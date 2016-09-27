@@ -1,0 +1,90 @@
+Done => *
+
+Oct 22, 2006
+*Need to use user attributes to describe tables and groups (PyTables level).
+
+Dec 5, 2006
+Class diagram to describe file organization.
+User documentation.
+*Statement of work for DMC.
+Look into SRB. Can this be used for updates?
+*Utility to return available data.
+*Utility to tie Sorts_g tables to data.
+    *How to get gather order into ph5 file?
+
+Dec 14
+*Program to add reports to Report_g.
+*Need to calculate and store offsets using various methods. (only great circle)
+
+Dec 15
+GUI to populate ph5 file (raw files, dep file, reports etc.).
+GUI to cross check data (may be same gui as above).
+Intelligent editor for ph5 files (GUI).
+Server for DMC to work through web interface.
+*Generate (detailed?) maps of station locations and experiment location on the fly.
+Improve exception handling!
+Spectra of traces ore other methods for QC. (Jim)
+Raw file readers for rt-130, baler data, etc.
+
+Jan 12, 2007
+*Program to read events and generate a sort for each event and each array. (Done with kef files instead)
+*Need program to generate kef file to update Sort_t
+
+Jan 26
+*Need to force order of columns in tables under Sort_g so report generation is easier. (Done)
+
+Feb 1
+*Need application to check validity of kef files. (Add to kef2ph5?)
+
+Feb 3
+*Need to change location X to northing, location Y to easting? (Note: This was already done correctly)
+
+Feb 4
+Need to make query-ph5 generate a log.
+
+Feb 12
+*Need to design response group table. For now only needs to include bit weight and gain.
+*Need to parse gain field on 125a and insert info in response table.
+
+Feb 23
+General ph5 file verifyer.
+
+Mar 6
+*Need to support EBCDIC and ibm floats in SEGY_h.py.
+*Need to tie Response_t entry to actual data traces.
+
+Mar 22
+*In the Das_g_[sn] the SOH_a, Log_a and Event_a need to roll to new file like the Data_a.
+
+April 19
+*Need to store clock correction information in a generalized format not by each type of instrument.
+
+April 25
+Refined queries. (DMC tool)
+Produce SAC in addition to SEG-Y.
+
+May 01
+*Eliminate enumerated types from tables.
+
+May 07
+View gathers directly from ph5 file.
+
+May 18
+*Receiver gathers. (See July 10 entry)
+Use construct to parse dep files.
+
+June 19
+*Need to generate data_description.txt, and data_request_key.txt as per Sandy e-mail of June 19, 2007.
+
+June 27
+*Check to see if lat/lon get read into Y/X correctly.
+
+July 10
+Add sample_count_i to Das_t.
+Write a program to populate Time_t.
+To get receiver gather, Sort_t:start_time is relative to trace start, Sort_t:end_time is length of trace, 
+Array_t_[nnn]:deploy_time is start of trace, Array_t_[nnn]:pickup_time is end of trace.
+
+July 26
+Move /Experiment_g/Receivers_g/Das_g_[n]/Time_t to /Experiment_g/Receivers_g/Time_t,
+/Experiment_g/Receivers_g/Das_g_[n]/Receiver_t to /Experiment_g/Receivers_g/Receiver_t.

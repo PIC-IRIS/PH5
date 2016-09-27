@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+###   2012.194
+#
+vi 125a2ph5
+vi 1302ph5
+vi batch2dep
+vi churn-array-deploy-times
+vi create_empty_sort_array
+vi das_start_stop
+vi das_start_stop_kef_gen
+vi dep2ph5
+vi depcheck
+vi dumpreports
+vi dumpsgy
+vi fix_3chan_texan
+vi fix_das_chan_num
+vi fix_num_samples
+vi geod2kef
+vi index_offset_t
+vi initialize-ph5
+vi kef2ph5
+vi kmz-builder
+vi map-gen
+vi noven
+vi obsipshot2dep
+vi ph52seg 
+vi ph5toseg
+vi query-ph5
+vi recvorder
+vi report2ph5
+vi report-gen
+vi set_deploy_pickup_times
+vi sort-kef-gen
+vi sort-recv-dep
+vi table2kef
+vi tabletokef
+vi time-kef-gen
+vi tsp2dep
+vi txn2segy2dep

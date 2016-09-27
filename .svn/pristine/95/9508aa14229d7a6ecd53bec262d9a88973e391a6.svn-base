@@ -1,0 +1,10 @@
+digraph KefEdit{
+	rankdir=LR
+	KefEdit [label = "KefEdit|{MainWindow|main()}" shape = record]
+	KefParser [label = "KefParser|{KefParser|KefSyntaxError|KefFileTypeError}" shape = record]
+	Table [label = "Table|{Table}" shape = record]
+
+	KefEdit -> KefParser
+	KefEdit -> Table
+	KefParser -> Table
+}

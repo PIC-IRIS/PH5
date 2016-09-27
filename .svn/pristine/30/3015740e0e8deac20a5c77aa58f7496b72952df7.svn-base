@@ -1,0 +1,41 @@
+#!/usr/bin/env pnpython3
+
+import sys, os, re
+
+LDRE = re.compile ("LD_LIBRARY_PATH.*")
+
+files = open ('programs.txt')
+
+while True :
+    f = files.readline ()
+    f = f.strip ()
+    fh = open (f)
+    of = open ('tmp.sh', mode='w')
+    
+    i = -1
+    while True :
+        line = fh.readline ()
+        if not line : break
+        if LDRE.match (line) :
+            line = "export {0}".format (line)
+        #i += 1
+        #if i == 1 :
+            #print "#   Version: 2014.105"
+            #of.write ("#   Version: 2014.105\n")
+            #continue
+        #elif i == 4 :
+            #print '\nLD_LIBRARY_PATH=${K3}/lib\n'
+            #of.write ('\nLD_LIBRARY_PATH=${K3}/lib\n\n')
+            #continue
+        #else :
+        print line,
+        of.write (line)
+            
+    of.close (); fh.close (); i = -1
+    ans = raw_input ('{0} Ok? '.format (f))
+    if ans == 'y' :
+        os.system ('mv tmp.sh {0}'.format (f))
+        
+    
+    
+    

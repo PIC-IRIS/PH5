@@ -1,0 +1,226 @@
+#!/usr/bin/env pnpython2
+
+import os, sys, time
+import TimeDoy, Experiment
+
+PROG_VERSION = "2010.312"
+
+os.environ['TZ'] = 'UTM'
+time.tzset ()
+
+DASS = {}
+Array_t = {}
+#
+#   To hold table rows and keys
+#
+class rows_keys (object) :
+    __slots__ = ('rows', 'keys')
+    def __init__ (self, rows = None, keys = None) :
+        self.rows = rows
+        self.keys = keys
+        
+    def set (self, rows = None, keys = None) :
+        if rows != None : self.rows = rows
+        if keys != None : self.keys = keys
+
+class ph5_time (object) :
+    __slots__ = 'passcal_s', 'epoch_l', 'ascii_s', 'micro_seconds_i', 'type_s'
+    
+    def __init__ (self, passcal_s = None, epoch_l = None, ascii_s = None, micro_seconds_i = None) :
+        if passcal_s != None :
+            self._passcal (passcal_s)
+        elif epoch_l != None :
+            self._epoch (epoch_l)
+        elif ascii_s != None :
+            self._ascii (ascii_s)
+            
+        if micro_seconds_i != None :
+            self.micro_seconds_i = micro_seconds_i
+        else :
+            self.micro_seconds_i = 0
+
+    def _passcal (self, passcal_s) :
+        tdoy = TimeDoy.TimeDoy ()
+        flds = passcal_s.split (':')
+        for i in range (5) :
+            try :
+                x = flds[i]
+            except :
+                flds.append (0)
+                
+        epoch_l = tdoy.epoch (int (flds[0]), int (flds[1]), int (flds[2]), int (flds[3]), int (flds[4]))
+        self._epoch (epoch_l)
+        self.passcal_s = passcal_s
+        
+    #   Read ascii time as produced by time.ctime XXX   Untested   XXX
+    def _ascii (self, ascii_s) :
+        tdoy = TimeDoy.TimeDoy ()
+        ttuple = time.strptime (ascii_s, "%a %b %d %H:%M:%S %Y")
+        epoch_l = time.mktime (ttuple)
+        self._epoch (epoch_l)
+        self.passcal_s = tdoy.epoch2PasscalTime (self.epoch_l)
+        
+    def _epoch (self, epoch_l) :
+        tdoy = TimeDoy.TimeDoy ()
+        self.epoch_l = epoch_l
+        self.ascii_s = time.ctime (self.epoch_l)
+        self.type_s = 'BOTH'
+        self.passcal_s = tdoy.epoch2PasscalTime (self.epoch_l)
+        
+#
+#   Read Command line arguments
+#
+def get_args () :
+    global PH5, PATH, DEBUG
+    
+    from optparse import OptionParser
+    
+    oparser = OptionParser ()
+    
+    oparser.usage = "churn-array-deploy-times --nickname=ph5-file-prefix options"
+    
+    oparser.description = ""
+    
+    oparser.add_option ("-n", "--nickname", dest = "ph5_file_prefix",
+                        help = "The ph5 file prefix (experiment nickname).",
+                        metavar = "ph5_file_prefix")
+    
+    oparser.add_option ("-p", "--path", dest = "ph5_path",
+                        help = "Path to ph5 files. Defaults to current directory.",
+                        metavar = "ph5_path")
+    
+    oparser.add_option ("--bug", dest = "debug", action = "store_true", default = False)
+    
+    options, args = oparser.parse_args ()
+    
+    if options.ph5_file_prefix != None :
+        PH5 = options.ph5_file_prefix
+    else :
+        PH5 = None
+        
+    if options.ph5_path != None :
+        PATH = options.ph5_path
+    else :
+        PATH = "."
+        
+    if options.debug != None :
+        DEBUG = options.debug
+        
+    if PH5 == None :
+        sys.stderr.write ("Error: Missing required option --nickname. Try --help\n")
+        sys.exit (-1) 
+        
+#
+#
+#
+def read_das_table (das) :
+    global EX, DASS
+    
+    if DASS.has_key (das) :
+        EX.ph5_g_receivers.setcurrent (DASS[das])
+        das_r, das_keys = EX.ph5_g_receivers.read_das ()
+        return rows_keys (das_r, das_keys)
+    else :
+        return None
+    
+#
+#
+#
+def read_sort_arrays () :
+    '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
+    global EX
+    
+    array_t = {}
+    #   We get a list of Array_t_[n] names here...
+    #   (these are also in Sort_t)
+    names = EX.ph5_g_sorts.names ()
+    for n in names :
+        arrays, array_keys = EX.ph5_g_sorts.read_arrays (n)
+        
+        rowskeys = rows_keys (arrays, array_keys)
+        #   We key this on the name since there can be multiple arrays
+        array_t[n] = rowskeys
+        
+    return array_t
+
+#
+#
+#
+def read_das_groups () :
+    '''   Get das groups   '''
+    global EX
+    
+    #   Get references for all das groups keyed on das
+    return EX.ph5_g_receivers.alldas_g ()
+
+#
+#   Initialize ph5 file
+#
+def initialize_ph5 (editmode = False) :
+    '''   Initialize the ph5 file   '''
+    global EX, PATH, PH5
+    
+    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX.ph5open (editmode)
+    EX.initgroup ()
+    
+def ejaculate (k) :
+    arrays = Array_t.keys ()
+    arrays.sort ()
+    
+    for a in arrays :
+        ofile = a + ".churn.txt"
+        fh = open (ofile, "w+")
+        stations = len (Array_t[a].rows)
+        fh.write ("Array: {0} Stations: {1:d}\n".format (a, stations))
+        epochs = k[a].keys ()
+        epochs.sort ()
+        for e in epochs :
+            sample_rates = k[a][e].keys ()
+            sample_rates.sort ()
+            for sr in sample_rates :
+                #fh.write ("Sample rate: {0:d}\n".format (sr))
+                p = ph5_time (epoch_l=e)
+                fh.write ("{0}\t{1}\t{2}\t{3:15.1f}\n".format (sr, p.passcal_s, k[a][e][sr], p.epoch_l))
+            
+        fh.close ()
+    
+def churn () :
+    arrays = Array_t.keys ()
+    
+    Keyed_on_array = {}
+    for a in arrays :
+        Keyed_on_array[a] = {}
+        for array_t in Array_t[a].rows :
+            das = array_t['das/serial_number_s']
+            Das_t = read_das_table (das)
+            if not Das_t :
+                print "Ooops..." + das
+                continue
+            
+            for das_t in Das_t.rows :
+                sample_rate = int (das_t['sample_rate_i'] / das_t['sample_rate_multiplier_i'])
+                start_epoch = das_t['time/epoch_l']
+                if not Keyed_on_array[a].has_key (start_epoch) :
+                    Keyed_on_array[a][start_epoch] = {}
+                    
+                if Keyed_on_array[a][start_epoch].has_key (sample_rate) :
+                    Keyed_on_array[a][start_epoch][sample_rate] += 1
+                else :
+                    Keyed_on_array[a][start_epoch][sample_rate] = 1
+                
+    return Keyed_on_array
+            
+    
+if __name__ == '__main__' :
+    get_args ()
+    now = time.time ()
+    initialize_ph5 ()
+    
+    Array_t = read_sort_arrays ()
+    DASS = read_das_groups ()
+    keyed = churn ()
+    ejaculate (keyed)
+    minutes = (time.time () - now) / 60.
+    
+    print "{0:5.1f} minutes".format (minutes)

@@ -1,0 +1,468 @@
+#!/usr/bin/env pnpython2
+#
+#   Parse TSP input files and produce a rawmeet dep file.
+#
+#   Steve Azevedo, June 2007
+#
+
+import sys, os, re, string, time
+
+PROG_VERSION = '2010.266a'
+
+#   TSP input file version
+TSP_VERSION = '3.2'
+#   rawmeet dep file version
+DEP_VERSION = '0007.107'
+
+#   Coordinate system to coordinate system conversion, normally proj4 program cs2cs
+CS2CS = 'cs2cs'
+
+#   Holds key (station), value (das)
+DAS = {}
+
+class geom (object) :
+    __slots__ = ("station", "X", "Y", "Z", "zone", "datum", "proj")
+    
+#   Instance of geom keyed on station    
+GEOM = {}
+
+class shot (object) :
+    __slots__ = ("year", "doy", "hour", "minute", "second", "station", "length", "comment")
+    
+class das (object) :
+    __slots__ = ("station", "das", "comment")
+
+#   Instance of shot keyed on station
+SHOT = {}
+
+def lst2str (l) :
+    s = ""
+    for i in l :
+        s += i + " "
+        
+    return s.strip ()
+
+def get_args () :
+    '''   Parse input args
+          -u   UTM geometry file
+          -d   TSP DAS file
+          -s   TSP shot file
+          '''
+    global UTMFILE, GEOMFILE, DASFILE, SHOTFILE, DEBUG
+    UTMFILE = None; DASFILE = None; SHOTFILE = None; GEOMFILE = None
+    
+    from optparse import OptionParser
+
+    oparser = OptionParser ()
+    oparser.description = "Version: %s Convert TSP input files to a dep file. Writes to stdout." % PROG_VERSION
+    oparser.usage = "tsp2dep -u tsp_utm_file | -g tsp_geom_file -d tsp_das_file -s tsp_shot_file"
+    oparser.add_option ("-g", "--geom", dest = "GEOMFILE",
+                        help="A TSP geometry file. \"station_num latitude longitude [elevation]\"",
+                        metavar="tsp_geom_file")
+    oparser.add_option ("-u", "--utm", dest = "UTMFILE",
+                      help="A TSP UTM geometry file. \"station, northing, easting, elevation\"", 
+                      metavar="tsp_utm_file")
+    oparser.add_option ("-d", "--das", dest = "DASFILE",
+                       help = "A TSP DAS file. \"station, das_number\"",
+                       metavar = "tsp_das_file")
+    oparser.add_option ("-s", "--shot", dest = "SHOTFILE",
+                        help="A TSP shot file. \"year, doy, hr, mn, sc, station, length\"",
+                        metavar = "tsp_shot_file")
+    #oparser.add_option ("-r", "--rate", dest = "SAMPLERATE",
+                        #help = "Sample rate of data.",
+                        #metavar = "sample_rate")
+    oparser.add_option ("-D", dest = "DEBUG", action = "store_true", default = False)
+    options, args = oparser.parse_args()
+    #print options.outfile
+    
+    if options.UTMFILE != None :
+        UTMFILE = options.UTMFILE
+        
+    if options.GEOMFILE != None :
+        GEOMFILE = options.GEOMFILE
+        
+    if options.DASFILE != None :
+        DASFILE = options.DASFILE
+        
+    if options.SHOTFILE != None :
+        SHOTFILE = options.SHOTFILE
+        
+    #if options.SAMPLERATE != None :
+        #SAMPLERATE = options.SAMPLERATE
+    #else :
+        #SAMPLERATE = ""
+        
+    DEBUG = options.DEBUG
+    
+    if UTMFILE != None and GEOMFILE != None :
+        sys.stderr.write ("Can not use a TST geometry file and a TSP UTM file. Pick on or the other.\n")
+        sys.exit ()
+
+    if (UTMFILE == None and GEOMFILE == None) or DASFILE == None or SHOTFILE == None :
+        sys.stderr.write ("Missing required option. Try --help\n")
+        sys.exit ()
+        
+def utm2geod (geo) :
+    '''   Convert UTM coordinates to geodetic coordinates   '''
+    command = "%s +proj=utm +zone=%s +datum=%s\
+               +to +proj=latlong +datum=%s -r -s -f \"%%f\" <<EOF\n%s %s %s\nEOF\n" % (CS2CS,
+                                                                                       geo.zone,
+                                                                                       geo.datum,
+                                                                                       "WGS84",
+                                                                                       geo.Y,
+                                                                                       geo.X,
+                                                                                       geo.Z)
+    
+    #print command
+    try :
+        fh = os.popen (command)
+    except :
+        sys.stderr.write ("Failed to execute: %s" % command)
+        return None, None, None
+    
+    lat = None
+    lon = None
+    elev = None
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        flds = string.split (line)
+        if len (flds) == 3 :
+            lat = string.strip (flds[0])
+            lon = string.strip (flds[1])
+            elev = string.strip (flds[2])
+            break
+        
+    return lat, lon, elev
+
+#   RE to match UTM zone        
+zoneRE = re.compile ("UTM Zone (\d*).*")
+#   RE to match datum
+datumRE = re.compile ("Horizontal Datum: (.*)")
+#   RE to match floating point number
+floatRE = re.compile ("\d*\.\d*")
+#   RE to match int
+intRE = re.compile ("\d*")
+
+#   Example UTM file (left justified)
+#        Spears Ranch Seismic Experiment Survey Coordinates
+#        UTM Zone 14 North
+#        Horizontal Datum: NAD83
+#        Vertical Datum: NAVD88
+#
+#        Station  Northing(m) Easting(m) Elev(m)
+#        2  3814491.766 715693.129 310.517
+#        2000 3814586.510 715593.821 304.756
+#        2001 3814582.163 715613.302 305.656
+#
+
+def parseUTM () :
+    '''   Parse TSP UTM file   '''
+    global UTMFILE
+    zone = ""; datum = ""
+    
+    try :
+        fh = open (UTMFILE)
+    except IOError :
+        sys.stderr.write ("Error: Failed to open %s." % UTMFILE)
+        sys.exit ()
+        
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        if line[0] == '#' : continue
+        if DEBUG : sys.stderr.write (line)
+        line = line[:-1]
+        #print line
+        m = zoneRE.match (line)
+        if m :
+            zone = m.groups ()[0]
+            continue
+        
+        m = datumRE.match (line)
+        if m :
+            datum = m.groups ()[0]
+            continue
+        
+        line = string.replace (line, ',', ' ')
+        flds = string.split (line)
+        #print flds
+        if len (flds) >= 4 :
+            try :
+                int (flds[0]) 
+            except ValueError :
+                continue
+            else :
+                if floatRE.match (flds[0]) :
+                    continue
+            
+            try :
+                float (flds[3]) 
+            except ValueError :
+                continue
+            
+        else :
+            continue
+            
+        #print flds, zone, datum
+        g = geom ()
+        g.station = string.strip (flds[0])
+        g.Y = string.strip (flds[1])
+        g.X = string.strip (flds[2])
+        g.Z = string.strip (flds[3])
+        g.zone = zone
+        g.datum = datum
+        g.proj = 'UTM'
+        Y, X, Z = utm2geod (g)
+        if Y != None :
+            g.X = X
+            g.Y = Y
+            g.Z = Z
+            g.proj = 'geographic'
+            g.datum = 'WGS84'
+            g.zone = ''
+            
+        GEOM[g.station] = g
+        
+    fh.close ()
+    
+def parseGEOM () :
+    '''   Parse TSP GEOM file
+          station lat lon [elev]
+    '''
+    global GEOMFILE
+    
+    try :
+        fh = open (GEOMFILE)
+    except IOError :
+        sys.stderr.write ("Error: Failed to open %s." % GEOMFILE)
+        sys.exit ()
+        
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        if line[0] == '#' : continue
+        if DEBUG : sys.stderr.write (line)
+        line = line[:-1]
+        if not line : continue
+        line = string.replace (line, ',', ' ')
+        flds = string.split (line)
+        g = geom ()
+        g.proj = 'geographic'
+        g.datum = ''
+        g.zone = ''
+        g.station = string.strip (flds[0])
+        g.Y = string.strip (flds[1])
+        g.X = string.strip (flds[2])
+        try :
+            g.Z = string.strip (flds[3])
+        except :
+            g.Z = "0.0"
+            
+        GEOM[g.station] = g
+        
+    fh.close ()
+        
+def parseDAS () :
+    '''   Parse TSP DAS file   '''
+    global DASFILE
+    
+    #fh = open (DASFILE)
+    try :
+        fh = open (DASFILE)
+    except IOError :
+        sys.stderr.write ("Error: Failed to open %s." % DASFILE)
+        sys.exit ()
+        
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        if line[0] == '#' : continue
+        if DEBUG : sys.stderr.write (line)
+        d = das ()
+        line = string.replace (line, ',', ' ')
+        flds = string.split (line)
+        if len (flds) >= 2 :
+            d.station = flds[0].strip ()
+            d.das = flds[1].strip ()
+        else :
+            continue
+        
+        try :
+            d.comment = lst2str (flds[3:])
+        except :
+            d.comment = ""
+            
+        DAS[d.station] = d
+            
+    fh.close ()
+            
+def parseSHOT () :
+    '''   Parse TSP SHOT file   '''
+    global SHOTFILE
+    
+    #fh = open (SHOTFILE)
+    try :
+        fh = open (SHOTFILE)
+    except IOError :
+        sys.stderr.write ("Error: Failed to open %s." % SHOTFILE)
+        sys.exit ()
+        
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        if line[0] == '#' : continue
+        if line[0] != '2' : continue
+        if DEBUG : sys.stderr.write (line)
+        flds = string.split (line, ',')
+        if len (flds) >= 7 :
+            s = shot ()
+            s.year = string.strip (flds[0])
+            s.doy = string.strip (flds[1])
+            s.hour = string.strip (flds[2])
+            s.minute = string.strip (flds[3])
+            s.second = string.strip (flds[4])
+            s.station = string.strip (flds[5])
+            s.length = string.strip (flds[6])
+        else :
+            continue
+            
+        try :
+            s.comment = lst2str (flds[7:])
+        except :
+            s.comment = ""
+            
+        SHOT[s.station] = s
+            
+    fh.close ()
+    
+def cvtLat (lat) :
+    if float (lat) < 0 :
+        Y = 'S' + lat[1:]
+    else :
+        Y = 'N' + lat
+        
+    return Y
+        
+def cvtLon (lon) :
+    if float (lon) < 0 :
+        X= 'W' + lon[1:]
+    else :
+        X = 'E' + lon
+        
+    return X
+    
+def printSHOT () :
+    '''   Print dep file SHOT lines   '''
+    kys = SHOT.keys ()
+    kys.sort ()
+    for k in kys :
+        try :
+            s = SHOT[k]
+            g = GEOM[k]
+            
+            Y = cvtLat (g.Y)
+            X = cvtLon (g.X)
+        except KeyError :
+            sys.stderr.write ("Warning: No geometry information for shot %s\n" % k)
+            continue
+            
+        shottime = "%s:%s:%s:%s:%s" % (s.year,
+                                       s.doy,
+                                       s.hour,
+                                       s.minute,
+                                       s.second)
+        
+        print "SHOT;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (s.station,         #Shot ID
+                                                                     s.station,         #Flag number
+                                                                     s.station[0],      #Line
+                                                                     Y,                 #Lat
+                                                                     X,                 #Lon
+                                                                     g.Z,               #Elev
+                                                                     shottime,          #Time of Shot
+                                                                     '',                #Pre-trigger
+                                                                     '',                #Post-trigger
+                                                                     "",                #Sample rate
+                                                                     "",                #Depth
+                                                                     "",                #Size of shot
+                                                                     "",                #Reduction velocity
+                                                                     "",                #Radius
+                                                                     s.comment)         #Comment
+        
+def printRECV () :
+    '''   Print dep file RECV lines   '''
+    kys = DAS.keys ()
+    kys.sort ()
+    
+    for station in kys :
+        try :
+            d = DAS[station]
+            g = GEOM[station]
+            Y = cvtLat (g.Y)
+            X = cvtLon (g.X)
+        except KeyError :
+            sys.stderr.write ("Warning: No geometry for station %s\n" % station)
+            continue
+        
+        print "RECV;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (d.das,             #DAS serial number
+                                                                     station,           #Flag number
+                                                                     station[0],        #Line
+                                                                     'texan',           #Type
+                                                                     '1',               #Channel
+                                                                     "",                #Sensor ID
+                                                                     "",                #Uphole?
+                                                                     Y,                 #Lat
+                                                                     X,                 #Lon
+                                                                     g.Z,               #Elev
+                                                                     "",                #Team
+                                                                     "",                #Deployment time
+                                                                     "",                #Pickup time
+                                                                     "",                #Shots
+                                                                     d.comment)         #Comments
+        
+def printHDR () :
+    print "# tsp2dep Version: %s dep Version: %s TSP Version: %s Run: %s" % (PROG_VERSION,
+                                                                             DEP_VERSION,
+                                                                             TSP_VERSION,
+                                                                             time.asctime ())
+
+if __name__ == "__main__" :
+    global UTMFILE, GEOMFILE, SHOTFILE, DASFILE, DEBUG
+    get_args ()
+    if UTMFILE :
+        parseUTM ()
+    elif GEOMFILE :
+        parseGEOM ()
+    else :
+        sys.stderr.write ("No geometry file given.\n")
+        sys.exit ()
+        
+    if DEBUG :
+        print "Parsing geometry"
+        kys = GEOM.keys ()
+        kys.sort ()
+        for k in kys :
+            o = GEOM[k]
+            print "station: ", o.station, "Y: ", o.Y, "X: ", o.X, "Z: ", o.Z, "datum: ", o.datum, "zone: ", o.zone
+            
+    parseDAS ()
+    if DEBUG :
+        print "Parsing: %s" % DASFILE
+        kys = DAS.keys ()
+        kys.sort ()
+        for k in kys :
+            d = DAS[k]
+            print "Station: ", d.station, "DAS: ", d.das
+            
+    parseSHOT ()
+    if DEBUG :
+        print "Parsing: %s" % SHOTFILE
+        kys = SHOT.keys ()
+        kys.sort ()
+        for k in kys :
+            o = SHOT[k]
+            print o.year, o.doy, o.hour, o.minute, o.second, o.station, o.length
+    
+    printHDR ()
+    printSHOT ()
+    printRECV ()

@@ -1,0 +1,9 @@
+#! /usr/bin/python2.6
+
+def mymod(values):
+    thing = values
+    for value in values:
+        for i,entry in enumerate(value):
+            thing[value] = ["WOOT"]
+    return thing
+

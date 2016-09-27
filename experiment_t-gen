@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#   Version: 2016.133
+EXEC='changes'
+MOD='pn4'
+
+h=$@
+
+if [ ! -z "${KX}" ]
+then
+	PYTHON=pnpython4
+	export PYTHON
+        PYTHONPATH=${KX}/apps/${MOD}:${KX}/apps/pn3
+        export PYTHONPATH
+else
+        echo "KX environment not set! Can not continue."
+	exit
+fi
+
+if [ -z "$PYTHON" ]
+then
+	echo "$PYTHON not found!"
+	exit
+fi
+
+${PYTHON} ${KX}/apps/${MOD}/${EXEC}.py $h

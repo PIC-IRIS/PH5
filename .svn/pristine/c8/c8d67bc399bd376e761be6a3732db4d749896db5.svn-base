@@ -1,0 +1,4 @@
+#!/bin/bash
+
+python ftpserver.py &
+python PH5Server.py &

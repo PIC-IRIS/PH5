@@ -1,0 +1,33 @@
+x#! /usr/local/bin/python
+
+import FileList
+from PyQt4 import QtGui, QtCore
+
+class UploadQueue(QtGui.QWidget):
+    def __init__(self, parent=None):
+        super(UploadQueue, self).__init__(parent)
+
+        self.view = FileList.FileList(self)
+        self.connect(self.view, QtCore.SIGNAL("dropped"), self.pictureDropped)
+        self.button = QtGui.QPushButton("Upload")
+
+        layout = QtGui.QVBoxLayout(self)
+        layout.addWidget(self.view)
+        layout.addWidget(self.button)
+
+    def pictureDropped(self, l):
+        for url in l:
+            if os.path.exists(url):             
+                item = QtGui.QListWidgetItem(url, self.view) 
+                item.setStatusTip(url)  
+                
+    def keyPressEvent(self, event):
+        if type(event) == QtGui.QKeyEvent:
+            if event.key() == QtCore.Qt.Key_Delete:
+                self.delete()    
+            else:
+                event.ignore()
+
+    def delete(self):
+        for SelectedItem in self.view.selectedItems():
+            self.view.takeItem(self.view.row(SelectedItem))

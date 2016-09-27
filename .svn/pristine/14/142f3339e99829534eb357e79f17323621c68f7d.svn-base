@@ -1,0 +1,47 @@
+--Create the inititial table structure for teh PH5server database
+
+CREATE TABLE Users
+(userid INTEGER PRIMARY KEY AUTOINCREMENT,
+username varCHAR(25),
+pass CHAR(32)
+);
+
+
+CREATE TABLE Experiments
+(experimentid INTEGER PRIMARY KEY AUTOINCREMENT,
+experiment_name varCHAR(64),
+userid int
+);
+
+CREATE TABLE Config
+(DATAROOT varChar(128),
+K3 varChar(128),
+EXPERIMENT_DIR varCHAR(128),
+SSL int
+);
+
+CREATE TABLE Locks
+(indx INTEGER PRIMARY KEY AUTOINCREMENT,
+experiment_name varChar(128),
+username varCHAR(128)
+);
+
+
+CREATE TABLE Sessions
+(token varChar(32) PRIMARY KEY,
+logged_in int,
+file_to_work varCHAR(256),
+myfile varChar(256),
+ftype varChar(256),
+experiment_name varChar(256),
+load_data  varChar(256),
+username  varChar(256),
+time_stamp int
+);
+
+
+
+
+insert into Users (username, pass) values ('localhost', '83e3cfe08c6b519634039e0b89bcc7a2');
+insert into Experiments (experimentid, experiment_name, userid) values (1, "test", 1);
+

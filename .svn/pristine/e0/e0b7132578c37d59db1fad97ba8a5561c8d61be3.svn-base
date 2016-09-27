@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>KefEdit Documentation</title>
+</head>
+
+<body>
+
+<h1>KefEdit</h1>
+<h4>A lightweight, functional, PIC-approved, kef file editor</h4>
+
+<p>The following pages attempt to document the uses and features
+of KefEdit</p>
+
+<ul>
+<li><a href="./editor.html"><b>1. Using the Editor</b></a></li>
+<li><a href="./interface.html"><b>2. Using the Web Interface</b></a></li>
+</ul>
+
+<p>&copy 2012-2013 IRIS/PASSCAL</p>
+
+</body>
+
+</html>

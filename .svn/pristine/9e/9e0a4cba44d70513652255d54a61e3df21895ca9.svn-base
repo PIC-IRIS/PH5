@@ -1,0 +1,9 @@
+
+from distutils.core import setup, Extension
+
+setup (name = "ibm2iee_py", version = "2013.121",
+       ext_modules = [
+    Extension (
+    "ibm2ieee_py", ["ibm2ieee_py.c", "ibm2ieeewrapper_py.c"],
+    #extra_link_args = ["-m32"]
+)])
