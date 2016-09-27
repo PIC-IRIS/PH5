@@ -1,0 +1,179 @@
+#!/usr/bin/env python
+
+
+from twisted.internet.protocol import Protocol, Factory
+from twisted.internet import reactor, ssl
+from twisted.protocols.basic import IntNStringReceiver
+
+import sched, time
+import PH5ProcessProtocol as processor
+import sys
+from RE import *
+import re
+import struct
+import os, os.path
+import hashlib
+import subprocess
+import zipfile
+from PH5DB import *
+from PH5Helper import *
+from configobj import ConfigObj
+
+PROG_VERSION = '2013.016.b'
+
+
+##search patterns
+edit=RE(r'^\bedit\b')
+add=RE(r'^\badd\b')
+delete=RE(r'^\bdelete\b')
+load=RE(r'^\bload\b')
+received1=RE(r'^\bdone-111\b')
+load_data=""
+
+
+### Protocol Implementation
+
+# This is just about the simplest possible protocol
+class Echo(IntNStringReceiver):
+    """ The protocol is based on twisted.protocols.basic
+        IntNStringReceiver, with little-endian 32-bit 
+        length prefix.
+    """
+    structFormat = "<L"
+    prefixLength = struct.calcsize(structFormat)
+
+    def stringReceived(self, data):
+        global SSL, DATAROOT, EXPERIMENT_DIR, K3
+
+        logged_in, file_to_work, myfile, ftype, experiment_name, load_data, username, token, data, time_stamp = process_token(data, DATAROOT, EXPERIMENT_DIR)
+
+        if data.startswith('file'):
+            response=file_to_edit(token, data, logged_in, experiment_name, DATAROOT, EXPERIMENT_DIR)
+            self.sendString(response.encode('utf8'))
+
+
+        # get a kef file
+        elif data.startswith("get_kef"):
+            response=get_kef(token, logged_in, data, experiment_name, DATAROOT, EXPERIMENT_DIR)
+            self.sendString(response.encode('utf8'))
+
+        # create experiment ###
+        elif data.startswith("create experiment"):
+            response =create_experiment(token, logged_in, data, username, DATAROOT, EXPERIMENT_DIR)
+            self.sendString(response.encode('utf8'))
+
+    ## File execute ###
+        elif data.startswith("execute"):
+
+
+            if not file_to_work:
+                self.sendString('you must select a  file to work with')
+            else:
+
+                response=prepare_execute(token, logged_in, ftype, file_to_work, experiment_name, DATAROOT, EXPERIMENT_DIR)
+                self.sendString(response.encode('utf8'))    
+
+    ## Experiment ###
+        elif data.startswith("experiment"):
+
+            response = do_experiment(token, logged_in, username, data,  DATAROOT, EXPERIMENT_DIR)
+            self.sendString(response.encode('utf8'))
+
+    ## User login ###
+        elif data.startswith("login"):
+
+            response = do_login(data, token, DATAROOT, EXPERIMENT_DIR)
+
+            self.sendString(response.encode('utf8'))
+
+    ## Get Commands ###
+        elif data.startswith("commands"):
+            experiment_list=[]
+            response = get_commands()
+
+
+            self.sendString(response.encode('utf8'))
+
+    ## Get experiments ###
+
+        elif data.startswith("get experiments"):
+            experiment_list=[]
+            experiment_list = get_experiments(username,  DATAROOT, EXPERIMENT_DIR)
+            response= ', '.join(experiment_list)
+            self.sendString(response.encode('utf8'))
+
+    ## client exit ###
+        elif data.startswith("exit"):
+
+            print "client left..cleaning up"
+            Remove_Session(token, DATAROOT, EXPERIMENT_DIR) 
+            set_lock(username, experiment_name,  DATAROOT, EXPERIMENT_DIR, 0)
+
+        elif edit.search(data):
+
+            #self.sendString('edit function enganged')
+            if not file_to_work:
+                self.sendString('you must select a ph5 file to work with')
+            else:
+                response=do_edit(data)
+                self.sendString(response.encode('utf8'))    
+
+
+        elif add.search(data):
+            self.sendString('add function enganged')
+
+        elif delete.search(data):
+            self.sendString('delete function enganged')
+
+        elif data.startswith("done"):
+            if file_to_work:
+                self.sendString('done editing file: '+file_to_work )
+                write_session(token, "file_to_work", "") 
+                write_session(token, "ftype", "")
+            else:
+                self.sendString('you were not working with any file' )
+
+
+            if experiment_name:
+                self.sendString('done working with experiment: '+experiment_name ) 
+                write_session(token, "experiment_name", "")
+            else:
+                self.sendString('you were not working with any experiment' )
+
+
+
+
+
+        elif data.startswith("Welcome to server"):
+            self.sendString(data.encode('utf8'))
+
+
+
+
+
+        else:
+            self.sendString('Command not understood: use "commands" to get list of available commands or view help file')
+
+
+
+def main():
+    f = Factory()
+    f.protocol = Echo
+    if SSL == 1:
+        os.chdir (os.environ['K3'])
+        #print os.path.join (os.environ['K3'], 'config/keys/server.key')
+        reactor.listenSSL(50007, f, ssl.DefaultOpenSSLContextFactory('config/keys/server.key', 
+                                                                     'config/keys/server.crt'))
+        print "Server SSL mode ON"
+    else:
+        reactor.listenTCP(50007, f)
+        print "Server SSL mode OFF"
+
+    reactor.run()
+
+
+if __name__ == '__main__':
+    global SSL, DATAROOT, EXPERIMENT_DIR, K3
+    DATAROOT, EXPERIMENT_DIR, K3, SSL = read_config ()
+
+    main()

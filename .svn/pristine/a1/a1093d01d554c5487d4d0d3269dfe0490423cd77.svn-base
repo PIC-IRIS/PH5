@@ -1,0 +1,28 @@
+#! /usr/local/bin/python
+
+import time
+import hashlib
+from random import randint
+
+class LoginOracle:
+    def __init__(self):
+        self.username = 'localhost'
+        self.password = '83e3cfe08c6b519634039e0b89bcc7a2'
+        self.host = "jasper.passcal.nmt.edu"
+        self.port = 50007
+        self.ssl = None
+        self.token = None
+
+    def generate_token(self):
+        __hash_phase_one()
+        __hash_phase_two()
+        __hash_phase_three()
+
+    def __hash_phase_one(self):
+        self.token = hashlib.md5(str(time.time())).hexdigest()
+    
+    def __hash_phase_two(self):
+        self.token = self.token + str(randint(1000000000, 9999999999))
+
+    def __hash_phase_three(self):
+        self.token = hashlib.md5(self.token).hexdigest

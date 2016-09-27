@@ -1,0 +1,142 @@
+#!/usr/bin/env pnpython2
+
+#
+#   Read dep files and insert dep file info into
+#   a ph5 file
+#
+#   Josh Aragon, Aug 2007
+#
+#
+PROG_VERSION = '2012.075'
+
+import os, sys
+import Experiment, Dep
+
+def get_args () :
+    global PH5, DEPFILE
+
+    from optparse import OptionParser
+
+    oparser = OptionParser ()
+    oparser.usage = "dep2ph5 [--help][--dep dep_file][--kef kef_file][--raw raw_file | --file file_list_file] --nickname output_file_prefix"
+    oparser.description = "Version: %s Read a dep file into ph5 format." % PROG_VERSION
+    oparser.add_option ("-n", "--nickname", dest = "outfile",
+                        help="The ph5 file prefix (experiment nick name).",
+                        metavar = "output_file_prefix")
+    oparser.add_option ("-d", "--dep", dest = "depfile",
+                        help = "Rawmeet dep file.",
+                        metavar = "dep_file")
+    oparser.add_option ("-p", dest = "doprint", action = "store_true", default = False)
+    options, args = oparser.parse_args()
+
+    PH5 = None
+    DEPFILE = None
+
+
+    if options.outfile != None :
+        PH5 = options.outfile
+
+
+    if options.depfile != None :
+        DEPFILE = options.depfile
+
+    if PH5 == None :
+        #print H5, FILES
+        sys.stderr.write ("Error: Missing required option. Try --help\n")
+        sys.exit ()
+#    if not os.path.exists (PH5 + '.ph5') :
+#        sys.stderr.write ("Error: %s does not exist!\n" % PH5)
+#        sys.exit ()
+
+
+def dep_update () :
+    global EX, DEPFILE
+
+    dp = Dep.Dep (DEPFILE)
+    dp.open ()
+    dp.read ()
+    dp.rewindReceiver ()
+    dp.rewindShot ()
+    dp.rewindTime ()
+
+    #   Populate shot table Event_t  
+    #print "Event_t"
+    while 1 :
+        p = dp.nextShot ()
+        if not p : break
+        b = dp._build (p)
+        b = b['Event_t']
+        EX.ph5_g_sorts.populateEvent_t (b)
+
+    #self.rewindShot ()
+    current_array = None
+    ref = None
+    #   Populate Sort_t and Array_t tables
+    #   XXX   Assumes that Line designation is grouped together in dep file   XXX
+    while 1 :
+        p = dp.nextReceiver ()
+        if not p : break
+        b = dp._build (p)
+        
+        tmp = p['R_array']
+        #
+        if tmp != current_array :
+            current_array = tmp
+            next = EX.ph5_g_sorts.nextName ()
+            ref = EX.ph5_g_sorts.newSort (next)
+            #s = b['Sort_t']
+            #s['array_t_name_s'] = next
+            #print "Sort_t"
+            #EX.ph5_g_sorts.populateSort_t (s)
+        
+        a = b['Array_t']
+        #print "Array_t"
+        EX.ph5_g_sorts.populateArray_t (a)
+        
+    #   Process TIME from dep    
+    while 1 :
+        p = dp.nextTime ()
+        if not p : break
+        try :
+            filename = p['T_file']
+            das = str (int (filename[1:5]) + 10000)
+        except :
+            sys.stderr.write ("Warning: Can't update Time_t. Unuseable filename from TIME section of dep file.\n")
+            continue
+            
+        if EX.ph5_g_receivers.getdas_g (das) :
+            b = dp._build (p)
+            EX.ph5_g_receivers.populateTime_t (b['Time_t'])
+        else :
+            sys.stderr.write ("Warning: No data for %s\n" % das)
+
+
+def initializeExperiment (nickname) :
+    global EX, PH5
+
+    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EDIT = True
+    EX.ph5open (EDIT)
+    EX.initgroup ()
+
+def closePH5 () :
+    global EX
+    EX.ph5close ()
+
+
+if __name__ == '__main__' :
+    os.environ['TZ'] = 'GMT'
+    global PH5, DEPFILE
+
+    get_args ()
+
+    print "Initializing ph5 file..."
+    initializeExperiment (PH5)
+
+
+    dep_update ()
+
+    #ph5flush ()
+    closePH5 ()
+    print "Done"
+     

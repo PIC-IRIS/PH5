@@ -1,0 +1,37 @@
+#! /usr/local/bin/python
+
+import KefContainer
+import KefTable
+
+class KefBuilder:
+    def __init__(self):
+        self.builder_cache = dict()
+        self.container = KefContainer.KefContainer()
+
+    def update(self, table, row):
+        self.mark(table, row, "Update")
+
+    def delete(self, table, row):
+        self.mark(table, row, "Delete")
+
+    def remove(self, row):
+        try:
+            self.builder_cache.pop(row)
+        except KeyError:
+            return
+
+    def mark(self, table, row, indicator):
+        row_string = "{0}:{1}:".format(table.fields[row], indicator)
+        self.builder_cache[row] = [row_string, table.package_row(row)]
+    
+    def add_key(self, table, row):
+        self.builder_cache[row][0] += table.labels[row]
+
+    def build_container(self):
+        for field, row in self.builder_cache.values():
+            self.container[field] = row
+
+        return self.container
+
+    def empty(self):
+        self.container = list()
