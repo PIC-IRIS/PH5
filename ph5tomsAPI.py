@@ -22,12 +22,17 @@ import ph5API
 
 import decimate
 
+import time
+
+import TimeDOY
+
 from TimeDOY import epoch2passcal
 
 from TimeDOY import passcal2epoch
 
 import numpy
 
+from datetime import datetime, time
 
 
 
@@ -48,6 +53,26 @@ def decode_sta(LLSSS):
     # opposite of above encode_sta
 
     return str(int(LLSSS[:2], 36)) + LLSSS[2:]
+
+def DOY_breakup(start_fepoch):
+    
+    
+    passcal_start = epoch2passcal(start_fepoch) 
+    start_passcal_list=passcal_start.split(":")
+    start_doy=start_passcal_list[1] 
+    year= start_passcal_list[0] 
+    next_doy=int(start_doy)+1
+    if next_doy >365:
+        next_doy=1
+        year=int(year)+1
+        
+    Next_passcal_date=str(year)+":"+str(next_doy)+":00:00:00.000"
+    stop_fepoch = passcal2epoch(Next_passcal_date)
+    stop_fepoch=stop_fepoch-.001
+    
+    seconds= stop_fepoch-start_fepoch
+    return stop_fepoch, seconds
+
 
 
 
@@ -309,7 +334,8 @@ class PH5toMSeed(object):
                     
                     start_passcal=epoch2passcal(start_fepoch, sep=':')
                     start_passcal_list=start_passcal.split(":")
-                    start_doy=start_passcal_list[1]     
+                    start_doy=start_passcal_list[1]   
+                    start_year=start_passcal_list[0]  
                     
                     
                     if self.offset:
@@ -321,74 +347,107 @@ class PH5toMSeed(object):
                         
                     data = {}
                         
-                    c = station_list[deployment][0]['channel_number_i']                    
+                    c = station_list[deployment][0]['channel_number_i'] 
                     
-                    #print "cutting data for station "+station+" Channel "+str(c)		    
-                    if not data.has_key (c) :
-                        data[c] = []     
+                    if (stop_fepoch - start_fepoch) > 86400:
+                        #print "we need to break this down into days"
+                        # send start and stop time to DOY_breakup to get a list of star and stop times
+                        seconds_covered=0
+                        total_seconds= stop_fepoch - start_fepoch
+                        times_to_cut=[]
+                        stop_time, seconds =DOY_breakup(start_fepoch)
+                        seconds_covered= seconds_covered+seconds   
+                        times_to_cut.append([start_fepoch, stop_time])
+                        start_time = stop_time+.001
                         
-                    if self.channel and c in self.channel:
-                        data[c].append (ph5.cut (das, start_fepoch, stop_fepoch, chan=c))
-                        
-                    elif self.channel and c not in self.channel:
-                        data[c] = []
-                        
-                    else:
-                        data[c].append (ph5.cut (das, start_fepoch, stop_fepoch, chan=c)) 
-                        
-                    chans = data.keys (); chans.sort ()
-                    for c in chans : 
-                        
-                        traces = data[c]
-                        for trace in traces: 
+                        while  seconds_covered < total_seconds:
+                            stop_time, seconds =DOY_breakup(start_time)
+                            seconds_covered= seconds_covered+seconds
+                            times_to_cut.append([start_time, stop_time])
+                            start_time = stop_time+.001
                             
-                            if self.decimation:
-                                shift, data = decimate.decimate (self.decimation, trace.data) 
-                                sr = int (sr/int (self.decimation))
-                                trace.sample_rate = wsr
-                                trace.nsamples = len (data)
-                                if trace.nsamples == 0 :
-                                    #   Failed to read any data
-                                    sys.stderr.write ("Warning: No data for data logger {2}/{0} starting at {1}.".format (das, trace.start_time, sta))
-                                    continue 	
+                        
+                        
+                        
                             
                             
-                            try :
-                                mseed_trace = obspy.Trace (data=trace.data)
-                            except ValueError :
-                                sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
-                                continue
-                            mseed_trace.stats.sampling_rate = float (trace.das_t[0]['sample_rate_i']) / float (trace.das_t[0]['sample_rate_multiplier_i'])
-                            mseed_trace.stats.station = station   ###   ZZZ   Get from Maps_g
-                            mseed_trace.stats.channel = band_code+instrument_code+CHAN_MAP[c]    
                             
-                            if 'net_code_s' in experiment_t[0]:
-                                mseed_trace.stats.network = experiment_t[0]['net_code_s']
-                            else:
-                                mseed_trace.stats.network = 'XX'
                             
-                            if self.notimecorrect == True:
-                                corrected_time = trace.time_correct ()
-                                mseed_trace.stats.starttime = obspy.UTCDateTime (corrected_time.epoch (fepoch=False))
-                                mseed_trace.stats.starttime.microsecond = corrected_time.dtobject.microsecond
+                        
+                        
+                            
+                    for x in times_to_cut:
+                        print "cutting data for station "+station+" Channel "+str(c)	+" das: "+das	    
+                        if not data.has_key (c) :
+                            data[c] = []     
+                        
+                        if self.channel and c in self.channel:
+                            data[c].append (ph5.cut (das, x[0], x[1], chan=c))
+                        
+                        elif self.channel and c not in self.channel:
+                            data[c] = []
+                        
+                        else:
+                            data[c].append (ph5.cut (das, x[0], x[1], chan=c)) 
+                        
+                        chans = data.keys (); chans.sort ()
+                    
+                        
+                        for c in chans : 
+                        
+                            traces = data[c]
+                            for trace in traces: 
+                            
+                                print trace.sample_rate
                                 
-                            else: 
-                                mseed_trace.stats.starttime = obspy.UTCDateTime (trace.start_time.epoch (fepoch=True))
-                                mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond 
+                                if self.decimation:
+                                    shift, data = decimate.decimate (self.decimation, trace.data) 
+                                    sr = int (sr/int (self.decimation))
+                                    trace.sample_rate = wsr
+                                    trace.nsamples = len (data)
+                                    if trace.nsamples == 0 :
+                                        #   Failed to read any data
+                                        sys.stderr.write ("Warning: No data for data logger {2}/{0} starting at {1}.".format (das, trace.start_time, sta))
+                                        continue 	
                             
                             
-                            if self.stream is True:
-                                #yield mseed_trace
-                                continue
-                                #yielding seems to cause a crash
+                                try :
+                                    mseed_trace = obspy.Trace (data=trace.data)
+                                except ValueError :
+                                    sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
+                                    continue
+                                mseed_trace.stats.sampling_rate = float (trace.das_t[0]['sample_rate_i']) / float (trace.das_t[0]['sample_rate_multiplier_i'])
+                                mseed_trace.stats.station = station   ###   ZZZ   Get from Maps_g
+                                mseed_trace.stats.channel = band_code+instrument_code+CHAN_MAP[c]    
+                            
+                                if 'net_code_s' in experiment_t[0]:
+                                    mseed_trace.stats.network = experiment_t[0]['net_code_s']
+                                else:
+                                    mseed_trace.stats.network = 'XX'
+                            
+                                if self.notimecorrect == True:
+                                    corrected_time = trace.time_correct ()
+                                    mseed_trace.stats.starttime = obspy.UTCDateTime (corrected_time.epoch (fepoch=False))
+                                    mseed_trace.stats.starttime.microsecond = corrected_time.dtobject.microsecond
+                                
+                                else: 
+                                    mseed_trace.stats.starttime = obspy.UTCDateTime (trace.start_time.epoch (fepoch=True))
+                                    mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond 
+                            
+                                
+                                if self.stream is True:
+                                    #yield mseed_trace
+                                    continue
+                                    #yielding seems to cause a crash
 
-                            else:
-                                outfile = self.filename_gen (mseed_trace, array)    
-                                mseed_trace.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')                        
+                                else:
+                                    outfile = self.filename_gen (mseed_trace, array)    
+                                    mseed_trace.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')                        
                         
                     
                     
-        print "leaving"
+            
+            print "leaving"
             
 
 
