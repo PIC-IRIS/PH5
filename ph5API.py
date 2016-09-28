@@ -684,6 +684,7 @@ class ph5 (Experiment.ExperimentGroup) :
                  chan -> channel to cut
                  apply_time_correction -> iff True, slide traces to correct for clock drift
         '''
+        
         self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
         if apply_time_correction :
             Time_t = self.get_time_t (das)
@@ -694,6 +695,7 @@ class ph5 (Experiment.ExperimentGroup) :
             time_cor_guess_samples = sr * (time_cor_guess_ms / 1000.)
         else :
             time_cor_guess_samples = 0.
+         
             
         samples_read = 0
         first = True
@@ -769,6 +771,7 @@ class ph5 (Experiment.ExperimentGroup) :
             receiver_t = None
             response_t = None
         
+        
         trace = Trace (data, 
                        start_fepoch, 
                        time_correction, 
@@ -779,7 +782,7 @@ class ph5 (Experiment.ExperimentGroup) :
                        das_t, 
                        receiver_t,
                        response_t)
-            
+           
         return trace
             
 #
