@@ -1,0 +1,1205 @@
+K 25
+svn:wc:ra_dav:version-url
+V 31
+/svn/!svn/ver/3630/steve/K3/pn3
+END
+surt_130_py.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/surt_130_py.py
+END
+tsp2dep
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/tsp2dep
+END
+bcd_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3666/steve/K3/pn3/bcd_py.c
+END
+report-gen
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3458/steve/K3/pn3/report-gen
+END
+PH5Helper.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2616/steve/K3/pn3/PH5Helper.py
+END
+batch2dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2261/steve/K3/pn3/batch2dep.py
+END
+installServer.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2615/steve/K3/pn3/installServer.py
+END
+ibmfloat.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2752/steve/K3/pn3/ibmfloat.py
+END
+SACFactory.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3751/steve/K3/pn3/SACFactory.py
+END
+SEGYFactory.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3885/steve/K3/pn3/SEGYFactory.py
+END
+sort-kef-gen.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3886/steve/K3/pn3/sort-kef-gen.py
+END
+sort-recv-dep
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3458/steve/K3/pn3/sort-recv-dep
+END
+kef2ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3887/steve/K3/pn3/kef2ph5.py
+END
+etopo20lats.gz
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/etopo20lats.gz
+END
+recvorder
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3458/steve/K3/pn3/recvorder
+END
+pn125.py
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3576/steve/K3/pn3/pn125.py
+END
+RE.py
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/2298/steve/K3/pn3/RE.py
+END
+ebcdic.py
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/2261/steve/K3/pn3/ebcdic.py
+END
+license.txt
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2758/steve/K3/pn3/license.txt
+END
+report2ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3262/steve/K3/pn3/report2ph5.py
+END
+TimeDOY.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3874/steve/K3/pn3/TimeDOY.py
+END
+125a2ph5.profile
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2261/steve/K3/pn3/125a2ph5.profile
+END
+Experiment.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3888/steve/K3/pn3/Experiment.py
+END
+dumpreports.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/dumpreports.py
+END
+ph52seg
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/ph52seg
+END
+nuke-table.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3889/steve/K3/pn3/nuke-table.py
+END
+SEGD_h.py
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3669/steve/K3/pn3/SEGD_h.py
+END
+depcheck_rc.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/depcheck_rc.py
+END
+bcdwrapper_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3667/steve/K3/pn3/bcdwrapper_py.c
+END
+recvorder.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3303/steve/K3/pn3/recvorder.py
+END
+fix_das_chan_num
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3458/steve/K3/pn3/fix_das_chan_num
+END
+suibm2ieee_py.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2793/steve/K3/pn3/suibm2ieee_py.py
+END
+servers
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/2617/steve/K3/pn3/servers
+END
+segy2ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3624/steve/K3/pn3/segy2ph5.py
+END
+query-ph5
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3458/steve/K3/pn3/query-ph5
+END
+etopo20data.gz
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/etopo20data.gz
+END
+1302ph5
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/1302ph5
+END
+cs2cs.py
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2642/steve/K3/pn3/cs2cs.py
+END
+install
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/2295/steve/K3/pn3/install
+END
+das_start_stop_kef_gen
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/3458/steve/K3/pn3/das_start_stop_kef_gen
+END
+reconstruct-2.03dev-py2.6.egg
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/2261/steve/K3/pn3/reconstruct-2.03dev-py2.6.egg
+END
+kmz-builder.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2666/steve/K3/pn3/kmz-builder.py
+END
+cleanup.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2606/steve/K3/pn3/cleanup.py
+END
+load-report.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/load-report.py
+END
+dumpsgy.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3264/steve/K3/pn3/dumpsgy.py
+END
+test.sgy
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2261/steve/K3/pn3/test.sgy
+END
+PH5Server
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3458/steve/K3/pn3/PH5Server
+END
+todo.txt
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2261/steve/K3/pn3/todo.txt
+END
+map-gen
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/map-gen
+END
+create_database.sql
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/2574/steve/K3/pn3/create_database.sql
+END
+migrate_2to3.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3325/steve/K3/pn3/migrate_2to3.py
+END
+create_empty_sort_array
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/3458/steve/K3/pn3/create_empty_sort_array
+END
+dumpsgy
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/dumpsgy
+END
+fix_num_samples
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3458/steve/K3/pn3/fix_num_samples
+END
+depcheck.qrc
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2261/steve/K3/pn3/depcheck.qrc
+END
+meta-data-gen.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3896/steve/K3/pn3/meta-data-gen.py
+END
+Kef.py
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/3632/steve/K3/pn3/Kef.py
+END
+sort-shot-kef.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3345/steve/K3/pn3/sort-shot-kef.py
+END
+ph5toseg
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3458/steve/K3/pn3/ph5toseg
+END
+TimeDoy.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3890/steve/K3/pn3/TimeDoy.py
+END
+ph5_merge_helper.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3744/steve/K3/pn3/ph5_merge_helper.py
+END
+rt_130_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2261/steve/K3/pn3/rt_130_py.c
+END
+config.sql
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2615/steve/K3/pn3/config.sql
+END
+SEGY_h.py
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3268/steve/K3/pn3/SEGY_h.py
+END
+rt_130_py.h
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2261/steve/K3/pn3/rt_130_py.h
+END
+rt_125a_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2261/steve/K3/pn3/rt_125a_py.c
+END
+dep2ph5
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/dep2ph5
+END
+tsp2dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2261/steve/K3/pn3/tsp2dep.py
+END
+report2ph5
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3458/steve/K3/pn3/report2ph5
+END
+PH5Server.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2593/steve/K3/pn3/PH5Server.py
+END
+ibm2ieee_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3627/steve/K3/pn3/ibm2ieee_py.c
+END
+ibm2ieeewrapper_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/3627/steve/K3/pn3/ibm2ieeewrapper_py.c
+END
+sort-recv-kef.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3344/steve/K3/pn3/sort-recv-kef.py
+END
+SACReader.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3251/steve/K3/pn3/SACReader.py
+END
+segd2ph5
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3678/steve/K3/pn3/segd2ph5
+END
+skel.py
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/2261/steve/K3/pn3/skel.py
+END
+kmz-builder
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3458/steve/K3/pn3/kmz-builder
+END
+diff.txt
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2261/steve/K3/pn3/diff.txt
+END
+geod2kef
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3458/steve/K3/pn3/geod2kef
+END
+firfilt_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3062/steve/K3/pn3/firfilt_py.c
+END
+clean.sh
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2596/steve/K3/pn3/clean.sh
+END
+initialize-ph5
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3458/steve/K3/pn3/initialize-ph5
+END
+PIC_Processing_2008.240.pdf
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/2261/steve/K3/pn3/PIC_Processing_2008.240.pdf
+END
+dumpsac
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/dumpsac
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/2261/steve/K3/pn3/README
+END
+install.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3875/steve/K3/pn3/install.py
+END
+rt_130wrapper_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/rt_130wrapper_py.c
+END
+create_TRD_links.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3432/steve/K3/pn3/create_TRD_links.py
+END
+receivers-tree.jpg
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/receivers-tree.jpg
+END
+churn-array-deploy-times
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/3458/steve/K3/pn3/churn-array-deploy-times
+END
+sort-shot-kef
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3458/steve/K3/pn3/sort-shot-kef
+END
+fir.h
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/3019/steve/K3/pn3/fir.h
+END
+tabletokef.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/2589/steve/K3/pn3/tabletokef.py
+END
+columns.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3269/steve/K3/pn3/columns.py
+END
+create_empty_sort_array.py
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/2261/steve/K3/pn3/create_empty_sort_array.py
+END
+tree.jpg
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2261/steve/K3/pn3/tree.jpg
+END
+init_config.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2589/steve/K3/pn3/init_config.py
+END
+tabletokef
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3458/steve/K3/pn3/tabletokef
+END
+servers.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2625/steve/K3/pn3/servers.py
+END
+initialize-ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/2674/steve/K3/pn3/initialize-ph5.py
+END
+ph5toseg.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3751/steve/K3/pn3/ph5toseg.py
+END
+nuke-table
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3458/steve/K3/pn3/nuke-table
+END
+init_config
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3458/steve/K3/pn3/init_config
+END
+to_vi.sh
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2261/steve/K3/pn3/to_vi.sh
+END
+das_start_stop
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3458/steve/K3/pn3/das_start_stop
+END
+Receiver_t.kef
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2661/steve/K3/pn3/Receiver_t.kef
+END
+batch2dep
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3458/steve/K3/pn3/batch2dep
+END
+txn2segy2dep
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3458/steve/K3/pn3/txn2segy2dep
+END
+125a2ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3891/steve/K3/pn3/125a2ph5.py
+END
+cleanup.sh
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2603/steve/K3/pn3/cleanup.sh
+END
+fix_3chan_texan
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3458/steve/K3/pn3/fix_3chan_texan
+END
+decimate.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3063/steve/K3/pn3/decimate.py
+END
+construct-2.00-full.zip
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/2261/steve/K3/pn3/construct-2.00-full.zip
+END
+kef2ph5
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3458/steve/K3/pn3/kef2ph5
+END
+RT_130_h.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3638/steve/K3/pn3/RT_130_h.py
+END
+depcheck
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3458/steve/K3/pn3/depcheck
+END
+DasGrapher.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/2395/steve/K3/pn3/DasGrapher.py
+END
+ftpserver.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2607/steve/K3/pn3/ftpserver.py
+END
+ph5_merge_helper
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3458/steve/K3/pn3/ph5_merge_helper
+END
+obsipshot2dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2261/steve/K3/pn3/obsipshot2dep.py
+END
+pass.dat
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2607/steve/K3/pn3/pass.dat
+END
+geod2kef.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2644/steve/K3/pn3/geod2kef.py
+END
+PH5.db
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/2562/steve/K3/pn3/PH5.db
+END
+fix_num_samples.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/3273/steve/K3/pn3/fix_num_samples.py
+END
+ftpserver
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/2603/steve/K3/pn3/ftpserver
+END
+SegyReader.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3629/steve/K3/pn3/SegyReader.py
+END
+dumpreports
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3458/steve/K3/pn3/dumpreports
+END
+surt_125a_py.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/2261/steve/K3/pn3/surt_125a_py.py
+END
+PIC_Processing.txt
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/PIC_Processing.txt
+END
+cleanup
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/2608/steve/K3/pn3/cleanup
+END
+pn130.py
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3639/steve/K3/pn3/pn130.py
+END
+ph5toseg_beta
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3458/steve/K3/pn3/ph5toseg_beta
+END
+file_list_2008.323
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/file_list_2008.323
+END
+firfiltwrapper_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3064/steve/K3/pn3/firfiltwrapper_py.c
+END
+offset-table.jpg
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2261/steve/K3/pn3/offset-table.jpg
+END
+migrate_2to3
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3458/steve/K3/pn3/migrate_2to3
+END
+Dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/2261/steve/K3/pn3/Dep.py
+END
+subcd_py.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3671/steve/K3/pn3/subcd_py.py
+END
+sort-kef-gen
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3458/steve/K3/pn3/sort-kef-gen
+END
+columns.py.bak
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/columns.py.bak
+END
+segd2ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3892/steve/K3/pn3/segd2ph5.py
+END
+report-gen.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/2261/steve/K3/pn3/report-gen.py
+END
+map-gen.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2261/steve/K3/pn3/map-gen.py
+END
+construct-2.00-py2.5.egg
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/2261/steve/K3/pn3/construct-2.00-py2.5.egg
+END
+compile.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3275/steve/K3/pn3/compile.py
+END
+qt4reactor.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/2298/steve/K3/pn3/qt4reactor.py
+END
+Sfactory.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3023/steve/K3/pn3/Sfactory.py
+END
+sort-recv-dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3345/steve/K3/pn3/sort-recv-dep.py
+END
+set_deploy_pickup_times
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/3458/steve/K3/pn3/set_deploy_pickup_times
+END
+recreate_external_references.py
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/3343/steve/K3/pn3/recreate_external_references.py
+END
+obsipshot2dep
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3458/steve/K3/pn3/obsipshot2dep
+END
+txn2segy2dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/2261/steve/K3/pn3/txn2segy2dep.py
+END
+ph5tosac
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3458/steve/K3/pn3/ph5tosac
+END
+query-ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2261/steve/K3/pn3/query-ph5.py
+END
+index_offset_t.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/2261/steve/K3/pn3/index_offset_t.py
+END
+sort-recv-kef
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3458/steve/K3/pn3/sort-recv-kef
+END
+PH5DB.py
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2606/steve/K3/pn3/PH5DB.py
+END
+app.sh
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/3457/steve/K3/pn3/app.sh
+END
+dep2latlon.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/2261/steve/K3/pn3/dep2latlon.py
+END
+PIC_Processing.odt
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/PIC_Processing.odt
+END
+has_changed.sh
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3893/steve/K3/pn3/has_changed.sh
+END
+depcheck.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2261/steve/K3/pn3/depcheck.py
+END
+das_start_stop_kef_gen.py
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/2261/steve/K3/pn3/das_start_stop_kef_gen.py
+END
+time-kef-gen.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3743/steve/K3/pn3/time-kef-gen.py
+END
+index_offset_t
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3458/steve/K3/pn3/index_offset_t
+END
+etopo20lons.gz
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/etopo20lons.gz
+END
+config.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2607/steve/K3/pn3/config.cfg
+END
+meta-data-gen
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3458/steve/K3/pn3/meta-data-gen
+END
+PH5ProcessProtocol.py
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/2619/steve/K3/pn3/PH5ProcessProtocol.py
+END
+rt_125awrapper_py.c
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/2261/steve/K3/pn3/rt_125awrapper_py.c
+END
+time-kef-gen
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3458/steve/K3/pn3/time-kef-gen
+END
+set_deploy_pickup_times.py
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/2261/steve/K3/pn3/set_deploy_pickup_times.py
+END
+sort_helper.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/sort_helper.py
+END
+das_start_stop.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3370/steve/K3/pn3/das_start_stop.py
+END
+startServers.sh
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/2324/steve/K3/pn3/startServers.sh
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/4570/steve/K3/pn3/LICENSE
+END
+dumpsac.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3246/steve/K3/pn3/dumpsac.py
+END
+construct-2.0-2.4.zip
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/2261/steve/K3/pn3/construct-2.0-2.4.zip
+END
+noven
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/3458/steve/K3/pn3/noven
+END
+fix_3chan_texan.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/fix_3chan_texan.py
+END
+novitiate.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3894/steve/K3/pn3/novitiate.py
+END
+1302ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3718/steve/K3/pn3/1302ph5.py
+END
+file_list_2009.062
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/2261/steve/K3/pn3/file_list_2009.062
+END
+churn-array-deploy-times.py
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/2261/steve/K3/pn3/churn-array-deploy-times.py
+END
+SegdReader.py
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3670/steve/K3/pn3/SegdReader.py
+END
+recreate_external_references
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/3458/steve/K3/pn3/recreate_external_references
+END
+dep2ph5.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/2261/steve/K3/pn3/dep2ph5.py
+END
+table2kef
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3458/steve/K3/pn3/table2kef
+END
+batch2dep.py.old
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2261/steve/K3/pn3/batch2dep.py.old
+END
+construct-2.5.0-py2.7.egg
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/2830/steve/K3/pn3/construct-2.5.0-py2.7.egg
+END
+SAC_h.py
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3250/steve/K3/pn3/SAC_h.py
+END
+segy2ph5
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3458/steve/K3/pn3/segy2ph5
+END
+sufirfilt_py.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/2261/steve/K3/pn3/sufirfilt_py.py
+END
+125a2ph5
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3458/steve/K3/pn3/125a2ph5
+END
+stopServers.sh
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2324/steve/K3/pn3/stopServers.sh
+END
+fix_das_chan_num.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/2261/steve/K3/pn3/fix_das_chan_num.py
+END
+create_TRD_links
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3458/steve/K3/pn3/create_TRD_links
+END
+convert-dep.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/2261/steve/K3/pn3/convert-dep.py
+END
+ph5tosac.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3751/steve/K3/pn3/ph5tosac.py
+END
+SimpleMap.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2261/steve/K3/pn3/SimpleMap.py
+END

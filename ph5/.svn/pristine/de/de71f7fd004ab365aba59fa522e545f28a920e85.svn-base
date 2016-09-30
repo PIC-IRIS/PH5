@@ -1,0 +1,337 @@
+#!/usr/bin/env python
+
+#
+#   Simple dep file checker GUI
+#   Steve Azevedo, Nov 2009
+#
+# This is only needed for Python v2 but is harmless for Python v3.
+import sip
+sip.setapi('QVariant', 2)
+
+from PyQt4 import QtCore, QtGui
+
+import depcheck_rc
+
+import Dep
+
+PROG_VERSION = __version__ = '2009.251 Pre-release test version'
+
+class MainWindow(QtGui.QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+
+        self.curFile = ''
+
+        self.setupEditor ()
+        self.setCentralWidget(self.textEdit)
+
+        self.createActions()
+        self.createMenus()
+        self.createToolBars()
+        self.createStatusBar()
+
+        self.readSettings()
+
+        self.textEdit.document().contentsChanged.connect(self.documentWasModified)
+
+        self.setCurrentFile('')
+        self.setUnifiedTitleAndToolBarOnMac(True)
+        
+    def setupEditor(self):
+        font = QtGui.QFont()
+        font.setFamily('Courier')
+        font.setFixedPitch(True)
+        font.setPointSize(12)
+
+        self.textEdit = QtGui.QTextEdit()
+        self.textEdit.setFont(font)
+
+        #self.highlighter = Highlighter(self.textEdit.document())
+
+    def closeEvent(self, event):
+        if self.maybeSave():
+            self.writeSettings()
+            event.accept()
+        else:
+            event.ignore()
+
+    def newFile(self):
+        if self.maybeSave():
+            self.textEdit.clear()
+            self.setCurrentFile('')
+
+    def open(self):
+        if self.maybeSave():
+            #fd = QtGui.QFileDialog ()
+            #fd.setNameFilter ("depfiles (*.dep)")
+            fileName = QtGui.QFileDialog.getOpenFileName(self,
+                                                         "Open a dep file",
+                                                         ".",
+                                                         "Dep Files (*.dep);;All Files (*)")
+            if fileName:
+                self.loadFile(fileName)
+
+    def save(self):
+        if self.curFile:
+            return self.saveFile(self.curFile)
+
+        return self.saveAs()
+
+    def saveAs(self):
+        fileName = QtGui.QFileDialog.getSaveFileName(self)
+        if fileName:
+            return self.saveFile(fileName)
+
+        return False
+
+    def about(self):
+        progText = "depcheck: %s" % PROG_VERSION
+        aboutText = ("Do initial checking of KITCHEN dep files.\n"
+                     "Yellow squiggle indicates areas that MAY need attention.\n"
+                     "Red squiggle indicates areas that DO need attention.\n"
+                     "Cursor hover over squiggle for message.")
+        QtGui.QMessageBox.about(self, progText, aboutText)
+
+    def documentWasModified(self):
+        self.setWindowModified(self.textEdit.document().isModified())
+
+    def createActions(self):
+        self.newAct = QtGui.QAction(QtGui.QIcon(':/depcheck_images/new.png'), "&New",
+                self, shortcut=QtGui.QKeySequence.New,
+                statusTip="Create a new file", triggered=self.newFile)
+
+        self.openAct = QtGui.QAction(QtGui.QIcon(':/depcheck_images/open.png'),
+                "&Open...", self, shortcut=QtGui.QKeySequence.Open,
+                statusTip="Open an existing file", triggered=self.open)
+
+        self.saveAct = QtGui.QAction(QtGui.QIcon(':/depcheck_images/save.png'),
+                "&Save", self, shortcut=QtGui.QKeySequence.Save,
+                statusTip="Save the document to disk", triggered=self.save)
+
+        self.saveAsAct = QtGui.QAction("Save &As...", self,
+                shortcut=QtGui.QKeySequence.SaveAs,
+                statusTip="Save the document under a new name",
+                triggered=self.saveAs)
+
+        self.exitAct = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q",
+                statusTip="Exit the application", triggered=self.close)
+
+        self.cutAct = QtGui.QAction(QtGui.QIcon(':/depcheck_images/cut.png'), "Cu&t",
+                self, shortcut=QtGui.QKeySequence.Cut,
+                statusTip="Cut the current selection's contents to the clipboard",
+                triggered=self.textEdit.cut)
+
+        self.copyAct = QtGui.QAction(QtGui.QIcon(':/depcheck_images/copy.png'),
+                "&Copy", self, shortcut=QtGui.QKeySequence.Copy,
+                statusTip="Copy the current selection's contents to the clipboard",
+                triggered=self.textEdit.copy)
+
+        self.pasteAct = QtGui.QAction(QtGui.QIcon(':/depcheck_images/paste.png'),
+                "&Paste", self, shortcut=QtGui.QKeySequence.Paste,
+                statusTip="Paste the clipboard's contents into the current selection",
+                triggered=self.textEdit.paste)
+
+        self.aboutAct = QtGui.QAction("&About", self,
+                statusTip="Show the application's About box",
+                triggered=self.about)
+        '''
+        self.aboutQtAct = QtGui.QAction("About &Qt", self,
+                statusTip="Show the Qt library's About box",
+                triggered=QtGui.qApp.aboutQt)
+        '''
+        self.cutAct.setEnabled(False)
+        self.copyAct.setEnabled(False)
+        self.textEdit.copyAvailable.connect(self.cutAct.setEnabled)
+        self.textEdit.copyAvailable.connect(self.copyAct.setEnabled)
+
+    def createMenus(self):
+        self.fileMenu = self.menuBar().addMenu("&File")
+        self.fileMenu.addAction(self.newAct)
+        self.fileMenu.addAction(self.openAct)
+        self.fileMenu.addAction(self.saveAct)
+        self.fileMenu.addAction(self.saveAsAct)
+        self.fileMenu.addSeparator();
+        self.fileMenu.addAction(self.exitAct)
+
+        self.editMenu = self.menuBar().addMenu("&Edit")
+        self.editMenu.addAction(self.cutAct)
+        self.editMenu.addAction(self.copyAct)
+        self.editMenu.addAction(self.pasteAct)
+
+        self.menuBar().addSeparator()
+
+        self.helpMenu = self.menuBar().addMenu("&Help")
+        self.helpMenu.addAction(self.aboutAct)
+        #self.helpMenu.addAction(self.aboutQtAct)
+
+    def createToolBars(self):
+        self.fileToolBar = self.addToolBar("File")
+        self.fileToolBar.addAction(self.newAct)
+        self.fileToolBar.addAction(self.openAct)
+        self.fileToolBar.addAction(self.saveAct)
+
+        self.editToolBar = self.addToolBar("Edit")
+        self.editToolBar.addAction(self.cutAct)
+        self.editToolBar.addAction(self.copyAct)
+        self.editToolBar.addAction(self.pasteAct)
+
+    def createStatusBar(self):
+        self.statusBar().showMessage("Ready")
+
+    def readSettings(self):
+        settings = QtCore.QSettings("KITCHEN", "depcheck")
+        pos = settings.value("pos", QtCore.QPoint(200, 200))
+        size = settings.value("size", QtCore.QSize(400, 400))
+        self.resize(size)
+        self.move(pos)
+
+    def writeSettings(self):
+        settings = QtCore.QSettings("KITCHEN", "depcheck")
+        settings.setValue("pos", self.pos())
+        settings.setValue("size", self.size())
+
+    def maybeSave(self):
+        if self.textEdit.document().isModified():
+            ret = QtGui.QMessageBox.warning(self, "depcheck",
+                    "The dep file has been modified.\nDo you want to save "
+                    "your changes?",
+                    QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard |
+                    QtGui.QMessageBox.Cancel)
+            if ret == QtGui.QMessageBox.Save:
+                return self.save()
+            elif ret == QtGui.QMessageBox.Cancel:
+                return False
+        return True
+
+    def loadFile(self, fileName):
+        self.statusBar().showMessage("Checking dep file...")
+        dp = Dep.Dep (fileName)
+        dp.open (); dp.read ()
+        questionFormat = QtGui.QTextCharFormat ()
+        questionFormat.setUnderlineStyle (QtGui.QTextCharFormat.WaveUnderline)
+        questionFormat.setUnderlineColor (QtCore.Qt.yellow)
+        badFormat = QtGui.QTextCharFormat ()
+        badFormat.setUnderlineStyle (QtGui.QTextCharFormat.WaveUnderline)
+        badFormat.setUnderlineColor (QtCore.Qt.red)
+        goodFormat = self.textEdit.currentCharFormat ()
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        self.textEdit.clear ()
+        for what in ('SHOT', 'RECV') :
+            if what == 'SHOT' :
+                File = dp.saneSHOT ()
+            else :
+                File = dp.saneRECV ()
+                
+            for Line in File :
+                self.textEdit.insertPlainText (what)
+                #line = buildLine ('SHOT', shotLine)
+                for val in Line :
+                    if val.value == None : val.value = ' '
+                    self.textEdit.insertPlainText (';')
+                    if val.quality == '-' :
+                        badFormat.setToolTip (val.comment)
+                        self.textEdit.setCurrentCharFormat (badFormat)
+                        self.textEdit.insertPlainText (val.value)
+                        self.textEdit.setCurrentCharFormat (goodFormat)
+                    elif val.quality == '?' :
+                        questionFormat.setToolTip (val.comment)
+                        self.textEdit.setCurrentCharFormat (questionFormat)
+                        self.textEdit.insertPlainText (val.value)
+                        self.textEdit.setCurrentCharFormat (goodFormat)
+                    else :
+                        self.textEdit.insertPlainText (val.value)
+                        
+                self.textEdit.insertPlainText ('\n')
+            
+        QtGui.QApplication.restoreOverrideCursor()
+        self.setCurrentFile(fileName)
+        self.statusBar().showMessage("File loaded", 2000)    
+    '''
+    def loadFile(self, fileName):
+        file = QtCore.QFile(fileName)
+        if not file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text):
+            QtGui.QMessageBox.warning(self, "Application",
+                    "Cannot read file %s:\n%s." % (fileName, file.errorString()))
+            return
+
+        inf = QtCore.QTextStream(file)
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        self.textEdit.setPlainText(inf.readAll())
+        QtGui.QApplication.restoreOverrideCursor()
+
+        self.setCurrentFile(fileName)
+        self.statusBar().showMessage("File loaded", 2000)
+    '''
+    def saveFile(self, fileName):
+        file = QtCore.QFile(fileName)
+        if not file.open(QtCore.QFile.WriteOnly | QtCore.QFile.Text):
+            QtGui.QMessageBox.warning(self, "depcheck",
+                    "Cannot write file %s:\n%s." % (fileName, file.errorString()))
+            return False
+
+        outf = QtCore.QTextStream(file)
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        outf << self.textEdit.toPlainText()
+        QtGui.QApplication.restoreOverrideCursor()
+
+        self.setCurrentFile(fileName);
+        self.statusBar().showMessage("File saved", 2000)
+        return True
+
+    def setCurrentFile(self, fileName):
+        self.curFile = fileName
+        self.textEdit.document().setModified(False)
+        self.setWindowModified(False)
+
+        if self.curFile:
+            shownName = self.strippedName(self.curFile)
+        else:
+            shownName = 'untitled.txt'
+
+        self.setWindowTitle("%s[*] - depcheck %s" % (shownName, PROG_VERSION))
+
+    def strippedName(self, fullFileName):
+        return QtCore.QFileInfo(fullFileName).fileName()
+    
+class Highlighter (QtGui.QSyntaxHighlighter) :
+    def __init__ (self, parent = None) :
+        super (Highlighter, self).__init__ (parent)
+        
+        badFormat = QtGui.QTextCharFormat()
+        badFormat.setForeground (QtCore.Qt.black)
+        badFormat.setUnderlineStyle (QtGui.QTextCharFormat.WaveUnderline)
+        badFormat.setUnderlineColor (QtCore.Qt.red)
+        
+        badPattern = [ ";\?.*\?;", ]
+        #badPattern = [ ".*;", ]
+        self.highlightingRules = [(QtCore.QRegExp(pattern), badFormat)
+                for pattern in badPattern]
+        
+    def highlightBlock (self, text) :
+        for pattern, format in self.highlightingRules :
+            expression = QtCore.QRegExp(pattern)
+            expression.setMinimal (True)
+            index = expression.indexIn(text)
+            while index >= 0:
+                length = expression.matchedLength()
+                self.setFormat(index, length, format)
+                index = expression.indexIn(text, index + length)
+    
+###   Mixins   ###
+def buildLine (what, line) :
+    ret = what
+    for l in line :
+        val = ";%s%s%s" % (l.quality, l.value, l.quality)
+        ret = ret + val
+        
+    return QtCore.QString (ret)
+    #return ret
+
+if __name__ == '__main__':
+
+    import sys
+
+    app = QtGui.QApplication(sys.argv)
+    mainWin = MainWindow()
+    mainWin.show()
+    sys.exit(app.exec_())

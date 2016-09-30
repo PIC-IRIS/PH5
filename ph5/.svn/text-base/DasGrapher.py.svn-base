@@ -1,0 +1,270 @@
+# DAS GRAPHER v1.0
+# For plotting active data collection 
+#
+# Base Gui Created: Thu Oct  4 10:22:29 2012
+#      by: PyQt4 UI code generator 4.9.3
+#
+
+__author__ = "Randall R. Van Why Jr."
+__copyright__ = "Copyright 2012, IRIS/PASSCAL"
+__credits__ = ["Steve Azevedo", "Derick Hess", "Luke Campagnola"]
+__license__ = "GPL"
+__version__ = "1.0.0"
+__maintainer__ = "Randall Van Why"
+__email__ = ["rvan_why@nmt.edu","azevedo@passcal.nmt.edu"]
+__status__ = "Semi-Production"
+
+from PyQt4 import QtCore, QtGui
+import tables
+from pyqtgraph import PlotWidget
+import pyqtgraph as pg
+import time
+import sys
+import datetime
+
+files=[]
+paths = []
+times=[]
+count=0
+
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    _fromUtf8 = lambda s: s
+
+
+
+##################################################
+#PRE PLOTTING LOOP: Grabs the paths, times and   #
+#files outlined by master.ph5                    #
+##################################################
+
+def prePlottingLoop(master, count):
+    h5f = tables.openFile(master,'r')
+    master_index = h5f.root.Experiment_g.Receivers_g.Index_t
+    getFiles(files, master_index)
+    getPaths(paths, master_index)
+
+    #Get the times from the paths in every file.
+    for i in range(len(files)):
+        try:
+            count = getTimes(files[i], paths, count, times)
+        #It goes until there are no more files to grab from.
+        except IOError:
+            break      
+
+
+##########################
+#END PRE PLOTTING LOOP   #
+##########################
+
+# Collects the names of all files that contain data
+# outlined by master.ph5
+def getFiles(files, master_index):
+    for i in range(len(master_index)):
+        files.append(master_index[i][1])
+
+# Grabs all the paths to the array groups within the files
+# This is also outlined by master.ph5
+def getPaths(paths, master_index):
+    for i in range(len(master_index)):
+        paths.append(master_index[i][2])
+
+# This large function collects the times that data was being
+# collected. It opens each file temporarily, collects and
+# stores the times as well as the group name, and starts again
+# with the next file. where this is grabbing times from may
+# seem convoluted but upon inspection of each file with a
+# program like vitables will clear things up.
+def getTimes(files, paths, path_begin, times):
+    tmp = tables.openFile(files,'r')
+    try:
+        #Begins from where it left off
+        for j in paths[path_begin:]:	
+            #set das equal to the das table	
+            das = tmp.getNode('%s/Das_t' % j)
+            split = j.rsplit('/')[1:]
+            #grab all times in das, append to time list
+            timelist=[]
+            for k in range(len(das)):
+                timelist.append(int(das[k][13][1]))
+            #to ensure we know where we are on path[]
+            #add the name of the group
+            timelist.append(split[2])
+            #Finally, add everything to global times array
+            times.append(timelist)
+            path_begin += 1
+        tmp.close()
+    #If the program attempts to grab a group not in the file
+    #it returns the last path. Recursively call.
+    except tables.exceptions.NoSuchNodeError:
+        tmp.close()		
+        #path_begin is the last good one
+        #+1 to get the bad one		
+        return path_begin+1
+    return -1
+
+# This code is courtesy of Luke Campagnola from his
+# PYQTGRAPH examples. 
+class CustomViewBox(pg.ViewBox):
+    def __init__(self, *args, **kwds):
+        pg.ViewBox.__init__(self, *args, **kwds)
+        self.setMouseMode(self.PanMode)
+
+    ## reimplement right-click to zoom out
+    def mouseClickEvent(self, ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            self.autoRange(padding=.05)
+
+    def mouseDragEvent(self, ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            ev.ignore()
+        else:
+            pg.ViewBox.mouseDragEvent(self, ev)
+
+#Also coutesy of Luke Campagnola
+class DateAxis(pg.AxisItem):
+    def tickStrings(self, values, scale, spacing):
+        return [time.strftime('%a %h %d %H:%M', time.localtime(x)) for x in values]
+
+# Now we outline the gui itself
+class Ui_MainWindow(object):
+    def selectFile(self):
+        master = str(QtGui.QFileDialog.getOpenFileName())
+        prePlottingLoop(master, count)
+
+    # This function translates the strings in the lineedit
+    # to UNIX Epoch format
+    def formatDate(self, line):
+        date=line
+        date=str(date)
+        pattern = '%m:%d:%Y'
+        date=int(time.mktime(time.strptime(date, pattern)))
+        return date
+
+    # Prints the mouse position in the form of a date
+    # Gives the user more information about the data.
+    def printMousePos(self, pos):
+        if self.pw.sceneBoundingRect().contains(pos):
+            mousePoint = self.pw.plotItem.vb.mapSceneToView(pos)
+            xpos = float(mousePoint.x())
+            xposdt = datetime.datetime.fromtimestamp(xpos)
+            date = xposdt.ctime()
+            self.label_1.setText("<span style='color: black'>Current=%s</span>" % date)
+
+    # This function is large yet easy to follow. It is called when user hits redraw button
+    # First it collects the start and end dates, then it goes through the times array
+    # and plots the times that are within the start and end date in the correct format.
+    # When all the times have been plotted, it sets the y axis labels to the apropriate das group.
+    def redraw(self):
+        self.pw.clear()
+
+        #Grab start and end date
+        dateStart = self.formatDate(self.lineEdit.text())
+        dateEnd = self.formatDate(self.lineEdit_2.text())
+
+        labels=[]
+        count=[]
+        ticks=[]
+        dates=[]
+
+        #collect all times...
+        for i in range(len(times)):
+            y=[]
+            real=[]
+
+            for k in range(len(times[i][:-1])):
+                if (times[i][k] >= dateStart and times[i][k] <= dateEnd):
+                    real.append(times[i][k])
+                    y.append(i)
+                else:
+                    pass
+
+            labels.append(times[i][-1])
+            ticks.append((i, times[i][-1]))
+            #...and plot them
+            self.pw.plot(x=real, y=y, symbol='t', pen=None)
+
+        #make everything look nice
+        self.pw.showLabel('left', show=False)
+        self.pw.getAxis('left').setWidth(100)
+        self.pw.show()
+        self.ax.setTicks([ticks])
+
+    # The rest of the code was automatically generated by PYQT
+    # The only human additions were the function calls to redraw and selectFile
+    # BEGIN PYQT4 CODE:
+    def setupUi(self, MainWindow):
+        axis = DateAxis(orientation='bottom')
+        self.ax = pg.AxisItem(orientation = 'left', showValues=False)
+        vb = CustomViewBox()  
+        MainWindow.setObjectName(_fromUtf8("MainWindow"))
+        MainWindow.resize(1280, 800)
+        self.centralwidget = QtGui.QWidget(MainWindow)
+        self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
+        self.pw = PlotWidget(self.centralwidget,viewBox=vb, axisItems={'left': self.ax,'bottom': axis}, enableMenu=False, title="Das Arrays vs. Time")
+        self.pw.setGeometry(QtCore.QRect(50, 0, 1280, 550))
+        self.pw.setObjectName(_fromUtf8("graphicsView"))
+        self.lineEdit = QtGui.QLineEdit(self.centralwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(70, 600, 241, 31))
+        self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
+        self.lineEdit_2 = QtGui.QLineEdit(self.centralwidget)
+        self.lineEdit_2.setGeometry(QtCore.QRect(520, 600, 241, 31))
+        self.lineEdit_2.setObjectName(_fromUtf8("lineEdit_2"))
+        self.pushButton = QtGui.QPushButton(self.centralwidget)
+        self.pushButton.setGeometry(QtCore.QRect(370, 585, 95, 31))
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.pushButton.clicked.connect(self.redraw)
+        self.label = QtGui.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(100, 635, 221, 21))
+        self.label.setObjectName(_fromUtf8("label"))
+        self.label_1 = QtGui.QLabel(self.centralwidget)
+        self.label_1.setGeometry(QtCore.QRect(300, 560, 250, 21))
+        self.label_2 = QtGui.QLabel(self.centralwidget)
+        self.label_2.setGeometry(QtCore.QRect(550, 635, 211, 21))
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtGui.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1280, 29))
+        self.menubar.setObjectName(_fromUtf8("menubar"))
+        self.menuFile = QtGui.QMenu(self.menubar)
+        self.menuFile.setObjectName("menuFile")
+        MainWindow.setMenuBar(self.menubar)
+
+        self.actionupdateall = QtGui.QAction(MainWindow)
+        self.actionupdateall.setObjectName("actionupdateall")
+        self.actionupdateall.setText("Open")
+        self.actionupdateall.triggered.connect(self.selectFile)
+
+        self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionupdateall)
+        self.menubar.addAction(self.menuFile.menuAction())
+
+        self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
+
+        self.statusbar = QtGui.QStatusBar(MainWindow)
+        self.statusbar.setObjectName(_fromUtf8("statusbar"))
+        MainWindow.setStatusBar(self.statusbar)
+        self.actionOpen_Master = QtGui.QAction(MainWindow)
+        self.actionOpen_Master.setObjectName(_fromUtf8("actionOpen_Master"))
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "DAS Grapher", None, QtGui.QApplication.UnicodeUTF8))
+        self.pushButton.setText(QtGui.QApplication.translate("MainWindow", "Redraw", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("MainWindow", "Start Date: MM:DD:YYYY", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_2.setText(QtGui.QApplication.translate("MainWindow", "End Date: MM:DD:YYYY", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionOpen_Master.setText(QtGui.QApplication.translate("MainWindow", "Open Master", None, QtGui.QApplication.UnicodeUTF8))
+        self.pw.scene().sigMouseMoved.connect(self.printMousePos)
+
+    #END PYQT4 CODE
+
+if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
+    MainWindow = QtGui.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())

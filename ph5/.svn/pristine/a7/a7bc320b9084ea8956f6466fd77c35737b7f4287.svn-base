@@ -1,0 +1,357 @@
+
+"""
+Helper for PH5Server
+handles authentecation for the PH5server using SQLite. 
+The database contains the following tables:
+
+Users-This tables contains userid, username, and an md5 hased password
+
+experiment- contains a list of experiments and associated userid's
+
+"""
+
+import sqlite3 as lite
+import sys, os
+
+PROG_VERSION = "2013.016.a"
+
+#get sessions that are old
+def clean_sessions(current_time, DATAROOT, EXPERIMENT_DIR):
+
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        timeout = str(int(current_time) - (30*60))
+        
+        print db
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT token from Sessions where time_stamp<="+timeout)
+                
+                rows = cur.fetchall()
+                for row in rows:
+                        print "deleting session: "+row[0]
+                        cur.execute("delete from Sessions where token='"+row[0]+"'")
+                        con.commit()
+
+        con.close()
+        return ("done!")
+
+def Remove_Session(token, DATAROOT, EXPERIMENT_DIR):
+
+
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("delete from Sessions where token='"+token+"'")
+                con.commit()
+
+
+        con.close()
+
+
+def Init_Session(token, DATAROOT, EXPERIMENT_DIR):
+
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        print '***' + db + '***'
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("insert into Sessions (token, logged_in, file_to_work, myfile, ftype, experiment_name, load_data, username, time_stamp) values('"+token+"',0, '','','','','','','')")
+                con.commit()
+
+
+        con.close()
+
+def write_session(token,variable, value, DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("update Sessions set "+variable+"='"+str(value)+"' where token='"+token+"'")
+                con.commit()
+
+
+        con.close()
+
+
+def Get_Session(token, DATAROOT, EXPERIMENT_DIR):
+
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        print db
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT * from Sessions where token='"+token+"'")
+
+                rows = cur.fetchall()
+
+
+        con.close()
+        return (rows)
+
+
+def Get_Config():
+
+        db =os.path.join (os.environ['K3'], 'config', 'config.db')
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT * from Config")
+
+                rows = cur.fetchall()
+
+
+        con.close()
+        return (rows)
+
+#Authenticates a user in the sqlite database. returns 1 if authenticated 0 otherwise. 
+#Note the password here is ALREADY hashed(md5). This is to help insure the password was never transmitted unhashed
+def Authenticate(username, password, DATAROOT, EXPERIMENT_DIR):
+
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT * from Users where username='"+username+"' AND pass='"+password+"'")
+
+                rows = cur.fetchall()
+                if rows != []:
+                        authenticated = 1
+                        cur.execute("SELECT token from Sessions where username='"+username+"'")
+                        rows = cur.fetchall()
+                        if len(rows) > 1:
+                                for row in rows:
+                                        Remove_Session(row[0], DATAROOT, EXPERIMENT_DIR)
+
+
+                else:
+                        authenticated = 0
+
+        con.close()
+        return (authenticated)
+
+def part_of_experiment(username, experiment_name,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT * from Users where username='"+username+"'")
+                row = cur.fetchone()
+                userid = str(row[0])
+                cur.execute("SELECT experiment_name from Experiments where userid="+userid+" AND experiment_name='"+experiment_name+"'")
+                row = cur.fetchone()
+                if row is not None:
+                        if str(row[0]) == experiment_name:
+                                response = 1
+                        else:
+                                response = 0
+                else:
+                        response=0
+
+        con.close()
+        return (response)
+
+#get experiment lock status
+def get_lock(username, experiment_name,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT * from locks where username='"+username+"' and experiment_name='"+experiment_name+"'")
+                row = cur.fetchone()
+
+                if row is not None:
+
+                        response = 1 #there is a lock
+                else:
+                        response=0 #no lock
+
+        con.close()
+        return (response)
+
+#set a lock on experiment
+def set_lock(username, experiment_name,  DATAROOT, EXPERIMENT_DIR, status):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        con = lite.connect(db)
+        if status ==1:
+                try:
+
+                        cur=con.cursor()
+                        cur.execute("insert into locks (username, experiment_name) values ('"+username+"','"+experiment_name+"')")
+                        con.commit()
+
+                except lite.Error, e:
+                        if con:
+                                con.rollback()
+                        return(0)
+
+                finally:
+                        if con:
+                                con.close()
+
+        if status == 0:
+                try:
+                        cur=con.cursor()
+
+                        cur.execute("delete from locks where experiment_name='"+experiment_name+"'")
+                        con.commit()
+
+                except lite.Error, e:
+                        if con:
+                                con.rollback()
+                        return(0)
+
+                finally:
+                        if con:
+                                con.close()
+
+
+        return (1)
+
+
+#Get a list of experiments a user is allowed to edit
+#returns empty set if user doesnt exist or no experiments assigned to user
+def get_experiments(username,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        experiments =[]
+
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT userid from Users where username='"+username+"'")
+                row = cur.fetchone()
+                if row != None:
+                        userid = row[0]
+                else: 
+                        message= "User not found in database"
+                        return(message)
+
+                cur.execute ("SELECT experiment_name from Experiments where userid="+str(userid))
+
+
+                rows = cur.fetchall()
+                for row in rows:
+                        experiments.append(str(row[0]))
+        con.close()	
+        return(experiments)
+
+#Get a list of experiments a user is allowed to edit by USERID
+#returns empty set if user doesnt exist or no experiments assigned to user
+def get_experiments_userid(userid,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        experiments =[]
+
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+
+                cur.execute ("SELECT experiment_name from Experiments where userid="+str(userid))
+
+                rows = cur.fetchall()
+                for row in rows:
+                        experiments.append(str(row[0]))
+        con.close()	
+        return(experiments)
+
+#add a user returns 1 on success 0 on fail
+#Note the password here is ALREADY hashed(md5). This is to help insure the password was never transmitted unhashed
+def add_user(username, password,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        try:
+
+                con = lite.connect(db)
+                cur=con.cursor()
+                cur.execute("INSERT into Users (username, pass) values ('"+username+"','"+password+"')")
+                con.commit()
+
+        except lite.Error, e:
+                if con:
+                        con.rollback()
+                return(0)
+
+        finally:
+                if con:
+                        con.close()
+                return(1)
+
+
+#add an experiment and associated users to the database
+def add_experiment(experiment_name, userid,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        try:
+
+                con = lite.connect(db)
+                cur=con.cursor()
+
+                cur.execute("INSERT into Experiments ( experiment_name, userid) values ('"+experiment_name+"',"+str(userid)+")")
+
+                con.commit()
+
+        except lite.Error, e:
+                if con:
+                        con.rollback()
+                return(0)
+
+        finally:
+                if con:
+                        con.close()
+                return(1)
+
+
+#get list of users for an experiment by experiment ID
+def get_users_experimentid(experimentid,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+        
+        users=[]
+
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT userid from Experiments where experimentid="+str(experimentid))
+
+                rows = cur.fetchall()
+                for row in rows:
+                        cur.execute("SELECT username from Users where userid="+str(row[0]))
+                        name = cur.fetchone()
+                        users.append(str(name[0]))
+        con.close()	
+        return(users)
+
+
+
+#get userid based on username
+def get_userid(username,  DATAROOT, EXPERIMENT_DIR):
+        
+        db = os.path.join (DATAROOT, EXPERIMENT_DIR, "PH5.db")
+
+        con = lite.connect(db)
+        with con:
+                cur=con.cursor()
+                cur.execute("SELECT userid from Users where username='"+str(username)+"'")
+
+                userid = cur.fetchone()
+                userid =str(userid[0])
+
+        con.close()	
+        return(userid)

@@ -1,0 +1,9 @@
+
+from distutils.core import setup, Extension
+
+setup (name = "rt_130_py", version = "2001.273",
+       ext_modules = [
+    Extension (
+    "rt_130_py", ["rt_130_py.c", "rt_130wrapper_py.c"],
+    #extra_link_args = ["-m32"]
+)])

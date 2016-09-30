@@ -1,0 +1,784 @@
+*** ../novitiate.py	2012-04-04 16:17:55.757205261 -0600
+--- ./novitiate.py	2012-02-14 10:13:57.584734049 -0700
+***************
+*** 10,60 ****
+  #from __future__ import unicode_literals
+  #from future_builtins import *
+  
+! PROG_VERSION = __version__ = "2012.095 Alpha"
+  
+  import platform
+  import sys, os, re
+- from math import radians, cos, tan, sqrt, pi
+  from PyQt4 import QtGui, QtCore, Qt
+  import TimeDoy
+  
+- MIN_DAS_SN = 10000; MAX_DAS_SN = 20000
+- USE_FACE_PLATE_SN = True
+- LOC_TOL_METERS = 100.
+- 
+- def get_args () :
+-     from optparse import OptionParser
+-     
+-     oparser = OptionParser ()
+-     
+-     oparser.usage = "Version: {0}: novitiate [options]".format (PROG_VERSION)
+-     
+-     oparser.description = "Interactively create a dep file from a csv spread sheet."
+-     
+-     oparser.add_option ("-s", "--das_sn_range", dest = "das_sn_range", action='store',
+-                         help = "The serial number range of DAS's on experiment. --das_sn_range=10000-20000",
+-                         metavar = "das_sn_range")
+-    
+-     oparser.add_option ("-f", "--dont_use_face_plate_sn", dest = "use_face_plate_sn", action="store_false",
+-                         help = "Assume face plate serial numbers, ie. add 10000 to sn in dep file. Default is to use face plate sn.",
+-                         default = True, metavar = "use_face_plate_sn") 
+-     
+-     oparser.add_option ("-l", "--location_tolerance", dest = "location_tolerance", action='store',
+-                         help = "Flag distances that exceed this value in location. --location_tolerance=100.",
+-                         metavar="location_tolerance", type='float')
+-     
+-     options, args = oparser.parse_args ()
+-     
+-     if options.das_sn_range :
+-         MAX_DAS_SN, MIN_DAS_SN = options.das_sn_range.split ('-')
+-         MAX_DAS_SN = int (MAX_DAS_SN); MIN_DAS_SN = int (MIN_DAS_SN)
+-         
+-     if options.use_face_plate_sn :
+-         USE_FACE_PLATE_SN = False
+-         
+-     if options.location_tolerance :
+-         LOC_TOL_METERS = options.location_tolerance
+- 
+  def _sign (val, latlon) :
+      ret = val
+      try :
+--- 10,22 ----
+  #from __future__ import unicode_literals
+  #from future_builtins import *
+  
+! PROG_VERSION = __version__ = "2011.278 Alpha"
+  
+  import platform
+  import sys, os, re
+  from PyQt4 import QtGui, QtCore, Qt
+  import TimeDoy
+  
+  def _sign (val, latlon) :
+      ret = val
+      try :
+***************
+*** 92,115 ****
+          
+      return False
+  
+- def is_deploy (order, line) :
+-     if order.has_key ('DorP') :
+-         if line[order['DorP']].upper () == 'D' :
+-             return True
+-     
+-     return False
+- 
+  FIELD_KEYS = ('SHOT', 'RECV')
+! FIELDS = {}; SHOTQC = {}
+! FIELDS['SHOT'] = [ 'Shot-ID','Station','Line','Channel','Lat','Lon','Elev',
+!                    'STimeY:J:H:M:S.s','STimeYear','STimeJd','STimeMo','STimeDa',
+!                    'STimeHr','STimeMn','STimeSc','STimeMs','PreSec','PostSec',
+!                    'SR','Depth','Size','RVel','Radius','Comment' ]
+! 
+! def build_shot (order, line, n) :
+!     vals = {'ID':'', 'Station':'', 'Line':'999', 'Channel':'1', 'Lat':'', 
+!             'Lon':'', 'Elev':'', 'Time':'', 'Pre':'', 'Post':'', 'SR':'', 
+!             'Depth':'', 'Size':'', 'RVel':'', 'Radius':'', 'Comment':''}
+  
+      if not 'Shot-ID' in order :
+          return None
+--- 54,64 ----
+          
+      return False
+  
+  FIELD_KEYS = ('SHOT', 'RECV')
+! FIELDS = {}
+! FIELDS['SHOT'] = [ 'Shot-ID','Station','Line','Channel','Lat','Lon','Elev','STimeY:J:H:M:S.s','STimeYear','STimeJd','STimeMo','STimeDa','STimeHr','STimeMn','STimeSc','STimeMs','PreSec','PostSec','SR','Depth','Size','RVel','Radius','Comment' ]
+! def build_shot (order, line) :
+!     vals = {'ID':'', 'Station':'', 'Line':'999', 'Channel':'1', 'Lat':'', 'Lon':'', 'Elev':'', 'Time':'', 'Pre':'', 'Post':'', 'SR':'', 'Depth':'', 'Size':'', 'RVel':'', 'Radius':'', 'Comment':''}
+  
+      if not 'Shot-ID' in order :
+          return None
+***************
+*** 139,161 ****
+                                                                         sc)
+          else :
+              STime = line[order['STimeY:J:H:M:S.s']]
+!     except Exception, e :
+!         sys.stderr.write ("Error {1}:\n\tCan't convert time {0}\n".format (line, e))
+          return
+          
+      keys = order.keys ()
+      for k in keys :
+          try :
+              if k == 'Shot-ID' :
+!                 try :
+!                     vals['ID'] = str (int (line[order[k]]))
+!                 except :
+!                     vals['ID'] = line[order[k]]
+              elif k == 'Station' :
+!                 try :
+!                     vals['Station'] = str (int (line[order[k]]))
+!                 except :
+!                     vals['Station'] = line[order[k]]
+              elif k == 'Line' :
+                  vals['Line'] = line[order[k]]
+              elif k == 'Channel' :
+--- 88,104 ----
+                                                                         sc)
+          else :
+              STime = line[order['STimeY:J:H:M:S.s']]
+!     except :
+!         sys.stderr.write ("Error: Can't convert time {0}".format (line))
+          return
+          
+      keys = order.keys ()
+      for k in keys :
+          try :
+              if k == 'Shot-ID' :
+!                 vals['ID'] = line[order[k]]
+              elif k == 'Station' :
+!                 vals['Station'] = line[order[k]]
+              elif k == 'Line' :
+                  vals['Line'] = line[order[k]]
+              elif k == 'Channel' :
+***************
+*** 186,200 ****
+              pass
+          
+      vals['Time'] = STime
+-     tmpkey = vals['Station']
+-     i = 0
+-     while SHOTQC.has_key (tmpkey) :
+-         tmpkey = tmpkey.split (':')[0] + ":{0}".format (i)
+-         i += 1
+-     
+-     SHOTQC[tmpkey] = [ vals['ID'], vals['Station'], vals['Line'], vals['Lat'], vals['Lon'],
+-                        vals['Elev'], vals['Time'], vals['Pre'], vals['Post'], vals['SR'],
+-                        vals['Depth'], vals['Size'], vals['RVel'], vals['Radius'], vals['Comment'] ]
+      
+      return "SHOT;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format (vals['ID'],
+                                                                                             vals['Station'],
+--- 129,134 ----
+***************
+*** 212,449 ****
+                                                                                             vals['Radius'],
+                                                                                             vals['Comment'])
+  
+! def churn_recv (recvqc, recvkey) :
+!     ret = []
+!     def stripdeppu (vals) :
+!         '''   Return vals_dep, vals_pu
+!         '''
+!         msg = ''
+!         if len (vals) == 2 :
+!             if vals[0]['DTime'] and vals[1]['PUTime'] :
+!                 return vals[0], vals[1], msg
+!             elif vals[0]['PUTime'] and vals[1]['DTime'] :
+!                 return vals[1], vals[0], msg
+!         else :
+!             dt = {}; pt = {}
+!             for v in vals :
+!                 if v['DTime'] :
+!                     dt[v['DTime']] = v
+!                 if v['PUTime'] :
+!                     pt[v['PUTime']] = v
+!                     
+!             if not pt :
+!                 msg = 'No pickup record'
+!                 pt = dt
+!             elif not dt :
+!                 msg = 'No deployment record'
+!                 dt = pt
+!                     
+!             keys_dt = dt.keys ()
+!             keys_pt = pt.keys ()
+!             
+!             keys_dt.sort ()
+!             keys_pt.sort (); keys_pt.reverse ()
+!             
+!             return dt[keys_dt[0]], pt[keys_pt[0]], msg
+!                 
+!     def append_ret (vals) :
+!         '''   Build lines for dep file.
+!               val_dep is a hash of deployment values
+!               val_pu is a hash of pickups   
+!         '''
+!         vals_dep, vals_pu, msg = stripdeppu (vals)
+!         #global ret
+!         ret.append ("RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format (vals_dep['ID'],
+!                                                                                                     vals_dep['Station'],
+!                                                                                                     vals_dep['Line'],
+!                                                                                                     vals_dep['Type'],
+!                                                                                                     vals_dep['Channel'],
+!                                                                                                     vals_dep['Sensor'],
+!                                                                                                     vals_dep['Uphole'],
+!                                                                                                     vals_dep['Lat'],
+!                                                                                                     vals_dep['Lon'],
+!                                                                                                     vals_dep['Elev'],
+!                                                                                                     vals_dep['DT'],
+!                                                                                                     vals_dep['DTime'],
+!                                                                                                     vals_pu['PUTime'],
+!                                                                                                     vals_dep['Shots'],
+!                                                                                                     vals_pu['Comment']))
+!     #   End append_ret
+!         
+!     err = []
+!     def append_err (vals) :
+!         '''   Check for errors in deployment and pickup entries
+!         Tests:
+!            *1) Does a texan have a missing pickup (or deploy) record?
+!            2) Are the station ID's unique?
+!            *3) Is the pickup position more than 100 meters from the deploy position?
+!            *4) Does the deploy texan ID match the pickup texan ID?
+!            *5) Is the elevation within 200 meters of the deployment record?
+!            *6) Is the pickup LED not 'G'?   
+!            *7) Is texan ID in the correct range?     
+!         '''
+!         #global err
+!         vals_dep, vals_pu, msg = stripdeppu (vals)
+!         lineNos = "[ {0}, {1} ]".format (vals_dep['n'], vals_pu['n'])
+!         
+!         #   1) Missing deploy or pickup record
+!         if msg :
+!             msg = "#{0} Warning: Station: {1} {2}!\n".format (lineNos,
+!                                                               vals_dep['Station'],
+!                                                               msg)
+!         else :
+!             msg = ''
+!             
+!         #   4) Deploy texan SN and pickup texan SN differ
+!         if vals_dep['ID'] != vals_pu['ID'] :
+!             msg += "#{3} Warning: Station: {2}, deployed texan SN {0} and picked up texan SN {1} differ!\n".format (vals_dep['ID'], 
+!                                                                                                                     vals_pu['ID'], 
+!                                                                                                                     vals_dep['Station'],
+!                                                                                                                     lineNos)
+!         #   7)
+!         if int (vals_dep['ID']) > MAX_DAS_SN or int (vals_dep['ID']) < MIN_DAS_SN :
+!             msg += "#{0} Warning: suspicious data logger serial number {1} at station {2}!\n".format (lineNos,
+!                                                                                                       vals_dep['ID'],
+!                                                                                                       vals_dep['Station'])
+!         #   7)
+!         if int (vals_pu['ID']) > MAX_DAS_SN or int (vals_pu['ID']) < MIN_DAS_SN :
+!             msg += "#{0} Warning: suspicious data logger serial number {1} at station {2}!\n".format (lineNos,
+!                                                                                                       vals_pu['ID'],
+!                                                                                                       vals_pu['Station'])        
+!             
+!         ##   1) Missing deploy or pickup record
+!         #if vals_dep == vals_pu :
+!             #if vals_dep['PUTime'] != None :
+!             ##if vals_dep['DorP'] == 'D' :
+!                 #msg += "#{1} Warning: Station: {0}, no pickup record!\n".format (vals_dep['Station'], lineNos)
+!             #else :
+!                 #msg += "#{1} Warning: Station: {0}, no deploy record!\n".format (vals_dep['Station'], lineNos)
+!                 
+!         #   6) LED not green on pickup
+!         if vals_pu.has_key ('LED') :
+!             if vals_pu['LED'] != 'G' and vals_pu['LED'] != 'g' :
+!                 msg += "#{0} Warning: Station: {1}, LED was '{2}' at pickup!\n".format (lineNos, vals_dep['Station'], vals_pu['LED'])
+!             
+!         #   5) Elevation on pickup record is not within 200 meters of deployment
+!         if abs (float (vals_dep['Elev']) - float (vals_pu['Elev'])) >= LOC_TOL_METERS :
+!             msg += "#{0} Warning: Station: {1}, elevation differs by more that 200 meters!\n".format (lineNos, vals_dep['Station'])
+!             
+!         #   3) Is pickup location more that about 100 meters from deploy location
+!         
+!         #   Deploy lat and lon
+!         d_lat = vals_dep['Lat'].replace ('N', '+')
+!         d_lat = d_lat.replace ('S', '-')
+!         d_lat = float (d_lat)
+!         d_lon = vals_dep['Lon'].replace ('E', '+')
+!         d_lon = d_lon.replace ('W', '-')
+!         d_lon = float (d_lon)
+!         #   Pickup lat and lon
+!         p_lat = vals_pu['Lat'].replace ('N', '+')
+!         p_lat = p_lat.replace ('S', '-')
+!         p_lat = float (p_lat)
+!         p_lon = vals_pu['Lon'].replace ('E', '+')
+!         p_lon = p_lon.replace ('W', '-')
+!         p_lon = float (p_lon)
+!         #   One degree lat equals this many meters at lat φ
+!         #   111132.954 - 559.822(cos 2φ) + 1.175(cos 4φ)
+!         #
+!         #   One degree lon equals this many meters at lat φ
+!         #   ((pi / 180.) * 6378137.) * cos (0.99664719. * tan (φ))
+!         
+!         #   Average lat
+!         a_lat = (d_lat + p_lat) / 2.
+!         fac_lat = 111132.954 - (559.822 * (cos (2. * radians (a_lat)))) + (1.175 * (cos (4. * radians (a_lat))))
+!         fac_lon = ((pi / 180.) * 6378137.) * cos (0.99664719 * tan (radians (a_lat)))
+!         delta_lat = (d_lat - p_lat) * fac_lat
+!         delta_lon = (d_lon - p_lon) * fac_lon
+!         #   This is a gross estimate
+!         dist = sqrt ((delta_lat * delta_lat) + (delta_lon * delta_lon))
+!         if dist > LOC_TOL_METERS :
+!             msg += "#{0} Warning: Station: {1}, distance of pickup and deployment location differs by more that 100 meters!\n".format (lineNos,
+!                                                                                                                                        vals_dep['Station'])
+!                 
+!         err.append (msg)
+!     #   End append_err
+!         
+!     stations = recvkey.keys ()
+!     stations.sort ()
+!     for station in stations :
+!         keys = recvkey[station]
+!         keys.sort ()
+!         vals = []
+!         for k in keys : vals.append (recvqc[k])
+!         append_err (vals)
+!         append_ret (vals)
+!         #   Oops, only pickup or deploy
+!         #if len (keys) == 1 :
+!             ##   Print RECV line and missing P or D message
+!             #vals = recvqc[keys[0]]
+!             #append_ret (vals, vals)
+!             #append_err (vals, vals)
+!         #elif len (keys) == 2 :
+!             ##   Print RECV line, all checks
+!             #vals_dep = recvqc[keys[0]]
+!             #vals_pu  = recvqc[keys[1]]
+!             #append_ret (vals_dep, vals_pu)
+!             #append_err (vals_dep, vals_pu)
+!         #else :
+!             ##   Something is wrong, what?
+!             #vals_dep = None
+!             #vals_pu  = None
+!             ##   Must be 3 or more entries, ie multiple pickups or deployments
+!             #for k in keys :
+!                 #tmp = recvqc[k]
+!                 #if tmp['PUTime'] != '' :
+!                     #if vals_pu != None :
+!                         ##   Append to ret
+!                         #if vals_dep == None :
+!                             #append_ret (vals_pu, vals_pu)
+!                             #append_err (vals_pu, vals_pu)
+!                         #else :
+!                             #append_ret (vals_dep, vals_pu)
+!                             #append_err (vals_dep, vals_pu)
+!                             #vals_dep = None
+!                     
+!                     #vals_pu  = tmp
+!                 #else :
+!                     #if vals_dep != None :
+!                         ##   Append to ret
+!                         #if vals_pu == None :
+!                             #append_ret (vals_dep, vals_dep)
+!                             #append_err (vals_dep, vals_dep)
+!                         #else :
+!                             #append_ret (vals_dep, vals_pu)
+!                             #append_err (vals_dep, vals_pu)
+!                             #vals_pu = None
+!                     
+!                     #vals_dep = tmp
+!                     
+!             #if vals_pu == None and vals_dep != None :
+!                 #append_ret (vals_dep, vals_dep)
+!                 ##   XXX   Append to err   XXX
+!             #elif vals_dep == None and vals_pu != None :
+!                 #append_ret (vals_pu, vals_pu)
+!                 ##   XXX   Append to err   XXX
+!             #elif vals_dep != None and vals_pu != None :
+!                 #append_ret (vals_dep, vals_pu)
+!                 #append_err (vals_dep, vals_pu)
+!                 
+!     return err, ret
+!     
+! FIELDS['RECV'] = [ 'Receiver-ID','Station','Line','Type','Channel','Sensor',
+!                    'Uphole','Lat','Lon','Elev','Team','DTimeY:J:H:M:S','TimeYear',
+!                    'TimeH:M','TimeMo/Da','PTimeY:J:H:M:S','Shots','Comment','LED','DorP' ]
+! 
+! RECVQC = {}; RECVKEY = {}
+! def build_recv (order, line, n) :
+      ''' order => the keys we have used from FIELD
+          line  => the fields of the line from the field
+-         n     => the line number from original file
+      '''
+!     vals = {'ID':'', 'Station':'', 'Line':'999', 'Type':'', 'Channel':'1', 
+!             'Sensor':'', 'Uphole':'', 'Lat':'', 'Lon':'', 'Elev':'', 'DT':'', 
+!             'DTime':'', 'PUTime':'', 'Shots':'', 'Comment':'', 'LED':'', 'DorP':'', 
+!             'n':'' }
+  
+      if not order.has_key ('Receiver-ID') :
+          return None
+--- 146,157 ----
+                                                                                             vals['Radius'],
+                                                                                             vals['Comment'])
+  
+! FIELDS['RECV'] = [ 'Receiver-ID','Station','Line','Type','Channel','Sensor','Uphole','Lat','Lon','Elev','Team','DTimeY:J:H:M:S','DTimeYear','DTimeJd','DTimeMo','DTimeDa','DTimeHr','DTimeMn','DTimeSc','PTimeY:J:H:M:S','PTimeYear','PTimeJd','PTimeMo','PTimeDa','PTimeHr','PTimeMn','PTimeSc','Shots','Comment' ]
+! def build_recv (order, line) :
+      ''' order => the keys we have used from FIELD
+          line  => the fields of the line from the field
+      '''
+!     vals = {'ID':'', 'Station':'', 'Line':'999', 'Type':'', 'Channel':'1', 'Sensor':'', 'Uphole':'', 'Lat':'', 'Lon':'', 'Elev':'', 'DT':'', 'DTime':'', 'PUTime':'', 'Shots':'', 'Comment':'' }
+  
+      if not order.has_key ('Receiver-ID') :
+          return None
+***************
+*** 451,467 ****
+      DTime = ''; PTime = ''
+      if has_time (order) :
+          try :
+!             if not order.has_key ('DTimeY:J:H:M:S') and is_deploy (order, line) :
+!                 yr = int (line[order['TimeYear']])
+                  tdoy = TimeDoy.TimeDoy ()
+!                 if order.has_key ('TimeH:M') :
+!                     hr, mn = map (int, line[order['TimeH:M']].split (':'))
+!                     
+!                 if order.has_key ('TimeMo/Da') :
+!                     mo, da = map (int, line[order['TimeMo/Da']].split ('/'))
+                      doy = tdoy.doy (mo, da, yr)
+!                     
+!                 sc = 0.0
+                      
+                  DTime = "{0:4d}:{1:03d}:{2:02d}:{3:02d}:{4:06.3f}".format (yr,
+                                                                             doy,
+--- 159,180 ----
+      DTime = ''; PTime = ''
+      if has_time (order) :
+          try :
+!             if not order.has_key ('DTimeY:J:H:M:S') :
+!                 yr = int (line[order['DTimeYear']])
+                  tdoy = TimeDoy.TimeDoy ()
+!                 if order.has_key ('DTimeMo') :
+!                     da = int (line[order['DTimeDa']])
+!                     mo = int (line[order['DTimeMo']])
+                      doy = tdoy.doy (mo, da, yr)
+!                 else :
+!                     doy = int (line[order['DTimeJd']])
+!                 
+!                 hr = int (line[order['DTimeHr']])
+!                 mn = int (line[order['DTimeMn']])
+!                 if order.has_key ('DTimeSc') :
+!                     sc = float (line[order['DTimeSc']])
+!                 else :
+!                     sc = 0.0
+                      
+                  DTime = "{0:4d}:{1:03d}:{2:02d}:{3:02d}:{4:06.3f}".format (yr,
+                                                                             doy,
+***************
+*** 469,489 ****
+                                                                             mn,
+                                                                             sc)
+              else :
+!                 try :
+!                     DTime = line[order['DTimeY:J:H:M:S']]
+!                 except : DTime = None
+          
+!             if not order.has_key ('PTimeY:J:H:M:S') and not is_deploy (order, line) :
+!                 yr = int (line[order['TimeYear']])
+                  tdoy = TimeDoy.TimeDoy ()
+!                 if order.has_key ('TimeH:M') :
+!                     hr, mn = map (int, line[order['TimeH:M']].split (':'))
+!                     
+!                 if order.has_key ('TimeMo/Da') :
+!                     mo, da = map (int, line[order['TimeMo/Da']].split ('/'))
+                      doy = tdoy.doy (mo, da, yr)
+!                     
+!                 sc = 0.0
+                      
+                  PTime = "{0:4d}:{1:03d}:{2:02d}:{3:02d}:{4:06.3f}".format (yr,
+                                                                             doy,
+--- 182,205 ----
+                                                                             mn,
+                                                                             sc)
+              else :
+!                 DTime = line[order['DTimeY:J:H:M:S']]
+          
+!             if not order.has_key ('PTimeY:J:H:M:S') :
+!                 yr = int (line[order['PTimeYear']])
+                  tdoy = TimeDoy.TimeDoy ()
+!                 if order.has_key ('PTimeMo') :
+!                     da = int (line[order['PTimeDa']])
+!                     mo = int (line[order['PTimeMo']])
+                      doy = tdoy.doy (mo, da, yr)
+!                 else :
+!                     doy = int (line[order['PTimeJd']])
+!                 
+!                 hr = int (line[order['PTimeHr']])
+!                 mn = int (line[order['PTimeMn']])
+!                 if order.has_key ('PTimeSc') :
+!                     sc = float (line[order['PTimeSc']])
+!                 else :
+!                     sc = 0.0
+                      
+                  PTime = "{0:4d}:{1:03d}:{2:02d}:{3:02d}:{4:06.3f}".format (yr,
+                                                                             doy,
+***************
+*** 491,522 ****
+                                                                             mn,
+                                                                             sc)
+              else :
+!                 try :
+!                     PTime = line[order['PTimeY:J:H:M:S']]
+!                 except : PTime = None
+!         except Exception, e :
+!             sys.stderr.write ("Error {1}:\n\tCan't convert time {0}\n".format (line, e))
+              return
+                  
+      keys = order.keys ()
+      for k in keys :
+          try :
+              if k == 'Receiver-ID' :
+!                 try :
+!                     vals['ID'] = int (line[order[k]])
+!                     if USE_FACE_PLATE_SN :
+!                         vals['ID'] += 10000
+!                         
+!                     vals['ID'] = str (vals['ID'])
+!                 except :
+!                     vals['ID'] = line[order[k]]
+              elif k == 'Station' :
+!                 try :
+!                     vals['Station'] = str (int (line[order[k]]))
+!                 except :
+!                     vals['Station'] = line[order[k]]
+!                 if vals['Station'] == '100' : 
+!                     pass
+              elif k == 'Line' :
+                  vals['Line'] = line[order[k]]
+              elif k == 'Type' :
+--- 207,224 ----
+                                                                             mn,
+                                                                             sc)
+              else :
+!                 PTime = line[order['PTimeY:J:H:M:S']]
+!         except :
+!             sys.stderr.write ("Error: Can't convert time {0}".format (line))
+              return
+                  
+      keys = order.keys ()
+      for k in keys :
+          try :
+              if k == 'Receiver-ID' :
+!                 vals['ID'] = line[order[k]]
+              elif k == 'Station' :
+!                 vals['Station'] = line[order[k]]
+              elif k == 'Line' :
+                  vals['Line'] = line[order[k]]
+              elif k == 'Type' :
+***************
+*** 544,605 ****
+                  vals['Shots'] = line[order[k]]
+              elif k == 'Comment' :
+                  vals['Comment'] = line[order[k]]
+-             elif k == 'LED' :
+-                 vals['LED'] = line[order[k]]
+-             if k == 'DorP' :
+-                 vals['DorP'] = line[order[k]]
+          except IndexError :
+              pass
+              
+-     vals['n'] = n
+      vals['DTime'] = DTime
+      vals['PUTime'] = PTime
+      
+!     #
+!     #   RECVKEY['station'] = [ 'station', 'station:0', ..., 'station:n' ]
+!     #
+!     #   RECVQC['station<:n>'] = vals
+!     #
+!     tmpkey = vals['Station']
+!     i = 0
+!     while RECVQC.has_key (tmpkey) :
+!         tmpkey = tmpkey.split (':')[0] + ":{0}".format (i)
+!         i += 1
+! 
+!     if not RECVKEY.has_key (vals['Station']) :
+!         RECVKEY[vals['Station']] = []
+!         
+!     RECVKEY[vals['Station']].append (tmpkey)
+!     RECVQC[tmpkey] = vals
+!     
+!     #return "RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format (vals['ID'],
+!                                                                                            #vals['Station'],
+!                                                                                            #vals['Line'],
+!                                                                                            #vals['Type'],
+!                                                                                            #vals['Channel'],
+!                                                                                            #vals['Sensor'],
+!                                                                                            #vals['Uphole'],
+!                                                                                            #vals['Lat'],
+!                                                                                            #vals['Lon'],
+!                                                                                            #vals['Elev'],
+!                                                                                            #vals['DT'],
+!                                                                                            #vals['DTime'],
+!                                                                                            #vals['PUTime'],
+!                                                                                            #vals['Shots'],
+!                                                                                            #vals['Comment'])
+          
+  #FIELDS['TIME'] = [ 'Year', 'DOY', 'Month', 'Day', 'Hour', 'Minute', 'Seconds', 'Mili-Seconds' ]
+  
+- def write_shot_header (fh) :
+-     import time as t
+-     fh.write ("#Shot dep written by novitiate: {0}\n".format (t.ctime (t.time ())))
+-     fh.write ("#S_id;S_station;S_line;S_lat;S_lon;S_elev;S_time;S_pre-trig;S_post-trig;S_sr;S_depth;S_size;S_rvel;S_radius;S_comment")
+- 
+- def write_recv_header (fh) :
+-     import time as t
+-     fh.write ("#Receiver dep written by novitiate: {0}\n".format (t.ctime (t.time ())))
+-     fh.write ("#R_id;R_station;R_line;R_receiver-type;R_chan;R_sensor;R_uphole;R_lat;R_lon;R_elev;R_team;R_deploy_time;R_pickup_time;R_shots;R_comment\n")
+- 
+  SEPMAP = {'tab':'\t', 'comma':',', 'semi-colon':';', 'colon':':', 'space':'\s'}
+  
+  class MyQTableWidget (QtGui.QTableWidget) :
+--- 246,275 ----
+                  vals['Shots'] = line[order[k]]
+              elif k == 'Comment' :
+                  vals['Comment'] = line[order[k]]
+          except IndexError :
+              pass
+              
+      vals['DTime'] = DTime
+      vals['PUTime'] = PTime
+      
+!     return "RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format (vals['ID'],
+!                                                                                            vals['Station'],
+!                                                                                            vals['Line'],
+!                                                                                            vals['Type'],
+!                                                                                            vals['Channel'],
+!                                                                                            vals['Sensor'],
+!                                                                                            vals['Uphole'],
+!                                                                                            vals['Lat'],
+!                                                                                            vals['Lon'],
+!                                                                                            vals['Elev'],
+!                                                                                            vals['DT'],
+!                                                                                            vals['DTime'],
+!                                                                                            vals['PUTime'],
+!                                                                                            vals['Shots'],
+!                                                                                            vals['Comment'])
+          
+  #FIELDS['TIME'] = [ 'Year', 'DOY', 'Month', 'Day', 'Hour', 'Minute', 'Seconds', 'Mili-Seconds' ]
+  
+  SEPMAP = {'tab':'\t', 'comma':',', 'semi-colon':';', 'colon':':', 'space':'\s'}
+  
+  class MyQTableWidget (QtGui.QTableWidget) :
+***************
+*** 698,708 ****
+          y = 5
+          xmax = 250
+          xbase = 5
+!         
+!         #
+!         #   FIELD_KEYS = [ 'SHOT', 'RECV' ]
+!         #   FIELDS keyed on FIELD_KEYS
+!         #
+          for key in FIELD_KEYS :
+              for word in FIELDS[key] :
+                  wordLabel = DragLabel(word, self)
+--- 368,374 ----
+          y = 5
+          xmax = 250
+          xbase = 5
+! 
+          for key in FIELD_KEYS :
+              for word in FIELDS[key] :
+                  wordLabel = DragLabel(word, self)
+***************
+*** 827,833 ****
+          viewLinesLabel = QtGui.QLabel ("View Lines")
+          self.viewLines = QtGui.QSpinBox ()
+          viewLinesLabel.setBuddy (self.viewLines)
+!         self.viewLines.setRange (1, 60)
+          self.viewLines.setValue (settings['linesView'])
+          
+          
+--- 493,499 ----
+          viewLinesLabel = QtGui.QLabel ("View Lines")
+          self.viewLines = QtGui.QSpinBox ()
+          viewLinesLabel.setBuddy (self.viewLines)
+!         self.viewLines.setRange (1, 6)
+          self.viewLines.setValue (settings['linesView'])
+          
+          
+***************
+*** 897,903 ****
+          exit.setStatusTip('Exit application')
+          self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+  
+!         #self.statusBar()
+  
+          menubar = self.menuBar()
+          file = menubar.addMenu('&File')
+--- 563,569 ----
+          exit.setStatusTip('Exit application')
+          self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+  
+!         self.statusBar()
+  
+          menubar = self.menuBar()
+          file = menubar.addMenu('&File')
+***************
+*** 1020,1060 ****
+          sep = SEPMAP[str (key)]
+          skip = self.settings['linesSkip']
+          fh = None
+-         n = 1
+          for line in self.readFileLines[skip:] :
+              line = line[:-1]
+              #print (line)
+              flds = line.split (sep)
+!             build_recv (self.table.colKey, flds, n + skip)
+!             sline = build_shot (self.table.colKey, flds, n + skip)
+!             n += 1
+!             #if rline != None or sline != None :
+!             if sline != None :
+                  if fh == None :
+                      fh = open (saveFileName, 'w+')
+-                     write_shot_header (fh)
+                      
+!                 #if rline : fh.write (rline + '\n')
+                  if sline : fh.write (sline + '\n')
+-         #   XXX   XXX
+-         if RECVQC : 
+-             err, ret = churn_recv (RECVQC, RECVKEY)
+-             if fh == None :
+-                 fh = open (saveFileName, 'w+')
+-                 write_recv_header (fh)
+                  
+-             for e in err : fh.write (e)
+-             for r in ret : fh.write (r + '\n')
+-         
+          if fh : fh.close ()
+          
+            
+  if __name__ == '__main__' :
+-     get_args ()
+      app = QtGui.QApplication(sys.argv)
+      form = Novitiate ()
+      form.show ()
+!     app.exec_ ()
+! '''
+! 
+! '''
+\ No newline at end of file
+--- 686,709 ----
+          sep = SEPMAP[str (key)]
+          skip = self.settings['linesSkip']
+          fh = None
+          for line in self.readFileLines[skip:] :
+              line = line[:-1]
+              #print (line)
+              flds = line.split (sep)
+!             rline = build_recv (self.table.colKey, flds)
+!             sline = build_shot (self.table.colKey, flds)
+!             if rline != None or sline != None :
+                  if fh == None :
+                      fh = open (saveFileName, 'w+')
+                      
+!                 if rline : fh.write (rline + '\n')
+                  if sline : fh.write (sline + '\n')
+                  
+          if fh : fh.close ()
+          
+            
+  if __name__ == '__main__' :
+      app = QtGui.QApplication(sys.argv)
+      form = Novitiate ()
+      form.show ()
+!     app.exec_ ()
+\ No newline at end of file

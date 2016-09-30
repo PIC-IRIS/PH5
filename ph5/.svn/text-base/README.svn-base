@@ -1,0 +1,501 @@
+===============================================================================
+                        PIC KITCHEN Version 2009.018
+===============================================================================
+Overview:
+
+Changed the HDF5 organization to include an Index_t at the top level. This is
+used to index data in multiple HDF5 files so that extremely large datasets 
+can be handled easier. Added options to ph5toseg to handle continuous data.
+
+Changed:
+
+Usage: ph5toseg --nickname ph5-file-prefix [options]
+
+Convert ph5 file to SEG format. (Presently only SEG-Y and PASSCAL SEGY trace
+files)
+
+Options:
+  -h, --help            show this help message and exit
+  -c channel_number, --channel=channel_number
+                        Only include channel number, 1 = Z, 2 = N, 3 = E
+  -n ph5_file_prefix, --nickname=ph5_file_prefix
+                        The ph5 file prefix (experiment nickname).
+  -p ph5_path, --path=ph5_path
+                        Path to ph5 files. Defaults to current directory.
+  -s sort_table_line, --sorttableline=sort_table_line
+                        Sort table line number.
+  -t start_time, --starttime=start_time
+                        Starting time of traces YYYY:JJJ:HH:MM:SS:MS
+  -l trace_length, --length=trace_length
+                        Length of traces in seconds.
+  -o gatherpath, --outpath=gatherpath
+                        Directory to write gathers and reports to.
+  -O offset, --offset=offset
+                        Offset into file to start trace, S.s
+  -x                    Do Not time correct data.
+  -d                    
+  -P, --passcal-segy    Generate PASSCAL SEGY trace files.
+
+===============================================================================
+			PIC KITCHEN Version 2008.322
+===============================================================================
+Overview:
+
+This release modifies columns.py to include a sample_rate_multilpier to
+the Das_t table. This is to allow sample rates less than 1 sample per second.
+Also two programs have been added. 1302ph5 converts RT-130 files to ph5 format.
+txn2segy2dep converts txn2segy input files to dep format.
+
+New:
+
+Usage: 1302ph5 [--help][--dep dep_file][--kef kef_file][--raw raw_file | --file file_list_file] --nickname output_file_prefix
+
+Read a raw rt-130 files and optionally a kef and/or dep file into ph5 format.
+
+Options:
+  -h, --help            show this help message and exit
+  -r raw_file, --raw=raw_file
+                        RT-130 raw file
+  -f file_list_file, --file=file_list_file
+                        File containing list of RT-130 raw file names.
+  -n output_file_prefix, --nickname=output_file_prefix
+                        The ph5 file prefix (experiment nick name).
+  -k kef_file, --kef=kef_file
+                        Kitchen Exchange Format file.
+  -d dep_file, --dep=dep_file
+                        Rawmeet dep file.
+  -p
+
+Usage: txn2segy2dep -s txn2segy_survey_file -d txn2segy_das_file -e txn2segy_event_file
+
+Convert txn2segy input files to a dep file. Writes to stdout.
+
+Options:
+  -h, --help            show this help message and exit
+  -s txn2segy_survey_file, --survey=txn2segy_survey_file
+                        A TXN2SEGY geometry file. "station northing easting
+                        elevation"
+  -d txn2segy_das_file, --das=txn2segy_das_file
+                        A TXN2SEGY DAS file. "station das_number channels"
+  -e tsp_shot_file, --event=tsp_shot_file
+                        A TXN2SEGY event file. "station YYYY:JJJ:HH:MM:SS
+                        dasfile_name"
+  -D
+===============================================================================
+			PIC KITCHEN Version 2008.073
+===============================================================================
+Overview:
+
+This release contains numerous bug fixes, a new program map-gen to generate
+simple maps of experiment location. The software was also ported to use
+version 2 of pytables.
+
+New:
+
+Usage: map-gen --nickname ph5-file-prefix [--path path-to-ph5-files]
+
+Generate a map of receivers and sources on a topo map and a world map of the
+experiment location.
+
+Options:
+  -h, --help            show this help message and exit
+  -n ph5_file_prefix, --nickname=ph5_file_prefix
+                        The ph5 file prefix (experiment nickname).
+  -p ph5_path, --path=ph5_path
+                        Path to ph5 files. Defaults to current directory.
+===============================================================================
+                        PIC KITCHEN Version 2007.233
+===============================================================================
+Overview:
+
+This release contains several bug fixes, a new ph5 file organization, and a new version of
+ph5toseg. Ph5toseg now accepts a start time and length within the recording window, and the
+option to not time correct.
+
+Changed or New Files:
+
+125a2ph5.py: PROG_VERSION = '2007.228'
+columns.py: PH5VERSION = '2007.213 Bleeding'
+dep2ph5.py: PROG_VERSION = '2007.227 alpha'
+Dep.py: PROG_VERSION = '2007.228'
+Experiment.py: PROG_VERSION = '2007.213'
+geod2kef.py: PROG_VERSION = '2007.214'
+Kef.py: PROG_VERSION = '2007.206'
+ph5toseg.py: PROG_VERSION = '2007.233'
+pn125.py: PROG_VERSION = '2007.200'
+report-gen.py: PROG_VERSION = '2007.228'
+SEGY_h.py: PROG_VERSION = '2007.227'
+Sfactory.py: PROG_VERSION = "2007.233"
+TimeDoy.py: PROG_VERSION = '2007.228'
+time-kef-gen.py: PROG_VERSION = '2007.213'
+
+ph5toseg.py -h
+usage: ph5toseg --nickname ph5-file-prefix [options]
+
+Convert ph5 file to SEG format. (Presently only SEG-Y and PASSCAL SEGY trace
+files)
+
+options:
+  -h, --help            show this help message and exit
+  -n ph5_file_prefix, --nickname=ph5_file_prefix
+                        The ph5 file prefix (experiment nickname).
+  -p ph5_path, --path=ph5_path
+                        Path to ph5 files. Defaults to current directory.
+  -s sort_table_line, --sorttableline=sort_table_line
+                        Sort table line number.
+  -t start_time, --starttime=start_time
+                        Starting time of traces YYYY:JJJ:HH:MM:SS:MS
+  -l trace_length, --length=trace_length
+                        Length of traces in seconds.
+  -o gatherpath, --outpath=gatherpath
+                        Directory to write gathers and reports to.
+  -x                    Do Not time correct data.
+  -d                    
+  -P, --passcal-segy    Generate PASSCAL SEGY trace files.
+
+                        PIC KITCHEN Version 2007.222 (incomplete not released)
+=============================================================================================
+			PIC KITCHEN Version 2007.183
+=============================================================================================
+Overview:
+
+This release contains mainly bug fixes as well as code to convert TSP input files
+to the dep format as produced by the PASSCAL rawmeet program. It also contains 
+the data from the Spears Ranch experiment (SOAD). The processing steps used at
+PIC to create SOAD.ph5 follow in another document.
+
+New Files:
+
+-tsp2dep.py - A program to read TSP input files and convert them to a dep file.
+
+usage: tsp2dep -u tsp_utm_file -d tsp_das_file -s tsp_shot_file
+
+Convert TSP input files to a dep file. Writes to stdout.
+
+options:
+  -h, --help            show this help message and exit
+  -u tsp_utm_file, --utm=tsp_utm_file
+                        A TSP geometry file. "station, northing, easting,
+                        elevation"
+  -d tsp_das_file, --das=tsp_das_file
+                        A TSP DAS file. "station, das_number"
+  -s tsp_shot_file, --shot=tsp_shot_file
+                        A TSP shot file. "year, doy, hr, mn, sc, station,
+                        length"	
+
+-tabletokef.py - A program to dump ph5 tables to kef format.
+
+usage: tabletokef --nickname ph5-file-prefix options
+
+Dump a table to a kef file.
+
+options:
+  -h, --help            show this help message and exit
+  -n ph5_file_prefix, --nickname=ph5_file_prefix
+                        The ph5 file prefix (experiment nickname).
+  -p ph5_path, --path=ph5_path
+                        Path to ph5 files. Defaults to current directory.
+  -d                    
+  -E, --Experiment_t    Dump /Experiment_g/Experiment_t to a kef file.
+  -S, --Sort_t          Dump /Experiment_g/Sorts_g/Sort_t to a kef file.
+  -O, --Offset_t        Dump /Experiment_g/Sort_g/Offset_t to a kef file.
+  -V, --Event_t         Dump /Experiment_g/Sorts_g/Event_t to a kef file.
+  -A n, --Array_t_=n    Dump /Experiment_g/Sorts_g/Array_t_[n] to a kef file.
+  -R, --Response_t      Dump /Experiment_g/Responses_g/Response_t to a kef
+                        file.
+  -P, --Report_t        Dump /Experiment_g/Reports_g/Report_t to a kef file.
+  -C das, --Receiver_t_=das
+                        Dump /Experiment_g/Receivers_g/Das_g_[das]/Receiver_t
+                        to a kef file.
+  -D das, --Das_t=das   Dump /Experiment_g/Receivers_g/Das_g_[das]/Das_t to a
+                        kef file.
+	
+
+Changed Files:
+
+125a2ph5.py
+columns.py
+Dep.py
+Experiment.py
+install.py
+Kef.py
+ph5toseg.py
+pn125.py
+query-ph5.py
+
+=============================================================================================
+			PIC KITCHEN Version 2007.113a
+=============================================================================================
+Overview: 
+
+This release contains software to convert data in the ph5 files (HDF5) to standard
+SEG-Y or PASSCAL SEGY trace files. 
+
+The SEG-Y produced complies with SEG Y rev 1 Data Exchange format with the exception that 
+the extended portion of the trace headers are not used. The SEG-Y files produced also comply 
+with the 1975 SEG Y standard with the exception that the trace data is written in 32 bit IEEE 
+floats rather than IBM floats. This seems to be a common practice. The textural header is 
+written in EBCDIC and there are no extra textural headers. The REEL headers fully comply 
+with rev 1.
+
+The PASSCAL SEGY produced has the trace data written in 32 bit two's compliment.
+
+The data is requested by arrays and start times using a request key. See the pdf file
+data_request_key.pdf. Each request key defines a collection of stations (the array),
+a start time and a trace length.
+
+New Files:
+
+-construct-2.0-2.4.zip - A library for parsing and building of data structures (binary or textual).
+
+-data_request_key.pdf - A report that outlines the data that is available in the ph5 file and the request
+used to extract them.
+
+-ebcdic.py - A library to do conversions between EBCDIC and ASCII.
+
+-ibmfloat.py - A library to do conversions between IEEE floats and IBM floats.
+
+-ph5toseg - A program to convert data in the ph5 file to standard SEG-Y or PASSCAL SEGY trace files.
+usage: ph5toseg --nickname ph5-file-prefix [options]
+
+Convert ph5 file to SEG format. (Presently only SEG-Y and PASSCAL SEGY trace
+files)
+
+options:
+  -h, --help            show this help message and exit
+  -n ph5_file_prefix, --nickname=ph5_file_prefix
+                        The ph5 file prefix (experiment nickname).
+  -p ph5_path, --path=ph5_path
+                        Path to ph5 files. Defaults to current directory.
+  -s sort_table_line, --sorttableline=sort_table_line
+                        Sort table line number.
+  -o gatherpath, --outpath=gatherpath
+                        Directory to write gathers and reports to.
+  -d                    
+  -P, --passcal-segy    Generate PASSCAL SEGY trace files.
+
+Example:
+
+From data_request_key.pdf we find the data for shot #3.
+
+63	 	Tue Mar 21 09:00:00 2006 	149.720	 1 	 	Shot id 3
+
+Now we run ph5toseg to produce a SEG-Y gather for that shot.
+
+$ ph5toseg -p /arch/buffer/PIC/Kitchen/Experiments -n GEO_DESIRE -s 63 -o /arch/buffer/PIC/Kitchen/Tests
+
+Will extract 149.72 seconds of data starting at Tue Mar 21 09:00:00 2006 for the stations
+defined in array 1.
+
+The following files will be produced, GEO-DESIRE_1_01142931600.000.SGY (the SEG-Y file), and
+ph5toseg.log (a log file). 
+
+A portion of the log file is below:
+
+2007-04-23 12:50:53,107 Experiment: GEO-DESIRE Wide-Angle Reflection / Refractio
+n experiment, Israel and Jordan 2006
+2007-04-23 12:50:53,108 Summary: A seismic wide-angle reflection/refraction (WRR
+)  across the Dead Sea Transform in the region of the southern Dead Sea  basin.
+2007-04-23 12:50:53,741 Extracting: Sort request line 63
+2007-04-23 12:50:53,741 Description: Shot id 3, stake 19
+2007-04-23 12:50:53,742 Start to nearest second: Tue Mar 21 09:00:00 2006
+2007-04-23 12:50:53,742 Start: 01142931600.000 Stop: 01142931749.720
+2007-04-23 12:50:53,742 Shot ID: 3. Stake 19
+2007-04-23 12:50:53,742 =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+2007-04-23 12:50:53,742 Station_id: 16 DAS: 10993
+2007-04-23 12:50:53,743 Offset: 51706 m Azimuth: 176.462738 degrees
+2007-04-23 12:50:53,777 Gain: 32 Bitweight: 5.96046e-08 volts/count
+2007-04-23 12:50:53,797 Clock: Offset: 2.70193e-08 Slope: 0.0159473
+2007-04-23 12:50:53,797 Opening: ./PSGY/GEO-DESIRE_1_01142931600.000.SGY
+2007-04-23 12:50:53,813 Time correction ms: 8
+2007-04-23 12:50:53,816 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+.
+.
+.
+2007-04-23 12:51:13,148 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+2007-04-23 12:51:13,906 Station_id: 72 DAS: 11110
+2007-04-23 12:51:13,907 Offset: 21196 m Azimuth: -178.759674 degrees
+2007-04-23 12:51:13,907 Warning: No data for 11110 in ph5 file.
+2007-04-23 12:51:13,908 Station_id: 74 DAS: 11116
+2007-04-23 12:51:13,908 Offset: 20522 m Azimuth: -179.378738 degrees
+2007-04-23 12:51:14,034 Gain: 32 Bitweight: 5.96046e-08 volts/count
+2007-04-23 12:51:14,083 Time correction ms: 0
+2007-04-23 12:51:14,086 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+.
+.
+.
+2007-04-23 12:52:46,090 Closing ph5 file
+
+=============================================================================================
+                          PIC KITCHEN Version 2007.032a
+=============================================================================================
+Files:
+
+-columns.py - Describes the meta-data table columns.
+
+-Experiment.py - Provides the basic functionality to build and query hdf5 files
+in ph5 format.
+
+-Dep.py - Provides functionality to deal with .dep files that are produced by
+the rawmeet program.
+
+-Kef.py - Provides the functionality to deal with kef (kitchen exchange format)
+files.
+
+-125a2ph5 - Read raw data from RT-125(a) data loggers, .dep files, and kef files
+and build a file in ph5 format.
+usage: 125a2ph5 [--help][--dep dep_file][--kef kef_file][--raw raw_file | --file file_list_file] --nickname output_file_prefix
+
+Read a raw texan files and optionally a kef file into ph5 format.
+
+options:
+  -h, --help            show this help message and exit
+  -r raw_file, --raw=raw_file
+                        RT-125(a) texan raw file
+  -f file_list_file, --file=file_list_file
+                        File containing list of RT-125(a) raw file names.
+  -n output_file_prefix, --nickname=output_file_prefix
+                        The ph5 file prefix (experiment nick name).
+  -k kef_file, --kef=kef_file
+                        Kitchen Exchange Format file.
+  -d dep_file, --dep=dep_file
+                        Rawmeet dep file.
+
+-geod2kef.py - Calculate offsets from locations in ph5 file and produce a kef
+file. *** Currently only does great circle calculations ***
+usage: geod2kef --nickname output_file_prefix [--path][-h][--listellipsoids][--listunits][-U units][-E ellipsoid]
+
+Read locations and calculate offsets from events to receivers. Produce kef
+file to populate ph5 file.
+
+options:
+  -h, --help            show this help message and exit
+  -n output_file_prefix, --nickname=output_file_prefix
+                        The ph5 file prefix (experiment nick name).
+  -p output_file_path, --path=output_file_path
+                        Path to directory containing ph5 files. Defaults to
+                        current directory
+  -U output_units       Units to output offsets in. (Use -u to get list of
+                        acceptable units.) Default == 'm' (meters)
+  -E calculation_ellipsoid
+                        Ellipsoid to use. (Use -e to get a list of acceptable
+                        ellipsoids.) Default == 'WGS84'
+  -e, --listellipsoids  List available ellipsoids.
+  -u, --listunits       List all available output units.
+
+-initialize-ph5.py - Create an empty ph5 file.
+usage: initialize_ph5 [--help]--kef kef_file --output output_file
+
+Program to initialize PH5 file at start of experiment. The kef file should
+contain information for experiment table /Experiment_g/Experiment_t.
+
+options:
+  -h, --help            show this help message and exit
+  -n output_file, --nickname=output_file
+                        Experiment nickname.
+  -k kef_file, --kef=kef_file
+                        Kitchen Exchange Format file containing experiment
+                        info.
+
+-kef2ph5.py - Read a kef file and update, append, or delete mata-data in a 
+ph5 file from it.
+usage: kef2ph5 --kef kef_file --nickname ph5_file_prefix [--path path]
+
+Update a ph5 file from a kef file.
+
+options:
+  -h, --help            show this help message and exit
+  -n OUTFILE, --nickname=OUTFILE
+                        The ph5 file prefix (experiment nickname).
+  -k KEFFILE, --kef=KEFFILE
+                        Kitchen Exchange Format file.
+  -p PATH, --path=PATH  Path to directory where ph5 files are stored.
+  -c, --check           Show what will be done but don't do it!
+
+-query-ph5.py - Query a ph5 file and generate reports on the data that is
+contained in it. *** Produces text output files. Does not write logs yet. ***
+usage: query-ph5 --nickname output_file_prefix --outpath path_to_reports [-p path][--shots][--arrays][--data][--experiment][--reports]
+
+Query ph5 file for information on shots, arrays, and trace data.
+
+options:
+  -h, --help            show this help message and exit
+  -n output_file_prefix, --nickname=output_file_prefix
+                        The ph5 file prefix (experiment nick name).
+  -p PH5PATH            Path to where ph5 files are stored. Defaults to
+                        current directory
+  -e, --shots           Retreive information about shots.
+  -a, --arrays          Retreive information about arrays.
+  -d, --data            Retreive information about all recorded trace data.
+  -x, --experiments     Retreive information about the experiment.
+  -r, --reports         Retreive information on reports.
+  -o data_report_path, --outpath=data_report_path
+                        Path to write reports to.
+
+-report2ph5 - Read reports in pdf (or other format) into a ph5 file.
+usage: load-report --file report-file --kef kef-file --nickname experiment-nickname [--path path-to-kef-file]
+
+Load a report (pdf) into a ph5 file.
+
+options:
+  -h, --help            show this help message and exit
+  -f REPORT_FILE, --file=REPORT_FILE
+                        The file containing the report, (pdf, doc, ps, etc.).
+  -k KEF_FILE, --kef=KEF_FILE
+                        Kef file describing row in Report_t for the report.
+  -n NICKNAME, --nickname=NICKNAME
+                        Experiment nickname.
+  -p PATH, --path=PATH  Path to where ph5 files are stored
+
+-desire.dep - An example file in .dep format.
+
+-desire-experiment.kef - An example kef file to update 
+/Experiment_g/Experiment_t.
+
+-desire-offsets.kef - An example kef file to update
+/Experiment_g/Sorts_g/Offset_t.
+
+-desire-report.kef - An example kef file to update
+/Experiment_g/Reports_g/Report_t
+
+-desire-report.pdf - PDF report file.
+
+-desire-sort.kef - An example kef file to update (and delete)
+/Experiment_g/Sorts_g/Sort_t.
+
+-Feb03.kef - A file showing all of the possible tables and keys in a kef file.
+
+-GEO-DESIRE.ph5 - A ph5 file containing data from the Israel side of the 
+geo-desire experiment. *** Try http://www.hdfgroup.org/hdf-java-html/hdfview/
+to get a good idea of the format. ***
+
+Kef File Format:
+
+The kef file format is very simple. It is parsed single pass. A line that 
+starts with a '/' contains the name of the table to be changed edning in
+a newline followed by lines starting with a '\t' character followed by the
+column name followed by '=' followed by the value ending in a newline.
+You can also specify whether you want to Update or Delete a row based on
+a column key.
+
+As an example:
+#   Create a row in the offset table containing these values.
+/Experiment_g/Sorts_g/Offset_t
+        event_id_s = 1
+        receiver_id_s = 16
+        azimuth/value_f = -177.006913
+        azimuth/units_s = degrees
+        offset/value_d = 4645.475
+        offset/units_s = m
+#   Now change the values
+/Experiment_g/Sorts_g/Offset_t:Update:receiver_id_s
+        event_id_s = 1
+        receiver_id_s = 16
+        azimuth/value_f = -169.717875
+        azimuth/units_s = degrees
+        offset/value_d = 3242.436
+        offset/units_s = m
+#   Now delete the row (the first row where receiver_id_s is 16)
+/Experiment_g/Sorts_g/Offset_t:Delete:receiver_id_s
+        receiver_id_s = 16
+

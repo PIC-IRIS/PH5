@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#   Version: 2012.194
+EXEC='kef'
+MOD='pn3/PH5GUI'
+
+h=$@
+
+if [ ! -z "${K3}" ]
+then
+	PYTHON=pnpython3
+	export PYTHON
+        PYTHONPATH=${K3}/apps/${MOD}:${K3}/apps/pn3
+        export PYTHONPATH
+else
+        echo "K3 environment not set! Can not continue."
+	exit
+fi
+
+if [ -z "$PYTHON" ]
+then
+	echo "$PYTHON not found!"
+	exit
+fi
+
+${PYTHON} ${K3}/apps/${MOD}/${EXEC}.py $h

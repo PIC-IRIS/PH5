@@ -1,0 +1,59 @@
+#!/usr/local/bin/python
+
+import urllib
+import urllib2
+import RequestBuilder
+
+class Requestor:
+    def __init__(self):
+        self.url = None
+        self.builder = RequestBuilder.RequestBuilder()
+    
+    def make_request(self, data):
+        args = urllib.urlencode(data)
+
+        try:
+            request = urllib2.urlopen(self.url + '?' + args)
+        except urllib2.HTTPError as e:
+            return "!! Server returned {0} with reason: {1}".format(e.code, e.reason), None
+        except urllib2.URLError as e:
+            return "!! Server returned {0} with reason: {1}".format(e.code, e.reason), None
+        return "Request Successful!", request.read()
+
+    def make_post(self, data):
+        data = urllib.urlencode(data)
+        
+        try:
+            request = urllib2.urlopen(self.url, data)
+        except urllib2.HTTPError:
+            return "Error uploading data"
+        except urllib2.URLError:
+            return "Error uploading data"
+
+        return "Data uploaded successfully"
+
+    def request_kef(self, experiment_id, kef_type):
+        self.builder.build_kef_request(experiment_id, kef_type)
+        return self.make_request(self.builder.data_buffer)
+
+    def request_array(self, experiment_id, array_number):
+        self.builder.build_array_request(experiment_id, array_number)
+        return self.make_request(self.builder.data_buffer)
+
+    def request_das(self, experiment_id, das_number):
+        self.builder.build_das_request(experiment_id, das_number)
+        return self.make_request(self.builder.data_buffer)
+
+    def request_map(self,experiment_id, nwlat, nwlon, selat, selon):
+        nw = [nwlat, nwlon]
+        se = [selat, selon]
+        self.builder.build_map_request(experiment_id, nw, se)
+        return self.make_request(self.builder.data_buffer)
+
+    def request_naked_map(self, experiment_id):
+        self.builder.build_naked_map_request(experiment_id)
+        return self.make_request(self.builder.data_buffer)
+
+    def send_file(self, experiment_id, kef_type, filestream):
+        self.builder.build_upload_request(experiment_id, kef_type, filestream)
+        return self.make_post(self.builder.data_buffer)

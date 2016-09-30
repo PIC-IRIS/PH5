@@ -1,0 +1,27 @@
+#!/usr/bin/env pnpython3
+
+from configobj import ConfigObj
+
+import sqlite3 as lite
+import sys, os
+
+config_file = os.path.join (os.environ['K3'], "config", "PH5Server.cfg")
+config = ConfigObj(config_file)
+
+DATAROOT = config['DATAROOT']
+K3 = config['K3']
+EXPERIMENT_DIR = config['EXPERIMENT_DIR']
+SSL = config['SSL']
+
+db = os.path.join (os.environ['K3'], 'config', 'config.db')
+        
+con = lite.connect(db)
+with con:
+	cur = con.cursor()
+	print "initializing config"
+	cur.execute("delete from Config")
+	cur.execute("insert into Config (DATAROOT, K3, EXPERIMENT_DIR, SSL) values ('"+DATAROOT+"','"+K3+"','"+EXPERIMENT_DIR+"',"+SSL+")")
+	con.commit()
+
+con.close()
+
