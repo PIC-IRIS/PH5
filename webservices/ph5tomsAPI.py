@@ -386,7 +386,7 @@ class PH5toMSeed(object):
                         
                         
                         
-                            
+                         
                             
                             
                             
@@ -399,13 +399,13 @@ class PH5toMSeed(object):
                             data[c] = []     
                         
                         if self.component and c in self.component:
-                            data[c].append (ph5.cut (das, x[0], x[1], chan=c))
+                            data[c].append (self.ph5.cut (das, x[0], x[1], chan=c))
                         
                         elif self.component and c not in self.component:
                             data[c] = []
                         
                         else:
-                            data[c].append (ph5.cut (das, x[0], x[1], chan=c)) 
+                            data[c].append (self.ph5.cut (das, x[0], x[1], chan=c)) 
                         
                         chans = data.keys (); chans.sort ()
                     
@@ -652,6 +652,13 @@ def get_args () :
                          help="Comma separated list of julian days to extract.",
 
                          metavar="doy_keep", type=str)
+    
+    
+    parser.add_argument ("-F", "--format", action="store", dest="format",
+    
+                             help="SAC or MSEED",
+    
+                             metavar="format", type=str)    
 
 
 
