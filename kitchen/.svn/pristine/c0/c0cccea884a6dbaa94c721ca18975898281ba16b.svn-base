@@ -1,0 +1,363 @@
+#!/usr/bin/env pnpython3
+
+#
+#   Generate Sort_t kef file for continuous data.
+#
+#   Steve Azevedo, December 2008
+#
+
+import sys, os, os.path, time, math
+#   This provides the base functionality
+import Experiment, TimeDOY
+#   The wiggles are stored as numpy arrays
+#import numpy
+
+#   Make sure we are all on the same time zone ;^)
+os.environ['TZ'] = 'UTM'
+time.tzset ()
+
+PROG_VERSION = '2014.241'
+
+#
+#   These are to hold different parts of the meta-data
+#
+#   /Experiment_g/Experiment_t
+EXPERIMENT_T = None
+#   /Experiment_g/Sorts_g/Event_t
+#EVENT_T = None
+#   /Experiment_g/Sorts_g/Offset_t
+#OFFSET_T = None
+#   /Experiment_g/Sorts_g/Sort_t
+SORT_T = None
+#   /Experiment_g/Responses_g/Response_t
+#RESPONSE_T = None
+#   /Experiment_g/Sorts_g/Array_t_[nnn]
+ARRAY_T = {}
+#   /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
+DAS_T = {}
+#   /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
+#RECEIVER_T = {}
+#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name) 
+#SOH_A = {}
+#   A list of das_groups that refers to Das_g_[sn]'s
+DASS = []
+
+class start_stop (object) :
+    __slots__ = 'das', 'channel', 'stream', 'start', 'stop', 'sps', 'gap'
+    
+#
+#   To hold table rows and keys
+#
+class rows_keys (object) :
+    __slots__ = ('rows', 'keys')
+    def __init__ (self, rows = None, keys = None) :
+        self.rows = rows
+        self.keys = keys
+        
+    def set (self, rows = None, keys = None) :
+        if rows != None : self.rows = rows
+        if keys != None : self.keys = keys
+
+#
+#   To hold DAS sn and references to Das_g_[sn]
+#
+class das_groups (object) :
+    __slots__ = ('das', 'node')
+    def __init__ (self, das = None, node = None) :
+        self.das = das
+        self.node = node
+
+#
+#   Read Command line arguments
+#
+def get_args () :
+    global PH5, PATH, DEBUG, AFTER_EPOCH
+    
+    from optparse import OptionParser
+    
+    oparser = OptionParser ()
+    
+    oparser.usage = "das_start_stop --nickname ph5-file-prefix [--path path-to-ph5-files]"
+    
+    oparser.description = "Generate Sort_t kef file for continuous data."
+    
+    oparser.add_option ("-n", "--nickname", dest = "ph5_file_prefix",
+                        help = "The ph5 file prefix (experiment nickname).",
+                        metavar = "ph5_file_prefix")
+    
+    oparser.add_option ("-p", "--path", dest = "ph5_path",
+                        help = "Path to ph5 files. Defaults to current directory.",
+                        metavar = "ph5_path")
+    
+    oparser.add_option ("-c", "--check-after", dest = "check_after",
+                        help = "Start checking after given time: YYYY:JJJ:HH:MM:SS",
+                        metavar = "check_after")
+    
+    oparser.add_option ("-d", dest = "debug", action = "store_true", default = False)
+    
+    options, args = oparser.parse_args ()
+    
+    if options.ph5_file_prefix != None :
+        PH5 = options.ph5_file_prefix
+    else :
+        PH5 = None
+        
+    if options.ph5_path != None :
+        PATH = options.ph5_path
+    else :
+        PATH = "."
+        
+    if options.check_after != None :
+        try :
+            yr, jd, hr, mn, sc = options.check_after.split (":")
+            #tdoy = TimeDoy.TimeDoy ()
+            tdoy = TimeDOY.TimeDOY (year=int (yr), 
+                                    hour=int (hr), 
+                                    minute=int (mn), 
+                                    second=int (sc), 
+                                    microsecond=0, 
+                                    doy=int (jd))
+            
+            AFTER_EPOCH = tdoy.epoch  ()
+        except Exception, e :
+            sys.stderr.write ("%s" % e)
+            sys.exit ()
+    else :
+        AFTER_EPOCH = 0
+        
+    if options.debug != None :
+        DEBUG = options.debug
+        
+    if PH5 == None :
+        sys.stderr.write ("Error: Missing required option. Try --help\n")
+        sys.exit (-1)
+        
+    if not os.path.exists (PH5) and not os.path.exists (PH5 + '.ph5') :
+        sys.stderr.write ("Error: %s does not exist!\n" % PH5)
+        sys.exit ()
+
+#
+#   Initialize ph5 file
+#
+def initialize_ph5 (editmode = False) :
+    '''   Initialize the ph5 file   '''
+    global EX, PATH, PH5
+    
+    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX.ph5open (editmode)
+    EX.initgroup ()
+
+#
+#   Print rows_keys
+#
+def debug_print (a) :
+    i = 1
+    #   Loop through table rows
+    for r in a.rows :
+        #   Print line number
+        print "%d) " % i,
+        i += 1
+        #   Loop through each row column and print
+        for k in a.keys :
+            print k, "=>", r[k], ",",
+        print
+        
+def read_sort_arrays () :
+    '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
+    global EX, ARRAY_T
+    
+    #   We get a list of Array_t_[n] names here...
+    #   (these are also in Sort_t)
+    names = EX.ph5_g_sorts.names ()
+    for n in names :
+        arrays, array_keys = EX.ph5_g_sorts.read_arrays (n)
+        
+        rowskeys = rows_keys (arrays, array_keys)
+        #   We key this on the name since there can be multiple arrays
+        ARRAY_T[n] = rowskeys
+        
+def read_sort_table () :
+    '''   Read /Experiment_t/Sorts_g/Sort_g   '''
+    global EX, SORT_T
+    
+    sorts, sorts_keys = EX.ph5_g_sorts.read_sorts ()
+    
+    if sorts == None : return False
+    
+    rowskeys = rows_keys (sorts, sorts_keys)
+    
+    SORT_T = rowskeys
+    
+    return True
+    
+def read_receivers () :
+    '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
+    global EX, DAS_T, DASS
+    #print "Reading DAS groups..."
+    #   Get references for all das groups keyed on das
+    dasGroups = EX.ph5_g_receivers.alldas_g ()
+    dass = dasGroups.keys ()
+    
+    for d in dass :
+        #   Get node reference
+        g = dasGroups[d]
+        dg = das_groups (d, g)
+        #   Save a master list for later
+        DASS.append (dg)
+        #print "Reading DAS table for ", d
+        #   Set the current das group
+        EX.ph5_g_receivers.setcurrent (g)
+        
+        #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
+        das, das_keys = EX.ph5_g_receivers.read_das ()
+        rowskeys = rows_keys (das, das_keys)
+        DAS_T[d] = rowskeys
+        #debug_print (rowskeys)
+        
+        #   Read /Experiment_g/Receivers_g/Receiver_t
+        #receiver, receiver_keys = EX.ph5_g_receivers.read_receiver ()
+        #rowskeys = rows_keys (receiver, receiver_keys)
+        #RECEIVER_T[d] = rowskeys
+        
+        #   Read SOH file(s) for this das
+        #SOH_A[d] = EX.ph5_g_receivers.read_soh ()
+        #   Get all of the SOH_a_[n] names
+        #soh_names = SOH_A[d].keys ()
+        
+        #LOG_A[d] = EX.ph5_g_receivers.read_log ()
+        
+        #EVENT_T[d] = EX.ph5_g_receivers.read_event ()
+        
+def get_start_stop () :
+    '''
+    Calculate start and stop of each data window.
+    SS - A dictionary keyed on das
+    starts_stops - A list of start_stop ()
+    start_stop - An object holding start, stop, stream, channel, etc.
+    
+    SS[das] -> starts_stops[n] -> start_stop ()
+    '''
+    global DAS_T, SS
+   
+    SS = {}
+    dass = DAS_T.keys ()
+    dass.sort ()
+    
+    for d in dass :
+        starts_stops = []
+        rk = DAS_T[d]
+        prev_stop = {}
+        for r in rk.rows :
+            ss = start_stop ()
+            ss.das = d
+            ss.channel = r['channel_number_i']
+            ss.stream = r['stream_number_i']
+            ss.sps = r['sample_rate_i']
+            ss.start = r['time/epoch_l'] + r['time/micro_seconds_i'] / 1000000.0
+            ss.stop = ss.start + (r['sample_count_i'] * (1.0 / r['sample_rate_i']))
+            if prev_stop.has_key (ss.channel) :
+                #sample_interval = 1.0 / ss.sps
+                #calc_start = prev_stop[ss.channel] #+ sample_interval
+                ss.gap = ss.start - prev_stop[ss.channel]
+            else :
+                ss.gap = None
+                
+            #print d, ss.channel, ss.stream, ss.start, ss.stop, ss.gap
+            prev_stop[ss.channel] = ss.stop
+            starts_stops.append (ss)
+            
+        SS[d] = starts_stops
+        
+def get_first_last (after = 0) :
+    global SS
+        
+    smin = 4294967296; smax = 0
+    first_start = None; last_stop = None
+    dass = SS.keys ()
+    for d in dass :
+        ss = SS[d]
+        for s in ss :
+            if after <= s.start :
+                
+                if s.start < smin :
+                    smin = s.start
+                    first_start = s
+                    
+                if s.stop > smax :
+                    smax = s.stop
+                    last_stop = s
+                
+    #print first_start.das, time.ctime (first_start.start)
+    #print last_stop.das, time.ctime (last_stop.stop)
+                
+    return first_start, last_stop
+
+def get_arrays () :
+    global SORT_T
+    
+    KV = {}
+    if SORT_T == None :
+        read_sort_table ()
+        
+    for s in SORT_T.rows :
+        KV[s['array_name_s']] = s['array_t_name_s']
+        
+    return KV
+
+def kef_gin (first, last) :
+    global SS, EX
+    
+    PH5_VERSION = EX.version ()
+    
+    #ar = get_arrays ()
+    ar = EX.ph5_g_sorts.names ()
+    
+    now = time.time ()
+    print "#   das_start_stop_kef_gen Version: %s ph5 Version: %s" % (PROG_VERSION, PH5_VERSION)
+    r = 1
+    for a in ar :
+        t0 = first.start
+        t1 = last.stop
+        (t1_float_part, t1_int_part) = math.modf (t1)
+        (t0_float_part, t0_int_part) = math.modf (t0)
+        #
+        print "#   row %d\n/Experiment_g/Sorts_g/Sort_t" % r
+        print "\tarray_name_s = %03d" % int (a[-3:])
+        print "\tarray_t_name_s = %s" % a
+        print "\tdescription_s = Time span for experiment."
+        print "\tstart_time/epoch_l = %d" % t0_int_part
+        print "\tstart_time/micro_seconds_i = %d" % (t0_float_part * 1000000.)
+        print "\tstart_time/type_s = %s" % "BOTH"
+        print "\tstart_time/ascii_s = %s" % time.ctime (t0)
+        print "\tend_time/epoch_l = %d" % t1_int_part
+        print "\tend_time/micro_seconds_i = %d" % (t1_float_part * 1000000.)
+        print "\tend_time/ascii_s = %s" % time.ctime (t1)
+        print "\tend_time/type_s = BOTH"
+        print "\ttime_stamp/epoch_l = %d" % now
+        print "\ttime_stamp/ascii_s = %s" % time.ctime (now)
+        print "\ttime_stamp/micro_seconds_i = 0"
+        print "\ttime_stamp/type_s = BOTH"
+        r += 1
+        
+    if r < 2 :
+        sys.stderr.write ("Warning: No arrays found. Was the dep file loaded yet?")
+        
+if __name__ == "__main__" :
+    #   Get program arguments
+    get_args ()
+    
+    #   Initialize ph5 file
+    initialize_ph5 ()
+    
+    #   Read tables in Das_g_[sn]
+    read_receivers ()
+    #   Get start and stop times for each das, each event 
+    get_start_stop ()
+    #   Get first start time and last stop time
+    first_start_stop, last_start_stop = get_first_last (AFTER_EPOCH)
+    
+    #   Print out Sort_t kef file
+    kef_gin (first_start_stop, last_start_stop)
+    
+    #   Close ph5 file
+    EX.ph5close ()

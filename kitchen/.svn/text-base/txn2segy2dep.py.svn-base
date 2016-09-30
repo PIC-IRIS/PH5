@@ -1,0 +1,202 @@
+#!/usr/bin/env pnpython2
+
+import sys, os, re, string, time
+
+PROG_VERSION = '2008.319'
+
+#   TSP input file version
+TXN2SEGY_VERSION = '2008.278a'
+#   rawmeet dep file version
+DEP_VERSION = '0007.107'
+
+def get_args () :
+    '''   Parse input args
+          -s   SURVEYFILE geometry file
+          -d   DASFILE
+          -e   EVENTFILE
+          '''
+    global SURVEYFILE, DASFILE, EVENTFILE, DEBUG
+    SURVEYFILE = None; DASFILE = None; EVENTFILE = None
+    
+    from optparse import OptionParser
+
+    oparser = OptionParser ()
+    oparser.description = "Convert txn2segy input files to a dep file. Writes to stdout."
+    oparser.usage = "txn2segy2dep -s txn2segy_survey_file -d txn2segy_das_file -e txn2segy_event_file"
+    oparser.add_option ("-s", "--survey", dest = "SURVEYFILE",
+                      help="A TXN2SEGY geometry file. \"station northing easting elevation\"", 
+                      metavar="txn2segy_survey_file")
+    oparser.add_option ("-d", "--das", dest = "DASFILE",
+                       help = "A TXN2SEGY DAS file. \"station das_number channels\"",
+                       metavar = "txn2segy_das_file")
+    oparser.add_option ("-e", "--event", dest = "EVENTFILE",
+                        help="A TXN2SEGY event file. \"station YYYY:JJJ:HH:MM:SS dasfile_name\"",
+                        metavar = "tsp_shot_file")
+    
+    oparser.add_option ("-D", dest = "DEBUG", action = "store_true", default = False)
+    options, args = oparser.parse_args()
+    
+    if options.SURVEYFILE != None :
+        SURVEYFILE = options.SURVEYFILE
+        
+    if options.DASFILE != None :
+        DASFILE = options.DASFILE
+        
+    if options.EVENTFILE != None :
+        EVENTFILE = options.EVENTFILE
+        
+    DEBUG = options.DEBUG
+
+    if SURVEYFILE == None or DASFILE == None or EVENTFILE == None :
+        sys.stderr.write ("Missing required option. Try --help\n")
+        sys.exit ()
+        
+def parse_survey () :
+    global DEBUG, SURVEYFILE, SURVEYKEY 
+    SURVEYKEY = {}
+    
+    fh = open (SURVEYFILE)
+    
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        line = line[:-1]
+        flds = string.split (line)
+        SURVEYKEY[flds[0]] = flds
+        
+    fh.close ()
+    
+def parse_event () :
+    global DEBUG, EVENTFILE, EVENTKEY
+    EVENTKEY = {}
+    
+    fh = open (EVENTFILE)
+    
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        line = line[:-1]
+        flds = string.split (line)
+        EVENTKEY[flds[0]] = flds
+        
+    fh.close ()
+    
+def parse_das () :
+    global DEBUG, DASFILE, DASKEY
+    DASKEY = {}
+    
+    fh = open (DASFILE)
+    
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        line = line[:-1]
+        flds = string.split (line)
+        DASKEY[flds[0]] = flds
+        
+    fh.close ()
+    
+def cvtLat (lat) :
+    if float (lat) < 0 :
+        Y = 'S' + lat[1:]
+    else :
+        Y = 'N' + lat
+        
+    return Y
+        
+def cvtLon (lon) :
+    if float (lon) < 0 :
+        X= 'W' + lon[1:]
+    else :
+        X = 'E' + lon
+        
+    return X
+    
+def print_shot () :
+    global EVENTKEY, SURVEYKEY
+    
+    stations = EVENTKEY.keys ()
+    
+    stations.sort ()
+    
+    for s in stations :
+        survey_line = None
+        if SURVEYKEY.has_key (s) :
+            survey_line = SURVEYKEY[s]
+            
+        line = s[0]
+        x = ''
+        y = ''
+        elev = ''
+        if survey_line :
+            x = cvtLon (survey_line[2])
+            y = cvtLat (survey_line[1])
+            elev = survey_line[3]
+            
+        time = EVENTKEY[s][1]
+        
+        print "SHOT;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (s,         #Shot ID
+                                                                     s,         #Flag number
+                                                                     line,      #Line
+                                                                     y,         #Lat
+                                                                     x,         #Lon
+                                                                     elev,      #Elev
+                                                                     time,      #Time of Shot
+                                                                     '',                #Pre-trigger
+                                                                     '',                #Post-trigger
+                                                                     "",                #Sample rate
+                                                                     "",                #Depth
+                                                                     "",                #Size of shot
+                                                                     "",                #Reduction velocity
+                                                                     "",                #Radius
+                                                                     "")                #Comment
+        
+def print_das () :
+    global DASKEY, SURVEYKEY
+    
+    stations = DASKEY.keys ()
+    
+    stations.sort ()
+    
+    for s in stations :
+        survey_line = None
+        if SURVEYKEY.has_key (s) :
+            survey_line = SURVEYKEY[s]
+            
+        line = s[0]
+        x = ''
+        y = ''
+        elev = ''
+        if survey_line :
+            x = cvtLon (survey_line[2])
+            y = cvtLat (survey_line[1])
+            elev = survey_line[3]
+            
+        das = DASKEY[s][1]
+        schan = DASKEY[s][2]
+        channels = list (schan)
+        
+        for chan in channels :
+            print "RECV;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (das,               #DAS serial number
+                                                                         s,           #Flag number
+                                                                         line,        #Line
+                                                                         'RefTek',           #Type
+                                                                         chan,               #Channel
+                                                                         "",                #Sensor ID
+                                                                         "",                #Uphole?
+                                                                         y,                 #Lat
+                                                                         x,                 #Lon
+                                                                         elev,               #Elev
+                                                                         "",                #Team
+                                                                         "",                #Deployment time
+                                                                         "",                #Pickup time
+                                                                         "",                #Shots
+                                                                         "")                #Comments
+            
+if __name__ == '__main__' :
+    get_args ()
+    parse_survey ()
+    parse_event ()
+    parse_das ()
+    print_shot ()
+    print_das ()

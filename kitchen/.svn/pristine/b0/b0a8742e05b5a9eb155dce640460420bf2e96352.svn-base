@@ -1,0 +1,64 @@
+#! /usr/local/bin/python
+
+class RequestBuilder:
+    def __init__(self):
+        self.data_buffer = {}
+
+        #Command dictionary
+        self.commands = {'experiment':'exp_id', 
+                         'kef':'kef_type',
+                         'array':'array', 
+                         'das':'das',
+                         'corner':'NWCorner_lat'} #Here is the hack
+
+    def build_request(self, experiment_id, meta, value, extra = None):
+        self.clear_data_buffer()
+        experiment = self.commands['experiment']
+        command = self.commands[meta]
+
+        self.data_buffer[experiment] = experiment_id
+        self.data_buffer[command] = value.lower()
+
+        if extra:
+            self.data_buffer.update(extra)
+
+    def build_naked_map_request(self, experiment_id):
+        self.clear_data_buffer()
+        experiment = self.commands['experiment']
+        self.data_buffer[experiment] = experiment_id
+        
+    def build_upload_request(self, experiment_id, kef_type, filestream):
+        self.clear_data_buffer()
+        experiment = self.commands['experiment']
+        kef = self.commands['kef']
+        
+        self.data_buffer[experiment] = experiment_id
+        self.data_buffer[kef] = kef_type
+        self.data_buffer['file'] = filestream
+
+    def build_kef_request(self, experiment_id, kef_type):
+        self.build_request(experiment_id, 'kef', kef_type)
+
+    def build_array_request(self, experiment_id, array_number):
+        x = {}
+        x['array'] = array_number
+        self.build_request(experiment_id, 'array', array_number, x)
+
+    def build_das_request(self, experiment_id, das_number):
+        x = {}
+        x['das'] = das_number
+        self.build_request(experiment_id, 'das', das_number, x)
+
+    def build_map_request(self, experiment_id, nw, se):
+        #FIXME: This is a pretty bad hack, which is a side effect of forcing command use
+        #EASYFIX: consider revising the build_request method.
+        
+        value = "{0}&NWCorner_lon={1}&SECorner_lat={2}&SECorner_lon={3}".format(
+            nw[0], 
+            nw[1], 
+            se[0], 
+            se[1])
+        self.build_request(experiment_id, 'corner', value)
+
+    def clear_data_buffer(self):
+        self.data_buffer = {}

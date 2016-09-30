@@ -1,0 +1,87 @@
+#!/usr/bin/env pnpython2
+#
+#   Index offset table in ph5 file to speed up in kernal searches
+#
+#   Steve Azevedo, March 2012
+#
+import sys, os
+import Experiment
+
+PROG_VERSION = "2012.069"
+
+EX = None; PH5 = None; PATH = None
+
+def get_args () :
+    global PH5, PATH
+    
+    from optparse import OptionParser
+    
+    oparser = OptionParser ()
+    
+    oparser.usage = "Version: {0}\nindex_offset_t --nickname ph5-file-prefix".format (PROG_VERSION)
+    
+    oparser.add_option ("-n", "--nickname", dest = "ph5_file_prefix",
+                        help = "The ph5 file prefix (experiment nickname).",
+                        metavar = "ph5_file_prefix")
+    
+    oparser.add_option ("-p", "--path", dest = "ph5_path",
+                        help = "Path to ph5 files. Defaults to current directory.",
+                        metavar = "ph5_path")
+    
+    options, args = oparser.parse_args ()
+    
+    if options.ph5_file_prefix != None :
+        PH5 = options.ph5_file_prefix
+    else :
+        PH5 = None
+        
+    if options.ph5_path != None :
+        PATH = options.ph5_path
+    else :
+        PATH = "."
+        
+#
+#   Initialize ph5 file
+#
+def initialize_ph5 (editmode = False) :
+    '''   Initialize the ph5 file   '''
+    global EX, PATH, PH5
+    
+    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX.ph5open (editmode)
+    EX.initgroup ()
+
+def info_print () :
+    global EX
+    
+    print "#\n#\t%s\tph5 version: %s\n#" % (time.ctime (time.time ()), EX.version ())
+#
+#   Print rows_keys
+#
+def table_print (t, a) :
+    global TABLE_KEY
+    i = 0
+    #   Loop through table rows
+    for r in a.rows :
+        i += 1
+        print "#   Table row %d" % i
+        #   Print table name
+        if TABLE_KEY in a.keys :
+            print "{0}:Update:{1}".format (t, TABLE_KEY)
+        else :
+            print t
+        #   Loop through each row column and print
+        for k in a.keys :
+            print "\t", k, "=", r[k]
+            
+if __name__ == '__main__' :
+    
+    get_args ()
+    
+    initialize_ph5 (True)
+    
+    #   index on event_id_s and receiver_id_s
+    EX.ph5_g_sorts.index_offset_table ()
+    
+    EX.ph5close ()
+    

@@ -1,0 +1,44 @@
+#!/usr/bin/env pnpython2
+#
+#   A simple program to sort a receiver only dep file by line
+#   then by station.
+
+import sys
+
+try :
+    fh = open (sys.argv[1], 'U')
+except :
+    print "Usage: sort-recv-kef recv_only_depfile.kef > sorted_depfile.kef"
+    sys.exit ()
+
+byline = {}
+bystation = {}
+lines = []
+while 1 :
+    line = fh.readline ()
+    if not line : break
+    flds = line.split (';')
+    #   Line
+    l = "{0:03d}".format (int (flds[3]))
+
+    if not byline.has_key (l) :
+        byline[l] = []
+        
+    byline[l].append (line.strip ())
+    
+lines = byline.keys ()
+lines.sort ();
+
+for l in lines :
+    stationlines = byline[l]
+    stations = []
+    for stationline in stationlines :
+        flds = stationline.split (';')
+        #   Station
+        s = "{0:05d}".format (int (flds[2]))
+        stations.append (s)
+        bystation[s] = stationline
+        
+    stations.sort ()
+    for s in stations :
+        print bystation[s]

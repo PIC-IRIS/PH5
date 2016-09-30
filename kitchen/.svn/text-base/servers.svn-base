@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#   Version: 2012.194
+EXEC='servers'
+MOD='pn3'
+
+h=$@
+
+if [ ! -z "${K3}" ]
+then
+	PYTHON=pnpython3
+	export PYTHON
+        PYTHONPATH=${K3}/apps/${MOD}
+        export PYTHONPATH
+	export LD_LIBRARY_PATH=${K3}/lib
+else
+        echo "K3 environment not set! Can not continue."
+	exit
+fi
+
+if [ -z "$PYTHON" ]
+then
+	echo "$PYTHON not found!"
+	exit
+fi
+
+${PYTHON} ${K3}/apps/${MOD}/${EXEC}.py $h

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#   Version: 2014.105
+EXEC='ph5toseg_new'
+MOD='pn2'
+
+export LD_LIBRARY_PATH=${K3}/lib
+
+h=$@
+
+if [ ! -z "${KITCHEN}" ]
+then
+	PYTHON=pnpython2
+	export PYTHON
+        set PYTHONPATH ${KITCHEN}/apps/${MOD}:${KITCHEN}/apps/${MOD}/construct-2.0-2.4.zip
+        export PYTHONPATH
+else
+        echo "KITCHEN environment not set! Can not continue."
+	exit
+fi
+
+if [ -z "$PYTHON" ]
+then
+	echo "$PYTHON not found!"
+	exit
+fi
+
+
+${PYTHON} ${KITCHEN}/apps/${MOD}/${EXEC}.py $h
