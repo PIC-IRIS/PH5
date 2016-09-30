@@ -1,0 +1,23 @@
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+class MapWindow:
+    def show(self):
+        try:
+            img = mpimg.imread('temp.png')
+            imgplt = plt.imshow(img)
+            plt.show()
+            
+        except IOError:
+            return
+
+        except RuntimeError:
+            return
+        
+    def close(self):
+        plt.close()
+
+
+if __name__ == '__main__':
+    mw = MapWindow()
+    mw.show()

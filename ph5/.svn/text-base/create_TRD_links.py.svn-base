@@ -1,0 +1,172 @@
+#!/usr/bin/env pnpython3
+#
+#   Create links to TRD files
+#
+#   create_TRD_links.py starting_search_path
+#
+#   Steve Azevedo, March 2014
+#
+
+import os, sys, re, time
+import numpy as np
+from shutil import copy as copy
+
+PROG_VERSION = "2014.087.a"
+
+#   Regular expression for TRD file
+trdRE = re.compile ("I(\d\d\d\d).*[Tt][Rr][Dd]")
+
+
+class trd (object) :
+    __slots__ = ("path", "size")
+
+#
+#   Read Command line arguments
+#
+def get_args () :
+    global PATH, FORTE, REPORT
+    
+    from optparse import OptionParser
+    
+    oparser = OptionParser ()
+    
+    #try :
+        #start_dir = sys.argv[1]
+    #except :
+        #sys.stderr.write ("create_TRD_links --path starting_search_path [--hard_links]")
+        #sys.exit ()
+        
+    oparser.usage = "create_TRD_links --path=starting_search_path [--hard_links][--report=report_name]"
+    
+    oparser.description = ""
+    
+    oparser.add_option ("--hard_links", dest = "hard_links",
+                        help = "Create hard instead of symbolic links to TRD files.",
+                        default=False)
+    
+    oparser.add_option ("--path", dest = "starting_path",
+                        help = "Starting TRD file search path.",
+                        metavar = "starting_path", type = "string",
+                        default = ".")
+    
+    oparser.add_option ("--report", dest = "link_report",
+                        help = "Write a report on TRD file links.",
+                        metavar = "link_report_name", type = "string",
+                        default = None)    
+    
+    options, args = oparser.parse_args ()
+    
+    PATH = options.starting_path
+    if not os.path.exists (PATH) :
+        sys.stderr.write ("{0} does not exist!".format (PATH))
+        sys.exit ()
+    
+    FORTE = options.hard_links
+    
+    REPORT = options.link_report
+
+def achar_trd () :
+    global TRDS
+    #
+    #   TRDS[das] -> [trd_object, ...]
+    #
+    TRDS = {}
+    #   Sizes of files in bytes
+    sizes = []
+    for root, dirs, files in os.walk (PATH, followlinks=False) :
+        for f in files :
+            mh = trdRE.match (f)
+            if mh :
+                das = mh.groups ()[0]
+                source = os.path.join (root, f)
+                size = os.path.getsize (source)
+                t = trd ()
+                t.path = source
+                t.size = size
+                sizes.append (size)
+                if not TRDS.has_key (das) :
+                    TRDS[das] = []
+                    
+                TRDS[das].append (t)
+    
+    #   Standard deviation of file sizes
+    std = np.std (sizes)
+    #   Average file size
+    ave = np.average (sizes)
+    #   Total sum of file sizes
+    total = np.sum (sizes)
+    
+    return std, ave, total
+
+def make_links () :
+    '''   Link trd files to new location.   '''
+    global T, NOTLINKED
+    
+    DASS = TRDS.keys ()
+    DASS.sort ()
+    T = []
+    NOTLINKED = []
+    for das in DASS :
+        trds = TRDS[das]
+        hashbyname = {}
+        for t in trds :
+            name = os.path.basename (t.path)
+            #   Link if the file names are unique
+            if not hashbyname.has_key (name) :
+                hashbyname[name] = t
+                continue
+            #   If the file names are the same, pick the largest file.
+            if t.size > hashbyname[name].size :
+                NOTLINKED.append (hashbyname[name])
+                hashbyname[name] = t
+        
+        for name in hashbyname.keys () :        
+            T.append (hashbyname[name])
+    
+    here = os.getcwd ()
+    for t in T :
+        dst = os.path.basename (t.path)
+        writeto = os.path.join (here, dst)
+        if writeto == os.path.abspath (t.path) :
+            sys.stderr.write ("Source and destination files are the same file: {0}\n".format (writeto))
+            continue
+        
+        if os.path.exists (dst) :
+            sys.stderr.write ("Overwriting: {0}\n".format (dst))
+            os.unlink (dst)
+        if FORTE :
+            try :
+                os.link (t.path, dst)
+            except OSError as e :
+                copy (t.path, dst)
+        else :
+            os.symlink (t.path, dst)
+    
+def relatorio (s, a, t) :
+    fh = open (REPORT + ".txt", mode="w+")
+    
+    fh.write ("#   Written by create_TRD_links v{0} at {1}\n".format (PROG_VERSION, time.ctime (time.time ())))
+    i = 0; tottrd = 0
+    for t in T :
+        dst = os.path.basename (t.path)
+        if t.size < (ave - std) : first_char = 'SMALL'
+        elif t.size > (ave + std) : first_char = 'LARGE'
+        else : first_char = 'OK   '
+        
+        fh.write ("{3} linked {0} to {1}, size: {2}\n".format (t.path, dst, t.size, first_char))
+        tottrd += t.size; i += 1
+    
+    first_char = "?"    
+    for n in NOTLINKED :
+        fh.write ("{3} not linked {0} to {1}, size: {2}\n".format (t.path, dst, t.size, first_char))
+        
+    fh.write ("\n\nLinked {0} TRD files. Total size {1}\n".format (i, tottrd))
+    
+    fh.close ()
+
+if __name__ == "__main__" :
+    get_args ()
+    std, ave, total = achar_trd ()
+    make_links ()
+    if REPORT :
+        relatorio (std, ave, total)
