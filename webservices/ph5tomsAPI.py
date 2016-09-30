@@ -455,7 +455,7 @@ class PH5toMSeed(object):
                                 
                                 
                                 yield mseed_trace
-                                    
+        self.ph5.close()
 
                                                     
                         
@@ -676,7 +676,7 @@ if __name__ == '__main__' :
 
     args = get_args ()
 
-    ph5 = ph5API.ph5 (path=args.ph5path, nickname=args.nickname)
+    
 
     ph5ms = PH5toMSeed(args.nickname, args.array, args.length, args.offset, args.component, args.sta_list, 
 
@@ -694,7 +694,7 @@ if __name__ == '__main__' :
         t.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')         
 
     
-    ph5.close ()
+    
 
     #print t () - then
 
