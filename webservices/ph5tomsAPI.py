@@ -410,24 +410,25 @@ class PH5toMSeed(object):
                         
                             traces = data[c]
                             for trace in traces: 
+                                
                             
                                 
                                 
                                 if self.decimation:
                                     shift, data = decimate.decimate (self.decimation, trace.data) 
-                                    sr = int (sr/int (self.decimation))
+                                    wsr = int (sample_rate/int (self.decimation))
                                     trace.sample_rate = wsr
                                     trace.nsamples = len (data)
-                                    if trace.nsamples == 0 :
+                                if trace.nsamples == 0 :
                                         #   Failed to read any data
-                                        sys.stderr.write ("Warning: No data for data logger {2}/{0} starting at {1}.".format (das, trace.start_time, sta))
-                                        continue 	
+                                        #sys.stderr.write ("Warning: No data for data logger {2}/{0} starting at {1}.".format (das, trace.start_time, sta))
+                                    continue 	
                             
                             
                                 try :
                                     mseed_trace = obspy.Trace (data=trace.data)
                                 except ValueError :
-                                    sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
+                                    #sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
                                     continue
                                 mseed_trace.stats.sampling_rate = float (trace.das_t[0]['sample_rate_i']) / float (trace.das_t[0]['sample_rate_multiplier_i'])
                                 mseed_trace.stats.station = station   ###   ZZZ   Get from Maps_g
