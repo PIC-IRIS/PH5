@@ -296,6 +296,10 @@ class PH5toMSeed(object):
                         instrument_code=station_list[deployment][0]['seed_instrument_code_s']
                     else:
                         instrument_code="P"
+                    if 'seed_orientation_code_s' in station_list[deployment][0]: 
+                        orientation_code=station_list[deployment][0]['seed_orientation_code_s']
+                    else:
+                        orientation_code="X"                    
                         
                     c = station_list[deployment][0]['channel_number_i']     
                     
@@ -432,7 +436,7 @@ class PH5toMSeed(object):
                                     continue
                                 mseed_trace.stats.sampling_rate = float (trace.das_t[0]['sample_rate_i']) / float (trace.das_t[0]['sample_rate_multiplier_i'])
                                 mseed_trace.stats.station = station   ###   ZZZ   Get from Maps_g
-                                mseed_trace.stats.channel = band_code+instrument_code+CHAN_MAP[c]    
+                                mseed_trace.stats.channel = band_code+instrument_code+orientation_code    
                             
                                 if 'net_code_s' in experiment_t[0]:
                                     mseed_trace.stats.network = experiment_t[0]['net_code_s']
