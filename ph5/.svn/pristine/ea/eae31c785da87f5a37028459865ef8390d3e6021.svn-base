@@ -1,0 +1,5 @@
+#!/usr/bin/env pnpython3
+
+import compileall as ca
+
+ca.compile_file ('novitiate.py')

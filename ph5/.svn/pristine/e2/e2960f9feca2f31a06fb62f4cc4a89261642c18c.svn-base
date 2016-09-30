@@ -1,0 +1,9 @@
+#This is the configuration file for the PH5 GUI
+#SSL should be left ON (1) unless there is a very good reason not to.
+##one reason SSL may be used in off (0) mode is if this is a localhost only install
+
+SERVER_HOST = jasper.passcal.nmt.edu
+SERVER_PORT = 50007
+
+SSL= 1
+

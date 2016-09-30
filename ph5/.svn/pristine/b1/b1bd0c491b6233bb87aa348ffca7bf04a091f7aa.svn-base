@@ -1,0 +1,751 @@
+#!/usr/bin/env pnpython3
+#
+#   Basic API for reading a family of ph5 files
+#
+#   Steve Azevedo, March 2015
+#
+
+import sys, os, time
+import numpy as np
+from pyproj import Geod
+import columns, Experiment, TimeDOY
+
+PROG_VERSION = '2015.266 Developmental'
+
+__version__ = PROG_VERSION
+
+#   Conversion factors to meters
+FACTS_M = { 'km':1000., 'm':1., 'dm':1./10., 'cm':1./100., 'mm':1./1000., 'kmi':1852.0, 'in':0.0254, 'ft':0.3048, 'yd':0.9144,
+            'mi':1609.344, 'fath':1.8288, 'ch':20.1168, 'link':0.201168, 'us-in':1./39.37, 'us-ft':0.304800609601219, 'us-yd':0.914401828803658,
+            'us-ch':20.11684023368047, 'us-mi':1609.347218694437, 'ind-yd':0.91439523, 'ind-ft':0.30479841, 'ind-ch':20.11669506 }
+
+class APIError (Exception) :
+    def __init__ (self, errno, msg) :
+        self.args = (errno, msg)
+        self.errno = errno
+        self.msg = msg
+        
+class Trace (object) :
+    '''   Trace object
+          data -> Numpy array of trace data points
+          start_time -> TimeDOY time object
+          time_correction_ms -> The correction to account for ocillator drift
+          nsamples -> Number of data samples, ie. length of data
+          sample_rate -> Number of samples per second as a float
+          ttype -> Data sample point type, at this point 'int' or 'float'
+          das_t -> A list of Das_t dictionaries
+    '''
+    __slots__ = ('data', 'start_time', 'time_correction_ms', 'nsamples', 'sample_rate', 'ttype', 'das_t')
+    def __init__ (self, data, fepoch, time_correction_ms, nsamples, sample_rate, ttype, das_t) :
+        self.data = data
+        self.start_time = TimeDOY.TimeDOY (epoch=fepoch)
+        self.time_correction_ms = time_correction_ms
+        self.nsamples = nsamples
+        self.sample_rate = sample_rate
+        self.ttype = ttype
+        self.das_t = das_t
+        
+class ph5 (Experiment.ExperimentGroup) :
+    def __init__ (self, path=None, nickname=None, editmode=False) :
+        '''   path -> Path to ph5 file
+              nickname -> The master ph5 file name, ie. master.ph5
+              editmode -> Always False
+        '''
+        Experiment.ExperimentGroup.__init__ (self, currentpath=path, nickname=nickname)
+        if self.currentpath != None and self.nickname != None :
+            self.ph5open (editmode)
+            self.initgroup ()
+            
+        self.clear ()
+        
+    def clear (self) :
+        '''   Clears key variables   '''
+        self.Array_t = {}          #   Array_t[array_name] = { 'byid':byid, 'order':order, 'keys':keys }
+        self.Event_t = {}          #   Event_t[event_name] = { 'byid':byid, 'order':order, 'keys':keys }
+        self.Sort_t = {}           #   Sort_t[array_name] = { 'rows':rows, 'keys':keys }
+        self.Das_t = {}            #   Das_t[das] = { 'rows':rows, 'keys':keys }
+        self.Index_t = None
+        self.Time_t = None
+        self.Receiver_t = None
+        self.Experiment_t = None
+        self.Response_t = None
+        self.Array_t_names = []
+        self.Event_t_names = []
+        self.Das_g_names = []
+        self.num_found_das = 0
+        
+    def close (self) :
+        self.ph5close ()
+        
+    def get_offset (self, sta_line, sta_id, evt_line, evt_id) :
+        '''   Calculate offset distance in meters from a shot to a station
+              Inputs:
+                 sta_line -> the array or line
+                 sta_id -> the station id
+                 evt_line -> the shot line
+                 evt_id -> the event or shot id
+              Returns:
+                 A dictionary with the following keys:
+                 {   'event_id_s': The event or shot id,
+                     'receiver_id_s': The station or receiver id,
+                     'azimuth/value_f: The azimuth from the station to the shot,
+                     'azimuth/units_s': The units of the azimuth,
+                     'offset/value_d': The offset distance,
+                     'offset/units_s': The units of the offset
+                 }
+        '''
+        az = 0.0
+        baz = 0.0
+        dist = 0.0
+        try :
+            if self.Array_t.has_key (sta_line) and self.Event_t.has_key (evt_line) :
+                array_t = self.Array_t[sta_line]['byid'][sta_id]
+                event_t = self.Event_t[evt_line]['byid'][evt_id]
+                lon0 = array_t['location/X/value_d']
+                lat0 = array_t['location/Y/value_d']
+                lon1 = event_t['location/X/value_d']
+                lat1 = event_t['location/Y/value_d']
+                az, baz, dist = run_geod (lat0, lon0, lat1, lon1)
+        except Exception as e :
+            sys.stderr.write ("Warning: Couldn't get offset. {0}\n".format (repr (e)))
+        
+        return {'event_id_s': evt_id, 'receiver_id_s': sta_id, 'azimuth/value_f': az, 'azimuth/units_s': 'degrees', 'offset/value_d': dist, 'offset/units_s': 'm'}    
+    
+    def calc_offsets (self, array, shot_id, shot_line="Event_t") :
+        '''
+           Calculate offset with sign from a shot point to each station in an
+           array.
+           Inputs:
+              array -> the array or line as named in the ph5 file, 'Array_t_001'.
+              shot_id -> the event or shot id, '101'.
+              shot_line -> the shot line, 'Event_t' (old style), 'Event_t_001' (new style).
+           Returns:
+              A list of dictionaries in the same format as ph5 Offset_t.
+        '''
+        Offset_t = []
+        if not self.Array_t_names :
+            self.read_array_t_names ()
+        if array not in self.Array_t_names :
+            return Offset_t
+        if not self.Array_t.has_key (array) :
+            self.read_array_t (array)
+        if not self.Event_t_names :
+            self.read_event_t_names ()
+        if not self.Event_t.has_key (shot_line) :
+            self.read_event_t (shot_line)
+            
+        Array_t = self.Array_t[array]
+        order = Array_t['order']
+        
+        Event_t = self.Event_t[shot_line]
+        if Event_t['byid'].has_key (shot_id) :
+            event_t = Event_t['byid'][shot_id]
+        else : return Offset_t
+        
+        for o in order :
+            array_t = Array_t['byid'][o]
+            #print array_t['id_s']
+            offset_t = self.get_offset (array, array_t['id_s'], shot_line, shot_id)
+            Offset_t.append (offset_t)
+            
+        rows = calc_offset_sign (Offset_t)
+        
+        byid, order = by_id (rows, key='receiver_id_s')
+        
+        return {'byid':byid, 'order':order, 'keys':rows[0].keys ()}
+        
+    def read_experiment_t (self) :
+        '''   Read Experiment_t
+              Sets:
+                 Experiment_t['rows'] (a list of dictionaries)
+                 Experiment_t['keys'] (a list of dictionary keys)
+        '''
+        rows, keys = self.read_experiment ()
+        self.Experiment_t = {'rows':rows, 'keys':keys}
+
+    def read_event_t_names (self) :
+        '''   Read Event_t names
+              Sets:
+                 Event_t_names
+        '''
+        self.Event_t_names.append ('Event_t')
+        
+    def read_event_t (self, name) :
+        '''   Read Event_t
+              Inputs:
+                 name -> the Event_t_xxx name
+              Sets:
+                 Event_t[name]['byid'] Keyed by shot id (a list of dictionaries)
+                 Event_t[name]['order'] Keyed by order in the PH5 file (a list of dictionaries)
+                 Event_t[name]['keys'] (a list of dictionary keys)
+        '''
+        if name in self.Event_t_names :
+            rows, keys = self.ph5_g_sorts.read_events ()
+            byid, order = by_id (rows)
+            self.Event_t[name] = {'byid':byid, 'order':order, 'keys':keys}
+
+    def read_array_t_names (self) :
+        '''   Read Array_t names
+              Sets:
+                 Array_t_names
+        '''
+        self.Array_t_names = self.ph5_g_sorts.names ()
+        
+    def read_array_t (self, name) :
+        '''   Read Array_t n
+              Inputs:
+                 name -> the name of the array as a string 'Array_t_xxx'
+              Sets:
+                 Array_t[name]['byid'] Keyed by station id (a list of dictionaries)
+                 Array_t[name]['order'] Keyed in order as in PH5 file (a list of dictionaries)
+                 Array_t[name]['keys'] (a list of dictionary keys)
+        '''
+        if name in self.Array_t_names :
+            rows, keys = self.ph5_g_sorts.read_arrays (name)
+            byid, order = by_id (rows)
+            self.Array_t[name] = {'byid':byid, 'order':order, 'keys':keys}
+            
+    def read_sort_t (self) :
+        '''   Read Sort_t
+              Sets:
+                 Sort_t['rows'] (a list of dictionaries)
+                 Sort_t['keys'] (a list of dictionary keys)
+        '''
+        tmp = {}
+        rows, keys = self.ph5_g_sorts.read_sorts ()
+        for r in rows :
+            if not tmp.has_key (r['array_t_name_s']) :
+                tmp[r['array_t_name_s']] = []
+             
+            tmp[r['array_t_name_s']].append (r)
+        
+        arrays = tmp.keys ()
+        for a in arrays :
+            self.Sort_t[a] = { 'rows':tmp[a], 'keys':keys }
+            
+    def read_index_t (self) :
+        '''   Read Index_t
+              Sets:
+                 Index_t['rows'] (a list of dictionaries)
+                 Index_t['keys'] (a list of dictionary keys)
+        '''
+        rows, keys = self.ph5_g_receivers.read_index ()
+        self.Index_t = { 'rows':rows, 'keys': keys }
+        
+    def read_time_t (self) :
+        '''   Read Time_t
+              Sets:
+                 Time_t['rows'] (a list of dictionaries)
+                 Time_t['keys'] (a list of dictionary keys)
+        '''
+        rows, keys = self.ph5_g_receivers.read_time ()
+        self.Time_t = { 'rows':rows, 'keys':keys }
+        
+    def get_time_t (self, das) :
+        '''   Return Time_t as a list of dictionaries   
+              Returns:
+                 time_t (a list of dictionaries)
+        '''
+        if not self.Time_t :
+            self.read_time_t ()
+        
+        time_t = []   
+        for t in self.Time_t['rows'] :
+            if t['das/serial_number_s'] == das :
+                time_t.append (t)
+                
+        return time_t
+        
+    def read_receiver_t (self) :
+        '''   Read Receiver_t
+              Sets:
+                 Receiver_t['rows] (a list of dictionaries)
+                 Receiver_t['keys'] (a list of dictionary keys)
+        '''
+        rows, keys = self.ph5_g_receivers.read_receiver ()
+        self.Receiver_t = { 'rows':rows, 'keys':keys }
+        
+    def read_response_t (self) :
+        '''   Read Response_t
+              Sets:
+                 Response_t['rows'] (a list of dictionaries)
+                 Response_t['keys] (a list of dictionary keys)
+        '''
+        rows, keys = self.ph5_g_responses.read_responses ()
+        self.Response_t = { 'rows':rows, 'keys':keys }
+        
+    def read_das_g_names (self) :
+        '''   Read Das_g names   
+              Sets:
+                 Das_g_names (a list of dictionary keys)
+        '''
+        self.Das_g_names = self.ph5_g_receivers.alldas_g ()
+        
+    def read_das_t (self, das, start_epoch=None, stop_epoch=None) :
+        '''   Read Das_t, return Das_t keyed on DAS serial number
+              Inputs:
+                 das -> DAS serial number as string
+                 start_epoch -> epoch time in seconds
+                 stop_epoch -> epoch time in seconds
+              Sets:
+                 Das_t[das]['rows'] (a list of dictionaries)
+                 Das_t[das]['keys'] (a list of dictionary keys)
+                 
+        '''
+        if self.Das_g_names == [] : self.read_das_g_names ()
+        node = None; found = False
+
+        if das in self.Das_g_names :
+            node = self.ph5_g_receivers.getdas_g (das)
+            self.ph5_g_receivers.setcurrent (node)
+        
+        if node == None : return
+        rows_keep = []
+        rows, keys = self.ph5_g_receivers.read_das ()
+        if  stop_epoch != None and start_epoch != None :
+            for r in rows :
+                #   Start and stop for this das event window
+                start = float (r['time/epoch_l']) + float (r['time/micro_seconds_i']) / 1000000.
+                stop = start + (float (r['sample_count_i']) / float (r['sample_rate_i']) / float (r['sample_rate_multiplier_i']))
+                #   We need to keep this
+                if is_in (start, stop, start_epoch, stop_epoch) :
+                    rows_keep.append (r)
+                    found = True
+        else : rows_keep = rows 
+        
+        if len (rows_keep) > 0 :        
+            self.Das_t[das] = { 'rows':rows_keep, 'keys':keys }
+            self.num_found_das += 1
+            
+    def read_t (self, table, n=None) :
+        '''   Read table and return kef
+              Inputs:
+                 table -> Experiment_t, Sort_t, Offset_t, Event_t, Array_t requires n, Response_t, Receiver_t, Index_t, Das_t requires n, Time_t
+                 n -> the number of the table
+        '''
+        if table == "Experiment_t" :
+            self.read_experiment_t ()
+            return build_kef ("/Experiment_g/Experiment_t", self.Experiment_t['rows'])
+        elif table == "Sort_t" :
+            self.read_sort_t ()
+            keys = self.Sort_t.keys ()
+            rows = []
+            for k in keys :
+                rows += self.Sort_t[k]['rows']
+            return build_kef ("/Experiment_t/Sorts_g/Sort_t", rows)
+        elif table == "Offset_t" :
+            raise APIError (-1, "Return of Offset_t not inplemented.")
+        #   This will change once shot lines are implemented
+        elif table == "Event_t" :
+            self.read_event_t_names ()
+            rows = []
+            for en in self.Event_t_names :
+                self.read_event_t (en)
+                bi = self.Event_t[en]['byid']
+                order = self.Event_t[en]['order']
+                for o in order :
+                    rows.append (bi[o])
+            return build_kef ("/Experiment_g/Sorts_g/Event_t", rows)
+        elif table == "Array_t" :
+            n = int (n)
+            self.read_array_t_names ()
+            self.read_array_t ("Array_t_{0:03d}".format (n))
+            rows = []
+            bi = self.Array_t["Array_t_{0:03d}".format (n)]['byid']
+            order = self.Array_t["Array_t_{0:03d}".format (n)]['order']
+            for o in order :
+                rows.append (bi[o])
+            return build_kef ("/Experiment_g/Sorts_g/Array_t_{0:03d}".format (n), rows)
+        elif table == "Response_t" :
+            self.read_response_t ()
+            return build_kef ("/Experiment_g/Responses_g/Response_t", self.Response_t['rows'])
+        elif table == "Report_t" :
+            raise APIError (-1, "Return of Report_t not implemented.")
+        elif table == "Receiver_t" :
+            self.read_receiver_t ()
+            return build_kef ("/Experiment_g/Receivers_g/Receiver_t", self.Receiver_t['rows'])
+        elif table == "Index_t" :
+            self.read_index_t ()
+            return build_kef ("/Experiment_g/Receivers_g/Index_t", self.Index_t['rows'])
+        elif table == "Das_t" :
+            self.read_das_g_names ()
+            self.read_das_t (n)
+            return build_kef ("/Experiment_g/Receivers_g/Das_t_{0}/Das_t".format (n), self.Das_t[n]['rows'])
+        elif table == "Time_t" :
+            self.read_time_t ()
+            return build_kef ("/Experiment_g/Receivers_g/Time_t", self.Time_t['rows'])
+        else :
+            return None
+        
+    def cut (self, das, start_fepoch, stop_fepoch, chan=1) :
+        '''   Cut trace data and return a Trace object
+              Inputs:
+                 das -> data logger serial number
+                 start_fepoch -> time to cut start of trace as a floating point epoch
+                 stop_fepoch -> time to cut end of trace as a floating point epoch
+                 chan -> channel to cut
+        '''
+        self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch)
+        Time_t = self.get_time_t (das)
+        samples_read = 0
+        first = True
+        das_t = []
+        if not self.Das_t.has_key (das) :
+            return Trace (np.array ([]), start_fepoch, 0, 0, 0, None, das_t)
+        
+        window_start_fepoch0 = None
+        for d in self.Das_t[das]['rows'] :
+            if d['channel_number_i'] != chan :
+                continue
+            window_start_fepoch = fepoch (d['time/epoch_l'], d['time/micro_seconds_i'])
+            if window_start_fepoch0 == None : window_start_fepoch0 = window_start_fepoch
+            window_sample_rate =  d['sample_rate_i'] / float (d['sample_rate_multiplier_i'])
+            window_samples = d['sample_count_i']
+            window_stop_fepoch = window_start_fepoch + (window_samples / window_sample_rate)
+            #   Number of samples left to cut
+            cut_samples = int (((stop_fepoch - start_fepoch) * window_sample_rate) - samples_read)
+            #   How many samples into window to start cut
+            cut_start_sample = int ((start_fepoch - window_start_fepoch) * window_sample_rate)
+            #   If this is negative we must be at the start of the next recording window
+            if cut_start_sample < 0 : cut_start_sample = 0
+            #   Last sample in this recording window that we need to cut
+            cut_stop_sample = cut_start_sample + cut_samples
+            #   Read the data trace from this window
+            trace_reference = self.ph5_g_receivers.find_trace_ref (d['array_name_data_a'].strip ())
+            data_tmp = self.ph5_g_receivers.read_trace (trace_reference, 
+                                                        start = cut_start_sample,
+                                                        stop = cut_stop_sample)
+            current_trace_type, current_trace_byteorder = self.ph5_g_receivers.trace_info (trace_reference)
+            if first :
+                first = False
+                needed_samples = cut_samples
+                dt = 'int32'
+                if current_trace_type == 'float' :
+                    dt = 'float32'
+                    
+                data = np.array ([], dtype=dt)
+                #data.resize (cut_samples)
+                #data = np.resize (data, (1, cut_samples))
+                #print len (data)
+            else :
+                #   Time difference between the end of last window and the start of this one
+                time_diff = abs (new_window_start_fepoch - window_start_fepoch)
+                if time_diff > (1. / window_sample_rate) :
+                    sys.stderr.write ("Data not continuous. Difference: {0} Sample interval: {1}\n".format (time_diff, (1. / window_sample_rate)))
+                    #break
+                                
+            if len (data_tmp) > 0 :
+                data = np.append (data, data_tmp)
+                #print len (data), data.dtype
+                #data.extend (data_tmp)
+                samples_read += len (data_tmp)
+                das_t.append (d)
+                
+            new_window_start_fepoch = window_stop_fepoch
+            
+        time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
+            
+        trace = Trace (data, start_fepoch, time_correction, samples_read, window_sample_rate, current_trace_type, das_t)
+            
+        return trace
+            
+#
+###   Mix-ins
+#
+def by_id (rows, key='id_s') :
+    order = []
+    byid = {}
+    for r in rows :
+        if r.has_key (key) :
+            Id = r[key]
+            byid[Id] = r
+            order.append (Id)
+            
+    return byid, order
+#
+###
+#
+def run_geod (lat0, lon0, lat1, lon1) :
+    UNITS = 'm' 
+    ELLIPSOID = 'WGS84'
+
+    flds = []
+    
+    config = "+ellps={0}".format (ELLIPSOID)
+    
+    g = Geod (config)
+    
+    az, baz, dist = g.inv (lon0, lat0, lon1, lat1)
+    
+    if dist :
+        dist /= FACTS_M[UNITS]
+        
+    #   Return list containing azimuth, back azimuth, distance
+    return az, baz, dist
+#
+###
+#
+def deg2dms (dgs) :
+    f, d = math.modf (dgs)
+    f = abs (f)
+    m = 60.0 * f
+    f, m = math.modf (m)
+    #print math.frexp (f), math.frexp (m)
+    s = 60.0 * f
+    dms = "%dd%02d'%09.6f\"" % (d, m, s)
+    #print dms
+    return dms
+#
+###
+#
+#   Convert from polar to rectangular coordinates
+def rect(r, w, deg=0): 
+    # radian if deg=0; degree if deg=1 
+    from math import cos, sin, pi 
+    if deg: 
+        w = pi * w / 180.0 
+    return r * cos(w), r * sin(w) 
+
+def linreg(X, Y): 
+    if len(X) != len(Y): 
+        raise ValueError, 'Unequal length, X and Y. Can\'t do linear regression.' 
+    
+    N = len(X) 
+    Sx = Sy = Sxx = Syy = Sxy = 0.0 
+    for x, y in map(None, X, Y): 
+        Sx = Sx + x 
+        Sy = Sy + y 
+        Sxx = Sxx + x*x 
+        Syy = Syy + y*y 
+        Sxy = Sxy + x*y 
+        
+    det = Sxx * N - Sx * Sx
+    if det == 0 :
+        return 0.0, 0.0
+    
+    a, b = (Sxy * N - Sy * Sx)/det, (Sxx * Sy - Sx * Sxy)/det 
+    
+    meanerror = residual = 0.0 
+    for x, y in map(None, X, Y): 
+        meanerror = meanerror + (y - Sy/N)**2 
+        residual = residual + (y - a * x - b)**2 
+        
+    RR = 1 - residual/meanerror
+    if N > 2 :
+        ss = residual / (N-2)
+    else :
+        ss = 1.
+        
+    #Var_a, Var_b = ss * N / det, ss * Sxx / det 
+    return a, b, (RR, ss)
+
+
+def calc_offset_sign (offsets) :
+    '''   offsets is a list of offset_t   '''
+    if not offsets : return []
+    from math import atan, degrees
+    X = []; Y = []; O = []
+    offsetmin = 21 ** 63 - 1
+    for offset_t in offsets :
+        try :
+            w = offset_t['azimuth/value_f']
+            r = offset_t['offset/value_d']
+            if abs (r) < abs (offsetmin) :
+                offsetmin = r
+                
+            x, y = rect (r, w, deg=True)
+            X.append (x); Y.append (y)
+        except Exception, e :
+            sys.stderr.write ("%s\n" % e)
+            
+    #   The seismic line is abx + c (ab => w)   
+    ab, c, err = linreg (X, Y)
+    
+    #sys.stderr.write ("Linear regression: {0}x + {1}, R^2 = {2}, s^2 = {3}\n".format (ab, c, err[0], err[1]))
+    
+    if abs (ab) > 1 :
+        regangle = degrees (atan (1./ab))
+    else :
+        regangle = degrees (atan (ab))
+        
+    sig = 0
+    flop = False
+    for offset_t in offsets :
+        try :
+            #   Rotate line to have zero slope
+            a = offset_t['azimuth/value_f']
+            
+            w = a - regangle
+            #   Pick initial sign
+            if sig == 0 :
+                if w < 0 :
+                    sig = -1
+                else :
+                    sig = 1
+                    
+            offset_t['offset/value_d'] = sig * float (offset_t['offset/value_d'])
+            
+            #   Once we pass the minimum offset flip the sign
+            if abs (offsetmin) == abs (offset_t['offset/value_d']) and not flop :
+                flop = True
+                sig *= -1
+
+            O.append (offset_t)
+        except Exception, e :
+            sys.stderr.write ("%s\n" % e)
+        
+    sys.stdout.flush ()
+    #   Returning Oh not zero
+    return O
+#
+##
+#
+def is_in (start, stop, start_epoch, stop_epoch) :
+    '''
+       start is start of window
+       stop is stop of window
+       start_epoch is start of desired data
+       stop_epoch is stop of desired data
+    '''
+    #   start_epoch is in between start and stop
+    if start_epoch >= start and start_epoch <= stop :
+        return True
+    #   stop_epoch is in between start and stop
+    elif stop_epoch >= start and stop_epoch <= stop :
+        return True
+    #   entire recording window is in between start_epoch and stop_epoch
+    elif start_epoch <= start and stop_epoch >= stop :
+        return True
+    else :
+        return False
+#
+###
+#
+def build_kef (ts, rs) :
+    '''
+       ts -> table string
+       rs -> rows object
+    '''
+    tdoy = TimeDOY.TimeDOY (epoch=time.time ())
+    ret = "#\n###   Written by ph5API v{0} at {1}\n#\n".format (PROG_VERSION, tdoy.getFdsnTime ())
+    i = 0
+    for r in rs :
+        i += 1
+        ret += "#   {0}\n".format (i)
+        ret += ts + '\n'
+        keys = r.keys ()
+        for k in keys :
+            line = "\t{0} = {1}\n".format (k, r[k])
+            ret += line
+            
+    return ret
+#
+###
+#
+def fepoch (epoch, ms) :
+    '''
+    Given ascii epoch and miliseconds return epoch as a float.
+    '''
+    epoch = float (int (epoch))
+    secs = float (int (ms)) / 1000000.0
+    
+    return epoch + secs
+
+def _cor (start_fepoch, stop_fepoch, Time_t) :
+    '''   Calculate clock correction in miliseconds   '''
+    if not Time_t :
+        return 0
+    
+    time_t = None
+    for t in Time_t :
+        data_start = fepoch (t['start_time/epoch_l'], t['start_time/micro_seconds_i'])
+        data_stop = fepoch (t['end_time/epoch_l'], t['end_time/micro_seconds_i'])
+        if is_in (data_start, data_stop, start_fepoch, stop_fepoch) :
+            time_t = t
+            break
+        
+    if time_t == None :
+        return 0
+    
+    if time_t['slope_d'] > 0.01 :
+        raise APIError (-2, "Drift rate exceeds 1 percent.")
+    
+    mid_fepoch = start_fepoch + ((stop_fepoch - start_fepoch) / 2.)
+    delta_fepoch = mid_fepoch - data_start
+    
+    time_correction_ms = int (time_t['slope_d'] * 1000. * delta_fepoch) * -1
+    return time_correction_ms
+
+if __name__ == '__main__' :
+    p = ph5 (path='/home/azevedo/Data/10-016', nickname='master.ph5')
+    O = p.calc_offsets ('Array_t_001', '101'); p.close ()
+    sys.exit ()
+    #   Initialize PH5
+    p = ph5 (path='/home/azevedo/Desktop/11-001/11-001', nickname='master.ph5')
+    #   Create dictionary to hold trace objects
+    d = {}
+    #   Cut Z
+    d['Z'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=1)
+    #   Cut N
+    d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2)
+    #   Cut E
+    d['E'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=3)
+    #   Display trace data
+    for c in ('Z', 'N', 'E') :
+        print d[c].start_time.getISOTime ()
+        i = 0
+        for point in d[c].data :
+            print i, point
+            i += 1
+    #   Close PH5
+    p.close ()
+    #   Initialize new PH5
+    p = ph5 (path='/home/azevedo/Desktop/Red_River', nickname='master.ph5')
+    #   Read Experiment_t, return kef
+    t1 = p.read_t ("Experiment_t")
+    print t1
+    #   Read Sort_t, return kef
+    t2 = p.read_t ("Sort_t")
+    #   Read Event_t, return kef
+    t3 = p.read_t ("Event_t")
+    #   Read Array_t_001, return kef
+    t4 = p.read_t ("Array_t", n=1)
+    #   Read Response_t, return kef
+    t5 = p.read_t ("Response_t")
+    #   Read Receiver_t, return kef
+    t6 = p.read_t ("Receiver_t")
+    #   Read Index_t, return kef
+    t7 = p.read_t ("Index_t")
+    #   Read Das_t for sn 10550, return kef
+    t8 = p.read_t ("Das_t", "10550")
+    #   Read Time_t, return kef
+    t9 = p.read_t ("Time_t")
+    #   Read data in shot order, return Trace object
+    p.read_array_t_names ()
+    for n in p.Array_t_names :
+        if not p.Array_t.has_key (n) :
+            p.read_array_t (n)
+            
+        array_t = p.Array_t[n]['byid']
+        for k in array_t.keys () :
+            das = array_t[k]['das/serial_number_s']
+            #   Cut, DAS sn, start epoch, stop epoch
+            d = p.cut (das, 1200913195.333, 1200913200.5)
+            print d.nsamples
+    #   Read data in receiver order, return Trace object
+    for n in p.Event_t_names :
+        if not p.Event_t.has_key (n) :
+            p.read_event_t (n)
+            
+        event_t = p.Event_t[n]['byid']
+        for k in event_t.keys () :
+            t0 = fepoch (event_t[k]['time/epoch_l'], event_t[k]['time/micro_seconds_i'])
+            #   Cut, DAS sn, event time (as epoch), event time + length
+            d = p.cut ('10463', t0, t0 + 10.)
+            i = 0
+            print d.start_time.getFdsnTime ()
+            for point in d.data :
+                print i, point
+                i += 1
+            pass
+    p.close ()

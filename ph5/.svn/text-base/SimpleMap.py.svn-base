@@ -1,0 +1,216 @@
+#!/usr/bin/env pnpython2
+#
+#   This module provides classes to build simple maps.
+#   LocationMap - displays the experiment location on a map of the globe
+#   StationMap - displays station locations with topography
+#
+#   Steve Azevedo, Feb 2008
+#
+
+PROG_VERSION = '2009.287'
+
+#from matplotlib.toolkits.basemap import Basemap, shiftgrid
+from mpl_toolkits.basemap import Basemap, shiftgrid
+#from pylab import title, show, arange, pi, load, cm, figure, text
+from pylab import title, show, arange, pi, mlab, cm, figure, text
+
+class point (object) :
+    __keys__ = ('lat', 'lon', 'elev')
+    
+class LocationMap :
+    '''
+       Generate world map with a red square at point. Defaults to 
+       Robinson projection and course resolution.
+    '''
+    def __init__ (self, point, proj = 'robin', res = 'c', width = None, height = None) :
+        self.lat = point.lat
+        self.lon = point.lon
+        self.fig = figure ()
+        self.map = Basemap (width = width, height = height,
+                            resolution = res, projection = proj,
+                            lat_0 = self.lat, lon_0 = self.lon)
+        
+    def display (self) :
+        '''
+           Display world map with red square at self.lat, self.lon
+        '''
+        self.map.drawmapboundary(fill_color='aqua')
+        # draw coasts and fill continents.
+        self.map.drawcoastlines(linewidth=0.5)
+        self.map.fillcontinents(color='tan',lake_color='aqua')
+        # 20 degree graticule.
+        self.map.drawparallels(arange(-80,80,20))
+        self.map.drawmeridians(arange(-180,180,20))
+        # draw a red square at the center.
+        xpt, ypt = self.map(self.lon, self.lat)
+        self.map.plot([xpt],[ypt],'sr') 
+        # draw the title.
+        title(self.title)
+        #show()
+
+    def settitle (self, text) :
+        '''
+           Set map title
+        '''
+        self.title = text
+        
+    def topo (self, topofile, lonsfile, latsfile) :
+        '''
+           Broken (as of 2008.060)
+        '''
+        topoin = mlab.load (topofile)
+        lons = mlab.load (lonsfile)
+        lats = mlab.load (latsfile)
+        
+        #   Shift lons to -180 to 180 instead of 20 to 380
+        topoin, lons = shiftgrid (180., topoin, lons, start = False)
+        xdif = self.map.xmax - self.map.xmin
+        ydif = self.map.ymax - self.map.ymin
+        #nx = int (1000 * xdif); ny = int (1000 * ydif)
+        nx = int((self.map.xmax-self.map.xmin)/40000.)+1; ny = int((self.map.ymax-self.map.ymin)/40000.)+1
+        #   Transform to nx X ny regularly spaced native projection grid
+        topodat,x,y = self.map.transform_scalar(topoin,lons,lats,nx,ny,returnxy=True)
+        self.map.imshow (topodat, cm.jet)
+
+class StationMap :
+    '''
+       Generate a map of the bounding area with topography of the 
+       experiment and plot the stations on it.
+    '''
+    def __init__ (self, upperleft, lowerright, proj = 'cyl', res = 'f', ticks = False) :
+        self.upperleft = upperleft
+        self.lowerright = lowerright
+        self.fig = figure ()
+        
+        self.map = Basemap (llcrnrlon = upperleft.lon,
+                            llcrnrlat = lowerright.lat,
+                            urcrnrlon = lowerright.lon,
+                            urcrnrlat = upperleft.lat,
+                            projection = proj,
+                            resolution = res,
+                            suppress_ticks = ticks)
+            
+        self.clear ()
+        
+    def clear (self) :
+        '''   Clear all of the points from the array (not the map)   '''
+        self.points = []
+        
+    def addpoint (self, p) :
+        '''   Add a point to the array   '''
+        self.points.append (p)
+        
+    def plotpoints (self, sym = 'v', col = 'k') :
+        '''   
+           Place points in array on map.
+           sym == symbols
+            -     : solid line
+            --    : dashed line
+            -.    : dash-dot line
+            :     : dotted line
+            .     : points
+            ,     : pixels
+            o     : circle symbols
+            ^     : triangle up symbols
+            v     : triangle down symbols
+            <     : triangle left symbols
+            >     : triangle right symbols
+            s     : square symbols
+            +     : plus symbols
+            x     : cross symbols
+            D     : diamond symbols
+            d     : thin diamond symbols
+            1     : tripod down symbols
+            2     : tripod up symbols
+            3     : tripod left symbols
+            4     : tripod right symbols
+            h     : hexagon symbols
+            H     : rotated hexagon symbols
+            p     : pentagon symbols
+            |     : vertical line symbols
+            _     : horizontal line symbols
+            steps : use gnuplot style 'steps' # kwarg only
+            
+           col == colors
+            b  : blue
+            g  : green
+            r  : red
+            c  : cyan
+            m  : magenta
+            y  : yellow
+            k  : black
+            w  : white
+        '''
+        style = sym + col
+        for p in self.points :
+            xpt, ypt = self.map (p.lon, p.lat)
+            self.map.plot ([xpt], [ypt], style)
+            
+    def settitle (self, text) :
+        '''
+           Place map title
+        '''
+        title (text)
+        
+    def topo (self, topofile, lonsfile, latsfile) :
+        '''
+           Generate an image of the topography for the area
+           and place it on the map. Use 'summer' color map
+           yellow -> green where yellow represents higher
+           elevations.
+        '''
+        topoin = mlab.load (topofile)
+        lons = mlab.load (lonsfile)
+        lats = mlab.load (latsfile)
+        
+        #   Shift lons to -180 to 180 instead of 20 to 380
+        topoin, lons = shiftgrid (180., topoin, lons, start = False)
+        xdif = self.map.xmax - self.map.xmin
+        ydif = self.map.ymax - self.map.ymin
+        nx = int (1000 * xdif); ny = int (1000 * ydif)
+        #   Transform to nx X ny regularly spaced native projection grid
+        topodat,x,y = self.map.transform_scalar(topoin,lons,lats,nx,ny,returnxy=True)
+        self.map.imshow (topodat, cm.summer)
+        
+    def display (self) :
+        '''   Display the map   '''
+        self.map.drawcoastlines ()
+        self.map.drawrivers ()
+        self.map.drawcountries ()
+        self.map.drawstates ()
+        self.map.drawparallels(arange(-80,80,0.5))
+        self.map.drawmeridians(arange(-180,180,0.5))
+        self.map.fillcontinents (color = 'coral', lake_color = 'aqua')
+        #show ()
+        
+if __name__ == '__main__' :
+    import string, sys
+    fh = open ('lat-lon.txt')
+    ul = point ()
+    ul.lat = 37.5; ul.lon = 94.0
+    lr = point ()
+    lr.lat = 34.5; lr.lon = 96.0
+    m = StationMap (ul, lr)
+    m.settitle ("INDEPTH IV Stations")
+    #
+    while 1 :
+        line = fh.readline ()
+        if not line : break
+        lat, lon, elev = string.split (line)
+        p = point ()
+        p.lat = lat; p.lon = lon; p.elev = elev
+        m.addpoint (p)
+    
+    m.topo ('etopo20data.gz', 'etopo20lons.gz', 'etopo20lats.gz')
+    m.plotpoints (col='m', sym='.')
+    print "Station"
+    m.display ()
+    
+    al = point ()
+    al.lat = 36.0; al.lon = 95.0
+    s = LocationMap (al, res = 'c')
+    print "Location"
+    s.settitle ("INDEPTH IV")
+    s.display ()
+    s.topo ('etopo20data.gz', 'etopo20lons.gz', 'etopo20lats.gz')
+    show ()

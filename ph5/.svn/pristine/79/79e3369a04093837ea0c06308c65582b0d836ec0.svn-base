@@ -1,0 +1,138 @@
+#!/usr/bin/env python
+
+#
+#   Class to ease conversion from year/doy to year/month/day
+#
+#   Steve Azevedo, 000119
+#   Nov 12, 2006 -- Added doy, epoch calculations
+#
+import time, os, math
+
+PROG_VERSION = '2013.029'
+
+os.environ['TZ'] = 'UTC'
+time.tzset ()
+
+class TimeDoy :
+    def __init__ (self) :
+        self.days_in_month      = (31,28,31,30,31,30,31,31,30,31,30,31,31)
+        self.days_in_month_leap = (31,29,31,30,31,30,31,31,30,31,30,31,31)
+        
+        self.number_month = {'Jan':1,'Feb':2,'Mar':3,'Apr':4,'May':5,'Jun':6,
+                             'Jul':7,'Aug':8,'Sep':9,'Oct':10,'Nov':11,'Dec':12 }
+        self.ascii_month  = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',
+                             7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec' }
+
+    def is_leap_year (self, year) :
+        return (year % 4 == 0 and year % 100 != 0 or year % 400 == 0)
+
+    def getMonthDay (self, year, doy) :
+        if self.is_leap_year (year) :
+            days_in_month = self.days_in_month_leap
+        else :
+            days_in_month = self.days_in_month
+        
+        totalDays = 0
+        month = 0
+        day = 0
+        for i in range (13) :
+            totalDays = totalDays + days_in_month[i]
+            if totalDays > doy :
+                totalDays = totalDays - days_in_month[i]
+                #
+                month = i + 1
+                day = doy - totalDays
+                if day == 0 :
+                    day = days_in_month[i - 1]
+                    month = month - 1
+                #print totalDays, doy, days_in_month[i]
+                break
+
+        return (month, day)
+    
+    def doy (self, mo, da, yr) :
+        '''   month 1-12   '''
+        #mo = mo - 1, Month -> 0-11
+        if self.is_leap_year (yr) :
+            days_in_month = self.days_in_month_leap
+        else :
+            days_in_month = self.days_in_month
+            
+        jd = 0
+        m = 0
+        for m in range (mo) :
+            jd = jd + days_in_month[m]
+        
+        if da != days_in_month[m] :
+            jd = jd + da
+        
+        return jd
+    
+    def epoch (self, yr, doy, hr, mn, sc) :
+        mo, da = self.getMonthDay (yr, doy)
+        e = time.mktime ((yr, mo, da, hr, mn, sc, -1, doy, -1))
+        
+        return e
+    
+    #   Broken
+    def getPasscalTime (self, amo, da, hr, mn, sc, yr) :
+        mo = self.number_month[amo] - 1
+        jd = self.doy (mo, da, yr)
+        
+        return "%4d:%03d:%02d:%02d:%02d" % (yr, jd, hr, mn, sc)
+    
+    def epoch2PasscalTime (self, epoch, ms = False) :
+        secs, sc = math.modf (epoch)
+        ttuple = time.gmtime (sc)
+        
+        if ms :
+            return "%4d:%03d:%02d:%02d:%02d.%03d" % (ttuple[0],
+                                                     ttuple[7],
+                                                     ttuple[3],
+                                                     ttuple[4],
+                                                     ttuple[5],
+                                                     int (secs * 1000.0))
+        else :
+            return "%4d:%03d:%02d:%02d:%09.6f" % (ttuple[0],
+                                                  ttuple[7],
+                                                  ttuple[3],
+                                                  ttuple[4],
+                                                  float (ttuple[5]) + secs)
+        
+if __name__ == "__main__" :
+    tm = TimeDoy ()
+    print "Year: 2004, Doy: 335"
+    os.system ("calday 335 2004")
+    moda = tm.getMonthDay (2004, 335)
+    jd = tm.doy (moda[0], moda[1], 2004)
+    print ("Month: %d Day: %d DOY: %d" % (moda[0], moda[1], jd))
+    print "_-" * 40
+    print "Year: 2004, Doy: 31"
+    os.system ("calday 31 2004")
+    moda = tm.getMonthDay (2004, 31)
+    jd = tm.doy (moda[0], moda[1], 2004)
+    print ("Month: %d Day: %d DOY: %d" % (moda[0], moda[1], jd))
+    print "_-" * 40
+    print "Year: 2005, Doy: 360"
+    os.system ("calday 360 2005")
+    moda = tm.getMonthDay (2005, 360)
+    jd = tm.doy (moda[0], moda[1], 2005)
+    print ("Month: %d Day: %d DOY: %d" % (moda[0], moda[1], jd))
+    print "_-" * 40
+    print "Year: 1980, Doy: 360"
+    os.system ("calday 360 1980")
+    moda = tm.getMonthDay (1980, 360)
+    jd = tm.doy (moda[0], moda[1], 1980)
+    print ("Month: %d Day: %d DOY: %d" % (moda[0], moda[1], jd))
+    print "_-" * 40
+    print "Epoch: 1186765845, 2007:222:17:10:45"
+    os.system ("calday 222 2007")
+    print tm.epoch (2007, 222, 17, 10, 45)
+    
+
+    
+
+
+
+
+

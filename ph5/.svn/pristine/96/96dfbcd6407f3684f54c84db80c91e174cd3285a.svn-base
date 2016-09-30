@@ -1,0 +1,143 @@
+#!/usr/bin/env pnpython2
+#
+#   Convert a batch file to a dep file.
+#
+#   Lots-o-gotchas in da code
+#
+
+import string, time, os
+import TimeDoy
+
+os.environ['TZ'] = 'UTC'
+time.tzset ()
+
+class receiver (object) :
+    __slots__ = ("id", "lat", "lon", "elev", "array",
+                 "dep_time",
+                 "sensor_type", "sensor_sn",
+                 "inst_type", "inst_sn",
+                 "samplerate",
+                 "channel")
+    
+class event (object) :
+    __slots__ = ("epoch", "lat", "lon", "elev", "mag", "ascii_time", "PNSW_name")
+    
+fh = open ("texanBatch")
+
+tdoy = TimeDoy.TimeDoy ()
+
+RECV = {}
+ORDER = []
+SHOTS = []
+r = None
+while 1 :
+    line = fh.readline ()
+    if not line : break
+    flds = string.split (line)
+    if not flds : continue
+    what = string.strip (flds[0])
+    
+    flds = flds[1:]
+    
+    if what == 'sta' :
+        if r != None :
+            RECV[r.id] = r
+            
+        r = receiver ()
+        r.id = string.strip (flds[0])
+        r.lat = string.strip (flds[1])
+        r.lon = string.strip (flds[2])
+        r.elev = string.strip (flds[3])
+        r.array = string.join (flds[4:], "-")
+        ORDER.append (flds[0])
+    elif what == 'time' :
+        (da, mo, yr) = string.split (flds[0], '/')
+        (hr, mn, sc) = string.split (flds[1], ':')
+        doy = tdoy.doy (7, int (da), int (yr))
+        #epoch = tdoy.epoch (int (yr), doy, int (hr), int (mn), int (sc))        
+        r.dep_time = "%4d:%03d:%02d:%02d:%02d.000" % (int (yr), doy, int (hr), int (mn), int (sc))
+    elif what == 'datalogger' :
+        r.inst_type = string.strip (flds[0])
+        r.inst_sn = string.strip (flds[1])
+    elif what == 'sensor' :
+        r.sensor_type = string.strip (flds[0])
+        r.sensor_sn = string.strip (flds[1])
+    elif what == 'samplerate' :
+        r.samplerate = string.strip (flds[0])[:-3]
+    elif what == 'channel' :
+        r.channel = string.strip (flds[0])
+
+RECV[r.id] = r
+
+fh.close ()
+
+fh = open ("shotInfo.txt")
+
+i = 1
+
+while 1 :
+    line = fh.readline ()
+    if not line : break
+    flds = string.split (line)
+    
+    s = event ()
+    
+    s.PNSW_name = flds[2]
+    (da, mo, yr) = string.split (flds[0], '-')
+    (hr, mn, sc) = string.split (flds[1], ':')
+    doy = tdoy.doy (int (mo), int (da), int (yr))
+    epoch = tdoy.epoch (int (yr), doy, int (hr), int (mn), int (sc))
+    s.epoch = epoch
+    s.ascii_time = "%4d:%03d:%02d:%02d:%02d.000" % (int (yr), doy, int (hr), int (mn), int (sc))
+    
+    #lat = flds[3]; lon = flds[4]; elev = flds[5]
+    s.lat = flds[3]
+    s.lon = flds[4]
+    s.elev = flds[5]
+    
+    mag = flds[6]
+    
+    s.mag = mag
+    
+    SHOTS.append (s)
+    
+fh.close ()
+
+i = 0
+for s in SHOTS :
+    i += 1
+    print "SHOT;%s;%d;%s;N%s;W%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (s.PNSW_name,       #   ID
+                                                                   i,                 #   Station
+                                                                   '',                #   Line
+                                                                   s.lat,             #   Lat
+                                                                   s.lon[1:],         #   Lon
+                                                                   s.elev,            #   Elev
+                                                                   s.ascii_time,      #   Event time
+                                                                   '',                #   Pre-trig
+                                                                   '',                #   Post-trig
+                                                                   '',                #   Sample rate
+                                                                   '',                #   Depth
+                                                                   s.mag,             #   Magnitude
+                                                                   '',                #   Reduction velocity
+                                                                   '',                #   Radius
+                                                                   'coda magnitudes') #   Comment
+    
+for k in ORDER :
+    r = RECV[k]
+    print "RECV;%s;%s;%s;%s;%s;%s/%s;%s;N%s;W%s;%s;%s;%s;%s;%s;%s" % (r.inst_sn,         #   Sensor SN
+                                                                      r.id,              #   Station ID
+                                                                      r.array,           #   Line
+                                                                      r.inst_type,       #   Receiver type
+                                                                      '1',               #   Channel
+                                                                      r.sensor_type,
+                                                                      r.sensor_sn,       #   Sensor type/sn
+                                                                      '',                #   Uphole?
+                                                                      r.lat,             #   lat
+                                                                      r.lon[1:],         #   lon
+                                                                      r.elev,            #   elev
+                                                                      '',                #   team
+                                                                      r.dep_time,        #   Deployment time
+                                                                      '',                #   Pick up time
+                                                                      '',                #   Shots covered
+                                                                      '')                #   comment
+    

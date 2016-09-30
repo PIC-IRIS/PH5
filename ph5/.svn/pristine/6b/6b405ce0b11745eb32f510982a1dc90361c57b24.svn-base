@@ -1,0 +1,42 @@
+#!/usr/bin/env pnpython2
+
+import Experiment, Kef, columns
+import sys, os, os.path, time
+
+PROG_VERSION = '2010.319'
+PH5 = None; EX = None; PATH = None
+
+#   Force time zone to UTC
+os.environ['TZ'] = 'UTC'
+time.tzset ()
+
+def initializeExperiment () :
+    global EX, PH5, PATH
+    
+    EX = Experiment.ExperimentGroup (nickname = PH5, currentpath = PATH)
+    EDIT = True
+    EX.ph5open (EDIT)
+    EX.initgroup ()
+    
+def closePH5 () :
+    global EX
+    EX.ph5close ()
+    
+if __name__ == '__main__' :
+    PH5 = sys.argv[1]
+    PATH = '.'
+    
+    if not os.path.exists (PH5) :
+        sys.stderr.write ("Can't find {0:s}\n".format (PH5))
+        sys.stderr.write ("Usage: create_empty_sort_array path_to_ph5_file\n")
+        sys.exit ()
+        
+    initializeExperiment ()
+    
+    name = EX.ph5_g_sorts.nextName ()
+    
+    sys.stderr.write ("Creating: /Experiment_g/Sorts_g/{0:s}\n".format (name))
+    
+    EX.ph5_g_sorts.newSort (name)
+    
+    closePH5 ()

@@ -1,0 +1,503 @@
+#!/usr/bin/env pnpython2
+#
+#   A program to query a ph5 file. Generates reports in text format.
+#
+#   Steve Azevedo, January 2007
+#
+
+import sys, os, time, copy
+import Experiment
+
+PROG_VERSION = '2007.192'
+
+#   List of rows_keys as returned by ph5_g_sorts.read_sorts ()
+SORT_T = []
+#   Dictionary keyd on array_t_name_s of lists of rows_keys as returned by ph5_g_sorts.read_arrays ()
+ARRAY_T = {}
+#   List of rows_keys as returned by ph5_g_sorts.read_events ()
+EVENT_T = []
+#
+DAS = []
+#   List of rows_keys as returned bu ph5_g_Experiment.read_experiment ()
+EXPERIMENT_T = []
+#   List of rows_keys as returned by ph5_g_reports.read_reports ()
+REPORTS_T = []
+
+#   These dictionarys map table column names to report column labels
+#   /Experiment_g/Experiment_t
+experiment_kv = {'PIs_s':'Principal Investigators',
+                 'institutions_s':'Institution',
+                 'longname_s':'Experiment Name',
+                 'nickname_s':'Experiment Nickname',
+                 'north_west_corner/X/units_s':'NW Corner (units)',
+                 'north_west_corner/X/value_d':'NW Corner X',
+                 'north_west_corner/Y/units_s':'NW Corner (units)',
+                 'north_west_corner/Y/value_d':'NW Corner Y',
+                 'north_west_corner/Z/units_s':'NW Corner (units)',
+                 'north_west_corner/Z/value_d':'NW Corner Z',
+                 'north_west_corner/coordinate_system_s':'NW Corner Coordinate System',
+                 'north_west_corner/description_s':'NW Corner Description',
+                 'north_west_corner/ellipsoid_s':'NW Corner Ellipsoid',
+                 'north_west_corner/projection_s':'NW Corner Projection',
+                 'south_east_corner/X/units_s':'SE Corner (units)',
+                 'south_east_corner/X/value_d':'SE Corner X',
+                 'south_east_corner/Y/units_s':'SE Corner (units)',
+                 'south_east_corner/Y/value_d':'SE Corner Y',
+                 'south_east_corner/Z/units_s':'SE Corner (units)',
+                 'south_east_corner/Z/value_d':'SE Corner Z',
+                 'south_east_corner/coordinate_system_s':'SE Corner Coordinate System',
+                 'south_east_corner/description_s':'SE Corner Description',
+                 'south_east_corner/ellipsoid_s':'SE Corner Ellipsoid',
+                 'south_east_corner/projection_s':'SE Corner Projection',
+                 'summary_paragraph_s':'Experiment Summary',
+                 'time_stamp/ascii_s':'Time of Entry',
+                 'time_stamp/epoch_l':'Epoch of Entry',
+                 'time_stamp/micro_seconds_i':'Epoch us',
+                 'time_stamp/type_s':'Type'}
+#   /Experiment_g/Sorts_g/Sort_t
+sort_kv = {'array_name_s':'Name',
+           'array_t_name_s':'Internal Name',
+           'description_s':'Description',
+           'end_time/ascii_s':'End Time',
+           'end_time/epoch_l':'Ending Epoch',
+           'end_time/micro_seconds_i':'Ending Epoch us',
+           'end_time/type_s':'Type',
+           'start_time/ascii_s':'Start Time',
+           'start_time/epoch_l':'Starting Epoch',
+           'start_time/micro_seconds_i':'Starting Epoch us',
+           'start_time/type_s':'Type',
+           'time_stamp/ascii_s':'Time Stamp',
+           'time_stamp/epoch_l':'Time Stamp Epoch',
+           'time_stamp/micro_seconds_i':'Time Stamp Epoch us',
+           'time_stamp/type_s':'Type'}
+#   /Experiment_g/Sorts_g/Array_t_nnn
+array_kv = {'das/manufacturer_s':'DAS Manufacturer',
+            'das/model_s':'DAS Model',
+            'das/notes_s':'DAS Notes',
+            'das/serial_number_s':'DAS Serial Number',
+            'deploy_time/ascii_s':'Deployment Time',
+            'deploy_time/epoch_l':'Deployment Epoch',
+            'deploy_time/micro_seconds_i':'Deployment us',
+            'deploy_time/type_s':'Type',
+            'description_s':'Description',
+            'id_s':'Stake ID',
+            'location/X/units_s':'Units',
+            'location/X/value_d':'X',
+            'location/Y/units_s':'Units',
+            'location/Y/value_d':'Y',
+            'location/Z/units_s':'Units',
+            'location/Z/value_d':'Z',
+            'location/coordinate_system_s':'Coordinate System',
+            'location/description_s':'Description',
+            'location/ellipsoid_s':'Ellipsoid',
+            'location/projection_s':'Projection',
+            'pickup_time/ascii_s':'Pickup Time',
+            'pickup_time/epoch_l':'Pickup Epoch',
+            'pickup_time/micro_seconds_i':'Pickup us',
+            'pickup_time/type_s':'Type',
+            'sensor/manufacturer_s':'Geophone Manufacturer',
+            'sensor/model_s':'Geophone Model',
+            'sensor/notes_s':'Geophone Notes',
+            'sensor/serial_number_s':'Geophone Serial Number'}
+#   /Experiment_g/Sorts_g/Offset_t
+offset_kv = {'event_id_s':'Event ID',
+             'offset/units_s':'Units',
+             'offset/value_d':'Offset',
+             'receiver_id_s':'Receiver ID'}
+#   /Experiment_g/Sorts_g/Event_t
+event_kv = {'depth/units_s':'Units',
+            'depth/value_d':'Depth',
+            'description_s':'Description',
+            'id_s':'Event ID',
+            'location/X/units_s':'Units',
+            'location/X/value_d':'X',
+            'location/Y/units_s':'Units',
+            'location/Y/value_d':'Y',
+            'location/Z/units_s':'Units',
+            'location/Z/value_d':'Z',
+            'location/coordinate_system_s':'Coordinate System',
+            'location/description_s':'Description',
+            'location/ellipsoid_s':'Ellipsoid',
+            'location/projection_s':'Projection',
+            'size/units_s':'Units',
+            'size/value_d':'Size',
+            'time/ascii_s':'Event Time',
+            'time/epoch_l':'Event Epoch',
+            'time/micro_seconds_i':'Event us',
+            'time/type_s':'Type'}
+#   /Experiment_g/Reports_g/Report_t
+report_kv = {'array_name_a':'Internal Name',
+             'description_s':'Description',
+             'format_s':'Report Format',
+             'title_s':'Title'}
+#   This is not from a single table
+das_kv = {'das':'DAS Serial Number',
+          'epoch':'Start Time Epoch',
+          'time':'Start Time',
+          'length':'Trace Length Seconds',
+          'channel':'Recorder Channel'}
+
+class rows_keys :
+    def __init__ (self, rows = None, keys = None) :
+        self.rows = rows                             #   Table rows as returned by iterrows
+        self.keys = keys                             #   Keys for each row
+        
+def openFH (name) :
+    '''   Open file handle for 'current' report   '''
+    global OUT, FH
+    try :
+        os.makedirs (OUT)
+    except OSError :
+        pass
+    
+    filename = os.path.join (OUT, name)
+    try :
+        FH = open (filename, 'w')
+    except Exception, e :
+        sys.stderr.write ("Error: Failed to open %s\n%s\n" % (filename, e))
+        
+def closeFH () :
+    '''   Close 'current' file handle   '''
+    global FH
+    
+    try :
+        FH.close ()
+    except :
+        pass
+
+def psep (w, c = '-') :
+    '''   Print a row separator to the 'current' report   '''
+    global FH
+    FH.write ('+')
+    for n in w :
+        n += 2
+        FH.write (c * n)
+        FH.write ('+')
+        
+    FH.write ('\n')
+    
+def pline (line, c = '|') :
+    '''   Print a row   '''
+    global FH
+    t = 0
+    for l in line :
+        t += len (l)
+        FH.write (c + l)
+    
+    FH.write (c + '\n')  
+
+def report (what, kv) :
+    '''   Generate a report   '''
+    for wht in what :
+        rws = wht.rows
+        kys = wht.keys
+        w = [0] * len (kys)
+        #   Put column widths in w
+        for r in rws :
+            i = 0
+            for k in kys :
+                #   Compare length of column title to length of string in title
+                if len (kv[k]) > len (str (r[k])) :
+                    big = len (kv[k])
+                else :
+                    big = len (str (r[k]))
+                    
+                if big > w[i] :
+                    w[i] = big
+                    
+                i += 1
+        #   Print header separator   
+        psep (w, '=')
+        #   Find column labels, and center them in column
+        i = 0
+        line = []
+        for k in kys :
+            s = kv[k]
+            l = s.center (w[i] + 2)
+            line.append (l)
+            i += 1
+        #   Print column labels
+        pline (line)
+        psep (w, '=')
+        #   Print data in columns
+        for r in rws :
+            i = 0
+            line = []
+            for k in kys :
+                s = str (r[k])
+                l = s.center (w[i] + 2)
+                line.append (l)
+                i += 1
+                
+            pline (line)
+            psep (w)
+        
+def get_args () :
+    ''' 
+       Parse input args
+    '''
+    global PH5, PATH, SHOTS, ARRAYS, DATA, REPORTS, EXPERIMENTS, OUT
+    
+    from optparse import OptionParser
+
+    oparser = OptionParser ()
+    oparser.usage = "query-ph5 --nickname output_file_prefix --outpath path_to_reports [-p path][--shots][--arrays][--data][--experiment][--reports]"
+    oparser.description = "Query ph5 file for information on shots, arrays, and trace data."
+    
+    oparser.add_option ("-n", "--nickname", dest = "outfile",
+                        help="The ph5 file prefix (experiment nick name).",
+                        metavar = "output_file_prefix")
+    oparser.add_option ("-p", dest = "ph5path", help = "Path to where ph5 files are stored. Defaults to current directory")
+    oparser.add_option ("-e", "--shots", dest = "shots", help = "Retreive information about shots.",
+                        action = "store_true", default = False)
+    oparser.add_option ("-a", "--arrays", dest = "arrays", help = "Retreive information about arrays.",
+                        action = "store_true", default = False)
+    oparser.add_option ("-d", "--data", dest = "data", help = "Retreive information about all recorded trace data.",
+                        action = "store_true", default = False)
+    oparser.add_option ("-x", "--experiments", dest = "experiments", help = "Retreive information about the experiment.",
+                        action = "store_true", default = False)
+    oparser.add_option ("-r", "--reports", dest = "reports", help = "Retreive information on reports.",
+                        action = "store_true", default = False)
+    oparser.add_option ("-o", "--outpath", dest = "reportpath",
+                        help = "Path to write reports to.",
+                        metavar = "data_report_path")
+    
+    options, args = oparser.parse_args()
+    #print options.outfile
+
+    PH5 = None
+    OUT = None
+    PATH = '.'
+    SHOTS = False
+    ARRAYS = False
+    DATA = False
+    REPORTS = False
+    EXPERIMENTS = False
+    
+    if options.outfile != None :
+        PH5 = options.outfile
+
+    if options.shots == True :
+        SHOTS = True
+        
+    if options.arrays == True :
+        ARRAYS = True
+        
+    if options.data == True :
+        DATA = True
+        
+    if options.ph5path != None :
+        PATH = options.ph5path
+        
+    if options.experiments != None :
+        EXPERIMENTS = options.experiments
+        
+    if options.reports != None :
+        REPORTS = options.reports
+        
+    if options.reportpath != None :
+        OUT = options.reportpath
+
+    if PH5 == None or OUT == None :
+        #print H5, FILES
+        sys.stderr.write ("Error: Missing required option. Try --help\n")
+        sys.exit (-1)
+    
+    tmp = os.path.join (PATH, PH5) + '.ph5'
+    if not os.path.exists (tmp) :
+        sys.stderr.write ("Error: %s does not exist!\n" % tmp)
+        sys.exit (-2)
+        
+def read_events () :
+    '''   Read /Experiment_g/Sorts_g/Shots_t   '''
+    global EX, EVENT_T
+    
+    events, ekeys = EX.ph5_g_sorts.read_events ()
+    #ekeys.sort ()
+    rk = rows_keys (events, ekeys)
+    #   EVENT_T contains a list of rows_keys
+    EVENT_T.append (rk)
+        
+def read_sorts () :
+    '''   Read /Experiment_g/Sorts_g/Sort_t   '''
+    global EX, ARRAY, SORT_T
+    ARRAYS = []
+    A = {}
+    
+    sorts, skeys = EX.ph5_g_sorts.read_sorts ()
+    #skeys.sort ()
+    rk = rows_keys (sorts, skeys)
+    #   SORT_T contains a list of rows_keys
+    SORT_T.append (rk)
+    
+    #   Get a list of Array_t_nnn
+    for s in sorts :
+        a = s['array_t_name_s']
+        A[a] = True
+        
+    #   ARRAY is a list of Array_t_nnn names  
+    ARRAY = A.keys ()
+    ARRAY.sort ()
+        
+def read_arrays () :
+    '''   Read all /Experiment_g/Sorts_g/Array_t_nnn   '''
+    global EX, ARRAY, ARRAY_T
+    
+    for a in ARRAY :
+        if not ARRAY_T.has_key (a) :
+            ARRAY_T[a] = []
+            
+        arrays, akeys = EX.ph5_g_sorts.read_arrays (a)
+        #akeys.sort ()
+        rk = rows_keys (arrays, akeys)
+        #   ARRAY_T a dictionary keyed on Array_t_nnn name that points to a list of rows_keys
+        ARRAY_T[a].append (rk)
+        
+def read_experiments () :
+    '''   Read /Experiment_g/Experiment_t   '''
+    global EX, EXPERIMENT_T
+    
+    experiments, ekeys = EX.read_experiment ()
+    #ekeys.sort ()
+    rk = rows_keys (experiments, ekeys)
+    EXPERIMENT_T.append (rk)
+    
+def read_reports () :
+    '''   Read /Experiment_g/Reports_g/Report_t   '''
+    global EX, REPORTS_T
+    
+    reports, rkeys = EX.ph5_g_reports.read_reports ()
+    #rkeys.sort ()
+    rk = rows_keys (reports, rkeys)
+    REPORTS_T.append (rk)
+ 
+def read_das () :
+    #   Find info on all data traces for all data loggers
+    global EX, DAS
+    
+    #   dict is a dictionary keyed on DAS number that points to a list of:
+    #
+    #   class data_trace :
+    #      def __init__ (self) :
+    #         das        = None                #   ASCII DAS serial number
+    #         epoch      = None                #   Floating point epoch
+    #         length     = None                #   Length of data in seconds
+    #         channel    = None                #   Channel number
+    #         data_trace = None                #   Data trace reference
+    #         receiver   = None                #   Receiver_t row for this das
+    #         keys       = None                #   Keys for Receiver_t row
+    #
+    dict = EX.ph5_g_receivers.find_traces ()
+    DAS.append (dict)
+    
+def das_report () :
+    '''   Generate a report on all data traces   '''
+    os.environ['TZ'] = 'GMT'
+    global DAS
+    
+    for dict in DAS :
+        ret = []
+        ks = dict.keys ()
+        ks.sort ()
+        #   Key is DAS
+        for k in ks :
+            lst = dict[k]
+            retl = []
+            for l in lst :
+                retk = {}
+                retk['das'] = l.das
+                retk['epoch'] = l.epoch
+                retk['length'] = l.length
+                retk['channel'] = l.channel
+                retk['time'] = time.ctime (l.epoch)
+                retl.append (retk)
+                
+            kys = ['das', 'epoch', 'time', 'length', 'channel']
+            tmp = rows_keys (retl, kys)
+            ret.append (tmp)
+                
+        report (ret, das_kv)
+    
+if __name__ == '__main__' :
+    global PH5, PATH, EX, SHOTS, ARRAYS, DATA, REPORTS, EXPERIMENTS
+    #   Get program arguments
+    get_args ()
+    t1 = time.time ()
+    #   Initialize ph5 file
+    EX = Experiment.ExperimentGroup (PATH, PH5)
+    editmode = False
+    EX.ph5open (editmode)
+    EX.initgroup ()
+    
+    #print "Reading events..."
+    if SHOTS == True :
+        read_events ()
+        openFH ("EventReport.txt")
+        report (EVENT_T, event_kv)
+        closeFH ()
+    #print "Reading sorts..."
+    if ARRAYS == True :
+        read_sorts ()
+        #print "Reading arrays..."
+        read_arrays ()
+        for a in ARRAY_T.keys () :
+            openFH ("%sReport.txt" % a)
+            report (ARRAY_T[a], array_kv)
+            closeFH ()
+            
+        openFH ("SortsReport.txt")
+        report (SORT_T, sort_kv)
+        closeFH ()
+    #print "Reading das..."
+    if DATA == True :
+        read_das ()
+        openFH ("DataReport.txt")
+        das_report ()
+        closeFH ()
+    #print "Reading reports..."
+    if REPORTS == True :
+        read_reports ()
+        openFH ("ReportsReport.txt")
+        report (REPORTS_T, report_kv)
+        closeFH ()
+    #print "Reading experiments..."
+    if EXPERIMENTS == True :
+        read_experiments ()
+        openFH ("ExperimentReport.txt")
+        report (EXPERIMENT_T, experiment_kv)
+        closeFH ()
+    
+    EX.ph5close ()
+    ##   XXX   Logic follows but needs to get organized in functions   XXX
+    #sorts, skeys = EX.ph5_g_sorts.read_sorts ()
+    #first_sort = True
+    #i = 0
+    #for s in sorts :
+        ##   Get a dictionary of DASs in this array
+        #a_name = s['array_t_name_s']
+        #array, akeys = EX.ph5_g_sorts.read_arrays (a_name)
+        ##   The dictionary
+        #dass = {}
+        #for a in array :
+            #dass[a['das/serial_number_s']] = True
+        
+        ##   Loop through events and populate the Sort_t table
+        #events, ekeys = EX.ph5_g_sorts.read_events ()
+        #for e in events :
+            #ep = float (e['time/epoch_l']) + (float (e['time/micro_seconds_i']) / 1000000.0)
+            #dict = EX.ph5_g_receivers.find_traces (ep)
+            #ks = dict.keys ()
+            #for k in ks :
+                
+                ##   Is this das in this array?
+                #if not dass.has_key (dict[k].das) :
+                    #print "Not found in any array: ", dict[k].das
+                    #continue
+                #lat = dict[k].receiver['location/X/value_d']
+                #lon = dict[k].receiver['location/Y/value_d']
+                ##print dict[k].das, dict[k].epoch, dict[k].length, lat, lon
+                #i = i + 1
+                
+    #print "Matched %d traces." % i
+    t2 = time.time ()
+    print "Minutes: %12.4f" % ((t2 - t1) / 60.0)

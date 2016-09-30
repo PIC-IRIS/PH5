@@ -1,0 +1,26 @@
+#! /usr/local/bin/python
+
+import KefTable
+import KefParser
+import KefWriter
+import KefContainer
+import KefBuilder
+import KefScriptEngine
+
+class KefUtility:
+    def __init__(self):
+        self.writer = KefWriter.KefWriter()
+        self.parser = KefParser.KefParser()
+        self.builder = KefBuilder.KefBuilder()
+
+    def run_kefscript(self, scriptname, table):
+        return KefScriptEngine.run_script(scriptname, table)
+    
+    def new_table(self):
+        return KefTable.KefTable()
+
+    def parse_kef(self, kef_file):
+        return self.parser.parse(kef_file)
+
+    def write_kef(self, outfile, container):
+        self.writer.write_kef(outfile, container)

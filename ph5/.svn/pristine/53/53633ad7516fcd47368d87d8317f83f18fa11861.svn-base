@@ -1,0 +1,17 @@
+#! /usr/local/bin/python
+
+class KefWriter:
+    def __init__(self):
+        pass
+
+    def write_kef(self, filename, container):
+        """Writes the contents of a container to a kef file"""
+        with open(filename, 'w') as outfile:
+            outfile.write("#\n")
+            outfile.write("#\n")
+            for i, (row, field) in enumerate(container):
+                outfile.write("#   Table row {0}\n".format(i))
+                outfile.write("{0}\n".format(row))
+                
+                for key, value in field.iteritems():
+                    outfile.write("\t{0} = {1}\n".format(key,value))
