@@ -351,7 +351,7 @@ class PH5toMSeed(object):
                     
                     
                     if self.offset:
-                        start_fepoch = start_fepoch + self.offset
+                        start_fepoch = start_fepoch + int(self.offset)
                     
                     if self.doy_keep:
                         if start_doy not in self.doy:
