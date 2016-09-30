@@ -220,7 +220,7 @@ class PH5toMSeed(object):
 
     
 
-    def filename_gen (self, mseed_trace, array) :
+    def filename_gen (self, mseed_trace) :
 
         if self.stream:
 
@@ -232,7 +232,7 @@ class PH5toMSeed(object):
 
         pre = epoch2passcal (secs, sep='_')
 
-        ret = "{0}.{1}.{2}.{3}.{4}.ms".format (pre, s.network, s.station, s.channel, array)
+        ret = "{0}.{1}.{2}.{3}.ms".format (pre, s.network, s.station, s.channel)
 
         ret = os.path.join (self.out_dir, ret)
 
@@ -448,19 +448,16 @@ class PH5toMSeed(object):
                                     mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond 
                             
                                 
-                                if self.stream is True:
-                                    #yield mseed_trace
-                                    continue
-                                    #yielding seems to cause a crash
+                                
+                                yield mseed_trace
+                                    
 
-                                else:
-                                    outfile = self.filename_gen (mseed_trace, array)    
-                                    mseed_trace.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')                        
+                                                    
                         
                     
                     
             
-            print "leaving"
+            
             
 
 
@@ -679,8 +676,10 @@ if __name__ == '__main__' :
     
 
     
-    ph5ms.process_all()
-   
+    traces = ph5ms.process_all()
+    for t in traces:
+        outfile = ph5ms.filename_gen (t)    
+        t.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')         
 
     
     ph5.close ()
