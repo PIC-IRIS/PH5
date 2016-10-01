@@ -1,32 +1,18 @@
 #!/usr/bin/env pnpython3
-
-
 # Derick Hess, Sept 2016
-
-PROG_VERSION = "2016.274 Developmental"
-
 
 import sys
 import os
-
 import obspy
-
 import ph5API
-
 import decimate
-
 import time
-
 from datetime import datetime
-
-import TimeDOY
-
 from TimeDOY import epoch2passcal
-
 from TimeDOY import passcal2epoch
-
 import numpy
 
+PROG_VERSION = "2016.274 Developmental"
 
 def fdsntimetoepoch(fdsn_time):
     pattern = "%Y-%m-%dT%H:%M:%S.%f"
@@ -71,15 +57,17 @@ def DOY_breakup(start_fepoch):
 
 class PH5toMSeed(object):
 
-    def __init__(self, nickname, array, length, offset, component=[], station=[],
+    def __init__(self, nickname, array, length, offset, component=[], 
 
-                 ph5path=".", netcode="XX", channel=[],
+                 station=[], ph5path=".", netcode="XX", channel=[],
 
                  das_sn=None,  use_deploy_pickup=True, decimation=None,
 
                  sample_rate_keep=None, doy_keep=[], stream=False, out_dir=".",
 
-                 starttime=None, stoptime=None, reduction_velocity=-1., dasskip=None):
+                 starttime=None, stoptime=None, reduction_velocity=-1., 
+            
+                 dasskip=None):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
 
@@ -106,9 +94,8 @@ class PH5toMSeed(object):
         self.channel = channel
 
         self.netcode = netcode
-        self.length = length
 
-        #fileplace = args.fileplace
+        self.length = length        
 
         self.nickname = nickname
 
@@ -135,7 +122,7 @@ class PH5toMSeed(object):
 
                 sys.exit()
 
-        if dasskip != None:
+        if dasskip is not None:
 
             self.dasskip = dasskip
 
@@ -179,7 +166,7 @@ class PH5toMSeed(object):
 
     def read_arrays(self, name):
 
-        if name == None:
+        if name is None:
 
             for n in self.ph5.Array_t_names:
 
@@ -238,7 +225,7 @@ class PH5toMSeed(object):
         for array_name in array_names:
             array = array_name[-3:]
 
-            if self.array != None and self.array != array:
+            if self.array is not None and self.array != array:
 
                 continue
 
@@ -267,8 +254,8 @@ class PH5toMSeed(object):
                         sample_rate = station_list[
                             deployment][0]['sample_rate_i']
 
-                    # if SAMPLE_RATE_KEEP != None and sample_rate not in SAMPLE_RATE_LIST:
-                    #    continue
+                    if self.sample_rate_list and sample_rate not in self.sample_rate_list:
+                        continue
 
                     if 'seed_band_code_s' in station_list[deployment][0]:
                         band_code = station_list[deployment][
@@ -294,11 +281,8 @@ class PH5toMSeed(object):
                     if self.channel and full_code not in self.channel:
                         continue
 
-                    # if DASSKIP == das:
-                    #    continue
-
-                    # if DAS != None and DAS != das:
-                    #   continue
+                    if self.das_sn and self.das_sn != das:
+                       continue
 
                     self.ph5.read_das_t(das)
 
@@ -310,8 +294,9 @@ class PH5toMSeed(object):
                             start_fepoch = fdsntimetoepoch(self.start_time)
 
                     else:
-                        start_fepoch = ph5API.fepoch(station_list[deployment][0][
-                                                     'deploy_time/epoch_l'], station_list[deployment][0]['deploy_time/micro_seconds_i'])
+                        start_fepoch = ph5API.fepoch(station_list[deployment][0]
+                                       ['deploy_time/epoch_l'], station_list[deployment][0]
+                                       ['deploy_time/micro_seconds_i'])
 
                     if self.length:
                         stop_fepoch = start_fepoch + self.length
@@ -323,10 +308,11 @@ class PH5toMSeed(object):
                         else:
                             stop_fepoch = fdsntimetoepoch(self.end_time)
                     else:
-                        stop_fepoch = ph5API.fepoch(station_list[deployment][0][
-                                                    'pickup_time/epoch_l'], station_list[deployment][0]['pickup_time/micro_seconds_i'])
+                        stop_fepoch = ph5API.fepoch(station_list[deployment][0]
+                                      ['pickup_time/epoch_l'], station_list[deployment]
+                                      [0]['pickup_time/micro_seconds_i'])
 
-                    if self.use_deploy_pickup == True and not ((start_fepoch >= deploy and stop_fepoch <= pickup)):
+                    if self.use_deploy_pickup is True and not ((start_fepoch >= deploy and stop_fepoch <= pickup)):
                         # das not deployed within deploy/pickup time
                         continue
 
@@ -347,9 +333,7 @@ class PH5toMSeed(object):
                     c = station_list[deployment][0]['channel_number_i']
 
                     if (stop_fepoch - start_fepoch) > 86400:
-                        # print "we need to break this down into days"
-                        # send start and stop time to DOY_breakup to get a list
-                        # of star and stop times
+                        
                         seconds_covered = 0
                         total_seconds = stop_fepoch - start_fepoch
                         times_to_cut = []
