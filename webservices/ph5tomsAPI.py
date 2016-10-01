@@ -1,16 +1,9 @@
 #!/usr/bin/env pnpython3
 
-#
 
-#   A take on ph52ms but using PH5API.
+# Derick Hess, Sept 2016
 
-#
-
-#   Steve Azevedo, May 2016
-
-#   modified: Derick Hess, Sept 2016
-
-PROG_VERSION = "2016.264 Developmental"
+PROG_VERSION = "2016.274 Developmental"
 
 
 
@@ -220,19 +213,37 @@ class PH5toMSeed(object):
 
     
 
-    def filename_gen (self, mseed_trace) :
+    def filenamemseed_gen (self, trace) :
 
         if self.stream:
 
             return sys.stdout
 
-        s = mseed_trace.stats
+        s = trace.stats
 
         secs = int (s.starttime.timestamp)
 
         pre = epoch2passcal (secs, sep='_')
 
         ret = "{0}.{1}.{2}.{3}.ms".format (pre, s.network, s.station, s.channel)
+
+        ret = os.path.join (self.out_dir, ret)
+
+        return ret
+
+    def filenamesac_gen (self, trace) :
+
+        if self.stream:
+
+            return sys.stdout
+
+        s = trace.stats
+
+        secs = int (s.starttime.timestamp)
+
+        pre = epoch2passcal (secs, sep='.')
+
+        ret = "{0}.{1}.{2}.{3}.SAC".format (s.network, s.station, s.channel, pre)
 
         ret = os.path.join (self.out_dir, ret)
 
@@ -689,11 +700,21 @@ if __name__ == '__main__' :
 
     
     traces = ph5ms.process_all()
-    for t in traces:
-        outfile = ph5ms.filename_gen (t)    
-        t.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')         
 
-    
+    if args.format and args.format.upper() == "MSEED": 
+        for t in traces:
+            outfile = ph5ms.filenamemseed_gen (t)    
+            t.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')         
+
+    elif args.format and args.format.upper() == "SAC": 
+        for t in traces:
+            outfile = ph5ms.filenamesac_gen (t)    
+            t.write (outfile, format='SAC')  
+    else:
+        for t in traces:
+            outfile = ph5ms.filenamemseed_gen (t)    
+            t.write (outfile, format='MSEED', reclen=512, encoding='STEIM2')
+           
     
 
     #print t () - then
