@@ -177,10 +177,6 @@ class PH5toMSeed(object):
 
     def filenamemseed_gen(self, trace):
 
-        if self.stream:
-
-            return sys.stdout
-
         s = trace.stats
 
         secs = int(s.starttime.timestamp)
@@ -189,15 +185,12 @@ class PH5toMSeed(object):
 
         ret = "{0}.{1}.{2}.{3}.ms".format(pre, s.network, s.station, s.channel)
 
-        ret = os.path.join(self.out_dir, ret)
+        if not self.stream:
+            ret = os.path.join(self.out_dir, ret)
 
         return ret
 
     def filenamesac_gen(self, trace):
-
-        if self.stream:
-
-            return sys.stdout
 
         s = trace.stats
 
@@ -208,7 +201,8 @@ class PH5toMSeed(object):
         ret = "{0}.{1}.{2}.{3}.SAC".format(
             s.network, s.station, s.channel, pre)
 
-        ret = os.path.join(self.out_dir, ret)
+        if not self.stream:
+            ret = os.path.join(self.out_dir, ret)
 
         return ret
 
