@@ -12,7 +12,7 @@ from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 import numpy
 
-PROG_VERSION = "2016.274 Developmental"
+PROG_VERSION = "2016.284 Developmental"
 
 def fdsntimetoepoch(fdsn_time):
     pattern = "%Y-%m-%dT%H:%M:%S.%f"
@@ -67,7 +67,7 @@ class PH5toMSeed(object):
 
                  starttime=None, stoptime=None, reduction_velocity=-1., 
             
-                 dasskip=None):
+                 dasskip=None, shot_line=1):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
 
@@ -87,7 +87,7 @@ class PH5toMSeed(object):
 
         self.station = station
 
-        self.sample_rate_list = []
+        self.sample_rate_list = sample_rate_keep
 
         self.doy_keep = doy_keep
 
@@ -108,6 +108,8 @@ class PH5toMSeed(object):
         self.start_time = starttime
 
         self.end_time = stoptime
+        
+        self.shot_line = shot_line
 
         if not os.path.exists(self.out_dir):
 
@@ -162,7 +164,10 @@ class PH5toMSeed(object):
         self.ph5.read_array_t_names()
 
         self.ph5.read_das_g_names()
+        
         self.ph5.read_experiment_t()
+        
+        self.ph5.read_event_t(shot_line)
 
     def read_arrays(self, name):
 
@@ -207,7 +212,7 @@ class PH5toMSeed(object):
         return ret
 
     def process_all(self):
-        CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
+        
 
         self.read_arrays(None)
 
@@ -230,13 +235,22 @@ class PH5toMSeed(object):
             for station in arrayorder:
 
                 if self.station:
-                    if station not in self.station:
-
+                    does_match=[]
+                    sta_list=self.station.split(',')
+                    for x in sta_list:   
+                        if station == x:
+                            does_match.append(1)
+                    if not does_match:
                         continue
+                        
 
                 station_list = arraybyid.get(station)
+                
+                
 
                 for deployment in station_list:
+                    
+                    
 
                     deploy = station_list[deployment][0]['deploy_time/epoch_l']
 
@@ -245,11 +259,23 @@ class PH5toMSeed(object):
                     das = station_list[deployment][0]['das/serial_number_s']
 
                     if 'sample_rate_i' in station_list[deployment][0]:
-                        sample_rate = station_list[
-                            deployment][0]['sample_rate_i']
-
-                    if self.sample_rate_list and sample_rate not in self.sample_rate_list:
-                        continue
+                        sample_rate = station_list[deployment][0]['sample_rate_i']
+                    
+                    if 'sample_rate_multiplier_i' in station_list[deployment][0]:
+                        sample_rate_multiplie = station_list[deployment][0]['sample_rate_multiplier_i']                    
+                        
+                    
+                    
+                    if self.sample_rate_list: 
+                        does_match=[]
+                        sample_list=self.sample_rate_list.split(',')   
+                        for x in sample_list:
+                            if sample_rate == int(x):
+                                does_match.append(1)
+                        if not does_match:
+                            continue
+                    
+                    
 
                     if 'seed_band_code_s' in station_list[deployment][0]:
                         band_code = station_list[deployment][
@@ -270,7 +296,7 @@ class PH5toMSeed(object):
 
                     c = station_list[deployment][0]['channel_number_i']
 
-                    full_code = band_code + instrument_code + CHAN_MAP[c]
+                    full_code = band_code + instrument_code + orientation_code
 
                     if self.channel and full_code not in self.channel:
                         continue
@@ -385,8 +411,13 @@ class PH5toMSeed(object):
                                 except ValueError:
                                     #sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
                                     continue
-                                mseed_trace.stats.sampling_rate = float(
-                                    trace.das_t[0]['sample_rate_i']) / float(trace.das_t[0]['sample_rate_multiplier_i'])
+                               
+                                
+                                
+                                
+                                mseed_trace.stats.sampling_rate = float(sample_rate) / float(sample_rate_multiplie)
+                                
+                                
                                 mseed_trace.stats.station = station  # ZZZ   Get from Maps_g
                                 mseed_trace.stats.channel = band_code + instrument_code + orientation_code
 
@@ -445,7 +476,7 @@ def get_args():
 
     parser.add_argument('--network',
 
-                        help='The 2 character SEED network code to be used in the MSEED output headers and fileames',
+                        help=argparse.SUPPRESS,
 
                         default='XX')
 
@@ -462,18 +493,22 @@ def get_args():
     #                     type=str, metavar="event_number")
 
     #parser.add_argument ("-E", "--allevents", action="store_true", default=False)
+    
+    parser.add_argument ("--shot_line", action="store", help="shot line", 
+    
+                             type=str, metavar="shot_line", default=1)    
 
     parser.add_argument("--stream", action="store_true", default=False,
 
-                        help="Stream output to stdout.")
+                        help="Stream output to stdout. No additonal parameters are given to this argument.")
 
     parser.add_argument("-s", "--starttime", action="store",
 
-                        type=str, dest="start_time", metavar="start_time")
+                        type=str, dest="start_time", metavar="start_time", help="Time formats are YYYY:DOY:HH:MM:SS.ss or YYYY-mm-ddTHH:MM:SS.ss")
 
     parser.add_argument("-t", "--stoptime", action="store",
 
-                        type=str, dest="stop_time", metavar="stop_time")
+                        type=str, dest="stop_time", metavar="stop_time", help="Time formats are YYYY:DOY:HH:MM:SS.ss or YYYY-mm-ddTHH:MM:SS.ss")
 
     parser.add_argument("-A", "--all", action="store_true",
                         default=False, dest="extract_all")
@@ -484,7 +519,7 @@ def get_args():
 
     parser.add_argument("-O", "--offset", action="store",
 
-                        type=float, dest="offset", metavar="offset")
+                        type=float, dest="offset", metavar="offset", help="Offset time in seconds")
 
     parser.add_argument("-c", "--component", action="store",
 
@@ -510,7 +545,7 @@ def get_args():
 
     parser.add_argument("-V", "--reduction_velocity", action="store", dest="red_vel",
 
-                        metavar="red_vel", type=float, default="-1.")
+                        metavar="red_vel", type=float, default="-1.",help=argparse.SUPPRESS)
 
     # Field only
 
@@ -570,22 +605,32 @@ if __name__ == '__main__':
 
                        args.decimation, args.sample_rate, args.doy_keep, args.stream,
 
-                       args.out_dir, args.start_time, args.stop_time, args.red_vel, args.dasskip)
+                       args.out_dir, args.start_time, args.stop_time, args.red_vel, args.dasskip, args.shot_line)
 
     traces = ph5ms.process_all()
 
     if args.format and args.format.upper() == "MSEED":
         for t in traces:
-            outfile = ph5ms.filenamemseed_gen(t)
-            t.write(outfile, format='MSEED', reclen=512, encoding='STEIM2')
+            if not args.stream:
+                outfile = ph5ms.filenamemseed_gen(t)
+                t.write(outfile, format='MSEED', reclen=512, encoding='STEIM2')
+            else:
+                t.write(sys.stdout, format='MSEED', reclen=512, encoding='STEIM2')
+                
 
     elif args.format and args.format.upper() == "SAC":
         for t in traces:
-            outfile = ph5ms.filenamesac_gen(t)
-            t.write(outfile, format='SAC')
+            if not args.stream:
+                outfile = ph5ms.filenamesac_gen(t)
+                t.write(outfile, format='SAC')
+            else:
+                t.write(sys.stdout, format='SAC')
     else:
         for t in traces:
-            outfile = ph5ms.filenamemseed_gen(t)
-            t.write(outfile, format='MSEED', reclen=512, encoding='STEIM2')
+            if not args.stream:
+                outfile = ph5ms.filenamemseed_gen(t)
+                t.write(outfile, format='MSEED', reclen=512, encoding='STEIM2')
+            else:
+                t.write(sys.stdout, format='MSEED', reclen=512, encoding='STEIM2')
 
     # print t () - then
