@@ -67,7 +67,7 @@ class PH5toMSeed(object):
 
                  starttime=None, stoptime=None, reduction_velocity=-1., 
             
-                 dasskip=None, shot_line=1):
+                 dasskip=None, shotline=None, eventnumbers=[]):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
 
@@ -109,7 +109,9 @@ class PH5toMSeed(object):
 
         self.end_time = stoptime
         
-        self.shot_line = shot_line
+        self.shotline= shotline
+        
+        self.eventnumbers = eventnumbers
 
         if not os.path.exists(self.out_dir):
 
@@ -167,7 +169,11 @@ class PH5toMSeed(object):
         
         self.ph5.read_experiment_t()
         
-        self.ph5.read_event_t(shot_line)
+        if shotline:
+            
+            self.ph5.read_event_t_names()
+            
+                                   
 
     def read_arrays(self, name):
 
@@ -179,6 +185,17 @@ class PH5toMSeed(object):
 
         else:
             self.ph5.read_array_t(name)
+			
+    def read_events(self, name):
+
+        if name is None:
+
+            for n in self.ph5.Event_t_names:
+
+                self.ph5.read_event_t(n)
+
+        else:
+            self.ph5.read_event_t(name)
 
     def filenamemseed_gen(self, trace):
 
@@ -220,7 +237,36 @@ class PH5toMSeed(object):
 
         array_names = self.ph5.Array_t_names
         array_names.sort()
-
+		
+        self.read_events(None)
+        shot_lines = self.ph5.Event_t_names
+        shot_lines.sort()
+        matched_shot_line=""
+		
+		
+        for shot_line in shot_lines:
+            if int(shot_line[-3:]) == int(self.shotline): 
+                matched_shot_line = shot_line
+        
+           
+        
+        
+        start_times =[]
+        if self.eventnumbers and self.shotline and matched_shot_line:
+		   
+            self.eventnumbers=self.eventnumbers.split(',') 
+            for evt in self.eventnumbers:
+                try:
+                    event_t = self.ph5.Event_t[matched_shot_line]['byid'][evt]
+                    start_times.append(event_t['time/epoch_l'])
+                #this exception usually occurs when there is no event table or incorrect shotline is given    
+                except Exception as e :
+                    print "error"
+                    
+            
+            
+                
+            
         for array_name in array_names:
             array = array_name[-3:]
 
@@ -306,139 +352,139 @@ class PH5toMSeed(object):
 
                     self.ph5.read_das_t(das)
 
-                    if self.start_time:
+                    if self.start_time and not matched_shot_line:
                         if "T" not in self.start_time:
                             start_fepoch = self.start_time
-                            start_fepoch = passcal2epoch(start_fepoch)
+                            start_times.append(passcal2epoch(start_fepoch))
                         else:
-                            start_fepoch = fdsntimetoepoch(self.start_time)
+                            start_times.append(fdsntimetoepoch(self.start_time))
 
-                    else:
-                        start_fepoch = ph5API.fepoch(station_list[deployment][0]
+                    elif not matched_shot_line:
+                        start_times.append(ph5API.fepoch(station_list[deployment][0]
                                        ['deploy_time/epoch_l'], station_list[deployment][0]
-                                       ['deploy_time/micro_seconds_i'])
+                                       ['deploy_time/micro_seconds_i']))
+                    for start_fepoch in start_times:
+                        if self.length:
+                            stop_fepoch = start_fepoch + self.length
 
-                    if self.length:
-                        stop_fepoch = start_fepoch + self.length
-
-                    elif self.end_time:
-                        if "T" not in self.end_time:
-                            stop_fepoch = self.end_time
-                            stop_fepoch = passcal2epoch(stop_fepoch)
+                        elif self.end_time:
+                            if "T" not in self.end_time:
+                                stop_fepoch = self.end_time
+                                stop_fepoch = passcal2epoch(stop_fepoch)
+                            else:
+                                stop_fepoch = fdsntimetoepoch(self.end_time)
                         else:
-                            stop_fepoch = fdsntimetoepoch(self.end_time)
-                    else:
-                        stop_fepoch = ph5API.fepoch(station_list[deployment][0]
-                                      ['pickup_time/epoch_l'], station_list[deployment]
-                                      [0]['pickup_time/micro_seconds_i'])
+                            stop_fepoch = ph5API.fepoch(station_list[deployment][0]
+                                          ['pickup_time/epoch_l'], station_list[deployment]
+                                          [0]['pickup_time/micro_seconds_i'])
 
-                    if self.use_deploy_pickup is True and not ((start_fepoch >= deploy and stop_fepoch <= pickup)):
-                        # das not deployed within deploy/pickup time
-                        continue
-
-                    start_passcal = epoch2passcal(start_fepoch, sep=':')
-                    start_passcal_list = start_passcal.split(":")
-                    start_doy = start_passcal_list[1]
-                    start_year = start_passcal_list[0]
-
-                    if self.offset:
-                        start_fepoch = start_fepoch + int(self.offset)
-
-                    if self.doy_keep:
-                        if start_doy not in self.doy:
+                        if self.use_deploy_pickup is True and not ((start_fepoch >= deploy and stop_fepoch <= pickup)):
+                            # das not deployed within deploy/pickup time
                             continue
 
-                    data = {}
+                        start_passcal = epoch2passcal(start_fepoch, sep=':')
+                        start_passcal_list = start_passcal.split(":")
+                        start_doy = start_passcal_list[1]
+                        start_year = start_passcal_list[0]
 
-                    c = station_list[deployment][0]['channel_number_i']
+                        if self.offset:
+                            start_fepoch = start_fepoch + int(self.offset)
 
-                    if (stop_fepoch - start_fepoch) > 86400:
+                        if self.doy_keep:
+                            if start_doy not in self.doy:
+                                continue
+
+                        data = {}
+
+                        c = station_list[deployment][0]['channel_number_i']
+
+                        if (stop_fepoch - start_fepoch) > 86400:
                         
-                        seconds_covered = 0
-                        total_seconds = stop_fepoch - start_fepoch
-                        times_to_cut = []
-                        stop_time, seconds = DOY_breakup(start_fepoch)
-                        seconds_covered = seconds_covered + seconds
-                        times_to_cut.append([start_fepoch, stop_time])
-                        start_time = stop_time + .001
-
-                        while seconds_covered < total_seconds:
-                            stop_time, seconds = DOY_breakup(start_time)
+                            seconds_covered = 0
+                            total_seconds = stop_fepoch - start_fepoch
+                            times_to_cut = []
+                            stop_time, seconds = DOY_breakup(start_fepoch)
                             seconds_covered = seconds_covered + seconds
-                            times_to_cut.append([start_time, stop_time])
+                            times_to_cut.append([start_fepoch, stop_time])
                             start_time = stop_time + .001
-                    else:
-                        times_to_cut = [[start_fepoch, stop_fepoch]]
 
-                    for x in times_to_cut:
-
-                        if not data.has_key(c):
-                            data[c] = []
-
-                        if self.component and c in self.component:
-                            data[c].append(self.ph5.cut(
-                                das, x[0], x[1], chan=c))
-
-                        elif self.component and c not in self.component:
-                            data[c] = []
-
+                            while seconds_covered < total_seconds:
+                                stop_time, seconds = DOY_breakup(start_time)
+                                seconds_covered = seconds_covered + seconds
+                                times_to_cut.append([start_time, stop_time])
+                                start_time = stop_time + .001
                         else:
-                            data[c].append(self.ph5.cut(
-                                das, x[0], x[1], chan=c))
+                            times_to_cut = [[start_fepoch, stop_fepoch]]
 
-                        chans = data.keys()
-                        chans.sort()
+                        for x in times_to_cut:
 
-                        for c in chans:
+                            if not data.has_key(c):
+                                data[c] = []
 
-                            traces = data[c]
-                            for trace in traces:
+                            if self.component and c in self.component:
+                                data[c].append(self.ph5.cut(
+                                    das, x[0], x[1], chan=c))
 
-                                if self.decimation:
-                                    shift, data = decimate.decimate(
-                                        self.decimation, trace.data)
-                                    wsr = int(sample_rate /
-                                              int(self.decimation))
-                                    trace.sample_rate = wsr
-                                    trace.nsamples = len(data)
-                                if trace.nsamples == 0:
+                            elif self.component and c not in self.component:
+                                data[c] = []
+
+                            else:
+                                data[c].append(self.ph5.cut(
+                                    das, x[0], x[1], chan=c))
+
+                            chans = data.keys()
+                            chans.sort()
+
+                            for c in chans:
+
+                                traces = data[c]
+                                for trace in traces:
+
+                                    if self.decimation:
+                                        shift, data = decimate.decimate(
+                                            self.decimation, trace.data)
+                                        wsr = int(sample_rate /
+                                                  int(self.decimation))
+                                        trace.sample_rate = wsr
+                                        trace.nsamples = len(data)
+                                    if trace.nsamples == 0:
                                         #   Failed to read any data
                                         #sys.stderr.write ("Warning: No data for data logger {2}/{0} starting at {1}.".format (das, trace.start_time, sta))
-                                    continue
+                                        continue
 
-                                try:
-                                    mseed_trace = obspy.Trace(data=trace.data)
-                                except ValueError:
-                                    #sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
-                                    continue
+                                    try:
+                                        mseed_trace = obspy.Trace(data=trace.data)
+                                    except ValueError:
+                                        #sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
+                                        continue
                                
                                 
                                 
                                 
-                                mseed_trace.stats.sampling_rate = float(sample_rate) / float(sample_rate_multiplie)
+                                    mseed_trace.stats.sampling_rate = float(sample_rate) / float(sample_rate_multiplie)
                                 
                                 
-                                mseed_trace.stats.station = station  # ZZZ   Get from Maps_g
-                                mseed_trace.stats.channel = band_code + instrument_code + orientation_code
+                                    mseed_trace.stats.station = station  # ZZZ   Get from Maps_g
+                                    mseed_trace.stats.channel = band_code + instrument_code + orientation_code
 
-                                if 'net_code_s' in experiment_t[0]:
-                                    mseed_trace.stats.network = experiment_t[
-                                        0]['net_code_s']
-                                else:
-                                    mseed_trace.stats.network = 'XX'
+                                    if 'net_code_s' in experiment_t[0]:
+                                        mseed_trace.stats.network = experiment_t[
+                                            0]['net_code_s']
+                                    else:
+                                        mseed_trace.stats.network = 'XX'
 
-                                if self.notimecorrect == True:
-                                    corrected_time = trace.time_correct()
-                                    mseed_trace.stats.starttime = obspy.UTCDateTime(
-                                        corrected_time.epoch(fepoch=False))
-                                    mseed_trace.stats.starttime.microsecond = corrected_time.dtobject.microsecond
+                                    if self.notimecorrect == True:
+                                        corrected_time = trace.time_correct()
+                                        mseed_trace.stats.starttime = obspy.UTCDateTime(
+                                            corrected_time.epoch(fepoch=False))
+                                        mseed_trace.stats.starttime.microsecond = corrected_time.dtobject.microsecond
 
-                                else:
-                                    mseed_trace.stats.starttime = obspy.UTCDateTime(
-                                        trace.start_time.epoch(fepoch=True))
-                                    mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond
+                                    else:
+                                        mseed_trace.stats.starttime = obspy.UTCDateTime(
+                                            trace.start_time.epoch(fepoch=True))
+                                        mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond
 
-                                yield mseed_trace
+                                    yield mseed_trace
         self.ph5.close()
 
     def process_event(self):
@@ -488,15 +534,18 @@ def get_args():
 
     # Need to get event or start time, length, array and/or station list
 
-    # parser.add_argument ("-e", "--eventnumber", action="store",
+    parser.add_argument ("-e", "--eventnumbers", action="store",
 
-    #                     type=str, metavar="event_number")
+                         type=str, metavar="eventnumbers", default=[])
+    
+    
+    parser.add_argument ("--shotline", action="store",
+    
+                             type=str, metavar="shotline", default="1")
+    
+     
 
     #parser.add_argument ("-E", "--allevents", action="store_true", default=False)
-    
-    parser.add_argument ("--shot_line", action="store", help="shot line", 
-    
-                             type=str, metavar="shot_line", default=1)    
 
     parser.add_argument("--stream", action="store_true", default=False,
 
@@ -605,7 +654,7 @@ if __name__ == '__main__':
 
                        args.decimation, args.sample_rate, args.doy_keep, args.stream,
 
-                       args.out_dir, args.start_time, args.stop_time, args.red_vel, args.dasskip, args.shot_line)
+                       args.out_dir, args.start_time, args.stop_time, args.red_vel, args.dasskip, args.shotline, args.eventnumbers)
 
     traces = ph5ms.process_all()
 
