@@ -2,6 +2,22 @@
 # Oct 2016
 
 
+"""
+
+The MIT License (MIT)
+Copyright (c) 2016 Derick Hess
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
+to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""
+
 import sys
 
 import os
@@ -36,12 +52,12 @@ import argparse
 
 import fnmatch
 
-import StringIO
 
 
-from time import time as tm
 
-PROG_VERSION = "2016.284"
+
+
+PROG_VERSION = "2016.291"
 
 
 def get_args():
@@ -72,10 +88,6 @@ def get_args():
 
     parser.add_argument("-f", "--format", action="store", default="STATIONXML", dest="out_format",
                         type=str, metavar="out_format", help="Output format: STATIONXML or KML")
-
-    # parser.add_argument ("-r", "--response", action="store", dest="response_list",
-    #                             help="Comma separated list of response files",
-    #                             type=str, metavar="response_list")
 
     parser.add_argument("--array", action="store", dest="array_list",
                         help="Comma separated list of arrays. Wildcards accepted",
@@ -134,52 +146,55 @@ class PH5toStationXML(object):
     def __init__(self, args):
 
         self.args = args
+        
+        
 
         # self.bb_resp = response_from_respfile(
         #    '/opt/k4/apps/pn4/webservices/RESP.XX.NS007..BHZ.CMG3T.120.1500',
         #    '/opt/k4/apps/pn4/webservices/RESP.XX.NR021..HHZ.130.32.100')
+        
+        nickname = args.get('nickname')
+        if nickname[-3:] == 'ph5':
 
-        if args.nickname[-3:] == 'ph5':
-
-            PH5FILE = os.path.join(args.ph5path, args.nickname)
+            PH5FILE = os.path.join(args.get('ph5path'), args.get('nickname'))
 
         else:
 
-            PH5FILE = os.path.join(args.ph5path, args.nickname + '.ph5')
+            PH5FILE = os.path.join(args.get('ph5path'), args.get('nickname') + '.ph5')
 
-            args.nickname = args.nickname + '.ph5'
+            args['nickname'] = args['nickname'] + '.ph5'
 
-        if not self.args.channel_list:
-            self.args.channel_list = "*"
+        if not self.args.get('channel_list'):
+            self.args['channel_list'] = "*"
 
-        if not self.args.sta_list:
-            self.args.sta_list = "*"
+        if not self.args.get('sta_list'):
+            self.args['sta_list'] = "*"
 
-        if not self.args.location_list:
-            self.args.location_list = "*"
+        if not self.args.get('location_list'):
+            self.args['location_list'] = "*"
 
-        if not self.args.network_list:
-            self.args.network_list = "*"
+        if not self.args.get('network_list'):
+            self.args['network_list'] = "*"
 
-        if not self.args.reportnum_list:
-            self.args.reportnum_list = "*"
+        if not self.args.get('reportnum_list'):
+            self.args['reportnum_list'] = "*"
 
-        if not self.args.array_list:
-            self.args.array_list = "*"
+        if not self.args.get('array_list'):
+            self.args['array_list'] = "*"
 
-        if self.args.start_time and "T" in self.args.start_time:
-            self.args.start_time = datetime.datetime.strptime(
-                self.args.start_time, "%Y-%m-%dT%H:%M:%S+%f")
-        elif self.args.start_time:
-            self.args.start_time = datetime.datetime.strptime(
-                self.args.start_time, "%Y:%j:%H:%M:%S.%f")
+        if self.args.get('start_time') and "T" in self.args.get('start_time'):
+            self.args['start_time'] = datetime.datetime.strptime(
+                self.args.get('start_time'), "%Y-%m-%dT%H:%M:%S+%f")
+        elif self.args.get('start_time'):
+            self.args['start_time'] = datetime.datetime.strptime(
+                self.args.get('start_time'), "%Y:%j:%H:%M:%S.%f")
 
-        if self.args.stop_time and "T" in self.args.stop_time:
-            self.args.stop_time = datetime.datetime.strptime(
-                self.args.stop_time, "%Y-%m-%dT%H:%M:%S+%f")
-        elif self.args.stop_time:
-            self.args.stop_time = datetime.datetime.strptime(
-                self.args.stop_time, "%Y:%j:%H:%M:%S.%f")
+        if self.args.get('stop_time') and "T" in self.args.get('stop_time'):
+            self.args['stop_time'] = datetime.datetime.strptime(
+                self.args.get('stop_time'), "%Y-%m-%dT%H:%M:%S+%f")
+        elif self.args.get('stop_time'):
+            self.args['stop_time'] = datetime.datetime.strptime(
+                self.args.get('stop_time'), "%Y:%j:%H:%M:%S.%f")
 
     def read_arrays(self, name):
         if name is None:
@@ -188,14 +203,16 @@ class PH5toStationXML(object):
         else:
             self.ph5.read_array_t(name)
 
+
     def Read_Stations(self, sta_list):
+        
 
         all_stations = []
         cha_list_patterns = [x.strip()
-                             for x in self.args.channel_list.split(',')]
+                             for x in self.args.get('channel_list').split(',')]
         location_patterns = [x.strip()
-                             for x in self.args.location_list.split(',')]
-        array_patterns = [x.strip() for x in self.args.array_list.split(',')]
+                             for x in self.args.get('location_list').split(',')]
+        array_patterns = [x.strip() for x in self.args.get('array_list').split(',')]
 
         for array_name in self.array_names:
 
@@ -219,20 +236,20 @@ class PH5toStationXML(object):
                 elevation = "{0:.6f}".format(
                     station_list[1][0]['location/Z/value_d'])
 
-                if self.args.minlat and float(
-                        self.args.minlat) > float(latitude):
+                if self.args.get('minlat') and float(
+                        self.args.get('minlat')) > float(latitude):
                     continue
 
-                if self.args.minlon and float(
-                        self.args.minlon) > float(longitude):
+                if self.args.get('minlon') and float(
+                        self.args.get('minlon')) > float(longitude):
                     continue
 
-                if self.args.maxlat and float(
-                        self.args.maxlat) < float(latitude):
+                if self.args.get('maxlat') and float(
+                        self.args.get('maxlat')) < float(latitude):
                     continue
 
-                if self.args.maxlon and float(
-                        self.args.maxlon) < float(longitude):
+                if self.args.get('maxlon') and float(
+                        self.args.get('maxlon')) < float(longitude):
                     continue
 
                 station = obspy.core.inventory.Station(station_list[1][0]
@@ -246,12 +263,12 @@ class PH5toStationXML(object):
                 station.end_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['pickup_time/epoch_l'])
 
-                if self.args.start_time and (
-                        station.start_date <= self.args.start_time):
+                if self.args.get('start_time') and (
+                        station.start_date <= self.args.get('start_time')):
                     continue
 
-                if self.args.stop_time and (
-                        station.stop_date >= self.args.stop_time):
+                if self.args.get('stop_time') and (
+                        station.stop_date >= self.args.get('stop_time')):
                     continue
 
                 station.creation_date = datetime.datetime.fromtimestamp(
@@ -262,9 +279,9 @@ class PH5toStationXML(object):
                 station.site = obspy.core.inventory.Site(
                     name=station_list[1][0]['das/serial_number_s'])
 
-                if self.args.level and (
-                        self.args.level == "channel" or
-                        self.args.level == "response"):
+                if self.args.get('level') and (
+                        self.args.get('level') == "channel" or
+                        self.args.get('level') == "response"):
 
                     for deployment in station_list:
                         total_channels = total_channels + 1
@@ -319,28 +336,28 @@ class PH5toStationXML(object):
                                         'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
                                     removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
 
-                                if self.args.start_time and (
-                                        obs_channel.start_date <= self.args.start_time):
+                                if self.args.get('start_time') and (
+                                        obs_channel.start_date <= self.args.get('start_time')):
                                     continue
 
-                                if self.args.stop_time and (
-                                        obs_channel.stop_date >= self.args.stop_time):
+                                if self.args.get('stop_time') and (
+                                        obs_channel.stop_date >= self.args.get('stop_time')):
                                     continue
 
-                                if self.args.minlat and float(
-                                        self.args.minlat) > float(latitude):
+                                if self.args.get('minlat') and float(
+                                        self.args.get('minlat')) > float(latitude):
                                     continue
 
-                                if self.args.minlon and float(
-                                        self.args.minlon) > float(longitude):
+                                if self.args.get('minlon') and float(
+                                        self.args.get('minlon')) > float(longitude):
                                     continue
 
-                                if self.args.maxlat and float(
-                                        self.args.maxlat) < float(latitude):
+                                if self.args.get('maxlat') and float(
+                                        self.args.get('maxlat')) < float(latitude):
                                     continue
 
-                                if self.args.maxlon and float(
-                                        self.args.maxlon) < float(longitude):
+                                if self.args.get('maxlon') and float(
+                                        self.args.get('maxlon')) < float(longitude):
                                     continue
 
                                 #if self.args.level.upper() == "RESPONSE":
@@ -386,11 +403,11 @@ class PH5toStationXML(object):
 
     def Parse_Networks(self, path):
         network_patterns = [x.strip()
-                            for x in self.args.network_list.split(',')]
+                            for x in self.args.get('network_list').split(',')]
         reportnum_patterns = [x.strip()
-                              for x in self.args.reportnum_list.split(',')]
+                              for x in self.args.get('reportnum_list').split(',')]
 
-        self.ph5 = ph5API.ph5(path=path, nickname=args.nickname)
+        self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_array_t_names()
         self.ph5.read_das_g_names()
         self.ph5.read_experiment_t()
@@ -423,9 +440,9 @@ class PH5toStationXML(object):
         network.alternate_code = self.experiment_t[0]['experiment_id_s']
         network.description = self.experiment_t[0]['longname_s']
 
-        if self.args.level and self.args.level != "network":
+        if self.args.get('level') and self.args.get('level') != "network":
 
-            sta_list = self.Parse_Station_list(self.args.sta_list)
+            sta_list = self.Parse_Station_list(self.args.get('sta_list'))
             network.stations = self.Read_Stations(sta_list)
 
         self.ph5.close()
@@ -435,12 +452,12 @@ class PH5toStationXML(object):
     def Process(self):
         networks = []
 
-        paths = self.args.ph5path.split(',')
+        paths = self.args.get('ph5path').split(',')
 
-        if self.args.basepath:
+        if self.args.get('basepath'):
 
             paths = []
-            for dirName, subdirList, fileList in os.walk(self.args.basepath):
+            for dirName, subdirList, fileList in os.walk(self.args.get('basepath')):
                 for fname in fileList:
                     if fname == "master.ph5":
                         paths.append(dirName)
@@ -452,8 +469,8 @@ class PH5toStationXML(object):
                 networks.append(network)
 
         inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
-                                             sender="IRIS-DMC-PH5", created=datetime.datetime.now(),
-                                             module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.uri)
+                                             sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
+                                             module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.get('uri'))
 
         return inv
 
@@ -461,7 +478,9 @@ class PH5toStationXML(object):
 if __name__ == '__main__':
 
     args = get_args()
-    ph5sxml = PH5toStationXML(args)
+    args_dict = vars(args)
+    ph5sxml = PH5toStationXML(args_dict)
+    
     inv = ph5sxml.Process()
 
     if args.out_format.upper() == "STATIONXML":
@@ -469,6 +488,7 @@ if __name__ == '__main__':
 
     elif args.out_format.upper() == "KML":
         inv.write(args.outfile, format='KML')
+        
     else:
         print "Incorrect output format. Formats are STATIONXML or KML"
         sys.exit()
