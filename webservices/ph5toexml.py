@@ -39,6 +39,10 @@ from lxml import etree
 
 from datetime import datetime
 
+from obspy import Catalog, UTCDateTime
+
+import obspy.core.event
+
 
 PROG_VERSION = "2016.293 Developmental"
 
@@ -160,7 +164,7 @@ class PH5toexml(object):
             
     def get_fdsn_time(self, epoch, microseconds):
             
-        fdsn_time=datetime.utcfromtimestamp(epoch+microseconds).strftime("%Y-%m-%dT%H:%M:%S+%f")
+        fdsn_time=datetime.utcfromtimestamp(epoch+microseconds).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             
         return fdsn_time    
             
@@ -292,7 +296,7 @@ class PH5toexml(object):
     
     def write(self,outfile, list_of_networks, out_format):
         
-        def write_xml(list_of_networks):
+        def write_exml(list_of_networks):
             out=[]
             
             out.append("<?xml version='1.0' encoding='UTF-8'?>")
@@ -378,9 +382,46 @@ class PH5toexml(object):
                 
             return
         
+        def write_quakeml(list_of_networks):
+            
+            
+            catalogs=[]
+            events=[]
+            for network in list_of_networks:
+                catalog=Catalog()
+                
+                for shot_line in network.shot_lines:
+                    for shot in shot_line.shots: 
+                        origins =[]
+                        magnitudes=[]
+                        origin= obspy.core.event.origin.Origin()
+                        origin.time=shot.start_time
+                        origin.latitude=shot.lat
+                        origin.longitude=shot.lon
+                        origin.extra={'Elevation':{'value': str(shot.elev), 'namespace': r"http://some-page-namespace"}}
+                        origins.append(origin)
+                        magnitudes.append(obspy.core.event.magnitude.Magnitude(mag=shot.mag, magnitude_type=shot.mag_units))
+                        
+                        identifier = obspy.core.event.base.ResourceIdentifier(id=str(network.code)+"."+str(shot_line.name[-3:])+"."+str(shot.shot_id))
+                        event=(obspy.core.event.Event(resource_id=identifier, event_type="Controlled Explosion", origins=origins, magnitudes=magnitudes))
+                        event.extra={'Network':{'value': str(network.code), 'type': 'attribute', 'namespace': r"http://some-page-namespace"},
+                                     'ReportNum':{'value': str(network.reportnum), 'type': 'attribute','namespace': r"http://some-page-namespace"}, 
+                                     'ShotLine':{'value': str(shot_line.name[-3:]),'type': 'attribute', 'namespace': r"http://some-page-namespace"},
+                                     'Shot_id':{'value': str(shot.shot_id),'type': 'attribute', 'namespace': r"http://some-page-namespace"}
+                                     }
+                        events.append(event)
+                        
+                
+                catalog.events=events
+            
+            catalog.write(outfile, "QUAKEML",  nsmap={"my_ns": r"http://some-name.space"})
+            
+            
+            return
         
-        if out_format.upper() == "XML":
-            write_xml(list_of_networks)
+        
+        if out_format.upper() == "EXML":
+            write_exml(list_of_networks)
             
         elif out_format.upper() == "KML":
             
@@ -389,6 +430,10 @@ class PH5toexml(object):
         elif out_format.upper() == "TEXT" or out_format.upper() == "TXT":
                         
             write_text(list_of_networks)  
+            
+        elif out_format.upper() == "QUAKEML":
+                                    
+            write_quakeml(list_of_networks)          
             
         else:
             print "output format not supported. XML, KML, or TEXT only"
