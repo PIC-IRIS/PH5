@@ -40,7 +40,7 @@ from lxml import etree
 from datetime import datetime
 
 
-PROG_VERSION = "2016.291 Developmental"
+PROG_VERSION = "2016.293 Developmental"
 
 
 def get_args():
@@ -70,8 +70,8 @@ def get_args():
                            help="Comma separated list of report numbers. Wildcards accepted",
                            type=str, metavar="reportnum_list")   
     
-    parser.add_argument("-f","--format", action="store", dest="format",
-                        help="Out format: either XML or KML",
+    parser.add_argument("-f","--format", action="store", dest="format", default="XML",
+                        help="Out format: either XML,KML, or TEXT",
                         type=str, metavar="format")   
     
     parser.add_argument("-s", "--starttime", action="store",
@@ -319,6 +319,7 @@ class PH5toexml(object):
             
             for line in out:
                 target.write(line.encode(encoding='UTF-8',errors='strict')+"\n")
+            return
                 
             
                 
@@ -358,8 +359,22 @@ class PH5toexml(object):
             
             target = open(outfile, 'w')    
             target.write(etree.tostring(etree.ElementTree(doc),pretty_print=True))
+            return
+        
+        def write_text(list_of_networks):
+            out=[]
+            out.append("Network|ReportNum|ShotLine|Shot|ShotTime|Latitude|Longitude|Elevation|ShotSize|ShotUnits")
             
-    
+            for network in list_of_networks:
+                for shot_line in network.shot_lines:
+                    for shot in shot_line.shots:
+                        out.append(str(network.code)+"|"+network.reportnum+"|"+str(shot_line.name[-3:])+"|"+str(shot.shot_id)+"|"+shot.start_time+"|"+str(shot.lat)+"|"+str(shot.lon)+"|"+str(shot.elev)+"|"+str(shot.mag)+"|"+shot.mag_units)
+                        
+                    
+            target = open(outfile, 'w')
+                                    
+            for line in out:
+                target.write(line.encode(encoding='UTF-8',errors='strict')+"\n") 
                 
             return
         
@@ -370,8 +385,13 @@ class PH5toexml(object):
         elif out_format.upper() == "KML":
             
             write_kml(list_of_networks)
+            
+        elif out_format.upper() == "TEXT" or out_format.upper() == "TXT":
+                        
+            write_text(list_of_networks)  
+            
         else:
-            print "output format not supported. XML or KML only"
+            print "output format not supported. XML, KML, or TEXT only"
 
         return
             
