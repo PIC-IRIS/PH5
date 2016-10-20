@@ -281,9 +281,12 @@ class PH5toMSeed(object):
             matched=0
             
             
+            
             if self.array:
                 arrays=self.array.split(',')
+                
                 for x in arrays:
+                    
                     if int(x) == int(array):
                         matched =1
                         
@@ -595,7 +598,7 @@ def get_args():
 
     
 
-    parser.add_argument("-a", "--array", action="store", help="separated list of arrays to extract",
+    parser.add_argument("-a", "--array", action="store", help="Comma separated list of arrays to extract",
 
                         type=str, dest="array", metavar="array")
 
