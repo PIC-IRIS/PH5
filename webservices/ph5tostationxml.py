@@ -57,7 +57,7 @@ import fnmatch
 
 
 
-PROG_VERSION = "2016.291"
+PROG_VERSION = "2016.293"
 
 
 def get_args():
@@ -184,14 +184,14 @@ class PH5toStationXML(object):
 
         if self.args.get('start_time') and "T" in self.args.get('start_time'):
             self.args['start_time'] = datetime.datetime.strptime(
-                self.args.get('start_time'), "%Y-%m-%dT%H:%M:%S+%f")
+                self.args.get('start_time'), "%Y-%m-%dT%H:%M:%S.%f")
         elif self.args.get('start_time'):
             self.args['start_time'] = datetime.datetime.strptime(
                 self.args.get('start_time'), "%Y:%j:%H:%M:%S.%f")
 
         if self.args.get('stop_time') and "T" in self.args.get('stop_time'):
             self.args['stop_time'] = datetime.datetime.strptime(
-                self.args.get('stop_time'), "%Y-%m-%dT%H:%M:%S+%f")
+                self.args.get('stop_time'), "%Y-%m-%dT%H:%M:%S.%f")
         elif self.args.get('stop_time'):
             self.args['stop_time'] = datetime.datetime.strptime(
                 self.args.get('stop_time'), "%Y:%j:%H:%M:%S.%f")
@@ -229,12 +229,21 @@ class PH5toStationXML(object):
                 if x not in sta_list:
                     continue
 
-                longitude = "{0:.6f}".format(
+                longitude = "{0:.10}".format(
                     station_list[1][0]['location/X/value_d'])
-                latitude = "{0:.6f}".format(
+                latitude = "{0:.10f}".format(
                     station_list[1][0]['location/Y/value_d'])
-                elevation = "{0:.6f}".format(
+                elevation = "{0:.10f}".format(
                     station_list[1][0]['location/Z/value_d'])
+                
+                if  not -90 <= float(latitude) <= 90:
+                    
+                    continue
+                
+                if not  -180 <= float(longitude) <= 180:
+                    
+                    continue                
+                
 
                 if self.args.get('minlat') and float(
                         self.args.get('minlat')) > float(latitude):
@@ -251,7 +260,9 @@ class PH5toStationXML(object):
                 if self.args.get('maxlon') and float(
                         self.args.get('maxlon')) < float(longitude):
                     continue
-
+                
+                
+                
                 station = obspy.core.inventory.Station(station_list[1][0]
                                                        ['seed_station_name_s'],
                                                        latitude=latitude,
@@ -268,7 +279,7 @@ class PH5toStationXML(object):
                     continue
 
                 if self.args.get('stop_time') and (
-                        station.stop_date >= self.args.get('stop_time')):
+                        station.end_date >= self.args.get('stop_time')):
                     continue
 
                 station.creation_date = datetime.datetime.fromtimestamp(
@@ -277,7 +288,7 @@ class PH5toStationXML(object):
                     station_list[1][0]['pickup_time/epoch_l'])
                 station.alternate_code = str(array_name)
                 station.site = obspy.core.inventory.Site(
-                    name=station_list[1][0]['das/serial_number_s'])
+                    name=station_list[1][0]['seed_station_name_s'])
 
                 if self.args.get('level') and (
                         self.args.get('level') == "channel" or
@@ -341,7 +352,7 @@ class PH5toStationXML(object):
                                     continue
 
                                 if self.args.get('stop_time') and (
-                                        obs_channel.stop_date >= self.args.get('stop_time')):
+                                        obs_channel.end_date >= self.args.get('stop_time')):
                                     continue
 
                                 if self.args.get('minlat') and float(
