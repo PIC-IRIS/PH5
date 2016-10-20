@@ -52,6 +52,7 @@ import argparse
 
 import fnmatch
 
+from obspy.core.util import AttribDict
 
 
 
@@ -146,7 +147,7 @@ class PH5toStationXML(object):
     def __init__(self, args):
 
         self.args = args
-        
+        self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
         
 
         # self.bb_resp = response_from_respfile(
@@ -286,7 +287,16 @@ class PH5toStationXML(object):
                     station_list[1][0]['deploy_time/epoch_l'])
                 station.termination_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['pickup_time/epoch_l'])
-                station.alternate_code = str(array_name)
+                extra = AttribDict({
+                    'PH5Array': {
+                        'value': str(array_name)[-3:],
+                        'namespace': self.iris_custom_ns,
+                        'type': 'attribute'
+                    }
+                }) 
+                
+                station.extra=extra
+                 
                 station.site = obspy.core.inventory.Site(
                     name=station_list[1][0]['seed_station_name_s'])
 
@@ -376,7 +386,16 @@ class PH5toStationXML(object):
                                     #        'sensor/model_s'] == 'cmg3t':
 
                                     #    obs_channel.response = self.bb_resp
-
+                                 
+                                extra = AttribDict({
+                                        'PH5Component': {
+                                            'value': station_list[deployment][0]['channel_number_i'],
+                                            'namespace': self.iris_custom_ns,
+                                            'type': 'attribute'
+                                        }
+                                    }) 
+                                obs_channel.extra=extra
+    
                                 obs_channels.append(obs_channel)
 
                         longitude = "{0:.6f}".format(station_list[deployment][
@@ -493,9 +512,9 @@ if __name__ == '__main__':
     ph5sxml = PH5toStationXML(args_dict)
     
     inv = ph5sxml.Process()
-
+    print inv.networks
     if args.out_format.upper() == "STATIONXML":
-        inv.write(args.outfile, format='STATIONXML')
+        inv.write(args.outfile, format='STATIONXML', nsmap={'iris': ph5sxml.iris_custom_ns})
 
     elif args.out_format.upper() == "KML":
         inv.write(args.outfile, format='KML')
