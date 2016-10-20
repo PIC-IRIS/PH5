@@ -279,8 +279,8 @@ class PH5toMSeed(object):
             array = array_name[-3:]
             
             
-
-            if self.array is not None and self.array != array:
+            
+            if self.array  and int(self.array) != int(array):
 
                 continue
 
