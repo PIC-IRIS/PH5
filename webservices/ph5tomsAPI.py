@@ -1,6 +1,21 @@
 #!/usr/bin/env pnpython3
 # Derick Hess, Sept 2016
 
+"""
+
+The MIT License (MIT)
+Copyright (c) 2016 Derick Hess
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
+to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""
 import sys
 import os
 import obspy
@@ -12,7 +27,7 @@ from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 import numpy
 
-PROG_VERSION = "2016.284 Developmental"
+PROG_VERSION = "2016.291"
 
 def fdsntimetoepoch(fdsn_time):
     pattern = "%Y-%m-%dT%H:%M:%S.%f"
@@ -61,7 +76,7 @@ class PH5toMSeed(object):
 
                  station=[], ph5path=".", netcode="XX", channel=[],
 
-                 das_sn=None,  use_deploy_pickup=True, decimation=None,
+                 das_sn=None,  use_deploy_pickup=False, decimation=None,
 
                  sample_rate_keep=None, doy_keep=[], stream=False, out_dir=".",
 
@@ -269,6 +284,8 @@ class PH5toMSeed(object):
             
         for array_name in array_names:
             array = array_name[-3:]
+            
+            
 
             if self.array is not None and self.array != array:
 
@@ -279,6 +296,8 @@ class PH5toMSeed(object):
             arrayorder = self.ph5.Array_t[array_name]['order']
 
             for station in arrayorder:
+                start_times =[]
+                
 
                 if self.station:
                     does_match=[]
@@ -296,6 +315,9 @@ class PH5toMSeed(object):
 
                 for deployment in station_list:
                     
+                    start_times=[]
+                    
+            
                     
 
                     deploy = station_list[deployment][0]['deploy_time/epoch_l']
@@ -308,7 +330,7 @@ class PH5toMSeed(object):
                         sample_rate = station_list[deployment][0]['sample_rate_i']
                     
                     if 'sample_rate_multiplier_i' in station_list[deployment][0]:
-                        sample_rate_multiplie = station_list[deployment][0]['sample_rate_multiplier_i']                    
+                        sample_rate_multiplier = station_list[deployment][0]['sample_rate_multiplier_i']                    
                         
                     
                     
@@ -363,7 +385,12 @@ class PH5toMSeed(object):
                         start_times.append(ph5API.fepoch(station_list[deployment][0]
                                        ['deploy_time/epoch_l'], station_list[deployment][0]
                                        ['deploy_time/micro_seconds_i']))
+                        
+                    
+                    
+                   
                     for start_fepoch in start_times:
+                      
                         if self.length:
                             stop_fepoch = start_fepoch + self.length
 
@@ -394,9 +421,9 @@ class PH5toMSeed(object):
                             if start_doy not in self.doy:
                                 continue
 
-                        data = {}
+                        
 
-                        c = station_list[deployment][0]['channel_number_i']
+                        
 
                         if (stop_fepoch - start_fepoch) > 86400:
                         
@@ -415,35 +442,44 @@ class PH5toMSeed(object):
                                 start_time = stop_time + .001
                         else:
                             times_to_cut = [[start_fepoch, stop_fepoch]]
+                            
+                       
 
                         for x in times_to_cut:
+                            data = {}
+                            
 
                             if not data.has_key(c):
                                 data[c] = []
 
                             if self.component and c in self.component:
                                 data[c].append(self.ph5.cut(
-                                    das, x[0], x[1], chan=c))
+                                    das, x[0], x[1], chan=c, sample_rate=sample_rate, apply_time_correction=False))
 
                             elif self.component and c not in self.component:
                                 data[c] = []
 
                             else:
                                 data[c].append(self.ph5.cut(
-                                    das, x[0], x[1], chan=c))
+                                    das, x[0], x[1], chan=c, sample_rate=sample_rate, apply_time_correction=False))
 
                             chans = data.keys()
                             chans.sort()
+                            
+                            
 
                             for c in chans:
-
+                                
+                                
                                 traces = data[c]
                                 for trace in traces:
-
+                                    
+                                 
                                     if self.decimation:
+                                        print "decimation"
                                         shift, data = decimate.decimate(
                                             self.decimation, trace.data)
-                                        wsr = int(sample_rate /
+                                        wsr = int(trace.sample_rate /
                                                   int(self.decimation))
                                         trace.sample_rate = wsr
                                         trace.nsamples = len(data)
@@ -458,10 +494,9 @@ class PH5toMSeed(object):
                                         #sys.stderr.write ("Error: Can't create trace for DAS {0} at {1}.".format (das, repr (trace.start_time)))
                                         continue
                                
-                                
-                                
-                                
-                                    mseed_trace.stats.sampling_rate = float(sample_rate) / float(sample_rate_multiplie)
+                            
+                                    
+                                    mseed_trace.stats.sampling_rate = trace.sample_rate / float(sample_rate_multiplier)
                                 
                                 
                                     mseed_trace.stats.station = station  # ZZZ   Get from Maps_g
@@ -483,26 +518,10 @@ class PH5toMSeed(object):
                                         mseed_trace.stats.starttime = obspy.UTCDateTime(
                                             trace.start_time.epoch(fepoch=True))
                                         mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond
-
+                                        
+                                    
                                     yield mseed_trace
         self.ph5.close()
-
-    def process_event(self):
-
-        pass
-
-    def process_start(self):
-
-        pass
-
-    def process_error(self):
-
-        pass
-
-    def process_all_events(self):
-
-        pass
-
 
 def get_args():
 
@@ -532,7 +551,6 @@ def get_args():
 
                         default=[])
 
-    # Need to get event or start time, length, array and/or station list
 
     parser.add_argument ("-e", "--eventnumbers", action="store",
 
@@ -543,9 +561,6 @@ def get_args():
     
                              type=str, metavar="shotline", default="1")
     
-     
-
-    #parser.add_argument ("-E", "--allevents", action="store_true", default=False)
 
     parser.add_argument("--stream", action="store_true", default=False,
 
@@ -609,7 +624,7 @@ def get_args():
 
                         metavar="out_dir", type=str, default=".")
 
-    parser.add_argument("--use_deploy_pickup", action="store_true", default=True,
+    parser.add_argument("--use_deploy_pickup", action="store_true", default=False,
 
                         help="Use deploy and pickup times to determine if data exists for a station.",
 
@@ -662,9 +677,9 @@ if __name__ == '__main__':
         for t in traces:
             if not args.stream:
                 outfile = ph5ms.filenamemseed_gen(t)
-                t.write(outfile, format='MSEED', reclen=512, encoding='STEIM2')
+                t.write(outfile, format='MSEED', reclen=4096, encoding='STEIM2')
             else:
-                t.write(sys.stdout, format='MSEED', reclen=512, encoding='STEIM2')
+                t.write(sys.stdout, format='MSEED', reclen=4096, encoding='STEIM2')
                 
 
     elif args.format and args.format.upper() == "SAC":
@@ -678,8 +693,8 @@ if __name__ == '__main__':
         for t in traces:
             if not args.stream:
                 outfile = ph5ms.filenamemseed_gen(t)
-                t.write(outfile, format='MSEED', reclen=512, encoding='STEIM2')
+                t.write(outfile, format='MSEED', reclen=4096, encoding='STEIM2')
             else:
-                t.write(sys.stdout, format='MSEED', reclen=512, encoding='STEIM2')
+                t.write(sys.stdout, format='MSEED', reclen=4096, encoding='STEIM2')
 
     # print t () - then

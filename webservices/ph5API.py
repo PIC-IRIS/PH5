@@ -1,4 +1,4 @@
-#!/usr/bin/env pnpython3
+#!/usr/bin/env pnpython4
 #
 #   Basic API for reading a family of ph5 files
 #
@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.267 Developmental'
+PROG_VERSION = '2016.294 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -30,7 +30,7 @@ class APIError (Exception) :
         self.msg = msg
         
 class Trace (object) :
-    '''   Trace object:
+    '''   PH5 trace object:
           data -> Numpy array of trace data points
           start_time -> TimeDOY time object
           time_correction_ms -> The correction to account for ocillator drift
@@ -111,7 +111,7 @@ class ph5 (Experiment.ExperimentGroup) :
               array -> The Array_t name example: Array_t_001
               station -> The station id_s
            Output:
-              returns a list of stations for this station
+              returns a list of channels for this station
         '''
         try :
             chans = self.Array_t[array]['byid'][station].keys ()
@@ -675,27 +675,28 @@ class ph5 (Experiment.ExperimentGroup) :
         else :
             return None
         
-    def cut (self, das, start_fepoch, stop_fepoch, chan=1, apply_time_correction = True) :
+    def cut (self, das, start_fepoch, stop_fepoch, chan=1, sample_rate=None, apply_time_correction = True) :
         '''   Cut trace data and return a Trace object
               Inputs:
                  das -> data logger serial number
                  start_fepoch -> time to cut start of trace as a floating point epoch
                  stop_fepoch -> time to cut end of trace as a floating point epoch
                  chan -> channel to cut
+                 sample_rate -> sample rate in samples per second
                  apply_time_correction -> iff True, slide traces to correct for clock drift
+              Returns:
+                 PH5 trace object
         '''
-        
         self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
         if apply_time_correction :
             Time_t = self.get_time_t (das)
             time_cor_guess_ms = _cor (start_fepoch, stop_fepoch, Time_t)
             if self.Das_t.has_key (das) :
-                sr = self.Das_t[das]['rows'][0]['sample_rate_i'] / float (self.Das_t[das]['rows'][0]['sample_rate_multiplier_i'])
+                sr = sample_rate
             else : sr = 0.
             time_cor_guess_samples = sr * (time_cor_guess_ms / 1000.)
         else :
             time_cor_guess_samples = 0.
-         
             
         samples_read = 0
         first = True
@@ -706,7 +707,8 @@ class ph5 (Experiment.ExperimentGroup) :
         window_start_fepoch0 = None
         window_stop_fepoch = None
         for d in self.Das_t[das]['rows'] :
-            if d['channel_number_i'] != chan :
+            sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])
+            if (d['channel_number_i'] != chan) or  (sr != sample_rate) :
                 continue
             window_start_fepoch = fepoch (d['time/epoch_l'], d['time/micro_seconds_i'])
             if window_start_fepoch0 == None : window_start_fepoch0 = window_start_fepoch
@@ -758,11 +760,14 @@ class ph5 (Experiment.ExperimentGroup) :
                 
             new_window_start_fepoch = window_stop_fepoch
         
-        try :    
-            time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
-        except APIError as e :
-            sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
-            time_correction = 0
+        if apply_time_correction :
+            try :    
+                time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
+            except APIError as e :
+                sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
+                time_correction = 0
+        else:
+            time_correction=0
         #   Make sure there was data
         if das_t :
             receiver_t = self.get_receiver_t (das_t[0])
@@ -770,7 +775,6 @@ class ph5 (Experiment.ExperimentGroup) :
         else : 
             receiver_t = None
             response_t = None
-        
         
         trace = Trace (data, 
                        start_fepoch, 
@@ -782,12 +786,15 @@ class ph5 (Experiment.ExperimentGroup) :
                        das_t, 
                        receiver_t,
                        response_t)
-           
+            
         return trace
             
 #
 ###   Mix-ins
 #
+def seed_channel_code (array_t) :
+    return array_t['seed_band_code_s'] + array_t['seed_instrument_code_s'] + array_t['seed_orientation_code_s']
+
 def by_id (rows, key='id_s', secondary_key=None, unique_key=True) :
     '''   Order table info by id_s (usually) then if required a secondary key.
     '''
@@ -1041,11 +1048,11 @@ if __name__ == '__main__' :
     ##   Create dictionary to hold trace objects
     #d = {}
     ##   Cut Z
-    #d['Z'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=1)
+    #d['Z'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=1, sample_rate=250)
     ##   Cut N
-    #d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2)
+    #d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2, sample_rate=250)
     ##   Cut E
-    #d['E'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=3)
+    #d['E'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=3, sample_rate=250)
     ##   Display trace data
     #for c in ('Z', 'N', 'E') :
         #print d[c].start_time.getISOTime ()
@@ -1092,7 +1099,7 @@ if __name__ == '__main__' :
         for k in array_t.keys () :
             das = array_t[k]['das/serial_number_s']
             #   Cut, DAS sn, start epoch, stop epoch
-            d = p.cut (das, 1200913195.333, 1200913200.5)
+            d = p.cut (das, 1200913195.333, 1200913200.5, sample_rate=100)
             print d.nsamples
     ##   Read data in receiver order, return Trace object
     #p.read_event_t_names ()
@@ -1104,7 +1111,7 @@ if __name__ == '__main__' :
         #for k in event_t.keys () :
             #t0 = fepoch (event_t[k]['time/epoch_l'], event_t[k]['time/micro_seconds_i'])
             ##   Cut, DAS sn, event time (as epoch), event time + length
-            #d = p.cut ('11809', t0, t0 + 10.)
+            #d = p.cut ('11809', t0, t0 + 10., sample_rate=100)
             #i = 0
             #print d.start_time.getFdsnTime ()
             #for point in d.data :
