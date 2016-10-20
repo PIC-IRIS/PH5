@@ -129,6 +129,7 @@ class Shot(object):
         self.elev=elev
         self.elev_units=elev_units
         self.description=description
+        self.depth=float(0.0)
         
     
     
@@ -261,6 +262,11 @@ class PH5toexml(object):
                               value['location/Y/value_d'], value['location/X/value_d'], 
                               value['location/Z/value_d'], value['location/X/units_s'], 
                               value['location/Z/units_s'], value['description_s'])
+                    
+                   
+                    shot.depth=value['depth/value_d']
+                    
+                    
                     shots.append(shot)
 
                 sl.shots=shots
@@ -398,23 +404,25 @@ class PH5toexml(object):
                         origin.time=shot.start_time
                         origin.latitude=shot.lat
                         origin.longitude=shot.lon
-                        origin.extra={'Elevation':{'value': str(shot.elev), 'namespace': r"http://some-page-namespace"}}
+                        origin.extra={'Elevation':{'value':str(shot.elev), 'namespace': r'http://some-name.space'}}
+                        if shot.depth != 0:
+                            origin.depth=shot.depth
                         origins.append(origin)
                         magnitudes.append(obspy.core.event.magnitude.Magnitude(mag=shot.mag, magnitude_type=shot.mag_units))
                         
                         identifier = obspy.core.event.base.ResourceIdentifier(id=str(network.code)+"."+str(shot_line.name[-3:])+"."+str(shot.shot_id))
                         event=(obspy.core.event.Event(resource_id=identifier, event_type="Controlled Explosion", origins=origins, magnitudes=magnitudes))
-                        event.extra={'Network':{'value': str(network.code), 'type': 'attribute', 'namespace': r"http://some-page-namespace"},
-                                     'ReportNum':{'value': str(network.reportnum), 'type': 'attribute','namespace': r"http://some-page-namespace"}, 
-                                     'ShotLine':{'value': str(shot_line.name[-3:]),'type': 'attribute', 'namespace': r"http://some-page-namespace"},
-                                     'Shot_id':{'value': str(shot.shot_id),'type': 'attribute', 'namespace': r"http://some-page-namespace"}
+                        event.extra={'Network':{'value': str(network.code), 'type': 'attribute', 'namespace': r'http://some-name.space'},
+                                     'ReportNum':{'value': str(network.reportnum), 'type': 'attribute','namespace': r'http://some-name.space'}, 
+                                     'ShotLine':{'value': str(shot_line.name[-3:]),'type': 'attribute', 'namespace':r'http://some-name.space'},
+                                     'Shot_id':{'value': str(shot.shot_id),'type': 'attribute', 'namespace': r'http://some-name.space'}
                                      }
                         events.append(event)
                         
                 
                 catalog.events=events
             
-            catalog.write(outfile, "QUAKEML",  nsmap={"my_ns": r"http://some-name.space"})
+            catalog.write(outfile, "QUAKEML",  nsmap={"PH5": r"http://some-name.space"})
             
             
             return
