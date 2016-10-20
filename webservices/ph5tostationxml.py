@@ -58,7 +58,7 @@ from obspy.core.util import AttribDict
 
 
 
-PROG_VERSION = "2016.293"
+PROG_VERSION = "2016.294"
 
 
 def get_args():
@@ -90,9 +90,9 @@ def get_args():
     parser.add_argument("-f", "--format", action="store", default="STATIONXML", dest="out_format",
                         type=str, metavar="out_format", help="Output format: STATIONXML or KML")
 
-    parser.add_argument("--array", action="store", dest="array_list",
-                        help="Comma separated list of arrays. Wildcards accepted",
-                        type=str, metavar="array_list")
+    #parser.add_argument("--array", action="store", dest="array_list",
+    #                    help="Comma separated list of arrays. Wildcards accepted",
+    #                    type=str, metavar="array_list")
 
     parser.add_argument("--station", action="store", dest="sta_list",
                         help="Comma separated list of stations. Wildcards accepted",
@@ -229,13 +229,10 @@ class PH5toStationXML(object):
 
                 if x not in sta_list:
                     continue
-
-                longitude = "{0:.10}".format(
-                    station_list[1][0]['location/X/value_d'])
-                latitude = "{0:.10f}".format(
-                    station_list[1][0]['location/Y/value_d'])
-                elevation = "{0:.10f}".format(
-                    station_list[1][0]['location/Z/value_d'])
+                
+                longitude = station_list[1][0]['location/X/value_d']
+                latitude = station_list[1][0]['location/Y/value_d']
+                elevation = station_list[1][0]['location/Z/value_d']
                 
                 if  not -90 <= float(latitude) <= 90:
                     
@@ -398,12 +395,12 @@ class PH5toStationXML(object):
     
                                 obs_channels.append(obs_channel)
 
-                        longitude = "{0:.6f}".format(station_list[deployment][
-                                                     0]['location/X/value_d'])
-                        latitude = "{0:.6f}".format(station_list[deployment][
-                                                    0]['location/Y/value_d'])
-                        elevation = "{0:.6f}".format(station_list[deployment][
-                                                     0]['location/Z/value_d'])
+                        longitude = station_list[deployment][
+                                                     0]['location/X/value_d']
+                        latitude = station_list[deployment][
+                                                    0]['location/Y/value_d']
+                        elevation = station_list[deployment][
+                                                     0]['location/Z/value_d']
 
                 station.selected_number_of_channels = len(channels)
                 station.total_number_of_channels = total_channels

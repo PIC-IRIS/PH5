@@ -27,6 +27,8 @@ from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 import numpy
 
+
+
 PROG_VERSION = "2016.294"
 
 def fdsntimetoepoch(fdsn_time):
@@ -281,9 +283,12 @@ class PH5toMSeed(object):
             matched=0
             
             
+            
             if self.array:
                 arrays=self.array.split(',')
+                
                 for x in arrays:
+                    
                     if int(x) == int(array):
                         matched =1
                         
@@ -317,7 +322,13 @@ class PH5toMSeed(object):
                     
                     start_times=[]
                     
+                                        
+                    
                     if self.eventnumbers and self.shotline and matched_shot_line:
+                        
+                        if not self.length:
+                            #print "error: length must be specified. Use -l option"
+                            sys.exit()
                                        
                         eventnumbers=self.eventnumbers.split(',') 
                         for evt in eventnumbers:
@@ -595,7 +606,7 @@ def get_args():
 
     
 
-    parser.add_argument("-a", "--array", action="store", help="separated list of arrays to extract",
+    parser.add_argument("-a", "--array", action="store", help="Comma separated list of arrays to extract",
 
                         type=str, dest="array", metavar="array")
 
@@ -675,9 +686,7 @@ def get_args():
 
 if __name__ == '__main__':
 
-    #from time import time as t
-
-    #then = t ()
+    
 
     args = get_args()
 
@@ -715,4 +724,4 @@ if __name__ == '__main__':
             else:
                 t.write(sys.stdout, format='MSEED', reclen=4096, encoding='STEIM2')
 
-    # print t () - then
+    
