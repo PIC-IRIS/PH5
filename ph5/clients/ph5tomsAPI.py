@@ -27,7 +27,7 @@ from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 import numpy
 
-PROG_VERSION = "2016.291"
+PROG_VERSION = "2016.294"
 
 def fdsntimetoepoch(fdsn_time):
     pattern = "%Y-%m-%dT%H:%M:%S.%f"
@@ -278,11 +278,17 @@ class PH5toMSeed(object):
         for array_name in array_names:
             array = array_name[-3:]
             
+            matched=0
             
             
-            if self.array  and int(self.array) != int(array):
-
-                continue
+            if self.array:
+                arrays=self.array.split(',')
+                for x in arrays:
+                    if int(x) == int(array):
+                        matched =1
+                        
+                if matched != 1:
+                    continue
 
             arraybyid = self.ph5.Array_t[array_name]['byid']
 
@@ -435,7 +441,7 @@ class PH5toMSeed(object):
                         
 
                         if (stop_fepoch - start_fepoch) > 86400:
-                        
+                            original_stop_fepoch = stop_fepoch
                             seconds_covered = 0
                             total_seconds = stop_fepoch - start_fepoch
                             times_to_cut = []
@@ -453,6 +459,15 @@ class PH5toMSeed(object):
                             times_to_cut = [[start_fepoch, stop_fepoch]]
                             
                        
+                        
+                        times_to_cut[-1][-1] = stop_fepoch
+                        
+                        
+                        if int(times_to_cut[-1][-2]) == int(times_to_cut[-1][-1]):
+                            del times_to_cut[-1]
+                        
+                        
+                        
                         
                         for x in times_to_cut:
                             
@@ -578,10 +593,9 @@ def get_args():
 
                         type=str, dest="stop_time", metavar="stop_time", help="Time formats are YYYY:DOY:HH:MM:SS.ss or YYYY-mm-ddTHH:MM:SS.ss")
 
-    parser.add_argument("-A", "--all", action="store_true",
-                        default=False, dest="extract_all")
+    
 
-    parser.add_argument("-a", "--array", action="store",
+    parser.add_argument("-a", "--array", action="store", help="separated list of arrays to extract",
 
                         type=str, dest="array", metavar="array")
 
