@@ -512,7 +512,7 @@ if __name__ == '__main__':
     ph5sxml = PH5toStationXML(args_dict)
     
     inv = ph5sxml.Process()
-    print inv.networks
+    
     if args.out_format.upper() == "STATIONXML":
         inv.write(args.outfile, format='STATIONXML', nsmap={'iris': ph5sxml.iris_custom_ns})
 
