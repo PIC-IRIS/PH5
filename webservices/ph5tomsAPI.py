@@ -82,13 +82,13 @@ class PH5toMSeed(object):
 
                  starttime=None, stoptime=None, reduction_velocity=-1., 
             
-                 dasskip=None, shotline=None, eventnumbers=[]):
+                 dasskip=None, shotline=None, eventnumbers=[],notimecorrect=False):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
 
         self.array = array
 
-        self.notimecorrect = False
+        self.notimecorrect = notimecorrect
 
         self.decimation = decimation
 
@@ -262,21 +262,14 @@ class PH5toMSeed(object):
         for shot_line in shot_lines:
             if int(shot_line[-3:]) == int(self.shotline): 
                 matched_shot_line = shot_line
+            
+            
         
-           
+          
         
         
         start_times =[]
-        if self.eventnumbers and self.shotline and matched_shot_line:
-		   
-            self.eventnumbers=self.eventnumbers.split(',') 
-            for evt in self.eventnumbers:
-                try:
-                    event_t = self.ph5.Event_t[matched_shot_line]['byid'][evt]
-                    start_times.append(event_t['time/epoch_l'])
-                #this exception usually occurs when there is no event table or incorrect shotline is given    
-                except Exception as e :
-                    print "error"
+        
                     
             
             
@@ -296,6 +289,7 @@ class PH5toMSeed(object):
             arrayorder = self.ph5.Array_t[array_name]['order']
 
             for station in arrayorder:
+                
                 start_times =[]
                 
 
@@ -317,11 +311,22 @@ class PH5toMSeed(object):
                     
                     start_times=[]
                     
+                    if self.eventnumbers and self.shotline and matched_shot_line:
+                                       
+                        eventnumbers=self.eventnumbers.split(',') 
+                        for evt in eventnumbers:
+                            try:
+                                event_t = self.ph5.Event_t[matched_shot_line]['byid'][evt]
+                                start_times.append(event_t['time/epoch_l'])
+                                #this exception usually occurs when there is no event table or incorrect shotline is given    
+                            except Exception as e :
+                                print "error"                    
+                    
             
                     
 
                     deploy = station_list[deployment][0]['deploy_time/epoch_l']
-
+           
                     pickup = station_list[deployment][0]['pickup_time/epoch_l']
 
                     das = station_list[deployment][0]['das/serial_number_s']
@@ -365,6 +370,8 @@ class PH5toMSeed(object):
                     c = station_list[deployment][0]['channel_number_i']
 
                     full_code = band_code + instrument_code + orientation_code
+                    
+                    
 
                     if self.channel and full_code not in self.channel:
                         continue
@@ -373,6 +380,8 @@ class PH5toMSeed(object):
                        continue
 
                     self.ph5.read_das_t(das)
+                    
+                    
 
                     if self.start_time and not matched_shot_line:
                         if "T" not in self.start_time:
@@ -390,7 +399,7 @@ class PH5toMSeed(object):
                     
                    
                     for start_fepoch in start_times:
-                      
+                        
                         if self.length:
                             stop_fepoch = start_fepoch + self.length
 
@@ -444,8 +453,9 @@ class PH5toMSeed(object):
                             times_to_cut = [[start_fepoch, stop_fepoch]]
                             
                        
-
+                        
                         for x in times_to_cut:
+                            
                             data = {}
                             
 
@@ -454,14 +464,14 @@ class PH5toMSeed(object):
 
                             if self.component and c in self.component:
                                 data[c].append(self.ph5.cut(
-                                    das, x[0], x[1], chan=c, sample_rate=sample_rate, apply_time_correction=False))
+                                    das, x[0], x[1], chan=c, sample_rate=sample_rate, apply_time_correction=not self.notimecorrect))
 
                             elif self.component and c not in self.component:
                                 data[c] = []
 
                             else:
                                 data[c].append(self.ph5.cut(
-                                    das, x[0], x[1], chan=c, sample_rate=sample_rate, apply_time_correction=False))
+                                    das, x[0], x[1], chan=c, sample_rate=sample_rate, apply_time_correction=not self.notimecorrect))
 
                             chans = data.keys()
                             chans.sort()
@@ -476,7 +486,7 @@ class PH5toMSeed(object):
                                     
                                  
                                     if self.decimation:
-                                        print "decimation"
+                                        
                                         shift, data = decimate.decimate(
                                             self.decimation, trace.data)
                                         wsr = int(trace.sample_rate /
@@ -496,7 +506,7 @@ class PH5toMSeed(object):
                                
                             
                                     
-                                    mseed_trace.stats.sampling_rate = trace.sample_rate / float(sample_rate_multiplier)
+                                    mseed_trace.stats.sampling_rate = trace.sample_rate / float(trace.das_t[0]['sample_rate_multiplier_i'])
                                 
                                 
                                     mseed_trace.stats.station = station  # ZZZ   Get from Maps_g
@@ -508,16 +518,10 @@ class PH5toMSeed(object):
                                     else:
                                         mseed_trace.stats.network = 'XX'
 
-                                    if self.notimecorrect == True:
-                                        corrected_time = trace.time_correct()
-                                        mseed_trace.stats.starttime = obspy.UTCDateTime(
-                                            corrected_time.epoch(fepoch=False))
-                                        mseed_trace.stats.starttime.microsecond = corrected_time.dtobject.microsecond
-
-                                    else:
-                                        mseed_trace.stats.starttime = obspy.UTCDateTime(
+                             
+                                    mseed_trace.stats.starttime = obspy.UTCDateTime(
                                             trace.start_time.epoch(fepoch=True))
-                                        mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond
+                                    mseed_trace.stats.starttime.microsecond = trace.start_time.dtobject.microsecond
                                         
                                     
                                     yield mseed_trace
@@ -559,7 +563,7 @@ def get_args():
     
     parser.add_argument ("--shotline", action="store",
     
-                             type=str, metavar="shotline", default="1")
+                             type=str, metavar="shotline", default=None)
     
 
     parser.add_argument("--stream", action="store_true", default=False,
@@ -617,7 +621,7 @@ def get_args():
 
                         type=int, dest="length", metavar="length")
 
-    parser.add_argument("-N", "--notimecorrect",
+    parser.add_argument("--notimecorrect",
                         action="store_true", default=False)
 
     parser.add_argument("-o", "--out_dir", action="store",
@@ -669,7 +673,7 @@ if __name__ == '__main__':
 
                        args.decimation, args.sample_rate, args.doy_keep, args.stream,
 
-                       args.out_dir, args.start_time, args.stop_time, args.red_vel, args.dasskip, args.shotline, args.eventnumbers)
+                       args.out_dir, args.start_time, args.stop_time, args.red_vel, args.dasskip, args.shotline, args.eventnumbers, args.notimecorrect)
 
     traces = ph5ms.process_all()
 
