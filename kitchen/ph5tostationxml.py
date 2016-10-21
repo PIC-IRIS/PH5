@@ -180,8 +180,8 @@ class PH5toStationXML(object):
         if not self.args.get('reportnum_list'):
             self.args['reportnum_list'] = "*"
 
-        if not self.args.get('array_list'):
-            self.args['array_list'] = "*"
+        #if not self.args.get('array_list'):
+            #self.args['array_list'] = "*"
 
         if self.args.get('start_time') and "T" in self.args.get('start_time'):
             self.args['start_time'] = datetime.datetime.strptime(
