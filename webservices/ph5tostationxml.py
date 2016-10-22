@@ -400,7 +400,7 @@ class PH5toStationXML(object):
                                  
                                 extra = AttribDict({
                                         'PH5Component': {
-                                            'value': station_list[deployment][0]['channel_number_i'],
+                                            'value': str(station_list[deployment][0]['channel_number_i']),
                                             'namespace': self.iris_custom_ns,
                                             'type': 'attribute'
                                         }
