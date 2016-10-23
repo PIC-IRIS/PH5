@@ -26,8 +26,6 @@ import obspy
 
 import ph5API
 
-import decimate
-
 import time
 
 import calendar
@@ -209,6 +207,8 @@ class PH5toStationXML(object):
         
 
         all_stations = []
+        
+        
         cha_list_patterns = [x.strip()
                              for x in self.args.get('channel_list').split(',')]
         location_patterns = [x.strip()
@@ -234,7 +234,7 @@ class PH5toStationXML(object):
                 
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
-
+            
             for x in arrayorder:
                 station_list = arraybyid.get(x)
                 channels = []
@@ -280,6 +280,7 @@ class PH5toStationXML(object):
                                                        latitude=latitude,
                                                        longitude=longitude,
                                                        elevation=elevation)
+                
 
                 station.start_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['deploy_time/epoch_l'])
@@ -400,7 +401,7 @@ class PH5toStationXML(object):
                                  
                                 extra = AttribDict({
                                         'PH5Component': {
-                                            'value': station_list[deployment][0]['channel_number_i'],
+                                            'value': str(station_list[deployment][0]['channel_number_i']),
                                             'namespace': self.iris_custom_ns,
                                             'type': 'attribute'
                                         }
@@ -485,6 +486,11 @@ class PH5toStationXML(object):
 
             sta_list = self.Parse_Station_list(self.args.get('sta_list'))
             network.stations = self.Read_Stations(sta_list)
+            start_time, end_time=self.get_network_date()
+            
+            network.start_date=datetime.datetime.fromtimestamp(start_time)
+            network.end_date=datetime.datetime.fromtimestamp(end_time)
+           
 
         self.ph5.close()
 
@@ -514,6 +520,33 @@ class PH5toStationXML(object):
                                              module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.get('uri'))
 
         return inv
+    
+    def get_network_date(self):
+        self.read_arrays(None)
+        array_names = self.ph5.Array_t_names
+        array_names.sort()
+        min_start_time=7289567999
+        max_end_time=0        
+        
+        for array_name in array_names:
+            array = array_name[-3:] 
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order'] 
+            
+            for station in arrayorder:
+                station_list = arraybyid.get(station)
+                for deployment in station_list:
+                    if float(station_list[deployment][0]['deploy_time/epoch_l']) < float(min_start_time):
+                        min_start_time=float(station_list[deployment][0]['deploy_time/epoch_l'])
+                        
+                    if float(station_list[deployment][0]['pickup_time/epoch_l']) > float(max_end_time):
+                        max_end_time=float(station_list[deployment][0]['pickup_time/epoch_l'])  
+                        
+        return min_start_time, max_end_time
+                    
+                    
+                                    
+        
 
 
 if __name__ == '__main__':
