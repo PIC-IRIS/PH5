@@ -744,7 +744,7 @@ class ph5 (Experiment.ExperimentGroup) :
                 #print len (data)
             else :
                 #   Time difference between the end of last window and the start of this one
-                time_diff = abs (new_window_start_fepoch - window_start_fepoch)
+                time_diff = np.absolute(new_window_start_fepoch - window_start_fepoch)
                 #   Overlaps are positive
                 d['gap_overlap'] = time_diff - (1. / window_sample_rate)
                 #if abs (time_diff) > (1. / window_sample_rate) :

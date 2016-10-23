@@ -2,7 +2,6 @@
 # Derick Hess, Oct 2016
 
 """
-
 The MIT License (MIT)
 Copyright (c) 2016 Derick Hess
 
@@ -22,31 +21,30 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
-
 """
 
 import sys
 import os
-import obspy
+from obspy import Trace
+from obspy.core.util import AttribDict
+from obspy import UTCDateTime
 import ph5API
-import decimate
 import time
-from datetime import datetime
 from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
-import numpy
 
 
-PROG_VERSION = "2016.295"
+PROG_VERSION = "2016.296"
 
 
 def fdsntimetoepoch(fdsn_time):
+
     pattern = "%Y-%m-%dT%H:%M:%S.%f"
     epoch = float(time.mktime(time.strptime(fdsn_time, pattern)))
     return epoch
 
 
-def DOY_breakup(start_fepoch):
+def doy_breakup(start_fepoch):
 
     passcal_start = epoch2passcal(start_fepoch)
     start_passcal_list = passcal_start.split(":")
@@ -57,9 +55,9 @@ def DOY_breakup(start_fepoch):
         next_doy = 1
         year = int(year) + 1
 
-    Next_passcal_date = str(year) + ":" + str(next_doy) + ":00:00:00.000"
-    stop_fepoch = passcal2epoch(Next_passcal_date)
-    stop_fepoch = stop_fepoch - .001
+    next_passcal_date = str(year) + ":" + str(next_doy) + ":00:00:00.000"
+    stop_fepoch = passcal2epoch(next_passcal_date)
+    stop_fepoch -= .001
 
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
@@ -70,7 +68,7 @@ class StationCut(object):
     def __init__(self, net_code, station, das, channel,
                  seed_channel, starttime, endtime,
                  sample_rate, sample_rate_multiplier,
-                 notimecorrect, location):
+                 notimecorrect, location, latitude, longitude):
 
         self.net_code = net_code
         self.station = station
@@ -83,6 +81,8 @@ class StationCut(object):
         self.sample_rate_multiplier = sample_rate_multiplier
         self.notimecorrect = notimecorrect
         self.location = location
+        self.latitude = latitude
+        self.longitude = longitude
 
 
 class PH5toMSeed(object):
@@ -121,7 +121,7 @@ class PH5toMSeed(object):
         if not os.path.exists(self.out_dir):
             try:
                 os.mkdir(self.out_dir)
-            except Exception as e:
+            except Exception:
                 sys.stderr.write(
                     "Error: Can't create {0}.".format(self.out_dir))
                 sys.exit()
@@ -139,13 +139,13 @@ class PH5toMSeed(object):
         # print PH5_PATH, PH5_FILE
 
         if self.nickname[-3:] == 'ph5':
-            PH5FILE = os.path.join(self.ph5path, self.nickname)
+            ph5file = os.path.join(self.ph5path, self.nickname)
         else:
-            PH5FILE = os.path.join(self.ph5path, self.nickname + '.ph5')
-            self.nickname = self.nickname + '.ph5'
+            ph5file = os.path.join(self.ph5path, self.nickname + '.ph5')
+            self.nickname += '.ph5'
 
-        if not os.path.exists(PH5FILE):
-            sys.stderr.write("Error: %s not found.\n" % PH5FILE)
+        if not os.path.exists(ph5file):
+            sys.stderr.write("Error: %s not found.\n" % ph5file)
             sys.exit(-1)
 
         self.ph5 = ph5API.ph5(path=self.ph5path, nickname=self.nickname)
@@ -192,6 +192,35 @@ class PH5toMSeed(object):
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
+    
+    def filenamemsimg_gen(self, trace):
+    
+        s = trace.stats
+        secs = int(s.starttime.timestamp)
+        pre = epoch2passcal(secs, sep='_')
+        ret = "{0}.{1}.{2}.{3}.{4}.png".format(pre, s.network, s.station,
+                                              s.location, s.channel)
+        if not self.stream:
+            if not os.path.exists(os.path.join(self.out_dir, "preview_images")):
+                os.makedirs(os.path.join(self.out_dir, "preview_images"))
+                    
+            ret = os.path.join(self.out_dir, "preview_images", ret)
+        return ret
+    
+    def filenamesacimg_gen(self, trace):
+    
+        s = trace.stats
+        secs = int(s.starttime.timestamp)
+        pre = epoch2passcal(secs, sep='.')
+        ret = "{0}.{1}.{2}.{3}.{4}.png".format(
+                s.network, s.station, s.location, s.channel, pre)
+        if not self.stream:
+            if not self.stream:
+                if not os.path.exists(os.path.join(self.out_dir, "preview_images")):
+                    os.makedirs(os.path.join(self.out_dir, "preview_images")) 
+                    
+            ret = os.path.join(self.out_dir, "preview_images", ret)
+        return ret    
 
     def create_trace(self, station_to_cut):
 
@@ -204,17 +233,10 @@ class PH5toMSeed(object):
                         sample_rate=station_to_cut.sample_rate,
                         apply_time_correction=nt)
 
-        if self.decimation:
-            shift, data = decimate.decimate(
-                self.decimation, trace.data)
-            wsr = int(trace.sample_rate /
-                      int(self.decimation))
-            trace.sample_rate = wsr
-            trace.nsamples = len(data)
         if trace.nsamples == 0:
             return
         try:
-            obspy_trace = obspy.Trace(data=trace.data)
+            obspy_trace = Trace(data=trace.data)
         except ValueError:
             return
 
@@ -223,14 +245,19 @@ class PH5toMSeed(object):
                                                'sample_rate_multiplier_i']))
         obspy_trace.stats.location = station_to_cut.location
         obspy_trace.stats.station = station_to_cut.station
+        obspy_trace.stats.coordinates = AttribDict()
+        obspy_trace.stats.coordinates.latitude = station_to_cut.latitude
+        obspy_trace.stats.coordinates.longitude = station_to_cut.longitude
         obspy_trace.stats.channel = station_to_cut.seed_channel
         obspy_trace.stats.network = station_to_cut.net_code
-        obspy_trace.stats.starttime = obspy.UTCDateTime(
+        obspy_trace.stats.starttime = UTCDateTime(
             trace.start_time.epoch(
                 fepoch=True))
         obspy_trace.stats.starttime.microsecond = (
             trace.start_time.dtobject.microsecond)
 
+        if self.decimation:
+            obspy_trace.decimate(int(self.decimation))
         ph5.close()
 
         return obspy_trace
@@ -244,7 +271,6 @@ class PH5toMSeed(object):
         shot_lines = self.ph5.Event_t_names
         shot_lines.sort()
         matched_shot_line = ""
-        start_times = []
 
         for shot_line in shot_lines:
 
@@ -267,7 +293,7 @@ class PH5toMSeed(object):
             arrayorder = self.ph5.Array_t[array_name]['order']
 
             for station in arrayorder:
-                start_times = []
+
                 if self.station:
                     does_match = []
                     sta_list = self.station.split(',')
@@ -280,7 +306,7 @@ class PH5toMSeed(object):
                 station_list = arraybyid.get(station)
                 for deployment in station_list:
                     start_times = []
-                    stations_to_cut = []
+
                     if (self.eventnumbers and
                             self.shotline and matched_shot_line):
                         if not self.length:
@@ -293,7 +319,10 @@ class PH5toMSeed(object):
                                 event_t = self.ph5.Event_t[
                                     matched_shot_line]['byid'][evt]
                                 start_times.append(event_t['time/epoch_l'])
-                            except Exception as e:
+                                self.evt_lat = event_t['location/Y/value_d']
+                                self.evt_lon = event_t['location/X/value_d']
+                                # sys.exit()
+                            except Exception:
                                 print "error"
                     deploy = station_list[deployment][0]['deploy_time/epoch_l']
                     location = station_list[deployment][
@@ -304,7 +333,7 @@ class PH5toMSeed(object):
                     if 'sample_rate_i' in station_list[deployment][0]:
                         sample_rate = station_list[deployment
                                                    ][0]['sample_rate_i']
-
+                    sample_rate_multiplier = 1
                     if ('sample_rate_multiplier_i' in
                             station_list[deployment][0]):
                         sample_rate_multiplier = station_list[
@@ -382,25 +411,24 @@ class PH5toMSeed(object):
                         start_passcal = epoch2passcal(start_fepoch, sep=':')
                         start_passcal_list = start_passcal.split(":")
                         start_doy = start_passcal_list[1]
-                        start_year = start_passcal_list[0]
                         if self.offset:
-                            start_fepoch = start_fepoch + int(self.offset)
+                            start_fepoch += int(self.offset)
                         if self.doy_keep:
                             if start_doy not in self.doy:
                                 continue
                         if (stop_fepoch - start_fepoch) > 86400:
-                            original_stop_fepoch = stop_fepoch
+
                             seconds_covered = 0
                             total_seconds = stop_fepoch - start_fepoch
                             times_to_cut = []
-                            stop_time, seconds = DOY_breakup(start_fepoch)
+                            stop_time, seconds = doy_breakup(start_fepoch)
                             seconds_covered = seconds_covered + seconds
                             times_to_cut.append([start_fepoch, stop_time])
                             start_time = stop_time + .001
 
                             while seconds_covered < total_seconds:
-                                stop_time, seconds = DOY_breakup(start_time)
-                                seconds_covered = seconds_covered + seconds
+                                stop_time, seconds = doy_breakup(start_time)
+                                seconds_covered += seconds
                                 times_to_cut.append([start_time, stop_time])
                                 start_time = stop_time + .001
                         else:
@@ -411,6 +439,10 @@ class PH5toMSeed(object):
                                 times_to_cut[-1][-1]):
                             del times_to_cut[-1]
 
+                        latitude = station_list[deployment][
+                            0]['location/Y/value_d']
+                        longitude = station_list[deployment][
+                            0]['location/X/value_d']
                         for x in times_to_cut:
                             station_x = StationCut(
                                 experiment_t[0]['net_code_s'],
@@ -423,7 +455,9 @@ class PH5toMSeed(object):
                                 sample_rate,
                                 sample_rate_multiplier,
                                 self.notimecorrect,
-                                location)
+                                location,
+                                latitude,
+                                longitude)
                             yield station_x
 
         return
@@ -565,10 +599,16 @@ def get_args():
         "-F", "--format", action="store", dest="format",
         help="SAC or MSEED",
         metavar="format", type=str)
+    
+    parser.add_argument(
+            "--previewimages",
+            help="produce png images of traces",
+            action="store_true",
+            default=False)    
 
-    args = parser.parse_args()
+    the_args = parser.parse_args()
 
-    return args
+    return the_args
 
 
 if __name__ == '__main__':
@@ -591,30 +631,33 @@ if __name__ == '__main__':
     if args.format and args.format.upper() == "MSEED":
         for t in traces:
             if not args.stream:
-
                 t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096, encoding='STEIM2')
+                        reclen=4096)
+                if args.previewimages is True:
+                    t.plot(outfile=ph5ms.filenamemsimg_gen(t), bgcolor="#DCD3ED", color="#272727", face_color="#DCD3ED")
+                    
             else:
-                t.write(sys.stdout, format='MSEED', reclen=4096,
-                        encoding='STEIM2')
+                t.write(sys.stdout, format='MSEED', reclen=4096)
 
     elif args.format and args.format.upper() == "SAC":
         for t in traces:
             if not args.stream:
-
                 t.write(ph5ms.filenamesac_gen(t), format='SAC')
+                if args.previewimages is True:
+                    t.plot(outfile=ph5ms.filenamesacimg_gen(t))                
+                
             else:
                 t.write(sys.stdout, format='SAC')
+
     else:
         for t in traces:
             if not args.stream:
-
                 t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096, encoding='STEIM2')
+                        reclen=4096)    
+                if args.previewimages is True:
+                    t.plot(outfile=ph5ms.filenamemsimg_gen(t))
             else:
-                t.write(sys.stdout, format='MSEED', reclen=4096,
-                        encoding='STEIM2')
+                t.write(sys.stdout, format='MSEED', reclen=4096)
 
     ph5ms.ph5.close()
-
     print tm() - then
