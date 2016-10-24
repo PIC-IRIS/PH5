@@ -372,14 +372,27 @@ class PH5toMSeed(object):
                     if self.das_sn and self.das_sn != das:
                         continue
                     self.ph5.read_das_t(das)
-
+                    
+                    
                     if self.start_time and not matched_shot_line:
+                            
                         if "T" not in self.start_time:
-                            start_fepoch = self.start_time
-                            start_times.append(passcal2epoch(start_fepoch))
+                            check_start_time = passcal2epoch(self.start_time)                         
+                            if float(check_start_time) > float(deploy):
+                                start_fepoch = self.start_time
+                                start_times.append(passcal2epoch(start_fepoch))
+                            else:
+                                start_times.append(deploy)
+                                
                         else:
-                            start_times.append(fdsntimetoepoch(
-                                self.start_time))
+                            check_start_time = fdsntimetoepoch(self.start_time)
+                            if float(check_start_time) > float(deploy):
+                                start_times.append(fdsntimetoepoch(
+                                    self.start_time))   
+                            else:
+                                start_times.append(deploy)
+                        if float(check_start_time) > float(pickup):
+                            continue                            
                     elif not matched_shot_line:
                         start_times.append(ph5API.fepoch(station_list[
                             deployment][0]
@@ -388,36 +401,54 @@ class PH5toMSeed(object):
                             ['deploy_time/micro_seconds_i']))
 
                     for start_fepoch in start_times:
+                        
+                        
                         if self.length:
                             stop_fepoch = start_fepoch + self.length
+                        
                         elif self.end_time:
+                            
                             if "T" not in self.end_time:
-                                stop_fepoch = self.end_time
-                                stop_fepoch = passcal2epoch(stop_fepoch)
+                                check_end_time = passcal2epoch(self.end_time)
+                                if float(check_end_time) < float(pickup):
+                                    stop_fepoch = self.end_time
+                                    stop_fepoch = passcal2epoch(stop_fepoch)
+                                else:
+                                    stop_fepoch = pickup
+                                    
                             else:
-                                stop_fepoch = fdsntimetoepoch(self.end_time)
+                                check_end_time = fdsntimetoepoch(self.end_time)
+                                if float(check_end_time) < float(pickup):
+                                    stop_fepoch = fdsntimetoepoch(self.end_time)
+                                else:
+                                    stop_fepoch= pickup
+                            if float(check_end_time) < float(pickup):
+                                continue                            
                         else:
                             stop_fepoch = ph5API.fepoch(
                                 station_list[deployment
                                              ][0]['pickup_time/epoch_l'],
                                 station_list[deployment]
                                 [0]['pickup_time/micro_seconds_i'])
+                            
                         if (self.use_deploy_pickup is True and not
                                 ((start_fepoch >= deploy and
                                   stop_fepoch <= pickup))):
-                            # das not deployed within deploy/pickup time
+                            # das not deployed within deploy/pickup time 
                             continue
-
+                        
                         start_passcal = epoch2passcal(start_fepoch, sep=':')
                         start_passcal_list = start_passcal.split(":")
                         start_doy = start_passcal_list[1]
+                        
                         if self.offset:
                             start_fepoch += int(self.offset)
+                            
                         if self.doy_keep:
                             if start_doy not in self.doy:
                                 continue
+                            
                         if (stop_fepoch - start_fepoch) > 86400:
-
                             seconds_covered = 0
                             total_seconds = stop_fepoch - start_fepoch
                             times_to_cut = []
@@ -434,15 +465,18 @@ class PH5toMSeed(object):
                         else:
                             times_to_cut = [[start_fepoch, stop_fepoch]]
                             times_to_cut[-1][-1] = stop_fepoch
+                            
 
                         if int(times_to_cut[-1][-2]) == int(
                                 times_to_cut[-1][-1]):
                             del times_to_cut[-1]
+                            
 
                         latitude = station_list[deployment][
                             0]['location/Y/value_d']
                         longitude = station_list[deployment][
                             0]['location/X/value_d']
+                        
                         for x in times_to_cut:
                             station_x = StationCut(
                                 experiment_t[0]['net_code_s'],
@@ -644,7 +678,7 @@ if __name__ == '__main__':
             if not args.stream:
                 t.write(ph5ms.filenamesac_gen(t), format='SAC')
                 if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamesacimg_gen(t))                
+                    t.plot(outfile=ph5ms.filenamesacimg_gen(t), bgcolor="#DCD3ED", color="#272727", face_color="#DCD3ED")                
                 
             else:
                 t.write(sys.stdout, format='SAC')
@@ -655,7 +689,7 @@ if __name__ == '__main__':
                 t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
                         reclen=4096)    
                 if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t))
+                    t.plot(outfile=ph5ms.filenamemsimg_gen(t), bgcolor="#DCD3ED", color="#272727", face_color="#DCD3ED")
             else:
                 t.write(sys.stdout, format='MSEED', reclen=4096)
 
