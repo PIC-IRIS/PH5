@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.294 Developmental'
+PROG_VERSION = '2016.297 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -268,10 +268,10 @@ class ph5 (Experiment.ExperimentGroup) :
             c = self.channels (array_table_name, o)[0]
             array_t = Array_t['byid'][o]
             offset_t = self.ph5_g_sorts.read_offset_fast (shot_id, 
-                                                          array_t[c]['id_s'], 
+                                                          array_t[c][0]['id_s'], 
                                                           name=offset_table_name)
             
-            Offset_t[array_t[c]['id_s']] = offset_t
+            Offset_t[array_t[c][0]['id_s']] = offset_t
             
         return Offset_t
     
@@ -585,6 +585,10 @@ class ph5 (Experiment.ExperimentGroup) :
             self.num_found_das += 1
             
         return das
+    
+    def forget_das_t (das) :
+        if self.Das_t.has_key (das) :
+            del self.Das_t[das]
             
     def read_t (self, table, n=None) :
         '''   Read table and return kef
@@ -685,7 +689,7 @@ class ph5 (Experiment.ExperimentGroup) :
                  sample_rate -> sample rate in samples per second
                  apply_time_correction -> iff True, slide traces to correct for clock drift
               Returns:
-                 PH5 trace object
+                 A list of PH5 trace objects split on gaps
         '''
         self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
         if apply_time_correction :
@@ -700,6 +704,8 @@ class ph5 (Experiment.ExperimentGroup) :
             
         samples_read = 0
         first = True
+        new_trace = False
+        traces = []
         das_t = []
         if not self.Das_t.has_key (das) :
             return Trace (np.array ([]), start_fepoch, 0., 0, 0., None, None, das_t, None, None)
@@ -744,54 +750,129 @@ class ph5 (Experiment.ExperimentGroup) :
                 #print len (data)
             else :
                 #   Time difference between the end of last window and the start of this one
-                time_diff = np.absolute(new_window_start_fepoch - window_start_fepoch)
+                time_diff = abs (new_window_start_fepoch - window_start_fepoch)
                 #   Overlaps are positive
                 d['gap_overlap'] = time_diff - (1. / window_sample_rate)
-                #if abs (time_diff) > (1. / window_sample_rate) :
-                    #raise APIError ("Data not continuous. Difference: {0} Sample interval: {1}\n".format (time_diff, (1. / window_sample_rate)))
-                    #break
+                #   Data gap
+                if abs (time_diff) > (1. / window_sample_rate) :
+                    new_trace = True
                                 
             if len (data_tmp) > 0 :
-                data = np.append (data, data_tmp)
-                #print len (data), data.dtype
-                #data.extend (data_tmp)
-                samples_read += len (data_tmp)
-                das_t.append (d)
+                if new_trace :
+                    trace = Trace (data, 
+                                   start_fepoch, 
+                                   0,                       #   time_correction
+                                   len (data),              #   samples_read
+                                   window_sample_rate, 
+                                   current_trace_type, 
+                                   current_trace_byteorder, 
+                                   das_t, 
+                                   None,                    #   receiver_t
+                                   None)                    #   response_t
+                    start_fepoch = window_start_fepoch
+                    traces.append (trace)
+                    data = data_tmp
+                    das_t = []
+                    new_trace = False
+                else :
+                    data = np.append (data, data_tmp)
+                    #print len (data), data.dtype
+                    #data.extend (data_tmp)
+                    samples_read += len (data_tmp)
+                    das_t.append (d)
                 
             new_window_start_fepoch = window_stop_fepoch
-        
-        if apply_time_correction :
-            try :    
-                time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
-            except APIError as e :
-                sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
-                time_correction = 0
-        else:
-            time_correction=0
-        #   Make sure there was data
-        if das_t :
-            receiver_t = self.get_receiver_t (das_t[0])
-            response_t = self.get_response_t (das_t[0])
-        else : 
-            receiver_t = None
-            response_t = None
-        
+        #   Done reading all the traces catch the last bit
         trace = Trace (data, 
                        start_fepoch, 
-                       time_correction, 
-                       samples_read, 
+                       0,                       #   time_correction_ms
+                       len (data),              #   nsamples
                        window_sample_rate, 
                        current_trace_type, 
                        current_trace_byteorder, 
                        das_t, 
-                       receiver_t,
-                       response_t)
+                       None,                    #   receiver_t
+                       None)                    #   response_t
+        traces.append (trace)
+        
+        for t in range (len (traces)) :
+            if apply_time_correction :
+                window_start_fepoch0 = traces[t].start_time
+                window_stop_fepoch = window_start_fepoch0 + (traces[t].nsamples / sr)
+                try :    
+                    time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
+                except APIError as e :
+                    sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
+                    time_correction = 0.
+            else :
+                time_correction = 0.
+            #   Set time correction    
+            traces[t].time_correction_ms = time_correction
+            #   Make sure there was data
+            if das_t :
+                receiver_t = self.get_receiver_t (das_t[0])
+                response_t = self.get_response_t (das_t[0])
+            else : 
+                receiver_t = None
+                response_t = None
+            #   Set receiver_t and response_t
+            traces[t].receiver_t = receiver_t
+            traces[t].response_t = response_t
+            #trace = Trace (data, 
+                           #start_fepoch, 
+                           #time_correction, 
+                           #samples_read, 
+                           #window_sample_rate, 
+                           #current_trace_type, 
+                           #current_trace_byteorder, 
+                           #das_t, 
+                           #receiver_t,
+                           #response_t)
             
-        return trace
+        return traces
             
 #
 ###   Mix-ins
 #
+def pad_traces (traces) :
+    '''
+       Input:
+          A list of ph5 Trace objects
+       Return:
+          A trace object with gaps padded with the mean
+    '''
+    def pad (data, n, dtype) :
+        m = np.mean (data, dtype=dtype)
+        
+        return np.append (data, [m] * n)
+        
+    ret = Trace (traces[0].data,          #   Gets extended (np.append)
+                 0.,                      #   Gets set at begining
+                 0,                       #   ???
+                 0.,                      #   Gets set at end
+                 traces[0].sample_rate,   #   Should not change 
+                 traces[0].ttype,         #   Should not change
+                 traces[0].byteorder,      #   Should not change
+                 traces[0].das_t,         #   Gets appended to
+                 traces[0].receiver_t,    #   Should not change
+                 traces[0].response_t)    #   Should not change
+    ret.start_time = traces[0].start_time
+    
+    end_time0 = None
+    end_time1 = None
+    for t in traces :
+        end_time0 = t.start_time.epoch (fepoch=True) + (t.nsamples / t.sample_rate)
+        if end_time1 != None :
+            if end_time0 != end_time1 :
+                n = int (((end_time1 - end_time0) * ret.sample_rate) + 0.5)
+                #   Pad
+                d = pad (t.data, n, dtype=ret.ttype)
+                ret.data = np.append (ret.data, d)
+                
+        end_time1 = end_time0 + (1. / t.sample_rate)
+        
+    return ret
+        
 def seed_channel_code (array_t) :
     return array_t['seed_band_code_s'] + array_t['seed_instrument_code_s'] + array_t['seed_orientation_code_s']
 

@@ -178,8 +178,8 @@ class PH5toStationXML(object):
         if not self.args.get('reportnum_list'):
             self.args['reportnum_list'] = "*"
 
-        #if not self.args.get('array_list'):
-            #self.args['array_list'] = "*"
+        if not self.args.get('array_list'):
+            self.args['array_list'] = "*"
 
         if self.args.get('start_time') and "T" in self.args.get('start_time'):
             self.args['start_time'] = datetime.datetime.strptime(
@@ -213,6 +213,9 @@ class PH5toStationXML(object):
                              for x in self.args.get('channel_list').split(',')]
         location_patterns = [x.strip()
                              for x in self.args.get('location_list').split(',')]
+        
+        array_patterns = [x.strip()
+                          for x in self.args.get('array_list').split(',')]        
        
 
         for array_name in self.array_names:
@@ -221,16 +224,15 @@ class PH5toStationXML(object):
             
             matched=0
             
-            if self.args.get('array_list'):
-                arrays=self.args.get('array_list').split(',')
+     
                             
-                for x in arrays:
+            for pattern in array_patterns:
+                if fnmatch.fnmatch(array, pattern):
+                    matched = 1
                                 
-                    if int(x) == int(array):
-                        matched =1
-                                    
-                if matched != 1:
-                    continue    
+                    
+            if matched != 1:
+                continue    
                 
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
@@ -428,12 +430,13 @@ class PH5toStationXML(object):
         l = []
         all_stations = []
         sta_list_patterns = [x.strip() for x in sta_list.split(',')]
+       
 
         for array_name in self.array_names:
             array = array_name[-3:]
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
-
+            
             for station in arrayorder:
                 all_stations.append(str(station))
 
@@ -491,7 +494,10 @@ class PH5toStationXML(object):
             network.start_date=datetime.datetime.fromtimestamp(start_time)
             network.end_date=datetime.datetime.fromtimestamp(end_time)
            
-
+        if not network.stations:
+            self.ph5.close()
+            return
+            
         self.ph5.close()
 
         return network
