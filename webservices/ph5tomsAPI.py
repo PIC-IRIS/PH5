@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 import sys
 import os
 from obspy import Trace
+from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy import UTCDateTime
 import ph5API
@@ -34,7 +35,7 @@ from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 
 
-PROG_VERSION = "2016.296"
+PROG_VERSION = "2016.298"
 
 
 def fdsntimetoepoch(fdsn_time):
@@ -171,9 +172,9 @@ class PH5toMSeed(object):
         else:
             self.ph5.read_event_t(name)
 
-    def filenamemseed_gen(self, trace):
+    def filenamemseed_gen(self, stream):
 
-        s = trace.stats
+        s = stream.traces[0].stats
         secs = int(s.starttime.timestamp)
         pre = epoch2passcal(secs, sep='_')
         ret = "{0}.{1}.{2}.{3}.{4}.ms".format(pre, s.network, s.station,
@@ -182,9 +183,9 @@ class PH5toMSeed(object):
             ret = os.path.join(self.out_dir, ret)
         return ret
 
-    def filenamesac_gen(self, trace):
+    def filenamesac_gen(self, stream):
 
-        s = trace.stats
+        s = stream.traces[0].stats
         secs = int(s.starttime.timestamp)
         pre = epoch2passcal(secs, sep='.')
         ret = "{0}.{1}.{2}.{3}.{4}.SAC".format(
@@ -192,75 +193,87 @@ class PH5toMSeed(object):
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
-    
-    def filenamemsimg_gen(self, trace):
-    
-        s = trace.stats
+
+    def filenamemsimg_gen(self, stream):
+
+        s = stream.traces[0].stats
         secs = int(s.starttime.timestamp)
         pre = epoch2passcal(secs, sep='_')
         ret = "{0}.{1}.{2}.{3}.{4}.png".format(pre, s.network, s.station,
-                                              s.location, s.channel)
+                                               s.location, s.channel)
         if not self.stream:
-            if not os.path.exists(os.path.join(self.out_dir, "preview_images")):
+            if not os.path.exists(
+                    os.path.join(self.out_dir, "preview_images")):
                 os.makedirs(os.path.join(self.out_dir, "preview_images"))
-                    
+
             ret = os.path.join(self.out_dir, "preview_images", ret)
         return ret
-    
-    def filenamesacimg_gen(self, trace):
-    
-        s = trace.stats
+
+    def filenamesacimg_gen(self, stream):
+
+        s = stream.traces[0].stats
         secs = int(s.starttime.timestamp)
         pre = epoch2passcal(secs, sep='.')
         ret = "{0}.{1}.{2}.{3}.{4}.png".format(
-                s.network, s.station, s.location, s.channel, pre)
+            s.network, s.station, s.location, s.channel, pre)
         if not self.stream:
             if not self.stream:
-                if not os.path.exists(os.path.join(self.out_dir, "preview_images")):
-                    os.makedirs(os.path.join(self.out_dir, "preview_images")) 
-                    
+                if not os.path.exists(
+                        os.path.join(self.out_dir, "preview_images")):
+                    os.makedirs(os.path.join(self.out_dir, "preview_images"))
+
             ret = os.path.join(self.out_dir, "preview_images", ret)
-        return ret    
+        return ret
 
     def create_trace(self, station_to_cut):
 
         ph5 = ph5API.ph5(path=self.ph5path, nickname=self.nickname)
 
         nt = not station_to_cut.notimecorrect
-        trace = ph5.cut(station_to_cut.das, station_to_cut.starttime,
-                        station_to_cut.endtime,
-                        chan=station_to_cut.channel,
-                        sample_rate=station_to_cut.sample_rate,
-                        apply_time_correction=nt)
+        traces = ph5.cut(station_to_cut.das, station_to_cut.starttime,
+                         station_to_cut.endtime,
+                         chan=station_to_cut.channel,
+                         sample_rate=station_to_cut.sample_rate,
+                         apply_time_correction=nt)
 
-        if trace.nsamples == 0:
-            return
-        try:
-            obspy_trace = Trace(data=trace.data)
-        except ValueError:
+        obspy_stream = Stream()
+
+        if type(traces) is not list:
             return
 
-        obspy_trace.stats.sampling_rate = (trace.sample_rate /
-                                           float(trace.das_t[0][
-                                               'sample_rate_multiplier_i']))
-        obspy_trace.stats.location = station_to_cut.location
-        obspy_trace.stats.station = station_to_cut.station
-        obspy_trace.stats.coordinates = AttribDict()
-        obspy_trace.stats.coordinates.latitude = station_to_cut.latitude
-        obspy_trace.stats.coordinates.longitude = station_to_cut.longitude
-        obspy_trace.stats.channel = station_to_cut.seed_channel
-        obspy_trace.stats.network = station_to_cut.net_code
-        obspy_trace.stats.starttime = UTCDateTime(
-            trace.start_time.epoch(
-                fepoch=True))
-        obspy_trace.stats.starttime.microsecond = (
-            trace.start_time.dtobject.microsecond)
+        for trace in traces:
+            if trace.nsamples == 0:
+                continue
 
-        if self.decimation:
-            obspy_trace.decimate(int(self.decimation))
+            try:
+                obspy_trace = Trace(data=trace.data)
+            except ValueError:
+                print "error"
+                continue
+
+            obspy_trace.stats.sampling_rate = (
+                trace.sample_rate /
+                station_to_cut.sample_rate_multiplier)
+            obspy_trace.stats.location = station_to_cut.location
+            obspy_trace.stats.station = station_to_cut.station
+            obspy_trace.stats.coordinates = AttribDict()
+            obspy_trace.stats.coordinates.latitude = station_to_cut.latitude
+            obspy_trace.stats.coordinates.longitude = station_to_cut.longitude
+            obspy_trace.stats.channel = station_to_cut.seed_channel
+            obspy_trace.stats.network = station_to_cut.net_code
+            obspy_trace.stats.starttime = UTCDateTime(
+                trace.start_time.epoch(
+                    fepoch=True))
+            obspy_trace.stats.starttime.microsecond = (
+                trace.start_time.dtobject.microsecond)
+
+            if self.decimation:
+                obspy_trace.decimate(int(self.decimation))
+
+            obspy_stream.append(obspy_trace)
         ph5.close()
 
-        return obspy_trace
+        return obspy_stream
 
     def create_cut_list(self):
         self.read_arrays(None)
@@ -372,27 +385,26 @@ class PH5toMSeed(object):
                     if self.das_sn and self.das_sn != das:
                         continue
                     self.ph5.read_das_t(das)
-                    
-                    
+
                     if self.start_time and not matched_shot_line:
-                            
+
                         if "T" not in self.start_time:
-                            check_start_time = passcal2epoch(self.start_time)                         
+                            check_start_time = passcal2epoch(self.start_time)
                             if float(check_start_time) > float(deploy):
                                 start_fepoch = self.start_time
                                 start_times.append(passcal2epoch(start_fepoch))
                             else:
                                 start_times.append(deploy)
-                                
+
                         else:
                             check_start_time = fdsntimetoepoch(self.start_time)
                             if float(check_start_time) > float(deploy):
                                 start_times.append(fdsntimetoepoch(
-                                    self.start_time))   
+                                    self.start_time))
                             else:
                                 start_times.append(deploy)
                         if float(check_start_time) > float(pickup):
-                            continue                            
+                            continue
                     elif not matched_shot_line:
                         start_times.append(ph5API.fepoch(station_list[
                             deployment][0]
@@ -401,53 +413,56 @@ class PH5toMSeed(object):
                             ['deploy_time/micro_seconds_i']))
 
                     for start_fepoch in start_times:
-                        
-                        
+
                         if self.length:
                             stop_fepoch = start_fepoch + self.length
-                        
+
                         elif self.end_time:
-                            
+
                             if "T" not in self.end_time:
                                 check_end_time = passcal2epoch(self.end_time)
+
                                 if float(check_end_time) < float(pickup):
+
                                     stop_fepoch = self.end_time
                                     stop_fepoch = passcal2epoch(stop_fepoch)
                                 else:
                                     stop_fepoch = pickup
-                                    
+
                             else:
                                 check_end_time = fdsntimetoepoch(self.end_time)
                                 if float(check_end_time) < float(pickup):
-                                    stop_fepoch = fdsntimetoepoch(self.end_time)
+                                    stop_fepoch = fdsntimetoepoch(
+                                        self.end_time)
                                 else:
-                                    stop_fepoch= pickup
-                            if float(check_end_time) < float(pickup):
-                                continue                            
+                                    stop_fepoch = pickup
+
+                            if float(check_end_time) < float(deploy):
+                                continue
                         else:
                             stop_fepoch = ph5API.fepoch(
                                 station_list[deployment
                                              ][0]['pickup_time/epoch_l'],
                                 station_list[deployment]
                                 [0]['pickup_time/micro_seconds_i'])
-                            
+
                         if (self.use_deploy_pickup is True and not
                                 ((start_fepoch >= deploy and
                                   stop_fepoch <= pickup))):
-                            # das not deployed within deploy/pickup time 
+                            # das not deployed within deploy/pickup time
                             continue
-                        
+
                         start_passcal = epoch2passcal(start_fepoch, sep=':')
                         start_passcal_list = start_passcal.split(":")
                         start_doy = start_passcal_list[1]
-                        
+
                         if self.offset:
                             start_fepoch += int(self.offset)
-                            
+
                         if self.doy_keep:
                             if start_doy not in self.doy:
                                 continue
-                            
+
                         if (stop_fepoch - start_fepoch) > 86400:
                             seconds_covered = 0
                             total_seconds = stop_fepoch - start_fepoch
@@ -465,18 +480,16 @@ class PH5toMSeed(object):
                         else:
                             times_to_cut = [[start_fepoch, stop_fepoch]]
                             times_to_cut[-1][-1] = stop_fepoch
-                            
 
                         if int(times_to_cut[-1][-2]) == int(
                                 times_to_cut[-1][-1]):
                             del times_to_cut[-1]
-                            
 
                         latitude = station_list[deployment][
                             0]['location/Y/value_d']
                         longitude = station_list[deployment][
                             0]['location/X/value_d']
-                        
+
                         for x in times_to_cut:
                             station_x = StationCut(
                                 experiment_t[0]['net_code_s'],
@@ -501,9 +514,9 @@ class PH5toMSeed(object):
         cuts = self.create_cut_list()
         # self.ph5.close()
         for cut in cuts:
-            trace = self.create_trace(cut)
-            if trace is not None:
-                yield trace
+            stream = self.create_trace(cut)
+            if stream is not None:
+                yield stream
 
         return
 
@@ -630,15 +643,15 @@ def get_args():
         metavar="doy_keep", type=str)
 
     parser.add_argument(
-        "-F", "--format", action="store", dest="format",
+        "-F", "-f", "--format", action="store", dest="format",
         help="SAC or MSEED",
         metavar="format", type=str)
-    
+
     parser.add_argument(
-            "--previewimages",
-            help="produce png images of traces",
-            action="store_true",
-            default=False)    
+        "--previewimages",
+        help="produce png images of traces",
+        action="store_true",
+        default=False)
 
     the_args = parser.parse_args()
 
@@ -660,36 +673,42 @@ if __name__ == '__main__':
         args.out_dir, args.start_time, args.stop_time, args.red_vel,
         args.dasskip, args.shotline, args.eventnumbers, args.notimecorrect)
 
-    traces = ph5ms.process_all()
+    streams = ph5ms.process_all()
 
     if args.format and args.format.upper() == "MSEED":
-        for t in traces:
+        for t in streams:
             if not args.stream:
                 t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
                         reclen=4096)
                 if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t), bgcolor="#DCD3ED", color="#272727", face_color="#DCD3ED")
-                    
+                    t.plot(outfile=ph5ms.filenamemsimg_gen(t),
+                           bgcolor="#DCD3ED", color="#272727",
+                           face_color="#DCD3ED")
+
             else:
                 t.write(sys.stdout, format='MSEED', reclen=4096)
 
     elif args.format and args.format.upper() == "SAC":
-        for t in traces:
+        for t in streams:
             if not args.stream:
                 t.write(ph5ms.filenamesac_gen(t), format='SAC')
                 if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamesacimg_gen(t), bgcolor="#DCD3ED", color="#272727", face_color="#DCD3ED")                
-                
+                    t.plot(outfile=ph5ms.filenamesacimg_gen(t),
+                           bgcolor="#DCD3ED", color="#272727",
+                           face_color="#DCD3ED")
+
             else:
                 t.write(sys.stdout, format='SAC')
 
     else:
-        for t in traces:
+        for t in streams:
             if not args.stream:
                 t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096)    
+                        reclen=4096)
                 if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t), bgcolor="#DCD3ED", color="#272727", face_color="#DCD3ED")
+                    t.plot(outfile=ph5ms.filenamemsimg_gen(t),
+                           bgcolor="#DCD3ED", color="#272727",
+                           face_color="#DCD3ED")
             else:
                 t.write(sys.stdout, format='MSEED', reclen=4096)
 
