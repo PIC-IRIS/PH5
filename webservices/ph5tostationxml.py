@@ -56,7 +56,7 @@ from obspy.core.util import AttribDict
 
 
 
-PROG_VERSION = "2016.294"
+PROG_VERSION = "2016.299"
 
 
 def get_args():
@@ -288,14 +288,18 @@ class PH5toStationXML(object):
                     station_list[1][0]['deploy_time/epoch_l'])
                 station.end_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['pickup_time/epoch_l'])
-
-                if self.args.get('start_time') and (
-                        station.start_date <= self.args.get('start_time')):
+                
+                
+                
+                if self.args.get('start_time') and self.args.get('start_time') > station.end_date:
+                    # chosen start time after pickup
                     continue
-
-                if self.args.get('stop_time') and (
-                        station.end_date >= self.args.get('stop_time')):
-                    continue
+                
+                if self.args.get('stop_time') and self.args.get('stop_time') < station.start_date:
+                    # chosen end time before pickup
+                    continue                
+                
+                       
 
                 station.creation_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['deploy_time/epoch_l'])
