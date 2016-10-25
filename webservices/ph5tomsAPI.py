@@ -229,6 +229,11 @@ class PH5toMSeed(object):
 
         ph5 = ph5API.ph5(path=self.ph5path, nickname=self.nickname)
 
+        ph5.read_das_t(station_to_cut.das)
+
+        if not ph5.Das_t.has_key(station_to_cut.das):
+            return
+
         nt = not station_to_cut.notimecorrect
         traces = ph5.cut(station_to_cut.das, station_to_cut.starttime,
                          station_to_cut.endtime,
@@ -272,6 +277,9 @@ class PH5toMSeed(object):
 
             obspy_stream.append(obspy_trace)
         ph5.close()
+
+        if len(obspy_stream.traces) < 1:
+            return
 
         return obspy_stream
 
@@ -384,7 +392,6 @@ class PH5toMSeed(object):
                         continue
                     if self.das_sn and self.das_sn != das:
                         continue
-                    self.ph5.read_das_t(das)
 
                     if self.start_time and not matched_shot_line:
 
