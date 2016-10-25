@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.297 Developmental'
+PROG_VERSION = '2016.298.1 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -692,6 +692,7 @@ class ph5 (Experiment.ExperimentGroup) :
                  A list of PH5 trace objects split on gaps
         '''
         self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
+        Das_t = filter_das_t (self.Das_t[das]['rows'], chan)
         if apply_time_correction :
             Time_t = self.get_time_t (das)
             time_cor_guess_ms = _cor (start_fepoch, stop_fepoch, Time_t)
@@ -708,11 +709,11 @@ class ph5 (Experiment.ExperimentGroup) :
         traces = []
         das_t = []
         if not self.Das_t.has_key (das) :
-            return Trace (np.array ([]), start_fepoch, 0., 0, 0., None, None, das_t, None, None)
+            return [Trace (np.array ([]), start_fepoch, 0., 0, 0., None, None, das_t, None, None)]
         
         window_start_fepoch0 = None
         window_stop_fepoch = None
-        for d in self.Das_t[das]['rows'] :
+        for d in Das_t :
             sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])
             if (d['channel_number_i'] != chan) or  (sr != sample_rate) :
                 continue
@@ -758,6 +759,7 @@ class ph5 (Experiment.ExperimentGroup) :
                     new_trace = True
                                 
             if len (data_tmp) > 0 :
+                #  Gap!!!
                 if new_trace :
                     trace = Trace (data, 
                                    start_fepoch, 
@@ -772,7 +774,7 @@ class ph5 (Experiment.ExperimentGroup) :
                     start_fepoch = window_start_fepoch
                     traces.append (trace)
                     data = data_tmp
-                    das_t = []
+                    das_t = [d]
                     new_trace = False
                 else :
                     data = np.append (data, data_tmp)
@@ -795,10 +797,23 @@ class ph5 (Experiment.ExperimentGroup) :
                        None)                    #   response_t
         traces.append (trace)
         
-        for t in range (len (traces)) :
+        ret = []
+        #start0 = None
+        #start1 = None
+        for t in traces :
+            ##   Remove extra traces in case DAS was loaded multiple times.
+            #if start1 == None : 
+                #start0 = t.start_time.epoch (fepoch=True)
+                #start1 = t.start_time.epoch (fepoch=True)
+            #else :
+                #start1 = t.start_time.epoch (fepoch=True)
+                
+            #if start1 < start0 : 
+                #break
+            
             if apply_time_correction :
-                window_start_fepoch0 = traces[t].start_time
-                window_stop_fepoch = window_start_fepoch0 + (traces[t].nsamples / sr)
+                window_start_fepoch0 = t.start_time
+                window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
                 try :    
                     time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
                 except APIError as e :
@@ -807,7 +822,7 @@ class ph5 (Experiment.ExperimentGroup) :
             else :
                 time_correction = 0.
             #   Set time correction    
-            traces[t].time_correction_ms = time_correction
+            t.time_correction_ms = time_correction
             #   Make sure there was data
             if das_t :
                 receiver_t = self.get_receiver_t (das_t[0])
@@ -816,8 +831,9 @@ class ph5 (Experiment.ExperimentGroup) :
                 receiver_t = None
                 response_t = None
             #   Set receiver_t and response_t
-            traces[t].receiver_t = receiver_t
-            traces[t].response_t = response_t
+            t.receiver_t = receiver_t
+            t.response_t = response_t
+            ret.append (t)
             #trace = Trace (data, 
                            #start_fepoch, 
                            #time_correction, 
@@ -829,7 +845,7 @@ class ph5 (Experiment.ExperimentGroup) :
                            #receiver_t,
                            #response_t)
             
-        return traces
+        return ret
             
 #
 ###   Mix-ins
@@ -860,7 +876,11 @@ def pad_traces (traces) :
     
     end_time0 = None
     end_time1 = None
+    x = 0
+    tcor_sum = 0
     for t in traces :
+        tcor_sum += t.time_correction_ms
+        x += 1.
         end_time0 = t.start_time.epoch (fepoch=True) + (t.nsamples / t.sample_rate)
         if end_time1 != None :
             if end_time0 != end_time1 :
@@ -871,6 +891,9 @@ def pad_traces (traces) :
                 
         end_time1 = end_time0 + (1. / t.sample_rate)
         
+    ret.nsamples = len (ret.data)
+    ret.time_correction_ms = int ((tcor_sum / x) + 0.5)
+         
     return ret
         
 def seed_channel_code (array_t) :
@@ -1119,7 +1142,23 @@ def _cor (start_fepoch, stop_fepoch, Time_t) :
     
     time_correction_ms = int (time_t['slope_d'] * 1000. * delta_fepoch) * -1
     return time_correction_ms
-
+#
+###
+#
+def filter_das_t (Das_t, chan) :
+    #
+    ret = []
+    Das_t = [das_t for das_t in Das_t if das_t['channel_number_i'] == chan]
+    for das_t in Das_t :
+        if not ret :
+            ret.append (das_t)
+            continue
+        time0 = ret[-1]['time/epoch_l'] + (ret[-1]['time/micro_seconds_i'] / 1000000.)
+        time1 = das_t['time/epoch_l'] + (das_t['time/micro_seconds_i'] / 1000000.)
+        if time0 < time1 : ret.append (das_t)
+        
+    return ret
+    
 if __name__ == '__main__' :
     #p = ph5 (path='/home/azevedo/Data/10-016', nickname='master.ph5')
     #O = p.calc_offsets ('Array_t_001', '101'); p.close ()
@@ -1145,6 +1184,11 @@ if __name__ == '__main__' :
     #p.close ()
     #   Initialize new PH5
     p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
+    epoch0 = TimeDOY.passcal2epoch ("2016:191:00:00:00.000", fepoch=True)
+    das = "1X1001"
+    epoch1 = epoch0 + (60. * 60. * 24.) 
+    traces = p.cut (das, epoch0, epoch1, chan=3, sample_rate=250.)
+    sys.exit ()
     #t0 = p.read_t ("Offset_t")
     ##print t0; sys.exit ()
     ##   Read Experiment_t, return kef
