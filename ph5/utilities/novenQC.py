@@ -14,7 +14,7 @@ import simplekml as kml
 
 import TimeDOY
 
-PROG_VERSION = "2016.206 Developmental"
+PROG_VERSION = "2016.286 Developmental"
 
 FACTS = { 'km':1000., 'm':1., 'dm':1./10., 'cm':1./100., 'mm':1./1000., 'kmi':1852.0, 'in':0.0254, 'ft':0.3048, 'yd':0.9144,
           'mi':1609.344, 'fath':1.8288, 'ch':20.1168, 'link':0.201168, 'us-in':1./39.37, 'us-ft':0.304800609601219, 'us-yd':0.914401828803658,
@@ -263,7 +263,8 @@ def qc_deploy_pickup (rows) :
         errs.append ("{0}-{1} Warning: Distance between deployment and pickup locations seems large for station {2}.".format (line_numbers[0], line_numbers[1], r['id_s']))
     #   What should be the time between deployment and pickup?
     time_delta = qc_time (dptime['D'], dptime['P'])
-    if time_delta > 475200 or time_delta < 0 :
+    #   About 6 months
+    if time_delta > 15552000 or time_delta < 0 :
         errs.append ("{0}-{1} Warning: time between deployment and pickup unusual for station {2}.".format (line_numbers[0], line_numbers[1], r['id_s']))
     
     return errs
