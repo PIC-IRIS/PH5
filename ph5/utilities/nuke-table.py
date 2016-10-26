@@ -8,7 +8,7 @@
 import os, sys
 import Experiment, columns
 
-PROG_VERSION = '2016.205'
+PROG_VERSION = '2016.293'
 
 #
 #   Read Command line arguments
@@ -226,4 +226,6 @@ if __name__ == '__main__' :
         yon = raw_input ("Are you sure you want to delete all data in Das_t for das {0}? y/n ".format (DAS_TABLE))
         if yon == 'y' :
             EX.ph5_g_receivers.nuke_das_t (DAS_TABLE)
+            
+    EX.ph5close ()
         
