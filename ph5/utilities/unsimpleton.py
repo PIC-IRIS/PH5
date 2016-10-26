@@ -4,7 +4,7 @@
 #
 #   Input: List of files to rename in a file (one per line), output directory for links
 #
-#   Usage: unsimpleton list_of_files out_directory
+#   Usage: unsimpleton list_of_files_to_link out_directory
 #
 #   Steve Azevedo, August 2016
 #
@@ -12,7 +12,7 @@ import sys, os
 sys.path.append (os.path.join (os.environ["KX"], "apps", "pn4"))
 import SegdReader
 
-PROG_VERSION = "2016.190 Developmental"
+PROG_VERSION = "2016.294 Developmental"
 
 def print_container (container) :
     keys = container.keys ()
@@ -134,12 +134,13 @@ if __name__ == '__main__' :
             line_number = sd.reel_headers.extended_header_3['line_number']
             receiver_point = sd.reel_headers.extended_header_3['receiver_point']
             version = sd.reel_headers.general_header_block_2['file_version_number']
-            outfile = "R{0}_{1}.0.0.rg{2}".format (line_number, receiver_point, 16)
+            id_number = sd.reel_headers.extended_header_1['id_number']
+            outfile = "PIC_{0}_{1}_{3}.0.0.rg{2}".format (line_number, receiver_point, 16, id_number)
             linkname = os.path.join (outpath, outfile)
             i = 0
             while os.path.exists (linkname) :
                 i += 1
-                outfile = "R{0}_{1}.0.{3}.rg{2}".format (line_number, receiver_point, 16, i)
+                outfile = "PIC_{0}_{1}_{4}.0.{3}.rg{2}".format (line_number, receiver_point, 16, i, id_number)
                 linkname = os.path.join (outpath, outfile)
                 
             try :
