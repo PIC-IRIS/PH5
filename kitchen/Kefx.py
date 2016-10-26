@@ -1,4 +1,8 @@
 #!/usr/bin/env pnpython4
+#
+#   Kef handler library
+#   Steve Azevedo, September 2016
+#
 
 import sys, os, string, re
 import columns
