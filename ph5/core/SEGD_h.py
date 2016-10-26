@@ -11,7 +11,7 @@ import sys, exceptions, os, os.path
 import construct
 import bcd_py
 
-PROG_VERSION = '2016.193 Developmental'
+PROG_VERSION = '2016.287 Developmental'
 
 def __version__ () :
     print PROG_VERSION
@@ -657,7 +657,9 @@ class Channel_set_descriptor (object) :
 def extended_header_1 () :
     BIN = construct.Struct ("BIN",
                             #   Remote unit 
-                            construct.UBInt64 ("id_number"),
+                            #construct.UBInt64 ("id_number"),
+                            construct.UBInt32 ("part_number"),
+                            construct.UBInt32 ("id_number"),
                             #   All epochs in micro-seconds
                             construct.UBInt64 ("epoch_deploy"),
                             construct.UBInt64 ("epoch_pickup"),
@@ -665,7 +667,7 @@ def extended_header_1 () :
     return BIN
 
 class Extended_header_1 (object) :
-    __keys__ = ("id_number",
+    __keys__ = ("part_number", "id_number",
                 "epoch_deploy",
                 "epoch_pickup",
                 "remote_unit_epoch")
