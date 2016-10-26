@@ -14,7 +14,7 @@ import math, numpy, os, time, string, sys
 from pyproj import Geod
 from cs2cs import geod2utm
 
-PROG_VERSION = "2015.267 Developmental"
+PROG_VERSION = "2015.299 Developmental"
 
 os.environ['TZ'] = 'UTC'
 time.tzset ()
@@ -305,7 +305,8 @@ class Ssegy :
         
     def set_das_t (self, das_t) :
         self.das_t = das_t
-        self.sample_rate = das_t['sample_rate_i']
+        if not self.sample_rate :
+            self.sample_rate = das_t['sample_rate_i']
         self.channel_number = das_t['channel_number_i']
         
     def set_sample_rate (self, sample_rate) :
