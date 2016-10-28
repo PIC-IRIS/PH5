@@ -713,6 +713,8 @@ class ph5 (Experiment.ExperimentGroup) :
         
         window_start_fepoch0 = None
         window_stop_fepoch = None
+        
+        data=None
         for d in Das_t :
             sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])
             if (d['channel_number_i'] != chan) or  (sr != sample_rate) or (d['time/epoch_l'] < start_fepoch) or (d['time/epoch_l'] > stop_fepoch) :
@@ -759,7 +761,7 @@ class ph5 (Experiment.ExperimentGroup) :
                     new_trace = True
                                 
             if len (data_tmp) > 0 :
-                print "gap"
+                
                 #  Gap!!!
                 if new_trace :
                     trace = Trace (data, 
@@ -786,6 +788,8 @@ class ph5 (Experiment.ExperimentGroup) :
                 
             new_window_start_fepoch = window_stop_fepoch
         #   Done reading all the traces catch the last bit
+        if data is None:
+            return [Trace (np.array ([]), start_fepoch, 0., 0, 0., None, None, das_t, None, None)]
         trace = Trace (data, 
                        start_fepoch, 
                        0,                       #   time_correction_ms
