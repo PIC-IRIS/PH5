@@ -374,14 +374,7 @@ class PH5toStationXML(object):
                                     serial_number=station_list[deployment][0][
                                         'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
                                     removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-
-                                if self.args.get('start_time') and (
-                                        obs_channel.start_date <= self.args.get('start_time')):
-                                    continue
-
-                                if self.args.get('stop_time') and (
-                                        obs_channel.end_date >= self.args.get('stop_time')):
-                                    continue
+      
 
                                 if self.args.get('minlat') and float(
                                         self.args.get('minlat')) > float(latitude):
