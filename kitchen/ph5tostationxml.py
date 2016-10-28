@@ -56,7 +56,7 @@ from obspy.core.util import AttribDict
 
 
 
-PROG_VERSION = "2016.294"
+PROG_VERSION = "2016.299"
 
 
 def get_args():
@@ -178,8 +178,8 @@ class PH5toStationXML(object):
         if not self.args.get('reportnum_list'):
             self.args['reportnum_list'] = "*"
 
-        #if not self.args.get('array_list'):
-            #self.args['array_list'] = "*"
+        if not self.args.get('array_list'):
+            self.args['array_list'] = "*"
 
         if self.args.get('start_time') and "T" in self.args.get('start_time'):
             self.args['start_time'] = datetime.datetime.strptime(
@@ -213,6 +213,9 @@ class PH5toStationXML(object):
                              for x in self.args.get('channel_list').split(',')]
         location_patterns = [x.strip()
                              for x in self.args.get('location_list').split(',')]
+        
+        array_patterns = [x.strip()
+                          for x in self.args.get('array_list').split(',')]        
        
 
         for array_name in self.array_names:
@@ -221,16 +224,15 @@ class PH5toStationXML(object):
             
             matched=0
             
-            if self.args.get('array_list'):
-                arrays=self.args.get('array_list').split(',')
+     
                             
-                for x in arrays:
+            for pattern in array_patterns:
+                if fnmatch.fnmatch(array, pattern):
+                    matched = 1
                                 
-                    if int(x) == int(array):
-                        matched =1
-                                    
-                if matched != 1:
-                    continue    
+                    
+            if matched != 1:
+                continue    
                 
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
@@ -286,14 +288,18 @@ class PH5toStationXML(object):
                     station_list[1][0]['deploy_time/epoch_l'])
                 station.end_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['pickup_time/epoch_l'])
-
-                if self.args.get('start_time') and (
-                        station.start_date <= self.args.get('start_time')):
+                
+                
+                
+                if self.args.get('start_time') and self.args.get('start_time') > station.end_date:
+                    # chosen start time after pickup
                     continue
-
-                if self.args.get('stop_time') and (
-                        station.end_date >= self.args.get('stop_time')):
-                    continue
+                
+                if self.args.get('stop_time') and self.args.get('stop_time') < station.start_date:
+                    # chosen end time before pickup
+                    continue                
+                
+                       
 
                 station.creation_date = datetime.datetime.fromtimestamp(
                     station_list[1][0]['deploy_time/epoch_l'])
@@ -368,14 +374,7 @@ class PH5toStationXML(object):
                                     serial_number=station_list[deployment][0][
                                         'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
                                     removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-
-                                if self.args.get('start_time') and (
-                                        obs_channel.start_date <= self.args.get('start_time')):
-                                    continue
-
-                                if self.args.get('stop_time') and (
-                                        obs_channel.end_date >= self.args.get('stop_time')):
-                                    continue
+      
 
                                 if self.args.get('minlat') and float(
                                         self.args.get('minlat')) > float(latitude):
@@ -428,12 +427,13 @@ class PH5toStationXML(object):
         l = []
         all_stations = []
         sta_list_patterns = [x.strip() for x in sta_list.split(',')]
+       
 
         for array_name in self.array_names:
             array = array_name[-3:]
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
-
+            
             for station in arrayorder:
                 all_stations.append(str(station))
 
@@ -491,7 +491,10 @@ class PH5toStationXML(object):
             network.start_date=datetime.datetime.fromtimestamp(start_time)
             network.end_date=datetime.datetime.fromtimestamp(end_time)
            
-
+        if not network.stations:
+            self.ph5.close()
+            return
+            
         self.ph5.close()
 
         return network
