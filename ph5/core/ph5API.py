@@ -722,13 +722,13 @@ class ph5 (Experiment.ExperimentGroup) :
             window_start_fepoch = fepoch (d['time/epoch_l'], d['time/micro_seconds_i'])
             if window_start_fepoch0 == None : window_start_fepoch0 = window_start_fepoch
             #if window_stop_fepoch : delta = window_start_fepoch - window_stop_fepoch
-            window_sample_rate =  d['sample_rate_i'] / float (d['sample_rate_multiplier_i'])
+            #window_sample_rate =  d['sample_rate_i'] / float (d['sample_rate_multiplier_i'])
             window_samples = d['sample_count_i']
-            window_stop_fepoch = window_start_fepoch + (window_samples / window_sample_rate)
+            window_stop_fepoch = window_start_fepoch + (window_samples / sr)
             #   Number of samples left to cut
-            cut_samples = int (((stop_fepoch - start_fepoch) * window_sample_rate) - samples_read)
+            cut_samples = int (((stop_fepoch - start_fepoch) * sr) - samples_read)
             #   How many samples into window to start cut
-            cut_start_sample = int ((start_fepoch - window_start_fepoch) * window_sample_rate)
+            cut_start_sample = int ((start_fepoch - window_start_fepoch) * sr)
             #   If this is negative we must be at the start of the next recording window
             if cut_start_sample < 0 : cut_start_sample = 0
             #cut_start_sample -= time_cor_guess_samples
@@ -755,9 +755,9 @@ class ph5 (Experiment.ExperimentGroup) :
                 #   Time difference between the end of last window and the start of this one
                 time_diff = abs (new_window_start_fepoch - window_start_fepoch)
                 #   Overlaps are positive
-                d['gap_overlap'] = time_diff - (1. / window_sample_rate)
+                d['gap_overlap'] = time_diff - (1. / sr)
                 #   Data gap
-                if abs (time_diff) > (1. / window_sample_rate) :
+                if time_diff > (1. / sr) :
                     new_trace = True
                                 
             if len (data_tmp) > 0 :
@@ -768,7 +768,7 @@ class ph5 (Experiment.ExperimentGroup) :
                                    start_fepoch, 
                                    0,                       #   time_correction
                                    len (data),              #   samples_read
-                                   window_sample_rate, 
+                                   sr, 
                                    current_trace_type, 
                                    current_trace_byteorder, 
                                    das_t, 
@@ -794,13 +794,20 @@ class ph5 (Experiment.ExperimentGroup) :
                        start_fepoch, 
                        0,                       #   time_correction_ms
                        len (data),              #   nsamples
-                       window_sample_rate, 
+                       sr, 
                        current_trace_type, 
                        current_trace_byteorder, 
                        das_t, 
                        None,                    #   receiver_t
                        None)                    #   response_t
         traces.append (trace)
+        
+        if das_t :
+            receiver_t = self.get_receiver_t (das_t[0])
+            response_t = self.get_response_t (das_t[0])  
+        else : 
+            receiver_t = None
+            response_t = None        
         
         ret = []
         #start0 = None
@@ -829,12 +836,6 @@ class ph5 (Experiment.ExperimentGroup) :
             #   Set time correction    
             t.time_correction_ms = time_correction
             #   Make sure there was data
-            if das_t :
-                receiver_t = self.get_receiver_t (das_t[0])
-                response_t = self.get_response_t (das_t[0])
-            else : 
-                receiver_t = None
-                response_t = None
             #   Set receiver_t and response_t
             t.receiver_t = receiver_t
             t.response_t = response_t
