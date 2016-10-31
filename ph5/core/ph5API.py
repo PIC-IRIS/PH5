@@ -717,7 +717,8 @@ class ph5 (Experiment.ExperimentGroup) :
         data=None
         for d in Das_t :
             sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])
-            if (d['channel_number_i'] != chan) or  (sr != sample_rate) or (d['time/epoch_l'] < start_fepoch) or (d['time/epoch_l'] > stop_fepoch) :
+            
+            if (d['channel_number_i'] != chan) or  (sr != sample_rate) or (d['time/epoch_l'] > stop_fepoch) :
                 continue
             window_start_fepoch = fepoch (d['time/epoch_l'], d['time/micro_seconds_i'])
             if window_start_fepoch0 == None : window_start_fepoch0 = window_start_fepoch

@@ -35,6 +35,10 @@ from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 
 
+from time import time as tm
+
+
+
 PROG_VERSION = "2016.298"
 
 
@@ -226,6 +230,10 @@ class PH5toMSeed(object):
         return ret
 
     def create_trace(self, station_to_cut):
+        
+       
+        
+    
 
         ph5 = ph5API.ph5(path=self.ph5path, nickname=self.nickname)
 
@@ -234,7 +242,7 @@ class PH5toMSeed(object):
         if not ph5.Das_t.has_key(station_to_cut.das):
             return
 
-        nt = not station_to_cut.notimecorrect
+        nt = station_to_cut.notimecorrect  
         traces = ph5.cut(station_to_cut.das, station_to_cut.starttime,
                          station_to_cut.endtime,
                          chan=station_to_cut.channel,
@@ -245,6 +253,7 @@ class PH5toMSeed(object):
 
         if type(traces) is not list:
             return
+          
 
         for trace in traces:
             if trace.nsamples == 0:
@@ -280,6 +289,8 @@ class PH5toMSeed(object):
 
         if len(obspy_stream.traces) < 1:
             return
+        
+       
 
         return obspy_stream
 
@@ -387,6 +398,12 @@ class PH5toMSeed(object):
                         orientation_code = "X"
 
                     c = station_list[deployment][0]['channel_number_i']
+                                       
+                    if self.component:
+                        component_list= self.component.split(',')
+                        if str(c) not in component_list:
+                            continue
+                                        
                     full_code = band_code + instrument_code + orientation_code
                     if self.channel and full_code not in self.channel:
                         continue
@@ -668,8 +685,10 @@ def get_args():
 if __name__ == '__main__':
 
     from time import time as tm
+    
+    then =tm()
 
-    then = tm()
+    
     args = get_args()
 
     ph5ms = PH5toMSeed(
@@ -708,10 +727,13 @@ if __name__ == '__main__':
                 t.write(sys.stdout, format='SAC')
 
     else:
+    
         for t in streams:
+            
             if not args.stream:
                 t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
                         reclen=4096)
+                
                 if args.previewimages is True:
                     t.plot(outfile=ph5ms.filenamemsimg_gen(t),
                            bgcolor="#DCD3ED", color="#272727",
