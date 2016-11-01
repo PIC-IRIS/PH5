@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.298.1 Developmental'
+PROG_VERSION = '2016.305 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -173,8 +173,8 @@ class ph5 (Experiment.ExperimentGroup) :
             if self.Array_t.has_key (sta_line) and self.Event_t.has_key (evt_line) :
                 array_t = self.Array_t[sta_line]['byid'][sta_id][c]
                 event_t = self.Event_t[evt_line]['byid'][evt_id]
-                lon0 = array_t['location/X/value_d']
-                lat0 = array_t['location/Y/value_d']
+                lon0 = array_t[0]['location/X/value_d']
+                lat0 = array_t[0]['location/Y/value_d']
                 lon1 = event_t['location/X/value_d']
                 lat1 = event_t['location/Y/value_d']
                 az, baz, dist = run_geod (lat0, lon0, lat1, lon1)
@@ -221,7 +221,7 @@ class ph5 (Experiment.ExperimentGroup) :
             chans = self.channels (array, o)
             c = chans[0]
             #for c in array_t.keys () :
-            offset_t = self.get_offset (array, array_t[c]['id_s'], shot_line, shot_id)
+            offset_t = self.get_offset (array, array_t[c][0]['id_s'], shot_line, shot_id)
             Offset_t.append (offset_t)
             
         rows = calc_offset_sign (Offset_t)
@@ -692,6 +692,8 @@ class ph5 (Experiment.ExperimentGroup) :
                  A list of PH5 trace objects split on gaps
         '''
         self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
+        if not self.Das_t.has_key (das) :   
+            return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, [], None, None)]
         Das_t = filter_das_t (self.Das_t[das]['rows'], chan)
         if apply_time_correction :
             Time_t = self.get_time_t (das)
@@ -708,22 +710,20 @@ class ph5 (Experiment.ExperimentGroup) :
         new_trace = False
         traces = []
         das_t = []
-        if not self.Das_t.has_key (das) :
-            return [Trace (np.array ([]), start_fepoch, 0., 0, 0., None, None, das_t, None, None)]
-        
+            
         window_start_fepoch0 = None
         window_stop_fepoch = None
-        
         data=None
         for d in Das_t :
-            sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])           
+            sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])
+
             if (d['channel_number_i'] != chan) or  (sr != sample_rate) or (d['time/epoch_l'] > stop_fepoch) :
                 continue
             window_start_fepoch = fepoch (d['time/epoch_l'], d['time/micro_seconds_i'])
             if window_start_fepoch0 == None : window_start_fepoch0 = window_start_fepoch
-            #if window_stop_fepoch : delta = window_start_fepoch - window_stop_fepoch
-            #window_sample_rate =  d['sample_rate_i'] / float (d['sample_rate_multiplier_i'])
+            #   Number of samples in window
             window_samples = d['sample_count_i']
+            #   Window stop epoch
             window_stop_fepoch = window_start_fepoch + (window_samples / sr)
             #   Number of samples left to cut
             cut_samples = int (((stop_fepoch - start_fepoch) * sr) - samples_read)
@@ -731,7 +731,6 @@ class ph5 (Experiment.ExperimentGroup) :
             cut_start_sample = int ((start_fepoch - window_start_fepoch) * sr)
             #   If this is negative we must be at the start of the next recording window
             if cut_start_sample < 0 : cut_start_sample = 0
-            #cut_start_sample -= time_cor_guess_samples
             #   Last sample in this recording window that we need to cut
             cut_stop_sample = cut_start_sample + cut_samples
             #   Read the data trace from this window
@@ -748,20 +747,16 @@ class ph5 (Experiment.ExperimentGroup) :
                     dt = 'float32'
                     
                 data = np.array ([], dtype=dt)
-                #data.resize (cut_samples)
-                #data = np.resize (data, (1, cut_samples))
-                #print len (data)
             else :
                 #   Time difference between the end of last window and the start of this one
                 time_diff = abs (new_window_start_fepoch - window_start_fepoch)
                 #   Overlaps are positive
                 d['gap_overlap'] = time_diff - (1. / sr)
                 #   Data gap
-                if time_diff > (1. / sr) :
+                if abs (time_diff) > (1. / sr) :
                     new_trace = True
                                 
             if len (data_tmp) > 0 :
-                
                 #  Gap!!!
                 if new_trace :
                     trace = Trace (data, 
@@ -781,15 +776,14 @@ class ph5 (Experiment.ExperimentGroup) :
                     new_trace = False
                 else :
                     data = np.append (data, data_tmp)
-                    #print len (data), data.dtype
-                    #data.extend (data_tmp)
                     samples_read += len (data_tmp)
                     das_t.append (d)
-                
-            new_window_start_fepoch = window_stop_fepoch
+ 
+            new_window_start_fepoch = window_stop_fepoch + (1./sr)
+
         #   Done reading all the traces catch the last bit
         if data is None:
-            return [Trace (np.array ([]), start_fepoch, 0., 0, 0., None, None, das_t, None, None)]
+            return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, das_t, None, None)]
         trace = Trace (data, 
                        start_fepoch, 
                        0,                       #   time_correction_ms
@@ -801,14 +795,12 @@ class ph5 (Experiment.ExperimentGroup) :
                        None,                    #   receiver_t
                        None)                    #   response_t
         traces.append (trace)
-        
         if das_t :
             receiver_t = self.get_receiver_t (das_t[0])
             response_t = self.get_response_t (das_t[0])  
         else : 
             receiver_t = None
-            response_t = None        
-        
+            response_t = None         
         ret = []
         #start0 = None
         #start1 = None
@@ -835,7 +827,7 @@ class ph5 (Experiment.ExperimentGroup) :
                 time_correction = 0.
             #   Set time correction    
             t.time_correction_ms = time_correction
-            #   Make sure there was data
+            #
             #   Set receiver_t and response_t
             t.receiver_t = receiver_t
             t.response_t = response_t
@@ -1189,12 +1181,11 @@ if __name__ == '__main__' :
     ##   Close PH5
     #p.close ()
     #   Initialize new PH5
-    p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
-    epoch0 = TimeDOY.passcal2epoch ("2016:191:00:00:00.000", fepoch=True)
-    das = "1X1001"
-    epoch1 = epoch0 + (60. * 60. * 24.) 
-    traces = p.cut (das, epoch0, epoch1, chan=3, sample_rate=250.)
-    sys.exit ()
+    p = ph5 (path='/home/azevedo/Data/PABIP/PROCESS/Sigma-bak', nickname='master.ph5')
+    p.read_array_t_names ()
+    p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
+    traces = p.cut ('11528', 1443332700., 1443337210., chan=1, sample_rate=200.)
+    p.close (); sys.exit ()
     #t0 = p.read_t ("Offset_t")
     ##print t0; sys.exit ()
     ##   Read Experiment_t, return kef
