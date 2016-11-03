@@ -1,14 +1,15 @@
 #!/usr/bin/env pnpython3
 #
-#   Recreate external references under Receivers_g from Index_t
+#   Recreate external references under Receivers_g, and Maps_g from Index_t
 #
 #   Steve Azevedo, September 2012
 #
 import os, sys, time
 import Experiment
 
-PROG_VERSION='2015.048'
+PROG_VERSION='2016.307'
 INDEX_T = {}
+M_INDEX_T = {}
 PATH = None
 PH5 = None
 
@@ -34,11 +35,11 @@ def read_index_table () :
     rows, keys = EX.ph5_g_receivers.read_index ()
     INDEX_T = rows_keys (rows, keys)        
 #        
-def read_index_table () :
-    global EX, INDEX_T
+def read_m_index_table () :
+    global EX, M_INDEX_T
     
-    rows, keys = EX.ph5_g_receivers.read_index ()
-    INDEX_T = rows_keys (rows, keys)        
+    rows, keys = EX.ph5_g_maps.read_index ()
+    M_INDEX_T = rows_keys (rows, keys)        
 #        
 def update_external_references () :
     global EX, INDEX_T
@@ -70,8 +71,33 @@ def update_external_references () :
             
             print "E2 ", e.message
             
+    m = 0
+    for i in M_INDEX_T.rows :
+        external_file = i['external_file_name_s']
+        external_path = i['hdf5_path_s']
+        das = i['serial_number_s']
+        target = external_file + ':' + external_path
+        external_group = external_path.split ('/')[3]
+        print external_file, external_path, das, target, external_group
+        
+        #   Nuke old node
+        try :
+            group_node = EX.ph5.get_node (external_path)
+            group_node.remove ()
+        except Exception, e :
+            
+            print "E3 ", e.message
+            
+        #   Re-create node
+        try :
+            EX.ph5.create_external_link ('/Experiment_g/Maps_g', external_group, target)
+            m += 1
+        except Exception, e :
+            
+            print "E4 ", e.message        
+            
         #sys.exit ()
-    sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
+    sys.stderr.write ("done, Index_t {0} nodes recreated. M_Index_t {1} nodes recreated.\n".format (n, m))
     #logging.info ("done, {0} nodes recreated.\n".format (n))
     
 #
@@ -128,4 +154,5 @@ if __name__ == '__main__' :
     get_args ()
     initialize_ph5 ()
     read_index_table ()
+    read_m_index_table ()
     update_external_references ()
