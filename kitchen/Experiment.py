@@ -8,7 +8,7 @@
 import tables, numpy
 import columns, os, os.path, time, sys, string, re
 
-PROG_VERSION = '2016.246 Developmental'
+PROG_VERSION = '2016.307 Developmental'
 ZLIBCOMP=6
 
 os.environ['TZ'] = 'UTM'
@@ -86,8 +86,13 @@ class MapsGroup :
                                                  '/Experiment_g/Maps_g',
                                                  'Index_t',
                                                  columns.Index)
+            columns.add_reference ('/Experiment_g/Maps_g/Index_t', self.ph5_t_index)
         except tables.FileModeError as e :
             pass
+        
+    def nuke_index_t (self) :
+        self.ph5_t_index.remove ()
+        self.initgroup () 
             
     def setcurrent (self, g) :
         #   If this is an external link it needs to be redirected.
