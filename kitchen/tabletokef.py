@@ -12,7 +12,7 @@ import Experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2016.215"
+PROG_VERSION = "2016.307"
 #
 #   These are to hold different parts of the meta-data
 #
@@ -38,6 +38,8 @@ RECEIVER_T = None
 SOH_A = {}
 #   /Experiment_g/Receivers_g/Index_t
 INDEX_T = None
+#   /Experiment_g/Maps_g/Index_t
+M_INDEX_T = None
 #   A list of das_groups that refers to Das_g_[sn]'s
 DASS = []
 #   /Experiment_g/Receivers_g/Time_t
@@ -73,7 +75,7 @@ class das_groups (object) :
 def get_args () :
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
            ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, \
-           TABLE_KEY, INDEX_TABLE
+           TABLE_KEY, INDEX_TABLE, M_INDEX_TABLE
     
     from optparse import OptionParser
     
@@ -132,6 +134,10 @@ def get_args () :
                         default = False,
                         help = "Dump /Experiment_g/Receivers_g/Index_t to a kef file.")
     
+    oparser.add_option ("-M", "--M_Index_t", dest = "m_index_t", action = "store_true",
+                            default = False,
+                            help = "Dump /Experiment_g/Maps_g/Index_t to a kef file.")    
+    
     oparser.add_option ("-D", "--Das_t", dest = "das_t_", metavar = "das",
                         help = "Dump /Experiment_g/Receivers_g/Das_g_[das]/Das_t to a kef file.")
     
@@ -169,6 +175,7 @@ def get_args () :
     EVENT_TABLE = options.event_t_
     TIME_TABLE = options.time_t
     INDEX_TABLE = options.index_t
+    M_INDEX_TABLE = options.m_index_t
     
     if options.update_key != None :
         TABLE_KEY = options.update_key
@@ -386,6 +393,12 @@ def read_index_table () :
     
     rows, keys = EX.ph5_g_receivers.read_index ()
     INDEX_T = rows_keys (rows, keys)
+    
+def read_m_index_table () :
+    global EX, M_INDEX_T
+    
+    rows, keys = EX.ph5_g_maps.read_index ()
+    M_INDEX_T = rows_keys (rows, keys)
             
 def read_receivers (das = None) :
     '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
@@ -455,6 +468,10 @@ if __name__ == '__main__' :
     if INDEX_TABLE :
         read_index_table ()
         table_print ("/Experiment_g/Receivers_g/Index_t", INDEX_T)
+        
+    if M_INDEX_TABLE :
+        read_m_index_table ()
+        table_print ("/Experiment_g/Maps_g/Index_t", M_INDEX_T)
         
     if TIME_TABLE :
         read_time_table ()
