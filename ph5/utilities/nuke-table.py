@@ -8,7 +8,7 @@
 import os, sys
 import Experiment, columns
 
-PROG_VERSION = '2016.293'
+PROG_VERSION = '2016.307'
 
 #
 #   Read Command line arguments
@@ -16,7 +16,7 @@ PROG_VERSION = '2016.293'
 def get_args () :
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
            ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE, \
-           INDEX_TABLE, DAS_TABLE
+           INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
     
     from optparse import OptionParser
     
@@ -71,6 +71,10 @@ def get_args () :
                         default = False,
                         help = "Nuke /Experiment_g/Receivers_g/Index_t.")
     
+    oparser.add_option ("-M", "--M_Index_t", dest = "m_index_t", action = "store_true",
+                            default = False,
+                            help = "Nuke /Experiment_g/Maps_g/Index_t.")    
+    
     oparser.add_option ("-D", "--Das_t", dest = "das_t_", metavar = "das",
                         help = "Nuke /Experiment_g/Receivers_g/Das_g_[das]/Das_t.")
     
@@ -108,6 +112,7 @@ def get_args () :
     EVENT_TABLE = options.event_t_
     TIME_TABLE = options.time_t
     INDEX_TABLE = options.index_t
+    M_INDEX_TABLE = options.m_index_t
     
     if options.array_t_ != None :
         ARRAY_TABLE = options.array_t_
@@ -212,6 +217,9 @@ if __name__ == '__main__' :
     #   /Experiment_g/Receivers_g/Index_t
     if INDEX_TABLE :
         EX.ph5_g_receivers.nuke_index_t ()
+    #   /Experiment_g/Maps_g/Index_t
+    if M_INDEX_TABLE :
+        EX.ph5_g_maps.nuke_index_t ()
     #   /Experiment_g/Receivers_g/Receiver_t
     if RECEIVER_TABLE :
         EX.ph5_g_receivers.nuke_receiver_t ()
