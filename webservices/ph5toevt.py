@@ -9,7 +9,7 @@ import os, sys, logging
 sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2016.299 Developmental"
+PROG_VERSION = "2016.307 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -428,11 +428,21 @@ def gather () :
     
 if __name__ == '__main__' :
     get_args ()
-    logging.basicConfig (
-        filename = os.path.join (ARGS.out_dir, "ph5toevt.log"),
-        format = "%(asctime)s %(message)s",
-        level = logging.INFO
-    )
+    #   --stream set
+    if ARGS.write_stdout :
+        logging.basicConfig (
+            #stream = sys.stderr,
+            format = "%(asctime)s %(message)s",
+            level = logging.ERROR
+        ) 
+    #   Write log to file
+    else :
+        logging.basicConfig (
+            filename = os.path.join (ARGS.out_dir, "ph5toevt.log"),
+            format = "%(asctime)s %(message)s",
+            level = logging.INFO
+        )
+    ###
     logging.info ("{0}: {1}".format (PROG_VERSION, sys.argv))
     P5.read_event_t_names ()
     if not ARGS.start_time :
