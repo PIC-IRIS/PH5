@@ -64,10 +64,10 @@
 #
 
 import tables, types
-import sys, string, copy
+import os, sys, string, copy
 
 PH5VERSION = '2016.244.1'
-PROG_VERSION = '2016.103 Developmental'
+PROG_VERSION = '2016.309 Developmental'
 
 #TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
 
@@ -750,9 +750,9 @@ def _cast (vtype, val) :
                 val = int (val)
             except ValueError, e :
                 val = None
-        elif vtype == 'Enum' or vtype == 'enum' :
-            #   XXX   This only works since we only have a single enum   XXX
-            val = TIME_TYPE[val]
+        #elif vtype == 'Enum' or vtype == 'enum' :
+            ##   XXX   This only works since we only have a single enum   XXX
+            #val = TIME_TYPE[val]
     
     return val
     
