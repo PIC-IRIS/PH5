@@ -5,12 +5,12 @@
 #   Steve Azevedo, March 2015
 #
 
-import sys, os, time, re
+import sys, os, time, re, math
 import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.308 Developmental'
+PROG_VERSION = '2016.309 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
