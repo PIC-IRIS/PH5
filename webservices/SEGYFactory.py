@@ -14,7 +14,7 @@ import math, numpy, os, time, string, sys
 from pyproj import Geod
 from cs2cs import geod2utm
 
-PROG_VERSION = "2015.299 Developmental"
+PROG_VERSION = "2016.309 Developmental"
 
 os.environ['TZ'] = 'UTC'
 time.tzset ()
@@ -1146,7 +1146,7 @@ def write_segy_hdr (trace, fd, sf, num_traces) :
 def write_segy (trace, fd, sf) :
     data = trace.data
     errors = []
-    if len (data) > MAX_16 and BREAK_STANDARD == False :
+    if len (data) > MAX_16 and sf.break_standard == False :
         errors.append ("Warning: Data trace too long, %d samples, truncating to %d" % (len (data), MAX_16))
         sf.set_length_points (MAX_16)
         sf.set_data (data[:MAXSAMPLES])
