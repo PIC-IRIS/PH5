@@ -9,7 +9,7 @@ import os, sys, logging
 sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2016.307 Developmental"
+PROG_VERSION = "2016.309 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -361,7 +361,7 @@ def gather () :
                     if not fh :
                         if ARGS.write_stdout :
                             try :
-                                fh = open (sys.stdout)
+                                fh = sys.stdout
                             except Exception as e :
                                 logging.error ("{0}".format (e.message))
                                 logging.error ("Failed to open STDOUT. Can not continue.")
