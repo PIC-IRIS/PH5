@@ -6,7 +6,7 @@
 #
 
 import os, sys, logging
-sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
+#sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
 PROG_VERSION = "2016.309 Developmental"
