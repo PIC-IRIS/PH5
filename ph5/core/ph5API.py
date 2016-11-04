@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.305 Developmental'
+PROG_VERSION = '2016.308 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -586,7 +586,7 @@ class ph5 (Experiment.ExperimentGroup) :
             
         return das
     
-    def forget_das_t (das) :
+    def forget_das_t (self, das) :
         if self.Das_t.has_key (das) :
             del self.Das_t[das]
             
@@ -716,7 +716,6 @@ class ph5 (Experiment.ExperimentGroup) :
         data=None
         for d in Das_t :
             sr = float (d['sample_rate_i']) / float (d['sample_rate_multiplier_i'])
-
             if (d['channel_number_i'] != chan) or  (sr != sample_rate) or (d['time/epoch_l'] > stop_fepoch) :
                 continue
             window_start_fepoch = fepoch (d['time/epoch_l'], d['time/micro_seconds_i'])
