@@ -6,11 +6,11 @@
 #
 
 import os, sys, logging
-sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
+#sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2016.267.1 Developmental"
-
+PROG_VERSION = "2016.309 Developmental"
+#   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
 DECIMATION_FACTORS = SEGYFactory.DECIMATION_FACTORS
@@ -34,6 +34,18 @@ def get_args () :
     parser.add_argument ("-p", "--path", dest = "ph5_path",
                          help = "Path to ph5 files. Defaults to current directory.",
                          metavar = "ph5_path", default='.')
+    #   SEED channel
+    parser.add_argument ("--channel", dest="seed_channel",
+                         help="Filter on SEED channel.",
+                         metavar="seed_channel")
+    #   SEED network code
+    parser.add_argument ("--network", dest="seed_network",
+                         help="Filter on SEED net code.",
+                         metavar="seed_network")
+    #   SEED loc code
+    parser.add_argument ("--location", dest="seed_location",
+                         help="Filter on SEED loc code.",
+                         metavar="seed_location")    
     #   Channels. Will extract in order listed here. 'Usually' 1 -> Z, 2-> N, 3 -> E
     parser.add_argument ("-c", "--channels", action="store",
                          help="List of comma seperated channels to extract. Default = 1,2,3.",
@@ -65,6 +77,10 @@ def get_args () :
     #   Output directory
     parser.add_argument ("-o", "--out_dir", action="store", dest="out_dir", 
                          metavar="out_dir", type=str, default=".")
+    #   Write to stdout
+    parser.add_argument ("--stream", action="store_true", dest="write_stdout",
+                         help="Write to stdout instead of a file.",
+                         default=False)    
     #parser.add_argument ("-f", "--format", action="store", choices=["SEGY", "PSGY"],
                          #dest="format", metavar="format")
     #   Shot range to extract
@@ -122,6 +138,7 @@ def get_args () :
     elif ARGS.shot_range :
         a, b = map (int, ARGS.shot_range.split ('-'))
         ARGS.evt_list = map (str, range (a, b+1, 1))
+        print ARGS.evt_list[0], ARGS.evt_list[-1]
     ARGS.channels = map (int, ARGS.channels.split (','))
     
     if not os.path.exists (ARGS.out_dir) :
@@ -179,15 +196,19 @@ def gather () :
         #   Read Event_t_xxx
         Event_t = P5.Event_t[ARGS.shot_line]['byid']
         order = P5.Event_t[ARGS.shot_line]['order']
+        print order[0], order[-1]
         #   Take a guess at the number of traces in this SEG-Y file based on number of shots
         num_traces = len (order) * len (chans)
         #   Try to read offset distances (keyed on shot id's)
         Offset_t = P5.read_offsets_receiver_order (ARGS.station_array, sta, ARGS.shot_line)
         #   Loop through each shot by shot id
         for o in order :
+            print o
             ###   Check event list (and also shot_range), ARGS.evt_list, here!
             if ARGS.evt_list :
                 if not o in ARGS.evt_list : continue
+            #XXX
+            print "Shot ID: ", o
             #   Appropriate line from Event_t
             event_t = Event_t[o]
             ###   Need to handle time offset here, ARGS.seconds_offset_from_shot
@@ -211,6 +232,20 @@ def gather () :
             for c in chans :
                 if not array_t.has_key (c) :
                     continue
+                #   Filter out unwanted seed loc codes
+                if ARGS.seed_location and array_t[c][0]['seed_location_code_s'] != ARGS.seed_location :
+                    logging.info ("Location code mismatch: {0}/{1}/{2}".format (array_t[c][0]['seed_location_code_s'],
+                                                                                ARGS.seed_location,
+                                                                                c))
+                    continue
+                #   Filter out unwanted seed channels
+                seed_channel_code_s = ph5API.seed_channel_code (array_t[c][0])
+                if ARGS.seed_channel and seed_channel_code_s != ARGS.seed_channel :
+                    logging.info ("Channel code mismatch: {0}/{1}/{2}".format (array_t[c][0]['seed_channel_code_s'],
+                                                                               ARGS.seed_channel,
+                                                                               c))
+                    continue
+                #   DAS
                 das = array_t[c][0]['das/serial_number_s']
                 for t in range (len (array_t[c])) :
                     #   Deploy time
@@ -223,8 +258,7 @@ def gather () :
                         if ARGS.deploy_pickup :
                             logging.info ("Skipping.")  
                             continue
-                    #   Read Das table, should already be read so don't reread it
-                    P5.read_das_t (das, start_epoch=start_epoch, stop_epoch=stop_epoch, reread=False)
+
                     ###   Need to apply reduction velocity here
                     if ARGS.red_vel > 0. :
                         secs, errs = SEGYFactory.calc_red_vel_secs (Offset[o], ARGS.red_vel)
@@ -233,10 +267,15 @@ def gather () :
                         stop_fepoch += secs
                     #   Set array_t in SEGYFactory
                     sf.set_array_t (array_t[c][t])
+                    #   Read Das table
+                    #print ph5API.__version__
+                    P5.forget_das_t (das)
+                    #P5.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
                     #
                     ###   Cut trace
                     #                    
-                    trace = P5.cut (das, start_fepoch, stop_fepoch, chan=c)
+                    traces = P5.cut (das, start_fepoch, stop_fepoch, chan=c, sample_rate=sr)
+                    trace = ph5API.pad_traces (traces)
                     ##   This may be a command line option later
                     #if True :
                         #if trace.response_t :
@@ -294,30 +333,38 @@ def gather () :
                     ###   Open SEG-Y file
                     #
                     if not fh :
-                        #
-                        ###   Set up file nameing
-                        #
-                        try :
-                            nickname = P5.Experiment_t['rows'][-1]['nickname_s']
-                        except :
-                            nickname = "X"
-                        #
-                        base = "{0}_{1}_{2}_{3}".format (nickname, ARGS.station_array[-3:], sta, chan_name)
-                        outfilename = "{1:s}/{0:s}_0001.SGY".format (base, ARGS.out_dir)
-                        #   Make sure that the name in unique
-                        j = 1
-                        while os.path.exists (outfilename) :
-                            j += 1
-                            tmp = outfilename[:-8]
-                            outfilename = "{0}{1:04d}.SGY".format (tmp, j)
-                        #   Open SEG-Y file
-                        try :
-                            fh = open (outfilename, 'w+')
-                            logging.info ("Opened: {0}".format (outfilename))
-                        except Exception as e :
-                            logging.error ("Error: Failed to open {0}.\t{1}".format (outfilename, e.message))
-                            sys.stderr.write ("Error: Failed to open {0}.\t{1}".format (outfilename, e.message))
-                            sys.exit ()
+                        if ARGS.write_stdout :
+                            try :
+                                fh = sys.stdout
+                            except Exception as e :
+                                logging.error ("{0}".format (e.message))
+                                logging.error ("Failed to open STDOUT. Can not continue.")
+                                sys.exit (-1)
+                        else :                        
+                            #
+                            ###   Set up file nameing
+                            #
+                            try :
+                                nickname = P5.Experiment_t['rows'][-1]['nickname_s']
+                            except :
+                                nickname = "X"
+                            #
+                            base = "{0}_{1}_{2}_{3}".format (nickname, ARGS.station_array[-3:], sta, chan_name)
+                            outfilename = "{1:s}/{0:s}_0001.SGY".format (base, ARGS.out_dir)
+                            #   Make sure that the name in unique
+                            j = 1
+                            while os.path.exists (outfilename) :
+                                j += 1
+                                tmp = outfilename[:-8]
+                                outfilename = "{0}{1:04d}.SGY".format (tmp, j)
+                            #   Open SEG-Y file
+                            try :
+                                fh = open (outfilename, 'w+')
+                                logging.info ("Opened: {0}".format (outfilename))
+                            except Exception as e :
+                                logging.error ("Error: Failed to open {0}.\t{1}".format (outfilename, e.message))
+                                sys.stderr.write ("Error: Failed to open {0}.\t{1}".format (outfilename, e.message))
+                                sys.exit ()
                         #   Write reel headers and first trace
                         try :
                             logs = SEGYFactory.write_segy_hdr (trace, fh, sf, num_traces)
@@ -352,11 +399,21 @@ def gather () :
 if __name__ == '__main__' :
     #global STATIONS_ALL, SHOTS_ALL
     get_args ()
-    logging.basicConfig (
-        filename = os.path.join (ARGS.out_dir, "ph5torec.log"),
-        format = "%(asctime)s %(message)s",
-        level = logging.INFO
-    )
+    #   --stream set
+    if ARGS.write_stdout :
+        logging.basicConfig (
+            #stream = sys.stderr,
+            format = "%(asctime)s %(message)s",
+            level = logging.ERROR
+        ) 
+    #   Write log to file
+    else :
+        logging.basicConfig (
+            filename = os.path.join (ARGS.out_dir, "ph5torec.log"),
+            format = "%(asctime)s %(message)s",
+            level = logging.INFO
+        )
+    ###    
     logging.info ("{0}: {1}".format (PROG_VERSION, sys.argv))
     P5.read_event_t_names ()
     if not ARGS.shot_line in P5.Event_t_names :
@@ -381,6 +438,9 @@ if __name__ == '__main__' :
         experiment_t = P5.Experiment_t['rows'][-1]
         logging.info ("Experiment: {0}".format (experiment_t['longname_s'].strip ()))
         logging.info ("Summary: {0}".format (experiment_t['summary_paragraph_s'].strip ()))
+        if ARGS.seed_network and P5.Experiment_t['net_code_s'] != ARGS.seed_network :
+            logging.info ("Netcode mis-match: {0}/{1}".format (P5.Experiment_t['net_code_s'], ARGS.seed_network))
+            sys.exit (-1)        
     else :
         logging.warning ("Warning: No experiment information found. Contact PIC.")
         
@@ -392,5 +452,6 @@ if __name__ == '__main__' :
     gather ()
     logging.info ("Done.")
     logging.shutdown ()
+    P5.close ()
     sys.stderr.write ("Done\n")
     
