@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2016.309 Developmental'
+PROG_VERSION = '2016.313.1 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -35,6 +35,7 @@ class Trace (object) :
           start_time -> TimeDOY time object
           time_correction_ms -> The correction to account for ocillator drift
           nsamples -> Number of data samples, ie. length of data
+          padding -> Number of samples padding as a result of gaps
           sample_rate -> Number of samples per second as a float
           ttype -> Data sample point type, at this point 'int' or 'float'
           byteorder -> Data byteorder
@@ -44,7 +45,7 @@ class Trace (object) :
           Methods:
           time_correct -> Apply any time corrections and return a TimeDOY object
     '''
-    __slots__ = ('data', 'start_time', 'time_correction_ms', 'nsamples', 'sample_rate', 'ttype', 'byteorder', 'das_t', 'receiver_t', 'response_t', 'time_correct')
+    __slots__ = ('data', 'start_time', 'time_correction_ms', 'nsamples', 'padding', 'sample_rate', 'ttype', 'byteorder', 'das_t', 'receiver_t', 'response_t', 'time_correct')
     def __init__ (self, data, fepoch, time_correction_ms, nsamples, sample_rate, ttype, byteorder, das_t, receiver_t, response_t) :
         self.data = data
         self.start_time = TimeDOY.TimeDOY (epoch=fepoch)
@@ -90,6 +91,7 @@ class ph5 (Experiment.ExperimentGroup) :
         self.Event_t = {}          #   Event_t[event_name] = { 'byid':byid, 'order':order, 'keys':keys }
         self.Sort_t = {}           #   Sort_t[array_name] = { 'rows':rows, 'keys':keys }
         self.Das_t = {}            #   Das_t[das] = { 'rows':rows, 'keys':keys }
+        self.Das_t_full = {}       #   Das_t_full[das], internal complete copy of Das_t
         self.Offset_t = {}         #   Offset_t[offset_name] = { 'byid':byid, 'order':order, 'keys':keys }
         self.Index_t = None
         self.Time_t = None
@@ -382,7 +384,7 @@ class ph5 (Experiment.ExperimentGroup) :
                  name -> the name of the array as a string 'Array_t_xxx'
               Sets:
                  Array_t[name]['byid'] Keyed by station id as a list of dict of array_t lines by channel
-                 Array_t[name]['order']['channel'] Keyed in order as in PH5 file (a list of dictionaries)
+                 Array_t[name]['order'] Keyed in order as in PH5 file (a list of dictionaries)
                  Array_t[name]['keys'] (a list of dictionary keys)
         '''
         if name in self.Array_t_names :
@@ -558,7 +560,11 @@ class ph5 (Experiment.ExperimentGroup) :
         else :
             das_g = "Das_g_{0}".format (das)
             
-        if das in dass and not reread : return das
+        if das in dass and not reread and not start_epoch :
+            if self.Das_t_full.has_key (das) :
+                self.Das_t[das] = self.Das_t_full[das]
+                return das
+        
         if self.Das_g_names == [] : self.read_das_g_names ()
         node = None; found = False
         
@@ -568,20 +574,31 @@ class ph5 (Experiment.ExperimentGroup) :
         
         if node == None : return None
         rows_keep = []
-        rows, keys = self.ph5_g_receivers.read_das ()
+        rk = {}
+        if not self.Das_t_full.has_key (das) :
+            rows, keys = self.ph5_g_receivers.read_das ()
+            self.Das_t_full[das] = { 'rows':rows, 'keys':keys }
+            
         if  stop_epoch != None and start_epoch != None :
-            for r in rows :
+            for r in self.Das_t_full[das]['rows'] :
                 #   Start and stop for this das event window
                 start = float (r['time/epoch_l']) + float (r['time/micro_seconds_i']) / 1000000.
                 stop = start + (float (r['sample_count_i']) / float (r['sample_rate_i']) / float (r['sample_rate_multiplier_i']))
+                sr = float (r['sample_rate_i']) / float (r['sample_rate_multiplier_i'])
                 #   We need to keep this
                 if is_in (start, stop, start_epoch, stop_epoch) :
-                    rows_keep.append (r)
+                    if not rk.has_key (sr) : rk[sr] = []
+                    rk[sr].append (r)
                     found = True
+            rkk = rk.keys ()
+            #   Sort so higher sample rates are first
+            rkk.sort (reverse=True)
+            for s in rkk :
+                rows_keep.extend (rk[s])
         else : rows_keep = rows 
         
         if len (rows_keep) > 0 :        
-            self.Das_t[das] = { 'rows':rows_keep, 'keys':keys }
+            self.Das_t[das] = { 'rows':rows_keep, 'keys':self.Das_t_full[das]['keys'] }
             self.num_found_das += 1
             
         return das
@@ -739,6 +756,10 @@ class ph5 (Experiment.ExperimentGroup) :
                                                         stop = int (cut_stop_sample - time_cor_guess_samples))
             current_trace_type, current_trace_byteorder = self.ph5_g_receivers.trace_info (trace_reference)
             if first :
+                #   Correct start time to 'actual' time of first sample
+                #print TimeDOY.TimeDOY (epoch=start_fepoch),
+                start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
+                #print TimeDOY.TimeDOY (epoch=start_fepoch)
                 first = False
                 needed_samples = cut_samples
                 dt = 'int32'
@@ -754,7 +775,6 @@ class ph5 (Experiment.ExperimentGroup) :
                 #   Data gap
                 if abs (time_diff) > (1. / sr) :
                     new_trace = True
-                                
             if len (data_tmp) > 0 :
                 #  Gap!!!
                 if new_trace :
@@ -787,7 +807,7 @@ class ph5 (Experiment.ExperimentGroup) :
                        start_fepoch, 
                        0,                       #   time_correction_ms
                        len (data),              #   nsamples
-                       sr, 
+                       sample_rate, 
                        current_trace_type, 
                        current_trace_byteorder, 
                        das_t, 
@@ -875,6 +895,7 @@ def pad_traces (traces) :
     end_time1 = None
     x = 0
     tcor_sum = 0
+    N = 0
     for t in traces :
         tcor_sum += t.time_correction_ms
         x += 1.
@@ -885,9 +906,11 @@ def pad_traces (traces) :
                 #   Pad
                 d = pad (t.data, n, dtype=ret.ttype)
                 ret.data = np.append (ret.data, d)
+                N += n
                 
         end_time1 = end_time0 + (1. / t.sample_rate)
-        
+    
+    ret.padding = N    
     ret.nsamples = len (ret.data)
     ret.time_correction_ms = int ((tcor_sum / x) + 0.5)
          
@@ -1180,11 +1203,62 @@ if __name__ == '__main__' :
     ##   Close PH5
     #p.close ()
     #   Initialize new PH5
-    p = ph5 (path='/home/azevedo/Data/PABIP/PROCESS/Sigma-bak', nickname='master.ph5')
+    p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
     p.read_array_t_names ()
-    p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
-    traces = p.cut ('11528', 1443332700., 1443337210., chan=1, sample_rate=200.)
-    p.close (); sys.exit ()
+    p.read_array_t ('Array_t_005')
+    #print p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['deploy_time/ascii_s'], '->', p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['pickup_time/ascii_s']
+    array_t_0 = p.Array_t['Array_t_005']['byid']['5002'][1][0]
+    array_t_1 = p.Array_t['Array_t_005']['byid']['5002'][1][-1]
+    das = array_t_0['das/serial_number_s']
+    sr = array_t_0['sample_rate_i'] / float (array_t_0['sample_rate_multiplier_i'])
+    samples_per_day = int (86400 * sr)
+    start_tdoy = TimeDOY.TimeDOY (epoch=array_t_0['deploy_time/epoch_l'])
+    start_tdoy = TimeDOY.TimeDOY (year=start_tdoy.dtobject.year,
+                                  hour=0,
+                                  minute=0,
+                                  second=0,
+                                  microsecond=0,
+                                  doy=start_tdoy.doy ())
+    start_fepoch = start_tdoy.epoch (fepoch=True)
+    stop_fepoch = start_fepoch + 86400.
+    end_tdoy = TimeDOY.TimeDOY (epoch=array_t_1['pickup_time/epoch_l'])
+    end_tdoy = TimeDOY.TimeDOY (year=end_tdoy.dtobject.year,
+                                hour=23,
+                                minute=59,
+                                second=59,
+                                microsecond=999999,
+                                doy=end_tdoy.doy ())
+    end_fepoch = end_tdoy.epoch (fepoch=True)
+    while stop_fepoch < end_fepoch :
+        traces = p.cut (das, start_fepoch, stop_fepoch, sample_rate=sr)
+        for t in traces :
+            print TimeDOY.epoch2passcal (start_fepoch), TimeDOY.epoch2passcal (stop_fepoch)
+            print  '===>',t.start_time.getPasscalTime (ms=True),t.start_time.epoch (fepoch=True),t.sample_rate,t.nsamples,t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate),TimeDOY.epoch2passcal (t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate))
+            samps = 0
+            for d in t.das_t :
+                samps += d['sample_count_i']
+                tttttt = TimeDOY.TimeDOY (epoch=d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000.))
+                print "\t", tttttt.getPasscalTime (ms=True), d['sample_rate_i'], d['sample_count_i']
+            print "\t", samps
+            if len (t.data) != samples_per_day :
+                print "*\t===> {0} {1}".format (samples_per_day, len (t.data))
+        start_fepoch += 86400.
+        stop_fepoch += 86400.
+    #Offset_t = p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
+    #start = TimeDOY.TimeDOY (year=2016, 
+                             #month=07, 
+                             #day=28, 
+                             #hour=0, 
+                             #minute=0, 
+                             #second=0, 
+                             #microsecond=0)
+    #traces = p.cut ('9389', start.epoch (fepoch=True), start.epoch (fepoch=True) + 3600., chan=1, sample_rate=100.)
+    p.close (); sys.exit (-1)
+    p = ph5 (path='/run/media/azevedo/1TB_EXT4/Data/SEGMeNT_onshore/Sigma-bak', nickname='master.ph5')
+    p.read_event_t_names ()
+    print p.Event_t_names
+    p.close ()
+    sys.exit ()
     #t0 = p.read_t ("Offset_t")
     ##print t0; sys.exit ()
     ##   Read Experiment_t, return kef
