@@ -96,7 +96,7 @@ class PH5toMSeed(object):
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  out_dir=".", starttime=None, stoptime=None,
                  reduction_velocity=-1., dasskip=None, shotline=None,
-                 eventnumbers="", notimecorrect=False):
+                 eventnumbers="", notimecorrect=False, station_id=[]):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.array = array
@@ -107,6 +107,7 @@ class PH5toMSeed(object):
         self.offset = offset
         self.das_sn = das_sn
         self.station = station
+        self.station_id = station_id
         self.sample_rate_list = sample_rate_keep
         self.doy_keep = doy_keep
         self.channel = channel
@@ -329,9 +330,9 @@ class PH5toMSeed(object):
 
             for station in arrayorder:
 
-                if self.station:
+                if self.station_id:
                     does_match = []
-                    sta_list = self.station.split(',')
+                    sta_list = self.station_id.split(',')
                     for x in sta_list:
                         if station == x:
                             does_match.append(1)
@@ -341,6 +342,17 @@ class PH5toMSeed(object):
                 station_list = arraybyid.get(station)
                 for deployment in station_list:
                     start_times = []
+
+                    station_list[deployment][0]['seed_station_name_s']
+                    if self.station:
+                        does_match = []
+                        sta_list = self.station.split(',')
+                        for x in sta_list:
+                            if (station_list[deployment][0]
+                                    ['seed_station_name_s'] == x):
+                                does_match.append(1)
+                        if not does_match:
+                            continue
 
                     if (self.eventnumbers and
                             self.shotline and matched_shot_line):
@@ -633,8 +645,13 @@ def get_args():
 
     parser.add_argument(
         "--station", action="store", dest="sta_list",
-        help="Comma separated list of station id's",
+        help="Comma separated list of SEED station id's",
         metavar="sta_list", type=str, default=[])
+
+    parser.add_argument(
+        "--station_id", action="store", dest="sta_id_list",
+        help="Comma separated list of PH5 station id's",
+        metavar="sta_id_list", type=str, default=[])
 
     parser.add_argument(
         "-r", "--sample_rate_keep", action="store",
@@ -723,7 +740,8 @@ if __name__ == '__main__':
         args.channel, args.das_sn,  args.deploy_pickup,
         args.decimation, args.sample_rate, args.doy_keep, args.stream,
         args.out_dir, args.start_time, args.stop_time, args.red_vel,
-        args.dasskip, args.shotline, args.eventnumbers, args.notimecorrect)
+        args.dasskip, args.shotline, args.eventnumbers,
+        args.notimecorrect, args.sta_id_list)
 
     streams = ph5ms.process_all()
 
