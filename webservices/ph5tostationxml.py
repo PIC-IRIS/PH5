@@ -38,14 +38,6 @@ from TimeDOY import passcal2epoch
 
 from obspy import read_inventory
 
-# from obspy.core import inventory, read
-
-# from obspy.core.inventory.response import response_from_respfile
-
-# from obspy.io.xseed import Parser
-
-import numpy
-
 import argparse
 
 import fnmatch
@@ -56,7 +48,7 @@ from obspy.core.util import AttribDict
 
 
 
-PROG_VERSION = "2016.299"
+PROG_VERSION = "2016.327"
 
 
 def get_args():
@@ -146,6 +138,9 @@ class PH5toStationXML(object):
 
         self.args = args
         self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
+        self.cha_list_set=1
+        self.sta_list_set=1
+        self.location_list_set=1
         
 
         # self.bb_resp = response_from_respfile(
@@ -164,12 +159,15 @@ class PH5toStationXML(object):
             args['nickname'] = args['nickname'] + '.ph5'
 
         if not self.args.get('channel_list'):
+            self.cha_list_set=0
             self.args['channel_list'] = "*"
 
         if not self.args.get('sta_list'):
+            self.sta_list_set=0
             self.args['sta_list'] = "*"
 
         if not self.args.get('location_list'):
+            self.location_list_set=0
             self.args['location_list'] = "*"
 
         if not self.args.get('network_list'):
@@ -317,109 +315,133 @@ class PH5toStationXML(object):
                  
                 station.site = obspy.core.inventory.Site(
                     name=station_list[1][0]['seed_station_name_s'])
+                
 
-                if self.args.get('level') and (
-                        self.args.get('level') == "channel" or
-                        self.args.get('level') == "response"):
 
-                    for deployment in station_list:
-                        total_channels = total_channels + 1
-                        location_match = False
+                for deployment in station_list:
+                    total_channels = total_channels + 1
+                    location_match = False
 
-                        c = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
+                    c = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
+                     
+                    for pattern in cha_list_patterns:
+                        if fnmatch.fnmatch(c, pattern):
+                            
 
-                        for pattern in cha_list_patterns:
-                            if fnmatch.fnmatch(c, pattern):
-                                channels.append(c)
+                            if station_list[deployment][
+                                    0]['seed_location_code_s']:
+                                location = station_list[deployment][
+                                    0]['seed_location_code_s']
+                            else:
+                                location = "--"
 
-                                if station_list[deployment][
-                                        0]['seed_location_code_s']:
-                                    location = station_list[deployment][
-                                        0]['seed_location_code_s']
-                                else:
-                                    location = "--"
+                            for pattern in location_patterns:
+                                if fnmatch.fnmatch(location, pattern):
+                                    location_match = True
 
-                                for pattern in location_patterns:
-                                    if fnmatch.fnmatch(location, pattern):
-                                        location_match = True
+                            if not location_match:
+                                continue
+                            
+                            channels.append(c)
 
-                                if not location_match:
-                                    continue
+                            obs_channel = obspy.core.inventory.Channel(
+                                code=c, location_code=location,
+                                latitude=latitude,
+                                longitude=longitude, elevation=elevation,
+                                depth=0)
+                            obs_channel.start_date = datetime.datetime.fromtimestamp(
+                                station_list[deployment][0]['deploy_time/epoch_l'])
+                            obs_channel.end_date = datetime.datetime.fromtimestamp(
+                                station_list[deployment][0]['pickup_time/epoch_l'])
+                            obs_channel.sample_rate = station_list[
+                                deployment][0]['sample_rate_i']
+                            obs_channel.sample_rate_ration = station_list[
+                                deployment][0]['sample_rate_multiplier_i']
+                            obs_channel.storage_format = "PH5"
 
-                                obs_channel = obspy.core.inventory.Channel(
-                                    code=c, location_code=location,
-                                    latitude=latitude,
-                                    longitude=longitude, elevation=elevation,
-                                    depth=0)
-                                obs_channel.start_date = datetime.datetime.fromtimestamp(
-                                    station_list[deployment][0]['deploy_time/epoch_l'])
-                                obs_channel.end_date = datetime.datetime.fromtimestamp(
-                                    station_list[deployment][0]['pickup_time/epoch_l'])
-                                obs_channel.sample_rate = station_list[
-                                    deployment][0]['sample_rate_i']
-                                obs_channel.sample_rate_ration = station_list[
-                                    deployment][0]['sample_rate_multiplier_i']
-                                obs_channel.storage_format = "PH5"
+                            obs_channel.sensor = obspy.core.inventory.Equipment(
+                                type="", description="",
+                                manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
+                                serial_number=station_list[deployment][0][
+                                    'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
+                                removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
 
-                                obs_channel.sensor = obspy.core.inventory.Equipment(
-                                    type="", description="",
-                                    manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
-                                    serial_number=station_list[deployment][0][
-                                        'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
-                                    removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-
-                                obs_channel.data_logger = obspy.core.inventory.Equipment(
-                                    type="", description="",
-                                    manufacturer=station_list[deployment][0]['das/manufacturer_s'], vendor="", model=station_list[deployment][0]['das/model_s'],
-                                    serial_number=station_list[deployment][0][
-                                        'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
-                                    removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
+                            obs_channel.data_logger = obspy.core.inventory.Equipment(
+                                type="", description="",
+                                manufacturer=station_list[deployment][0]['das/manufacturer_s'], vendor="", model=station_list[deployment][0]['das/model_s'],
+                                serial_number=station_list[deployment][0][
+                                    'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
+                                removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
       
 
-                                if self.args.get('minlat') and float(
-                                        self.args.get('minlat')) > float(latitude):
-                                    continue
+                            if self.args.get('minlat') and float(
+                                    self.args.get('minlat')) > float(latitude):
+                                continue
 
-                                if self.args.get('minlon') and float(
-                                        self.args.get('minlon')) > float(longitude):
-                                    continue
+                            if self.args.get('minlon') and float(
+                                    self.args.get('minlon')) > float(longitude):
+                                continue
 
-                                if self.args.get('maxlat') and float(
-                                        self.args.get('maxlat')) < float(latitude):
-                                    continue
+                            if self.args.get('maxlat') and float(
+                                    self.args.get('maxlat')) < float(latitude):
+                                continue
 
-                                if self.args.get('maxlon') and float(
-                                        self.args.get('maxlon')) < float(longitude):
-                                    continue
+                            if self.args.get('maxlon') and float(
+                                    self.args.get('maxlon')) < float(longitude):
+                                continue
 
-                                #if self.args.level.upper() == "RESPONSE":
-                                    #if station_list[deployment][0][
-                                    #        'sensor/model_s'] == 'cmg3t':
+                            #if self.args.level.upper() == "RESPONSE":
+                                #if station_list[deployment][0][
+                                #        'sensor/model_s'] == 'cmg3t':
 
-                                    #    obs_channel.response = self.bb_resp
+                                #    obs_channel.response = self.bb_resp
                                  
-                                extra = AttribDict({
-                                        'PH5Component': {
-                                            'value': str(station_list[deployment][0]['channel_number_i']),
-                                            'namespace': self.iris_custom_ns,
-                                            'type': 'attribute'
-                                        }
-                                    }) 
-                                obs_channel.extra=extra
+                            extra = AttribDict({
+                                    'PH5Component': {
+                                        'value': str(station_list[deployment][0]['channel_number_i']),
+                                        'namespace': self.iris_custom_ns,
+                                        'type': 'attribute'
+                                    }
+                                }) 
+                            obs_channel.extra=extra
     
-                                obs_channels.append(obs_channel)
+                            obs_channels.append(obs_channel)
+                                
+                                
 
-                        longitude = station_list[deployment][
+                    longitude = station_list[deployment][
                                                      0]['location/X/value_d']
-                        latitude = station_list[deployment][
+                    latitude = station_list[deployment][
                                                     0]['location/Y/value_d']
-                        elevation = station_list[deployment][
+                    elevation = station_list[deployment][
                                                      0]['location/Z/value_d']
-
+                        
+                
                 station.selected_number_of_channels = len(channels)
                 station.total_number_of_channels = total_channels
-                station.channels = obs_channels
-                all_stations.append(station)
+                
+                
+                
+                if self.args.get('level') and (
+                    self.args.get('level').upper() == "CHANNEL" or
+                    self.args.get('level').upper() == "RESPONSE"): 
+                    
+                    if station.selected_number_of_channels ==0:
+                        continue
+                    else:
+                        station.channels = obs_channels
+                        all_stations.append(station)
+        
+                if self.args.get('level') and (
+                    self.args.get('level').upper() == "STATION" or self.args.get('level').upper() == "NETWORK"):
+                    
+                    if station.selected_number_of_channels == 0:
+                        if self.cha_list_set == 0 and self.location_list_set == 0:
+                            all_stations.append(station)
+                        else:
+                            continue
+                    all_stations.append(station)
+                    
 
         return all_stations
 
@@ -482,21 +504,26 @@ class PH5toStationXML(object):
         network.alternate_code = self.experiment_t[0]['experiment_id_s']
         network.description = self.experiment_t[0]['longname_s']
 
-        if self.args.get('level') and self.args.get('level') != "network":
+        sta_list = self.Parse_Station_list(self.args.get('sta_list'))
+        network.stations = self.Read_Stations(sta_list)
+        
 
-            sta_list = self.Parse_Station_list(self.args.get('sta_list'))
-            network.stations = self.Read_Stations(sta_list)
-            start_time, end_time=self.get_network_date()
-            
-            network.start_date=datetime.datetime.fromtimestamp(start_time)
-            network.end_date=datetime.datetime.fromtimestamp(end_time)
-           
         if not network.stations:
-            self.ph5.close()
-            return
+            if self.sta_list_set==1  or self.cha_list_set == 1 or self.location_list_set == 1 :   
+                self.ph5.close()
+                return        
+        
+        start_time, end_time=self.get_network_date()
+            
+        network.start_date=datetime.datetime.fromtimestamp(start_time)
+        network.end_date=datetime.datetime.fromtimestamp(end_time)
+           
+        
+        if self.args.get('level') and self.args.get('level').upper() == "NETWORK":
+            network.stations=[]
             
         self.ph5.close()
-
+        
         return network
 
     def Process(self):
