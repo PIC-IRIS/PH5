@@ -33,12 +33,13 @@ import ph5API
 import time
 from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
+import fnmatch
 
 
 from time import time as tm
 
 
-PROG_VERSION = "2016.326"
+PROG_VERSION = "2016.328"
 
 
 def fdsntimetoepoch(fdsn_time):
@@ -61,6 +62,7 @@ def doy_breakup(start_fepoch):
 
     next_passcal_date = str(year) + ":" + str(next_doy) + ":00:00:00.000"
     stop_fepoch = passcal2epoch(next_passcal_date)
+    stop_fepoch -= .001
 
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
@@ -90,13 +92,13 @@ class StationCut(object):
 
 class PH5toMSeed(object):
 
-    def __init__(self, ph5API_object, array, length, offset, component=[],
-                 station=[], netcode="XX", channel=[],
+    def __init__(self, nickname, array, length, offset, component=[],
+                 station=[], ph5path=".", netcode="XX", channel=[],
                  das_sn=None,  use_deploy_pickup=False, decimation=None,
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  out_dir=".", starttime=None, stoptime=None,
                  reduction_velocity=-1., dasskip=None, shotline=None,
-                 eventnumbers="", notimecorrect=False, station_id=[]):
+                 eventnumbers="", notimecorrect=False):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.array = array
@@ -107,19 +109,19 @@ class PH5toMSeed(object):
         self.offset = offset
         self.das_sn = das_sn
         self.station = station
-        self.station_id = station_id
         self.sample_rate_list = sample_rate_keep
         self.doy_keep = doy_keep
         self.channel = channel
         self.netcode = netcode
         self.length = length
+        self.nickname = nickname
+        self.ph5path = ph5path
         self.out_dir = out_dir
         self.stream = stream
         self.start_time = starttime
         self.end_time = stoptime
         self.shotline = shotline
         self.eventnumbers = eventnumbers
-        self.ph5 = ph5API_object
 
         if not os.path.exists(self.out_dir):
             try:
@@ -139,12 +141,22 @@ class PH5toMSeed(object):
                 'Error parsing args: Netcode must 2 character alphanumeric')
             sys.exit(-2)
 
-        if not self.ph5.Array_t_names:
-            self.ph5.read_array_t_names()
+        # print PH5_PATH, PH5_FILE
 
-        if not self.ph5.Experiment_t:
-            self.ph5.read_experiment_t()
+        if self.nickname[-3:] == 'ph5':
+            ph5file = os.path.join(self.ph5path, self.nickname)
+        else:
+            ph5file = os.path.join(self.ph5path, self.nickname + '.ph5')
+            self.nickname += '.ph5'
 
+        if not os.path.exists(ph5file):
+            sys.stderr.write("Error: %s not found.\n" % ph5file)
+            sys.exit(-1)
+
+        self.ph5 = ph5API.ph5(path=self.ph5path, nickname=self.nickname)
+        self.ph5.read_array_t_names()
+        self.ph5.read_das_g_names()
+        self.ph5.read_experiment_t()
         if shotline:
             self.ph5.read_event_t_names()
 
@@ -219,38 +231,19 @@ class PH5toMSeed(object):
 
     def create_trace(self, station_to_cut):
 
-        self.ph5.read_das_t(station_to_cut.das, station_to_cut.starttime,
-                            station_to_cut.endtime, reread=False)
+        ph5 = ph5API.ph5(path=self.ph5path, nickname=self.nickname)
 
-        if not self.ph5.Das_t.has_key(station_to_cut.das):
+        ph5.read_das_t(station_to_cut.das)
+
+        if not ph5.Das_t.has_key(station_to_cut.das):
             return
 
-        Das_t = ph5API.filter_das_t(self.ph5.Das_t[station_to_cut.das]['rows'],
-                                    station_to_cut.channel)
-
-        das_t_start_no_micro = float(Das_t[0]['time/epoch_l'])
-        das_t_start_micro_seconds = float(Das_t[0]['time/micro_seconds_i'])
-        das_t_start = (float(Das_t[0]['time/epoch_l']) +
-                       float(Das_t[0]['time/micro_seconds_i']) / 1000000)
-
-        if float(das_t_start) > float(station_to_cut.starttime):
-            start_time = das_t_start
-            start_time_no_micro = int(das_t_start_no_micro)
-            start_time_micro_seconds = int(das_t_start_micro_seconds)
-            if start_time_micro_seconds > 0:
-                station_to_cut.endtime += .0001
-
-        else:
-            start_time = station_to_cut.starttime
-            start_time_no_micro = station_to_cut.starttime
-            start_time_micro_seconds = 0
-
         nt = station_to_cut.notimecorrect
-        traces = self.ph5.cut(station_to_cut.das, start_time,
-                              station_to_cut.endtime,
-                              chan=station_to_cut.channel,
-                              sample_rate=station_to_cut.sample_rate,
-                              apply_time_correction=nt)
+        traces = ph5.cut(station_to_cut.das, station_to_cut.starttime,
+                         station_to_cut.endtime,
+                         chan=station_to_cut.channel,
+                         sample_rate=station_to_cut.sample_rate,
+                         apply_time_correction=nt)
 
         obspy_stream = Stream()
 
@@ -267,7 +260,9 @@ class PH5toMSeed(object):
                 print "error"
                 continue
 
-            obspy_trace.stats.sampling_rate = station_to_cut.sample_rate
+            obspy_trace.stats.sampling_rate = (
+                trace.sample_rate /
+                station_to_cut.sample_rate_multiplier)
             obspy_trace.stats.location = station_to_cut.location
             obspy_trace.stats.station = station_to_cut.station
             obspy_trace.stats.coordinates = AttribDict()
@@ -275,15 +270,17 @@ class PH5toMSeed(object):
             obspy_trace.stats.coordinates.longitude = station_to_cut.longitude
             obspy_trace.stats.channel = station_to_cut.seed_channel
             obspy_trace.stats.network = station_to_cut.net_code
-            obspy_trace.stats.starttime = UTCDateTime(start_time_no_micro)
-
+            obspy_trace.stats.starttime = UTCDateTime(
+                trace.start_time.epoch(
+                    fepoch=True))
             obspy_trace.stats.starttime.microsecond = (
-                start_time_micro_seconds)
+                trace.start_time.dtobject.microsecond)
 
             if self.decimation:
                 obspy_trace.decimate(int(self.decimation))
 
             obspy_stream.append(obspy_trace)
+        ph5.close()
 
         if len(obspy_stream.traces) < 1:
             return
@@ -291,50 +288,43 @@ class PH5toMSeed(object):
         return obspy_stream
 
     def create_cut_list(self):
-
+        self.read_arrays(None)
         experiment_t = self.ph5.Experiment_t['rows']
         array_names = self.ph5.Array_t_names
         array_names.sort()
         self.read_events(None)
         shot_lines = self.ph5.Event_t_names
         shot_lines.sort()
-        matched_shot_line = None
+        matched_shot_line = ""
 
-        if self.shotline:
-            for shot_line in shot_lines:
-                if int(shot_line[-3:]) == int(self.shotline):
-                    matched_shot_line = shot_line
+        for shot_line in shot_lines:
 
-        if self.shotline and not matched_shot_line:
-            sys.exit(-1)
-
-        if self.eventnumbers and not self.shotline:
-            sys.exit(-1)
+            if int(shot_line[-3:]) == int(self.shotline):
+                matched_shot_line = shot_line
 
         for array_name in array_names:
-            array = array_name[-3:]
+            array = int(array_name[-3:])
             matched = 0
 
             if self.array:
-                arrays = self.array.split(',')
-                for x in arrays:
-                    if int(x) == int(array):
-                        matched = 1
-                if matched != 1:
+                does_match = []
+                array_patterns = self.array.split(',')
+                for pattern in array_patterns:
+                    if fnmatch.fnmatch(str(array), pattern):
+                        does_match.append(1)
+                if not does_match:
                     continue
-
-            self.read_arrays(array_name)
 
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
 
             for station in arrayorder:
 
-                if self.station_id:
+                if self.station:
                     does_match = []
-                    sta_list = self.station_id.split(',')
-                    for x in sta_list:
-                        if station == x:
+                    sta_patterns = self.station.split(',')
+                    for pattern in sta_patterns:
+                        if fnmatch.fnmatch(station, pattern):
                             does_match.append(1)
                     if not does_match:
                         continue
@@ -342,17 +332,6 @@ class PH5toMSeed(object):
                 station_list = arraybyid.get(station)
                 for deployment in station_list:
                     start_times = []
-
-                    station_list[deployment][0]['seed_station_name_s']
-                    if self.station:
-                        does_match = []
-                        sta_list = self.station.split(',')
-                        for x in sta_list:
-                            if (station_list[deployment][0]
-                                    ['seed_station_name_s'] == x):
-                                does_match.append(1)
-                        if not does_match:
-                            continue
 
                     if (self.eventnumbers and
                             self.shotline and matched_shot_line):
@@ -370,7 +349,7 @@ class PH5toMSeed(object):
                                 self.evt_lon = event_t['location/X/value_d']
                                 # sys.exit()
                             except Exception:
-                                error = 1
+                                print 'error'
 
                     deploy = station_list[deployment][0]['deploy_time/epoch_l']
                     location = station_list[deployment][
@@ -421,8 +400,16 @@ class PH5toMSeed(object):
                             continue
 
                     full_code = band_code + instrument_code + orientation_code
-                    if self.channel and full_code not in self.channel:
-                        continue
+
+                    if self.channel:
+                        does_match = []
+                        cha_patterns = self.channel.split(',')
+                        for pattern in cha_patterns:
+                            if fnmatch.fnmatch(full_code, pattern):
+                                does_match.append(1)
+                        if not does_match:
+                            continue
+
                     if self.das_sn and self.das_sn != das:
                         continue
 
@@ -510,13 +497,13 @@ class PH5toMSeed(object):
                             stop_time, seconds = doy_breakup(start_fepoch)
                             seconds_covered = seconds_covered + seconds
                             times_to_cut.append([start_fepoch, stop_time])
-                            start_time = stop_time
+                            start_time = stop_time + .001
 
                             while seconds_covered < total_seconds:
                                 stop_time, seconds = doy_breakup(start_time)
                                 seconds_covered += seconds
                                 times_to_cut.append([start_time, stop_time])
-                                start_time = stop_time
+                                start_time = stop_time + .001
                         else:
                             times_to_cut = [[start_fepoch, stop_fepoch]]
                             times_to_cut[-1][-1] = stop_fepoch
@@ -545,15 +532,6 @@ class PH5toMSeed(object):
                                 location,
                                 latitude,
                                 longitude)
-
-                            self.ph5.read_das_t(station_x.das,
-                                                station_x.starttime,
-                                                station_x.endtime,
-                                                reread=False)
-
-                            if not self.ph5.Das_t.has_key(station_x.das):
-                                continue
-
                             yield station_x
 
         return
@@ -645,13 +623,8 @@ def get_args():
 
     parser.add_argument(
         "--station", action="store", dest="sta_list",
-        help="Comma separated list of SEED station id's",
+        help="Comma separated list of station id's",
         metavar="sta_list", type=str, default=[])
-
-    parser.add_argument(
-        "--station_id", action="store", dest="sta_id_list",
-        help="Comma separated list of PH5 station id's",
-        metavar="sta_id_list", type=str, default=[])
 
     parser.add_argument(
         "-r", "--sample_rate_keep", action="store",
@@ -720,28 +693,13 @@ if __name__ == '__main__':
 
     args = get_args()
 
-    # print PH5_PATH, PH5_FILE
-
-    if args.nickname[-3:] == 'ph5':
-        ph5file = os.path.join(args.ph5path, args.nickname)
-    else:
-        ph5file = os.path.join(args.ph5path, args.nickname + '.ph5')
-        args.nickname += '.ph5'
-
-    if not os.path.exists(ph5file):
-        sys.stderr.write("Error: %s not found.\n" % ph5file)
-        sys.exit(-1)
-
-    ph5API_object = ph5API.ph5(path=args.ph5path, nickname=args.nickname)
-
     ph5ms = PH5toMSeed(
-        ph5API_object, args.array, args.length, args.offset,
-        args.component, args.sta_list, args.network,
+        args.nickname, args.array, args.length, args.offset,
+        args.component, args.sta_list, args.ph5path, args.network,
         args.channel, args.das_sn,  args.deploy_pickup,
         args.decimation, args.sample_rate, args.doy_keep, args.stream,
         args.out_dir, args.start_time, args.stop_time, args.red_vel,
-        args.dasskip, args.shotline, args.eventnumbers,
-        args.notimecorrect, args.sta_id_list)
+        args.dasskip, args.shotline, args.eventnumbers, args.notimecorrect)
 
     streams = ph5ms.process_all()
 
@@ -785,4 +743,5 @@ if __name__ == '__main__':
             else:
                 t.write(sys.stdout, format='MSEED', reclen=4096)
 
+    ph5ms.ph5.close()
     print tm() - then
