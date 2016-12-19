@@ -22,7 +22,7 @@ import sys
 
 import os
 
-import obspy
+import obspy 
 
 import ph5API
 
@@ -43,6 +43,12 @@ import argparse
 import fnmatch
 
 from obspy.core.util import AttribDict
+
+from obspy.io.resp import parser
+
+from obspy.io.xseed.utils import lookup_code
+
+
 
 
 
@@ -333,7 +339,7 @@ class PH5toStationXML(object):
                                 location = station_list[deployment][
                                     0]['seed_location_code_s']
                             else:
-                                location = "--"
+                                location = "  "
 
                             for pattern in location_patterns:
                                 if fnmatch.fnmatch(location, pattern):
