@@ -10,7 +10,7 @@ from psutil import cpu_count, cpu_percent
 import PMonitor, pformaIO
 import WatchIt
 
-PROG_VERSION = "2016.246 Developmental"
+PROG_VERSION = "2017.032 Developmental"
 
 UTMZone = None
 
@@ -321,7 +321,7 @@ class MainWindow(QtGui.QMainWindow):
         self.utmAct = QtGui.QAction ("&UTM zone...", self,
                                      statusTip="UTM zone. For some SEG-D data.",
                                      triggered=self.setUTMZone)
-        self.combineAct = QtGui.QAction ("Combine SEG-D traces...", self,
+        self.combineAct = QtGui.QAction ("Combine # of SEG-D traces in ph5...", self,
                                          statusTip="Combine a number of SEG-D traces for faster processing.",
                                          triggered=self.setCombineSEGD)
         self.resetAct = QtGui.QAction ("R&eset", self, 
