@@ -14,7 +14,7 @@ import math, numpy, os, time, string, sys
 from pyproj import Geod
 from cs2cs import geod2utm
 
-PROG_VERSION = "2016.309 Developmental"
+PROG_VERSION = "2016.328 Developmental"
 
 os.environ['TZ'] = 'UTC'
 time.tzset ()
@@ -1120,13 +1120,27 @@ def write_segy_hdr (trace, fd, sf, num_traces) :
      
     try :
         sf.write_text_header (fd)
+    except Exception as e :
+        errors.append (e.message)
+        sys.stderr.write ("Error: {0}\n".format (e.message))
+    
+    try :
         sf.write_reel_header (fd)
+    except Exception as e :
+        errors.append (e.message)
+        sys.stderr.write ("Error: {0}\n".format (e.message))
+        
+    try :
         sf.write_trace_header (fd)
+    except Exception as e :
+        errors.append (e.message)
+        sys.stderr.write ("Error: {0}\n".format (e.message))
+        
+    try :
         sf.write_data_array (fd, nparray)
     except Exception as e :
-        print e.message
         errors.append (e.message)
-        raise SEGYError ("Error: Failed to write reel or first trace. {0}\n".format (e.message))
+        raise SEGYError ("Error: Failed to write reel and first trace. {0}\n".format (e.message))
         #traceback.print_exception(exc_type, exc_value, exc_traceback,
                                   #limit=2, file=sys.stderr)        
 
