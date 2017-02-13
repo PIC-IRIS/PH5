@@ -8,7 +8,7 @@ import sys, os, os.path, time, math
 #   This provides the base functionality
 import Experiment
 
-PROG_VERSION = "2014.258"
+PROG_VERSION = "2016.334"
 
 #   Make sure we are all on the same time zone ;^)
 os.environ['TZ'] = 'UTM'
@@ -193,7 +193,7 @@ def read_all_das () :
             #   If for some reason counting the number of samples in an array fails use value from Das_t
             #if samples == None :
             samples = r0['sample_count_i']
-                
+            r0['time/epoch_f'] = float (r0['time/epoch_l']) + (float (r0['time/micro_seconds_i']) / 1000000.)
             r0['samples'] = samples;
             r0['das'] = das
             R.append (r0)
