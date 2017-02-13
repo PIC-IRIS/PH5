@@ -7,8 +7,12 @@
 
 import tables, numpy
 import columns, os, os.path, time, sys, string, re
+try :
+    import importlib.reload as reload
+except ImportError :
+    pass
 
-PROG_VERSION = '2016.307 Developmental'
+PROG_VERSION = '2017.005 Developmental'
 ZLIBCOMP=6
 
 os.environ['TZ'] = 'UTM'
@@ -1203,7 +1207,7 @@ class ReportsGroup :
         a = self.ph5.create_array (self.ph5_g_reports, name, data)
         if description != None :
             a.attrs.description = description
-    
+
     def populate (self, p, pkey = None) :
         populate_table (self.ph5_t_report, 
                         p, 
@@ -1241,7 +1245,21 @@ class ResponsesGroup :
         ret, keys = read_table (self.ph5_t_response)
         
         return ret, keys
+    
+    def newearray (self, name, description = None) :
+        #
+        batom = tables.StringAtom (itemsize=40)
+        a = create_empty_earray (self.ph5,
+                                 self.current_g_das,
+                                 name,
+                                 batom=batom,
+                                 expectedrows=120)
         
+        if description != None :
+            a.attrs.description = description
+            
+        return a
+    
     def initgroup (self) :
         #   Create response group
         self.ph5_g_responses = initialize_group (self.ph5, 
@@ -1327,6 +1345,8 @@ class ExperimentGroup :
         if self.ph5 != None and self.ph5.isopen :
             self.ph5.close ()
             self.ph5 = None
+            #   This will not work with version 3
+            reload (columns)
             
     def populateExperiment_t (self, p) :
         ''' Keys: 'time_stamp/type, time_stamp/epoch, time_stamp/ascii, time_stamp/micro_seconds

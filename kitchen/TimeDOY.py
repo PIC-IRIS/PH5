@@ -9,7 +9,7 @@ import time, os, math, exceptions
 
 from datetime import datetime, tzinfo, timedelta
 
-PROG_VERSION = '2016.181 Developmental'
+PROG_VERSION = '2016.335 Developmental'
 
 DAYS_IN_MONTH = (31,28,31,30,31,30,31,31,30,31,30,31,31)
 DAYS_IN_MONTH_LEAP = (31,29,31,30,31,30,31,31,30,31,30,31,31)
@@ -105,6 +105,16 @@ class TimeDOY (object) :
     
     def __repr__ (self) :
         return str (self.dtobject)
+    
+    def __rsub__ (self, other) :
+        '''   Subtract seconds from self.  '''
+        dt = self.dtobject - timedelta (0, other)
+        return TimeDOY (dtobject=dt)  
+    
+    def __rsub__ (self, other) :
+        '''   Subtract seconds from self.  '''
+        dt = self.dtobject - timedelta (0, other)
+        return TimeDOY (dtobject=dt)  
     
     def __radd__ (self, other) :
         '''   Add seconds to self   '''
@@ -338,6 +348,10 @@ def inrange (value, low, high) :
         return True
     
 if __name__ == "__main__" :
+    import sys, os
+    tdoy = TimeDOY (microsecond=400000, epoch=1469645921)
+    print tdoy
+    sys.exit ()
     tdoy = TimeDOY (microsecond=231034, epoch=1402509329)
     print "Should return", '2014:162:17:55:29'
     print tdoy.getPasscalTime ()
