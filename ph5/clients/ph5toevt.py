@@ -9,7 +9,7 @@ import os, sys, logging
 #sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2016.309 Developmental"
+PROG_VERSION = "2017.038 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -23,11 +23,11 @@ def get_args () :
     parser = argparse.ArgumentParser ()
     
     parser.usage = "Version: %s\n" % PROG_VERSION
-    parser.usage += "ph5toseg --eventnumber=shot --nickname=experiment_nickname --length=seconds [--path=ph5_directory_path] [options]\n"
+    parser.usage += "ph5toevt --eventnumber=shot --nickname=experiment_nickname --length=seconds [--path=ph5_directory_path] [options]\n"
     parser.usage += "\toptions:\n\t--array=array, --offset=seconds (float), --reduction_velocity=km-per-second (float) --format=['SEGY']\n\n"
-    parser.usage += "ph5toseg --allevents --nickname=experiment_nickname --length=seconds [--path=ph5_directory_path] [options]\n"
+    parser.usage += "ph5toevt --allevents --nickname=experiment_nickname --length=seconds [--path=ph5_directory_path] [options]\n"
     parser.usage += "\toptions:\n\t--array=array, --offset=seconds (float), --reduction_velocity=km-per-second (float) --format=['SEGY']\n\n"
-    parser.usage += "ph5toseg --starttime=yyyy:jjj:hh:mm:ss[:.]sss --nickname=experiment_nickname --length=seconds [--path=ph5_directory_path] [options]\n"
+    parser.usage += "ph5toevt --starttime=yyyy:jjj:hh:mm:ss[:.]sss --nickname=experiment_nickname --length=seconds [--path=ph5_directory_path] [options]\n"
     parser.usage += "\toptions:\n\t--stoptime=yyyy:jjj:hh:mm:ss[:.]sss, --array=array, --reduction_velocity=km-per-second (float) --format=['SEGY']\n\n"
     #parser.usage += "ph5toseg --all, --nickname=experiment_nickname [--path=ph5_directory_path] [--das=das_sn] [--station=station_id] [--doy=comma seperated doy list] [options]"
     parser.usage += "\n\n\tgeneral options:\n\t--channel=[1,2,3]\n\t--sample_rate_keep=sample_rate\n\t--notimecorrect\n\t--decimation=[2,4,5,8,10,20]\n\t--out_dir=output_directory"
@@ -154,8 +154,15 @@ def get_args () :
         sys.stderr.write ("Error: Required argument missing. event_number|evt_list|all_events.\n")
         sys.exit (-1)
     #   Event or shot line
-    if ARGS.shot_line :
-        ARGS.shot_line = "Event_t_{0:03d}".format (ARGS.shot_line)
+    if ARGS.shot_line != None :
+        if ARGS.shot_line == 0 :
+            ARGS.shot_line = "Event_t"
+        else :
+            ARGS.shot_line = "Event_t_{0:03d}".format (ARGS.shot_line)
+        
+    elif not ARGS.start_time :
+        sys.stderr.write ("Error: Shot line or start time required.")
+        sys.exit (-2)
     #   Array or station line
     ARGS.station_array = "Array_t_{0:03d}".format (ARGS.station_array)
     #   Order of channels in gather
@@ -164,6 +171,7 @@ def get_args () :
     if ARGS.stations_to_gather :
         ARGS.stations_to_gather = map (int, ARGS.stations_to_gather.split (','))
         ARGS.stations_to_gather.sort ()
+        ARGS.stations_to_gather = map (str, ARGS.stations_to_gather)
         
     if not os.path.exists (ARGS.out_dir) :
         os.mkdir (ARGS.out_dir)
@@ -207,6 +215,7 @@ def gather () :
         else :
             event_tdoy = evt
             Offset_t = None
+            logging.warn ("Warning: No shot to receiver distances found.")
         if ARGS.seconds_offset_from_shot : 
             event_tdoy += ARGS.seconds_offset_from_shot
         end_tdoy = event_tdoy + ARGS.length
@@ -222,12 +231,18 @@ def gather () :
         chans_available = P5.channels_Array_t (ARGS.station_array)
         #   The trace sequence
         i = 0
+        skipped_chans = 0
         for sta in ARGS.stations_to_gather :
+            logging.info ("-=" * 20)
+            logging.info ("Attempting to find data for station {0}.".format (sta))
             #   Shot to station information
-            if Offset_t :
+            if Offset_t and Offset_t.has_key (sta) :
                 offset_t = Offset_t[sta]
                 sf.set_offset_t (offset_t)
             #   Array geometry
+            if not Array_t.has_key (sta) :
+                logging.info ("Warning: The station {0} is not in array {1}.".format (sta, ARGS.station_array))
+                continue
             array_t = Array_t[sta]
             #   Filter out unwanted channels
             chans = []
@@ -241,6 +256,8 @@ def gather () :
             #   Loop through channels
             for c in chans :
                 if not array_t.has_key (c) :
+                    logging.warn ("Warning: No channel information for {0} in array {1}.".format (c, ARGS.station_array))
+                    skipped_chans += 1
                     continue
                 try :
                     #   Filter out unwanted seed loc codes
@@ -258,10 +275,10 @@ def gather () :
                         continue
                 except :
                     pass
-                #   DAS
-                das = array_t[c][0]['das/serial_number_s']
                 #   Loop for each array_t per id_s and channel
                 for t in range (len (array_t[c])) :
+                    #   DAS
+                    das = array_t[c][t]['das/serial_number_s']
                     #   Deploy time
                     start_epoch = array_t[c][t]['deploy_time/epoch_l']
                     #   Pickup time
@@ -273,7 +290,16 @@ def gather () :
                             logging.info ("Skipping.")  
                             continue 
                     #   Read Das table, may already be read so don't reread it
-                    P5.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
+                    #   XXX   Debug only
+                    try :
+                        das_or_fail = P5.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
+                    except :
+                        logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, TimeDOY.epoch2passcal (start_epoch), TimeDOY.epoch2passcal (stop_epoch)))
+                        continue
+                    
+                    if das_or_fail == None :
+                        logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, TimeDOY.epoch2passcal (start_epoch), TimeDOY.epoch2passcal (stop_epoch)))
+                        continue                        
                     #   Sample rate
                     if P5.Das_t.has_key (array_t[c][t]['das/serial_number_s']) :
                         sr = float (P5.Das_t[array_t[c][t]['das/serial_number_s']]['rows'][0]['sample_rate_i']) / float (P5.Das_t[array_t[c][t]['das/serial_number_s']]['rows'][0]['sample_rate_multiplier_i'])     
@@ -302,7 +328,12 @@ def gather () :
                     ###   Cut trace
                     #     Need to pad iff multiple traces
                     traces = P5.cut (das, start_fepoch, stop_fepoch, chan=c, sample_rate=sr)
+                    if len (traces[0].data) == 0 :
+                        logging.warn ("Warning: No data found for {0} for station {1}.".format (das, sta))
+                        continue
                     trace = ph5API.pad_traces (traces)
+                    if trace.padding != 0 :
+                        logging.warn ("Warning: There were {0} samples of padding added to fill gap at middle or end of trace.".format (trace.padding))
                     ##   This may be a command line option later
                     #if True :
                         #if trace.response_t :
@@ -375,7 +406,7 @@ def gather () :
                             except :
                                 nickname = "X"
                             #
-                            base = "{0}_{1}_{2}_{3}".format (nickname, ARGS.station_array[-3:], sta, chan_name)
+                            base = "{0}_{1}_{2}_{3}".format (nickname, ARGS.station_array[-3:], evt, chan_name)
                             outfilename = "{1:s}/{0:s}_0001.SGY".format (base, ARGS.out_dir)
                             #   Make sure that the name in unique
                             j = 1
@@ -403,7 +434,8 @@ def gather () :
         #   Traces found does not match traces expected
         if i != num_traces and fh :
             #   Need to update reel_header
-            logging.warn ("Wrote {0} of {1} traces listed in {2}.".format (i, num_traces, ARGS.station_array))
+            if (num_traces - skipped_chans) < i :
+                logging.warn ("Warning: Wrote {0} of {1} trace/channels listed in {2}.".format (i, num_traces - skipped_chans, ARGS.station_array))
             sf.set_text_header (i)
             fh.seek (0, os.SEEK_SET)
             sf.write_text_header (fh)
@@ -421,8 +453,10 @@ def gather () :
             #sf.set_reel_header (i)
             #fh.seek (3200, os.SEEK_SET)
             #sf.write_reel_header (fh)
-                    
-        fh.close ()
+        try :            
+            fh.close ()
+        except AttributeError :
+            pass
         #   sta
     #   evt
     
@@ -463,7 +497,7 @@ if __name__ == '__main__' :
     P5.read_receiver_t ()
     P5.read_response_t ()
     P5.read_experiment_t ()
-    if P5.Experiment_t :
+    if P5.Experiment_t != None and P5.Experiment_t['rows'] != [] :
         experiment_t = P5.Experiment_t['rows'][-1]
         logging.info ("Experiment: {0}".format (experiment_t['longname_s'].strip ()))
         logging.info ("Summary: {0}".format (experiment_t['summary_paragraph_s'].strip ()))
