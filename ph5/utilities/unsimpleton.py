@@ -12,7 +12,7 @@ import sys, os
 sys.path.append (os.path.join (os.environ["KX"], "apps", "pn4"))
 import SegdReader
 
-PROG_VERSION = "2016.294 Developmental"
+PROG_VERSION = "2017.031 Developmental"
 
 def print_container (container) :
     keys = container.keys ()
@@ -111,6 +111,7 @@ if __name__ == '__main__' :
     if not os.path.exists (outpath) :
         os.makedirs (outpath)
     with open (sys.argv[1]) as fh :
+        lh = open ("unsimpleton.log", 'a+')  
         while True :
             line = fh.readline ()
             if not line : break
@@ -142,9 +143,12 @@ if __name__ == '__main__' :
                 i += 1
                 outfile = "PIC_{0}_{1}_{4}.0.{3}.rg{2}".format (line_number, receiver_point, 16, i, id_number)
                 linkname = os.path.join (outpath, outfile)
-                
+              
             try :
                 print filename, '->', linkname
                 os.link (filename, linkname)
+                lh.write ("{0} -> {1}\n".format (filename, linkname))
             except Exception as e :
                 print e.message
+                
+        lh.close ()
