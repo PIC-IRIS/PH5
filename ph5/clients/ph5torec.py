@@ -9,7 +9,7 @@ import os, sys, logging
 #sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2016.309 Developmental"
+PROG_VERSION = "2017.034 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -129,8 +129,12 @@ def get_args () :
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)
+    
+    if ARGS.shot_line == 0 :
+        ARGS.shot_line = "Event_t"
+    else :
+        ARGS.shot_line = "Event_t_{0:03d}".format (ARGS.shot_line)
         
-    ARGS.shot_line = "Event_t_{0:03d}".format (ARGS.shot_line)
     ARGS.station_array = "Array_t_{0:03d}".format (ARGS.station_array)
     ARGS.stations_to_gather = ARGS.stations_to_gather.split (',')
     if ARGS.evt_list :
@@ -138,7 +142,7 @@ def get_args () :
     elif ARGS.shot_range :
         a, b = map (int, ARGS.shot_range.split ('-'))
         ARGS.evt_list = map (str, range (a, b+1, 1))
-        print ARGS.evt_list[0], ARGS.evt_list[-1]
+        #print ARGS.evt_list[0], ARGS.evt_list[-1]
     ARGS.channels = map (int, ARGS.channels.split (','))
     
     if not os.path.exists (ARGS.out_dir) :
@@ -156,7 +160,7 @@ def gather () :
             if P5.Array_t.has_key (ARGS.station_array) :
                 array_t = P5.Array_t[ARGS.station_array]['byid'][sta]
             else :
-                P5.read_array_t ()
+                P5.read_array_t (ARGS.station_array)
                 array_t = P5.Array_t[ARGS.station_array]['byid'][sta]
             logging.info ("Extracting receiver(s) at station {0:s}.".format (sta))
             logging.info ("Found the following components:")
@@ -196,19 +200,19 @@ def gather () :
         #   Read Event_t_xxx
         Event_t = P5.Event_t[ARGS.shot_line]['byid']
         order = P5.Event_t[ARGS.shot_line]['order']
-        print order[0], order[-1]
+        #print order[0], order[-1]
         #   Take a guess at the number of traces in this SEG-Y file based on number of shots
         num_traces = len (order) * len (chans)
         #   Try to read offset distances (keyed on shot id's)
         Offset_t = P5.read_offsets_receiver_order (ARGS.station_array, sta, ARGS.shot_line)
         #   Loop through each shot by shot id
         for o in order :
-            print o
+            #print o
             ###   Check event list (and also shot_range), ARGS.evt_list, here!
             if ARGS.evt_list :
                 if not o in ARGS.evt_list : continue
             #XXX
-            print "Shot ID: ", o
+            #print "Shot ID: ", o
             #   Appropriate line from Event_t
             event_t = Event_t[o]
             ###   Need to handle time offset here, ARGS.seconds_offset_from_shot
@@ -276,6 +280,11 @@ def gather () :
                     #                    
                     traces = P5.cut (das, start_fepoch, stop_fepoch, chan=c, sample_rate=sr)
                     trace = ph5API.pad_traces (traces)
+                    if trace.nsamples == 0 :
+                        logging.info ("No data found for DAS {0} between {1} and {2}.".format (das, event_tdoy.getPasscalTime (), end_tdoy.getPasscalTime ()))
+                        continue
+                    if trace.padding != 0 :
+                        logging.warn ("Warning: There were {0} samples of padding added to fill gap(s) in original traces.".trace.padding)
                     ##   This may be a command line option later
                     #if True :
                         #if trace.response_t :
