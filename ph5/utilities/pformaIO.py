@@ -9,7 +9,7 @@ import json, time
 import subprocess32 as subprocess
 #import subprocess
 
-PROG_VERSION = '2016.230 Developmental'
+PROG_VERSION = '2017.032 Developmental'
 
 #JSON_DB = 'pforma.json'
 HOME = os.environ['HOME']
@@ -98,9 +98,11 @@ class formaIO () :
         
     def set_nmini (self, n) :
         '''
-            Set the self.nmini list of PH5 families from n and formaIO.MINIS
+            Set the self.nmini list of PH5 families from n and formaIO.MINIS.
+            Use value for N from pforma.cfg if it exists.
         '''
-        self.nmini = formaIO.MINIS[0:n]
+        if not self.cfg.has_key ('N') :
+            self.nmini = formaIO.MINIS[0:n]
         
     def initialize_ph5 (self) :
         '''   Set up processing directory structure and set M from existing mini files   '''
@@ -387,6 +389,8 @@ class formaIO () :
             #   Skip commented lines
             if line[0] == '#' : continue
             line = line.strip ()
+            #   Skip empty line
+            if not line : continue
             n += 1
             #   Try to guess data logger type and serial number based on file name
             raw_file = os.path.basename (line)        #
@@ -556,12 +560,48 @@ class formaIO () :
             os.chdir (self.whereami)
             
             return msg
+        
+        def get_array () :
+            '''   Dump /Experiment_g/Sorts_g/Array_t_xxx to Array_t_cat.kef   '''
+            msg = []
+            P = []
+            for m in self.nmini :
+                os.chdir (os.path.join (self.home, m))
+                command = "table2kef -n master.ph5 --all_arrays > Array_t_cat.kef"
+                ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
+                P.append (ret)
+                msg.append ("Extracting all Array_t for {0} to Array_t_cat.kef".format (m))
+            os.chdir (self.whereami)
+            _wait_for_it (P)
+            
+            return msg
+        
+        def load_array () :
+            '''   Load Array_t_cat files into the TO family   '''
+            msg = []
+            P = []
+            #if not os.path.exists (os.path.join (self.home, TO)) :
+                #os.mkdir (os.path.join (self.home, TO))
+                
+            os.chdir (os.path.join (self.home, TO))
+            for m in self.nmini :
+                command = "kef2ph5 -n master.ph5 -k ../{0}/Array_t_cat.kef".format (m)
+                ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
+                P.append (ret)
+                #   Load one at a time
+                _wait_for_it (P)
+                msg.append ("Extracted Array_t_cat from {0} and loading into {1}/master.ph5.".format (m, TO))
+                
+            os.chdir (self.whereami)
+            
+            return msg
                 
         def move_minis () :
             '''   Move all the mini ph5 files to the TO family   '''
             msg = []
             os.chdir (os.path.join (self.home, TO))
             for m in self.nmini :
+                print m
                 #if m == 'A' :
                     #continue
                         
@@ -574,6 +614,7 @@ class formaIO () :
                         except Exception as e :
                             raise formaIOError (errno=8, msg="Failed to move {0} to A.".format (mini))
                         
+                        print "Hard link {0} to {2}, preserve {1}/master.ph5.".format (mini, m, TO)
                         msg.append ("Hard link {0} to {2}, preserve {1}/master.ph5.".format (mini, m, TO))
             
             os.chdir (self.whereami)
@@ -602,8 +643,11 @@ class formaIO () :
         msg = []
         msg.extend (get_index ())
         msg.extend (load_index ())
+        msg.extend (get_array ())
+        msg.extend (load_array ())
         msg.extend (move_minis ())
         msg.extend (recreate_references ())
+        #print msg
         return msg
     
     def merge (self, loaded_dass) :
@@ -649,6 +693,8 @@ rt130RE = re.compile ("\d\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[Zz][Ii][Pp]")
 nodalRE = re.compile ("[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
 #   For simpleton 'nodal'
 simpletonodalRE = re.compile ("\d+\.fcnt")
+#   For PIC rename
+picnodalRE = re.compile ("PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
 def guess_instrument_type (filename) :
     '''   Attempt to determine type of datalogger from data file name   '''
     mo = texanRE.match (filename)
@@ -662,8 +708,13 @@ def guess_instrument_type (filename) :
     mo = nodalRE.match (filename)
     if mo :
         a, b, c = mo.groups ()
-        das = a + b
+        das = a + 'X' + b
         return 'nodal', das
+    mo = picnodalRE.match (filename)
+    if mo :
+        a, b, c = mo.groups ()
+        das = a + 'X' + b
+        return 'nodal', das    
     mo = simpletonodalRE.match (filename)
     if mo :
         #raise formaIOError (-100, "Error: Nodal simpleton file naming scheme: {0}. Please rename files.")
@@ -698,6 +749,9 @@ def print_it (x) :
 ###   Debug and example follows
 #    
 if __name__ == '__main__' :
+    filename = "PIC_1_25_1941.0.0.rg16"
+    print guess_instrument_type (filename)
+    sys.exit ()
     sys.path.append (os.path.join (os.environ['K3'], "apps/pn3"))
     
     import TimeDOY, time
