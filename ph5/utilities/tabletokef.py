@@ -12,7 +12,7 @@ import Experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2016.307"
+PROG_VERSION = "2017.040"
 #
 #   These are to hold different parts of the meta-data
 #
@@ -75,7 +75,7 @@ class das_groups (object) :
 def get_args () :
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
            ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, \
-           TABLE_KEY, INDEX_TABLE, M_INDEX_TABLE
+           TABLE_KEY, INDEX_TABLE, M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS
     
     from optparse import OptionParser
     
@@ -114,9 +114,17 @@ def get_args () :
                         type=int,
                         help = "Dump /Experiment_g/Sorts_g/Event_t_[n] to a kef file.")
     
+    oparser.add_option ("--all_events", dest='all_events', action='store_true',
+                        default=False,
+                        help='Dump all /Experiment_g/Sorts_g/Event_t_xxx to a kef file.')
+    
     oparser.add_option ("-A", "--Array_t_", dest = "array_t_", metavar = "n",
                         type=int,
                         help = "Dump /Experiment_g/Sorts_g/Array_t_[n] to a kef file.")
+    
+    oparser.add_option ("--all_arrays", dest = 'all_arrays', action='store_true',
+                        default=False,
+                        help = "Dump all /Experiment_g/Sorts_g/Array_t_xxx to a kef file.")
     
     oparser.add_option ("-R", "--Response_t", dest = "response_t", action = "store_true",
                         default = False,
@@ -185,6 +193,8 @@ def get_args () :
     else :
         ARRAY_TABLE = None
         
+    ALL_ARRAYS = options.all_arrays
+    ALL_EVENTS = options.all_events
     RESPONSE_TABLE = options.response_t
     REPORT_TABLE = options.report_t
     
@@ -293,6 +303,22 @@ def read_event_table () :
     
     EVENT_T[T] = rowskeys
     
+def read_all_event_table () :
+    global EX, EVENT_T
+    import re
+    EVENT_T_NAME_RE = re.compile ("Event_t.*")
+    
+    names = EX.ph5_g_sorts.namesRE (EVENT_T_NAME_RE)
+    for name in names :
+        try :
+            events, event_keys = EX.ph5_g_sorts.read_events (name)
+        except Exception as e :
+            sys.stderr.write ("Error: Can't read {0}.\nDoes it exist?\n".format (name))
+            continue
+        
+        rowskeys = rows_keys (events, event_keys)
+        EVENT_T[name] = rowskeys
+        
 def read_offset_table () :
     '''   Read /Experinent_t/Sorts_g/Offset_t   '''
     global EX, OFFSET_T
@@ -464,6 +490,11 @@ if __name__ == '__main__' :
         keys = EVENT_T.keys ()
         for k in keys :
             table_print ("/Experiment_g/Sorts_g/{0}".format (k), EVENT_T[k])
+    elif ALL_EVENTS != False :
+        read_all_event_table ()
+        keys = EVENT_T.keys ()
+        for k in keys :
+            table_print ("/Experiment_g/Sorts_g/{0}".format (k), EVENT_T[k])        
         
     if INDEX_TABLE :
         read_index_table ()
@@ -487,6 +518,14 @@ if __name__ == '__main__' :
             n = int (string.split (a, '_')[2])
             if n == int (ARRAY_TABLE) :
                 table_print ("/Experiment_g/Sorts_g/" + a, ARRAY_T[a])
+    elif ALL_ARRAYS :
+        if not SORT_T :
+            read_sort_table ()
+            
+        read_sort_arrays ()
+        arrays = ARRAY_T.keys ()
+        for a in arrays :
+            table_print ("/Experiment_g/Sorts_g/" + a, ARRAY_T[a])        
         
     if RESPONSE_TABLE :
         read_response_table ()
