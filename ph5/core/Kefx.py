@@ -7,7 +7,7 @@
 import sys, os, string, re
 import columns
 
-PROG_VERSION = '2016.265 Developmental'
+PROG_VERSION = '2017.032 Developmental'
 
 #   This line contains a key/value entered as is
 #keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
@@ -291,14 +291,26 @@ class Kef :
         
         return a, e, o
     
-    def ksort (self, key) :
+    def ksort (self, mkey) :
+        #   Kludge to handle mis-written node id_s
+        nodeIDRE = re.compile ("\d+X\d+")
         def cmp_on_key (x, y) :
-            return cmp (int (x[key]), int (y[key]))
+            if nodeIDRE.match (x[mkey]) :
+                x[mkey] = x[mkey].split ('X')[1]
+            if nodeIDRE.match (y[mkey]) :
+                y[mkey] = y[mkey].split ('X')[1]
+                
+            try :
+                return cmp (int (x[mkey]), int (y[mkey]))
+            except ValueError :
+                return cmp (x[mkey], y[mkey])
         
         keys = self.parsed.keys ()
         for k in keys :
             elements = self.parsed[k]
             tmp = sorted (elements, cmp_on_key)
+            #tmp = sorted (elements, key=lambda k: k[key])
+            #elements.sort (cmp_on_key)
             self.parsed[k] = tmp
 #
 ###   Mixins
