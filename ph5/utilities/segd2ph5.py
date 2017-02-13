@@ -1,4 +1,4 @@
-#!/usr/bin/env pnpython3
+#!/usr/bin/env pnpython4
 # -*- coding: iso-8859-15 -*-
 #
 #   Read Fairfield SEG-D (Version 1.6) from the Sweetwater experiment.
@@ -8,7 +8,7 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
-PROG_VERSION = "2016.231 Developmental"
+PROG_VERSION = "2017.032 Developmental"
 
 MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
@@ -425,6 +425,7 @@ def process_traces (rh, th, tr) :
     '''
     
     def process_das () :
+        global LSB
         '''
         '''
         p_das_t = {}
@@ -452,8 +453,15 @@ def process_traces (rh, th, tr) :
         #   Check to see if group exists for this das, if not build it
         das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas (str (Das))
         #   Build maps group (XXX)
-        map_g = EXREC.ph5_g_maps.newdas ('Das_g_', str (Das))     
-        p_das_t['receiver_table_n_i'] = 0   #   0 -> Z, 1 -> N (along line), 2 -> E (cross line)
+        map_g = EXREC.ph5_g_maps.newdas ('Das_g_', str (Das))  
+        if rh.general_header_block_1.chan_sets_per_scan == 1 :
+            #   Single channel
+            p_das_t['receiver_table_n_i'] = 0   #   0 -> Z
+        else :
+            #   1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5), 3 (Z Node) -> 0 (Z PH5)
+            M = {1:1, 2:2, 3:0}
+            p_das_t['receiver_table_n_i'] = M[th.trace_header.channel_set]
+            
         p_das_t['response_table_n_i'] = None
         p_das_t['time_table_n_i'] = 0
         p_das_t['time/type_s'] = 'BOTH'
@@ -485,8 +493,11 @@ def process_traces (rh, th, tr) :
                 value_d        
             response_file_a
         '''
-        LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
-        n_i = RESP.match (LSB, th.trace_header_N[3].preamp_gain_db)
+        try :
+            LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
+            n_i = RESP.match (LSB, th.trace_header_N[3].preamp_gain_db)
+        except Exception as e :
+            n_i = 0
         p_response_t['gain/units_s'] = 'dB'
         p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
         p_response_t['bit_weight/units_s'] = 'mV/count'
@@ -569,8 +580,55 @@ def process_traces (rh, th, tr) :
                 description_s
             channel_number_i
             description_s
+            sample_rate_i
+            sample_rate_multiplier_i
         '''
+        '''
+        Band Code:
+           1000 <= G < 5000
+           250  <= D < 1000
+           80   <= E < 250
+           10   <= S < 80
+        '''
+        if SD.sample_rate >= 1000 :
+            band_code = 'G'
+        elif SD.sample_rate >= 250 and SD.sample_rate < 1000 :
+            band_code = 'D'
+        elif SD.sample_rate >= 80 and SD.sample_rate < 250 :
+            band_code = 'E'
+        elif SD.sample_rate >= 10 and SD.sample_rate < 80 :
+            band_code = 'S'
+        else :
+            band_code = 'X'
+        '''
+        Instrument Code:
+           H
+        '''
+        instrument_code = 'H'
+        '''
+        Orientation Code:
+           chan 1 -> N
+           chan 2 -> E
+           chan 3 -> Z
+        or
+           chan 1 -> Z
+        '''
+        if SD.chan_sets_per_scan == 3 :
+            OM = { 1:'N', 2:'E', 3:'Z' }
+        elif SD.chan_sets_per_scan == 1 :
+            OM = { 1:'Z' }
+        else :
+            OM = None
+        if OM == None :
+            orientation_code = th.trace_header.channel_set
+        else :
+            orientation_code = OM[th.trace_header.channel_set]
         #for cs in range (SD.chan_sets_per_scan) :
+        p_array_t['seed_band_code_s'] = band_code
+        p_array_t['seed_instrument_code_s'] = instrument_code
+        p_array_t['seed_orientation_code_s'] = orientation_code
+        p_array_t['sample_rate_i'] = SD.sample_rate
+        p_array_t['sample_rate_multiplier_i'] = 1
         p_array_t['deploy_time/type_s'] = 'BOTH'
         f, i = modf (rh.extended_header_1.epoch_deploy / 1000000.)
         p_array_t['deploy_time/epoch_l'] = int (i)
@@ -581,9 +639,13 @@ def process_traces (rh, th, tr) :
         p_array_t['pickup_time/epoch_l'] = int (i)
         p_array_t['pickup_time/ascii_s'] = time.ctime (int(i))
         p_array_t['pickup_time/micro_seconds_i'] = int (f * 1000000.)
-        p_array_t['id_s'] = Das
+        p_array_t['id_s'] = Das.split ('X')[1]
         p_array_t['das/manufacturer_s'] = 'FairfieldNodal'
-        p_array_t['das/model_s'] = 'zland-[13]C'
+        DM = { 1:'ZLAND 1C', 3:"ZLAND 3C" }
+        try :
+            p_array_t['das/model_s'] = DM[SD.chan_sets_per_scan]
+        except Exception as e :
+            p_array_t['das/model_s'] = 'zland-[13]C'
         p_array_t['das/serial_number_s'] = Das
         p_array_t['das/notes_s'] = "manufacturer and model not read from data file."
         p_array_t['sensor/manufacturer_s'] = 'Geo Space'
@@ -605,7 +667,8 @@ def process_traces (rh, th, tr) :
         p_array_t['location/Z/units_s'] = 'unknown'
         p_array_t['location/Z/value_d'] = th.trace_header_N[4].receiver_point_depth_final / 10.
         p_array_t['channel_number_i'] = th.trace_header.channel_set
-        p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
+        #p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
+        p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format (Das, rh.extended_header_1.id_number)
         
         line = th.trace_header_N[4].line_number
         chan_set = th.trace_header.channel_set
@@ -844,6 +907,20 @@ if __name__ == '__main__' :
                     
             return das
         
+        def get_node (sd) :
+            #   Return node part number, node id, and number of channels
+            pn = None   #   Part Number
+            id = None   #   Node ID
+            nc = None   #   Number of channel sets
+            try :
+                nc = sd.reel_headers.general_header_block_1['chan_sets_per_scan']
+                pn = sd.reel_headers.extended_header_1['part_number']
+                id = sd.reel_headers.extended_header_1['id_number']
+            except Exception as e :
+                pass
+            
+            return pn, id, nc
+            
         def print_container (container) :
             keys = container.keys ()
             for k in keys :
@@ -902,6 +979,8 @@ if __name__ == '__main__' :
             #APPEND = correct_append_number ()
             nleft = APPEND
             Das = get_das (SD)
+            part_number, node_id, number_of_channels = get_node (SD)
+            #
             EXREC = get_current_data_only (SIZE, Das)
             #sys.stderr.write ("Processing: {0}... Size: {1}\n".format (SD.name (), SIZE))
             sys.stdout.write (":<Processing>: {0}\n".format (SD.name ())); sys.stdout.flush ()
@@ -909,6 +988,7 @@ if __name__ == '__main__' :
             if EXREC.filename != MINIPH5 :
                 #sys.stderr.write ("Opened: {0}...\n".format (EXREC.filename))
                 logging.info ("Opened: {0}...\n".format (EXREC.filename))
+                logging.info ("DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format (Das, node_id, part_number, number_of_channels))
                 MINIPH5 = EXREC.filename  
                 
             n = 0
