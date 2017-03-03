@@ -38,7 +38,7 @@ import fnmatch
 from time import time as tm
 
 
-PROG_VERSION = "2016.327b"
+PROG_VERSION = "2017.42"
 
 
 def fdsntimetoepoch(fdsn_time):
@@ -251,7 +251,8 @@ class PH5toMSeed(object):
                               chan=station_to_cut.channel,
                               sample_rate=station_to_cut.sample_rate,
                               apply_time_correction=nt)
-
+        
+        
         obspy_stream = Stream()
 
         if type(traces) is not list:
@@ -266,7 +267,8 @@ class PH5toMSeed(object):
             except ValueError:
                 print "error"
                 continue
-
+            
+            
             obspy_trace.stats.sampling_rate = station_to_cut.sample_rate
             obspy_trace.stats.location = station_to_cut.location
             obspy_trace.stats.station = station_to_cut.station
@@ -275,7 +277,7 @@ class PH5toMSeed(object):
             obspy_trace.stats.coordinates.longitude = station_to_cut.longitude
             obspy_trace.stats.channel = station_to_cut.seed_channel
             obspy_trace.stats.network = station_to_cut.net_code
-            obspy_trace.stats.starttime = UTCDateTime(start_time_no_micro)
+            obspy_trace.stats.starttime = UTCDateTime(trace.start_time.epoch())
 
             obspy_trace.stats.starttime.microsecond = (
                 start_time_micro_seconds)
@@ -287,7 +289,8 @@ class PH5toMSeed(object):
 
         if len(obspy_stream.traces) < 1:
             return
-
+        
+        
         return obspy_stream
 
     def create_cut_list(self):
@@ -317,7 +320,7 @@ class PH5toMSeed(object):
 
             if self.array:
                 does_match = []
-                array_patterns = self.array.split(',')
+                array_patterns = self.array
                 for pattern in array_patterns:
                     if fnmatch.fnmatch(str(array), pattern):
                         does_match.append(1)
@@ -333,7 +336,7 @@ class PH5toMSeed(object):
 
                 if self.station_id:
                     does_match = []
-                    sta_list = self.station_id.split(',')
+                    sta_list = self.station_id
                     for x in sta_list:
                         if station == x:
                             does_match.append(1)
@@ -349,7 +352,7 @@ class PH5toMSeed(object):
 
                     if self.station:
                         does_match = []
-                        sta_patterns = self.station.split(',')
+                        sta_patterns = self.station
                         for pattern in sta_patterns:
                             if fnmatch.fnmatch((station_list[deployment][0]
                                     ['seed_station_name_s']), pattern):
@@ -365,7 +368,7 @@ class PH5toMSeed(object):
                             # print "error: length must be specified.
                             # Use -l option"
                             sys.exit()
-                        eventnumbers = self.eventnumbers.split(',')
+                        eventnumbers = self.eventnumbers
                         for evt in eventnumbers:
                             try:
                                 event_t = self.ph5.Event_t[
@@ -394,7 +397,7 @@ class PH5toMSeed(object):
 
                     if self.sample_rate_list:
                         does_match = []
-                        sample_list = self.sample_rate_list.split(',')
+                        sample_list = self.sample_rate_list
                         for x in sample_list:
                             if sample_rate == int(x):
                                 does_match.append(1)
@@ -421,7 +424,7 @@ class PH5toMSeed(object):
                     c = station_list[deployment][0]['channel_number_i']
 
                     if self.component:
-                        component_list = self.component.split(',')
+                        component_list = self.component
                         if str(c) not in component_list:
                             continue
 
@@ -429,7 +432,7 @@ class PH5toMSeed(object):
                     
                     if self.channel:
                         does_match = []
-                        cha_patterns = self.channel.split(',')
+                        cha_patterns = self.channel
                         for pattern in cha_patterns:
                             if fnmatch.fnmatch(full_code, pattern):
                                 does_match.append(1)
@@ -746,6 +749,23 @@ if __name__ == '__main__':
 
     ph5API_object = ph5API.ph5(path=args.ph5path, nickname=args.nickname)
 
+    if args.array:
+        args.array = args.array.split(',')
+    if args.sta_id_list:
+        args.sta_id_list=args.sta_id_list.split(',')
+    if args.sta_list:    
+        args.sta_list=args.sta_list.split(',')
+    if args.eventnumbers:
+        args.eventnumbers= args.eventnumbers.split(',')
+    if args.sample_rate:
+        args.sample_rate = args.sample_rate.split(',')
+    if args.component:
+        args.component = args.component.split(',')
+    if args.channel:
+        args.channel = args.channel.split(',')
+
+    
+    
     ph5ms = PH5toMSeed(
         ph5API_object, args.array, args.length, args.offset,
         args.component, args.sta_list, args.network,
