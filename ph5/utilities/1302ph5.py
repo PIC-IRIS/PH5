@@ -10,7 +10,7 @@ import tables, sys, os, os.path, string, time, math, numpy, re, logging
 import columns
 import Experiment, Kef, pn130, TimeDOY
 
-PROG_VERSION = '2016.236 Developmental'
+PROG_VERSION = '2017.062 Developmental'
 MAX_PH5_BYTES = 1073741824 * 4   #   2GB (1024 X 1024 X 1024 X 4)
 NUM_CHANNELS = pn130.NUM_CHANNELS
 NUM_STREAMS = pn130.NUM_STREAMS
