@@ -15,7 +15,7 @@ import Experiment, TimeDOY
 os.environ['TZ'] = 'UTM'
 time.tzset ()
 
-PROG_VERSION = '2016.225 Developmental'
+PROG_VERSION = '2016.350 Developmental'
 
 #   Match lines related to timing in SOH
 timetoRE = re.compile ("\d+:.*--\s+TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+(\d{4}/\d{4})\s+MS")
@@ -362,7 +362,12 @@ if __name__ == "__main__" :
     #   Close ph5 file
     EX.ph5close ()
     
-    ave = npy.average (W); std = npy.std (W)
+    if W :
+        ave = npy.average (W); std = npy.std (W)
+    else :
+        ave = 0.
+        std = sys.float_info[0]
+        
     dass = WHACKED.keys ()
     dass.sort ()
     top = ave + std; bot = ave - std
