@@ -10,7 +10,7 @@
 import time, re, math
 import TimeDOY
 
-PROG_VERSION = '2016.246 Developmental'
+PROG_VERSION = '2017.074 Developmental'
 KEF_COLS = {}
 #   /Experiment_g/Sorts_g/Array_t_xxx columns as of Feb 2015
 KEF_COLS['receiver'] = ['id_s','location/X/value_d','location/X/units_s','location/Y/value_d','location/Y/units_s',
@@ -81,26 +81,29 @@ def write_receiver (top, filename) :
                     fh.write (path + '\n')
                     for k in row.keys () :
                         if k in KEF_COLS['receiver'] :
-                            #print k
-                            if timeRE.match (k) :
-                                fh.write (get_times (k, row[k]))
-                            elif locationRE.match (k) :
-                                mo = locationRE.match (k)
-                                pre = mo.groups ()[0]
-                                fh.write ("\t{0} = {1}\n".format (k, row[k]))
-                                fh.write ("\t{0}units_s = degrees\n".format (pre))
-                            elif elevationRE.match (k) :
-                                mo = elevationRE.match (k)
-                                pre = mo.groups ()[0]
-                                fh.write ("\t{0} = {1}\n".format (k, row[k]))
-                                fh.write ("\t{0}units_s = m\n".format (pre))
-                            #   Check if seed channel and split into band, instrument, and orientation
-                            elif seed_channelRE.match (k) :
-                                fh.write ("\t{0} = {1}\n".format ("seed_band_code_s", row[k][0]))
-                                fh.write ("\t{0} = {1}\n".format ("seed_instrument_code_s", row[k][1]))
-                                fh.write ("\t{0} = {1}\n".format ("seed_orientation_code_s", row[k][2]))
-                            else :
-                                fh.write ("\t{0} = {1}\n".format (k, row[k]))
+                            try :
+                                #print k
+                                if timeRE.match (k) :
+                                    fh.write (get_times (k, row[k]))
+                                elif locationRE.match (k) :
+                                    mo = locationRE.match (k)
+                                    pre = mo.groups ()[0]
+                                    fh.write ("\t{0} = {1}\n".format (k, row[k]))
+                                    fh.write ("\t{0}units_s = degrees\n".format (pre))
+                                elif elevationRE.match (k) :
+                                    mo = elevationRE.match (k)
+                                    pre = mo.groups ()[0]
+                                    fh.write ("\t{0} = {1}\n".format (k, row[k]))
+                                    fh.write ("\t{0}units_s = m\n".format (pre))
+                                #   Check if seed channel and split into band, instrument, and orientation
+                                elif seed_channelRE.match (k) :
+                                    fh.write ("\t{0} = {1}\n".format ("seed_band_code_s", row[k][0]))
+                                    fh.write ("\t{0} = {1}\n".format ("seed_instrument_code_s", row[k][1]))
+                                    fh.write ("\t{0} = {1}\n".format ("seed_orientation_code_s", row[k][2]))
+                                else :
+                                    fh.write ("\t{0} = {1}\n".format (k, row[k]))
+                            except Exception as e :
+                                sys.stderr.write ("Error writing kef file: {0}.\n".format (e.message))
                     
     fh.close ()
 
