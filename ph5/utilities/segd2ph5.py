@@ -8,7 +8,7 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
-PROG_VERSION = "2017.032 Developmental"
+PROG_VERSION = "2017.074 Developmental"
 
 MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
@@ -602,19 +602,19 @@ def process_traces (rh, th, tr) :
             band_code = 'X'
         '''
         Instrument Code:
-           H
+           Changed from H to P at request from Akram
         '''
-        instrument_code = 'H'
+        instrument_code = 'P'
         '''
         Orientation Code:
-           chan 1 -> N
-           chan 2 -> E
+           chan 1 -> N Changed to '1'
+           chan 2 -> E Changed to '2'
            chan 3 -> Z
         or
            chan 1 -> Z
         '''
         if SD.chan_sets_per_scan == 3 :
-            OM = { 1:'N', 2:'E', 3:'Z' }
+            OM = { 1:'1', 2:'2', 3:'Z' }
         elif SD.chan_sets_per_scan == 1 :
             OM = { 1:'Z' }
         else :
