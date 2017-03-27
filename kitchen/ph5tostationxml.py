@@ -22,7 +22,7 @@ import sys
 
 import os
 
-import obspy
+import obspy 
 
 import ph5API
 
@@ -48,7 +48,9 @@ from obspy.core.util import AttribDict
 
 
 
-PROG_VERSION = "2016.327"
+
+
+PROG_VERSION = "2017.085"
 
 
 def get_args():
@@ -87,10 +89,18 @@ def get_args():
     parser.add_argument("--station", action="store", dest="sta_list",
                         help="Comma separated list of stations. Wildcards accepted",
                         type=str, metavar="sta_list")
+    
+    parser.add_argument("--receiver", action="store", dest="receiver_list",
+                        help="Comma separated list of receiver id's. Wildcards accepted",
+                        type=str, metavar="receiver_list")    
 
     parser.add_argument("-c", "--channel", action="store", dest="channel_list",
                         help="Comma separated list of channels. Wildcards accepted",
                         type=str, metavar="channel_list")
+    
+    parser.add_argument("--component", action="store", dest="component_list",
+                        help="Comma separated list of components. Wildcards accepted",
+                        type=str, metavar="component_list")    
 
     parser.add_argument("-l", "--location", action="store", dest="location_list",
                         help="Comma separated list of locations. Wildcards accepted",
@@ -138,8 +148,10 @@ class PH5toStationXML(object):
 
         self.args = args
         self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
+        component_list_set=1
         self.cha_list_set=1
         self.sta_list_set=1
+        self.receiver_list_set=1
         self.location_list_set=1
         
 
@@ -148,36 +160,37 @@ class PH5toStationXML(object):
         #    '/opt/k4/apps/pn4/webservices/RESP.XX.NR021..HHZ.130.32.100')
         
         nickname = args.get('nickname')
-        if nickname[-3:] == 'ph5':
-
-            PH5FILE = os.path.join(args.get('ph5path'), args.get('nickname'))
-
-        else:
-
-            PH5FILE = os.path.join(args.get('ph5path'), args.get('nickname') + '.ph5')
-
+        if nickname[-3:] != 'ph5':
             args['nickname'] = args['nickname'] + '.ph5'
 
         if not self.args.get('channel_list'):
             self.cha_list_set=0
-            self.args['channel_list'] = "*"
+            self.args['channel_list'] = ["*"]
+            
+        if not self.args.get('component_list'):
+            self.component_list_set=0
+            self.args['component_list'] = ["*"]
 
         if not self.args.get('sta_list'):
             self.sta_list_set=0
-            self.args['sta_list'] = "*"
+            self.args['sta_list'] = ["*"]
+            
+        if not self.args.get('receiver_list'):
+            self.receiver_list_set=0
+            self.args['receiver_list'] = ["*"]
 
         if not self.args.get('location_list'):
             self.location_list_set=0
-            self.args['location_list'] = "*"
+            self.args['location_list'] = ["*"]
 
         if not self.args.get('network_list'):
-            self.args['network_list'] = "*"
+            self.args['network_list'] = ["*"]
 
         if not self.args.get('reportnum_list'):
-            self.args['reportnum_list'] = "*"
+            self.args['reportnum_list'] = ["*"]
 
         if not self.args.get('array_list'):
-            self.args['array_list'] = "*"
+            self.args['array_list'] = ["*"]
 
         if self.args.get('start_time') and "T" in self.args.get('start_time'):
             self.args['start_time'] = datetime.datetime.strptime(
@@ -207,13 +220,11 @@ class PH5toStationXML(object):
         all_stations = []
         
         
-        cha_list_patterns = [x.strip()
-                             for x in self.args.get('channel_list').split(',')]
-        location_patterns = [x.strip()
-                             for x in self.args.get('location_list').split(',')]
-        
-        array_patterns = [x.strip()
-                          for x in self.args.get('array_list').split(',')]        
+        cha_list_patterns = self.args.get('channel_list')
+        component_list_patterns = self.args.get('component_list')
+        receiver_list_patterns = self.args.get('receiver_list')
+        location_patterns = self.args.get('location_list')
+        array_patterns = self.args.get('array_list')      
        
 
         for array_name in self.array_names:
@@ -317,13 +328,34 @@ class PH5toStationXML(object):
                     name=station_list[1][0]['seed_station_name_s'])
                 
 
-
+                
                 for deployment in station_list:
+                    component_match =0
+                    receiver_match =0
+                    
+                    receiver_id=str(station_list[deployment][0]['id_s'])
+                    
+                    for pattern in receiver_list_patterns:
+                        if fnmatch.fnmatch(receiver_id, pattern):
+                            receiver_match =1
+                            
+                    if receiver_match != 1:
+                        continue
+                    
+                    
+                    c_id= str(station_list[deployment][0]['channel_number_i'])
+                    for pattern in component_list_patterns:
+                        if fnmatch.fnmatch(c_id, pattern):
+                            component_match =1
+                            
+                    if component_match != 1:
+                        continue
+                        
                     total_channels = total_channels + 1
                     location_match = False
 
                     c = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
-                     
+                    
                     for pattern in cha_list_patterns:
                         if fnmatch.fnmatch(c, pattern):
                             
@@ -333,7 +365,7 @@ class PH5toStationXML(object):
                                 location = station_list[deployment][
                                     0]['seed_location_code_s']
                             else:
-                                location = "--"
+                                location = ""
 
                             for pattern in location_patterns:
                                 if fnmatch.fnmatch(location, pattern):
@@ -418,6 +450,10 @@ class PH5toStationXML(object):
                         
                 
                 station.selected_number_of_channels = len(channels)
+                
+                if self.args.get('level').upper() == "STATION":
+                    station.selected_number_of_channels = 0
+                    
                 station.total_number_of_channels = total_channels
                 
                 
@@ -448,7 +484,7 @@ class PH5toStationXML(object):
     def Parse_Station_list(self, sta_list):
         l = []
         all_stations = []
-        sta_list_patterns = [x.strip() for x in sta_list.split(',')]
+        sta_list_patterns = sta_list
        
 
         for array_name in self.array_names:
@@ -457,19 +493,24 @@ class PH5toStationXML(object):
             arrayorder = self.ph5.Array_t[array_name]['order']
             
             for station in arrayorder:
-                all_stations.append(str(station))
-
-        for pattern in sta_list_patterns:
-            l.append(fnmatch.filter(all_stations, pattern))
-
-        final_list = list(set([val for sublist in l for val in sublist]))
+                station_list = arraybyid.get(station)
+                for deployment in station_list:
+                    
+                    for pattern in sta_list_patterns:
+                        if fnmatch.fnmatch(str(station), str(pattern)): 
+                            l.append(station)
+                        if fnmatch.fnmatch((station_list[deployment][0]
+                                                ['seed_station_name_s']), pattern):
+                            l.append(station)
+            
+            
+            final_list = sorted(set(l))
+                
         return final_list
 
     def Parse_Networks(self, path):
-        network_patterns = [x.strip()
-                            for x in self.args.get('network_list').split(',')]
-        reportnum_patterns = [x.strip()
-                              for x in self.args.get('reportnum_list').split(',')]
+        network_patterns = self.args.get('network_list')
+        reportnum_patterns =  self.args.get('reportnum_list')
 
         self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_array_t_names()
@@ -529,7 +570,7 @@ class PH5toStationXML(object):
     def Process(self):
         networks = []
 
-        paths = self.args.get('ph5path').split(',')
+        paths = self.args.get('ph5path')
 
         if self.args.get('basepath'):
 
@@ -582,9 +623,37 @@ class PH5toStationXML(object):
 if __name__ == '__main__':
 
     args = get_args()
-    args_dict = vars(args)
-    ph5sxml = PH5toStationXML(args_dict)
+    args_dict = vars(args) 
     
+    if args_dict.get('network_list'):
+        args_dict['network_list'] = [x.strip()
+                        for x in args_dict.get('network_list').split(',')]
+    if args_dict.get('reportnum_list'):
+        args_dict['reportnum_list'] = [x.strip()
+                        for x in args_dict.get('reportnum_list').split(',')]
+    if args_dict.get('sta_list'):
+        args_dict['sta_list'] = [x.strip()
+                        for x in args_dict.get('sta_list').split(',')]    
+    if args_dict.get('receiver_list'):
+        args_dict['receiver_list'] = [x.strip()
+                        for x in args_dict.get('receiver_list').split(',')]
+    if args_dict.get('array_list'):
+        args_dict['array_list'] = [x.strip()
+                        for x in args_dict.get('array_list').split(',')]    
+    if args_dict.get('location_list'):
+        args_dict['location_list'] = [x.strip()
+                        for x in args_dict.get('location_list').split(',')]
+    if args_dict.get('channel_list'):
+        args_dict['channel_list'] = [x.strip()
+                        for x in args_dict.get('channel_list').split(',')]
+    if args_dict.get('component_list'):
+        args_dict['component_list'] = [x.strip()
+                        for x in args_dict.get('component_list').split(',')]    
+    if args_dict.get('ph5path'):
+        args_dict['ph5path'] = args_dict.get('ph5path').split(',')
+
+    ph5sxml = PH5toStationXML(args_dict)
+
     inv = ph5sxml.Process()
     
     if args.out_format.upper() == "STATIONXML":

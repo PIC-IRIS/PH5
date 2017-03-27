@@ -50,7 +50,7 @@ from obspy.core.util import AttribDict
 
 
 
-PROG_VERSION = "2017.023"
+PROG_VERSION = "2017.085"
 
 
 def get_args():
@@ -450,6 +450,10 @@ class PH5toStationXML(object):
                         
                 
                 station.selected_number_of_channels = len(channels)
+                
+                if self.args.get('level').upper() == "STATION":
+                    station.selected_number_of_channels = 0
+                    
                 station.total_number_of_channels = total_channels
                 
                 
@@ -489,12 +493,19 @@ class PH5toStationXML(object):
             arrayorder = self.ph5.Array_t[array_name]['order']
             
             for station in arrayorder:
-                all_stations.append(str(station))
-
-        for pattern in sta_list_patterns:
-            l.append(fnmatch.filter(all_stations, pattern))
-
-        final_list = list(set([val for sublist in l for val in sublist]))
+                station_list = arraybyid.get(station)
+                for deployment in station_list:
+                    
+                    for pattern in sta_list_patterns:
+                        if fnmatch.fnmatch(str(station), str(pattern)): 
+                            l.append(station)
+                        if fnmatch.fnmatch((station_list[deployment][0]
+                                                ['seed_station_name_s']), pattern):
+                            l.append(station)
+            
+            
+            final_list = sorted(set(l))
+                
         return final_list
 
     def Parse_Networks(self, path):
