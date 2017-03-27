@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2017.040 Developmental'
+PROG_VERSION = '2017.054 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -28,6 +28,35 @@ class APIError (Exception) :
         self.args = (errno, msg)
         self.errno = errno
         self.msg = msg
+        
+class CutHeader (object) :
+    '''    PH5 cut header object
+           array -> The receiver array number or None if receiver gather
+           shot_line -> The shot line number or None if shot gather
+           length -> Number of samples in each line
+           order -> The order of the station or shot id's
+           si_us -> Sample interval in micro-seconds
+    '''
+    __slots__ = 'array', 'shot_line', 'length', 'order', 'si_us'
+    def __init__ (self, array=None, shot_line=None, length=0, order=[], si_us=0) :
+        self.array = array
+        self.shot_line = shot_line
+        self.length = length
+        self.order = order
+        self.si_us = si_us
+        
+    def __repr__ (self) :
+        if self.array :
+            gather_type = "Shot"
+        elif self.shot_line :
+            gather_type = "Receiver"
+        else :
+            gather_type = "Unknown"
+            
+        return "Gather type: {0}, Trace length: {1} Sample interval: {2} us, Number of traces {3}".format (gather_type,
+                                                                                                           self.length,
+                                                                                                           self.si_us,
+                                                                                                           len (self.order))
         
 class Cut (object) :
     '''    PH5 cut object
@@ -983,13 +1012,18 @@ class ph5 (Experiment.ExperimentGroup) :
                start_time -> The cut start time epoch as a float
                length -> The length of the cut in seconds as a float
         '''
+        ret = []
         #   Make sure array exists
         if self.Array_t.has_key (array_t_name) :
             Array_t = self.Array_t[array_t_name]['byid']
             order = self.Array_t[array_t_name]['order']
         else :
-            yield 
+            #yield 
+            return ret
+        #   Header
+        H = CutHeader (array=array_t_name[8:], order=[])
         #   Loop through each station in Array
+        stations_found = {}
         for o in order :
             #   Loop through each channel for this station
             chans = Array_t[o].keys ()
@@ -1013,7 +1047,22 @@ class ph5 (Experiment.ExperimentGroup) :
                     #   Get Cut object for time span, channel, and sample rate if available
                     C = self._Cut (das, start_time, stop_time, chan, sr=sr, msg=msg)
                     C.id_s = array_t['id_s']
-                    yield C
+                    if C.das_t_times != [] :
+                        if not stations_found.has_key (array_t['id_s']) :
+                            H.order.append (o)
+                            if H.length == 0 :
+                                H.length = length * sr
+                            if H.si_us == 0 :
+                                H.si_us = int ((1.0 / float (sr)) * 1000000.)                            
+                        stations_found[array_t['id_s']] = True
+                    #yield C
+                    ret.append (C)
+                    
+        if H.order != [] :
+            #yield H
+            ret.insert (0, H)
+        #print H.order    
+        return ret
             
     #
     ###
@@ -1026,6 +1075,7 @@ class ph5 (Experiment.ExperimentGroup) :
                array_t -> An Array_t dictionary for one station (not a list)
                length -> The length of the cut in seconds as a float
         '''
+        ret = []
         #   Get sample rate if available
         sr = None
         if array_t.has_key ('sample_rate_i') :
@@ -1033,7 +1083,13 @@ class ph5 (Experiment.ExperimentGroup) :
         chan = array_t['channel_number_i']
         Event_t = self.Event_t[event_t_name]['byid']
         order = self.Event_t[event_t_name]['order']
+        if len (event_t_name) == 7 :
+            shot_line = '0'
+        else :
+            shot_line = event_t_name[8:]
+        H = CutHeader (shot_line=shot_line, order=[])
         #   Loop through each event ID
+        events_found = {}
         for o in order :
             event_t = Event_t[o]
             start_time = fepoch (event_t['time/epoch_l'], event_t['time/micro_seconds_i'])
@@ -1048,8 +1104,25 @@ class ph5 (Experiment.ExperimentGroup) :
             #   Get a Cut object for this time span, channel and sample rate if available
             C = self._Cut (das, start_time, stop_time, chan, sr=sr, msg=msg)
             C.id_s = event_t['id_s']
+            if C.das_t_times != [] :
+                if not events_found.has_key (event_t['id_s']) :
+                    H.order.append (o)
+                    if H.length == 0 :
+                        H.length = length * sr
+                    if H.si_us == 0 :
+                        H.si_us = int ((1.0 / float (sr)) * 1000000.)
+                        
+                events_found[o] = True
             #
-            yield C
+            #yield C
+            ret.append (C)
+            
+        if H.order != [] :
+            #print H.order
+            #yield H
+            ret.insert (0, H)
+            
+        return ret
 
 #
 ###   Mix-ins
@@ -1419,6 +1492,7 @@ if __name__ == '__main__' :
                                 #print win[0], win[1]
                             #for msg in Cs.msg :
                                 #print msg
+    
     raw_input ("P")
     #
     ###   Shot gather
