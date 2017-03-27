@@ -12,7 +12,7 @@ try :
 except ImportError :
     pass
 
-PROG_VERSION = '2017.005 Developmental'
+PROG_VERSION = '2017.069 Developmental'
 ZLIBCOMP=6
 
 os.environ['TZ'] = 'UTM'
@@ -941,7 +941,14 @@ class ReceiversGroup :
                                        None)
            
         return dasGroups
-    
+    #
+    def init_Das_t (self, sn) :
+        sn = 'Das_g_' + sn
+        t = initialize_table (self.ph5, 
+                              '/Experiment_g/Receivers_g/' + sn, 
+                              'Das_t', 
+                              columns.Data)
+        return t
     #   New das group and tables 
     def newdas (self, sn) :
         t = None
@@ -1146,8 +1153,8 @@ class ReceiversGroup :
         g = self.getdas_g (das)
         if not g : return False
         self.setcurrent (g)
-        self.current_t_das.remove ()
-        self.newdas (das)
+        self.current_t_das.truncate (0)
+        #self.newdas (das)
         return True
         
     

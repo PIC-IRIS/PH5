@@ -1,4 +1,4 @@
-#!/usr/bin/env pnpython3
+#!/usr/bin/env pnpython4
 
 #
 #   Dump tables in ph5 file to kef format.
@@ -12,40 +12,43 @@ import Experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2017.040"
+PROG_VERSION = "2017.075"
 #
 #   These are to hold different parts of the meta-data
 #
-#   /Experiment_g/Experiment_t
-EXPERIMENT_T = None
-#   /Experiment_g/Sorts_g/Event_t
-EVENT_T = {}
-#   /Experiment_g/Sorts_g/Offset_t
-OFFSET_T = {}
-#   /Experiment_g/Sorts_g/Sort_t
-SORT_T = None
-#   /Experiment_g/Responses_g/Response_t
-RESPONSE_T = None
-#   /Experiment_g/Reports_g/Report_t
-REPORT_T = None
-#   /Experiment_g/Sorts_g/Array_t_[nnn]
-ARRAY_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
-DAS_T = {}
-#   /Experiment_g/Receivers_g/Receiver_t
-RECEIVER_T = None
-#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name) 
-SOH_A = {}
-#   /Experiment_g/Receivers_g/Index_t
-INDEX_T = None
-#   /Experiment_g/Maps_g/Index_t
-M_INDEX_T = None
-#   A list of das_groups that refers to Das_g_[sn]'s
-DASS = []
-#   /Experiment_g/Receivers_g/Time_t
-TIME_T = None
-#
-TABLE_KEY = None
+def init_local () :
+    global EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T, ARRAY_T, DAS_T
+    global RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, TABLE_KEY
+    #   /Experiment_g/Experiment_t
+    EXPERIMENT_T = None
+    #   /Experiment_g/Sorts_g/Event_t
+    EVENT_T = {}
+    #   /Experiment_g/Sorts_g/Offset_t
+    OFFSET_T = {}
+    #   /Experiment_g/Sorts_g/Sort_t
+    SORT_T = None
+    #   /Experiment_g/Responses_g/Response_t
+    RESPONSE_T = None
+    #   /Experiment_g/Reports_g/Report_t
+    REPORT_T = None
+    #   /Experiment_g/Sorts_g/Array_t_[nnn]
+    ARRAY_T = {}
+    #   /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
+    DAS_T = {}
+    #   /Experiment_g/Receivers_g/Receiver_t
+    RECEIVER_T = None
+    #   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name) 
+    SOH_A = {}
+    #   /Experiment_g/Receivers_g/Index_t
+    INDEX_T = None
+    #   /Experiment_g/Maps_g/Index_t
+    M_INDEX_T = None
+    #   A list of das_groups that refers to Das_g_[sn]'s
+    DASS = []
+    #   /Experiment_g/Receivers_g/Time_t
+    TIME_T = None
+    #
+    TABLE_KEY = None
 
 #
 #   To hold table rows and keys
@@ -465,11 +468,11 @@ if __name__ == '__main__' :
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
            ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, INDEX_TABLE
     
+    init_local ()
+    
     get_args ()
     
     initialize_ph5 ()
-    
-   
     
     if EXPERIMENT_TABLE :
         read_experiment_table ()
