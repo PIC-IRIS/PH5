@@ -12,7 +12,7 @@ import os, zipfile, tarfile, re, exceptions
 import os.path, string, math
 import RT_130_h, sys, TimeDOY
 
-PROG_VERSION = "2016.084 Developmental"
+PROG_VERSION = "2017.062 Developmental"
 
 fileRE = re.compile (".*\w{9}_\w{8}$")
 sohRE = re.compile (".*[Ss][Oo][Hh]\.[Rr][Tt]$")
@@ -1911,12 +1911,20 @@ def decode_sample_time (stime) :
     
     flds = split_sample_time (stime)
     
-    yr = int (flds[0])
-    doy = int (flds[1])
-    hr = int (flds[2])
-    mn = int (flds[3])
-    sc = int (flds[4])
-    ms = int (flds[5])
+    try :
+        yr = int (flds[0])
+        doy = int (flds[1])
+        hr = int (flds[2])
+        mn = int (flds[3])
+        sc = int (flds[4])
+        ms = int (flds[5])
+    except :
+        yr = 0
+        doy = 0
+        hr = 0
+        mn = 0
+        sc = 0
+        ms = 0     
     
     return (yr, doy, hr, mn, sc, ms)
 

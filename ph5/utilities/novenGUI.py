@@ -9,7 +9,7 @@ import os, sys, json, time
 from PyQt4 import QtGui, QtCore
 import novenQC, novenKef
 
-PROG_VERSION = '2016.260 Developmental'
+PROG_VERSION = '2017.074 Developmental'
 #   
 SEPMAP = {'tab':None, 'comma':',', 'semi-colon':';', 'colon':':', 'space':None}
 
