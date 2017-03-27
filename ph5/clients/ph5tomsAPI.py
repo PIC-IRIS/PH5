@@ -34,11 +34,12 @@ import time
 from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
 import fnmatch
+import copy
 
 from time import time as tm
 
 
-PROG_VERSION = "2016.327b"
+PROG_VERSION = "2017.42"
 
 
 def fdsntimetoepoch(fdsn_time):
@@ -68,13 +69,14 @@ def doy_breakup(start_fepoch):
 
 class StationCut(object):
 
-    def __init__(self, net_code, station, das, channel,
+    def __init__(self, net_code, station, seed_station, das, channel,
                  seed_channel, starttime, endtime,
                  sample_rate, sample_rate_multiplier,
                  notimecorrect, location, latitude, longitude):
 
         self.net_code = net_code
         self.station = station
+        self.seed_station = seed_station
         self.seed_channel = seed_channel
         self.das = das
         self.starttime = starttime
@@ -86,6 +88,9 @@ class StationCut(object):
         self.location = location
         self.latitude = latitude
         self.longitude = longitude
+        
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 
 class PH5toMSeed(object):
@@ -96,7 +101,7 @@ class PH5toMSeed(object):
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  out_dir=".", starttime=None, stoptime=None,
                  reduction_velocity=-1., dasskip=None, shotline=None,
-                 eventnumbers="", notimecorrect=False, station_id=[]):
+                 eventnumbers="", notimecorrect=False, station_id=[], restricted=[]):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.array = array
@@ -120,6 +125,7 @@ class PH5toMSeed(object):
         self.shotline = shotline
         self.eventnumbers = eventnumbers
         self.ph5 = ph5API_object
+        self.restricted = restricted
 
         if not os.path.exists(self.out_dir):
             try:
@@ -216,75 +222,156 @@ class PH5toMSeed(object):
 
             ret = os.path.join(self.out_dir, "preview_images", ret)
         return ret
-
-    def create_trace(self, station_to_cut):
-
-        self.ph5.read_das_t(station_to_cut.das, station_to_cut.starttime,
-                            station_to_cut.endtime, reread=False)
-
-        if not self.ph5.Das_t.has_key(station_to_cut.das):
-            return
-
-        Das_t = ph5API.filter_das_t(self.ph5.Das_t[station_to_cut.das]['rows'],
-                                    station_to_cut.channel)
-
-        das_t_start_no_micro = float(Das_t[0]['time/epoch_l'])
-        das_t_start_micro_seconds = float(Das_t[0]['time/micro_seconds_i'])
-        das_t_start = (float(Das_t[0]['time/epoch_l']) +
-                       float(Das_t[0]['time/micro_seconds_i']) / 1000000)
-
-        if float(das_t_start) > float(station_to_cut.starttime):
-            start_time = das_t_start
-            start_time_no_micro = int(das_t_start_no_micro)
-            start_time_micro_seconds = int(das_t_start_micro_seconds)
-            if start_time_micro_seconds > 0:
-                station_to_cut.endtime += .0001
-
+    
+    @staticmethod
+    def get_nonrestricted_segments(station_to_cut_list, restricted, station_to_cut_segments=[]):
+        """
+        Recursively trim station_to_cut request to remove restricted segments. The result is a list of StationCut
+        objects that contain only non-restricted data requests.
+        
+        :param station_to_cut: A StationCut object
+        :type: StationCut
+        :returns:
+            Returns a list of non-restricted StationCut objects
+        :type: list<StationCut>
+        """
+        if restricted:
+            if station_to_cut_segments == []:
+                station_to_cut_list = copy.deepcopy(station_to_cut_list)
+                restricted = copy.deepcopy(restricted)
+                station_to_cut_segments = copy.deepcopy(station_to_cut_segments)
+            for seg_to_cut in station_to_cut_list:
+                for r in restricted:
+                    if r.network == seg_to_cut.net_code and \
+                       r.station == seg_to_cut.seed_station and \
+                       r.location == seg_to_cut.location and \
+                       r.channel == seg_to_cut.seed_channel:
+                        # restricted-range-start <= station_to_cut <= restricted-range-end
+                        # -- station_to_cut inside restricted-range
+                        if (seg_to_cut.starttime >= r.starttime and \
+                            seg_to_cut.starttime <= r.endtime) and \
+                           (seg_to_cut.endtime >= r.starttime and \
+                            seg_to_cut.endtime <= r.endtime):
+                            continue # completely skip restricted request
+                        # restricted-range-start > station_to_cut < restricted-range-end
+                        # -- station_to_cut starts before restricted-range, ends inside restricted-range
+                        elif(seg_to_cut.starttime <= r.starttime and \
+                             seg_to_cut.starttime <= r.endtime) and \
+                            (seg_to_cut.endtime >= r.starttime  and \
+                             seg_to_cut.endtime <= r.endtime):
+                            seg_to_cut.endtime = r.starttime-1
+                            if seg_to_cut not in station_to_cut_segments:
+                                station_to_cut_segments.append(seg_to_cut)
+                            return PH5toMSeed.get_nonrestricted_segments(station_to_cut_segments,
+                                                                   restricted,
+                                                                   station_to_cut_segments)
+                        # restricted-range-start < station_to_cut > restricted-range-end
+                        # -- station_to_cut starts inside restricted-range, ends after restricted-range
+                        elif(seg_to_cut.starttime >= r.starttime and \
+                             seg_to_cut.starttime <= r.endtime) and \
+                            (seg_to_cut.endtime >= r.starttime and \
+                             seg_to_cut.endtime >= r.endtime):
+                            seg_to_cut.starttime = r.endtime+1
+                            if seg_to_cut not in station_to_cut_segments:
+                                station_to_cut_segments.append(seg_to_cut)
+                            return PH5toMSeed.get_nonrestricted_segments(station_to_cut_segments,
+                                                                   restricted,
+                                                                   station_to_cut_segments)
+                        # restricted-range-start > station_to_cut > restricted-range-end 
+                        # -- restricted-range inside station_to_cut
+                        elif(seg_to_cut.starttime <= r.starttime and \
+                             seg_to_cut.starttime <= r.endtime) and \
+                            (seg_to_cut.endtime >= r.starttime and \
+                             seg_to_cut.endtime >= r.endtime):
+                            segment1 = seg_to_cut
+                            segment2 = copy.deepcopy(seg_to_cut)
+                            segment1.endtime = r.starttime-1
+                            segment2.starttime = r.endtime+1
+                            if segment1 not in station_to_cut_segments: 
+                                station_to_cut_segments.append(segment1)
+                            if segment2 not in station_to_cut_segments: 
+                                station_to_cut_segments.append(segment2)
+                            return PH5toMSeed.get_nonrestricted_segments(station_to_cut_segments, 
+                                                                   restricted,
+                                                                   station_to_cut_segments)
+                        # -- restricted-range outside station_to_cut
+                        else:
+                            # entire segment is non-restricted
+                            if seg_to_cut not in station_to_cut_segments:
+                                station_to_cut_segments.append(seg_to_cut)
+            return station_to_cut_segments
         else:
-            start_time = station_to_cut.starttime
-            start_time_no_micro = station_to_cut.starttime
-            start_time_micro_seconds = 0
-
-        nt = station_to_cut.notimecorrect
-        traces = self.ph5.cut(station_to_cut.das, start_time,
-                              station_to_cut.endtime,
-                              chan=station_to_cut.channel,
-                              sample_rate=station_to_cut.sample_rate,
-                              apply_time_correction=nt)
-
+            return station_to_cut_list
+    
+    def create_trace(self, station_to_cut):
+        
+        station_to_cut_segments = self.get_nonrestricted_segments([station_to_cut], self.restricted)
         obspy_stream = Stream()
-
-        if type(traces) is not list:
-            return
-
-        for trace in traces:
-            if trace.nsamples == 0:
-                continue
-
-            try:
-                obspy_trace = Trace(data=trace.data)
-            except ValueError:
-                print "error"
-                continue
-
-            obspy_trace.stats.sampling_rate = station_to_cut.sample_rate
-            obspy_trace.stats.location = station_to_cut.location
-            obspy_trace.stats.station = station_to_cut.station
-            obspy_trace.stats.coordinates = AttribDict()
-            obspy_trace.stats.coordinates.latitude = station_to_cut.latitude
-            obspy_trace.stats.coordinates.longitude = station_to_cut.longitude
-            obspy_trace.stats.channel = station_to_cut.seed_channel
-            obspy_trace.stats.network = station_to_cut.net_code
-            obspy_trace.stats.starttime = UTCDateTime(start_time_no_micro)
-
-            obspy_trace.stats.starttime.microsecond = (
-                start_time_micro_seconds)
-
-            if self.decimation:
-                obspy_trace.decimate(int(self.decimation))
-
-            obspy_stream.append(obspy_trace)
-
+        for stc in station_to_cut_segments:
+            self.ph5.read_das_t(stc.das, stc.starttime,
+                                stc.endtime, reread=False)
+    
+            if not self.ph5.Das_t.has_key(stc.das):
+                return
+    
+            Das_t = ph5API.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
+                                        stc.channel)
+    
+            das_t_start_no_micro = float(Das_t[0]['time/epoch_l'])
+            das_t_start_micro_seconds = float(Das_t[0]['time/micro_seconds_i'])
+            das_t_start = (float(Das_t[0]['time/epoch_l']) +
+                           float(Das_t[0]['time/micro_seconds_i']) / 1000000)
+    
+            if float(das_t_start) > float(stc.starttime):
+                start_time = das_t_start
+                start_time_no_micro = int(das_t_start_no_micro)
+                start_time_micro_seconds = int(das_t_start_micro_seconds)
+                if start_time_micro_seconds > 0:
+                    stc.endtime += .0001
+    
+            else:
+                start_time = stc.starttime
+                start_time_no_micro = stc.starttime
+                start_time_micro_seconds = 0
+    
+            nt = stc.notimecorrect
+            traces = self.ph5.cut(stc.das, start_time,
+                                  stc.endtime,
+                                  chan=stc.channel,
+                                  sample_rate=stc.sample_rate,
+                                  apply_time_correction=nt)
+    
+            if type(traces) is not list:
+                return
+    
+            for trace in traces:
+                if trace.nsamples == 0:
+                    continue
+    
+                try:
+                    obspy_trace = Trace(data=trace.data)
+                except ValueError:
+                    print "error"
+                    continue
+                
+                
+                obspy_trace.stats.sampling_rate = stc.sample_rate
+                obspy_trace.stats.location = stc.location
+                obspy_trace.stats.station = stc.seed_station
+                obspy_trace.stats.coordinates = AttribDict()
+                obspy_trace.stats.coordinates.latitude = stc.latitude
+                obspy_trace.stats.coordinates.longitude = stc.longitude
+                obspy_trace.stats.channel = stc.seed_channel
+                obspy_trace.stats.network = stc.net_code
+                obspy_trace.stats.starttime = UTCDateTime(trace.start_time.epoch())
+    
+                obspy_trace.stats.starttime.microsecond = (
+                    start_time_micro_seconds)
+    
+                if self.decimation:
+                    obspy_trace.decimate(int(self.decimation))
+                obspy_stream.append(obspy_trace)
+    
         if len(obspy_stream.traces) < 1:
             return
 
@@ -317,7 +404,7 @@ class PH5toMSeed(object):
 
             if self.array:
                 does_match = []
-                array_patterns = self.array.split(',')
+                array_patterns = self.array
                 for pattern in array_patterns:
                     if fnmatch.fnmatch(str(array), pattern):
                         does_match.append(1)
@@ -333,7 +420,7 @@ class PH5toMSeed(object):
 
                 if self.station_id:
                     does_match = []
-                    sta_list = self.station_id.split(',')
+                    sta_list = self.station_id
                     for x in sta_list:
                         if station == x:
                             does_match.append(1)
@@ -344,12 +431,12 @@ class PH5toMSeed(object):
                 for deployment in station_list:
                     start_times = []
 
-                    station_list[deployment][0]['seed_station_name_s']
+                    seed_station = station_list[deployment][0]['seed_station_name_s']
                     
 
                     if self.station:
                         does_match = []
-                        sta_patterns = self.station.split(',')
+                        sta_patterns = self.station
                         for pattern in sta_patterns:
                             if fnmatch.fnmatch((station_list[deployment][0]
                                     ['seed_station_name_s']), pattern):
@@ -365,7 +452,7 @@ class PH5toMSeed(object):
                             # print "error: length must be specified.
                             # Use -l option"
                             sys.exit()
-                        eventnumbers = self.eventnumbers.split(',')
+                        eventnumbers = self.eventnumbers
                         for evt in eventnumbers:
                             try:
                                 event_t = self.ph5.Event_t[
@@ -394,7 +481,7 @@ class PH5toMSeed(object):
 
                     if self.sample_rate_list:
                         does_match = []
-                        sample_list = self.sample_rate_list.split(',')
+                        sample_list = self.sample_rate_list
                         for x in sample_list:
                             if sample_rate == int(x):
                                 does_match.append(1)
@@ -421,7 +508,7 @@ class PH5toMSeed(object):
                     c = station_list[deployment][0]['channel_number_i']
 
                     if self.component:
-                        component_list = self.component.split(',')
+                        component_list = self.component
                         if str(c) not in component_list:
                             continue
 
@@ -429,7 +516,7 @@ class PH5toMSeed(object):
                     
                     if self.channel:
                         does_match = []
-                        cha_patterns = self.channel.split(',')
+                        cha_patterns = self.channel
                         for pattern in cha_patterns:
                             if fnmatch.fnmatch(full_code, pattern):
                                 does_match.append(1)
@@ -546,6 +633,7 @@ class PH5toMSeed(object):
                             station_x = StationCut(
                                 experiment_t[0]['net_code_s'],
                                 station,
+                                seed_station,
                                 das,
                                 c,
                                 full_code,
@@ -746,6 +834,23 @@ if __name__ == '__main__':
 
     ph5API_object = ph5API.ph5(path=args.ph5path, nickname=args.nickname)
 
+    if args.array:
+        args.array = args.array.split(',')
+    if args.sta_id_list:
+        args.sta_id_list=args.sta_id_list.split(',')
+    if args.sta_list:    
+        args.sta_list=args.sta_list.split(',')
+    if args.eventnumbers:
+        args.eventnumbers= args.eventnumbers.split(',')
+    if args.sample_rate:
+        args.sample_rate = args.sample_rate.split(',')
+    if args.component:
+        args.component = args.component.split(',')
+    if args.channel:
+        args.channel = args.channel.split(',')
+
+    
+    
     ph5ms = PH5toMSeed(
         ph5API_object, args.array, args.length, args.offset,
         args.component, args.sta_list, args.network,
