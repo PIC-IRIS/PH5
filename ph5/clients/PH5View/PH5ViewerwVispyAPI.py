@@ -1,7 +1,12 @@
-#!/usr/bin/env pnpython4
-# from newDrawplot
+#!/usr/bin/env pnpython3
+#
+#   Plotting PH5 data
+#
+#   Lan Dam 
+#   
+#   Updated Feb 2017
 
-PROG_VERSION = "2016.205 Developmental"
+PROG_VERSION = "2017.051 Developmental"
 
 import sys, os, time, math, gc, re
 sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
@@ -11,8 +16,9 @@ import PH5ReaderwVispyAPI, TimeDOY
 
 from copy import deepcopy
 
+from PyQt4.QtWebKit import QWebView
 from PyQt4 import QtGui, QtCore, Qt,QtSvg
-from PyQt4.QtCore import QPoint,QRectF
+from PyQt4.QtCore import QPoint,QRectF, QUrl
 from PyQt4.QtGui import QPolygon, QImage, QPixmap, QColor, QPalette
 
 import numpy as np
@@ -23,7 +29,8 @@ from vispy.util.transforms import rotate
 
 #import vispy.mpl_plot as plt
 import matplotlib.pyplot as plt
-PH5VALFILE = path.join(mkdtemp(), 'PH5VAL.dat')     # to keep PH5 values for reuse
+
+PH5VALFILES = [ path.join(mkdtemp(), 'PH5VAL%s.dat' % ch) for ch in range(3) ]    # to keep PH5 values for reuse
 
 #OpenGL vertex shader
 #Defines how to draw and transform the graph
@@ -92,7 +99,39 @@ def showStatus(curMsg, nextMsg):
     statusMsg = "%s %s" % (curMsg , nextMsg)
     statusBar.showMessage(statusMsg)        
     
-  
+
+##########################################
+############### CLASS ####################
+# Author: Lan
+# Updated: 201702
+# CLASS: ManWindow - show Manual of the app..
+class ManWindow(QtGui.QWidget):
+    def __init__(self, mantype=""):
+        QtGui.QWidget.__init__(self)
+
+        view = QWebView(self)
+        if mantype=="manual":
+            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "PH5View_Manual.html"))
+            if os.path.isfile(file_path): 
+                local_url = QUrl.fromLocalFile(file_path)   
+                #view.load(local_url )
+                view.setUrl(local_url)
+            else:
+                msg = "The hyperlinks to bookmarks in the manual cannot work \n" + \
+                      "becaulse the file PH5View_Manual.html is missing.\n" +\
+                      "To move to the interested section, use scrollbar."
+                QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
+                view.setHtml(PH5ReaderwVispyAPI.html_manual)
+        
+        elif mantype=="whatsnew":
+            view.setHtml(PH5ReaderwVispyAPI.html_whatsnew % PROG_VERSION)
+        self.layout = QtGui.QHBoxLayout()
+        self.layout.addWidget(view)
+
+        self.setLayout(self.layout)
+        self.show()  
+
+
 ##########################################
 ############### CLASS ####################
 # Author: Lan
@@ -112,81 +151,175 @@ class Seperator(QtGui.QFrame):
             if length != None:
                 self.setFixedHeight(length)
 
+##########################################
+############### CLASS ####################
+# Author: Lan
+# Updated: 201612
+# CLASS: To display long message that need scrollbar
+class ScrollDialog(QtGui.QDialog):
+    def __init__( self, title='', header='', txt=''):
+        QtGui.QDialog.__init__(self)
+        #self.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken) 
+        #self.setGeometry(-10, 10,700, 400)
+        #self.setWindowFlags(QtCore.Qt.Window)
+        self.setWindowTitle(title)
+        self.resize(700,400)
+        vbox = QtGui.QVBoxLayout(self)
+        #vbox.setSpacing(0)
+        
+        # for non-scrolled text
+        if header != "":
+            headerLbl = QtGui.QLabel('', self)   
+            vbox.addWidget(headerLbl)
+            headerLbl.setText(header)
+        
+        # for scrolled text
+        if txt != "":
+            scrollArea = QtGui.QScrollArea(self)
+            vbox.addWidget(scrollArea)
+            scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+            scrollArea.setWidgetResizable(True)
+        
+            itemsFrame = QtGui.QFrame(); scrollArea.setWidget(itemsFrame)
+            scrollBox = QtGui.QVBoxLayout() 
+            itemsFrame.setLayout(scrollBox)
+            label = QtGui.QLabel('', self)   
+            scrollBox.addWidget(label)
+            label.setText(txt)
+            
+        closeBtn = QtGui.QPushButton('OK', self)
+        closeBtn.clicked.connect(self.onClose)
+        vbox.addWidget(closeBtn)        
+ 
+        self.show()
 
+
+    def onClose(self, evt):
+        self.close()
+        
+        
+        
+        
+##########################################
+############### CLASS ####################
+# Author: Lan
+# Updated: 2016
+# CLASS: InfoPanel - to show info of trace(s)
 class InfoPanel(QtGui.QFrame):
-    def __init__(self, control ):
+    def __init__( self, control, txt, canvas, statId ):
+        
         QtGui.QFrame.__init__(self)
         self.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
         self.control = control
+        self.canvas = canvas
+        self.statId = statId        
         
         #self.setWindowFlags(QtCore.Qt.Window)
         control.infoBox.addWidget(self)
         self.vbox = vbox = QtGui.QVBoxLayout(self)
         vbox.setSpacing(0)
-        hbox = QtGui.QHBoxLayout() ; vbox.addLayout(hbox)
+        quickRemBox = QtGui.QHBoxLayout() ; vbox.addLayout(quickRemBox)
+        quickRemBox.addWidget( QtGui.QLabel('QuickRemoved', self) )
+        self.quickRemCkbs = []
+        for chIndex in range(3):
+            self.quickRemCkbs.append(QtGui.QCheckBox(str(chIndex+1), self))
+            self.quickRemCkbs[chIndex].stateChanged.connect(self.onQuickRemove)
+            quickRemBox.addWidget(self.quickRemCkbs[chIndex])
+        quickRemBox.addStretch(1)
         
-        self.quickRemovedCkb = QtGui.QCheckBox('QuickRemoved', self)
-        self.quickRemovedCkb.stateChanged.connect(self.onQuickRemove)
-        hbox.addWidget(self.quickRemovedCkb)
-        
-        self.deepRemovedCkb = QtGui.QCheckBox('DeepRemoved', self)
-        self.deepRemovedCkb.stateChanged.connect(self.onDeepRemove)
-        hbox.addWidget(self.deepRemovedCkb)
+        deepRemBox = QtGui.QHBoxLayout() ; vbox.addLayout(deepRemBox)
+        deepRemBox.addWidget( QtGui.QLabel('DeepRemoved ', self) ) 
+        self.deepRemCkbs = []
+        for chIndex in range(3):
+            self.deepRemCkbs.append(QtGui.QCheckBox(str(chIndex+1), self))
+            self.deepRemCkbs[chIndex].stateChanged.connect(self.onDeepRemove)
+            deepRemBox.addWidget(self.deepRemCkbs[chIndex])
+        deepRemBox.addStretch(1)
         
         self.infoLabel = QtGui.QLabel('', self)    
         vbox.addWidget(self.infoLabel)
         
-        
-    def showInfo(self, txt, canvas, statId):
-        self.canvas = canvas
-        self.statId = statId
-        self.seq = self.control.metadata[self.statId]['seq']
+        control.infoBox.addWidget(self)
+
+        #self.seq = self.control.metadata[self.statId]['seq']
         self.infoLabel.setText(txt)
         self.allowRemove = False
-        if self.statId in self.control.PH5Info['quickRemoved']: 
-            self.quickRemovedCkb.setCheckState(QtCore.Qt.Checked)
-        else: 
-            self.quickRemovedCkb.setCheckState(QtCore.Qt.Unchecked)
-        if 'Main' in canvas.parent.title:
-            self.deepRemovedCkb.setEnabled(True)
-            if self.statId in self.control.PH5Info['deepRemoved']: 
-                self.deepRemovedCkb.setCheckState(QtCore.Qt.Checked)
-            else: 
-                self.deepRemovedCkb.setCheckState(QtCore.Qt.Unchecked)
-        else:
-            self.deepRemovedCkb.setCheckState(QtCore.Qt.Unchecked)
-            self.deepRemovedCkb.setEnabled(False)
+        for chIndex in range(3):
+            ch = chIndex+1
+            if ch not in self.control.channels or ch not in self.control.metadata[self.statId]['chans']: 
+                self.quickRemCkbs[chIndex].setEnabled(False)
+                self.deepRemCkbs[chIndex].setEnabled(False)
+                continue
             
+            self.quickRemCkbs[chIndex].setEnabled(True)
+            self.deepRemCkbs[chIndex].setEnabled(True)            
+            
+            if self.statId in self.control.PH5Info['quickRemoved'][ch]: 
+                self.quickRemCkbs[chIndex].setCheckState(QtCore.Qt.Checked)
+            else: 
+                self.quickRemCkbs[chIndex].setCheckState(QtCore.Qt.Unchecked)
+            if 'Main' in self.canvas.parent.title:
+                self.deepRemCkbs[chIndex].setEnabled(True)
+                if self.statId in self.control.PH5Info['deepRemoved'][ch]: 
+                    self.deepRemCkbs[chIndex].setCheckState(QtCore.Qt.Checked)
+                else: 
+                    self.deepRemCkbs[chIndex].setCheckState(QtCore.Qt.Unchecked)
+            else:
+                self.deepRemCkbs[chIndex].setCheckState(QtCore.Qt.Unchecked)
+                self.deepRemCkbs[chIndex].setEnabled(False)
+                
         self.allowRemove = True
         self.show()
-        
+
+    
+    ###################################
+    # Author: Lan
+    # def: onQuickRemove():201409  
+    # call quickRemove in canvas to turn the color of the trace to 'white'
     def onQuickRemove(self, evt):
         print "onQuickRemove"
         if not self.allowRemove: return
-        c = self.canvas.quickRemove(self.statId,self.quickRemovedCkb.isChecked() )
-        self.canvas.otherCanvas.quickRemove(self.statId,self.quickRemovedCkb.isChecked(), c) 
+        chIndex = self.quickRemCkbs.index(self.sender())
+
+        ch = chIndex+1
+   
+        c = self.canvas.quickRemove(ch, self.statId,self.quickRemCkbs[chIndex].isChecked() )
+        self.canvas.otherCanvas.quickRemove(ch, self.statId,self.quickRemCkbs[chIndex].isChecked(), c) 
+        
         self.canvas.updateData()
         self.canvas.otherCanvas.updateData()
         
-    
+    ###################################
+    # Author: Lan
+    # def: onDeepRemove():201409  
+    # add id of the trace to PH5Info['deepRemoved']
+    # all the the traces of 'deepRemoved' will be removed completly from the plot 
+    # when click 'DeepRemove' on Plot Panel
     def onDeepRemove(self, evt):
         if not self.allowRemove: return
-        if self.deepRemovedCkb.isChecked() \
-        and self.seq not in self.control.PH5Info['deepRemoved']:
-            self.control.PH5Info['deepRemoved'].append(self.seq)
-            
-        if not self.deepRemovedCkb.isChecked() \
-        and self.seq in self.control.PH5Info['deepRemoved']:
-            self.control.PH5Info['deepRemoved'].remove(self.seq)
+
+        chIndex = self.deepRemCkbs.index(self.sender())
+
+        ch = chIndex+1
         
-        print "deepRemoved List:", self.control.PH5Info['deepRemoved']     
+        if self.deepRemCkbs[chIndex].isChecked() \
+        and self.statId not in self.control.PH5Info['deepRemoved'][ch]:
+            self.control.PH5Info['deepRemoved'][ch].append(self.statId)
+            
+        if not self.deepRemCkbs[chIndex].isChecked() \
+        and self.statId in self.control.PH5Info['deepRemoved'][ch]:
+            self.control.PH5Info['deepRemoved'][ch].remove(self.statId)
+            
+        #print "deepRemoved List:", self.control.PH5Info['deepRemoved']  
+        
+        
 ##########################################
 ############### CLASS ####################
 # Author: Lan
 # Updated: 201410
 # CLASS: Selector - showing the selected area
 # due to the big amount of data, Selector is not shown on the move but only
-# shown at the beginning (mouse press) and the end (mouse release 
+# shown at the beginning (mouse press) and the end (mouse release) 
 class Selector(QtGui.QRubberBand):
     def __init__(self, *arg,**kwargs):
         super(Selector,self).__init__(*arg,**kwargs)
@@ -195,6 +328,7 @@ class Selector(QtGui.QRubberBand):
         painter = QtGui.QPainter(self)
         painter.setPen(QtGui.QPen(QtCore.Qt.red,5))
         painter.drawRect(e.rect().x()+1,e.rect().y()+1,e.rect().width()-1, e.rect().height()-1)
+        
 
 ##########################################
 ############### CLASS ####################
@@ -273,6 +407,11 @@ class PrintSaveParaDialog(QtGui.QDialog):
             self.fileFormatCtrl.addItems(formats)
             self.fileFormatCtrl.setCurrentIndex(svgindex)
             formLayout.addRow("File Format", self.fileFormatCtrl) 
+            
+        # allow to select option of showing legend in saved graphic or printed graphic
+        self.legendCkbox = QtGui.QCheckBox(self)
+        self.legendCkbox.setChecked(True)
+        formLayout.addRow("Legend", self.legendCkbox)
 
         okLbl = 'Save' if 'save' in typeStr else 'Print'
         self.OKBtn = QtGui.QPushButton(okLbl, self)
@@ -296,7 +435,7 @@ class PrintSaveParaDialog(QtGui.QDialog):
                 return 
             
             fileFormat = str(self.fileFormatCtrl.currentText()).split(":")[0]
-            return w, h, self.type[5:],fileFormat
+            return w, h, self.legendCkbox.isChecked(), self.type[5:],fileFormat
         else:
             try:
                 w = float(self.widthCtrl.text())
@@ -307,13 +446,15 @@ class PrintSaveParaDialog(QtGui.QDialog):
                 QtGui.QMessageBox.question(self, 'Error', errorMsg, QtGui.QMessageBox.Ok)
                 return                
             
-            return w, h, self.type[5:]
+            return w, h, self.legendCkbox.isChecked(), self.type[5:]
         
             
         
     @staticmethod  
     def print_save(parent, typeStr, unitStr, defaultSize):  
-        # this method to help PrintSaveDialog return values
+        """
+        this method to help PrintSaveDialog return values        
+        """
         dialog = PrintSaveParaDialog(parent, typeStr, unitStr, defaultSize)
         result = dialog.exec_()
         if result==QtGui.QDialog.Rejected: return
@@ -366,9 +507,11 @@ class Canvas(app.Canvas):
         
     def setOtherCanvas(self, c):
         self.otherCanvas = c
+        
+        
     ###################################
     # Author: Lan
-    # def: initData():201507
+    # def: initData():201507 - updated:2016:12
     #    initiate data for painting the whole data
     #    data to feed vispy drawing includes 4 parts: x, y, color, index
     #    => read each station's data: time + values, and create color + index , then feed data to self.program
@@ -380,14 +523,22 @@ class Canvas(app.Canvas):
     #    => build data for grid lines, then feed data to gProgram
     #    => re-position labels: resiteLabels()
     #    => update to redraw canvas
-    def initData(self, t=np.array([]), val=0, deepRemoving=False):
+    def initData(self, t=[], val=None, deepRemoving=False):
         global START, END, processInfo, countDRAW
         counData = 0
         #print "initData"
         start = time.time()
         direct = -1 if self.control.upRbtn.isChecked() else 1
-        self.currDir = 'up' if self.control.upRbtn.isChecked() else 'down'     
-        colors = [QColor(c).getRgbF()[:3] for c in self.control.conf['plotColor']]
+        self.currDir = 'up' if self.control.upRbtn.isChecked() else 'down' 
+        
+        colors = []
+        for ch in range(len(self.control.channels)): 
+            if ch < len(self.control.conf['plotColor']): 
+                colors.append( [QColor(c).getRgbF()[:3] for c in self.control.conf['plotColor'][ch]])
+            else:
+                colors.append( [QColor(c).getRgbF()[:3] for c in self.control.defaultConf['plotColor'][ch]])
+        
+        
         if not deepRemoving:
             self.parent.canvScaleT, self.parent.canvScaleV = (1.,1.)    # for resetting pan/scale
             self.parent.panT, self.parent.panV = (0.,0.)
@@ -401,7 +552,7 @@ class Canvas(app.Canvas):
         self.parent.setWindowTitle('Main Window:  %s %s' % (self.PH5View.graphName,self.control.conf['addingInfo']))
         if val!=None and len(t)!=0:
             self.reset(needUpdate=False)
-            # onGetnPlot(), onApplySimplify_Replot
+            print "onGetnPlot(), onApplySimplify_Replot"
             #self.startStatId = self.parent.startStatId= 0
             if not deepRemoving:
                 self.startStatId= 0
@@ -409,58 +560,83 @@ class Canvas(app.Canvas):
                 self.mainMinY = -1      # to define lim in self.painting
                 self.mainMaxY = 1
                 
-            self.data=[]
-            for i in range(len(val)):
-                aSize = len(val[i])
-                self.data.append( np.zeros(aSize,
-                                    dtype=[('a_position', np.float32, 2),
-                                           ('a_color', np.float32, 3),
-                                           ('a_index', np.float32, 1)]) )
-
-                # org: top2bottom, choose up - bottom2top: direct=-1
+            self.data={}
+            for ch in self.control.channels:  
+                self.data[ch] = []
+                for i in range(len(val[ch])):
     
-                if i in self.control.PH5Info['deepRemoved']:
-                    self.data[i]['a_position'][:, 0] = np.ones(0)
-                else:
-                    self.data[i]['a_position'][:, 0] = direct*t[self.control.keepList[i]]  
-                # change val to range (-1,1) - can't change in createVal() 
-                #                              bc val is a list of nparray, not an nparray
-                self.data[i]['a_position'][:, 1] = val[i]*2./self.control.maxVal -1
-                
-                # an np array of all 0s for each data will be fed separately
-                self.data[i]['a_index'] = np.repeat(0,aSize)
+                    # org: top2bottom, choose up - bottom2top: direct=-1
+                    if self.control.metadata[i]==None \
+                    or not self.control.channelCkbs[ch].isChecked() \
+                    or i in self.control.PH5Info['deepRemoved'][ch] \
+                    or self.control.PH5Info['LEN'][ch][i]==0:
+                        self.data[ch].append( np.zeros(0,
+                                                       dtype=[('a_position', np.float32, 2),
+                                                              ('a_color', np.float32, 3),
+                                                              ('a_index', np.float32, 1)]) )
+                    else:
+                        aSize = len(val[ch][i])
+                        self.data[ch].append( np.zeros(aSize,
+                                                       dtype=[('a_position', np.float32, 2),
+                                                              ('a_color', np.float32, 3),
+                                                              ('a_index', np.float32, 1)]) )                        
+                        #print "self.control.keepList[ch][i]:", self.control.keepList[ch][i]
+                        self.data[ch][i]['a_position'][:, 0] = direct*t[self.control.keepList[ch][i]]
+                        # change val to range (-1,1) - can't change in createVal() 
+                        #                              bc val is a list of nparray, not an nparray
+                        self.data[ch][i]['a_position'][:, 1] = val[ch][i]*2./self.control.maxVal -1
+                        # an np array of all 0s for each data will be fed separately
+                        self.data[ch][i]['a_index'] = np.repeat(0,aSize)
+  
 
-            
         if val==None and len(t)!=0:
-            # onApplyVel_RePlot(), onApplyCorrVel_RePlot()
-
-                if i in self.control.PH5Info['deepRemoved']:
-                    self.data[i]['a_position'][:, 0] = np.ones(0)
-                else:
-                    self.data[i]['a_position'][:, 0] = direct*t[self.control.keepList[i]]  
+            print "onApplyVel_RePlot(), onApplyCorrVel_RePlot()"
+            
+            for ch in self.control.channels:
+                for i in range(len(self.data[ch])):
+                    if not self.control.channelCkbs[ch].isChecked() \
+                    or i in self.control.PH5Info['deepRemoved'][ch] \
+                    or self.control.PH5Info['LEN'][ch][i]==0:
+                        self.data[ch][i]['a_position'][:, 0] = np.ones(0)
+                    else:
+                        self.data[ch][i]['a_position'][:, 0] = direct*t[self.control.keepList[ch][i]]  
 
         if val!= None and len(t)==0:
-            # onApplyOverlap_RePlot()
-            for i in range(len(self.data)):
-                self.data[i]['a_position'][:, 1] = val[i]*2./self.control.maxVal -1        
+            print "onApplyOverlapNormalize_RePlot()"
+            for ch in self.control.channels:  
+                for i in range(len(self.data[ch])):
+                    if not self.control.channelCkbs[ch].isChecked() \
+                    or i in self.control.PH5Info['deepRemoved'][ch] \
+                    or self.control.PH5Info['LEN'][ch][i]==0:
+                        self.data[ch][i]['a_position'][:, 1] = np.ones(0)
+                    else:
+                        self.data[ch][i]['a_position'][:, 1] = val[ch][i]*2./self.control.maxVal -1    
+                    
         
         # val==None, t==None: onApplyPropperty_RePlot()
-        for i in range(len(self.data)):
-            # always rebuild colors in case anything change in properties. This doesn't take lots of time
-            aSize = len(self.data[i]['a_index'])
-            if i in self.control.PH5Info['quickRemoved'].keys():
-                c = QColor(QtCore.Qt.white).getRgbF()[:3]
-            else:
-                colorIndex = i % len(colors)
-                c = colors[colorIndex]
-            self.data[i]['a_color'] = np.tile(c, (aSize,1) )
+        #print "colors:", colors
+        #print "data[1][1]['a_position']:", self.data[1][1]['a_position']
+        for ch in self.control.channels: 
+            #print "channel: ", ch
+            for i in range(len(self.data[ch])):
+                # always rebuild colors in case anything change in properties. This doesn't take lots of time
+                aSize = len(self.data[ch][i]['a_index'])
+                if i in self.control.PH5Info['quickRemoved'][ch].keys():
+                    c = QColor(QtCore.Qt.white).getRgbF()[:3]
+                else:
+                    colorIndex = i % len( colors[self.control.channels.index(ch)] )
+                    
+                    c = colors[self.control.channels.index(ch)][colorIndex]
+           
+                self.data[ch][i]['a_color'] = np.tile(c, (aSize,1) )
             
             
         if self.control.conf.has_key('showAbnormalStat') and self.control.conf['showAbnormalStat']:
-            for abn in self.control.PH5Info['abnormal']:
-                aSize = len(self.data[abn]['a_index'])
-                abColor = QColor(self.control.conf['abnormalColor']).getRgbF()[:3]
-                self.data[abn]['a_color'] = np.tile(abColor, (aSize,1)) 
+            for ch in self.control.channels:
+                for abn in self.control.PH5Info['abnormal']:
+                    aSize = len(self.data[ch][abn]['a_index'])
+                    abColor = QColor(self.control.conf['abnormalColor']).getRgbF()[:3]
+                    self.data[ch][abn]['a_color'] = np.tile(abColor, (aSize,1)) 
         # feedData() and feedGData() separately for buildGrid() require info created in feedData(): canvScaleT                   
         self.feedData(self.panT, self.panV, self.canvScaleT, self.canvScaleV)
         self.update_scale()
@@ -474,6 +650,7 @@ class Canvas(app.Canvas):
         self.update()
         self.parent.update()
         END = time.time()
+        #print "data:", self.data
         print 'Finish Plotting in %s seconds. Total processing time %s seconds' % (END-start, END-START)
         processInfo += "\nPlotting: %s seconds" % (END-start)
         processInfo += "\n=> Total processing time %s seconds" % (END-START)
@@ -482,7 +659,11 @@ class Canvas(app.Canvas):
         showStatus('', 'Finish Plotting in %s seconds. Total processing time %s seconds' % (END-start, END-START))
         self.defineViewWindow(0, 0, self.width, self.height)
         
+        self.parent.distance.setText( "%.3f" % (self.control.totalSize/20000.) )
+        self.parent.time.setText( "%.3f" % (self.control.dfltTimeLen/15.) )
 
+        
+            
     ###################################
     # Author: Lan
     # def: initSupportData():201507
@@ -531,6 +712,7 @@ class Canvas(app.Canvas):
     # initiate/reset info need for drawing especially for Support Window 
     # when some para. are changed and then redraw in MainWindow
     def reset(self, needUpdate=True):
+        #print "canvas.reset"
         #self.filterEnabled = False
         self.enableDrawing = False
         if needUpdate: 
@@ -561,13 +743,15 @@ class Canvas(app.Canvas):
             self.program.delete()
             del self.program
         except: pass
-        self.program = []
-        for i in range(len(self.data)):
-            self.program.append(gloo.Program(VERT_SHADER, FRAG_SHADER))
-            self.program[i].bind(gloo.VertexBuffer(self.data[i]))
-            self.program[i]['u_model'] = self.model
-            self.program[i]['u_pan'] = (tPan, vPan)        # time,val    (y,x) b/c the model has been turned 90 degree
-            self.program[i]['u_scale'] = (tScale, vScale)      # time, val
+        self.program = {}
+        for ch in self.data.keys():
+            self.program[ch] = []
+            for i in range(len(self.data[ch])):
+                self.program[ch].append(gloo.Program(VERT_SHADER, FRAG_SHADER))
+                self.program[ch][i].bind(gloo.VertexBuffer(self.data[ch][i]))
+                self.program[ch][i]['u_model'] = self.model
+                self.program[ch][i]['u_pan'] = (tPan, vPan)        # time,val    (y,x) b/c the model has been turned 90 degree
+                self.program[ch][i]['u_scale'] = (tScale, vScale)      # time, val
 
        
     ###################################
@@ -619,10 +803,11 @@ class Canvas(app.Canvas):
             else:
                 f = -1
                 self.currDir = 'down'
-                
-        for i in range(len(self.data)):
-            t = deepcopy(self.data[i]['a_position'][:, 0])
-            self.data[i]['a_position'][:, 0] = f*t
+        
+        for ch in self.control.channels:
+            for i in range(len(self.data[ch])):        
+                t = deepcopy(self.data[ch][i]['a_position'][:, 0])
+                self.data[ch][i]['a_position'][:, 0] = f*t
 
         direct = -1 if self.control.upRbtn.isChecked() else 1
         self.gtData['a_position'][:,0] = np.repeat(direct * self.timeY, 2)
@@ -658,7 +843,7 @@ class Canvas(app.Canvas):
         F = 1
         numOfLabels = 30
         while True:
-            numOfLabels = math.ceil(self.control.totalTime)/(F*self.control.horGridIntervalSB.value()*1000*canvScaleT)
+            numOfLabels = math.ceil(self.control.totalTime)/(F*self.control.timeGridIntervalSB.value()*1000*canvScaleT)
             if numOfLabels<=25: break
             F += 1                
         
@@ -718,8 +903,8 @@ class Canvas(app.Canvas):
         numOfDLabels = 15
         while True:
             F += 1
-            numOfDLabels = int(self.control.totalSize/(F*self.control.verGridIntervalSB.value()*1000*canvScaleV))
-            v= (self.control.totalSize,F*self.control.verGridIntervalSB.value()*1000,F, numOfDLabels)
+            numOfDLabels = int(self.control.totalSize/(F*self.control.distanceGridIntervalSB.value()*1000*canvScaleV))
+            v= (self.control.totalSize,F*self.control.distanceGridIntervalSB.value()*1000,F, numOfDLabels)
             #print "totalsize: %s, part=%s, F=%s, LNum=%s" % v
             if numOfDLabels<=10: break
         
@@ -765,7 +950,7 @@ class Canvas(app.Canvas):
         # 1s=1000ms, scaled down to the scale of time data sent to draw           
         secondScaled = 1000*control.scaleT
         # number of seconds per Gap
-        secondsNoPerGap = control.horGridIntervalSB.value()
+        secondsNoPerGap = control.timeGridIntervalSB.value()
             
         # recalc. gap length in (-1,1)
         gridGap = secondsNoPerGap * secondScaled
@@ -827,17 +1012,17 @@ class Canvas(app.Canvas):
         dLabels = []
 
         kilometerScaled = 1000/control.totalSize
-        kilometerPerGap = control.verGridIntervalSB.value()
+        kilometerPerGap = control.distanceGridIntervalSB.value()
         distanceGap = kilometerPerGap * kilometerScaled*2
  
-        # 0 value
-        self.zeroD = zeroD = -2*self.control.scaledDelta/self.control.maxVal -1
-        
+        # 0 value: delta is the left side of plot => -delta is zero
+        self.zeroD = zeroD = -2*self.control.scaledMinD/self.control.maxVal -1
+
         dList = [zeroD]
         dLabels = [('0', zeroD)]
         
         # less than 0 values
-        d = zeroD -distanceGap
+        d = zeroD - distanceGap
         realD = -kilometerPerGap
         i = 1
         # 0 -> -1: insert to the start of the list
@@ -916,18 +1101,19 @@ class Canvas(app.Canvas):
         gloo.clear(color=('white'))
         if self.enableDrawing:
             try:
-                for i in range(len(self.program)):
-                    try:
-                        if self.control.lineRbtn.isChecked():
-                            self.program[i].draw('line_strip')
-                        
-                        else:
-                            self.program[i].draw('points')
-                    except: break
+                for ch in self.program.keys():
+                    for i in range(len(self.program[ch])):
+                        try:
+                            if self.control.lineRbtn.isChecked():
+                                self.program[ch][i].draw('line_strip')
+                            
+                            else:
+                                self.program[ch][i].draw('points')
+                        except: break
                 try:
-                    if self.gtProgram and self.control.horGridCkb.isChecked():
+                    if self.gtProgram and self.control.timeGridCkb.isChecked():
                         self.gtProgram.draw('lines')
-                    if self.gdProgram and self.control.verGridCkb.isChecked():
+                    if self.gdProgram and self.control.distanceGridCkb.isChecked():
                         self.gdProgram.draw('lines')
                 except: return
             except RuntimeError, e:
@@ -961,16 +1147,12 @@ class Canvas(app.Canvas):
         #print "defineViewWindow setData= left=%s right=%s" % (left, right)
         
         k1 = self.locateDataPoint(left, top)  
-        #print "K1=", k1
-        if k1==None or len(k1)<1 or k1.__class__.__name__!='list': 
-            #print "defineViewWindow k1=%s, left=%s, top=%s" % (k1, left,top)
-            return False
+        #print "defineViewWindow K1=", k1
+        if k1==None or len(k1)<1 or k1.__class__.__name__!='list': return False
                                    
         k2 = self.locateDataPoint(right, bottom)
-        #print "K2=", k2 
-        if k2==None or len(k2)<1 or k2.__class__.__name__!='list': 
-            #print "defineViewWindow k2=%s, right=%s, bottom=%s" % (k2,right, bottom)
-            return False
+        #print "defineViewWindow K2=", k2 
+        if k2==None or len(k2)<1 or k2.__class__.__name__!='list': return False
 
         if setData: self.displayWinValues(k1[0], k2[-1])
         return k1[0], k2[-1]
@@ -988,7 +1170,8 @@ class Canvas(app.Canvas):
         timeLen = self.control.totalTime/(self.canvScaleT*1000)
         minInterval = math.ceil(10*timeLen/25.)/10 
         maxInterval = math.ceil(10*timeLen)/10
-        self.control.horGridIntervalSB.setRange(minInterval, maxInterval) 
+        self.control.timeGridIntervalSB.setRange(minInterval, maxInterval) 
+        
         
         newD1 = (k1['sentVal'] - self.zeroD) * self.control.totalSize/2000
         newD2 = (k2['sentVal'] - self.zeroD) * self.control.totalSize/2000
@@ -1001,7 +1184,7 @@ class Canvas(app.Canvas):
 
     ###################################
     # Author: Lan
-    # def: on_mouse_release() 201509
+    # def: on_mouse_release() 201609
     # if zoompan or when there is a right-click (chance of new choosing on this window): 
     #    updating info in the control panel
     # if select=True: 
@@ -1009,10 +1192,7 @@ class Canvas(app.Canvas):
     #    update self.LT, self.RB for use in the selected option after this
     def on_mouse_release(self,event):
         #print "on_mouse_release"
-        v = (self.enableDrawing, self.select, event)
-        #print "on_mouse_release enableDrawing=%s, select=%s, event=%s" % v
         if not self.enableDrawing: return
-        #print "on_mouse_release, self.parent.title=", self.parent.title
         if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ShiftModifier: return
         if event._button == 1:
             # this call is for showing info on the control panel
@@ -1021,6 +1201,7 @@ class Canvas(app.Canvas):
         if event == None: return
         x0, y0 = event.press_event.pos
         x1, y1 = event.last_event.pos
+
         self.zoomWidget.setGeometry(QtCore.QRect(QPoint(x0+self.offsetX,y0+self.offsetY), 
                                                  QPoint(x1+self.offsetX,y1+self.offsetY)).normalized())
         self.zoomWidget.show()   
@@ -1031,117 +1212,143 @@ class Canvas(app.Canvas):
         if v!=False:
             #print "on_mouse_release: ", v 
             self.LT, self.RB = v 
+            # save this new values for selection to zoom or pass to support window
             
         else: self.zoomWidget.hide()
 
-
+    """
+    # Author: Lan
+    # def: on_mouse_move() 201508
+    #     use to expand zoomWidget with each move
+    #     But need to comment out because of its poor performance
+    def on_mouse_move(self, event):
+        if not self.enableDrawing: return           
+        if event.is_dragging and self.select:               
+            x0, y0 = event.press_event.pos
+            x1, y1 = event.last_event.pos
+            #print "(%s,%s) - (%s,%s)" % (x0,y0,x1,y1) 
+            self.zoomWidget.setGeometry(QtCore.QRect(QPoint(x0+self.offsetX,y0+self.offsetY), 
+                                                     QPoint(x1+self.offsetX,y1+self.offsetY)).normalized())
+            self.zoomWidget.show()         
+    """
     ###################################
     # Author: Lan
     # def: calcPanScale() 201508
     #     apply new pans and scales into self.program and self.gProgram
     def applyNewPanScale(self):
-        for i in range(len(self.data)):
-            self.program[i]['u_scale'] = (self.canvScaleT, self.canvScaleV)
-            self.program[i]['u_pan'] = (self.panT, self.panV )
-        
-        if self.gtProgram != None: 
-            self.gtProgram[ 'u_scale'] = (self.canvScaleT, self.canvScaleV)
-            self.gtProgram['u_pan'] = (self.panT, self.panV )
-        if self.gdProgram != None: 
-            self.gdProgram[ 'u_scale'] = (self.canvScaleT, self.canvScaleV)
-            self.gdProgram['u_pan'] = (self.panT, self.panV )
+        for ch in self.control.channels:
+            for i in range(len(self.data[ch])):
+                self.program[ch][i]['u_scale'] = (self.canvScaleT, self.canvScaleV)
+                self.program[ch][i]['u_pan'] = (self.panT, self.panV )
+            
+            if self.gtProgram != None: 
+                self.gtProgram[ 'u_scale'] = (self.canvScaleT, self.canvScaleV)
+                self.gtProgram['u_pan'] = (self.panT, self.panV )
+            if self.gdProgram != None: 
+                self.gdProgram[ 'u_scale'] = (self.canvScaleT, self.canvScaleV)
+                self.gdProgram['u_pan'] = (self.panT, self.panV )
 
     ###################################
     # Author: Lan
-    # def: trimData() 201508
+    # def: trimData() 201601
     #    cut off the stations and time outside the selection
     #     + if a station in deepRemoved list, it will have no value 
     #     + at the 2 edges if the time values need to be added, PH5 values will use center value
     def trimData(self, D):
-        #print "\ntrimData"
-        # self.startStatId: the start station Id of the beginning of this window
-        # startStatId:  the start station Id of this zoomed section (LT)
-        #    (may cut off one station if that part is minor)
+        #print "\ntrimData LT=%s, RB=%s" % (self.LT, self.RB)
+
         LT = self.LT
         RB = self.RB
-        # in case of indexes go in opposite or der of distance offset, => need to switch index value
+        # if indexes go in opposite of distance offset => need to switch index value
         # do it for trimData() only, if other parts have problem, will consider changing later
         if LT['index'] > RB['index']: LT, RB = self.RB, self.LT
+        
+        # self.startStatId: the start station Id of the beginning of this window
+        # startStatId:  the start station Id of this zoomed section (LT)
+        #    (may cut off one station if that part is minor)        
         orgStartId = self.startStatId
         startStatId = LT['index'] 
-        if LT['sentVal'] > LT['sentCenter']:
+        if self.control.PH5Info['up']==True and LT['sentVal'] > LT['sentCenter']\
+        or self.control.PH5Info['up']==False and LT['sentVal'] < LT['sentCenter']:
             startStatId +=1
         
+            
         # self.endStatId: the end station Id consider the beginning of this window
-        # startStatId:  the end station Id of this zoomed section (RB)
+        # endStatId:  the end station Id of this zoomed section (RB)
         #    (may cut off one station if that part is minor)
         endStatId = RB['index']
-        if RB['sentVal'] < RB['sentCenter']:
+        if self.control.PH5Info['up']==True and RB['sentVal'] < RB['sentCenter'] \
+        or self.control.PH5Info['up']==False and RB['sentVal'] > RB['sentCenter']:
             endStatId -=1
  
-        index = 0
-        newData = []
+        
+        newData = {}
         timeTop = self.LT['sentTimeVal']
         timeBot = self.RB['sentTimeVal']
-        
-        for i in range(startStatId, endStatId+1):
-            if self.control.metadata[i+orgStartId]['seq'] in self.control.PH5Info['deepRemoved']: 
-                newData.append( np.zeros(0,
+        for ch in self.control.channels:
+            newData[ch] = []
+            index = 0
+            for i in range(startStatId, endStatId+1):
+                statId = i+orgStartId #self.control.metadata[i+orgStartId]['seq'] 
+                if not self.control.channelCkbs[ch].isChecked() \
+                or statId in self.control.PH5Info['deepRemoved'][ch] \
+                or self.control.PH5Info['LEN'][ch][i]==0: 
+                    newData[ch].append( np.zeros(0,
+                                        dtype=[('a_position', np.float32, 2),
+                                               ('a_color', np.float32, 3),
+                                               ('a_index', np.float32, 1)]) )
+                    index +=1
+                    continue
+                
+                timeVals = D[ch][i+orgStartId]['a_position'][:, 0]
+                ADD = self._findTrimKeepList(i, timeVals, timeTop, timeBot)
+                if ADD==False: return
+                trimKeepList, addLT, addRB, aSize = ADD
+    
+                #try:                 
+                
+                newData[ch].append( np.zeros(aSize,
                                     dtype=[('a_position', np.float32, 2),
                                            ('a_color', np.float32, 3),
                                            ('a_index', np.float32, 1)]) )
+                if aSize>0: 
+                    T = D[ch][i]['a_position'][:, 0][trimKeepList]
+                    V = D[ch][i]['a_position'][:, 1][trimKeepList]
+                    aColor = D[ch][i]['a_color'][0]
+                    center = self.control.statLimitList[i+orgStartId].mean()
+    
+                        
+                    startT = [timeTop]
+                    endT = [timeBot]
+                    # use center as the value to add in
+                    # choose to add at the top or end of the list depend on the time direction
+                    if self.control.upRbtn.isChecked():
+                        if addLT : 
+                            T = np.append(T, startT )
+                            V = np.append(V, center)
+                        if addRB:
+                            T = np.insert(T, 0, endT)
+                            V = np.insert(V, 0, center)
+                    else:                       
+                        if addLT : 
+                            T = np.insert(T, 0, startT )
+                            V = np.insert(V, 0, center)
+                        if addRB:
+                            T = np.append(T, endT)
+                            V = np.append(V, center)
+                    #print "ch=%s index=%s newData[ch]=%s" % (ch,index, newData[ch])
+                    newData[ch][index]['a_position'][:, 0] = T
+                    newData[ch][index]['a_position'][:, 1] = V
+                    newData[ch][index]['a_color'] = np.tile(aColor,(aSize,1))
+                    newData[ch][index]['a_index'] = np.repeat(0,aSize)
+    
                 index +=1
-                continue
-            
-            timeVals = D[i+orgStartId]['a_position'][:, 0]
-            ADD = self._findTrimKeepList(i, timeVals, timeTop, timeBot)
-            if ADD==False: return
-            trimKeepList, addLT, addRB, aSize = ADD
-
-            #try:                 
-            
-            newData.append( np.zeros(aSize,
-                                dtype=[('a_position', np.float32, 2),
-                                       ('a_color', np.float32, 3),
-                                       ('a_index', np.float32, 1)]) )
-            if aSize>0: 
-                T = D[i]['a_position'][:, 0][trimKeepList]
-                V = D[i]['a_position'][:, 1][trimKeepList]
-                aColor = D[i]['a_color'][0]
-                center = self.control.statLimitList[i+orgStartId].mean()
-
-                    
-                startT = [timeTop]
-                endT = [timeBot]
-                # use center as the value to add in
-                # choose to add at the top or end of the list depend on the time direction
-                if self.control.upRbtn.isChecked():
-                    if addLT : 
-                        T = np.append(T, startT )
-                        V = np.append(V, center)
-                    if addRB:
-                        T = np.insert(T, 0, endT)
-                        V = np.insert(V, 0, center)
-                else:                       
-                    if addLT : 
-                        T = np.insert(T, 0, startT )
-                        V = np.insert(V, 0, center)
-                    if addRB:
-                        T = np.append(T, endT)
-                        V = np.append(V, center)
-
-                newData[index]['a_position'][:, 0] = T
-                newData[index]['a_position'][:, 1] = V
-                newData[index]['a_color'] = np.tile(aColor,(aSize,1))
-                newData[index]['a_index'] = np.repeat(0,aSize)
-
-            index +=1
-            """
-            except Exception, e:   
-                print e
-                print "trimData:i=%s, aSize=%s, error2:%s" % (i,aSize,e)
-                break
-            """
+                """
+                except Exception, e:   
+                    print e
+                    print "trimData:i=%s, aSize=%s, error2:%s" % (i,aSize,e)
+                    break
+                """
         if self.parent.title == "Main Window":
             self.control.setAllReplotBtnsEnabled(False, resetCanvas=False)
             
@@ -1247,10 +1454,12 @@ class Canvas(app.Canvas):
     # def: update_scale(): 201507
     #    recalc limList (limit of displaying for each station)
     def update_scale(self):
-        self.canvScaleT, self.canvScaleV = self.program[0]['u_scale']
-        self.panT, self.panV = self.program[0]['u_pan']
+        ch0 = self.program.keys()[0]
+        self.canvScaleT, self.canvScaleV = self.program[ch0][0]['u_scale']
+        self.panT, self.panV = self.program[ch0][0]['u_pan']
+          
         L1 = self.startStatId
-        L2 = L1 + len(self.data)
+        L2 = L1 + self.control.PH5Info['numOfStations']
         self.limList = ( self.canvScaleV*(self.control.statLimitList[L1:L2] + self.panV ) + 1 ) * self.width * 0.5
 
         
@@ -1267,7 +1476,7 @@ class Canvas(app.Canvas):
         self.canvScaleV = 2/abs( LT['sentVal'] - RB['sentVal'] )
         
         L1 = self.startStatId
-        L2 = L1 + len(self.data)
+        L2 = L1 + self.control.PH5Info['numOfStations']
         self.limList = ( self.canvScaleV*(self.control.statLimitList[L1:L2] + self.panV ) + 1 ) * self.width * 0.5
 
     ###################################
@@ -1275,6 +1484,7 @@ class Canvas(app.Canvas):
     # def: _zoomTo() 201511
     # change pans, scale to fit Left-Top, Right-Bottom positions into the displaying window    
     def _zoomTo(self, LT, RB):
+        #print "_zoomTo"
         self._calcPanScale(LT, RB)
         self.applyNewPanScale()
         self.gtData, self.gdData, self.timeY, self.tLabels, self.dLabels = self.buildGrid()
@@ -1300,6 +1510,7 @@ class Canvas(app.Canvas):
     # def: onRight() 201511
     # zoom to the new section which move to the right self.parent.distance      
     def onRight(self, evt):
+        #print "onRight"
         LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
 
         newLT = {}
@@ -1309,8 +1520,12 @@ class Canvas(app.Canvas):
         newRB = {}
         newRB['sentVal'] = RB['sentVal'] - float(self.parent.distance.text())*1000*2/self.control.totalSize
         newRB['sentTimeVal'] = RB['sentTimeVal']      
-          
-        if newRB['sentVal'] < -1: return
+
+        if newRB['sentVal'] < -1: 
+            msg = "Cannot Move the plot Right any more." + \
+                  "\nYou may want to reduce the zoom/pan distance."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)              
+            return
         self._zoomTo(newLT, newRB)
 
     ###################################
@@ -1318,7 +1533,12 @@ class Canvas(app.Canvas):
     # def: onLeft() 201511
     # zoom to the new section which move to the left self.parent.distance   
     def onLeft(self, evt):
-        LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
+        #print "onLeft"
+        v = self.defineViewWindow(0, 0, self.width, self.height)
+        if v == False:
+            print "onLeft error in defineViewWindow"
+        else:
+            LT, RB = v
         newLT = {}
         newLT['sentVal'] = LT['sentVal'] + float(self.parent.distance.text())*1000*2/self.control.totalSize
         newLT['sentTimeVal'] = LT['sentTimeVal']
@@ -1326,8 +1546,12 @@ class Canvas(app.Canvas):
         newRB = {}
         newRB['sentVal'] = RB['sentVal'] + float(self.parent.distance.text())*1000*2/self.control.totalSize
         newRB['sentTimeVal'] = RB['sentTimeVal']
-        
-        if newLT['sentVal'] > 1: return
+
+        if newLT['sentVal'] > 1: 
+            msg = "Cannot Move the plot Left any more." + \
+                  "\nYou may want to reduce the zoom/pan distance."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)              
+            return
         self._zoomTo(newLT, newRB)        
 
     ###################################
@@ -1335,6 +1559,7 @@ class Canvas(app.Canvas):
     # def: onZoomOutW() 201511
     # zoom to the new section which horizontally zoom out self.parent.distance each side
     def onZoomOutW(self, evt):
+        #print "onZoomOUtW"
         LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
         newLT = {}
         newLT['sentVal'] = LT['sentVal'] - float(self.parent.distance.text())*1000*2/self.control.totalSize
@@ -1343,7 +1568,12 @@ class Canvas(app.Canvas):
         newRB = {}
         newRB['sentVal'] = RB['sentVal'] + float(self.parent.distance.text())*1000*2/self.control.totalSize
         newRB['sentTimeVal'] = RB['sentTimeVal']
-        if newRB['sentVal']-newLT['sentVal']>6: return
+
+        if newRB['sentVal']-newLT['sentVal']>6: 
+            msg = "Cannot Zoom Out in distance/value direction any more." + \
+                  "\nYou may want to reduce the zoom/pan distance."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)              
+            return
         self._zoomTo(newLT, newRB)    
         
         
@@ -1352,6 +1582,7 @@ class Canvas(app.Canvas):
     # def: onZoomInW() 201511
     # zoom to the new section which horizontally zoom in self.parent.distance each side  
     def onZoomInW(self, evt):
+        #print "onZoomInW"
         LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
         newLT = {}
         newLT['sentVal'] = LT['sentVal'] + float(self.parent.distance.text())*1000*2/self.control.totalSize
@@ -1361,7 +1592,11 @@ class Canvas(app.Canvas):
         newRB['sentVal'] = RB['sentVal'] - float(self.parent.distance.text())*1000*2/self.control.totalSize
         newRB['sentTimeVal'] = RB['sentTimeVal']
 
-        if newLT['sentVal']>newRB['sentVal']: return
+        if newLT['sentVal']>newRB['sentVal']: 
+            msg = "Cannot Zoom In in distance/value direction any more." + \
+                  "\nYou may want to reduce the zoom/pan distance."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)              
+            return
         self._zoomTo(newLT, newRB)  
 
     ###################################
@@ -1369,6 +1604,7 @@ class Canvas(app.Canvas):
     # def: onUp() 201511
     # zoom to the new section which move up self.parent.time                 
     def onUp(self, evt):
+        #print "onUp"
         LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
         
         newLT = {}
@@ -1379,7 +1615,10 @@ class Canvas(app.Canvas):
         newRB['sentTimeVal'] = RB['sentTimeVal'] + float(self.parent.time.text())*1000*self.control.scaleT
         newRB['sentVal'] = RB['sentVal'] 
         
-        if newLT['sentTimeVal'] > 1: return
+        if newLT['sentTimeVal'] > 1: 
+            msg = "Cannot Move the plot Up any more.\nYou may want to reduce the zoom/pan time."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)              
+            return
         self._zoomTo(newLT, newRB)    
 
     ###################################
@@ -1387,6 +1626,7 @@ class Canvas(app.Canvas):
     # def: onDown() 201511
     # zoom to the new section which move down self.parent.time          
     def onDown(self, evt):
+        #print "onDown"
         LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
         
         newLT = {}
@@ -1397,7 +1637,10 @@ class Canvas(app.Canvas):
         newRB['sentTimeVal'] = RB['sentTimeVal'] - float(self.parent.time.text())*1000*self.control.scaleT
         newRB['sentVal'] = RB['sentVal']
         
-        if newRB['sentTimeVal'] < -1: return
+        if newRB['sentTimeVal'] < -1: 
+            msg = "Cannot Move the plot Down any more.\nYou may want to reduce the zoom/pan time."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)              
+            return
         self._zoomTo(newLT, newRB)    
 
     ###################################
@@ -1416,7 +1659,10 @@ class Canvas(app.Canvas):
         newRB['sentTimeVal'] = RB['sentTimeVal'] - float(self.parent.time.text())*1000*self.control.scaleT
         newRB['sentVal'] = RB['sentVal'] 
         
-        if newLT['sentTimeVal'] > newRB['sentTimeVal']: return
+        if newLT['sentTimeVal'] > newRB['sentTimeVal']: 
+            msg = "Cannot Zoom In in time direction any more.\nYou may want to reduce the zoom/pan time."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
+            return
         self._zoomTo(newLT, newRB)    
         
     ###################################
@@ -1424,6 +1670,7 @@ class Canvas(app.Canvas):
     # def: onZoomOutH() 201511
     # zoom to the new section which vertically zoom out self.parent.time each side   
     def onZoomOutH(self, evt):
+        #print "onZoomOutH"
         LT, RB = self.defineViewWindow(0, 0, self.width, self.height)
         #direct = -1 if self.control.upRbtn.isChecked() else 1
         
@@ -1435,7 +1682,10 @@ class Canvas(app.Canvas):
         newRB['sentTimeVal'] = RB['sentTimeVal'] + float(self.parent.time.text())*1000*self.control.scaleT
         newRB['sentVal'] = RB['sentVal'] 
         
-        if newRB['sentTimeVal'] - newLT['sentTimeVal']>6: return
+        if newRB['sentTimeVal'] - newLT['sentTimeVal']>6: 
+            msg = "Cannot Zoom Out in time direction any more.\nYou may want to reduce the zoom/pan time."
+            QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)            
+            return
         self._zoomTo(newLT, newRB)    
         
     ###################################
@@ -1444,7 +1694,7 @@ class Canvas(app.Canvas):
     #    shit + right click on a station to show the info of that station
     #    self.select: show the starting point of selection section
     def on_mouse_press(self, event):
-        v = (self.enableDrawing, self.select, event)
+        #v = (self.enableDrawing, self.select, event)
         #print "on_mouse_release enableDrawing=%s, select=%s, event=%s" % v
         #global pointerWidget; pointerWidget.hide()
         for i in range(3): self.parent.statSelectors[i].hide()
@@ -1452,23 +1702,33 @@ class Canvas(app.Canvas):
         if not self.enableDrawing: return 
         control = self.control
         x,y = event._pos
+        #print "on_mouse_press: self.select=%s, x=%s, y=%s" % (self.select, x, y)
         #pointerWidget.move(self.parent.mapToGlobal(QPoint(x, y+self.offset))); pointerWidget.show()
         #modifiers = QtGui.QApplication.keyboardModifiers()
         if event._button == 2:          
             dataList = self.locateDataPoint(x, y, getInfo=True)
             #print "on_mouse_press len(d)=", len(dataList)
             #print dataList
-            for ip in control.infoPanels: ip.hide()
+            #for ip in control.infoPanels: ip.hide()
+            control.infoParentPanel.hide()
+            while len(control.infoPanels) > 0:
+                ip = control.infoPanels.pop()
+                control.infoBox.removeWidget(ip)
+                ip.deleteLater()
 
             count = 0
             for d in dataList:
                 info = ""
-                self.parent.statSelectors[count].setGeometry(d['statX']-2+self.offsetX,self.offsetY, 4, 4)
-                self.parent.statSelectors[count].show() 
+                if count < len(self.parent.statSelectors):
+                    # only show maximum 3 selected station because
+                    # 1. want to preset to save time
+                    # 2. too many stations will overlap each other so usere can't see all anyway
+                    self.parent.statSelectors[count].setGeometry(d['statXMean']-2+self.offsetX,self.offsetY, 4, 4)
+                    self.parent.statSelectors[count].show() 
                 #count +=1
                 statData = control.metadata[d['statId']]
                 #info += "statId:" + str(d['statId'])
-                info += "Sequence: " + str(statData['seq'])
+                info += "Sequence: " + str(d['statId']) #str(statData['seq'])
    
                 if control.correctionCkb.isChecked() or control.vel!=None:
                     #print "don't need rel Time"
@@ -1510,14 +1770,15 @@ class Canvas(app.Canvas):
                 info += "\nLattitude: " + str(statData['lat'])
                 info += "\nLongtitude: " + str(statData['long'])
                 info += "\nElevation: %s (%s)" % (statData['elev'], statData['elevUnit'])
-                control.infoPanels[count].showInfo(info, self, d['statId'])
+                #control.infoPanels[count].showInfo(info, self, d['statId'])
+                control.infoPanels.append(InfoPanel(control, info, self, d['statId']))
                 if count>2: break
                 count +=1
                 
             if count>0:
-                self.control.infoParentPanel.setGeometry(0, 10,200, 350)
-                self.control.infoParentPanel.show()
-                self.control.infoParentPanel.raise_()
+                control.infoBox.addStretch(1)
+                control.infoParentPanel.show()
+                control.infoParentPanel.raise_()
 
         elif self.select:
             self.zoomWidget.setGeometry(QtCore.QRect(QPoint(x+self.offsetX,y+self.offsetY), 
@@ -1525,104 +1786,95 @@ class Canvas(app.Canvas):
             self.zoomWidget.show()
     ###################################
     # Author: Lan
-    # def: locateDataPoint(): 201507
+    # def: locateDataPoint(): 201601
     #    calc the time, value, statId corresponding to the position  
-    def locateDataPoint(self, x, y, getInfo=None):
-        #print "locateDataPoint, x=%s, y=%s" % (x,y)
+    def locateDataPoint(self, x, y, getInfo=False):
+        #print "locateDataPoint, getInfo=%s, x=%s, self.startStatId=%s" % (getInfo, x,self.startStatId)
         returnVal = False
         secId = -1
         resultList = []
         direct = -1 if self.control.upRbtn.isChecked() else 1
         enough = False
-        # self.limList: list of postion ranges on the display for stations 
-        # - 2 contiguous stations can be overlaped
-        for i in range(len(self.limList)):
-            if returnVal != False:
-                resultList.append(returnVal)
-                # start secId from the first return value
-                secId = i       
-                returnVal = False
-                if enough: break
-            # once starting secId (secId>0), it is set to value 'i' until no more to return (returnVal=False), 
-            # then i > secId => finish trying to get returnVal
-            if secId>0 and i> secId: break  
-            statId = None
-            # when x belong to one station
-            v = (self.limList[i][0],self.limList[i][1], x)
-            if x>=self.limList[i][0] and x<=self.limList[i][1]:
-                returnVal = False               # reset returnVal
-                # i: index for stuffs belong to canvas
-                # statId: index for stuffs belong to control
-                statId = i + self.startStatId
-            # when getting postion for selected section
-            # if the edge not belong to any stations 
-            #=> add the beginning or the last station respectively 
-            elif getInfo==None:
+        # self.limList: list of postion ranges on the display for traces 
+        # When getInfo: more than two indeces can be listed
+        
+        #print "self.limList:", self.limList
+        # indeces list of indeces in limList where x fall into
+        k = np.where( (self.limList[:,0] <= x) & (self.limList[:,1] >= x) & (self.limList[:,0]!=self.limList[:,1]) )
+        indeces = k[0]
+        if not getInfo:
+            if len(k[0])>0: indeces = indeces[:1]
+            else:
+                # when getting postion for selected section
+                # There are 3 cases that the position not belong to any traces 
                 minLim = self.limList.min()
                 maxLim = self.limList.max()
-                if  x<=minLim:
-                    i = np.where(self.limList==minLim)[0][0]
-                    statId = i + self.startStatId
-                    enough = True               # to prevent continuing looping through limList
-                elif x>=maxLim:
-                    i = np.where(self.limList==maxLim)[0][0]
-                    statId = i + self.startStatId
-                    enough = True               # to prevent continuing looping through limList
-                elif i<len(self.limList)-1 and x>self.limList[i][1] and x<self.limList[i+1][0]:
-                    #print "x=%s [%s - %s] [%s - %s]" % (x, self.limList[i][0],self.limList[i][1],self.limList[0][0], self.limList[-1][1])
-                    statId = i + self.startStatId
-                    enough = True
-            # statId!=None: there is value to be processed
-            
-            if statId !=None:  
-                statX = self.limList[i].mean()
-                # sentTimeVal: timeVal in range (-1,1) that has been sent to canvas to draw
-                sentTimeVal = ((2.*y/self.height-1)/self.canvScaleT - self.panT)
-                # dispTimeVal: timeVal shown on the axisY
-                # relVal: if choose not to apply any reductions on the drawing,
-                #        the real timeVal on each station may be varied from the value on axisY.
-                #        This relative  value is the value with all the reductions added
-                dispTimeVal = (direct*sentTimeVal +1)/self.control.scaleT  + self.control.minT
-
-                """#double check
-                timeIndex = int(round(dispTimeVal / self.control.PH5Info['interval']))
-                print "statId=%s, timeIndex:%s" %  (statId,timeIndex)
-                if timeIndex in self.control.keepList[statId]:
-                    newValIndex = self.control.keepList[statId].index(timeIndex)
-                    comparePH5Val = self.control.ph5val[statId][newValIndex]
-                    print "compare with PH5Val:", comparePH5Val
-                """
-                sentMin = self.control.statLimitList[statId][0]
-                sentMax = self.control.statLimitList[statId][1]
-
-                sentCenter = (sentMin+sentMax)/2
-                orgCenter =  (sentCenter + 1)*self.control.maxVal/2
-                valCenter =  (self.control.metadata[statId]['minmax'][1]+self.control.metadata[statId]['minmax'][0])/2
                 
-                orgZero = orgCenter - valCenter*self.control.scaleVList[statId]
+                if  x<=minLim:  
+                    #1 when x is out of the left limit, use the left limit
+                    indeces = np.where(self.limList==minLim)[0]
+                
+                elif x>=maxLim: 
+                    #2 when x is out of the right limit, use the right limit
+                    indeces = np.where(self.limList==maxLim)[0]  
+                    
+                else:
+                    # when x is inside limit but not in any limList, use the next greater available
+                    k = np.where(self.limList[:,0]>x)[0]
+                    if self.control.PH5Info['up']==True: indeces = [k.min()]
+                    else: indeces = [k.max()]
 
-                sentVal = (x*2./self.width -1)/self.canvScaleV  - self.panV
-                """#double check
-                if timeIndex in self.control.keepList[statId]:
-                    val = self.data[i]['a_position'][:, 1][ newValIndex]
-                    print "sentVal=%s compare with val=%s" % (sentVal,val)
-                """   
-                PH5Val = ((sentVal+1)*self.control.maxVal/2 - orgZero)/self.control.scaleVList[statId]
+        for i in indeces:
+            statId = i + self.startStatId         
+            if self.control.metadata[statId] == None: continue
+            statXMean = self.limList[i].mean()
+            # sentTimeVal: timeVal in range (-1,1) that has been sent to canvas to draw
+            sentTimeVal = ((2.*y/self.height-1)/self.canvScaleT - self.panT)
+            # dispTimeVal: timeVal shown on the axisY
+            # relVal: if choose not to apply any reductions on the drawing,
+            #        the real timeVal on each station may be varied from the value on axisY.
+            #        This relative  value is the value with all the reductions added
+            dispTimeVal = (direct*sentTimeVal +1)/self.control.scaleT  + self.control.minT
 
-                PH5Min = ((sentMin+1)*self.control.maxVal/2 - orgZero)/self.control.scaleVList[statId]
-                PH5Max = ((sentMax+1)*self.control.maxVal/2 - orgZero)/self.control.scaleVList[statId]
-                returnVal = {'statId': statId, 
-                             'index': i,
-                             'PH5Val': int(round(PH5Val)), 
-                             'dispTimeVal': dispTimeVal, 
-                             'sentTimeVal': sentTimeVal, 
-                             'sentVal': sentVal,
-                             'sentCenter': sentCenter,
-                             'PH5Min': PH5Min,
-                             'PH5Max': PH5Max,
-                             'statX': statX}
-        # get the last value when loop is end (the returnVal is of the last station)
-        if returnVal != False:  
+            """#double check
+            timeIndex = int(round(dispTimeVal / self.control.PH5Info['interval']))
+            print "statId=%s, timeIndex:%s" %  (statId,timeIndex)
+            if timeIndex in self.control.keepList[statId]:
+                newValIndex = self.control.keepList[statId].index(timeIndex)
+                comparePH5Val = self.control.ph5val[statId][newValIndex]
+                print "compare with PH5Val:", comparePH5Val
+            """
+            sentMin = self.control.statLimitList[statId][0]
+            sentMax = self.control.statLimitList[statId][1]
+
+            sentCenter = (sentMin+sentMax)/2
+            orgCenter =  (sentCenter + 1)*self.control.maxVal/2
+            
+            valCenter =  (self.control.metadata[statId]['minmax'][1]+self.control.metadata[statId]['minmax'][0])/2
+                
+            orgZero = orgCenter - valCenter*self.control.scaleVList[statId]
+
+            sentVal = (x*2./self.width -1)/self.canvScaleV  - self.panV
+            """#double check
+            if timeIndex in self.control.keepList[statId]:
+                val = self.data[i]['a_position'][:, 1][ newValIndex]
+                print "sentVal=%s compare with val=%s" % (sentVal,val)
+            """   
+            PH5Val = ((sentVal+1)*self.control.maxVal/2 - orgZero)/self.control.scaleVList[statId]
+
+            PH5Min = ((sentMin+1)*self.control.maxVal/2 - orgZero)/self.control.scaleVList[statId]
+            PH5Max = ((sentMax+1)*self.control.maxVal/2 - orgZero)/self.control.scaleVList[statId]
+            returnVal = {'statId': statId, 
+                         'index': i,
+                         'PH5Val': int(round(PH5Val)), 
+                         'dispTimeVal': dispTimeVal, 
+                         'sentTimeVal': sentTimeVal, 
+                         'sentVal': sentVal,
+                         'sentCenter': sentCenter,
+                         'PH5Min': PH5Min,
+                         'PH5Max': PH5Max,
+                         'statXMean': statXMean}
+         
             resultList.append(returnVal)
 
         return resultList
@@ -1656,7 +1908,7 @@ class Canvas(app.Canvas):
         # call dialog to change the size of the image
         vals = PrintSaveParaDialog.print_save(self, self.printType, 'inch', (paperRect.width(),paperRect.height()) )
         if vals==None: return
-        w, h, printType = vals[0], vals[1], vals[2]
+        w, h, legend, printType = vals[0], vals[1], vals[2], vals[3]
         start = time.time()
         phase = "Printing"
         showStatus(phase, '')
@@ -1670,7 +1922,7 @@ class Canvas(app.Canvas):
         # set tight layout to save space for image
         fig.set_tight_layout(True)
         # plot data
-        self.painting(printType)
+        self.painting(printType, legend)
         fname = 'temp.png'
         # get printer's resolution for saving the figure
         resolution = self.printer.resolution()
@@ -1710,7 +1962,7 @@ class Canvas(app.Canvas):
         # call dialog to change the size of the image
         vals = PrintSaveParaDialog.print_save(self, saveType, 'pixels', (w, h) )
         if vals==None: return 
-        w, h, saveType, fileformat = vals[0], vals[1],vals[2], vals[3]
+        w, h, legend, saveType, fileformat = vals[0], vals[1],vals[2], vals[3], vals[4]
         
         # QFileDialog to set the name of the new image file                
         dialog = QtGui.QFileDialog(self.parent)
@@ -1735,7 +1987,7 @@ class Canvas(app.Canvas):
         # set tight layout to save space for image
         fig.set_tight_layout(True)
         # plot data
-        self.painting(saveType)
+        self.painting(saveType, legend)
         
         # remove the old five before saving the new one
         try:
@@ -1761,7 +2013,7 @@ class Canvas(app.Canvas):
     #    + limit stations
     #    + draw the whole data of the station in that window (data after trimming)
     #    + use ax.set_ylim to limit
-    def painting(self, psType):
+    def painting(self, psType, legend):
         conf = self.control.conf
 
         direct = -1 if self.control.upRbtn.isChecked() else 1
@@ -1776,9 +2028,13 @@ class Canvas(app.Canvas):
             if RB['sentVal'] < RB['sentCenter']: endId -=1
 
             timeY = self.timeY[self.gridT['start']:self.gridT['end']]
+            print "1: startId:%s, endId:%s" % (startId,endId)
         else:               # paint the starting view ( after trimming)
             startId = 0
-            endId = len(self.data) - 1
+            for ch in self.data.keys():
+                endId = len(self.data[ch]) - 1
+                break
+            print "2: startId:%s, endId:%s" % (startId,endId)
             # if this has been zoom from the starting scale
             # => need to rebuild grid
             if self.canvScaleT != self.parent.canvScaleT:
@@ -1791,29 +2047,48 @@ class Canvas(app.Canvas):
                 timeY = self.timeY[self.gridT['start']:self.gridT['end']]
                 
             minY = self.mainMinY
-            maxY = self.mainMaxY         
+            maxY = self.mainMaxY 
             
-        minX = self.data[startId]['a_position'][:, 1].min()
-        maxX = self.data[endId]['a_position'][:, 1].max()
+        minXList = []
+        maxXList = []
+
         thick = conf['plotThick'] if conf.has_key('plotThick') else .5
+        chLbls = []
         # plot stations one by one
-        for i in range(startId, endId+1):
-            if i % 10 == 0: showStatus("Plotting: ", "%s/%s" % (i, endId-startId+1))
-            if self.control.metadata[i+self.startStatId]['seq'] \
-               in self.control.PH5Info['deepRemoved']: continue
-            plt.plot(self.data[i]['a_position'][:, 1], 
-                     direct*self.data[i]['a_position'][:, 0],
-                     c=self.data[i]['a_color'][0], linewidth=thick)
+        for ch in self.control.channels:
+            if not self.control.channelCkbs[ch].isChecked(): continue
+            minXList.append( self.data[ch][startId]['a_position'][:, 1].min() )
+            maxXList.append( self.data[ch][endId]['a_position'][:, 1].max()   )         
+            for i in range(startId, endId+1):
+                if i % 10 == 0: showStatus("Plotting: ", "%s/%s" % (i, endId-startId+1))
+                #seq = self.control.metadata[i+self.startStatId]['seq']
+                statId = i+self.startStatId
+                if self.control.metadata[i]==None \
+                or statId in self.control.PH5Info['deepRemoved'][ch] \
+                or self.control.PH5Info['LEN'][ch][i]==0: continue
+                
+                p, = plt.plot(self.data[ch][i]['a_position'][:, 1], 
+                         direct*self.data[ch][i]['a_position'][:, 0],
+                         c=self.data[ch][i]['a_color'][0], linewidth=thick)
+                if ch not in chLbls:
+                    chLbls.append(ch)
+                    p.set_label("channel %s" % ch)
+                    #print "label:", ch
+                
+                
+                
+        minX = min(minXList)
+        maxX = max(maxXList)
                       
         showStatus("Gridding","")
 
         thick = conf['gridThick'] if conf.has_key('gridThick') else 1
     
-        if self.gtProgram and self.control.horGridCkb.isChecked():
+        if self.gtProgram and self.control.timeGridCkb.isChecked():
             for i in range(len(timeY)):
                 plt.plot( [minX, maxX], 
                           [timeY[i], timeY[i]],'--',
-                          c=QColor(conf['gridColor']).getRgbF()[:3], linewidth=thick )
+                          c=QColor(conf['gridColor']).getRgbF()[:3], linewidth=thick)
             
         ax = plt.subplot(111)
         ax.set_xlim(minX, maxX)
@@ -1825,7 +2100,7 @@ class Canvas(app.Canvas):
         plt.title(graphName, fontsize=fSize)
         if conf.has_key('hLabel'):
             fSize = conf['hLabelFSize'] if conf.has_key('hLabelFSize') else 9
-            plt.xlabel(conf['hLabel'], fontsize=fSize)            
+            plt.xlabel(conf['hLabel'], fontsize=fSize)    # labelpad=: distance from xtick        
         if conf.has_key('vLabel'):
             fSize = conf['vLabelFSize'] if conf.has_key('vLabelFSize') else 9
             plt.ylabel(conf['vLabel'], fontsize=fSize)         
@@ -1849,6 +2124,12 @@ class Canvas(app.Canvas):
         plt.tick_params(axis='both', which='major', labelsize=9)
         plt.xticks(x, xLabel)
         plt.yticks(y, yLabel)
+        if legend:
+            # http://matplotlib.org/api/pyplot_api.html: loc=2 => 'upper left'
+            # with bbox_to_anchor=(xleft, ytop, xright, ybottom)
+            # http://stackoverflow.com/questions/7125009/how-to-change-legend-size-with-matplotlib-pyplot: prop
+            plt.legend(bbox_to_anchor=(-.05, -.127, .2, .102), loc=2,
+                       ncol=3, borderaxespad=0, prop={'size':9})
         #plt.show()
 
 
@@ -1862,24 +2143,37 @@ class Canvas(app.Canvas):
     #    => change color of station back to the color saved in quickRemoved List
     #    => delete item corresponding to this station in quickRemoved list
     #    => b/c there are 2 canvas, item might already be deleted from quickRemoved List
-    def quickRemove(self, statId, removedStatus, c=0):
-        if not self.enableDrawing: return 1
+    def quickRemove(self, ch, statId, removedStatus, c=0):
+        #print "canvas.quickRemove: ch=%s, statId=%s, removedStatus=%s, c=%s" % (ch, statId, removedStatus, c)
+        if not self.enableDrawing:  print "quickRemove return 1";return 1
+       
         canvId = statId - self.startStatId
-        if canvId<0 or canvId>=len(self.data): return 2 
-        aSize = len(self.data[canvId]['a_index'])
+        #print "canvId=", canvId
+        if canvId<0 or canvId>=len(self.data[ch]): return 2 #print "quickRemove return 2"; return 2 
+        aSize = len(self.data[ch][canvId]['a_index'])
         if removedStatus:
-            self.control.PH5Info['quickRemoved'][statId] = deepcopy(self.data[canvId]['a_color'][0])
+            self.control.PH5Info['quickRemoved'][ch][statId] = deepcopy(self.data[ch][canvId]['a_color'][0])
             #print self.control.PH5Info['removed'][statId].__class__.__name__
             c = QColor(QtCore.Qt.white).getRgbF()[:3]
-            self.data[canvId]['a_color'] = np.tile(c, (aSize,1))
+            self.data[ch][canvId]['a_color'] = np.tile(c, (aSize,1))
+            #print "after add:", self.control.PH5Info['quickRemoved']
         else:  
-            if c.__class__.__name__=='ndarray': c = c   
-            else: c = deepcopy( self.control.PH5Info['quickRemoved'][statId] )
-
-            self.data[canvId]['a_color'] = np.tile(c, (aSize,1))
-            if statId in self.control.PH5Info['quickRemoved'].keys():
-                del self.control.PH5Info['quickRemoved'][statId] 
-                return c
+            try:
+                #print "Before remove PH5 quickRemoved:", self.control.PH5Info['quickRemoved']
+                if c.__class__.__name__=='ndarray': c = c   
+                else: c = deepcopy( self.control.PH5Info['quickRemoved'][ch][statId] )
+                
+                #print "After remove PH5 quickRemoved:", self.control.PH5Info['quickRemoved']
+                
+                self.data[ch][canvId]['a_color'] = np.tile(c, (aSize,1))
+                if statId in self.control.PH5Info['quickRemoved'][ch].keys():
+                    del self.control.PH5Info['quickRemoved'][ch][statId] 
+                    return c
+                
+                
+            except KeyError: 
+                #print "no remove"
+                return 3
                 
         return 0         
 
@@ -2211,30 +2505,41 @@ class PlottingPanel(QtGui.QMainWindow):
         
         
     def onUndoQuickRemove(self, evt):
-        for i in range(len(self.parent.PH5Info['quickRemoved'].keys())):
-            removId = self.parent.PH5Info['quickRemoved'].keys()[-1]
-            c = self.canvas.quickRemove(removId, False)
-            self.canvas.otherCanvas.quickRemove(removId, False, c)
+        for ch in self.parent.channels:
+            for i in range(len(self.parent.PH5Info['quickRemoved'][ch].keys())):
+                removId = self.parent.PH5Info['quickRemoved'][ch].keys()[-1]
+                c = self.canvas.quickRemove(ch, removId, False)
+                self.canvas.otherCanvas.quickRemove(ch, removId, False, c)
         
         self.canvas.updateData()
         self.canvas.otherCanvas.updateData()
-        for p in self.parent.infoPanels:
-            p.allowRemove = False
-            p.quickRemovedCkb.setCheckState(QtCore.Qt.Unchecked)
-            p.allowRemove = True
+        for ch in self.parent.channels:
+            for p in self.parent.infoPanels:
+                p.allowRemove = False
+                p.quickRemCkbs[ch].setCheckState(QtCore.Qt.Unchecked)
+                p.allowRemove = True
 
 
     def onDeepRemove(self, evt):
+        #print "onDeepRemove"
+        totalTraces = 0
+        for ch in self.parent.channels:
+            totalTraces += self.parent.PH5Info['numOfStations'] - len(self.parent.PH5Info['deepRemoved'][ch])
+        #print "totalTraces:", totalTraces
+        if totalTraces ==0 :
+            errorMsg = "You are trying to remove all data.\nThere must be at least one trace left in the plotting."
+            QtGui.QMessageBox.question(self, 'Error', errorMsg, QtGui.QMessageBox.Ok)
+            return
         self.parent.deepRemoveStations()
         
     def onUndoDeepRemove(self, evt):
-        
-        for p in self.parent.infoPanels:
-            p.allowRemove = False
-            p.deepRemovedCkb.setCheckState(QtCore.Qt.Unchecked)
-            p.allowRemove = True
+        for ch in self.parent.channels:
+            for p in self.parent.infoPanels:
+                p.allowRemove = False
+                p.deepRemCkbs[ch-1].setCheckState(QtCore.Qt.Unchecked)
+                p.allowRemove = True
 
-        self.parent.PH5Info['deepRemoved'] = []
+            self.parent.PH5Info['deepRemoved'][ch] = []
         self.parent.deepRemoveStations() 
         
         
@@ -2282,9 +2587,17 @@ class PH5Visualizer(QtGui.QMainWindow):
         self.arrays = []
         self.channels = []
         self.events =[]
-        helpAction = QtGui.QAction('Help', self)
-        helpAction.setShortcut('F1')
-        helpAction.triggered.connect(self.onHelp)
+        explainAction = QtGui.QAction('What?', self)
+        explainAction.setShortcut('Ctrl+E')
+        explainAction.triggered.connect(self.onExplain)
+        
+        manualAction = QtGui.QAction('Manual', self)
+        manualAction.setShortcut('F1')
+        manualAction.triggered.connect(self.onManual)
+        
+        whatsnewAction = QtGui.QAction("What's new?", self)
+        whatsnewAction.setShortcut('F1')
+        whatsnewAction.triggered.connect(self.onWhatsnew)        
         ################## FILE MENU  #################
         self.fileAction = fileAction = QtGui.QAction('Open File', self)        
         fileAction.triggered.connect(self.onFile)
@@ -2362,7 +2675,10 @@ class PH5Visualizer(QtGui.QMainWindow):
         
         self.menubar.addAction(self.segyAction) 
         
-        self.menubar.addAction(helpAction)
+        self.helpMenu = self.menubar.addMenu('&Help')
+        self.helpMenu.addAction(explainAction)
+        self.helpMenu.addAction(manualAction)
+        self.helpMenu.addAction(whatsnewAction)
         #######################################
         
         self.tabWidget = QtGui.QTabWidget(self); self.setCentralWidget(self.tabWidget)
@@ -2412,6 +2728,7 @@ class PH5Visualizer(QtGui.QMainWindow):
         
         confFile.write("\nSegyDir:%s" % segyDir)
         confFile.close()
+        if segyDir=="": return
         msg = "Enter sub directory name if you want to create a sub directory to save SEGY data,\n" + \
               "or leave it blank to save in the selected directory:"
         
@@ -2422,14 +2739,22 @@ class PH5Visualizer(QtGui.QMainWindow):
         else: return
         
         options = {}
-        
+        PH5View = self.mainControl.PH5View
         pathName = str(self.fname).split('/')
         options['ph5Path'] = "-p %s" % "/".join(pathName[:-1])
         options['nickname'] = "-n %s" % pathName[-1]
         options['outputDir'] = '-o %s' % segyDir
+        options['shotLine'] = '--shot_line %s' % PH5View.shotLine
 
-        options['length'] = "-l %s" % int(self.mainControl.timelenCtrl.text())
-        options['chan'] = "-c %s" % ",".join( map(str,self.selectedChannels) )
+        timeLength = float(self.mainControl.timelenCtrl.text())
+        if timeLength < 1: timeLength = 1
+        else: timeLength = int(round(timeLength))
+        options['length'] = "-l %s" % timeLength
+        channels = [str(ch) for ch in self.mainControl.channels  
+                    if self.mainControl.channelCkbs[ch].isChecked()] 
+        
+        options['array'] = "-A %s" % PH5View.selectedArray['arrayId']
+        options['chan'] = "-c %s" % ",".join( channels )
         
         if str(self.mainControl.velocityCtrl.text()).strip() in ['0','']:
             options['redVel'] = ''
@@ -2438,9 +2763,10 @@ class PH5Visualizer(QtGui.QMainWindow):
             options['redVel'] = '-V %f' % rv
 
         if self.submitGui == 'STATION':
+            print "shot gather"
             #options['array'] = '-a %s' % self.selectedArray['arrayId']
-            #options['stations'] = '.... %s' % ','.join( self.selectedStationIds )
-            options['event'] = '-e %s' % self.selectedEventIds[0]
+            options['stations'] = '--station_list %s' % ','.join( PH5View.selectedArray['seclectedStations'] )
+            options['event'] = '-e %s' % PH5View.selectedEvents[0]['eventId']
             
             options['offset'] = '-O %f' % float(self.mainControl.offsetCtrl.text())
 
@@ -2451,26 +2777,28 @@ class PH5Visualizer(QtGui.QMainWindow):
                 options['timeCorrect'] = '-N'
                 
 
-            cmdStr = "ph5toseg %(event)s %(chan)s %(length)s %(offset)s " + \
-                     "%(redVel)s %(timeCorrect)s %(ph5Path)s %(nickname)s %(outputDir)s" 
-            
+            #cmdStr = "ph5toseg %(event)s %(chan)s %(length)s %(offset)s %(stations)s" + \
+                     #"%(redVel)s %(timeCorrect)s %(ph5Path)s %(nickname)s %(outputDir)s" 
+            cmdStr = "ph5toevt %(shotLine)s %(array)s %(event)s %(chan)s %(length)s %(offset)s %(stations)s" + \
+                     "%(redVel)s %(timeCorrect)s %(ph5Path)s %(nickname)s %(outputDir)s"             
             
             
         elif self.submitGui == 'EVENT':
-            options['station'] = '-S %s' % self.selectedStationIds[0]
-            if len(self.selectedEventIds)==1:
-                options['shotRange'] = '-r %s' % self.selectedEventIds[0]
-            else:
-                options['shotRange'] = '-r %s-%s' % (self.selectedEventIds[0], self.selectedEventIds[-1])
-                
-            cmdStr = "recvorder %(chan)s %(station)s %(shotRange)s %(length)s " + \
-                     "%(redVel)s %(ph5Path)s %(nickname)s %(outputDir)s"
+            print "receiver gather"
+            options['station'] = '-S %s' % PH5View.selectedArray['seclectedStations'][0]
+            events = [ev['eventId'] for ev in PH5View.selectedEvents]
+            options['events'] = '--event_list %s' % ','.join(events)
+            
+            #cmdStr = "recvorder %(chan)s %(station)s %(events)s %(length)s " + \
+                     #"%(redVel)s %(ph5Path)s %(nickname)s %(outputDir)s"            
+            cmdStr = "ph5torec %(shotLine)s %(array)s %(chan)s %(station)s %(events)s %(length)s " + \
+                     "%(redVel)s %(ph5Path)s %(nickname)s %(outputDir)s"                
                 
         print cmdStr % options
         os.system(cmdStr % options)       
         
     
-    def onHelp(self):
+    def onExplain(self):
         self.helpEnable = not self.helpEnable
         
         if self.helpEnable:
@@ -2480,34 +2808,38 @@ class PH5Visualizer(QtGui.QMainWindow):
             
         self.setCursor(cursor)
 
+
+    def onManual(self): 
+        self.manualWin = ManWindow("manual")       
+
+    def onWhatsnew(self):
+        self.whatsnewWin = ManWindow("whatsnew")
             
     def onFile(self):
         dialog = QtGui.QFileDialog(self)
         dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
         fname = dialog.getOpenFileName(self, 'Open', '/home/field/Desktop/data', 'master.ph5') 
-        #print fname
+        print fname
 
         if fname == "": return
         self.fname = fname
         self.eventGui.clearArrays()
         self.stationGui.clearArrays()
-        del self.arrays
-        del self.channels
-        del self.events
+        try: del self.arrays
+        except: pass
+        try: del self.events
+        except: pass
         gc.collect()
         
         PH5Object = PH5ReaderwVispyAPI.PH5Reader()
         PH5Object.initialize_ph5(self.fname)
         PH5Object.createGraphExperiment()
-        PH5Object.createGraphArrayNEvents()
+        PH5Object.createGraphEvents()
         PH5Object.createGraphArraysNStations()
-        self.channels = deepcopy(PH5Object.chs)
-        #for l in PH5Object.graphArrays[0]['stations'] :
-                #print l
         self.arrays = deepcopy(PH5Object.graphArrays)
         self.events = deepcopy(PH5Object.graphEvents)
-        self.eventGui.setChannels()
-        self.stationGui.setChannels()
+        #self.eventGui.setChannels()
+        #self.stationGui.setChannels()
         
         self.eventGui.setArrays()
         self.stationGui.setArrays()
@@ -2524,6 +2856,10 @@ class PH5Visualizer(QtGui.QMainWindow):
         PH5Object.ph5close()
         del PH5Object
         gc.collect()
+        #print "begin testing"
+        #PH5Object = PH5ReaderwVispyAPI.PH5Reader()
+        #PH5Object.initialize_ph5('/home/field/Desktop/data/10-016/master.ph5')
+        #print "finish testing"
         
     ###################################
     # Author: Lan
@@ -2580,9 +2916,14 @@ class MainControl(QtGui.QMainWindow):
         self.conf = {}
         self.initConfig()
         self.eventId = None
+        self.channels = None
+        self.shotLine = None
+        self.PH5Info = None
         self.initUI()
         self.dfltOffset = 0
         self.dfltTimeLen = 60
+        self.gather = ""
+        #self.dfltTimeLen = .6    ### TESTING .6
         
         #self.setWindowTitle('Points')
         self.mainPlot = PlottingPanel(self, "Main Window", 270,0,1200,1100, isMainPlot=True)
@@ -2618,12 +2959,22 @@ class MainControl(QtGui.QMainWindow):
     # def: createInfoPanel():201504
     def createInfoPanel(self):
         self.infoParentPanel = QtGui.QWidget()
+        self.infoParentPanel.setGeometry(-10, 10,315, 1100)
         self.infoParentPanel.setWindowFlags(QtCore.Qt.Window)
-        self.infoBox = QtGui.QVBoxLayout(self.infoParentPanel)
-        self.infoBox.setSpacing(0)
+        vbox = QtGui.QVBoxLayout(self.infoParentPanel)
+        vbox.setSpacing(0)
+        
+        scrollArea = QtGui.QScrollArea(self.infoParentPanel)
+        vbox.addWidget(scrollArea)
+        scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scrollArea.setWidgetResizable(True)
+        
+        itemsFrame = QtGui.QFrame(); scrollArea.setWidget(itemsFrame)
+        self.infoBox = QtGui.QVBoxLayout() 
+        itemsFrame.setLayout(self.infoBox)
+              
         self.infoPanels = []
-        for i in range(3):
-            self.infoPanels.append(InfoPanel(self))
+
 
         
     ###################################
@@ -2640,12 +2991,14 @@ class MainControl(QtGui.QMainWindow):
         self.defaultConf['plotThick'] = 0.6
         self.defaultConf['gridThick'] = 0.4
         self.defaultConf['gridColor'] = QColor(150,150,150).name()
-        self.defaultConf['abnormalColor'] = QColor(QtCore.Qt.gray).name()
         self.defaultConf['showAbnormalStat'] = True
         
-        self.defaultConf['plotColor'] = []      # define color in the pattern
-        for i in range(self.defaultConf['patternSize']):
-            self.defaultConf['plotColor'].append(QColor(QtCore.Qt.gray).name())
+        self.defaultConf['abnormalColor'] = ['#a0a0a4', '#ffff00', '#00ffff']
+        colorSet = ['#a0a0a4', '#ffff00', '#00ffff'] # gray, yellow, cyan
+        self.defaultConf['plotColor'] = [[],[],[]]      # define color in the pattern
+        for ch in range(len(self.defaultConf['plotColor'])):
+            for i in range(self.defaultConf['patternSize']):
+                self.defaultConf['plotColor'][ch].append(colorSet[ch])
         
         # setFileConf
         self.fileConf = {}
@@ -2655,6 +3008,7 @@ class MainControl(QtGui.QMainWindow):
             return
         
         self.fileConf['plotColor'] = []
+        ncolor = None
         lines = confFile.readlines()
         confFile.close()
         for line in lines:
@@ -2668,9 +3022,28 @@ class MainControl(QtGui.QMainWindow):
             elif l[0] == 'plotThick': self.fileConf['plotThick'] = float(l[1].strip())
             elif l[0] == 'gridThick': self.fileConf['gridThick'] = float(l[1].strip())
             elif l[0] == 'abnormalColor': self.fileConf['abnormalColor'] = l[1].strip()
-            elif l[0] == 'plotColor': self.fileConf['plotColor'].append(QColor(l[1].strip()))
+            elif 'plotColor' in l[0]: 
+                if ncolor != l[0][-1]: # plotColor1: 1 is channel, when channel index changed, create new list 
+                    ncolor = l[0][-1]
+                    self.fileConf['plotColor'].append([])
+                self.fileConf['plotColor'][-1].append( l[1].strip() )
+
             elif l[0] == 'showAbnormalStat':
                 self.fileConf['showAbnormalStat'] = True if l[1].strip()=='True' else False
+    
+    
+
+    def onChangePropertyType(self, evt=None):
+        #print "onChangePropertyType"
+        if self.defaultPropRbtn.isChecked():  self.conf = self.defaultConf
+        else: self.conf = self.fileConf   
+        
+        for ch in range(len(self.channels)):
+            if ch < len(self.conf['plotColor']):
+                self.channelCkbs[self.channels[ch]].setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][ch][0]).name())
+            else:
+                self.channelCkbs[self.channels[ch]].setStyleSheet("QWidget { background-color: %s }" % QColor(self.defaultConf['plotColor'][ch][0]).name())
+        
 
     ###################################
     # Author: Lan
@@ -2693,7 +3066,7 @@ class MainControl(QtGui.QMainWindow):
         startrangeHBox.addWidget(self.startrangetimeCtrl)
         
         timerangeHBox = QtGui.QHBoxLayout(); vbox.addLayout(timerangeHBox)
-        timerangeHBox.addWidget(QtGui.QLabel('Length(s) '))
+        timerangeHBox.addWidget(QtGui.QLabel('Length (s)'))
         self.timelenCtrl = QtGui.QLineEdit();   self.timelenCtrl.installEventFilter(self)
         self.EXPL[self.timelenCtrl] = "The length of time for plotting."
         #self.timelenCtrl.setFixedWidth(50)
@@ -2721,11 +3094,12 @@ class MainControl(QtGui.QMainWindow):
         #self.distance2AvgSB.setFixedWidth(45)
         self.distance2AvgSB.setRange(0,20)
         self.distance2AvgSB.setSingleStep(1)
-        self.distance2AvgSB.setValue(5)
+        self.distance2AvgSB.setValue(5)  
+        #self.distance2AvgSB.setValue(20) ### TESTING 20
         gridBox.addWidget(self.distance2AvgSB, 0,1)
         
         self.simplifyReplotBtn = QtGui.QPushButton('Apply', self); self.simplifyReplotBtn.installEventFilter(self)
-        self.EXPL[self.simplifyReplotBtn] = "Apply new percentage of signal to be ignored and replot without reread PH5 data."
+        self.EXPL[self.simplifyReplotBtn] = "Apply new percentage of signal to be ignored and replot without rereading PH5 data."
         self.simplifyReplotBtn.clicked.connect(self.onApplySimplify_RePlot)
         self.simplifyReplotBtn.setFixedWidth(60)
         gridBox.addWidget(self.simplifyReplotBtn,0,2)
@@ -2786,8 +3160,8 @@ class MainControl(QtGui.QMainWindow):
         
         velHBox.addWidget(QtGui.QLabel('Reduction Velocity(m/s):     '))
         self.velocityCtrl = QtGui.QLineEdit('0',self); self.velocityCtrl.installEventFilter(self)
-        self.EXPL[self.velocityCtrl] = "Reduction Velocity to apply to the plot.\n" + \
-                              "Apply when the given value is > 0"
+        self.EXPL[self.velocityCtrl] = "Reduction Velocity applied to the plot.\n" + \
+                              "Applied when the given value is > 0"
         #self.velocityCtrl.setFixedWidth(45)
         velHBox.addWidget(self.velocityCtrl)
         
@@ -2805,10 +3179,12 @@ class MainControl(QtGui.QMainWindow):
         
         propV1Box = QtGui.QVBoxLayout(); propBox.addLayout(propV1Box)
         self.defaultPropRbtn = QtGui.QRadioButton('Default Prop.')  ; self.defaultPropRbtn.installEventFilter(self)
+        self.defaultPropRbtn.clicked.connect(self.onChangePropertyType)
         self.EXPL[self.defaultPropRbtn] = "Use the default properties for names and colors."
         propV1Box.addWidget(self.defaultPropRbtn)
         
         self.fromFilePropRbtn = QtGui.QRadioButton('Previous Prop.');self.fromFilePropRbtn.installEventFilter(self)
+        self.fromFilePropRbtn.clicked.connect(self.onChangePropertyType)
         self.EXPL[self.fromFilePropRbtn] = "Use the properties that were use prevously.\n" + \
                               "These properties can be editted by clicking 'Name-Color Prop."
         propV1Box.addWidget(self.fromFilePropRbtn)
@@ -2837,26 +3213,26 @@ class MainControl(QtGui.QMainWindow):
         
         ################ grid lines ################
         gridBox = QtGui.QHBoxLayout(); vbox.addLayout(gridBox)
-        self.verGridCkb = QtGui.QCheckBox('Vertical grid', self);   self.verGridCkb.installEventFilter(self)
-        self.EXPL[self.verGridCkb] = "Apply vertical grid lines. Take effect right after selected"
-        self.verGridCkb.setCheckState(QtCore.Qt.Checked)
-        gridBox.addWidget(self.verGridCkb)   
-        self.verGridCkb.clicked.connect(self.onChangeApplyGrids)
+        self.distanceGridCkb = QtGui.QCheckBox('Distance grid', self);   self.distanceGridCkb.installEventFilter(self)
+        self.EXPL[self.distanceGridCkb] = "Apply distance grid lines. Take effect right after selected"
+        #self.distanceGridCkb.setCheckState(QtCore.Qt.Checked)
+        gridBox.addWidget(self.distanceGridCkb)   
+        self.distanceGridCkb.clicked.connect(self.onChangeApplyGrids)
         
-        self.horGridCkb = QtGui.QCheckBox('Horizontal grid', self);   self.horGridCkb.installEventFilter(self)
-        self.EXPL[self.horGridCkb] = "Apply horizontal grid lines. Take effect right after selected"
-        self.horGridCkb.setCheckState(QtCore.Qt.Checked)
-        gridBox.addWidget(self.horGridCkb)   
-        self.horGridCkb.clicked.connect(self.onChangeApplyGrids)
+        self.timeGridCkb = QtGui.QCheckBox('time grid', self);   self.timeGridCkb.installEventFilter(self)
+        self.EXPL[self.timeGridCkb] = "Apply time grid lines. Take effect right after selected"
+        self.timeGridCkb.setCheckState(QtCore.Qt.Checked)
+        gridBox.addWidget(self.timeGridCkb)   
+        self.timeGridCkb.clicked.connect(self.onChangeApplyGrids)
         
         paneBox = QtGui.QHBoxLayout(); vbox.addLayout(paneBox)
         
         paneBox.addWidget(QtGui.QLabel("ReGrid Panel"))
         self.mainWindowRbtn = QtGui.QRadioButton('Main'); self.mainWindowRbtn.installEventFilter(self)
-        self.EXPL[self.mainWindowRbtn] = "New grid interval will be applied on Main Window"
+        self.EXPL[self.mainWindowRbtn] = "New grid intervals will be applied on Main Window"
         paneBox.addWidget(self.mainWindowRbtn)
         self.supportWindowRbtn = QtGui.QRadioButton('Support'); self.supportWindowRbtn.installEventFilter(self)
-        self.EXPL[self.supportWindowRbtn] = "New grid interval will be applied on Support Window"
+        self.EXPL[self.supportWindowRbtn] = "New grid intervals will be applied on Support Window"
         paneBox.addWidget(self.supportWindowRbtn)
         self.mainWindowRbtn.setChecked(True)
         self.bothWindowRbtn = QtGui.QRadioButton('Both'); self.bothWindowRbtn.installEventFilter(self)
@@ -2872,21 +3248,21 @@ class MainControl(QtGui.QMainWindow):
         gridVBox = QtGui.QVBoxLayout(); gridHBox.addLayout(gridVBox)
         
         horGridHBox = QtGui.QHBoxLayout(); gridVBox.addLayout(horGridHBox)
-        horGridHBox.addWidget(QtGui.QLabel("H. Grid Interval (s)"))
-        self.horGridIntervalSB = QtGui.QDoubleSpinBox(self)        ; self.horGridIntervalSB.installEventFilter(self)
-        self.EXPL[self.horGridIntervalSB] = "Horizontal Grid Interval in second"
-        self.horGridIntervalSB.setDecimals(1)
-        self.horGridIntervalSB.setSingleStep(.1)
-        self.horGridIntervalSB.setFixedWidth(80)
-        horGridHBox.addWidget(self.horGridIntervalSB)
+        horGridHBox.addWidget(QtGui.QLabel("Time Grid Interval (s)"))
+        self.timeGridIntervalSB = QtGui.QDoubleSpinBox(self)        ; self.timeGridIntervalSB.installEventFilter(self)
+        self.EXPL[self.timeGridIntervalSB] = "Horizontal Grid Interval in second"
+        self.timeGridIntervalSB.setDecimals(1)
+        self.timeGridIntervalSB.setSingleStep(.1)
+        self.timeGridIntervalSB.setFixedWidth(80)
+        horGridHBox.addWidget(self.timeGridIntervalSB)
         
         verGridHBox = QtGui.QHBoxLayout(); gridVBox.addLayout(verGridHBox)
-        verGridHBox.addWidget(QtGui.QLabel("V. Grid Interval (km)"))
-        self.verGridIntervalSB = QtGui.QSpinBox(self)        ; self.verGridIntervalSB.installEventFilter(self)
-        self.EXPL[self.verGridIntervalSB] = "Horizontal Grid Interval in second"
-        self.verGridIntervalSB.setFixedWidth(80)
-        self.verGridIntervalSB.setValue(10)
-        verGridHBox.addWidget(self.verGridIntervalSB)
+        verGridHBox.addWidget(QtGui.QLabel("Dista. Grid Interval (km)"))
+        self.distanceGridIntervalSB = QtGui.QSpinBox(self)        ; self.distanceGridIntervalSB.installEventFilter(self)
+        self.EXPL[self.distanceGridIntervalSB] = "Vertical Grid Interval in second"
+        self.distanceGridIntervalSB.setFixedWidth(80)
+        self.distanceGridIntervalSB.setValue(10)
+        verGridHBox.addWidget(self.distanceGridIntervalSB)
                 
         self.regridBtn = QtGui.QPushButton('ReGrid', self)  ; self.regridBtn.installEventFilter(self)
         self.EXPL[self.regridBtn] = "Apply new grid intervals"
@@ -2897,6 +3273,24 @@ class MainControl(QtGui.QMainWindow):
         self.regridBtn.setEnabled(False)
         
         vbox.addStretch(1)
+        vbox.addWidget(Seperator(thick=2, orientation="horizontal"))
+        ########################### which channel? ###################
+        channelBox = QtGui.QHBoxLayout(); vbox.addLayout(channelBox)
+        channelBox.addWidget(QtGui.QLabel("Channels"))
+        self.channelCkbs = {}
+        for ch in range(1,4):
+            self.channelCkbs[ch] = QtGui.QCheckBox(str(ch), self) 
+            #self.channelCkbs[ch].stateChanged.connect(self.onChangeChannels)
+            self.channelCkbs[ch].setEnabled(False)
+            self.EXPL[self.channelCkbs[ch]] = "Remove/Add this channel to the plot."   
+            channelBox.addWidget(self.channelCkbs[ch])       
+            
+        self.changeChanReplotBtn = QtGui.QPushButton('Apply', self); self.changeChanReplotBtn.installEventFilter(self)
+        self.EXPL[self.changeChanReplotBtn] = "Apply the selected Channels."
+        self.changeChanReplotBtn.clicked.connect(self.onChangeChannels)
+        self.changeChanReplotBtn.setFixedWidth(60)
+        channelBox.addWidget(self.changeChanReplotBtn)    
+        
         vbox.addWidget(Seperator(thick=2, orientation="horizontal"))
         ########################### which direction? #################
         directionBox = QtGui.QHBoxLayout(); vbox.addLayout(directionBox)
@@ -3054,8 +3448,8 @@ class MainControl(QtGui.QMainWindow):
                     
             minInterval = math.ceil(10*timeLen/25)/10
             maxInterval = math.ceil(timeLen*10)/10
-            self.horGridIntervalSB.setRange(minInterval, maxInterval)
-            self.horGridIntervalSB.setValue(math.ceil(timeLen*10/15)/10)
+            self.timeGridIntervalSB.setRange(minInterval, maxInterval)
+            self.timeGridIntervalSB.setValue(math.ceil(timeLen*10/15)/10)
             #print "timeLen=%s,minInterval=%s, maxInterval=%s, gridInterval=%s" % (timeLen, minInterval, maxInterval, math.ceil(timeLen*10/15)/10)
             
         except Exception,e:   
@@ -3143,6 +3537,26 @@ class MainControl(QtGui.QMainWindow):
     #   name, color, line thickness
     def onChangeProperties(self, evt):
         Properties(self).exec_() 
+
+
+    ###################################
+    # Author: Lan
+    # def: onChangeChannels():
+    def onChangeChannels(self, evt):
+        if self.PH5Info == None: return
+        count = 0
+        for ch in self.channelCkbs.keys():
+            if self.channelCkbs[ch].isChecked(): count += 1
+        
+        if count == 0: 
+            errorMsg = "There must be at least one channel selected."
+            QtGui.QMessageBox.question(self, 'Error', errorMsg, QtGui.QMessageBox.Ok)
+            return
+        
+        self.deepRemoveStations()
+        #self.mainCanvas.initData()
+        #self.mainPlot.activateWindow()
+        #self.supportCanvas.reset()        
 
     ###################################
     # Author: Lan
@@ -3247,7 +3661,7 @@ class MainControl(QtGui.QMainWindow):
             #print "bothWindowRbt 2 gridIntervalSB.value()=", self.gridIntervalSB.value()          
 
     def _regrid(self, canvas, plot):    
-        if not canvas.enableDrawing: return
+        if not canvas.enableDrawing: print "return"; return
         canvas.gtData, canvas.gdData, canvas.timeY, canvas.tLabels, canvas.dLabels \
             = canvas.buildGrid()
         canvas.feedGData(canvas.panT, canvas.panV, canvas.canvScaleT, canvas.canvScaleV)
@@ -3266,6 +3680,16 @@ class MainControl(QtGui.QMainWindow):
     def onGetnPlot(self, evt):
         if not self.check(checkTRange=True, checkDOffset=True, checkVelocity=True):
             return
+        
+        count = 0
+        for ch in self.channelCkbs.keys():
+            if self.channelCkbs[ch].isChecked(): count += 1
+        
+        if count == 0: 
+            errorMsg = "There is must be at least one channel selected."
+            QtGui.QMessageBox.question(self, 'Error', errorMsg, QtGui.QMessageBox.Ok)
+            return
+        
         self.reset()
         global START, processInfo
         START = time.time()
@@ -3278,7 +3702,7 @@ class MainControl(QtGui.QMainWindow):
         val = self.createVal()
     
         if val==False: return
-        t = self.createTime()
+        t = self.createTime(val)
         self.mainCanvas.initData(t=t, val=val)
         
         self.mainPlot.activateWindow()
@@ -3325,7 +3749,7 @@ class MainControl(QtGui.QMainWindow):
           
         val = self.createVal(createFromBeg=False, appNewSimpFactor=True)
         if val == False: return  
-        t = self.createTime()
+        t = self.createTime(val)
 
         self.mainCanvas.initData(val=val, t=t)
         self.mainPlot.activateWindow()
@@ -3358,30 +3782,26 @@ class MainControl(QtGui.QMainWindow):
     #    => then changed according to correction and velocity reduction of each station
     #    => scale to range (-1,1)
     #    => only keep the time index in the self.keepList
-    def createTime(self):
+    def createTime(self, val):
         global processInfo
         start = time.time()
         samNo = self.PH5Info['numOfSamples']
-        staNo =self.PH5Info['numOfStations']
-        #print "samNo=",samNo
-        #print "start:", 0+self.offset*1000
-        #print "end:", (samNo-1)*self.PH5Info['interval']+self.offset*1000
+        
         #t = np.tile(np.linspace(0+self.offset*1000, (samNo-1)*self.PH5Info['interval']+self.offset*1000, samNo), ( staNo,1) )
         t = np.linspace(0+self.offset*1000, (samNo-1)*self.PH5Info['interval']+self.offset*1000, samNo)
-        #print "len org t=", len(t[0])
-        #print "max t=",t.max()
 
-        self.minT = minT = t.min()
-        self.maxT = maxT = t.max()
-        #print "new minT=%s, maxT=%s" % (minT, maxT)
-        self.totalTime = abs(maxT - minT)
-        t -= minT
-        self.scaleT = 2/(maxT-minT)
+        self.minT = t.min()
+        self.maxT = t.max()
+        self.totalTime = abs(self.maxT - self.minT)
+        self.scaleT = 2/(self.maxT-self.minT)
+        self.zeroT = - self.minT*self.scaleT - 1
+
+        t -= self.minT
+        
         t *= self.scaleT
         
         t -= 1
-        self.zeroT = - minT*self.scaleT - 1 
-        
+             
         end = time.time()
         showStatus('Step 4 took %s seconds. Next: 5/%s' % (end-start, totalSteps), "Plotting")
         processInfo += "\nCreate Time value: %s seconds" % (end-start)
@@ -3398,43 +3818,50 @@ class MainControl(QtGui.QMainWindow):
     #    + greater than the simpFactor*abs(ymax-ymean) 
     #    + the peeks only (this takes too much time => look in old file if needed)
     #    + the start and end time of each station
-    def getKeepList(self, val, samNo, staNo, simplFactor):
-        keepList = []
+    def getKeepList(self, val, simplFactor):
+        keepList = {}
         prevVal = 0
         #print "len(val)=", len(val)
-        for i in range(staNo):
-            if i in self.PH5Info['deepRemoved']:
-                keepList.append([])
-                continue
-            #print "val[%s].shape=%s" % (i,val[i].shape)
-            # remove center
-            a = np.where( abs(val[i]-val[i].mean()) > abs(val[i].max()-val[i].mean())*simplFactor)[0]
-            o = []
-            d = val[i]
-            phase = 0   # 1:increasing; -1: decreasing
-            for k in range(len(a)):
-                try:
-                    # increasing
-                    if d[a[k]] <= d[a[k+1]]:
-                        if phase == 1:    #end of avg or decreasing
-                            o.append(k)
-                        phase=1
-                    # decreasing
-                    elif d[a[i]] >= d[a[k+1]]:
-                        if phase == -1:    #end of avg or increasing
-                            o.append(k)
-                        phase=-1
-                except IndexError: break
-
-            a = np.delete(a,o).tolist()
-
-            if 0 not in a:  a.insert(0, 0)
-
-            if samNo-1 not in a: a.append(samNo-1)
-            keepList.append(a)
-
-            if i == staNo-1: break
-        #print "keepList =", keepList[0]   
+        for ch in self.channels:
+            keepList[ch] = []
+            staNo = len(val[ch])
+            for i in range(staNo):
+                samNo = self.PH5Info['LEN'][ch][i]
+                if i in self.PH5Info['deepRemoved'][ch] or samNo==0:
+                    keepList[ch].append([])
+                    continue
+                #print "val[%s].shape=%s" % (i,val[i].shape)
+                # remove center
+                V = val[ch][i][:samNo]
+                a = np.where( abs(V-V.mean()) > abs(V.max()-V.mean())*simplFactor)[0]
+                o = []
+                d = V
+                phase = 0   # 1:increasing; -1: decreasing
+                for k in range(len(a)):
+                    try:
+                        # increasing
+                        if d[a[k]] <= d[a[k+1]]:
+                            if phase == 1:    #end of avg or decreasing
+                                o.append(k)
+                            phase=1
+                        # decreasing
+                        elif d[a[i]] >= d[a[k+1]]:
+                            if phase == -1:    #end of avg or increasing
+                                o.append(k)
+                            phase=-1
+                    except IndexError: break
+    
+                a = np.delete(a,o).tolist()
+    
+                if 0 not in a:  a.insert(0, 0)
+    
+                if samNo-1 not in a: a.append(samNo-1)
+                keepList[ch].append(a)
+                #print "statNo:%s, samNo:%s, keeplist:%s" % (staNo, samNo, a)
+    
+                if i == staNo-1: break
+        
+        #print "keepList =", keepList   
         return keepList
 
     ###################################
@@ -3446,14 +3873,19 @@ class MainControl(QtGui.QMainWindow):
         PH5Object = PH5ReaderwVispyAPI.PH5Reader()
         # initiate PH5Object with filename
         PH5Object.initialize_ph5(self.PH5View.fname)
-        PH5Object.set(self.PH5View.selectedChannels, ['Array_t_' + self.PH5View.selectedArray['arrayId']])
+
+        PH5Object.set(self.channels, ['Array_t_' + self.PH5View.selectedArray['arrayId']])
         # read trunk of data 
         #try:
-        
-        self.PH5Info = PH5Object.readData(orgStartT,offset, timeLen, staSpc, 
-                                          self.correctionCkb.isChecked(), 
-                                          self.vel, self.PH5View, statusBar, statusMsg)
-        
+        if self.gather == "shot":
+            self.PH5Info = PH5Object.readData_shotGather(orgStartT,offset, timeLen, staSpc, 
+                                self.correctionCkb.isChecked(), 
+                                self.vel, self.PH5View, statusBar, statusMsg)
+        else:
+            self.PH5Info = PH5Object.readData_receiverGather(orgStartT,offset, timeLen, staSpc, 
+                                self.correctionCkb.isChecked(), 
+                                self.vel, self.PH5View, statusBar, statusMsg)            
+    
         #except Exception, e:
             #print e
             #msg = "There must be something wrong in processing the data.\n" + \
@@ -3464,28 +3896,44 @@ class MainControl(QtGui.QMainWindow):
             #QtGui.QMessageBox.question(self, 'Error', msg, QtGui.QMessageBox.Ok)  
             #return False
         
+
+            
         showStatus("1/5:Getting PH5Data - ", "copy metadata")          
         self.metadata = deepcopy(PH5Object.metadata)
         # convert list to numpy array => check to see if can create numpy array from creating section ??????????????
         y = PH5Object.data
-        #print "y[2]:",y[2]
-        """
-        try :
-            print "len org data =", len(y[0])
-            print "No of station=" , len(y)
-        except : pass
-        """
+
         showStatus("1/5:Getting PH5Data - ", "save PH5 data to file to use in replotting")
-        PH5Val = np.array(y).ravel()
-        #self.PH5Size = 
-        #np.set_printoptions(threshold=np.nan) #to show all data in np.array
-        try :
-            ph5Valfile = np.memmap(PH5VALFILE, dtype='float32', mode='w+', shape=(1,PH5Val.size))
+        #print "files:", PH5VALFILES
+        LEN = 0
+        self.PH5Info['LEN']
+        for chId in range(len(self.channels)):
+            #print "ch:", ch
+            #i=0
+            #for a in y[self.channels[chId]]:
+                ##if self.PH5Info['LEN'][self.channels[chId]][i]<len(a):
+                #print "len(%s): %s - reallen:%s" % (i, len(a), self.PH5Info['LEN'][self.channels[chId]][i])
+                #i +=1
+            PH5Val = np.array(y[self.channels[chId]]).ravel()
+            #np.set_printoptions(threshold=np.nan) #to show all data in np.array
+            #try :
+            ph5Valfile = np.memmap(PH5VALFILES[chId], dtype='float32', mode='w+', shape=(1,PH5Val.size))
             ph5Valfile[:] = PH5Val[:]
             del ph5Valfile
-        except IOError :
-            pass
+            #except :
+                #pass
             
+        #print "len(zerolist)=",self.PH5Info['zerosList']
+        if self.PH5Info['noDataList'] != '':
+            msg = "The following items have no data return:" + self.PH5Info['noDataList']
+            if len(self.PH5Info['noDataList'])<=1000:
+                QtGui.QMessageBox.question(self, 'Information', msg, QtGui.QMessageBox.Ok) 
+            else:
+                ScrollDialog(title='Information',
+                             header="The following items have no data return:",
+                             txt=msg).exec_()
+        
+
         # close all files opened for PH5Object
         PH5Object.ph5close()
         showStatus("1/5:Getting PH5Data - ", "delete PH5Object to save resources")
@@ -3511,10 +3959,6 @@ class MainControl(QtGui.QMainWindow):
             "Length of time box is empty. You must enter a valid value for length of time", 
             QtGui.QMessageBox.Ok)
 
-        #array = self.parent.eventStationGui.selectedArray
-        #arrayIds = [array['arrayId']]
-        #sampleRate = array['sampleRate']
-
         overlap = self.overlapSB.value() / 100.0
         if createFromBeg:
             if self.PH5View.submitGui == 'STATION':
@@ -3526,23 +3970,16 @@ class MainControl(QtGui.QMainWindow):
             
             self.dfltOffset = self.offset = float(self.offsetCtrl.text())
             self.dfltTimeLen = float(self.timelenCtrl.text())
-            #startT = orgStartT + self.offset
-            # add a little bit than the time of one sample
-            #endT = orgStartT + float(self.timelenCtrl.text())
+
             if self.stationSpacingUnknownCkb.isChecked():
                 staSpc = float(self.nominalStaSpace.text())
             else:
                 staSpc = None
             
-            
-            #val = self.getPH5Data(startT, endT, 
-                                  #['Array_t_' + esGUI.selectedArray['arrayId']], 
-                                  #esGUI.selectedChannels, 
-                                  #esGUI.selectedArray['sampleRate'], staSpc )
             val = self.getPH5Data(orgStartT, self.offset, self.dfltTimeLen, staSpc )            
 
             if val == False: return False
-            if val==[]: 
+            if val=={}: 
                 msg = "In the selected range of time: " + \
                     "\n+ There is no station belong to the selected array(s)." + \
                     "\n+ OR The selected array and the selected event aren't match."
@@ -3554,17 +3991,15 @@ class MainControl(QtGui.QMainWindow):
             except ValueError:pass
             
         else:
-            val = np.memmap(PH5VALFILE, dtype='float32', mode='r', 
+            val = {}
+            for chId in range(len(self.channels)):
+                val[self.channels[chId]] = np.memmap(PH5VALFILES[chId], dtype='float32', mode='r', 
                             shape=(self.PH5Info['numOfStations'], self.PH5Info['numOfSamples']))
 
         self.PH5Info['overlap'] = overlap
-        samNo = self.PH5Info['numOfSamples'] 
         staNo = self.PH5Info['numOfStations'] 
         
         self.processData()
-        
-        if self.defaultPropRbtn.isChecked():  self.conf = self.defaultConf
-        else: self.conf = self.fileConf
 
         end = time.time()
         processInfo += "\nGetting PH5Data: %s seconds" % (end-start)
@@ -3575,7 +4010,7 @@ class MainControl(QtGui.QMainWindow):
         if appNewSimpFactor or createFromBeg:
             if self.distance2AvgSB.value() > 0:
                 simplFactor = self.distance2AvgSB.value()/100.
-                self.keepList = self.getKeepList(val, samNo, staNo, simplFactor)
+                self.keepList = self.getKeepList(val, simplFactor)
 
         end = time.time()
         processInfo += "\nGetting keep list: %s seconds" % (end-start)
@@ -3584,69 +4019,90 @@ class MainControl(QtGui.QMainWindow):
         
         start = time.time()
         #self.ph5val = []    # for double-check 
-        PH5Val = []    
 
-        self.statLimitList = stm = np.zeros((staNo,2))
-        self.scaleVList = []
         lastEnd = 0
         
-        if self.stationSpacingUnknownCkb.isChecked():
-            sizeV4aplot = float(self.nominalStaSpace.text()) * (1+overlap)
-        else:
-            sizeV4aplot = self.PH5Info['avgSize'] * (1+overlap)
-        #print "sizeV4aplot=",sizeV4aplot
+ 
+        if self.PH5Info['numOfDataStations'] > 1 :
+            # need to subtract 1 because each offset is only the center of each plot, not the min side or max side
+            sizeV4aplot = self.PH5Info['sumD'] / ( self.PH5Info['numOfDataStations'] - 1 ) / (1-overlap)
+        elif self.PH5Info['numOfDataStations'] == 1:
+            self.totalSize = sizeV4aplot = 1000.
             
+        # print "sumD:%s, sizeV4aplot:%s" % (self.PH5Info['sumD'], sizeV4aplot)
+   
         # signal is drawn on 2 sides of each distanceOffset
         # => at the start and end, add half of a sizeV4aPlot
-        delta = self.PH5Info['distanceOffset'][0] - sizeV4aplot/2.
-        #print "delta:", delta
+        self.minD = self.PH5Info['minOffset'] - sizeV4aplot/2.
+        
+        if self.PH5Info['numOfDataStations'] > 1 :
+            self.totalSize = self.PH5Info['sumD']+ sizeV4aplot
 
-        if self.PH5Info['distanceOffset'][0] > self.PH5Info['distanceOffset'][-1]:
-            delta = self.PH5Info['distanceOffset'][-1] - sizeV4aplot/2.
-        self.totalSize = abs(self.PH5Info['distanceOffset'][-1]-self.PH5Info['distanceOffset'][0]) \
-                    + sizeV4aplot
-        print "self.totalSize=",self.totalSize
-        self.scaledDelta = delta/self.totalSize
-        self.verGridIntervalSB.setRange(1,int(self.totalSize/1000))
+        print "total size:", self.totalSize
+        #print "sizeV4aplot=%s ; totalSize=%s" % (sizeV4aplot,self.totalSize)
+        self.scaledMinD = self.minD/self.totalSize
+        #print "int(self.totalSize/(1000*50))=",int(self.totalSize/(1000*50))
+        self.distanceGridIntervalSB.setRange( int(self.totalSize/(1000*50)), int(self.totalSize/1000) )
         scaledSizeV4aplot = sizeV4aplot/self.totalSize
         
-        maxP2P = max([abs(m['minmax'][0] - m['minmax'][1]) for m in self.metadata 
-                      if m['seq'] not in self.PH5Info['deepRemoved']])
-        
+        self.scaleVList = []
         if not self.normalizeCkb.isChecked():
-            self.scaleVList = [scaledSizeV4aplot/float(maxP2P)]*self.PH5Info['numOfStations']
-            #self.scaleVList = [scaledSizeV4aplot]*self.PH5Info['numOfStations']
+            maxP2Plist = []
+            for ch in self.channels:
+                try:
+                    maxP2Plist.append( max([abs(m['minmax'][0] - m['minmax'][1]) for m in self.metadata 
+                                            if m!=None and self.PH5Info['LEN'][ch][self.metadata.index(m)]!=0 \
+                                            and self.metadata.index(m) not in self.PH5Info['deepRemoved'][ch]]) )                
+                except ValueError: pass
+                    
+            maxP2P = max(maxP2Plist)
 
-        #if self.keepList!=None: print "keepList[2]=", self.keepList[2]
-        for i in range(staNo):
-            if self.metadata[i]['seq'] in self.PH5Info['deepRemoved']: 
-                PH5Val.append(val[i][[]])
-            else:
-                if self.distance2AvgSB.value()>0: 
-                    PH5Val.append(val[i][self.keepList[i]])     
-                else:
-                    #self.ph5val.append(val[i][self.keepList[i]])    # for double-check 
-                    PH5Val.append(val[i])
-                
+            self.scaleVList = [scaledSizeV4aplot/float(maxP2P)]*self.PH5Info['numOfStations'] 
+            
+        PH5Val = {}  
+        self.statLimitList = stm = np.zeros((staNo,2))
+        
+        for ch in self.channels: PH5Val[ch] = []        
+        zeroList = []
+        for i in range(len(self.metadata)):
+            if self.metadata[i] == None:        # when no data for that station, metadata will not be created
+                self.scaleVList.append(1)       # this info won't be used. just add to keep index
+                zeroList.append(0)              # this info won't be used. just add to keep index
+                continue
             if self.normalizeCkb.isChecked():
                 # difference bw min and max (peak to peak)
                 p2p = abs(self.metadata[i]['minmax'][1]-self.metadata[i]['minmax'][0])
                 # scale of a value of this plot over d
-                self.scaleVList.append( scaledSizeV4aplot / float(p2p) )
-            
-            centerPos = self.PH5Info['distanceOffset'][i] - delta
+                self.scaleVList.append( scaledSizeV4aplot / float(p2p) )  
+                
+            centerPos = self.PH5Info['distanceOffset'][i] - self.minD
             
             self.statLimitList[i][:] = [( centerPos - sizeV4aplot/2.)/self.totalSize,
                                         ( centerPos + sizeV4aplot/2.)/self.totalSize]  
 
             centerVal = (self.metadata[i]['minmax'][1]+self.metadata[i]['minmax'][0])/2
-            zero = self.statLimitList[i].mean() - centerVal * self.scaleVList[i]
+            zeroList.append( self.statLimitList[i].mean() - centerVal * self.scaleVList[i])
             
-            if i % 10 ==0: showStatus("Step3: Prepare drawing data" , "%s/%s" % (i,staNo))
-            PH5Val[i] = PH5Val[i]*self.scaleVList[i] + zero
+        self.maxVal = self.statLimitList.max() 
+        #print "self.statLimitList:", self.statLimitList[i]
+        #print "maxVal=", self.maxVal
+        for ch in self.channels:            
+            for i in range(len(self.metadata)):
+                if self.metadata[i] == None: PH5Val[ch].append([]); continue
+                #seq = self.metadata[i]['seq']
+                if i in self.PH5Info['deepRemoved'][ch] \
+                   or self.PH5Info['LEN'][ch][i]==0:  #(i,ch) in self.PH5Info['zerosList']:
+                    PH5Val[ch].append([]) ; continue
+                else:
+                    if self.distance2AvgSB.value()>0: 
+                        PH5Val[ch].append(val[ch][i][self.keepList[ch][i]])
 
-
-        self.maxVal = max([stm[0][0],stm[0][1],stm[-1][0], stm[-1][1]])
+                    else:
+                        #self.ph5val.append(val[i][self.keepList[i]])    # for double-check 
+                        PH5Val[ch].append(val[ch][i])
+                
+                if i % 10 ==0: showStatus("Step3: Prepare drawing data" , "%s/%s" % (i,len(val[ch])))
+                PH5Val[ch][i] = PH5Val[ch][i]*self.scaleVList[i] + zeroList[i]
 
         end = time.time()
         showStatus('Step 3 took %s seconds. Next: 4/%s' % (end-start, totalSteps), "Create Time value")
@@ -3690,7 +4146,7 @@ class MainControl(QtGui.QMainWindow):
         val = self.createVal(createFromBeg=False, appNewSimpFactor=False)
     
         if val==False: return
-        t = self.createTime()
+        t = self.createTime(val)
         self.mainCanvas.initData(t=t, val=val, deepRemoving=True)
         
         self.mainPlot.activateWindow()
@@ -3750,21 +4206,27 @@ class MainControl(QtGui.QMainWindow):
 
         self.velocityCtrl.setEnabled(state)
 
-        self.verGridCkb.setEnabled(state)
-        self.horGridCkb.setEnabled(state)
-        self.horGridIntervalSB.setEnabled(state)
-        self.verGridIntervalSB.setEnabled(state)
+        self.distanceGridCkb.setEnabled(state)
+        self.timeGridCkb.setEnabled(state)
+        self.timeGridIntervalSB.setEnabled(state)
+        self.distanceGridIntervalSB.setEnabled(state)
         self.mainWindowRbtn.setEnabled(state)
         self.supportWindowRbtn.setEnabled(state)
         self.bothWindowRbtn.setEnabled(state)
  
         self.distance2AvgSB.setEnabled(state)
 
-            
         if self.stationSpacingUnknownCkb.isChecked():
             self.nominalStaSpace.setEnabled(state)            
         else:
             self.nominalStaSpace.setEnabled(False)
+        
+        if not self.channels == None:  
+            for ch in range(1,4):
+                if ch in self.channels:
+                    self.channelCkbs[ch].setEnabled(state)
+                    self.channelCkbs[ch].setChecked(state)
+            
 
     def setAllReplotBtnsEnabled(self, state, resetCanvas=True):
         #self.allowReplot = state
@@ -3773,6 +4235,7 @@ class MainControl(QtGui.QMainWindow):
         self.propReplotBtn.setEnabled(state)
         self.overlapReplotBtn.setEnabled(state)
         self.normalizeReplotBtn.setEnabled(state)
+        self.changeChanReplotBtn.setEnabled(state)
         if resetCanvas and state==False:
             self.mainCanvas.reset()
             self.supportCanvas.reset()
@@ -3839,6 +4302,7 @@ class Properties(QtGui.QDialog):
         
     def initUI(self): 
         QtGui.QDialog.__init__(self)
+        self.setWindowTitle('Properties')
         mainbox = QtGui.QVBoxLayout(self)
         self.EXPL = EXPL = {}
         self.helpEnable = False
@@ -3889,7 +4353,7 @@ class Properties(QtGui.QDialog):
         propertiesGrid.addWidget(QtGui.QLabel("AddingInfo to GraphicName",propertiesPanel), 0, 0, QtCore.Qt.AlignRight)
         self.addingInfoText = QtGui.QLineEdit(propertiesPanel); self.addingInfoText.installEventFilter(self)
         EXPL[self.addingInfoText] = "Adding info to the name of the drawing"
-        self.addingInfoText. setFixedWidth(180)
+        self.addingInfoText.setFixedWidth(180)
         propertiesGrid.addWidget(self.addingInfoText, 0,1)
         
         propertiesGrid.addWidget(QtGui.QLabel("Horizontal Label", propertiesPanel), 2, 0, QtCore.Qt.AlignRight)
@@ -3913,14 +4377,14 @@ class Properties(QtGui.QDialog):
         self.updateBtn.resize(self.updateBtn.sizeHint())
         propertiesGrid.addWidget(self.updateBtn, 4, 2 )
         
-        propertiesGrid.addWidget(QtGui.QLabel("Plot thickness", propertiesPanel), 5, 0, QtCore.Qt.AlignRight)
+        propertiesGrid.addWidget(QtGui.QLabel("Trace Thickness", propertiesPanel), 5, 0, QtCore.Qt.AlignRight)
         self.plotThickText = QtGui.QLineEdit(propertiesPanel)       ; self.plotThickText.installEventFilter(self)
-        EXPL[self.plotThickText] = "Adjust the thickness of signals in file saving or printing"
+        EXPL[self.plotThickText] = "Adjust the thickness of traces in Saved/Printed Graphic"
         propertiesGrid.addWidget(self.plotThickText, 5, 1 )            
         
-        propertiesGrid.addWidget(QtGui.QLabel("Grid thickness", propertiesPanel), 7, 0, QtCore.Qt.AlignRight)
+        propertiesGrid.addWidget(QtGui.QLabel("Grid Thickness", propertiesPanel), 7, 0, QtCore.Qt.AlignRight)
         self.gridThickText = QtGui.QLineEdit(propertiesPanel)       ; self.gridThickText.installEventFilter(self)
-        EXPL[self.gridThickText] = "Adjust the thickness of signals in file saving or printing"
+        EXPL[self.gridThickText] = "Adjust the thickness of grids in Saved/Printed Graphic"
         propertiesGrid.addWidget(self.gridThickText, 7, 1 )
         self.gridColBtn = QtGui.QPushButton('Color', propertiesPanel); self.gridColBtn.installEventFilter(self)
         EXPL[self.gridColBtn] = "Change color of grid line"
@@ -3939,25 +4403,48 @@ class Properties(QtGui.QDialog):
         self.abnormalColBtn.resize(10,10)
         propertiesGrid.addWidget(self.abnormalColBtn, 8, 2 )
         
+        colorVBox = QtGui.QVBoxLayout()
+        propertiesHbox.addLayout(colorVBox)
+        
+        colorVBox.addWidget(QtGui.QLabel("Pattern Colors"))
+        
+        colorAllHBox = QtGui.QHBoxLayout()
+        colorVBox.addLayout(colorAllHBox)
+        colorAllHBox.addSpacing(10)
+        self.allColorBtns = []
+        for i in range(len(self.parent.channels)):
+            self.allColorBtns.append(QtGui.QPushButton('All', propertiesPanel))
+            self.allColorBtns[-1].setFixedWidth(50)
+            self.allColorBtns[-1].clicked.connect(self.onAllColorBtns)
+            colorAllHBox.addWidget(self.allColorBtns[-1])
+        colorAllHBox.addStretch(1)
+            
         scrollArea = QtGui.QScrollArea(self)
-        propertiesHbox.addWidget(scrollArea)
+        colorVBox.addWidget(scrollArea)
         scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scrollArea.setWidgetResizable(True)
         
         self.patternColorPanel = QtGui.QWidget()    ; self.patternColorPanel.installEventFilter(self)
         EXPL[self.patternColorPanel] = "Click to the buttons corresponding to the plot lines of which colors you want to change."
-        main_patternColorVBox = QtGui.QVBoxLayout(self.patternColorPanel)
-        
-        self.patternColorVBox = QtGui.QVBoxLayout() ; main_patternColorVBox.addLayout(self.patternColorVBox)
-        self.patternColorVBox.addWidget(QtGui.QLabel("Pattern Colors"))
+        main_patternColorHBox = QtGui.QHBoxLayout(self.patternColorPanel)
         
         scrollArea.setWidget(self.patternColorPanel)
         
+        
+        self.patternColorVBoxes = []
+        for i in range(len(self.parent.channels)):
+            self.patternColorVBoxes.append( QtGui.QVBoxLayout() )
+            self.patternColorVBoxes[i].addStretch(1)
+            main_patternColorHBox.addLayout( self.patternColorVBoxes[i] )
+        
+        #self.patternColorVBox.addWidget(QtGui.QLabel("Pattern Colors"))
+        #colorVBox.addStretch(1) 
+        
         self.plotColBtns = []
         
-        main_patternColorVBox.addStretch(1)
+        main_patternColorHBox.addStretch(1)
 
-        self.resize(650,600)
+        self.resize(700,600)
         
         if self.parent.defaultPropRbtn.isChecked():
             defaultRbtn.setChecked(True)
@@ -4007,16 +4494,16 @@ class Properties(QtGui.QDialog):
         self.parent.fileConf['showAbnormalStat'] = self.showAbnormalStatCkb.isChecked()
         errorItm = None
         try: self.parent.fileConf['patternSize'] = int(self.patternSizeText.text())
-        except ValueError: errorItm = "pattern size"; expectType = "an integer"
+        except ValueError: errorItm = "Pattern Size"; expectType = "an integer"
 
         try: self.parent.fileConf['plotThick'] = float(self.plotThickText.text())
-        except ValueError: errorItm = "plot thickness"; expectType = "a float"        
+        except ValueError: errorItm = "Plot Thickness"; expectType = "a float"        
 
         try: self.parent.fileConf['gridThick'] = float(self.gridThickText.text())
-        except ValueError: errorItm = "grid thickness"; expectType = "a float"
+        except ValueError: errorItm = "Grid Thickness"; expectType = "a float"
                             
         if errorItm!= None:
-            errorMsg = "%s must be %s number"
+            errorMsg = "%s must be %s number" % (errorItm, expectType)
             QtGui.QMessageBox.question(self, 'Error', errorMsg, QtGui.QMessageBox.Ok)
             return
             
@@ -4024,8 +4511,10 @@ class Properties(QtGui.QDialog):
         self.parent.fileConf['abnormalColor'] = self.abnormalColBtn.palette().color(1).name()
         
         self.parent.fileConf['plotColor'] = []
-        for cb in self.plotColBtns:
-            self.parent.fileConf['plotColor'].append(cb.palette().color(1).name())
+        for ch in range(len(self.parent.channels)):
+            self.parent.fileConf['plotColor'].append([])
+            for cb in self.plotColBtns[ch]:
+                self.parent.fileConf['plotColor'][ch].append(cb.palette().color(1).name())
         
         # save to conf. file
         confFile = open('PH5Viewer.cfg', 'w')
@@ -4049,13 +4538,24 @@ class Properties(QtGui.QDialog):
         if conf.has_key('gridThick'):
             confFile.write("\ngridThick:%s" % conf['gridThick'])
             
-        for pc in conf['plotColor']:
-            confFile.write("\nplotColor:%s" % pc)
+        for ch in range(len(conf['plotColor'])):
+            for pc in conf['plotColor'][ch]:
+                confFile.write("\nplotColor%s:%s" % (ch,pc))
             
         confFile.close()
         
         self.parent.fromFilePropRbtn.setChecked(True)
+        self.parent.onChangePropertyType()
         self.close()
+    
+    def onAllColorBtns(self, evt):
+        col = QtGui.QColorDialog.getColor()
+        if col.isValid():
+            self.sender().setStyleSheet("QWidget { background-color: %s }" % col.name())
+        
+        index = self.allColorBtns.index(self.sender())
+        for b in self.plotColBtns[index]:
+            b.setStyleSheet("QWidget { background-color: %s }" % col.name())
         
     ###################################
     # Author: Lan
@@ -4065,6 +4565,11 @@ class Properties(QtGui.QDialog):
         col = QtGui.QColorDialog.getColor()
         if col.isValid():
             self.sender().setStyleSheet("QWidget { background-color: %s }" % col.name())
+            
+        for ch in range(len(self.plotColBtns)):
+            for pb in self.plotColBtns[ch]:
+                pb.setStyleSheet("QWidget { background-color: %s }" % col.name())       
+            
 
     ###################################
     # Author: Lan
@@ -4095,6 +4600,7 @@ class Properties(QtGui.QDialog):
         if self.conf.has_key('abnormalColor'):
             self.abnormalColBtn.setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['abnormalColor']).name())
         
+        #print "self.conf['patternSize']:", self.conf['patternSize']
         if self.conf.has_key('patternSize'):
             pSize = self.conf['patternSize']
             self.patternSizeText.setText(str(pSize))
@@ -4114,23 +4620,38 @@ class Properties(QtGui.QDialog):
     # def: updatePlotColorButton():201409
     # delete all the color buttons
     # add color buttons according to pattern; any extra button, use default color
-    def updatePlotColorButton(self, pSize):        
-        for pb in self.plotColBtns:
-            self.patternColorVBox.removeWidget(pb)
-            pb.deleteLater()
+    def updatePlotColorButton(self, pSize): 
+        for ch in range(len(self.plotColBtns)):
+            for pb in self.plotColBtns[ch]:
+                self.patternColorVBoxes[ch].removeWidget(pb)
+                pb.deleteLater()
             
         self.plotColBtns = []
-        for i in range(pSize):
-            cb = QtGui.QPushButton(str(i), self.patternColorPanel)
-            self.plotColBtns.append(cb)
-            cb.clicked.connect(self.onChangeColor)
-            cb.resize(1,1)
-            self.patternColorVBox.addWidget(cb)
-            if i < self.conf['patternSize']: 
-                cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][i]).name())    
+        for ch in range(len(self.parent.channels)):
+            if ch < len(self.conf['plotColor']):
+                self.allColorBtns[ch].setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][ch][0]).name())
             else:
-                cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.parent.defaultConf['plotColor'][0]).name())
-        
+                self.allColorBtns[ch].setStyleSheet("QWidget { background-color: %s }" % QColor(self.parent.defaultConf['plotColor'][ch][0]).name())
+            self.plotColBtns.append([])
+
+            for i in range(pSize):
+                cb = QtGui.QPushButton(str(i), self.patternColorPanel)
+                cb.setFixedWidth(50)
+                self.plotColBtns[ch].append(cb)
+                cb.clicked.connect(self.onChangeColor)
+                cb.resize(1,1)
+                self.patternColorVBoxes[ch].addWidget(cb)
+                
+                if ch < len(self.conf['plotColor']):
+                    if i < self.conf['patternSize']: 
+                        cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][ch][i]).name())    
+                    else:
+                        cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.parent.defaultConf['plotColor'][ch][0]).name())
+                else:
+                    cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.parent.defaultConf['plotColor'][ch][0]).name())
+            self.patternColorVBoxes[ch].addStretch(1)
+            
+            
     ###################################
     # Author: Lan
     # def: onUpdate():201409
@@ -4153,8 +4674,8 @@ class ArrayGui(QtGui.QWidget):
         mainVbox = QtGui.QVBoxLayout(); #mainFrame.setLayout(mainbox)
         self.setLayout(mainVbox)
         
-        self.chBox = QtGui.QHBoxLayout(); mainVbox.addLayout(self.chBox)
-        self.chBox.addWidget(QtGui.QLabel('Channels:'))
+        #self.chBox = QtGui.QHBoxLayout(); mainVbox.addLayout(self.chBox)
+        #self.chBox.addWidget(QtGui.QLabel('Channels:'))
         #self.chWidget = QtGui.QWidget()
         #chBox.addWidget(self.chWidget)  
         #channelBox = QtGui.QHBoxLayout(); self.chWidget.setLayout(channelBox)
@@ -4168,15 +4689,7 @@ class ArrayGui(QtGui.QWidget):
      
         #mainVbox.addStretch(1)    
     
-    def setChannels(self):
-        
-        self.channelChks = channelChks = []
-        for i in range(len(self.PH5View.channels)):
-            if self.PH5View.channels[i]!=False:
-                channelChks.append(QtGui.QCheckBox(str(self.PH5View.channels[i]), self))
-                self.chBox.addWidget(channelChks[i])   
-                channelChks[i].setCheckState(QtCore.Qt.Checked)             
-        self.chBox.addStretch(1)          
+       
         
     def setArrays(self):
         #self.sampleRates = []
@@ -4209,6 +4722,7 @@ class ES_Gui(QtGui.QWidget):
         self.initUI()
         self.selectedEvents = []
         self.selectedStations = []
+        self.shotLine = None
 
 
     def initUI(self): 
@@ -4216,6 +4730,49 @@ class ES_Gui(QtGui.QWidget):
         #mainFrame = QtGui.QFrame(self);self.setCentralWidget(mainFrame)
         mainVbox = QtGui.QVBoxLayout(); #mainFrame.setLayout(mainbox)
         self.setLayout(mainVbox)
+        
+        # station form need channelCtrls:
+        #    if submit form (shot gather), channelCtrls need to be checkbox to allow to select multi, need to get shotCtrls from parents
+        #    If not submit form (receiver gather), channelCtrls need radio button to allow selecting only one channel at a time
+        # event form need shotCtrls (shotline) which should be radio button to allow selecting only one shotline at a time
+        self.headBox = QtGui.QHBoxLayout(); mainVbox.addLayout(self.headBox)
+        if self.ESType == 'STATION':
+            #if self.parent.__class__.__name__ == 'ES_Gui':  # => this is submit form
+            if self.submitType:
+                self.shotCtrls = self.parent.shotCtrls              
+            self.headBox.addWidget(QtGui.QLabel('Channels:'))
+            self.headBox.insertSpacing(-1,15)
+            self.channelCtrls = channelCtrls = []
+            channelGroup = QtGui.QButtonGroup(self)
+            for ch in self.array['channels']:
+                if self.submitType: channelCtrls.append(QtGui.QCheckBox(str(ch), self))
+                else: channelCtrls.append(QtGui.QRadioButton(str(ch), self))
+                i = len(channelCtrls) - 1
+                self.headBox.addWidget( channelCtrls[i] ) 
+                if self.submitType: channelCtrls[i].setCheckState(QtCore.Qt.Checked) 
+                else: channelGroup.addButton(channelCtrls[i])
+                channelCtrls[i].installEventFilter(self)
+                self.EXPL[channelCtrls[i]] = "Click this channel to select/deselect."
+            if not self.submitType: channelCtrls[0].setChecked(True)
+                
+        else:
+            if self.parent.__class__.__name__ == 'ES_Gui':
+                self.channelCtrls = self.parent.channelCtrls            
+            self.headBox.addWidget(QtGui.QLabel('Shot Lines:'))
+            self.headBox.insertSpacing(-1,15)            
+            self.shotCtrls = shotCtrls = []
+            shotGroup = QtGui.QButtonGroup(self)
+            for shot in self.PH5View.events['shotLines']:
+                shotCtrls.append(QtGui.QRadioButton(shot, self))
+                i = len(shotCtrls) - 1
+                self.headBox.addWidget( shotCtrls[i])
+                shotGroup.addButton(shotCtrls[i])
+                shotCtrls[i].clicked.connect(self.onSelectShot)
+            shotCtrls[0].setChecked(True)
+            
+                
+        self.headBox.addStretch(1)   
+
         if not self.submitType:
             v = ( self.array['sampleRate'], TimeDOY.epoch2passcal(self.array['deployT']), 
                   TimeDOY.epoch2passcal(self.array['pickupT']) )
@@ -4226,17 +4783,16 @@ class ES_Gui(QtGui.QWidget):
         scrollArea.setWidgetResizable(True)
         itemsFrame = QtGui.QFrame(); scrollArea.setWidget(itemsFrame)
         mainScrollBox = QtGui.QVBoxLayout() ; itemsFrame.setLayout(mainScrollBox)
-        scrollPanel = QtGui.QWidget(); mainScrollBox.addWidget(scrollPanel)
+        self.scrollPanel = scrollPanel = QtGui.QWidget(); mainScrollBox.addWidget(scrollPanel)
         ESHbox = QtGui.QHBoxLayout(scrollPanel); 
         ESVbox = QtGui.QVBoxLayout(); ESHbox.addLayout(ESVbox)    
         self.ESPane = QtGui.QWidget(scrollPanel)
         ESVbox.addWidget(self.ESPane)
         self.ESGrid = QtGui.QGridLayout(); self.ESPane.setLayout(self.ESGrid)   
         
-        if self.ESType == 'STATION': self.setStations()
-        elif self.ESType == 'EVENT': self.setEvents()
-        
-        
+        if self.ESType == 'EVENT': self.setEvents()
+        elif self.ESType == 'STATION': self.setStations()
+            
         ESVbox.addStretch(1)
         ESHbox.addStretch(1)        
         
@@ -4244,8 +4800,10 @@ class ES_Gui(QtGui.QWidget):
             botLayout = QtGui.QHBoxLayout(); mainVbox.addLayout(botLayout)
             self.submitBtn = QtGui.QPushButton('Submit'); self.submitBtn.installEventFilter(self)
             if self.ESType == 'STATION':
+                item = "stations"
                 self.EXPL[self.submitBtn] = "Submit the list of stations to be plotted"
-            if self.ESType == 'STATION':
+            if self.ESType == 'EVENT':
+                item = "events"
                 self.EXPL[self.submitBtn] = "Submit the list of events to be plotted"
             self.submitBtn.clicked.connect(self.onSubmit)
             self.submitBtn.resize(25, 70) #self.submitBtn.sizeHint())
@@ -4266,6 +4824,7 @@ class ES_Gui(QtGui.QWidget):
             botLayout.addWidget(self.helpBtn ) 
                         
             botLayout.addStretch(1)
+            mainVbox.addWidget(QtGui.QLabel("Shift + Left Click to select a range of %s" % item))
         
     def onHelp(self, evt):
         self.helpEnable = not self.helpEnable
@@ -4280,22 +4839,44 @@ class ES_Gui(QtGui.QWidget):
     def onCancel(self, evt):
         self.close()
 
-        
+
+    ###################################
+    # Author: Lan
+    # def: onSubmit():201701      
+    # get neccessary info for plotting
     def onSubmit(self, evt):
         PH5View = self.PH5View
         control = self.parent.control
         arrayGui = self.parent.parent
         
+        
         PH5View.submitGui = self.ESType
         PH5View.selectedArray = self.array
-        PH5View.selectedChannels = []
         ############ CHANNEL #############
-        for i in range(len(arrayGui.channelChks)):
-            if arrayGui.channelChks[i].isChecked():
-                PH5View.selectedChannels.append(PH5View.channels[i])  
+        control.channels = []
+        for ch in self.channelCtrls:
+            if ch.isChecked():
+                control.channels.append( self.array['channels'][self.channelCtrls.index(ch)] )
+        
+        
+        if control.channels == []:
+            msg = "There is no Channels selected."
+            QtGui.QMessageBox.question(self, 'Error', msg, QtGui.QMessageBox.Ok)
+            return
+        
 
         control.setWidgetsEnabled(True)
-        if self.ESType == 'EVENT':
+        control.stationSpacingUnknownCkb.setChecked(True)
+        if self.ESType == 'EVENT':  
+            """
+            receiver gather:
+                selectedEvents from check state
+                selectedStations was the selected station that open the events-submit form
+                no start time for receiver gather because multi events may be selected with different start time
+                space between traces is fixed because all selected event should belong to one station
+                no correction
+            """
+            control.gather = "receiver"
             PH5View.selectedEvents = [e for e in self.array['events'] if 
                                       e['eventChk'].checkState() == QtCore.Qt.Checked]
             
@@ -4306,7 +4887,6 @@ class ES_Gui(QtGui.QWidget):
             
             control.startrangetimeCtrl.setText('')
             control.startrangetimeCtrl.setEnabled(False)
-            control.stationSpacingUnknownCkb.setCheckState(QtCore.Qt.Checked)
             control.stationSpacingUnknownCkb.setEnabled(False)
             control.correctionCkb.setCheckState(QtCore.Qt.Unchecked)
             control.correctionCkb.setEnabled(False) 
@@ -4315,10 +4895,22 @@ class ES_Gui(QtGui.QWidget):
             e = PH5View.selectedEvents[0]
             
         elif self.ESType == 'STATION':
-            PH5View.selectedStations = [s for s in self.array['stations'] if 
-                                            s['stationChk'].checkState() == QtCore.Qt.Checked]
-            
-            if PH5View.selectedStations == []:
+            """
+            shot gather:
+                selectedStations from check state
+                selectedEvents was the selected event that open the stations-submit form
+                default start time is the start time of the selected event
+                if more than one channel selected, fixed space between traces is required for better view
+                offset: keep the previous offset used
+            """
+            control.gather = "shot"
+            self.array['seclectedStations'] = []
+            for sId in self.array['orderedStationIds']: # use orderedStationIds to have the station sorted from the reader
+                s = self.array['stations'][sId]
+                if s['stationChk'].checkState() == QtCore.Qt.Checked:
+                    self.array['seclectedStations'].append( sId ) 
+
+            if self.array['seclectedStations']  == []:
                 msg = "You must select at least one stations before continue."
                 QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
                 return
@@ -4326,34 +4918,45 @@ class ES_Gui(QtGui.QWidget):
             e = PH5View.selectedEvents[0]           
             control.startrangetimeCtrl.setText(TimeDOY.epoch2passcal(e['eStart']))
             control.startrangetimeCtrl.setEnabled(True)
-            
-            if len(PH5View.selectedStations)==1:
-                control.stationSpacingUnknownCkb.setCheckState(QtCore.Qt.Checked)
-                control.stationSpacingUnknownCkb.setEnabled(False)  
-            else:
-                control.stationSpacingUnknownCkb.setCheckState(QtCore.Qt.Unchecked)
-                control.stationSpacingUnknownCkb.setEnabled(True)  
                 
             control.correctionCkb.setCheckState(QtCore.Qt.Checked)
             control.correctionCkb.setEnabled(True) 
             control.offsetCtrl.setText(str(control.dfltOffset))
             control.offsetCtrl.setEnabled(True)
+            
+            if len(control.channels)>1:
+                control.overlapSB.setValue(0)
+                control.stationSpacingUnknownCkb.setEnabled(False)  
+                control.nominalStaSpace.setText('1000')
+            else:
+                control.overlapSB.setValue(25)  
+                control.stationSpacingUnknownCkb.setEnabled(True)  
         else: 
             print "Error in ES_GUI.onSubmit(): self.ESType='%s'" % self.ESType
      
+        for ch in range(1,4):
+            if ch in control.channels:
+                control.channelCkbs[ch].setEnabled(True)
+                control.channelCkbs[ch].setChecked(True)
+            else:
+                control.channelCkbs[ch].setEnabled(False)
+                control.channelCkbs[ch].setChecked(False)
+                
         
+            
+        control.onChangePropertyType()
+            
         control.eventId = e['eventId']
         control.upperTimeLen = e['eStop'] - e['eStart']
         newTimeLen = control.dfltTimeLen - control.dfltOffset
         minInterval = int(newTimeLen/25)
         maxInterval = int(newTimeLen)
-        control.horGridIntervalSB.setRange(minInterval, maxInterval)
-        control.horGridIntervalSB.setValue(int(newTimeLen/15))       
+        control.timeGridIntervalSB.setRange(minInterval, maxInterval)
+        control.timeGridIntervalSB.setValue(int(newTimeLen/15))       
         
         control.timelenCtrl.setText(str(control.dfltTimeLen))
         control.setAllReplotBtnsEnabled(False)
         PH5View.selectedEventIds = [e['eventId'] for e in PH5View.selectedEvents]
-        PH5View.selectedStationIds = [s['stationId'] for s in PH5View.selectedStations]
         
         PH5View.tabWidget.setCurrentIndex(0)
         #print "selected Channels=", PH5View.selectedChannels
@@ -4373,130 +4976,293 @@ class ES_Gui(QtGui.QWidget):
         
             
         
-        
+    ###################################
+    # Author: Lan
+    # def: setEvents():201701
+    # set GUI for user to select Event(s)      
     def setEvents(self): 
         if self.submitType :
             allChk = QtGui.QCheckBox('')
             allChk.setChecked(True)
             self.ESGrid.addWidget(allChk,0,0)
             allChk.installEventFilter(self)
-            self.EXPL[allChk] = "Click to select/unselect ALL events"
+            self.EXPL[allChk] = "Click to select/deselect ALL events"
             allChk.clicked.connect(self.onSelectAllEvents)
-        self.ESGrid.addWidget(QtGui.QLabel('ID'),0,1)
+        else: eventGroup = QtGui.QButtonGroup(self)
+        
+        self.ESGrid.addWidget(QtGui.QLabel('eventId'),0,1)
         self.ESGrid.addWidget(QtGui.QLabel('Time'),0,2)
         self.ESGrid.addWidget(QtGui.QLabel('Latitude'),0,3)
         self.ESGrid.addWidget(QtGui.QLabel('Longitude'),0,4)
         self.ESGrid.addWidget(QtGui.QLabel('Elevation(m)'),0,5)
         self.ESGrid.addWidget(QtGui.QLabel('Mag'),0,6)
         self.ESGrid.addWidget(QtGui.QLabel('Depth(m)'),0,7)
+        self.eventChks = []
+        self.evenIDList = []
+        self.selectedEventChks = []        
         self.array['events'] = []
-        lineSeq = 1
-        for evts in self.PH5View.events:
-            lineId = evts["arrayId"]
-            for e in evts['events'] :
-                if e['eStart']<self.array['deployT'] or e['eStart']>self.array['pickupT']: continue
-                self.array['events'].append(e)
-                if not self.submitType:
-                    e['eventRbtn'] = QtGui.QRadioButton(self.ESPane)
-                    e['eventRbtn'].installEventFilter(self)
-                    self.EXPL[e['eventRbtn']] = "Click this event to select/unselect."
-                    e['eventRbtn'].clicked.connect(self.onSelectEvent)
-                    self.ESGrid.addWidget(e['eventRbtn'], lineSeq, 0)
-                else:
-                    e['eventChk'] = QtGui.QCheckBox('', self.ESPane)
-                    e['eventChk'].setChecked(True)
-                    e['eventChk'].installEventFilter(self)
-                    self.EXPL[e['eventChk']] = "Click to select this event"
-                    self.ESGrid.addWidget(e['eventChk'], lineSeq, 0)
-                self.addLabel(self.ESGrid, str(e['eventId']), lineSeq, 1)
-                self.addLabel(self.ESGrid, TimeDOY.epoch2passcal(e['eStart']), lineSeq, 2)
-                self.addLabel(self.ESGrid, str(e['lat.']), lineSeq, 3)
-                self.addLabel(self.ESGrid, str(e['long.']), lineSeq, 4)
-                self.addLabel(self.ESGrid, str(e['elev.']), lineSeq, 5)
-                self.addLabel(self.ESGrid, str(e['mag.']), lineSeq, 6)
-                self.addLabel(self.ESGrid, str(e['depth']), lineSeq, 7)
-                lineSeq += 1
 
+        lineSeq = 1
+        for e in self.PH5View.events['events']:
+            if e['eStop']<self.array['deployT'] or e['eStart']>self.array['pickupT']: continue
+            self.array['events'].append(e)
+            self.evenIDList.append(e['eventId'])
+            if not self.submitType: # shot gather: user click on an event to open stations' form
+                e['eventRbtn'] = QtGui.QRadioButton(self.ESPane)
+                e['eventRbtn'].installEventFilter(self)
+                self.EXPL[e['eventRbtn']] = "Click this event to select/deselect."
+                e['eventRbtn'].clicked.connect(self.onSelectEvent)
+                self.ESGrid.addWidget(e['eventRbtn'], lineSeq, 0)
+                eventGroup.addButton(e['eventRbtn'])
+            else: # receiver gather. This form was opened when user select a station. User can select multi events befor submitting
+                e['eventChk'] = QtGui.QCheckBox('', self.ESPane)
+                e['eventChk'].setChecked(True)
+                e['eventChk'].installEventFilter(self)
+                e['eventChk'].clicked.connect(self.onSelectEventRange)
+                self.EXPL[e['eventChk']] = "Click to select this event"
+                self.ESGrid.addWidget(e['eventChk'], lineSeq, 0)
+            self.addLabel(self.ESGrid, str(e['eventId']), lineSeq, 1)
+            self.addLabel(self.ESGrid, TimeDOY.epoch2passcal(e['eStart']), lineSeq, 2)
+            self.addLabel(self.ESGrid, str(e['lat.']), lineSeq, 3)
+            self.addLabel(self.ESGrid, str(e['long.']), lineSeq, 4)
+            self.addLabel(self.ESGrid, str(e['elev.']), lineSeq, 5)
+            self.addLabel(self.ESGrid, str(e['mag.']), lineSeq, 6)
+            self.addLabel(self.ESGrid, str(e['depth']), lineSeq, 7)
+            lineSeq += 1
+        self.selectedEventChks = list(range(len(self.eventChks)))
+        self.onSelectShot()
+      
+    ###################################
+    # Author: Lan
+    # def: setStations():201701
+    # set GUI for user to select Station(s)      
     def setStations(self):
         if self.submitType:
             allChk = QtGui.QCheckBox('')
             allChk.setChecked(True)
             self.ESGrid.addWidget(allChk,0,0)
             allChk.installEventFilter(self)
-            self.EXPL[allChk] = "Click to select/unselect ALL stations"
+            self.EXPL[allChk] = "Click to select/deselect ALL stations"
             allChk.clicked.connect(self.onSelectAllStations)
-        self.ESGrid.addWidget(QtGui.QLabel('ID'),0,1)
+        else: stationGroup = QtGui.QButtonGroup(self)
+        
+        self.ESGrid.addWidget(QtGui.QLabel('staId'),0,1)
         self.ESGrid.addWidget(QtGui.QLabel('DAS'),0,2)
         self.ESGrid.addWidget(QtGui.QLabel('Latitude'),0,3)
         self.ESGrid.addWidget(QtGui.QLabel('Longitude'),0,4)
         self.ESGrid.addWidget(QtGui.QLabel('Elevation(m)'),0,5)
-        self.ESGrid.addWidget(QtGui.QLabel('Component'),0,6)
+        self.stationChks = []
         
         lineSeq = 1
-        for s in self.array['stations']:
-            if not self.submitType: 
+        for sId in self.array['orderedStationIds']:
+            s = self.array['stations'][sId]
+            if not self.submitType: # receiver gather: user click on a station to open events' form
                 s['stationRbtn'] = QtGui.QRadioButton(self.ESPane)
                 s['stationRbtn'].installEventFilter(self)
-                self.EXPL[s['stationRbtn']] = "Click this station to select/unselect"
+                self.EXPL[s['stationRbtn']] = "Click this station to select/deselect"
                 s['stationRbtn'].clicked.connect(self.onSelectStation)
                 self.ESGrid.addWidget(s['stationRbtn'], lineSeq, 0)
-            else:
+                stationGroup.addButton(s['stationRbtn'])
+            else: # shot gather. This form was opened when user select an event. User can select multi stations befor submitting
                 s['stationChk'] = QtGui.QCheckBox('', self.ESPane)
+                self.stationChks.append(s['stationChk'])
                 s['stationChk'].setChecked(True)
+                s['stationChk'].clicked.connect(self.onSelectStationRange)
                 s['stationChk'].installEventFilter(self)
                 self.EXPL[s['stationChk']] = "Click to select this station"
                 self.ESGrid.addWidget(s['stationChk'], lineSeq, 0)
+                
             self.addLabel(self.ESGrid, str(s['stationId']), lineSeq, 1)
             self.addLabel(self.ESGrid, str(s['dasSer']), lineSeq, 2)
             self.addLabel(self.ESGrid, str(s['lat.']), lineSeq, 3)
             self.addLabel(self.ESGrid, str(s['long.']), lineSeq, 4)
             self.addLabel(self.ESGrid, str(s['elev.']), lineSeq, 5)
-            self.addLabel(self.ESGrid, str(s['component']), lineSeq, 6)
             lineSeq += 1
-            
+                
+        self.selectedStationChks = list(range(len(self.stationChks)))
+
+
+    ###################################
+    # Author: Lan
+    # def: addLabel():2015
+    # set info labels with background white 
     def addLabel(self, grid, text, row, col):
         lbl = QtGui.QLabel(text)
         lbl.setStyleSheet("QWidget { background-color: white }" )
         lbl.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
         grid.addWidget(lbl,row,col)    
+        
 
-
+    ###################################
+    # Author: Lan
+    # def: onSelectAllStations():201612
+    # check/uncheck all stations
+    # set values in self.selectedStationChks to help in onSelectStationRange()
     def onSelectAllStations(self,evt):
         allChk = self.sender()
-        for s in self.array['stations']:
+        for sId in self.array['stations'].keys():
+            s = self.array['stations'][sId]
             s['stationChk'].setCheckState(allChk.checkState())
+        if allChk.checkState()==True:
+            self.selectedStationChks = list(range(len(self.stationChks)))
+        else:
+            self.selectedStationChks = []
+            
         
-        
+    ###################################
+    # Author: Lan
+    # def: onSelectAllEvents():201612
+    # check/uncheck all events
+    # set values in self.selectedEventChks to help in onSelectEventRange()
     def onSelectAllEvents(self,evt):
         allChk = self.sender()
         for e in self.array['events']:
-            e['eventChk'].setCheckState(allChk.checkState())
+            if e['shotlineId'] == self.PH5View.shotLine:
+                e['eventChk'].setCheckState(allChk.checkState())
+            
                 
-                
-    def onSelectEvent(self, state):     # select one event => list of stations for the array of this GUI to will show up
-        sndr = self.sender ()
+        if allChk.checkState()==True:
+            self.selectedEventChks = list(range(len(self.eventChks)))
+        else:
+            self.selectedEventChks = [] 
+            
+            
+    ###################################
+    # Author: Lan
+    # def: onSelectEvent():201612  
+    # select one event => list of stations for the array of this GUI to will show up
+    def onSelectEvent(self, state):    
         self.PH5View.selectedEvents = [e for e in self.array['events'] if e['eventRbtn'] == self.sender()]    #only one event in the selectedEvents
+
         self.stationsWidget = stationsWidget = ES_Gui(self, ESType='STATION', array=self.array, submitType=True)
         stationsWidget.setGeometry(130, 100, 650,700)
         v = (self.array['arrayId'], self.PH5View.selectedEvents[0]['eventId'])
         stationsWidget.setWindowTitle("Array %s - Event %s" % v)
         stationsWidget.show()
-        
     
-    def onSelectStation(self, state):   # select one station => list of events of which times belong to the time of this GUI's array
-        sndr = self.sender ()
-        self.PH5View.selectedStations = [s for s in self.array['stations'] if s['stationRbtn'] == self.sender()] #only one station in the selectedStations
+            
+    ###################################
+    # Author: Lan
+    # def: onSelectEvent():201612    
+    # select one station => list of events of which times belong to the time of this GUI's array
+    def onSelectStation(self, state):    
+        self.array['seclectedStation'] = []
+        for sId in self.array['stations'].keys():
+            s = self.array['stations'][sId]
+            if s['stationRbtn'] == self.sender():
+                self.array['seclectedStations'] = [sId]
+                break # only one station is selected
         self.eventsWidget = eventsWidget = ES_Gui(self, ESType='EVENT', array=self.array, submitType=True)
         eventsWidget.setGeometry(130, 100, 650,700)
-        v = (self.array['arrayId'], self.PH5View.selectedStations[0]['stationId'])
+        v = (self.array['arrayId'], self.array['seclectedStations'][0]) # 0: only one channel-station is selected, 1: index of station
         eventsWidget.setWindowTitle("Array %s - Station %s" % v)
         eventsWidget.show()
+
+
+    ###################################
+    # Author: Lan
+    # def: onSelectEventRange():201701
+    def onSelectEventRange(self, state):
+        index = self.eventChks.index(self.sender())
+        if self.sender().isChecked() == False:  # if uncheck, remove that event from selectedEventChks
+            #print "remove:%s in %s" % (index, self.selectedEventChks)
+            self.selectedEventChks.remove(index)
+            return
         
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        if len(self.selectedEventChks)==0 or modifiers != QtCore.Qt.ShiftModifier: 
+            # if first check with shift or check with no shift at all, add that sigle event to selectedEventChks
+            #print "add:%s in %s" % (index, self.selectedEventChks)
+            self.selectedEventChks.append(index)
+            return
+        
+
+        # check with shift, add the range from this event to the closest one to selectedEventChks
+        minId = min(self.selectedEventChks)
+        maxId = max(self.selectedEventChks)
+        
+        if index < minId:
+            maxId = minId
+            minId = index
+        else:
+            minId = maxId
+            maxId = index
+        #print "minId=%s, maxId=%s" % (minId, maxId)
+        for i in range(minId, maxId+1):
+            if i in self.selectedEventChks: continue
+            self.selectedEventChks.append(i)
+            self.eventChks[i].setCheckState(QtCore.Qt.Checked) 
+
+
+    ###################################
+    # Author: Lan
+    # def: onSelectStationRange():201701        
+    def onSelectStationRange(self, state):
+        index = self.stationChks.index(self.sender())
+        if self.sender().isChecked() == False: # if uncheck, remove that station from selectedStationChks
+            print "remove:%s in %s" % (index, self.selectedStationChks)
+            self.selectedStationChks.remove(index)
+            return
+        
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        if len(self.selectedStationChks)==0 or modifiers != QtCore.Qt.ShiftModifier:
+            # if first check with shift or check with no shift at all, add that sigle station to selectedStationChks
+            print "add:%s in %s" % (index, self.selectedStationChks)
+            self.selectedStationChks.append(index)
+            return
+    
+        # check with shift, add the range from this station to the closest one to selectedStationChks
+        minId = min(self.selectedStationChks)
+        maxId = max(self.selectedStationChks)
+        
+        if index < minId:
+            maxId = minId
+            minId = index
+        else:
+            minId = maxId
+            maxId = index
+        print "minId=%s, maxId=%s" % (minId, maxId)
+        for i in range(minId, maxId+1):
+            if i in self.selectedStationChks: continue
+            self.selectedStationChks.append(i)
+            self.stationChks[i].setCheckState(QtCore.Qt.Checked)      
+                
+                
+                
+    # def: onSelectShot
+    # Author: Lan Dam
+    # updated: 201702
+    # When select a shot Line, all the events belong to that shot line 
+    # will be enabled otherwise will be disabled
+    def onSelectShot(self, state=None):
+        #print "onSelectShot"
+
+        if state != None:
+            index = self.shotCtrls.index(self.sender())
+        else:
+            index = 0 # new form, default index=0
+        self.PH5View.shotLine = self.PH5View.events['shotLines'][index]
+        
+        if self.submitType: ctrlName = 'eventChk'
+        else: ctrlName = 'eventRbtn'
+
+        for e in self.PH5View.events['events']: 
+            if e['eventId'] not in self.evenIDList: continue
+            if e['shotlineId']== self.PH5View.events['shotLines'][index]:
+                e[ctrlName].setEnabled(True)
+                e[ctrlName].setChecked(True)
+            else:
+                e[ctrlName].setEnabled(False)
+                e[ctrlName].setChecked(False)
+
+            
+                    
 
         
     ###################################
     # Author: Lan
-    # def: eventFilter(): 20151022
+    # def: eventFilter
+    # updated: 20151022
     # using baloon tooltip to help user understand the use of the widget (only the one install event filter)
     def eventFilter(self, object, event):
         if not self.submitType and not self.PH5View.helpEnable: return False
