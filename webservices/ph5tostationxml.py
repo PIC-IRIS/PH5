@@ -470,12 +470,6 @@ class PH5toStationXML(object):
         
                 if self.args.get('level') and (
                     self.args.get('level').upper() == "STATION" or self.args.get('level').upper() == "NETWORK"):
-                    
-                    if station.selected_number_of_channels == 0:
-                        if self.cha_list_set == 0 and self.location_list_set == 0:
-                            all_stations.append(station)
-                        else:
-                            continue
                     all_stations.append(station)
                     
 
