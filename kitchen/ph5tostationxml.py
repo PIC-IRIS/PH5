@@ -286,8 +286,12 @@ class PH5toStationXML(object):
                 
                 
                 
-                station = obspy.core.inventory.Station(station_list[1][0]
-                                                       ['seed_station_name_s'],
+                if station_list[1][0]['seed_station_name_s']:
+                    station_name = station_list[1][0]['seed_station_name_s']
+                else:
+                    station_name = x
+                    
+                station = obspy.core.inventory.Station(station_name,
                                                        latitude=latitude,
                                                        longitude=longitude,
                                                        elevation=elevation)
