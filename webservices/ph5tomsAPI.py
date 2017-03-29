@@ -93,6 +93,14 @@ class StationCut(object):
         return self.__dict__ == other.__dict__
 
 
+class PH5toMSAPIError(Exception):
+    """Exception raised when there is a problem with the request.
+    :param: message -- explanation of the error
+    """
+    def __init__(self, message):
+        self.message = message
+
+
 class PH5toMSeed(object):
 
     def __init__(self, ph5API_object, array, length, offset, component=[],
@@ -131,9 +139,8 @@ class PH5toMSeed(object):
             try:
                 os.mkdir(self.out_dir)
             except Exception:
-                sys.stderr.write(
-                    "Error: Can't create {0}.".format(self.out_dir))
-                sys.exit()
+                raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
+
         if dasskip is not None:
             self.dasskip = dasskip
         else:
@@ -141,9 +148,7 @@ class PH5toMSeed(object):
 
         # Check network code is 2 alphanum
         if (not self.netcode.isalnum()) or (len(self.netcode) != 2):
-            sys.stderr.write(
-                'Error parsing args: Netcode must 2 character alphanumeric')
-            sys.exit(-2)
+            raise PH5toMSAPIError('Error - Netcode must be a 2 character alphanumeric.')
 
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
@@ -351,7 +356,6 @@ class PH5toMSeed(object):
                 try:
                     obspy_trace = Trace(data=trace.data)
                 except ValueError:
-                    print "error"
                     continue
                 
                 
@@ -393,10 +397,10 @@ class PH5toMSeed(object):
                     matched_shot_line = shot_line
 
         if self.shotline and not matched_shot_line:
-            sys.exit(-1)
+            raise PH5toMSAPIError("Error - requested shotline does not exist.")
 
         if self.eventnumbers and not self.shotline:
-            sys.exit(-1)
+            raise PH5toMSAPIError("Error - shotline not specified.")
 
         for array_name in array_names:
             array = array_name[-3:]
@@ -449,9 +453,7 @@ class PH5toMSeed(object):
                     if (self.eventnumbers and
                             self.shotline and matched_shot_line):
                         if not self.length:
-                            # print "error: length must be specified.
-                            # Use -l option"
-                            sys.exit()
+                            raise PH5toMSAPIError('Error - length is required for request by shot.')
                         eventnumbers = self.eventnumbers
                         for evt in eventnumbers:
                             try:
@@ -460,7 +462,6 @@ class PH5toMSeed(object):
                                 start_times.append(event_t['time/epoch_l'])
                                 self.evt_lat = event_t['location/Y/value_d']
                                 self.evt_lon = event_t['location/X/value_d']
-                                # sys.exit()
                             except Exception:
                                 error = 1
 
@@ -820,8 +821,6 @@ if __name__ == '__main__':
 
     args = get_args()
 
-    # print PH5_PATH, PH5_FILE
-
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)
     else:
@@ -838,7 +837,7 @@ if __name__ == '__main__':
         args.array = args.array.split(',')
     if args.sta_id_list:
         args.sta_id_list=args.sta_id_list.split(',')
-    if args.sta_list:    
+    if args.sta_list:
         args.sta_list=args.sta_list.split(',')
     if args.eventnumbers:
         args.eventnumbers= args.eventnumbers.split(',')
