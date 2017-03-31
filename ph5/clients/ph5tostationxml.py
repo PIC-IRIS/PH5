@@ -19,36 +19,14 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 """
 
 import sys
-
 import os
-
 import obspy 
-
 import ph5API
-
-import time
-
-import calendar
-
 import datetime
-
-from TimeDOY import epoch2passcal
-
-from TimeDOY import passcal2epoch
-
 from obspy import read_inventory
-
 import argparse
-
 import fnmatch
-
 from obspy.core.util import AttribDict
-
-
-
-
-
-
 
 PROG_VERSION = "2017.085"
 
@@ -148,20 +126,14 @@ class PH5toStationXML(object):
 
         self.args = args
         self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
-        component_list_set=1
         self.cha_list_set=1
         self.sta_list_set=1
         self.receiver_list_set=1
         self.location_list_set=1
-        
 
-        # self.bb_resp = response_from_respfile(
-        #    '/opt/k4/apps/pn4/webservices/RESP.XX.NS007..BHZ.CMG3T.120.1500',
-        #    '/opt/k4/apps/pn4/webservices/RESP.XX.NR021..HHZ.130.32.100')
-        
-        nickname = args.get('nickname')
-        if nickname[-3:] != 'ph5':
-            args['nickname'] = args['nickname'] + '.ph5'
+        nickname, ext = os.path.splitext(args.get('nickname'))
+        if ext != 'ph5':
+            args['nickname'] = nickname + '.ph5'
 
         if not self.args.get('channel_list'):
             self.cha_list_set=0
@@ -206,6 +178,22 @@ class PH5toStationXML(object):
             self.args['stop_time'] = datetime.datetime.strptime(
                 self.args.get('stop_time'), "%Y:%j:%H:%M:%S.%f")
 
+    def does_pattern_exists(self, patterns_list, other_pattern):
+        for pattern in patterns_list:
+            if fnmatch.fnmatch(other_pattern, pattern):
+                return True
+        return False
+    
+    def does_experiment_pattern_exists(self, request_patterns, code):
+        l = []
+        for pattern in request_patterns:
+            if fnmatch.fnmatch(self.experiment_t[0][code], pattern):
+                l.append(1)
+        if not l:
+            return False
+        else:
+            return True
+
     def read_arrays(self, name):
         if name is None:
             for n in self.ph5.Array_t_names:
@@ -213,12 +201,115 @@ class PH5toStationXML(object):
         else:
             self.ph5.read_array_t(name)
 
+    def is_lat_lon_match(self, latitude, longitude):
+        
+        if  not -90 <= float(latitude) <= 90:
+            return False 
+        elif not  -180 <= float(longitude) <= 180:
+            return False              
+        elif self.args.get('minlat') and float(
+                self.args.get('minlat')) > float(latitude):
+            return False
+        elif self.args.get('minlon') and float(
+                self.args.get('minlon')) > float(longitude):
+            return False
+        elif self.args.get('maxlat') and float(
+                self.args.get('maxlat')) < float(latitude):
+            return False
+        elif self.args.get('maxlon') and float(
+                self.args.get('maxlon')) < float(longitude):
+            return False
+        else:
+            return True
+        
+    def create_obs_network(self, obs_stations):
+        obs_network = obspy.core.inventory.Network(
+            self.experiment_t[0]['net_code_s'])
+        obs_network.alternate_code = self.experiment_t[0]['experiment_id_s']
+        obs_network.description = self.experiment_t[0]['longname_s']
+
+        obs_network.stations = obs_stations
+        
+        start_time, end_time=self.get_network_date()
+            
+        obs_network.start_date=datetime.datetime.fromtimestamp(start_time)
+        obs_network.end_date=datetime.datetime.fromtimestamp(end_time)
+        return obs_network
+
+    def create_obs_station(self, station_list, sta_code, 
+                           array_name, start_date, end_date, sta_longitude,
+                           sta_latitude, sta_elevation):
+
+        obs_station = obspy.core.inventory.Station(sta_code,
+                                               latitude=sta_latitude,
+                                               longitude=sta_longitude,
+                                               elevation=sta_elevation)
+        
+        obs_station.start_date = datetime.datetime.fromtimestamp(start_date)
+        obs_station.end_date = datetime.datetime.fromtimestamp(end_date)                            
+
+        obs_station.creation_date = datetime.datetime.fromtimestamp(
+            station_list[1][0]['deploy_time/epoch_l'])
+        obs_station.termination_date = datetime.datetime.fromtimestamp(
+            station_list[1][0]['pickup_time/epoch_l'])
+        extra = AttribDict({
+            'PH5Array': {
+                'value': str(array_name)[-3:],
+                'namespace': self.iris_custom_ns,
+                'type': 'attribute'
+            }
+        }) 
+        obs_station.extra=extra        
+        obs_station.site = obspy.core.inventory.Site(
+            name=station_list[1][0]['seed_station_name_s'])     
+
+        return obs_station
+        
+
+    def create_obs_channel(self, station_list, deployment, cha_code, loc_code,
+                           cha_longitude, cha_latitude, cha_elevation):       
+        obs_channel = obspy.core.inventory.Channel(
+            code=cha_code, location_code=loc_code,
+            latitude=cha_latitude,
+            longitude=cha_longitude, elevation=cha_elevation,
+            depth=0)
+        obs_channel.start_date = datetime.datetime.fromtimestamp(
+            station_list[deployment][0]['deploy_time/epoch_l'])
+        obs_channel.end_date = datetime.datetime.fromtimestamp(
+            station_list[deployment][0]['pickup_time/epoch_l'])
+        obs_channel.sample_rate = station_list[
+            deployment][0]['sample_rate_i']
+        obs_channel.sample_rate_ration = station_list[
+            deployment][0]['sample_rate_multiplier_i']
+        obs_channel.storage_format = "PH5"
+    
+        obs_channel.sensor = obspy.core.inventory.Equipment(
+            type="", description="",
+            manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
+            serial_number=station_list[deployment][0][
+                'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
+            removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
+    
+        obs_channel.data_logger = obspy.core.inventory.Equipment(
+            type="", description="",
+            manufacturer=station_list[deployment][0]['das/manufacturer_s'], vendor="", model=station_list[deployment][0]['das/model_s'],
+            serial_number=station_list[deployment][0][
+                'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
+            removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
+             
+        extra = AttribDict({
+                'PH5Component': {
+                    'value': str(station_list[deployment][0]['channel_number_i']),
+                    'namespace': self.iris_custom_ns,
+                    'type': 'attribute'
+                }
+            }) 
+        obs_channel.extra=extra
+        return obs_channel
 
     def Read_Stations(self, sta_list):
-        
 
         all_stations = []
-        
         
         cha_list_patterns = self.args.get('channel_list')
         component_list_patterns = self.args.get('component_list')
@@ -226,22 +317,12 @@ class PH5toStationXML(object):
         location_patterns = self.args.get('location_list')
         array_patterns = self.args.get('array_list')      
        
-
         for array_name in self.array_names:
 
             array = array_name[-3:]
             
-            matched=0
-            
-     
-                            
-            for pattern in array_patterns:
-                if fnmatch.fnmatch(array, pattern):
-                    matched = 1
-                                
-                    
-            if matched != 1:
-                continue    
+            if not self.does_pattern_exists(array_patterns, array):
+                continue
                 
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
@@ -255,114 +336,48 @@ class PH5toStationXML(object):
                 if x not in sta_list:
                     continue
                 
-                longitude = station_list[1][0]['location/X/value_d']
-                latitude = station_list[1][0]['location/Y/value_d']
-                elevation = station_list[1][0]['location/Z/value_d']
-                
-                if  not -90 <= float(latitude) <= 90:
-                    
-                    continue
-                
-                if not  -180 <= float(longitude) <= 180:
-                    
-                    continue                
-                
+                sta_longitude = station_list[1][0]['location/X/value_d']
+                sta_latitude = station_list[1][0]['location/Y/value_d']
+                sta_elevation = station_list[1][0]['location/Z/value_d']
 
-                if self.args.get('minlat') and float(
-                        self.args.get('minlat')) > float(latitude):
+                if not self.is_lat_lon_match(sta_latitude, sta_longitude):
                     continue
-
-                if self.args.get('minlon') and float(
-                        self.args.get('minlon')) > float(longitude):
-                    continue
-
-                if self.args.get('maxlat') and float(
-                        self.args.get('maxlat')) < float(latitude):
-                    continue
-
-                if self.args.get('maxlon') and float(
-                        self.args.get('maxlon')) < float(longitude):
-                    continue
-                
-                
                 
                 if station_list[1][0]['seed_station_name_s']:
                     station_name = station_list[1][0]['seed_station_name_s']
                 else:
                     station_name = x
-                    
-                station = obspy.core.inventory.Station(station_name,
-                                                       latitude=latitude,
-                                                       longitude=longitude,
-                                                       elevation=elevation)
-                
 
-                station.start_date = datetime.datetime.fromtimestamp(
-                    station_list[1][0]['deploy_time/epoch_l'])
-                station.end_date = datetime.datetime.fromtimestamp(
-                    station_list[1][0]['pickup_time/epoch_l'])
-                
-                
-                
-                if self.args.get('start_time') and self.args.get('start_time') > station.end_date:
+                start_date = station_list[1][0]['deploy_time/epoch_l']
+                end_date = station_list[1][0]['pickup_time/epoch_l']
+                if self.args.get('start_time') and self.args.get('start_time') > end_date:
                     # chosen start time after pickup
                     continue
-                
-                if self.args.get('stop_time') and self.args.get('stop_time') < station.start_date:
+                elif self.args.get('stop_time') and self.args.get('stop_time') < start_date:
                     # chosen end time before pickup
-                    continue                
-                
-                       
+                    continue
 
-                station.creation_date = datetime.datetime.fromtimestamp(
-                    station_list[1][0]['deploy_time/epoch_l'])
-                station.termination_date = datetime.datetime.fromtimestamp(
-                    station_list[1][0]['pickup_time/epoch_l'])
-                extra = AttribDict({
-                    'PH5Array': {
-                        'value': str(array_name)[-3:],
-                        'namespace': self.iris_custom_ns,
-                        'type': 'attribute'
-                    }
-                }) 
-                
-                station.extra=extra
-                 
-                station.site = obspy.core.inventory.Site(
-                    name=station_list[1][0]['seed_station_name_s'])
-                
-
-                
+                obs_station = self.create_obs_station(station_list, 
+                                                      station_name, array_name, 
+                                                      start_date, end_date,
+                                                      sta_longitude, sta_latitude,
+                                                      sta_elevation)
+                   
                 for deployment in station_list:
-                    component_match =0
-                    receiver_match =0
-                    
-                    receiver_id=str(station_list[deployment][0]['id_s'])
-                    
-                    for pattern in receiver_list_patterns:
-                        if fnmatch.fnmatch(receiver_id, pattern):
-                            receiver_match =1
-                            
-                    if receiver_match != 1:
-                        continue
-                    
+                    receiver_id=str(station_list[deployment][0]['id_s'])          
+                    if not self.does_pattern_exists(receiver_list_patterns, receiver_id):
+                        continue           
                     
                     c_id= str(station_list[deployment][0]['channel_number_i'])
-                    for pattern in component_list_patterns:
-                        if fnmatch.fnmatch(c_id, pattern):
-                            component_match =1
-                            
-                    if component_match != 1:
-                        continue
+                    if not self.does_pattern_exists(component_list_patterns, c_id):
+                        continue   
                         
                     total_channels = total_channels + 1
-                    location_match = False
 
-                    c = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
-                    
+                    seed_channel = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
+
                     for pattern in cha_list_patterns:
-                        if fnmatch.fnmatch(c, pattern):
-                            
+                        if fnmatch.fnmatch(seed_channel, pattern):
 
                             if station_list[deployment][
                                     0]['seed_location_code_s']:
@@ -371,145 +386,65 @@ class PH5toStationXML(object):
                             else:
                                 location = ""
 
-                            for pattern in location_patterns:
-                                if fnmatch.fnmatch(location, pattern):
-                                    location_match = True
-
-                            if not location_match:
-                                continue
+                            if not self.does_pattern_exists(location_patterns, location):
+                                continue 
                             
-                            channels.append(c)
+                            channels.append(seed_channel)
 
-                            obs_channel = obspy.core.inventory.Channel(
-                                code=c, location_code=location,
-                                latitude=latitude,
-                                longitude=longitude, elevation=elevation,
-                                depth=0)
-                            obs_channel.start_date = datetime.datetime.fromtimestamp(
-                                station_list[deployment][0]['deploy_time/epoch_l'])
-                            obs_channel.end_date = datetime.datetime.fromtimestamp(
-                                station_list[deployment][0]['pickup_time/epoch_l'])
-                            obs_channel.sample_rate = station_list[
-                                deployment][0]['sample_rate_i']
-                            obs_channel.sample_rate_ration = station_list[
-                                deployment][0]['sample_rate_multiplier_i']
-                            obs_channel.storage_format = "PH5"
-
-                            obs_channel.sensor = obspy.core.inventory.Equipment(
-                                type="", description="",
-                                manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
-                                serial_number=station_list[deployment][0][
-                                    'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
-                                removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-
-                            obs_channel.data_logger = obspy.core.inventory.Equipment(
-                                type="", description="",
-                                manufacturer=station_list[deployment][0]['das/manufacturer_s'], vendor="", model=station_list[deployment][0]['das/model_s'],
-                                serial_number=station_list[deployment][0][
-                                    'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
-                                removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-      
-
-                            if self.args.get('minlat') and float(
-                                    self.args.get('minlat')) > float(latitude):
+                            cha_longitude = station_list[deployment][
+                                                             0]['location/X/value_d']
+                            cha_latitude = station_list[deployment][
+                                                            0]['location/Y/value_d']
+                            cha_elevation = station_list[deployment][
+                                                             0]['location/Z/value_d'] 
+                            
+                            if not self.is_lat_lon_match(cha_latitude, cha_longitude):
                                 continue
 
-                            if self.args.get('minlon') and float(
-                                    self.args.get('minlon')) > float(longitude):
-                                continue
-
-                            if self.args.get('maxlat') and float(
-                                    self.args.get('maxlat')) < float(latitude):
-                                continue
-
-                            if self.args.get('maxlon') and float(
-                                    self.args.get('maxlon')) < float(longitude):
-                                continue
-
-                            #if self.args.level.upper() == "RESPONSE":
-                                #if station_list[deployment][0][
-                                #        'sensor/model_s'] == 'cmg3t':
-
-                                #    obs_channel.response = self.bb_resp
-                                 
-                            extra = AttribDict({
-                                    'PH5Component': {
-                                        'value': str(station_list[deployment][0]['channel_number_i']),
-                                        'namespace': self.iris_custom_ns,
-                                        'type': 'attribute'
-                                    }
-                                }) 
-                            obs_channel.extra=extra
-    
+                            obs_channel = self.create_obs_channel(station_list, deployment,
+                                                                  seed_channel, location, cha_longitude, 
+                                                                  cha_latitude, cha_elevation)
+                            
                             obs_channels.append(obs_channel)
-                                
-                                
-
-                    longitude = station_list[deployment][
-                                                     0]['location/X/value_d']
-                    latitude = station_list[deployment][
-                                                    0]['location/Y/value_d']
-                    elevation = station_list[deployment][
-                                                     0]['location/Z/value_d']
-                        
                 
-                station.selected_number_of_channels = len(channels)
+                obs_station.total_number_of_channels = len(obs_channels)
+                obs_station.selected_number_of_channels = len(obs_channels)
                 
+                # for station level show the selected_number_of_channels element
                 if self.args.get('level').upper() == "STATION":
-                    station.selected_number_of_channels = 0
-                    
-                station.total_number_of_channels = total_channels
-                
-                
-                
-                if self.args.get('level') and (
-                    self.args.get('level').upper() == "CHANNEL" or
-                    self.args.get('level').upper() == "RESPONSE"): 
-                    
-                    if station.selected_number_of_channels ==0:
-                        continue
-                    else:
-                        station.channels = obs_channels
-                        all_stations.append(station)
+                    obs_station.selected_number_of_channels = 0
         
-                if self.args.get('level') and (
-                    self.args.get('level').upper() == "STATION" or self.args.get('level').upper() == "NETWORK"):
-                    all_stations.append(station)
-                    
-
+                obs_station.channels = obs_channels   
+                if obs_station and obs_station.selected_number_of_channels == 0:
+                    continue
+                else:
+                    all_stations.append(obs_station)             
         return all_stations
 
     def Parse_Station_list(self, sta_list):
         l = []
-        all_stations = []
         sta_list_patterns = sta_list
        
-
         for array_name in self.array_names:
-            array = array_name[-3:]
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
             
             for station in arrayorder:
                 station_list = arraybyid.get(station)
                 for deployment in station_list:
-                    
                     for pattern in sta_list_patterns:
                         if fnmatch.fnmatch(str(station), str(pattern)): 
                             l.append(station)
                         if fnmatch.fnmatch((station_list[deployment][0]
                                                 ['seed_station_name_s']), pattern):
                             l.append(station)
-            
-            
-            final_list = sorted(set(l))
-                
+        final_list = sorted(set(l))          
         return final_list
 
     def Parse_Networks(self, path):
         network_patterns = self.args.get('network_list')
         reportnum_patterns =  self.args.get('reportnum_list')
-
+        
         self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_array_t_names()
         self.ph5.read_das_g_names()
@@ -520,75 +455,22 @@ class PH5toStationXML(object):
         self.array_names.sort()
 
         # read network code and compare to network list
-        l = []
-        for pattern in network_patterns:
-            if fnmatch.fnmatch(self.experiment_t[0]['net_code_s'], pattern):
-                l.append(1)
-        if not l:
+        if not self.does_experiment_pattern_exists(network_patterns, 'net_code_s'):
             self.ph5.close()
-            return None
+            return
 
         # read reportnum and compare to reportnum list
-        l = []
-        for pattern in reportnum_patterns:
-            if fnmatch.fnmatch(self.experiment_t[0][
-                               'experiment_id_s'], pattern):
-                l.append(1)
-        if not l:
+        if not self.does_experiment_pattern_exists(reportnum_patterns, 'experiment_id_s'):
             self.ph5.close()
-            return None
-
-        network = obspy.core.inventory.Network(
-            self.experiment_t[0]['net_code_s'])
-        network.alternate_code = self.experiment_t[0]['experiment_id_s']
-        network.description = self.experiment_t[0]['longname_s']
-
+            return
+        
         sta_list = self.Parse_Station_list(self.args.get('sta_list'))
-        network.stations = self.Read_Stations(sta_list)
+        obs_stations = self.Read_Stations(sta_list)
+        obs_network = self.create_obs_network(obs_stations)
         
-
-        if not network.stations:
-            if self.sta_list_set==1  or self.cha_list_set == 1 or self.location_list_set == 1 :   
-                self.ph5.close()
-                return        
-        
-        start_time, end_time=self.get_network_date()
-            
-        network.start_date=datetime.datetime.fromtimestamp(start_time)
-        network.end_date=datetime.datetime.fromtimestamp(end_time)
-           
-        
-        if self.args.get('level') and self.args.get('level').upper() == "NETWORK":
-            network.stations=[]
-            
         self.ph5.close()
         
-        return network
-
-    def Process(self):
-        networks = []
-
-        paths = self.args.get('ph5path')
-
-        if self.args.get('basepath'):
-
-            paths = []
-            for dirName, subdirList, fileList in os.walk(self.args.get('basepath')):
-                for fname in fileList:
-                    if fname == "master.ph5":
-                        paths.append(dirName)
-
-        for path in paths:
-
-            network = self.Parse_Networks(path)
-            if network:
-                networks.append(network)
-
-        inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
-                                             sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
-                                             module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.get('uri'))
-
-        return inv
+        return obs_network
     
     def get_network_date(self):
         self.read_arrays(None)
@@ -612,12 +494,32 @@ class PH5toStationXML(object):
                         max_end_time=float(station_list[deployment][0]['pickup_time/epoch_l'])  
                         
         return min_start_time, max_end_time
-                    
-                    
-                                    
-        
+    
+    def Process(self):
+        networks = []
 
+        paths = self.args.get('ph5path')
 
+        if self.args.get('basepath'):
+            paths = []
+            for dirName, subdirList, fileList in os.walk(self.args.get('basepath')):
+                for fname in fileList:
+                    if fname == "master.ph5":
+                        paths.append(dirName)
+
+        for path in paths:
+            network = self.Parse_Networks(path)
+            if network:
+                networks.append(network)
+        if networks:
+            inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
+                                                 sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
+                                                 module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.get('uri'))
+            return inv
+        else:
+            return
+
+                    
 if __name__ == '__main__':
 
     args = get_args()
