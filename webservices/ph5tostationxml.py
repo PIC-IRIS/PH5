@@ -223,18 +223,18 @@ class PH5toStationXML(object):
             return True
         
     def create_obs_network(self, obs_stations):
-        obs_network = obspy.core.inventory.Network(
-            self.experiment_t[0]['net_code_s'])
-        obs_network.alternate_code = self.experiment_t[0]['experiment_id_s']
-        obs_network.description = self.experiment_t[0]['longname_s']
-
-        obs_network.stations = obs_stations
-        
-        start_time, end_time=self.get_network_date()
-            
-        obs_network.start_date=datetime.datetime.fromtimestamp(start_time)
-        obs_network.end_date=datetime.datetime.fromtimestamp(end_time)
-        return obs_network
+        if obs_stations:
+            obs_network = obspy.core.inventory.Network(
+                self.experiment_t[0]['net_code_s'])
+            obs_network.alternate_code = self.experiment_t[0]['experiment_id_s']
+            obs_network.description = self.experiment_t[0]['longname_s']
+            start_time, end_time=self.get_network_date()   
+            obs_network.start_date=datetime.datetime.fromtimestamp(start_time)
+            obs_network.end_date=datetime.datetime.fromtimestamp(end_time)
+            obs_network.stations = obs_stations
+            return obs_network
+        else:
+            return
 
     def create_obs_station(self, station_list, sta_code, 
                            array_name, start_date, end_date, sta_longitude,
@@ -243,10 +243,7 @@ class PH5toStationXML(object):
         obs_station = obspy.core.inventory.Station(sta_code,
                                                latitude=sta_latitude,
                                                longitude=sta_longitude,
-                                               elevation=sta_elevation)
-        
-        obs_station.start_date = datetime.datetime.fromtimestamp(start_date)
-        obs_station.end_date = datetime.datetime.fromtimestamp(end_date)                            
+                                               elevation=sta_elevation)                           
 
         obs_station.creation_date = datetime.datetime.fromtimestamp(
             station_list[1][0]['deploy_time/epoch_l'])
@@ -263,8 +260,7 @@ class PH5toStationXML(object):
         obs_station.site = obspy.core.inventory.Site(
             name=station_list[1][0]['seed_station_name_s'])     
 
-        return obs_station
-        
+        return obs_station     
 
     def create_obs_channel(self, station_list, deployment, cha_code, loc_code,
                            cha_longitude, cha_latitude, cha_elevation):       
@@ -349,7 +345,9 @@ class PH5toStationXML(object):
                     station_name = x
 
                 start_date = station_list[1][0]['deploy_time/epoch_l']
+                start_date = datetime.datetime.fromtimestamp(start_date)
                 end_date = station_list[1][0]['pickup_time/epoch_l']
+                end_date = datetime.datetime.fromtimestamp(end_date)
                 if self.args.get('start_time') and self.args.get('start_time') > end_date:
                     # chosen start time after pickup
                     continue
@@ -407,14 +405,10 @@ class PH5toStationXML(object):
                             
                             obs_channels.append(obs_channel)
                 
-                obs_station.total_number_of_channels = len(obs_channels)
+                obs_station.total_number_of_channels = total_channels
                 obs_station.selected_number_of_channels = len(obs_channels)
-                
-                # for station level show the selected_number_of_channels element
-                if self.args.get('level').upper() == "STATION":
-                    obs_station.selected_number_of_channels = 0
-        
-                obs_station.channels = obs_channels   
+
+                obs_station.channels = obs_channels
                 if obs_station and obs_station.selected_number_of_channels == 0:
                     continue
                 else:
@@ -495,6 +489,20 @@ class PH5toStationXML(object):
                         
         return min_start_time, max_end_time
     
+    def trim_to_level(self, network):
+        if self.args.get('level').upper() == "NETWORK":
+            network.stations = []
+        elif self.args.get('level').upper() == "STATION":
+            # for station level show the selected_number_of_channels element
+            for station in network.stations:
+                station.selected_number_of_channels = 0
+                station.channels = []
+        elif self.args.get('level').upper() == "CHANNEL":
+            for station in network.stations:
+                for channel in station.channels:
+                    channel.response = None
+        return network
+ 
     def Process(self):
         networks = []
 
@@ -510,6 +518,7 @@ class PH5toStationXML(object):
         for path in paths:
             network = self.Parse_Networks(path)
             if network:
+                network = self.trim_to_level(network)
                 networks.append(network)
         if networks:
             inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
