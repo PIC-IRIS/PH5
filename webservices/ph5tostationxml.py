@@ -303,14 +303,57 @@ class PH5toStationXML(object):
         obs_channel.extra=extra
         return obs_channel
 
-    def Read_Stations(self, sta_list):
+    def read_channels(self, station_list):
 
-        all_stations = []
-        
+        obs_channels = []
         cha_list_patterns = self.args.get('channel_list')
         component_list_patterns = self.args.get('component_list')
         receiver_list_patterns = self.args.get('receiver_list')
         location_patterns = self.args.get('location_list')
+        for deployment in station_list:
+            receiver_id=str(station_list[deployment][0]['id_s'])          
+            if not self.does_pattern_exists(receiver_list_patterns, receiver_id):
+                continue           
+            
+            c_id= str(station_list[deployment][0]['channel_number_i'])
+            if not self.does_pattern_exists(component_list_patterns, c_id):
+                continue   
+
+            seed_channel = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
+
+            for pattern in cha_list_patterns:
+                if fnmatch.fnmatch(seed_channel, pattern):
+
+                    if station_list[deployment][
+                            0]['seed_location_code_s']:
+                        location = station_list[deployment][
+                            0]['seed_location_code_s']
+                    else:
+                        location = ""
+
+                    if not self.does_pattern_exists(location_patterns, location):
+                        continue 
+
+                    cha_longitude = station_list[deployment][
+                                                     0]['location/X/value_d']
+                    cha_latitude = station_list[deployment][
+                                                    0]['location/Y/value_d']
+                    cha_elevation = station_list[deployment][
+                                                     0]['location/Z/value_d'] 
+                    
+                    if not self.is_lat_lon_match(cha_latitude, cha_longitude):
+                        continue
+
+                    obs_channel = self.create_obs_channel(station_list, deployment,
+                                                          seed_channel, location, cha_longitude, 
+                                                          cha_latitude, cha_elevation)
+                    
+                    obs_channels.append(obs_channel)
+        return obs_channels
+    
+    def read_stations(self, sta_list):
+
+        all_stations = []
         array_patterns = self.args.get('array_list')      
        
         for array_name in self.array_names:
@@ -325,9 +368,7 @@ class PH5toStationXML(object):
             
             for x in arrayorder:
                 station_list = arraybyid.get(x)
-                channels = []
                 obs_channels = []
-                total_channels = 0
 
                 if x not in sta_list:
                     continue
@@ -361,51 +402,9 @@ class PH5toStationXML(object):
                                                       sta_longitude, sta_latitude,
                                                       sta_elevation)
                    
-                for deployment in station_list:
-                    receiver_id=str(station_list[deployment][0]['id_s'])          
-                    if not self.does_pattern_exists(receiver_list_patterns, receiver_id):
-                        continue           
-                    
-                    c_id= str(station_list[deployment][0]['channel_number_i'])
-                    if not self.does_pattern_exists(component_list_patterns, c_id):
-                        continue   
-                        
-                    total_channels = total_channels + 1
-
-                    seed_channel = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
-
-                    for pattern in cha_list_patterns:
-                        if fnmatch.fnmatch(seed_channel, pattern):
-
-                            if station_list[deployment][
-                                    0]['seed_location_code_s']:
-                                location = station_list[deployment][
-                                    0]['seed_location_code_s']
-                            else:
-                                location = ""
-
-                            if not self.does_pattern_exists(location_patterns, location):
-                                continue 
-                            
-                            channels.append(seed_channel)
-
-                            cha_longitude = station_list[deployment][
-                                                             0]['location/X/value_d']
-                            cha_latitude = station_list[deployment][
-                                                            0]['location/Y/value_d']
-                            cha_elevation = station_list[deployment][
-                                                             0]['location/Z/value_d'] 
-                            
-                            if not self.is_lat_lon_match(cha_latitude, cha_longitude):
-                                continue
-
-                            obs_channel = self.create_obs_channel(station_list, deployment,
-                                                                  seed_channel, location, cha_longitude, 
-                                                                  cha_latitude, cha_elevation)
-                            
-                            obs_channels.append(obs_channel)
+                obs_channels = self.read_channels(station_list)
                 
-                obs_station.total_number_of_channels = total_channels
+                obs_station.total_number_of_channels = len(sta_list)
                 obs_station.selected_number_of_channels = len(obs_channels)
 
                 obs_station.channels = obs_channels
@@ -415,7 +414,7 @@ class PH5toStationXML(object):
                     all_stations.append(obs_station)             
         return all_stations
 
-    def Parse_Station_list(self, sta_list):
+    def parse_station_list(self, sta_list):
         l = []
         sta_list_patterns = sta_list
        
@@ -435,7 +434,7 @@ class PH5toStationXML(object):
         final_list = sorted(set(l))          
         return final_list
 
-    def Parse_Networks(self, path):
+    def read_networks(self, path):
         network_patterns = self.args.get('network_list')
         reportnum_patterns =  self.args.get('reportnum_list')
         
@@ -458,8 +457,8 @@ class PH5toStationXML(object):
             self.ph5.close()
             return
         
-        sta_list = self.Parse_Station_list(self.args.get('sta_list'))
-        obs_stations = self.Read_Stations(sta_list)
+        sta_list = self.parse_station_list(self.args.get('sta_list'))
+        obs_stations = self.read_stations(sta_list)
         obs_network = self.create_obs_network(obs_stations)
         
         self.ph5.close()
@@ -516,7 +515,7 @@ class PH5toStationXML(object):
                         paths.append(dirName)
 
         for path in paths:
-            network = self.Parse_Networks(path)
+            network = self.read_networks(path)
             if network:
                 network = self.trim_to_level(network)
                 networks.append(network)
