@@ -134,5 +134,28 @@ class TestPH5toMSeed(unittest.TestCase):
         self.assertEqual(expected4.__dict__, result[3].__dict__, msg="Restricted inside of request. 4nd Segment")
         self.assertEqual(len(result), 4)
         
+        # not in restricted list at all
+        st = 1438794000.0
+        et = 1489589791.0
+        station_to_cut = StationCut(net_code="4C",
+                                 station="1003",
+                                 seed_station="DAN",
+                                 das="10811",
+                                 channel="1",
+                                 seed_channel="DPZ",
+                                 starttime=st,
+                                 endtime=et,
+                                 sample_rate=250,
+                                 sample_rate_multiplier=1,
+                                 notimecorrect=False,
+                                 location="",
+                                 latitude=-123.14976,
+                                 longitude=46.23013
+                                 )
+        station_to_cut_list = [station_to_cut]
+        expected = copy.deepcopy(station_to_cut)
+        result = PH5toMSeed.get_nonrestricted_segments(station_to_cut_list, restricted_list)
+        self.assertEqual(result[0].__dict__, expected.__dict__)
+        
 if __name__ == "__main__":
     unittest.main()
