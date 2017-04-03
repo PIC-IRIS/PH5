@@ -246,11 +246,13 @@ class PH5toMSeed(object):
                 restricted = copy.deepcopy(restricted)
                 station_to_cut_segments = copy.deepcopy(station_to_cut_segments)
             for seg_to_cut in station_to_cut_list:
+                is_restricted_sncl = False
                 for r in restricted:
                     if r.network == seg_to_cut.net_code and \
                        r.station == seg_to_cut.seed_station and \
                        r.location == seg_to_cut.location and \
                        r.channel == seg_to_cut.seed_channel:
+                        is_restricted_sncl = True
                         # restricted-range-start <= station_to_cut <= restricted-range-end
                         # -- station_to_cut inside restricted-range
                         if (seg_to_cut.starttime >= r.starttime and \
@@ -304,6 +306,9 @@ class PH5toMSeed(object):
                             # entire segment is non-restricted
                             if seg_to_cut not in station_to_cut_segments:
                                 station_to_cut_segments.append(seg_to_cut)
+                if not is_restricted_sncl:
+                    if seg_to_cut not in station_to_cut_segments:
+                        station_to_cut_segments.append(seg_to_cut)
             return station_to_cut_segments
         else:
             return station_to_cut_list
