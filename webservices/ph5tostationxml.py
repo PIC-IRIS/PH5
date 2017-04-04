@@ -229,7 +229,7 @@ class PH5toStationXML(object):
         :param: latitude : the latitude of the point to check :type: float
         :param: longitude : the longitude of the point to check :type: float
         """
-        if minradius or maxradius or latitude or longitude:
+        if minradius or maxradius or point_lat or point_lon:
             # min radius default to 0.0
             if not minradius:
                 minradius = 0.0
@@ -237,10 +237,10 @@ class PH5toStationXML(object):
             if not maxradius:
                 maxradius = minradius
             # latitude and longitude default to 0.0 when not defined
-            if not latitude:
-                latitude = 0.0
-            if not longitude:
-                longitude = 0.0
+            if not point_lat:
+                point_lat = 0.0
+            if not point_lon:
+                point_lon = 0.0
             dist = locations2degrees(latitude, longitude, point_lat, point_lon)
             if dist < minradius:
                 return False
