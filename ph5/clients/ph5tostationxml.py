@@ -24,6 +24,7 @@ import obspy
 import ph5API
 import datetime
 from obspy import read_inventory
+from obspy.geodetics import locations2degrees
 import argparse
 import fnmatch
 from obspy.core.util import AttribDict
@@ -240,13 +241,7 @@ class PH5toStationXML(object):
                 latitude = 0.0
             if not longitude:
                 longitude = 0.0
-            lat1 = math.radians(latitude)
-            lon1 = math.radians(longitude)
-            lat2 = math.radians(point_lat)
-            lon2 = math.radians(point_lon)
-            dist_rad = math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) 
-                                 * math.cos(lat2) * math.cos(lon1 - lon2))
-            dist = math.degrees(dist_rad)
+            dist = locations2degrees(latitude, longitude, point_lat, point_lon)
             if dist < minradius:
                 return False
             elif dist > maxradius:
