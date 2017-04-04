@@ -1,4 +1,0 @@
-#!/bin/bash
-
-kill `ps -ef | grep 'python ftpserver.py' | awk '{print $2}'`
-kill `ps -ef | grep 'python PH5Server.py' | awk '{print $2}'`
