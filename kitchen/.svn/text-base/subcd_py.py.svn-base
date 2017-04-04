@@ -1,9 +1,0 @@
-
-from distutils.core import setup, Extension
-
-setup (name = "bcd_py", version = "2014.119",
-       ext_modules = [
-    Extension (
-    "bcd_py", ["bcd_py.c", "bcdwrapper_py.c"],
-    #extra_link_args = ["-m32"]
-)])
