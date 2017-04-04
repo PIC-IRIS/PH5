@@ -1,2 +1,0 @@
-CREATE TABLE Config(DATAROOT varChar(128),K3 varChar(128),EXPERIMENT_DIR varCHAR(128),SSL int);
-insert into Config (DATAROOT, K3, EXPERIMENT_DIR, SSL) values ('/DATA', '/opt/K3', 'PH5_Experiments', 0);
