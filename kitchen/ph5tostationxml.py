@@ -27,6 +27,7 @@ from obspy import read_inventory
 import argparse
 import fnmatch
 from obspy.core.util import AttribDict
+import math
 
 PROG_VERSION = "2017.085"
 
@@ -111,6 +112,18 @@ def get_args():
     parser.add_argument("--maxlon", action="store",
                         help="Limit to stations with a longitude smaller than or equal to the specified maximum.",
                         type=float, dest="maxlon", metavar="maxlon")
+    
+    parser.add_argument("--latitude", action="store",
+                        help="Specify the central latitude point for a radial geographic constraint.")
+    
+    parser.add_argument("--longitude", action="store",
+                        help="Specify the central longitude point for a radial geographic constraint., ")
+    
+    parser.add_argument("--minradius", action="store",
+                    help="Specify minimum distance from the geographic point defined by latitude and longitude.")
+    
+    parser.add_argument("--maxradius", action="store",
+                        help="Specify maximum distance from the geographic point defined by latitude and longitude.")
 
     parser.add_argument("--uri", action="store", default="",
                         type=str, metavar="uri")
@@ -200,24 +213,101 @@ class PH5toStationXML(object):
                 self.ph5.read_array_t(n)
         else:
             self.ph5.read_array_t(name)
+    
+    @classmethod
+    def is_radial_intersection(cls, point_lat, point_lon, 
+                               minradius, maxradius, 
+                               latitude, longitude):
+        """
+        Checks if there is a radial intersection between a point radius boundary
+        and a latitude/longitude point.
+        :param: point_lat : the latitude of the point radius boundary :type: float
+        :param: point_lon : the longitude of the point radius boundary :type: float
+        :param: minradius : the minimum radius boundary :type: float
+        :param: maxradius : the maximum radius boundary :type: float
+        :param: latitude : the latitude of the point to check :type: float
+        :param: longitude : the longitude of the point to check :type: float
+        """
+        if minradius or maxradius or latitude or longitude:
+            # min radius default to 0.0
+            if not minradius:
+                minradius = 0.0
+            # make max radius default to min radius when not defined
+            if not maxradius:
+                maxradius = minradius
+            # latitude and longitude default to 0.0 when not defined
+            if not latitude:
+                latitude = 0.0
+            if not longitude:
+                longitude = 0.0
+            lat1 = math.radians(latitude)
+            lon1 = math.radians(longitude)
+            lat2 = math.radians(point_lat)
+            lon2 = math.radians(point_lon)
+            dist_rad = math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) 
+                                 * math.cos(lat2) * math.cos(lon1 - lon2))
+            dist = math.degrees(dist_rad)
+            if dist < minradius:
+                return False
+            elif dist > maxradius:
+                return False
+            else:
+                return True
+        else:
+            return True
+    
+    @classmethod
+    def is_rect_intersection(cls, minlat, maxlat, minlon, maxlon, latitude, longitude):
+        """
+        Checks if there is a radial intersection between a point radius boundary
+        and a latitude/longitude point.
+        :param: minlat : the minimum rectangular latitude :type: float
+        :param: maxlat : the maximum rectangular latitude :type: float
+        :param: minlon : the minimum rectangular longitude :type: float
+        :param: maxlon : the maximum rectangular longitude :type: float
+        :param: latitude : the latitude of the point to check :type: float
+        :param: longitude : the longitude of the point to check :type: float
+        """
+        if minlat and float(
+                minlat) > float(latitude):
+            return False
+        elif minlon and float(
+                minlon) > float(longitude):
+            return False
+        elif maxlat and float(
+                maxlat) < float(latitude):
+            return False
+        elif maxlon and float(
+                maxlon) < float(longitude):
+            return False
+        else:
+            return True
 
     def is_lat_lon_match(self, latitude, longitude):
-        
+        """
+        Checks if the given latitude/longitude matches geographic query constraints
+        :param: latitude : the latitude to check against the arguments geographic constraints
+        :param: longitude : the longitude to check against the arguments geographic constraints
+        """
         if  not -90 <= float(latitude) <= 90:
             return False 
         elif not  -180 <= float(longitude) <= 180:
-            return False              
-        elif self.args.get('minlat') and float(
-                self.args.get('minlat')) > float(latitude):
             return False
-        elif self.args.get('minlon') and float(
-                self.args.get('minlon')) > float(longitude):
+        # if lat/lon box intersection  
+        elif not PH5toStationXML.is_rect_intersection(self.args.get('minlat'),
+                                           self.args.get('maxlat'),
+                                           self.args.get('minlon'),
+                                           self.args.get('maxlon'),
+                                           latitude,
+                                           longitude):
             return False
-        elif self.args.get('maxlat') and float(
-                self.args.get('maxlat')) < float(latitude):
-            return False
-        elif self.args.get('maxlon') and float(
-                self.args.get('maxlon')) < float(longitude):
+        # check if point/radius intersection
+        elif not PH5toStationXML.is_radial_intersection(self.args.get('latitude'),
+                                             self.args.get('longitude'),
+                                             self.args.get('minradius'),
+                                             self.args.get('maxradius'),
+                                             latitude,
+                                             longitude):
             return False
         else:
             return True
