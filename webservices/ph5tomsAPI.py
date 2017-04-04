@@ -228,8 +228,8 @@ class PH5toMSeed(object):
             ret = os.path.join(self.out_dir, "preview_images", ret)
         return ret
     
-    @staticmethod
-    def get_nonrestricted_segments(station_to_cut_list, restricted, station_to_cut_segments=[]):
+    @classmethod
+    def get_nonrestricted_segments(cls, station_to_cut_list, restricted, station_to_cut_segments=[]):
         """
         Recursively trim station_to_cut request to remove restricted segments. The result is a list of StationCut
         objects that contain only non-restricted data requests.
@@ -315,7 +315,7 @@ class PH5toMSeed(object):
     
     def create_trace(self, station_to_cut):
         
-        station_to_cut_segments = self.get_nonrestricted_segments([station_to_cut], self.restricted)
+        station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments([station_to_cut], self.restricted)
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
             self.ph5.read_das_t(stc.das, stc.starttime,
