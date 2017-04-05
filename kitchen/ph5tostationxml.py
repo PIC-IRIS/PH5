@@ -371,10 +371,7 @@ class PH5toStationXML(object):
             'das/serial_number_s']  
         
         self.ph5.read_das_t(das, reread=False)   
-        
-        if not self.ph5.Das_t.has_key(das):
-            return
-        
+
         Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
                                     station_list[deployment][0][
                                         'channel_number_i'])        
