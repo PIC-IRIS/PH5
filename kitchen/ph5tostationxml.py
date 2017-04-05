@@ -368,19 +368,17 @@ class PH5toStationXML(object):
         obs_channel.storage_format = "PH5"
               
         das= station_list[deployment][0][
-            'das/serial_number_s']  
+            'das/serial_number_s'] 
         
         self.ph5.read_das_t(das, reread=False)   
-
-        Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
-                                    station_list[deployment][0][
-                                        'channel_number_i'])        
-        Receiver_t=self.ph5.get_receiver_t (Das_t, by_n_i=True)
         
-        
-        obs_channel.azimuth=Receiver_t['orientation/azimuth/value_f']
-        obs_channel.dip=Receiver_t['orientation/dip/value_f']
-        
+        if self.ph5.Das_t.has_key(das):
+            Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
+                                        station_list[deployment][0][
+                                            'channel_number_i'])     
+            Receiver_t=self.ph5.get_receiver_t (Das_t, by_n_i=True)
+            obs_channel.azimuth=Receiver_t['orientation/azimuth/value_f']
+            obs_channel.dip=Receiver_t['orientation/dip/value_f']
         
         sensor_type =  " ".join([x for x in [station_list[deployment][0]['sensor/manufacturer_s'], 
                                           station_list[deployment][0]['sensor/model_s']] if x])
@@ -455,6 +453,8 @@ class PH5toStationXML(object):
                                                           cha_latitude, cha_elevation)
                     
                     obs_channels.append(obs_channel)
+                
+
         return obs_channels
     
     def read_stations(self, sta_list):
