@@ -307,7 +307,8 @@ class PH5toStationXML(object):
         else:
             return True
         
-    def create_obs_network(self, obs_stations):
+    def create_obs_network(self, sta_list):
+        obs_stations = self.read_stations(sta_list)
         if obs_stations:
             obs_network = obspy.core.inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -316,6 +317,7 @@ class PH5toStationXML(object):
             start_time, end_time=self.get_network_date()   
             obs_network.start_date=datetime.datetime.fromtimestamp(start_time)
             obs_network.end_date=datetime.datetime.fromtimestamp(end_time)
+            obs_network.total_number_of_stations = len(sta_list)
             obs_network.stations = obs_stations
             return obs_network
         else:
@@ -328,8 +330,9 @@ class PH5toStationXML(object):
         obs_station = obspy.core.inventory.Station(sta_code,
                                                latitude=sta_latitude,
                                                longitude=sta_longitude,
+                                               start_date=start_date,
+                                               end_date=end_date,
                                                elevation=sta_elevation)                           
-
         obs_station.creation_date = datetime.datetime.fromtimestamp(
             station_list[1][0]['deploy_time/epoch_l'])
         obs_station.termination_date = datetime.datetime.fromtimestamp(
@@ -363,21 +366,22 @@ class PH5toStationXML(object):
         obs_channel.sample_rate_ration = station_list[
             deployment][0]['sample_rate_multiplier_i']
         obs_channel.storage_format = "PH5"
-    
+        sensor_type =  " ".join([x for x in [station_list[deployment][0]['sensor/manufacturer_s'], 
+                                          station_list[deployment][0]['sensor/model_s']] if x])
         obs_channel.sensor = obspy.core.inventory.Equipment(
-            type="", description="",
+            type=sensor_type, description="",
             manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
             serial_number=station_list[deployment][0][
                 'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
             removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-    
+        das_type =  " ".join([x for x in [station_list[deployment][0]['das/manufacturer_s'], 
+                                          station_list[deployment][0]['das/model_s']] if x])
         obs_channel.data_logger = obspy.core.inventory.Equipment(
-            type="", description="",
+            type=das_type, description="",
             manufacturer=station_list[deployment][0]['das/manufacturer_s'], vendor="", model=station_list[deployment][0]['das/model_s'],
             serial_number=station_list[deployment][0][
                 'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
             removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
-             
         extra = AttribDict({
                 'PH5Component': {
                     'value': str(station_list[deployment][0]['channel_number_i']),
@@ -543,8 +547,7 @@ class PH5toStationXML(object):
             return
         
         sta_list = self.parse_station_list(self.args.get('sta_list'))
-        obs_stations = self.read_stations(sta_list)
-        obs_network = self.create_obs_network(obs_stations)
+        obs_network = self.create_obs_network(sta_list)
         
         self.ph5.close()
         
