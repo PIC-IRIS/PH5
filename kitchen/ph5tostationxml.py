@@ -409,7 +409,7 @@ class PH5toStationXML(object):
                 }
             }) 
         obs_channel.extra=extra
-        print obs_channel
+
         return obs_channel
 
     def read_channels(self, station_list):
