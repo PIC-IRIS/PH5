@@ -366,6 +366,25 @@ class PH5toStationXML(object):
         obs_channel.sample_rate_ration = station_list[
             deployment][0]['sample_rate_multiplier_i']
         obs_channel.storage_format = "PH5"
+              
+        das= station_list[deployment][0][
+            'das/serial_number_s']  
+        
+        self.ph5.read_das_t(das, reread=False)   
+        
+        if not self.ph5.Das_t.has_key(das):
+            return
+        
+        Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
+                                    station_list[deployment][0][
+                                        'channel_number_i'])        
+        Receiver_t=self.ph5.get_receiver_t (Das_t, by_n_i=True)
+        
+        
+        obs_channel.azimuth=Receiver_t['orientation/azimuth/value_f']
+        obs_channel.dip=Receiver_t['orientation/dip/value_f']
+        
+        
         sensor_type =  " ".join([x for x in [station_list[deployment][0]['sensor/manufacturer_s'], 
                                           station_list[deployment][0]['sensor/model_s']] if x])
         obs_channel.sensor = obspy.core.inventory.Equipment(
@@ -390,6 +409,7 @@ class PH5toStationXML(object):
                 }
             }) 
         obs_channel.extra=extra
+        print obs_channel
         return obs_channel
 
     def read_channels(self, station_list):
