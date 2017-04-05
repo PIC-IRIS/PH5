@@ -563,7 +563,9 @@ class ph5 (Experiment.ExperimentGroup) :
         
         if by_n_i :    
             try :
-                n_i = das_t['receiver_table_n_i']
+                
+                n_i = das_t[0]['receiver_table_n_i']
+                
                 receiver_t = self.Receiver_t['rows'][n_i]
             except KeyError :
                 receiver_t = None
