@@ -39,7 +39,7 @@ import copy
 from time import time as tm
 
 
-PROG_VERSION = "2017.42"
+PROG_VERSION = "2017.101"
 
 
 def fdsntimetoepoch(fdsn_time):
@@ -437,230 +437,235 @@ class PH5toMSeed(object):
                         continue
 
                 station_list = arraybyid.get(station)
+                
                 for deployment in station_list:
                     start_times = []
-
-                    seed_station = station_list[deployment][0]['seed_station_name_s']
+                   
+    
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0,station_len):
+                        seed_station = station_list[deployment][st_num]['seed_station_name_s']
+                    
                     
 
-                    if self.station:
-                        does_match = []
-                        sta_patterns = self.station
-                        for pattern in sta_patterns:
-                            if fnmatch.fnmatch((station_list[deployment][0]
-                                    ['seed_station_name_s']), pattern):
-                                
-                                does_match.append(1)
-                        if not does_match:
-                            continue
-                    
-
-                    if (self.eventnumbers and
-                            self.shotline and matched_shot_line):
-                        if not self.length:
-                            raise PH5toMSAPIError('Error - length is required for request by shot.')
-                        eventnumbers = self.eventnumbers
-                        for evt in eventnumbers:
-                            try:
-                                event_t = self.ph5.Event_t[
-                                    matched_shot_line]['byid'][evt]
-                                start_times.append(event_t['time/epoch_l'])
-                                self.evt_lat = event_t['location/Y/value_d']
-                                self.evt_lon = event_t['location/X/value_d']
-                            except Exception:
-                                error = 1
-
-                    deploy = station_list[deployment][0]['deploy_time/epoch_l']
-                    location = station_list[deployment][
-                        0]['seed_location_code_s']
-                    pickup = station_list[deployment][0]['pickup_time/epoch_l']
-                    das = station_list[deployment][0]['das/serial_number_s']
-
-                    if 'sample_rate_i' in station_list[deployment][0]:
-                        sample_rate = station_list[deployment
-                                                   ][0]['sample_rate_i']
-                    sample_rate_multiplier = 1
-                    if ('sample_rate_multiplier_i' in
-                            station_list[deployment][0]):
-                        sample_rate_multiplier = station_list[
-                            deployment][0]['sample_rate_multiplier_i']
-
-                    if self.sample_rate_list:
-                        does_match = []
-                        sample_list = self.sample_rate_list
-                        for x in sample_list:
-                            if sample_rate == int(x):
-                                does_match.append(1)
-                        if not does_match:
-                            continue
-
-                    if 'seed_band_code_s' in station_list[deployment][0]:
-                        band_code = station_list[deployment][
-                            0]['seed_band_code_s']
-                    else:
-                        band_code = "D"
-                    if 'seed_instrument_code_s' in station_list[deployment][0]:
-                        instrument_code = station_list[deployment][
-                            0]['seed_instrument_code_s']
-                    else:
-                        instrument_code = "P"
-                    if ('seed_orientation_code_s' in
-                            station_list[deployment][0]):
-                        orientation_code = station_list[deployment][
-                            0]['seed_orientation_code_s']
-                    else:
-                        orientation_code = "X"
-
-                    c = station_list[deployment][0]['channel_number_i']
-
-                    if self.component:
-                        component_list = self.component
-                        if str(c) not in component_list:
-                            continue
-
-                    full_code = band_code + instrument_code + orientation_code
-                    
-                    if self.channel:
-                        does_match = []
-                        cha_patterns = self.channel
-                        for pattern in cha_patterns:
-                            if fnmatch.fnmatch(full_code, pattern):
-                                does_match.append(1)
-                        if not does_match:
-                            continue
-                    if self.das_sn and self.das_sn != das:
-                        continue
-
-                    if self.start_time and not matched_shot_line:
-
-                        if "T" not in self.start_time:
-                            check_start_time = passcal2epoch(self.start_time)
-                            if float(check_start_time) > float(deploy):
-                                start_fepoch = self.start_time
-                                start_times.append(passcal2epoch(start_fepoch))
-                            else:
-                                start_times.append(deploy)
-
-                        else:
-                            check_start_time = fdsntimetoepoch(self.start_time)
-                            if float(check_start_time) > float(deploy):
-                                start_times.append(fdsntimetoepoch(
-                                    self.start_time))
-                            else:
-                                start_times.append(deploy)
-                        if float(check_start_time) > float(pickup):
-                            continue
-                    elif not matched_shot_line:
-                        start_times.append(ph5API.fepoch(station_list[
-                            deployment][0]
-                            ['deploy_time/epoch_l'],
-                            station_list[deployment][0]
-                            ['deploy_time/micro_seconds_i']))
-
-                    for start_fepoch in start_times:
-
-                        if self.length:
-                            stop_fepoch = start_fepoch + self.length
-
-                        elif self.end_time:
-
-                            if "T" not in self.end_time:
-                                check_end_time = passcal2epoch(self.end_time)
-
-                                if float(check_end_time) < float(pickup):
-
-                                    stop_fepoch = self.end_time
-                                    stop_fepoch = passcal2epoch(stop_fepoch)
-                                else:
-                                    stop_fepoch = pickup
-
-                            else:
-                                check_end_time = fdsntimetoepoch(self.end_time)
-                                if float(check_end_time) < float(pickup):
-                                    stop_fepoch = fdsntimetoepoch(
-                                        self.end_time)
-                                else:
-                                    stop_fepoch = pickup
-
-                            if float(check_end_time) < float(deploy):
+                        if self.station:
+                            does_match = []
+                            sta_patterns = self.station
+                            for pattern in sta_patterns:
+                                if fnmatch.fnmatch((station_list[deployment][st_num]
+                                        ['seed_station_name_s']), pattern):
+                                    
+                                    does_match.append(1)
+                            if not does_match:
                                 continue
-                        else:
-                            stop_fepoch = ph5API.fepoch(
-                                station_list[deployment
-                                             ][0]['pickup_time/epoch_l'],
-                                station_list[deployment]
-                                [0]['pickup_time/micro_seconds_i'])
-
-                        if (self.use_deploy_pickup is True and not
-                                ((start_fepoch >= deploy and
-                                  stop_fepoch <= pickup))):
-                            # das not deployed within deploy/pickup time
-                            continue
-
-                        start_passcal = epoch2passcal(start_fepoch, sep=':')
-                        start_passcal_list = start_passcal.split(":")
-                        start_doy = start_passcal_list[1]
-
-                        if self.offset:
-                            start_fepoch += int(self.offset)
-
-                        if self.doy_keep:
-                            if start_doy not in self.doy:
+                        
+    
+                        if (self.eventnumbers and
+                                self.shotline and matched_shot_line):
+                            if not self.length:
+                                raise PH5toMSAPIError('Error - length is required for request by shot.')
+                            eventnumbers = self.eventnumbers
+                            for evt in eventnumbers:
+                                try:
+                                    event_t = self.ph5.Event_t[
+                                        matched_shot_line]['byid'][evt]
+                                    start_times.append(event_t['time/epoch_l'])
+                                    self.evt_lat = event_t['location/Y/value_d']
+                                    self.evt_lon = event_t['location/X/value_d']
+                                except Exception:
+                                    error = 1
+    
+                        deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
+                        location = station_list[deployment][
+                            st_num]['seed_location_code_s']
+                        pickup = station_list[deployment][st_num]['pickup_time/epoch_l']
+                        das = station_list[deployment][st_num]['das/serial_number_s']
+    
+                        if 'sample_rate_i' in station_list[deployment][0]:
+                            sample_rate = station_list[deployment
+                                                       ][st_num]['sample_rate_i']
+                        sample_rate_multiplier = 1
+                        if ('sample_rate_multiplier_i' in
+                                station_list[deployment][st_num]):
+                            sample_rate_multiplier = station_list[
+                                deployment][st_num]['sample_rate_multiplier_i']
+    
+                        if self.sample_rate_list:
+                            does_match = []
+                            sample_list = self.sample_rate_list
+                            for x in sample_list:
+                                if sample_rate == int(x):
+                                    does_match.append(1)
+                            if not does_match:
                                 continue
-
-                        if (stop_fepoch - start_fepoch) > 86400:
-                            seconds_covered = 0
-                            total_seconds = stop_fepoch - start_fepoch
-                            times_to_cut = []
-                            stop_time, seconds = doy_breakup(start_fepoch)
-                            seconds_covered = seconds_covered + seconds
-                            times_to_cut.append([start_fepoch, stop_time])
-                            start_time = stop_time
-
-                            while seconds_covered < total_seconds:
-                                stop_time, seconds = doy_breakup(start_time)
-                                seconds_covered += seconds
-                                times_to_cut.append([start_time, stop_time])
+    
+                        if 'seed_band_code_s' in station_list[deployment][st_num]:
+                            band_code = station_list[deployment][
+                                st_num]['seed_band_code_s']
+                        else:
+                            band_code = "D"
+                        if 'seed_instrument_code_s' in station_list[deployment][st_num]:
+                            instrument_code = station_list[deployment][
+                                st_num]['seed_instrument_code_s']
+                        else:
+                            instrument_code = "P"
+                        if ('seed_orientation_code_s' in
+                                station_list[deployment][st_num]):
+                            orientation_code = station_list[deployment][
+                                st_num]['seed_orientation_code_s']
+                        else:
+                            orientation_code = "X"
+    
+                        c = station_list[deployment][st_num]['channel_number_i']
+    
+                        if self.component:
+                            component_list = self.component
+                            if str(c) not in component_list:
+                                continue
+    
+                        full_code = band_code + instrument_code + orientation_code
+                        
+                        if self.channel:
+                            does_match = []
+                            cha_patterns = self.channel
+                            for pattern in cha_patterns:
+                                if fnmatch.fnmatch(full_code, pattern):
+                                    does_match.append(1)
+                            if not does_match:
+                                continue
+                        if self.das_sn and self.das_sn != das:
+                            continue
+    
+                        if self.start_time and not matched_shot_line:
+    
+                            if "T" not in self.start_time:
+                                check_start_time = passcal2epoch(self.start_time)
+                                if float(check_start_time) > float(deploy):
+                                    start_fepoch = self.start_time
+                                    start_times.append(passcal2epoch(start_fepoch))
+                                else:
+                                    start_times.append(deploy)
+    
+                            else:
+                                check_start_time = fdsntimetoepoch(self.start_time)
+                                if float(check_start_time) > float(deploy):
+                                    start_times.append(fdsntimetoepoch(
+                                        self.start_time))
+                                else:
+                                    start_times.append(deploy)
+                            if float(check_start_time) > float(pickup):
+                                continue
+                        elif not matched_shot_line:
+                            start_times.append(ph5API.fepoch(station_list[
+                                deployment][st_num]
+                                ['deploy_time/epoch_l'],
+                                station_list[deployment][st_num]
+                                ['deploy_time/micro_seconds_i']))
+    
+                        for start_fepoch in start_times:
+    
+                            if self.length:
+                                stop_fepoch = start_fepoch + self.length
+    
+                            elif self.end_time:
+    
+                                if "T" not in self.end_time:
+                                    check_end_time = passcal2epoch(self.end_time)
+    
+                                    if float(check_end_time) < float(pickup):
+    
+                                        stop_fepoch = self.end_time
+                                        stop_fepoch = passcal2epoch(stop_fepoch)
+                                    else:
+                                        stop_fepoch = pickup
+    
+                                else:
+                                    check_end_time = fdsntimetoepoch(self.end_time)
+                                    if float(check_end_time) < float(pickup):
+                                        stop_fepoch = fdsntimetoepoch(
+                                            self.end_time)
+                                    else:
+                                        stop_fepoch = pickup
+    
+                                if float(check_end_time) < float(deploy):
+                                    continue
+                            else: 
+                                stop_fepoch = ph5API.fepoch(
+                                    station_list[deployment
+                                                 ][st_num]['pickup_time/epoch_l'],
+                                    station_list[deployment]
+                                    [st_num]['pickup_time/micro_seconds_i'])
+    
+                            if (self.use_deploy_pickup is True and not
+                                    ((start_fepoch >= deploy and
+                                      stop_fepoch <= pickup))):
+                                # das not deployed within deploy/pickup time
+                                continue
+    
+                            start_passcal = epoch2passcal(start_fepoch, sep=':')
+                            start_passcal_list = start_passcal.split(":")
+                            start_doy = start_passcal_list[1]
+    
+                            if self.offset:
+                                start_fepoch += int(self.offset)
+    
+                            if self.doy_keep:
+                                if start_doy not in self.doy:
+                                    continue
+    
+                            if (stop_fepoch - start_fepoch) > 86400:
+                                seconds_covered = 0
+                                total_seconds = stop_fepoch - start_fepoch
+                                times_to_cut = []
+                                stop_time, seconds = doy_breakup(start_fepoch)
+                                seconds_covered = seconds_covered + seconds
+                                times_to_cut.append([start_fepoch, stop_time])
                                 start_time = stop_time
-                        else:
-                            times_to_cut = [[start_fepoch, stop_fepoch]]
-                            times_to_cut[-1][-1] = stop_fepoch
-
-                        if int(times_to_cut[-1][-2]) == int(
-                                times_to_cut[-1][-1]):
-                            del times_to_cut[-1]
-
-                        latitude = station_list[deployment][
-                            0]['location/Y/value_d']
-                        longitude = station_list[deployment][
-                            0]['location/X/value_d']
-
-                        for x in times_to_cut:
-                            station_x = StationCut(
-                                experiment_t[0]['net_code_s'],
-                                station,
-                                seed_station,
-                                das,
-                                c,
-                                full_code,
-                                x[0],
-                                x[1],
-                                sample_rate,
-                                sample_rate_multiplier,
-                                self.notimecorrect,
-                                location,
-                                latitude,
-                                longitude)
-
-                            self.ph5.read_das_t(station_x.das,
-                                                station_x.starttime,
-                                                station_x.endtime,
-                                                reread=False)
-
-                            if not self.ph5.Das_t.has_key(station_x.das):
-                                continue
-
-                            yield station_x
+    
+                                while seconds_covered < total_seconds:
+                                    stop_time, seconds = doy_breakup(start_time)
+                                    seconds_covered += seconds
+                                    times_to_cut.append([start_time, stop_time])
+                                    start_time = stop_time
+                            else:
+                                times_to_cut = [[start_fepoch, stop_fepoch]]
+                                times_to_cut[-1][-1] = stop_fepoch
+    
+                            if int(times_to_cut[-1][-2]) == int(
+                                    times_to_cut[-1][-1]):
+                                del times_to_cut[-1]
+    
+                            latitude = station_list[deployment][
+                                st_num]['location/Y/value_d']
+                            longitude = station_list[deployment][
+                                st_num]['location/X/value_d']
+    
+                            for x in times_to_cut:
+                                station_x = StationCut(
+                                    experiment_t[0]['net_code_s'],
+                                    station,
+                                    seed_station,
+                                    das,
+                                    c,
+                                    full_code,
+                                    x[0],
+                                    x[1],
+                                    sample_rate,
+                                    sample_rate_multiplier,
+                                    self.notimecorrect,
+                                    location,
+                                    latitude,
+                                    longitude)
+    
+                                self.ph5.read_das_t(station_x.das,
+                                                    station_x.starttime,
+                                                    station_x.endtime,
+                                                    reread=False)
+    
+                                if not self.ph5.Das_t.has_key(station_x.das):
+                                    continue
+    
+                                yield station_x
 
         return
 
