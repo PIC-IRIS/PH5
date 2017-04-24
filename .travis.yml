@@ -1,24 +1,6 @@
 language: python
 python:
   - "2.7"
-# install system dependencies
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install epel-release
-  - sudo apt-get install python-devel
-  - sudo apt-get install lapack-devel
-  - sudo apt-get install atlas-devel
-  - sudo apt-get install proj-devel
-  - sudo apt-get install qt4
-  - sudo apt-get install PyQt-devel
-  - sudo apt-get install cmake
-  - sudo apt-get install qt-mobility
-  - sudo apt-get install qtwebkit
-  - sudo apt-get install geos-devel
-  - sudo apt-get install libpng-devel
-  - sudo apt-get install tk-devel
-  - sudo apt-get install libxml2-devel
-  - sudo apt-get install libxslt-devel
 
 # command to install dependencies
 install:
