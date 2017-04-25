@@ -515,9 +515,11 @@ class PH5toStationXML(object):
                 station_list = arraybyid.get(station)
                 for deployment in station_list:
                     for pattern in sta_list_patterns:
-                        if fnmatch.fnmatch(str(station), str(pattern)): 
+                        if not station_list[deployment][0] ['seed_station_name_s'] and \
+                            fnmatch.fnmatch(str(station), str(pattern)):
+                            # no seed station code defined so compare against ph5 station-id
                             l.append(station)
-                        if fnmatch.fnmatch((station_list[deployment][0]
+                        elif fnmatch.fnmatch((station_list[deployment][0]
                                                 ['seed_station_name_s']), pattern):
                             l.append(station)
         final_list = sorted(set(l))          
