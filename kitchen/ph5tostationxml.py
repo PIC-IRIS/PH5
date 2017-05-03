@@ -391,6 +391,23 @@ class PH5toStationXML(object):
             }) 
         obs_channel.extra=extra
         return obs_channel
+    
+    def read_response(self, station_list, deployment):
+        das = station_list[deployment][0]['das/serial_number_s'] 
+        self.ph5.read_das_t(das, reread=False)   
+        if self.ph5.Das_t.get(das):
+            Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
+                                       station_list[deployment][0][
+                                           'channel_number_i'])
+            self.ph5.read_response_t()
+            Response_t = self.ph5.get_response_t(Das_t[0])
+            response_file = Response_t['response_file_a']
+            if response_file:
+                # TODO: Add code for reading locally stored repsonse information
+                pass
+            else:
+                # TODO: Add code for reading RESP form the NRL
+                pass
 
     def read_channels(self, station_list):
 
@@ -432,6 +449,8 @@ class PH5toStationXML(object):
                     
                     if not self.is_lat_lon_match(cha_latitude, cha_longitude):
                         continue
+
+                    response_inv = self.read_response(station_list, deployment)
 
                     obs_channel = self.create_obs_channel(station_list, deployment,
                                                           seed_channel, location, cha_longitude, 
