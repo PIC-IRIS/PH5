@@ -29,7 +29,7 @@ import argparse
 import fnmatch
 from obspy.core.util import AttribDict
 import math
-from obspy.clients.nrl import NRL
+from obspy.io.xseed import Parser
 
 PROG_VERSION = "2017.085"
 
@@ -141,14 +141,13 @@ class PH5ResponseManager(object):
         self.responses = []
         
     def add_response(self, sensor_keys, datalogger_keys, response):
-        self.responses.add(PH5Response(sensor_keys, datalogger_keys, response))
-    
+        self.responses.append(PH5Response(sensor_keys, datalogger_keys, response))
     
     def get_response(self, sensor_keys, datalogger_keys):
-        for response in self.responses:
-            if set(sensor_keys) == set(response.sensor_keys) and \
-               set(datalogger_keys) == set(response.datalogger_keys):
-                return response
+        for ph5_resp in self.responses:
+            if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
+               set(datalogger_keys) == set(ph5_resp.datalogger_keys):
+                return ph5_resp.response
     
     def is_already_requested(self, sensor_keys, datalogger_keys):
         for response in self.responses:
@@ -421,50 +420,55 @@ class PH5toStationXML(object):
             }) 
         obs_channel.extra=extra
         
-        response_inv = self.get_response(station_list, deployment, obs_channel)
+        if self.args.get('level').upper() == "RESPONSE":
+            # read response and add it to obspy channel inventory
+            obs_channel.response = self.get_response_inv(obs_channel)
 
         return obs_channel
     
-    def get_response(self, station_list, deployment, obs_channel):
-        das = station_list[deployment][0]['das/serial_number_s'] 
-        self.ph5.read_das_t(das, reread=False)   
+    def get_response_inv(self, obs_channel):
+        das = obs_channel.data_logger.serial_number
+        self.ph5.read_das_t(das, reread=False)
         if self.ph5.Das_t.get(das):
+            component = int(obs_channel.extra.PH5Component.value)
             Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
-                                       station_list[deployment][0][
-                                           'channel_number_i'])
+                                       component)
             self.ph5.read_response_t()
             Response_t = self.ph5.get_response_t(Das_t[0])
-            
-            response_file_das_a_name = Response_t['response_file_das_a']
-            
-            response_file_sensor_a_name = Response_t['response_file_sensor_a']
-            response_file_das_a = ""
-            response_file_sensor_a = ""
             sensor_keys = [obs_channel.sensor.manufacturer,
                            obs_channel.sensor.model]
             datalogger_keys = [obs_channel.data_logger.manufacturer,
                                obs_channel.data_logger.model]
-            if response_file_das_a_name: 
-                # There must always be a das response file. 
-                # Most experiments will have both resp files,
-                # but nodes only have das reps files
+            if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
+                response_file_das_a_name = Response_t.get('response_file_das_a', None)
+                response_file_sensor_a_name = Response_t.get('response_file_sensor_a', None)
+                # parse datalogger response
+                if response_file_das_a_name: 
+                    response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
+                    dl = Parser(response_file_das_a)
+                # parse sensor response if present
+                if response_file_sensor_a_name:
+                    response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
+                    sensor = Parser(response_file_sensor_a)
                 
-                response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
-                response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
-
-
-                # TODO: Add code for converting
+                inv_resp = None
+                if response_file_das_a_name and response_file_sensor_a_name:
+                    # both datalogger and sensor response
+                    comp_resp = Parser.combine_sensor_dl_resps(sensor=sensor, datalogger=dl)
+                    inv_resp = comp_resp.get_response()
+                elif response_file_das_a_name:
+                    # only datalogger response
+                    inv_resp = dl.get_response()
+                elif response_file_sensor_a_name:
+                    # only sensor response
+                    inv_resp = sensor.get_response()
                 
-                
-                #pass
+                if inv_resp:
+                    # update response manager and return response
+                    self.resp_manager.add_response(sensor_keys, datalogger_keys, inv_resp)
+                    return inv_resp
             else:
-                # TODO: Add code for reading RESP form the NRL
-                nrl = NRL()
-                if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
-                    response = nrl.get_response(sensor_keys, datalogger_keys)
-                    self.resp_manager.add_response(sensor_keys, datalogger_keys, response)
-                else:
-                    return self.resp_manager.get_response(sensor_keys, datalogger_keys)
+                return self.resp_manager.get_response(sensor_keys, datalogger_keys)
 
     def read_channels(self, station_list):
 
@@ -679,7 +683,6 @@ class PH5toStationXML(object):
                         paths.append(dirName)
 
         for path in paths:
-            self.path = path
             network = self.read_networks(path)
             if network:
                 network = self.trim_to_level(network)
