@@ -46,7 +46,7 @@ class MapsGroup :
         {
              "name":"Hdr_a_" {
              "properties": {
-                  "FileType":"SAC"|"SEG-Y"|"MSEED" {,
+                  "FileType":"SAC"|"SEG-Y"|"MSEED"|"SEG-D"|"SEG-2" {,
                       "type":"string",
                       "description":"Type of originating file",
                       "required": True,
@@ -1253,6 +1253,17 @@ class ResponsesGroup :
         
         return ret, keys
     
+    def get_response (self, name) :
+        try:
+            node = self.ph5.get_node (name)
+            out =""
+            for i in node:
+                out=out+i
+        except Exception, e :
+            sys.stderr.write ("Error: Failed to read response %s\n" % name)
+            
+        return out        
+    
     def newearray (self, name, description = None) :
         #
         batom = tables.StringAtom (itemsize=40)
@@ -1266,6 +1277,7 @@ class ResponsesGroup :
             a.attrs.description = description
             
         return a
+
     
     def initgroup (self) :
         #   Create response group
@@ -1519,6 +1531,8 @@ def get_nodes_by_name (filenode, where, RE, classname) :
             nodes[key] = n
             
     return nodes
+
+
         
 if __name__ == '__main__' :
     import os
