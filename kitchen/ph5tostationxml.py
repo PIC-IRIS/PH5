@@ -447,14 +447,29 @@ class PH5toStationXML(object):
                                            'channel_number_i'])
             self.ph5.read_response_t()
             Response_t = self.ph5.get_response_t(Das_t[0])
-            response_file = Response_t['response_file_a']
+            
+            response_file_das_a_name = Response_t['response_file_das_a']
+            
+            response_file_sensor_a_name = Response_t['response_file_sensor_a']
+            response_file_das_a = ""
+            response_file_sensor_a = ""
             sensor_keys = [obs_channel.sensor.manufacturer,
                            obs_channel.sensor.model]
             datalogger_keys = [obs_channel.data_logger.manufacturer,
                                obs_channel.data_logger.model]
-            if response_file:
-                # TODO: Add code for reading locally stored response information
-                pass
+            if response_file_das_a_name: 
+                # There must always be a das response file. 
+                # Most experiments will have both resp files,
+                # but nodes only have das reps files
+                
+                response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
+                response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
+
+
+                # TODO: Add code for converting
+                
+                
+                #pass
             else:
                 # TODO: Add code for reading RESP form the NRL
                 nrl = NRL()
@@ -677,6 +692,7 @@ class PH5toStationXML(object):
                         paths.append(dirName)
 
         for path in paths:
+            self.path = path
             network = self.read_networks(path)
             if network:
                 network = self.trim_to_level(network)

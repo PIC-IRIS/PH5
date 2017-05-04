@@ -573,7 +573,10 @@ class Response (tables.IsDescription) :
         units_s             = tables.StringCol (16)           #   Volts/Count?       
         value_d             = tables.Float64Col (pos=1)        
         
-    response_file_a         = tables.StringCol (32)           #   Response file name
+    #response_file_a         = tables.StringCol (32)           #   Response file name
+    response_file_das_a         = tables.StringCol (128)           #   DAS Response file name
+    response_file_sensor_a      = tables.StringCol (128)           #   Sensor Response file name
+    
 
 #
 #   -=-=-=-=-=-=-=-=-=-= Mixins =-=-=-=-=-=-=-=-=-=-
