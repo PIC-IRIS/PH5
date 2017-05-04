@@ -29,6 +29,7 @@ import argparse
 import fnmatch
 from obspy.core.util import AttribDict
 import math
+from obspy.clients.nrl import NRL
 
 PROG_VERSION = "2017.085"
 
@@ -134,6 +135,34 @@ def get_args():
     return args
 
 
+class PH5ResponseManager(object):
+    
+    def __init__(self):
+        self.responses = []
+        
+    def add_response(self, sensor_keys, datalogger_keys, response):
+        self.responses.add(PH5Response(sensor_keys, datalogger_keys, response))
+    
+    
+    def get_response(self, sensor_keys, datalogger_keys):
+        for response in self.responses:
+            if set(sensor_keys) == set(response.sensor_keys) and \
+               set(datalogger_keys) == set(response.datalogger_keys):
+                return response
+    
+    def is_already_requested(self, sensor_keys, datalogger_keys):
+        for response in self.responses:
+            if set(sensor_keys) == set(response.sensor_keys) and \
+               set(datalogger_keys) == set(response.datalogger_keys):
+                return True
+        return False
+
+class PH5Response(object):
+    def __init__(self, sensor_keys, datalogger_keys, response):
+        self.sensor_keys = sensor_keys
+        self.datalogger_keys = datalogger_keys
+        self.response = response
+
 class PH5toStationXML(object):
 
     def __init__(self, args):
@@ -144,6 +173,7 @@ class PH5toStationXML(object):
         self.sta_list_set=1
         self.receiver_list_set=1
         self.location_list_set=1
+        self.resp_manager = PH5ResponseManager()
 
         nickname, ext = os.path.splitext(args.get('nickname'))
         if ext != 'ph5':
@@ -403,9 +433,12 @@ class PH5toStationXML(object):
                 }
             }) 
         obs_channel.extra=extra
+        
+        response_inv = self.get_response(station_list, deployment, obs_channel)
+
         return obs_channel
     
-    def read_response(self, station_list, deployment):
+    def get_response(self, station_list, deployment, obs_channel):
         das = station_list[deployment][0]['das/serial_number_s'] 
         self.ph5.read_das_t(das, reread=False)   
         if self.ph5.Das_t.get(das):
@@ -415,12 +448,21 @@ class PH5toStationXML(object):
             self.ph5.read_response_t()
             Response_t = self.ph5.get_response_t(Das_t[0])
             response_file = Response_t['response_file_a']
+            sensor_keys = [obs_channel.sensor.manufacturer,
+                           obs_channel.sensor.model]
+            datalogger_keys = [obs_channel.data_logger.manufacturer,
+                               obs_channel.data_logger.model]
             if response_file:
-                # TODO: Add code for reading locally stored repsonse information
+                # TODO: Add code for reading locally stored response information
                 pass
             else:
                 # TODO: Add code for reading RESP form the NRL
-                pass
+                nrl = NRL()
+                if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
+                    response = nrl.get_response(sensor_keys, datalogger_keys)
+                    self.resp_manager.add_response(sensor_keys, datalogger_keys, response)
+                else:
+                    return self.resp_manager.get_response(sensor_keys, datalogger_keys)
 
     def read_channels(self, station_list):
 
@@ -462,8 +504,6 @@ class PH5toStationXML(object):
                     
                     if not self.is_lat_lon_match(cha_latitude, cha_longitude):
                         continue
-
-                    response_inv = self.read_response(station_list, deployment)
 
                     obs_channel = self.create_obs_channel(station_list, deployment,
                                                           seed_channel, location, cha_longitude, 
