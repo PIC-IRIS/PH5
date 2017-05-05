@@ -433,7 +433,9 @@ class PH5toStationXML(object):
             }) 
         obs_channel.extra=extra
         
-        if self.args.get('level').upper() == "RESPONSE":
+        if self.args.get('level').upper() == "RESPONSE" or \
+                (self.args.get('level').upper() == "CHANNEL" and \
+                 self.args.get('out_format').upper() == "TEXT"):
             # read response and add it to obspy channel inventory
             obs_channel.response = self.get_response_inv(obs_channel)
 
@@ -677,7 +679,8 @@ class PH5toStationXML(object):
             for station in network.stations:
                 station.selected_number_of_channels = 0
                 station.channels = []
-        elif self.args.get('level').upper() == "CHANNEL":
+        elif self.args.get('level').upper() == "CHANNEL" and \
+             self.args.get('out_format').upper() != "TEXT":
             for station in network.stations:
                 for channel in station.channels:
                     channel.response = None
