@@ -367,17 +367,15 @@ class PH5toStationXML(object):
             deployment][0]['sample_rate_multiplier_i']
         obs_channel.storage_format = "PH5"
               
-        das= station_list[deployment][0][
-            'das/serial_number_s'] 
-        start_date = station_list[deployment][0]['deploy_time/epoch_l']
-        start_date = (datetime.datetime.fromtimestamp(start_date) - datetime.datetime(1970,1,1)).total_seconds()
-        end_date = start_date + 86400*2
-        self.ph5.read_das_t(das, start_date, end_date, reread=False)   
+        das= station_list[deployment][0]['das/serial_number_s']   
+    
+        channel_start = station_list[deployment][0]['deploy_time/epoch_l']
+        channel_end = station_list[deployment][0]['pickup_time/epoch_l']
+        self.ph5.read_das_t(das, channel_start, channel_end)
         if self.ph5.Das_t.has_key(das):
             Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
-                                        station_list[deployment][0][
-                                            'channel_number_i'])     
-            Receiver_t=self.ph5.get_receiver_t (Das_t, by_n_i=True)
+                                        station_list[deployment][0]['channel_number_i'])
+            Receiver_t=self.ph5.get_receiver_t (Das_t[0], by_n_i=True)
             obs_channel.azimuth=Receiver_t['orientation/azimuth/value_f']
             obs_channel.dip=Receiver_t['orientation/dip/value_f']
         
@@ -405,7 +403,6 @@ class PH5toStationXML(object):
                 }
             }) 
         obs_channel.extra=extra
-        
         return obs_channel
 
     def read_channels(self, station_list):
@@ -454,8 +451,6 @@ class PH5toStationXML(object):
                                                           cha_latitude, cha_elevation)
                     
                     obs_channels.append(obs_channel)
-                
-
         return obs_channels
     
     def read_stations(self, sta_list):
