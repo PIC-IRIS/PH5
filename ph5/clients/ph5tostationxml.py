@@ -46,9 +46,6 @@ def get_args():
                         help="Comma separated list of paths to ph5 experiments",
                         type=str, metavar="ph5path")
 
-    parser.add_argument("--basepath", action="store",
-                        type=str, metavar="basepath", help="Specify a base directory containing any number of PH5 experiments. All PH5 files foudn will be used")
-
     parser.add_argument("--network", action="store", dest="network_list",
                         help="Comma separated list of networks. Wildcards accepted",
                         type=str, metavar="network_list")
@@ -689,11 +686,10 @@ class PH5toStationXML(object):
     def Process(self):
         networks = []
 
-        paths = self.args.get('ph5path')
-
-        if self.args.get('basepath'):
-            paths = []
-            for dirName, subdirList, fileList in os.walk(self.args.get('basepath')):
+        basepaths = self.args.get('ph5path')
+        paths = []
+        for basepath in basepaths:
+            for dirName, subdirList, fileList in os.walk(basepath):
                 for fname in fileList:
                     if fname == "master.ph5":
                         paths.append(dirName)
