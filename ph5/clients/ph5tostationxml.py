@@ -693,10 +693,11 @@ class PH5toStationXML(object):
 
         if self.args.get('basepath'):
             paths = []
-            for dirName, subdirList, fileList in os.walk(self.args.get('basepath')):
-                for fname in fileList:
-                    if fname == "master.ph5":
-                        paths.append(dirName)
+            for basepath in self.args.get('basepath'):
+                for dirName, subdirList, fileList in os.walk(basepath):
+                    for fname in fileList:
+                        if fname == "master.ph5":
+                            paths.append(dirName)
 
         for path in paths:
             network = self.read_networks(path)
