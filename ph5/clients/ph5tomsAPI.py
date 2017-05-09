@@ -149,8 +149,9 @@ class PH5toMSeed(object):
             self.dasskip = dasskip
 
         # Check network code is 2 alphanum
-        if (not self.netcode.isalnum()) or (len(self.netcode) != 2):
-            raise PH5toMSAPIError('Error - Netcode must be a 2 character alphanumeric.')
+        if self.netcode:
+            if (not self.netcode.isalnum()) or (len(self.netcode) > 2):
+                raise PH5toMSAPIError('Error - Netcode must be a 2 character alphanumeric.')
 
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
@@ -705,6 +706,9 @@ def get_args():
         "-p", "--ph5path", action="store", default=".",
         type=str, metavar="ph5_path")
 
+    parser.add_argument('--reqtype', help="Select from 'fdsn' or 'shot'. Individual request" +
+        "types have their own set of required parameters.", default="FDSN")
+
     parser.add_argument(
         '--network',
         help=argparse.SUPPRESS,
@@ -870,7 +874,7 @@ if __name__ == '__main__':
     
     
     ph5ms = PH5toMSeed(
-        ph5API_object, args.array, args.length, args.offset,
+        ph5API_object, args.reqtype, args.array, args.length, args.offset,
         args.component, args.sta_list, args.network,
         args.channel, args.das_sn,  args.deploy_pickup,
         args.decimation, args.sample_rate, args.doy_keep, args.stream,
