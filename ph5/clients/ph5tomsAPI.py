@@ -104,15 +104,14 @@ class PH5toMSAPIError(Exception):
 
 class PH5toMSeed(object):
 
-    def __init__(self, ph5API_object, reqtype, array, length, offset, component=[],
+    def __init__(self, ph5API_object, array, length, offset, component=[],
                  station=[], netcode="XX", channel=[],
                  das_sn=None,  use_deploy_pickup=False, decimation=None,
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  out_dir=".", starttime=None, stoptime=None,
                  reduction_velocity=-1., dasskip=None, shotline=None,
-                 eventnumbers="", notimecorrect=False, station_id=[], restricted=[]):
+                 eventnumbers=None, notimecorrect=False, station_id=[], restricted=[]):
 
-        self.reqtype = reqtype
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.array = array
         self.notimecorrect = notimecorrect
@@ -589,7 +588,6 @@ class PH5toMSeed(object):
                 yield station_x
                                 
     def create_cut_list(self):
-
         cuts_generator = []
 
         experiment_t = self.ph5.Experiment_t['rows']
@@ -600,7 +598,6 @@ class PH5toMSeed(object):
         shot_lines.sort()
         matched_shot_lines = []
         matched_shots = []
-
         if self.shotline:
             for shot_line in shot_lines:
                 if self.does_pattern_exists(self.shotline, shot_line[-3:]):
@@ -616,6 +613,8 @@ class PH5toMSeed(object):
                         continue
         if self.shotline and not matched_shot_lines:
             raise PH5toMSAPIError("Error - requested shotline(s) do not exist.")
+        elif self.eventnumbers and not matched_shots:
+            raise PH5toMSAPIError("Error - requested shotid(s) do not exist.")
 
         for array_name in array_names:
             array = array_name[-3:]
@@ -653,9 +652,7 @@ class PH5toMSeed(object):
                                         station_list[deployment][st_num]['seed_station_name_s']):
                                 continue
 
-                        if self.reqtype == "SHOT":
-                            if not (self.eventnumbers and self.shotline and self.length):
-                                raise PH5toMSAPIError("shotline, shotid and length are required for request by shot.")
+                        if matched_shot_lines and matched_shots:
                             # request by shot
                             for shotline in matched_shot_lines:
                                 for shot in matched_shots:
@@ -669,12 +666,10 @@ class PH5toMSeed(object):
                                         raise PH5toMSAPIError("Error reading events table.") 
                                 cuts_generator.append(self.create_cut(experiment_t, station, seed_station, station_list, 
                                                        start_times, deployment, st_num, matched_shot_lines))
-                        elif self.reqtype == "FDSN":
+                        else:
                             # fdsn request
                             cuts_generator.append(self.create_cut(experiment_t, station, seed_station, station_list, 
                                                    start_times, deployment, st_num, matched_shot_lines))
-                        else:
-                            raise PH5toMSAPIError("Unsupported request type - %s" % self.reqtype)
         return itertools.chain.from_iterable(cuts_generator)
 
     def process_all(self):
@@ -705,9 +700,6 @@ def get_args():
     parser.add_argument(
         "-p", "--ph5path", action="store", default=".",
         type=str, metavar="ph5_path")
-
-    parser.add_argument('--reqtype', help="Select from 'fdsn' or 'shot'. Individual request" +
-        "types have their own set of required parameters.", default="FDSN")
 
     parser.add_argument(
         '--network',
@@ -874,7 +866,7 @@ if __name__ == '__main__':
     
     
     ph5ms = PH5toMSeed(
-        ph5API_object, args.reqtype, args.array, args.length, args.offset,
+        ph5API_object, args.array, args.length, args.offset,
         args.component, args.sta_list, args.network,
         args.channel, args.das_sn,  args.deploy_pickup,
         args.decimation, args.sample_rate, args.doy_keep, args.stream,
