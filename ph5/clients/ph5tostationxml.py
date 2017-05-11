@@ -218,9 +218,9 @@ class PH5toStationXML(object):
             self.args['stop_time'] = datetime.datetime.strptime(
                 self.args.get('stop_time'), "%Y:%j:%H:%M:%S.%f")
 
-    def does_pattern_exists(self, patterns_list, other_pattern):
+    def does_pattern_exists(self, patterns_list, value):
         for pattern in patterns_list:
-            if fnmatch.fnmatch(other_pattern, pattern):
+            if fnmatch.fnmatch(value, pattern):
                 return True
         return False
     
