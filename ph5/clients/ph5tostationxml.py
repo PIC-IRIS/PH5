@@ -440,7 +440,9 @@ class PH5toStationXML(object):
     
     def get_response_inv(self, obs_channel):
         das = obs_channel.data_logger.serial_number
-        self.ph5.read_das_t(das, reread=False)
+        start = (obs_channel.start_date - datetime.datetime(1970,1,1)).total_seconds()
+        end = (obs_channel.end_date - datetime.datetime(1970,1,1)).total_seconds()
+        self.ph5.read_das_t(das, start, end,  reread=False)
         if self.ph5.Das_t.get(das):
             component = int(obs_channel.extra.PH5Component.value)
             Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
