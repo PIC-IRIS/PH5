@@ -111,7 +111,7 @@ class PH5toMSeed(object):
                  reduction_velocity=-1., notimecorrect=False,  restricted=[]):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
-        self.reqtype = reqtype
+        self.reqtype = reqtype.upper()
         self.array = array
         self.notimecorrect = notimecorrect
         self.decimation = decimation
@@ -163,7 +163,7 @@ class PH5toMSeed(object):
             if not self.start_time or not self.end_time:
                 raise PH5toMSAPIError("Error - starttime  is required for reqtype=fdsn.")         
         else:
-            raise PH5toMSAPIError("Error - Unknown request type - {0}".format(self.reqtype))
+            raise PH5toMSAPIError("Error - Unknown request type - {0}. Choose from FDSN or SHOT.".format(self.reqtype))
 
     def does_pattern_exists(self, patterns_list, value):
         for pattern in patterns_list:
@@ -580,7 +580,7 @@ class PH5toMSeed(object):
         experiment_t = self.ph5.Experiment_t['rows']
         
         seed_network = experiment_t[0]['net_code_s']
-        if self.netcode != seed_network:
+        if self.netcode and self.netcode != seed_network:
             raise PH5toMSAPIError(
                     "Error - The requested SEED network code does "
                     "not match this PH5 experiment network code. "
@@ -701,7 +701,7 @@ def get_args():
     parser.add_argument(
         '--network',
         help=argparse.SUPPRESS,
-        default='XX')
+        default=None)
 
     parser.add_argument(
         "--channel", action="store",
@@ -861,50 +861,52 @@ if __name__ == '__main__':
                  das_sn=args.das_sn,  use_deploy_pickup= args.deploy_pickup, 
                  decimation=args.decimation, sample_rate_keep=args.sample_rate, doy_keep=args.doy_keep, 
                  stream=args.stream, reduction_velocity=args.red_vel, notimecorrect=args.notimecorrect)
+
+        streams = ph5ms.process_all()
+
+
+        if args.format and args.format.upper() == "MSEED":
+            for t in streams:
+                if not args.stream:
+                    t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
+                            reclen=4096)
+                    if args.previewimages is True:
+                        t.plot(outfile=ph5ms.filenamemsimg_gen(t),
+                               bgcolor="#DCD3ED", color="#272727",
+                               face_color="#DCD3ED")
+    
+                else:
+                    t.write(sys.stdout, format='MSEED', reclen=4096)
+    
+        elif args.format and args.format.upper() == "SAC":
+            for t in streams:
+                if not args.stream:
+                    t.write(ph5ms.filenamesac_gen(t), format='SAC')
+                    if args.previewimages is True:
+                        t.plot(outfile=ph5ms.filenamesacimg_gen(t),
+                               bgcolor="#DCD3ED", color="#272727",
+                               face_color="#DCD3ED")
+    
+                else:
+                    t.write(sys.stdout, format='SAC')
+    
+        else:
+    
+            for t in streams:
+    
+                if not args.stream:
+                    t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
+                            reclen=4096)
+    
+                    if args.previewimages is True:
+                        t.plot(outfile=ph5ms.filenamemsimg_gen(t),
+                               bgcolor="#DCD3ED", color="#272727",
+                               face_color="#DCD3ED")
+                else:
+                    t.write(sys.stdout, format='MSEED', reclen=4096)
+
     except PH5toMSAPIError as err:
-        sys.stderr.write(err.message)
+        sys.stderr.write("{0}\n".format(err.message))
         exit(-1)
 
-    streams = ph5ms.process_all()
-
-    if args.format and args.format.upper() == "MSEED":
-        for t in streams:
-            if not args.stream:
-                t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096)
-                if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t),
-                           bgcolor="#DCD3ED", color="#272727",
-                           face_color="#DCD3ED")
-
-            else:
-                t.write(sys.stdout, format='MSEED', reclen=4096)
-
-    elif args.format and args.format.upper() == "SAC":
-        for t in streams:
-            if not args.stream:
-                t.write(ph5ms.filenamesac_gen(t), format='SAC')
-                if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamesacimg_gen(t),
-                           bgcolor="#DCD3ED", color="#272727",
-                           face_color="#DCD3ED")
-
-            else:
-                t.write(sys.stdout, format='SAC')
-
-    else:
-
-        for t in streams:
-
-            if not args.stream:
-                t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096)
-
-                if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t),
-                           bgcolor="#DCD3ED", color="#272727",
-                           face_color="#DCD3ED")
-            else:
-                t.write(sys.stdout, format='MSEED', reclen=4096)
-
-    sys.stdout.write(tm() - then)
+    sys.stdout.write(str(tm() - then))
