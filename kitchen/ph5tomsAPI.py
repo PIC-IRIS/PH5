@@ -135,7 +135,9 @@ class PH5toMSeed(object):
         self.ph5 = ph5API_object
         self.restricted = restricted
         
-        self.validate() # validate object arguments
+        if self.reqtype != "SHOT" and self.reqtype != "FDSN":
+            raise PH5toMSAPIError("Error - Invalid request type {0}. "
+                                  "Choose from FDSN or SHOT.".format(self.reqtype)) 
         
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
@@ -151,19 +153,6 @@ class PH5toMSeed(object):
                 os.mkdir(self.out_dir)
             except Exception:
                 raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
-
-    def validate(self):
-        """
-        Validate PH5toMSAPI for required arguments
-        """
-        if self.reqtype == "SHOT":
-            if not self.length:
-                raise PH5toMSAPIError("Error - length is required for reqtype=shot.") 
-        elif self.reqtype == "FDSN":
-            if not self.start_time or not self.end_time:
-                raise PH5toMSAPIError("Error - starttime  is required for reqtype=fdsn.")         
-        else:
-            raise PH5toMSAPIError("Error - Unknown request type - {0}. Choose from FDSN or SHOT.".format(self.reqtype))
 
     def does_pattern_exists(self, patterns_list, value):
         for pattern in patterns_list:
@@ -423,9 +412,11 @@ class PH5toMSeed(object):
     def create_cut(self, seed_network, ph5_station, seed_station, 
                    start_times, station_list, deployment, st_num):
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
+        deploy_micro = station_list[deployment][st_num]['deploy_time/micro_seconds_i']
+        pickup = station_list[deployment][st_num]['pickup_time/epoch_l']
+        pickup_micro = station_list[deployment][st_num]['pickup_time/micro_seconds_i']
         location = station_list[deployment][
             st_num]['seed_location_code_s']
-        pickup = station_list[deployment][st_num]['pickup_time/epoch_l']
         das = station_list[deployment][st_num]['das/serial_number_s']
         
         if 'sample_rate_i' in station_list[deployment][0]:
@@ -456,57 +447,64 @@ class PH5toMSeed(object):
 
         if self.reqtype == "FDSN":
             # trim user defined time range if it extends beyond the deploy/pickup times
-            if "T" not in self.start_time:
-                check_start_time = passcal2epoch(self.start_time)
-                if float(check_start_time) > float(deploy):
-                    start_fepoch = self.start_time
-                    start_times.append(passcal2epoch(start_fepoch))
+            if self.start_time:    
+                if "T" not in self.start_time:
+                    check_start_time = passcal2epoch(self.start_time)
+                    if float(check_start_time) > float(deploy):
+                        start_fepoch = self.start_time
+                        start_times.append(passcal2epoch(start_fepoch))
+                    else:
+                        start_times.append(deploy)
+            
                 else:
-                    start_times.append(deploy)
-        
+                    check_start_time = fdsntimetoepoch(self.start_time)
+                    if float(check_start_time) > float(deploy):
+                        start_times.append(fdsntimetoepoch(self.start_time))
+                    else:
+                        start_times.append(deploy)
+                if float(check_start_time) > float(pickup):
+                    return
             else:
-                check_start_time = fdsntimetoepoch(self.start_time)
-                if float(check_start_time) > float(deploy):
-                    start_times.append(fdsntimetoepoch(
-                        self.start_time))
-                else:
-                    start_times.append(deploy)
-            if float(check_start_time) > float(pickup):
-                return
+                start_times.append(ph5API.fepoch(deploy,deploy_micro))
         
         for start_fepoch in start_times:
         
             if self.reqtype == "SHOT":
-                stop_fepoch = start_fepoch + self.length
-            elif self.reqtype == "FDSN":
-        
-                if "T" not in self.end_time:
-                    check_end_time = passcal2epoch(self.end_time)
-        
-                    if float(check_end_time) < float(pickup):
-        
-                        stop_fepoch = self.end_time
-                        stop_fepoch = passcal2epoch(stop_fepoch)
-                    else:
-                        stop_fepoch = pickup
-        
+                if self.length:
+                    stop_fepoch = start_fepoch + self.length
                 else:
-                    check_end_time = fdsntimetoepoch(self.end_time)
-                    if float(check_end_time) < float(pickup):
-                        stop_fepoch = fdsntimetoepoch(
-                            self.end_time)
+                    raise PH5toMSAPIError("Error - length is required for requst by shot.")
+            elif self.reqtype == "FDSN":
+                if self.end_time:
+                    if "T" not in self.end_time:
+                        check_end_time = passcal2epoch(self.end_time)
+            
+                        if float(check_end_time) < float(pickup):
+            
+                            stop_fepoch = self.end_time
+                            stop_fepoch = passcal2epoch(stop_fepoch)
+                        else:
+                            stop_fepoch = pickup
+            
                     else:
-                        stop_fepoch = pickup
-        
-                if float(check_end_time) < float(deploy):
-                    continue
-        
+                        check_end_time = fdsntimetoepoch(self.end_time)
+                        if float(check_end_time) < float(pickup):
+                            stop_fepoch = fdsntimetoepoch(
+                                self.end_time)
+                        else:
+                            stop_fepoch = pickup
+            
+                    if float(check_end_time) < float(deploy):
+                        continue
+                else:
+                    stop_fepoch = ph5API.fepoch(pickup, pickup_micro)                
+
             if (self.use_deploy_pickup is True and not
                     ((start_fepoch >= deploy and
                       stop_fepoch <= pickup))):
                 # das not deployed within deploy/pickup time
                 continue
-        
+            
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
             start_doy = start_passcal_list[1]
@@ -719,11 +717,11 @@ def get_args():
 
     parser.add_argument(
         "--shotline", action="store",
-        type=str, metavar="shotline", default=None)
+        type=str, metavar="shotline", default=[])
     
     parser.add_argument(
         "-e", "--eventnumbers", action="store",
-        type=str, metavar="eventnumbers", default=None)
+        type=str, metavar="eventnumbers", default=[])
 
     parser.add_argument(
         "--stream", action="store_true", default=False,
@@ -777,7 +775,7 @@ def get_args():
         type=float, default=-1., help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "-l", "--length", action="store",
+        "-l", "--length", action="store", default=60,
         type=int, dest="length", metavar="length")
 
     parser.add_argument(
@@ -786,8 +784,8 @@ def get_args():
         default=False)
 
     parser.add_argument(
-        "--use_deploy_pickup", action="store_true", default=False,
-        help="Use deploy/pickuop times to determine if data exists.",
+        "--use_deploy_pickup", action="store_true", default=True,
+        help="Use deploy/pickup times to determine if data exists.",
         dest="deploy_pickup")
 
     parser.add_argument(
