@@ -577,7 +577,12 @@ class PH5toMSeed(object):
 
         experiment_t = self.ph5.Experiment_t['rows']
         
-        seed_network = experiment_t[0]['net_code_s']
+        try:
+            seed_network = experiment_t[0]['net_code_s']
+        except:
+            raise PH5toMSAPIError("Error - No net_code_s entry in Experiment_t. "
+                                  "Verify that this experiment is PH5 version >= PN4.")
+
         if self.netcode and self.netcode != seed_network:
             raise PH5toMSAPIError(
                     "Error - The requested SEED network code does "
