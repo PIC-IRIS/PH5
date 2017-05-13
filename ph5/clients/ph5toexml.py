@@ -379,7 +379,19 @@ class PH5toexml(object):
                 
                 if self.args.get('stop_time') and (
                     datetime.fromtimestamp(value['time/epoch_l']) > self.args.get('stop_time')):
-                    continue                      
+                    continue
+                
+                restricted = self.args.get('restricted')
+                if restricted:
+                    is_restricted = False
+                    for r in restricted:
+                        if r.network == network.code and \
+                           value['time/epoch_l'] >= r.starttime and \
+                           value['time/epoch_l'] <= r.endtime:
+                            is_restricted = True
+                            break
+                    if is_restricted:
+                        continue
 
                 shot=Shot(key, value['size/value_d'],value['size/units_s'], 
                           self.get_fdsn_time(value['time/epoch_l'], value['time/micro_seconds_i']), 
@@ -502,7 +514,7 @@ class PH5toexml(object):
                     for shot in shot_line.shots:
                         out.append(str(network.code)+"|"+network.reportnum+"|"+str(shot_line.name[-3:])+"|"+str(shot.shot_id)+"|"+shot.start_time+"|"+str(shot.lat)+"|"+str(shot.lon)+"|"+str(shot.elev)+"|"+str(shot.mag)+"|"+shot.mag_units)
             if out:
-                header = ["Network|ReportNum|ShotLine|Shot|ShotTime|Latitude|Longitude|Elevation|ShotSize|ShotUnits"]
+                header = ["#Network|ReportNum|ShotLine|Shot|ShotTime|Latitude|Longitude|Elevation|ShotSize|ShotUnits"]
                 out = header + out
                 if hasattr(outfile, 'write'):
                     target = outfile
