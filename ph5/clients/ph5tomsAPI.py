@@ -37,10 +37,8 @@ import fnmatch
 import copy
 import itertools
 
-from time import time as tm
 
-
-PROG_VERSION = "2017.101"
+PROG_VERSION = "2017.132"
 
 
 def fdsntimetoepoch(fdsn_time):
@@ -104,15 +102,16 @@ class PH5toMSAPIError(Exception):
 
 class PH5toMSeed(object):
 
-    def __init__(self, ph5API_object, array, length, offset, component=[],
-                 station=[], netcode="XX", channel=[],
+    def __init__(self, ph5API_object, out_dir=".", reqtype="FDSN", netcode=None, station=[], 
+                 station_id=[], channel=[], component=[], 
+                 array=[], shotline=None, eventnumbers=None,
+                 length=None, starttime=None, stoptime=None, offset=None, 
                  das_sn=None,  use_deploy_pickup=False, decimation=None,
-                 sample_rate_keep=None, doy_keep=[], stream=False,
-                 out_dir=".", starttime=None, stoptime=None,
-                 reduction_velocity=-1., dasskip=None, shotline=None,
-                 eventnumbers=None, notimecorrect=False, station_id=[], restricted=[]):
+                 sample_rate_keep=None, doy_keep=[], stream=False, 
+                 reduction_velocity=-1., notimecorrect=False,  restricted=[]):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
+        self.reqtype = reqtype.upper()
         self.array = array
         self.notimecorrect = notimecorrect
         self.decimation = decimation
@@ -135,38 +134,31 @@ class PH5toMSeed(object):
         self.eventnumbers = eventnumbers
         self.ph5 = ph5API_object
         self.restricted = restricted
-
-        if not os.path.exists(self.out_dir):
-            try:
-                os.mkdir(self.out_dir)
-            except Exception:
-                raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
-
-        if dasskip is not None:
-            self.dasskip = dasskip
-        else:
-            self.dasskip = dasskip
-
-        # Check network code is 2 alphanum
-        if self.netcode:
-            if (not self.netcode.isalnum()) or (len(self.netcode) > 2):
-                raise PH5toMSAPIError('Error - Netcode must be a 2 character alphanumeric.')
-
+        
+        if self.reqtype != "SHOT" and self.reqtype != "FDSN":
+            raise PH5toMSAPIError("Error - Invalid request type {0}. "
+                                  "Choose from FDSN or SHOT.".format(self.reqtype)) 
+        
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
 
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
-
-        if shotline:
+        
+        if self.reqtype == "SHOT":    
             self.ph5.read_event_t_names()
+            
+        if not self.stream and not os.path.exists(self.out_dir):
+            try:
+                os.mkdir(self.out_dir)
+            except Exception:
+                raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
 
     def does_pattern_exists(self, patterns_list, value):
         for pattern in patterns_list:
-            if fnmatch.fnmatch(value, pattern):
+            if fnmatch.fnmatch(str(value), str(pattern)):
                 return True
         return False
-
 
     def read_arrays(self, name):
 
@@ -372,7 +364,6 @@ class PH5toMSeed(object):
                 except ValueError:
                     continue
                 
-                
                 obspy_trace.stats.sampling_rate = stc.sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
@@ -395,32 +386,7 @@ class PH5toMSeed(object):
 
         return obspy_stream
     
-    def create_cut(self, experiment_t, station, seed_station, station_list, 
-                   start_times, deployment, st_num, matched_shot_lines):
-        deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
-        location = station_list[deployment][
-            st_num]['seed_location_code_s']
-        pickup = station_list[deployment][st_num]['pickup_time/epoch_l']
-        das = station_list[deployment][st_num]['das/serial_number_s']
-        
-        if 'sample_rate_i' in station_list[deployment][0]:
-            sample_rate = station_list[deployment
-                                       ][st_num]['sample_rate_i']
-        sample_rate_multiplier = 1
-        if ('sample_rate_multiplier_i' in
-                station_list[deployment][st_num]):
-            sample_rate_multiplier = station_list[
-                deployment][st_num]['sample_rate_multiplier_i']
-        
-        if self.sample_rate_list:
-            does_match = []
-            sample_list = self.sample_rate_list
-            for x in sample_list:
-                if sample_rate == int(x):
-                    does_match.append(1)
-            if not does_match:
-                return
-        
+    def get_channel_and_component(self, station_list, deployment, st_num):
         if 'seed_band_code_s' in station_list[deployment][st_num]:
             band_code = station_list[deployment][
                 st_num]['seed_band_code_s']
@@ -438,96 +404,113 @@ class PH5toMSeed(object):
         else:
             orientation_code = "X"
         
-        c = station_list[deployment][st_num]['channel_number_i']
+        seed_cha_code = band_code + instrument_code + orientation_code
+        component = station_list[deployment][st_num]['channel_number_i']
+        
+        return seed_cha_code, component
+    
+    def create_cut(self, seed_network, ph5_station, seed_station, 
+                   start_times, station_list, deployment, st_num):
+        deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
+        deploy_micro = station_list[deployment][st_num]['deploy_time/micro_seconds_i']
+        pickup = station_list[deployment][st_num]['pickup_time/epoch_l']
+        pickup_micro = station_list[deployment][st_num]['pickup_time/micro_seconds_i']
+        location = station_list[deployment][
+            st_num]['seed_location_code_s']
+        das = station_list[deployment][st_num]['das/serial_number_s']
+        
+        if 'sample_rate_i' in station_list[deployment][0]:
+            sample_rate = station_list[deployment][st_num]['sample_rate_i']
+        sample_rate_multiplier = 1
+        if ('sample_rate_multiplier_i' in
+                station_list[deployment][st_num]):
+            sample_rate_multiplier = station_list[
+                deployment][st_num]['sample_rate_multiplier_i']
+        
+        if self.sample_rate_list:
+            sample_list = self.sample_rate_list
+            if not self.does_pattern_exists(sample_list, sample_rate):
+                return
+            
+        seed_channel, component = self.get_channel_and_component(station_list, deployment, st_num)
         
         if self.component:
             component_list = self.component
-            if str(c) not in component_list:
+            if not self.does_pattern_exists(component_list, component):
                 return
-        
-        full_code = band_code + instrument_code + orientation_code
-        
         if self.channel:
-            does_match = []
             cha_patterns = self.channel
-            for pattern in cha_patterns:
-                if fnmatch.fnmatch(full_code, pattern):
-                    does_match.append(1)
-            if not does_match:
+            if not self.does_pattern_exists(cha_patterns, seed_channel):
                 return
         if self.das_sn and self.das_sn != das:
             return
-        if self.start_time and not matched_shot_lines:
-        
-            if "T" not in self.start_time:
-                check_start_time = passcal2epoch(self.start_time)
-                if float(check_start_time) > float(deploy):
-                    start_fepoch = self.start_time
-                    start_times.append(passcal2epoch(start_fepoch))
+
+        if self.reqtype == "FDSN":
+            # trim user defined time range if it extends beyond the deploy/pickup times
+            if self.start_time:    
+                if "T" not in self.start_time:
+                    check_start_time = passcal2epoch(self.start_time)
+                    if float(check_start_time) > float(deploy):
+                        start_fepoch = self.start_time
+                        start_times.append(passcal2epoch(start_fepoch))
+                    else:
+                        start_times.append(deploy)
+            
                 else:
-                    start_times.append(deploy)
-        
+                    check_start_time = fdsntimetoepoch(self.start_time)
+                    if float(check_start_time) > float(deploy):
+                        start_times.append(fdsntimetoepoch(self.start_time))
+                    else:
+                        start_times.append(deploy)
+                if float(check_start_time) > float(pickup):
+                    return
             else:
-                check_start_time = fdsntimetoepoch(self.start_time)
-                if float(check_start_time) > float(deploy):
-                    start_times.append(fdsntimetoepoch(
-                        self.start_time))
-                else:
-                    start_times.append(deploy)
-            if float(check_start_time) > float(pickup):
-                return
-        elif not matched_shot_lines:
-            start_times.append(ph5API.fepoch(station_list[
-                deployment][st_num]
-                ['deploy_time/epoch_l'],
-                station_list[deployment][st_num]
-                ['deploy_time/micro_seconds_i']))
+                start_times.append(ph5API.fepoch(deploy,deploy_micro))
         
         for start_fepoch in start_times:
         
-            if self.length:
-                stop_fepoch = start_fepoch + self.length
-        
-            elif self.end_time:
-        
-                if "T" not in self.end_time:
-                    check_end_time = passcal2epoch(self.end_time)
-        
-                    if float(check_end_time) < float(pickup):
-        
-                        stop_fepoch = self.end_time
-                        stop_fepoch = passcal2epoch(stop_fepoch)
-                    else:
-                        stop_fepoch = pickup
-        
+            if self.reqtype == "SHOT":
+                if self.length:
+                    stop_fepoch = start_fepoch + self.length
                 else:
-                    check_end_time = fdsntimetoepoch(self.end_time)
-                    if float(check_end_time) < float(pickup):
-                        stop_fepoch = fdsntimetoepoch(
-                            self.end_time)
+                    raise PH5toMSAPIError("Error - length is required for requst by shot.")
+            elif self.reqtype == "FDSN":
+                if self.end_time:
+                    if "T" not in self.end_time:
+                        check_end_time = passcal2epoch(self.end_time)
+            
+                        if float(check_end_time) < float(pickup):
+            
+                            stop_fepoch = self.end_time
+                            stop_fepoch = passcal2epoch(stop_fepoch)
+                        else:
+                            stop_fepoch = pickup
+            
                     else:
-                        stop_fepoch = pickup
-        
-                if float(check_end_time) < float(deploy):
-                    continue
-            else: 
-                stop_fepoch = ph5API.fepoch(
-                    station_list[deployment
-                                 ][st_num]['pickup_time/epoch_l'],
-                    station_list[deployment]
-                    [st_num]['pickup_time/micro_seconds_i'])
-        
+                        check_end_time = fdsntimetoepoch(self.end_time)
+                        if float(check_end_time) < float(pickup):
+                            stop_fepoch = fdsntimetoepoch(
+                                self.end_time)
+                        else:
+                            stop_fepoch = pickup
+            
+                    if float(check_end_time) < float(deploy):
+                        continue
+                else:
+                    stop_fepoch = ph5API.fepoch(pickup, pickup_micro)                
+
             if (self.use_deploy_pickup is True and not
                     ((start_fepoch >= deploy and
                       stop_fepoch <= pickup))):
                 # das not deployed within deploy/pickup time
                 continue
-        
+            
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
             start_doy = start_passcal_list[1]
         
             if self.offset:
+                # adjust starttime by an offset
                 start_fepoch += int(self.offset)
         
             if self.doy_keep:
@@ -561,65 +544,80 @@ class PH5toMSeed(object):
             longitude = station_list[deployment][
                 st_num]['location/X/value_d']
         
-            for x in times_to_cut:
+            for starttime, endtime in tuple(times_to_cut):
+                
+                self.ph5.read_das_t(das,
+                                    starttime,
+                                    endtime,
+                                    reread=False)
+                
+                if not self.ph5.Das_t.has_key(das):
+                    continue
+                
                 station_x = StationCut(
-                    experiment_t[0]['net_code_s'],
-                    station,
+                    seed_network,
+                    ph5_station,
                     seed_station,
                     das,
-                    c,
-                    full_code,
-                    x[0],
-                    x[1],
+                    component,
+                    seed_channel,
+                    starttime,
+                    endtime,
                     sample_rate,
                     sample_rate_multiplier,
                     self.notimecorrect,
                     location,
                     latitude,
                     longitude)
-        
-                self.ph5.read_das_t(station_x.das,
-                                    station_x.starttime,
-                                    station_x.endtime,
-                                    reread=False)
-        
-                if not self.ph5.Das_t.has_key(station_x.das):
-                    continue
+
                 yield station_x
                                 
     def create_cut_list(self):
         cuts_generator = []
 
         experiment_t = self.ph5.Experiment_t['rows']
+        
+        try:
+            seed_network = experiment_t[0]['net_code_s']
+        except:
+            raise PH5toMSAPIError("Error - No net_code_s entry in Experiment_t. "
+                                  "Verify that this experiment is PH5 version >= PN4.")
+
+        if self.netcode and self.netcode != seed_network:
+            raise PH5toMSAPIError(
+                    "Error - The requested SEED network code does "
+                    "not match this PH5 experiment network code. "
+                    "{0} != {1}".format(self.netcode, seed_network))
+        
         array_names = self.ph5.Array_t_names
         array_names.sort()
         self.read_events(None)
-        shot_lines = self.ph5.Event_t_names
-        shot_lines.sort()
-        matched_shot_lines = []
-        matched_shots = []
-        if self.shotline:
+        
+        if self.reqtype == "SHOT":
+            # create list of all matched shotlines and shot-ids for request by shot
+            shot_lines = self.ph5.Event_t_names
+            shot_lines.sort()
+            matched_shot_lines = []
+            matched_shots = []
             for shot_line in shot_lines:
-                if self.does_pattern_exists(self.shotline, shot_line[-3:]):
+                if not self.shotline or self.does_pattern_exists(self.shotline, shot_line[-3:]):
                     matched_shot_lines.append(shot_line)
                 else:
                     continue
                 event_t = self.ph5.Event_t[shot_line]['byid']
                 for shot_id, _ in event_t.iteritems():
-                    if self.eventnumbers and \
-                        self.does_pattern_exists(self.eventnumbers, shot_id):
+                    if not self.eventnumbers or self.does_pattern_exists(self.eventnumbers, shot_id):
                         matched_shots.append(shot_id)
                     else:
                         continue
-        if self.shotline and not matched_shot_lines:
-            raise PH5toMSAPIError("Error - requested shotline(s) do not exist.")
-        elif self.eventnumbers and not matched_shots:
-            raise PH5toMSAPIError("Error - requested shotid(s) do not exist.")
+            if self.shotline and not matched_shot_lines:
+                raise PH5toMSAPIError("Error - requested shotline(s) do not exist.")
+            elif self.eventnumbers and not matched_shots:
+                raise PH5toMSAPIError("Error - requested shotid(s) do not exist.")
 
         for array_name in array_names:
-            array = array_name[-3:]
-
             if self.array:
+                array = array_name[-3:]
                 array_patterns = self.array
                 if not self.does_pattern_exists(array_patterns, str(array)):
                     continue
@@ -629,20 +627,18 @@ class PH5toMSeed(object):
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
 
-            for station in arrayorder:
-
+            for ph5_station in arrayorder:
                 if self.station_id:
                     sta_list = self.station_id
-                    if not self.does_pattern_exists(sta_list, station):
+                    if not self.does_pattern_exists(sta_list, ph5_station):
                         continue
 
-
-                station_list = arraybyid.get(station)
+                station_list = arraybyid.get(ph5_station)
 
                 for deployment in station_list:
                     start_times = []
-    
                     station_len = len(station_list[deployment])
+                    
                     for st_num in range(0,station_len):
                         seed_station = station_list[deployment][st_num]['seed_station_name_s']
 
@@ -651,8 +647,7 @@ class PH5toMSeed(object):
                             if not self.does_pattern_exists(sta_patterns, 
                                         station_list[deployment][st_num]['seed_station_name_s']):
                                 continue
-
-                        if matched_shot_lines and matched_shots:
+                        if self.reqtype == "SHOT":
                             # request by shot
                             for shotline in matched_shot_lines:
                                 for shot in matched_shots:
@@ -664,24 +659,21 @@ class PH5toMSeed(object):
                                         self.evt_lon = event_t['location/X/value_d']
                                     except Exception:
                                         raise PH5toMSAPIError("Error reading events table.") 
-                                cuts_generator.append(self.create_cut(experiment_t, station, seed_station, station_list, 
-                                                       start_times, deployment, st_num, matched_shot_lines))
-                        else:
+                                cuts_generator.append(self.create_cut(seed_network, ph5_station, seed_station,
+                                                       start_times, station_list, deployment, st_num))
+                        elif self.reqtype == "FDSN":
                             # fdsn request
-                            cuts_generator.append(self.create_cut(experiment_t, station, seed_station, station_list, 
-                                                   start_times, deployment, st_num, matched_shot_lines))
+                            cuts_generator.append(self.create_cut(seed_network, ph5_station, seed_station,
+                                                   start_times, station_list, deployment, st_num))
+                            
         return itertools.chain.from_iterable(cuts_generator)
 
     def process_all(self):
-
         cuts = self.create_cut_list()
-        # self.ph5.close()
         for cut in cuts:
             stream = self.create_trace(cut)
             if stream is not None:
                 yield stream
-
-        return
 
 
 def get_args():
@@ -700,26 +692,41 @@ def get_args():
     parser.add_argument(
         "-p", "--ph5path", action="store", default=".",
         type=str, metavar="ph5_path")
+    
+    parser.add_argument(
+        "-o", "--out_dir", action="store",
+        metavar="out_dir", type=str, default=".")
+    
+    parser.add_argument(
+        "--reqtype", action="store",
+        type=str, default="FDSN")
 
     parser.add_argument(
         '--network',
         help=argparse.SUPPRESS,
-        default='XX')
-    #   This should be SEED channel?
+        default=None)
+
     parser.add_argument(
         "--channel", action="store",
         type=str, dest="channel",
         help="Comma separated list of SEED channels to extract",
         metavar="channel",
         default=[])
-
+    
     parser.add_argument(
-        "-e", "--eventnumbers", action="store",
-        type=str, metavar="eventnumbers", default="")
+        "-c", "--component", action="store",
+        type=str, dest="component",
+        help="Comma separated list of channel numbers to extract",
+        metavar="component",
+        default=[])
 
     parser.add_argument(
         "--shotline", action="store",
-        type=str, metavar="shotline", default=None)
+        type=str, metavar="shotline", default=[])
+    
+    parser.add_argument(
+        "-e", "--eventnumbers", action="store",
+        type=str, metavar="eventnumbers", default=[])
 
     parser.add_argument(
         "--stream", action="store_true", default=False,
@@ -746,13 +753,6 @@ def get_args():
         help="Offset time in seconds")
 
     parser.add_argument(
-        "-c", "--component", action="store",
-        type=str, dest="component",
-        help="Comma separated list of channel numbers to extract",
-        metavar="component",
-        default=[])
-
-    parser.add_argument(
         "-d", "--decimation", action="store",
         choices=["2", "4", "5", "8", "10", "20"],
         metavar="decimation", default=None)
@@ -777,10 +777,10 @@ def get_args():
         "-V", "--reduction_velocity", action="store",
         dest="red_vel",
         metavar="red_vel",
-        type=float, default="-1.", help=argparse.SUPPRESS)
+        type=float, default=-1., help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "-l", "--length", action="store",
+        "-l", "--length", action="store", default=60,
         type=int, dest="length", metavar="length")
 
     parser.add_argument(
@@ -789,17 +789,9 @@ def get_args():
         default=False)
 
     parser.add_argument(
-        "-o", "--out_dir", action="store",
-        metavar="out_dir", type=str, default=".")
-
-    parser.add_argument(
-        "--use_deploy_pickup", action="store_true", default=False,
-        help="Use deploy/pickuop times to determine if data exists.",
+        "--use_deploy_pickup", action="store_true", default=True,
+        help="Use deploy/pickup times to determine if data exists.",
         dest="deploy_pickup")
-
-    parser.add_argument(
-        '--dasskip',  metavar='dasskip',
-        help=argparse.SUPPRESS)
 
     parser.add_argument(
         "-D", "--das", action="store", dest="das_sn",
@@ -813,7 +805,7 @@ def get_args():
     parser.add_argument(
         "-F", "-f", "--format", action="store", dest="format",
         help="SAC or MSEED",
-        metavar="format", type=str)
+        metavar="format", type=str, default="MSEED")
 
     parser.add_argument(
         "--previewimages",
@@ -841,7 +833,7 @@ if __name__ == '__main__':
         args.nickname += '.ph5'
 
     if not os.path.exists(ph5file):
-        sys.stderr.write("Error: %s not found.\n" % ph5file)
+        sys.stderr.write("Error - {0} not found.\n".format(ph5file))
         sys.exit(-1)
 
     ph5API_object = ph5API.ph5(path=args.ph5path, nickname=args.nickname)
@@ -863,57 +855,61 @@ if __name__ == '__main__':
     if args.channel:
         args.channel = args.channel.split(',')
 
+    try:
+        ph5ms = PH5toMSeed( ph5API_object, out_dir=".", reqtype=args.reqtype, 
+                 netcode=args.network, station=args.sta_list, station_id=args.sta_id_list, 
+                 channel=args.channel, component=args.component, array=args.array, 
+                 shotline=args.shotline, eventnumbers=args.eventnumbers, length=args.length, 
+                 starttime=args.start_time, stoptime=args.stop_time, offset=args.offset, 
+                 das_sn=args.das_sn,  use_deploy_pickup= args.deploy_pickup, 
+                 decimation=args.decimation, sample_rate_keep=args.sample_rate, doy_keep=args.doy_keep, 
+                 stream=args.stream, reduction_velocity=args.red_vel, notimecorrect=args.notimecorrect)
+
+        streams = ph5ms.process_all()
+
+
+        if args.format and args.format.upper() == "MSEED":
+            for t in streams:
+                if not args.stream:
+                    t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
+                            reclen=4096)
+                    if args.previewimages is True:
+                        t.plot(outfile=ph5ms.filenamemsimg_gen(t),
+                               bgcolor="#DCD3ED", color="#272727",
+                               face_color="#DCD3ED")
     
+                else:
+                    t.write(sys.stdout, format='MSEED', reclen=4096)
     
-    ph5ms = PH5toMSeed(
-        ph5API_object, args.array, args.length, args.offset,
-        args.component, args.sta_list, args.network,
-        args.channel, args.das_sn,  args.deploy_pickup,
-        args.decimation, args.sample_rate, args.doy_keep, args.stream,
-        args.out_dir, args.start_time, args.stop_time, args.red_vel,
-        args.dasskip, args.shotline, args.eventnumbers,
-        args.notimecorrect, args.sta_id_list)
+        elif args.format and args.format.upper() == "SAC":
+            for t in streams:
+                if not args.stream:
+                    t.write(ph5ms.filenamesac_gen(t), format='SAC')
+                    if args.previewimages is True:
+                        t.plot(outfile=ph5ms.filenamesacimg_gen(t),
+                               bgcolor="#DCD3ED", color="#272727",
+                               face_color="#DCD3ED")
+    
+                else:
+                    t.write(sys.stdout, format='SAC')
+    
+        else:
+    
+            for t in streams:
+    
+                if not args.stream:
+                    t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
+                            reclen=4096)
+    
+                    if args.previewimages is True:
+                        t.plot(outfile=ph5ms.filenamemsimg_gen(t),
+                               bgcolor="#DCD3ED", color="#272727",
+                               face_color="#DCD3ED")
+                else:
+                    t.write(sys.stdout, format='MSEED', reclen=4096)
 
-    streams = ph5ms.process_all()
+    except PH5toMSAPIError as err:
+        sys.stderr.write("{0}\n".format(err.message))
+        exit(-1)
 
-    if args.format and args.format.upper() == "MSEED":
-        for t in streams:
-            if not args.stream:
-                t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096)
-                if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t),
-                           bgcolor="#DCD3ED", color="#272727",
-                           face_color="#DCD3ED")
-
-            else:
-                t.write(sys.stdout, format='MSEED', reclen=4096)
-
-    elif args.format and args.format.upper() == "SAC":
-        for t in streams:
-            if not args.stream:
-                t.write(ph5ms.filenamesac_gen(t), format='SAC')
-                if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamesacimg_gen(t),
-                           bgcolor="#DCD3ED", color="#272727",
-                           face_color="#DCD3ED")
-
-            else:
-                t.write(sys.stdout, format='SAC')
-
-    else:
-
-        for t in streams:
-
-            if not args.stream:
-                t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                        reclen=4096)
-
-                if args.previewimages is True:
-                    t.plot(outfile=ph5ms.filenamemsimg_gen(t),
-                           bgcolor="#DCD3ED", color="#272727",
-                           face_color="#DCD3ED")
-            else:
-                t.write(sys.stdout, format='MSEED', reclen=4096)
-
-    print tm() - then
+    sys.stdout.write(str(tm() - then))
