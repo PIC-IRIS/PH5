@@ -530,18 +530,14 @@ class PH5toStationXML(object):
         return final_list
 
     def read_networks(self, path):
+        
+        self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
+        self.ph5.read_experiment_t()
+        self.experiment_t = self.ph5.Experiment_t['rows']
+        
         network_patterns = self.args.get('network_list')
         reportnum_patterns =  self.args.get('reportnum_list')
         
-        self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
-        self.ph5.read_array_t_names()
-        self.ph5.read_das_g_names()
-        self.ph5.read_experiment_t()
-        self.read_arrays(None)
-        self.experiment_t = self.ph5.Experiment_t['rows']
-        self.array_names = self.ph5.Array_t_names
-        self.array_names.sort()
-
         # read network code and compare to network list
         if not ph5utils.does_pattern_exists(network_patterns, self.experiment_t[0]['net_code_s']):
             self.ph5.close()
@@ -551,6 +547,12 @@ class PH5toStationXML(object):
         if not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
             self.ph5.close()
             return
+
+        self.ph5.read_array_t_names()
+        self.ph5.read_das_g_names()
+        self.read_arrays(None)
+        self.array_names = self.ph5.Array_t_names
+        self.array_names.sort()
         
         sta_list = self.parse_station_list(self.args.get('sta_list'))
         obs_network = self.create_obs_network(sta_list)
