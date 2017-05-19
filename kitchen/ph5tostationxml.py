@@ -28,7 +28,7 @@ from obspy.core.util import AttribDict
 from obspy.io.xseed import Parser
 import ph5utils
 # functions for reading networks in parallel
-from multiprocessing import Pool
+import multiprocessing
 import copy_reg
 import types
 
@@ -600,7 +600,7 @@ class PH5toStationXML(object):
                     channel.response = None
         return network
  
-    def get_networks(self, path):
+    def get_network(self, path):
         network = self.read_networks(path)
         if network:
             network = self.trim_to_level(network)
@@ -620,12 +620,16 @@ def run_ph5_to_stationxml(sta_xml_obj):
     basepaths = sta_xml_obj.args.get('ph5path')
     paths = []
     for basepath in basepaths:
-        for dirName, subdirList, fileList in os.walk(basepath):
+        for dirName, _, fileList in os.walk(basepath):
             for fname in fileList:
                 if fname == "master.ph5":
                     paths.append(dirName)
-    pool = Pool(processes=len(paths))
-    networks = pool.map(sta_xml_obj.get_networks, paths)
+    if len(paths) < multiprocessing.cpu_count():
+        num_processes = len(paths)
+    else:
+        num_processes = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=num_processes)
+    networks = pool.map(sta_xml_obj.get_network, paths)
     networks = [n for n in networks if n]
     pool.close()
     pool.join()
