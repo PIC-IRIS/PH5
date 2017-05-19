@@ -1,7 +1,5 @@
 # Derick Hess
 # Oct 2016
-
-
 """
 
 The MIT License (MIT)
@@ -29,6 +27,11 @@ import fnmatch
 from obspy.core.util import AttribDict
 from obspy.io.xseed import Parser
 import ph5utils
+# functions for reading networks in parallel
+from multiprocessing import Pool
+import copy_reg
+import types
+
 
 PROG_VERSION = "2017.134"
 
@@ -530,20 +533,18 @@ class PH5toStationXML(object):
         return final_list
 
     def read_networks(self, path):
-        
         self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_experiment_t()
         self.experiment_t = self.ph5.Experiment_t['rows']
-        
-        network_patterns = self.args.get('network_list')
-        reportnum_patterns =  self.args.get('reportnum_list')
-        
+           
         # read network code and compare to network list
+        network_patterns = self.args.get('network_list')     
         if not ph5utils.does_pattern_exists(network_patterns, self.experiment_t[0]['net_code_s']):
             self.ph5.close()
             return
 
         # read reportnum and compare to reportnum list
+        reportnum_patterns =  self.args.get('reportnum_list')
         if not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
             self.ph5.close()
             return
@@ -599,30 +600,43 @@ class PH5toStationXML(object):
                     channel.response = None
         return network
  
-    def Process(self):
-        networks = []
-
-        basepaths = self.args.get('ph5path')
-        paths = []
-        for basepath in basepaths:
-            for dirName, subdirList, fileList in os.walk(basepath):
-                for fname in fileList:
-                    if fname == "master.ph5":
-                        paths.append(dirName)
-
-        for path in paths:
-            network = self.read_networks(path)
-            if network:
-                network = self.trim_to_level(network)
-                networks.append(network)
-        if networks:
-            inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
-                                                 sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
-                                                 module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.get('uri'))
-            return inv
+    def get_networks(self, path):
+        network = self.read_networks(path)
+        if network:
+            network = self.trim_to_level(network)
+            return network
         else:
             return
 
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
+
+def run_ph5_to_stationxml(sta_xml_obj):
+    basepaths = sta_xml_obj.args.get('ph5path')
+    paths = []
+    for basepath in basepaths:
+        for dirName, subdirList, fileList in os.walk(basepath):
+            for fname in fileList:
+                if fname == "master.ph5":
+                    paths.append(dirName)
+    pool = Pool(processes=len(paths))
+    networks = pool.map(sta_xml_obj.get_networks, paths)
+    networks = [n for n in networks if n]
+    pool.close()
+    pool.join()
+    if networks:
+        inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
+                                             sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
+                                             module="PH5 WEB SERVICE: metadata | version: 1", module_uri=sta_xml_obj.args.get('uri'))
+        return inv
+    else:
+        return        
+        
                     
 if __name__ == '__main__':
 
@@ -659,7 +673,7 @@ if __name__ == '__main__':
     try:
         ph5sxml = PH5toStationXML(args_dict)
     
-        inv = ph5sxml.Process()
+        inv = run_ph5_to_stationxml(ph5sxml)
         
         if args.out_format.upper() == "STATIONXML":
             inv.write(args.outfile, format='STATIONXML', nsmap={'iris': ph5sxml.iris_custom_ns})
