@@ -1,7 +1,5 @@
 # Derick Hess
 # Oct 2016
-
-
 """
 
 The MIT License (MIT)
@@ -24,14 +22,18 @@ import obspy
 import ph5API
 import datetime
 from obspy import read_inventory
-from obspy.geodetics import locations2degrees
 import argparse
 import fnmatch
 from obspy.core.util import AttribDict
-import math
 from obspy.io.xseed import Parser
+import ph5utils
+# functions for reading networks in parallel
+import multiprocessing
+import copy_reg
+import types
 
-PROG_VERSION = "2017.085"
+
+PROG_VERSION = "2017.139"
 
 
 def get_args():
@@ -204,35 +206,11 @@ class PH5toStationXML(object):
         if not self.args.get('array_list'):
             self.args['array_list'] = ["*"]
 
-        if self.args.get('start_time') and "T" in self.args.get('start_time'):
-            self.args['start_time'] = datetime.datetime.strptime(
-                self.args.get('start_time'), "%Y-%m-%dT%H:%M:%S.%f")
-        elif self.args.get('start_time'):
-            self.args['start_time'] = datetime.datetime.strptime(
-                self.args.get('start_time'), "%Y:%j:%H:%M:%S.%f")
+        if self.args.get('start_time'):
+            self.args['start_time'] = ph5utils.datestring_to_datetime(self.args.get('start_time'))
 
-        if self.args.get('stop_time') and "T" in self.args.get('stop_time'):
-            self.args['stop_time'] = datetime.datetime.strptime(
-                self.args.get('stop_time'), "%Y-%m-%dT%H:%M:%S.%f")
-        elif self.args.get('stop_time'):
-            self.args['stop_time'] = datetime.datetime.strptime(
-                self.args.get('stop_time'), "%Y:%j:%H:%M:%S.%f")
-
-    def does_pattern_exists(self, patterns_list, value):
-        for pattern in patterns_list:
-            if fnmatch.fnmatch(value, pattern):
-                return True
-        return False
-    
-    def does_experiment_pattern_exists(self, request_patterns, code):
-        l = []
-        for pattern in request_patterns:
-            if fnmatch.fnmatch(self.experiment_t[0][code], pattern):
-                l.append(1)
-        if not l:
-            return False
-        else:
-            return True
+        if self.args.get('stop_time'):
+            self.args['stop_time'] = ph5utils.datestring_to_datetime(self.args.get('stop_time'))
 
     def read_arrays(self, name):
         if name is None:
@@ -240,69 +218,6 @@ class PH5toStationXML(object):
                 self.ph5.read_array_t(n)
         else:
             self.ph5.read_array_t(name)
-    
-    @classmethod
-    def is_radial_intersection(cls, point_lat, point_lon, 
-                               minradius, maxradius, 
-                               latitude, longitude):
-        """
-        Checks if there is a radial intersection between a point radius boundary
-        and a latitude/longitude point.
-        :param: point_lat : the latitude of the point radius boundary :type: float
-        :param: point_lon : the longitude of the point radius boundary :type: float
-        :param: minradius : the minimum radius boundary :type: float
-        :param: maxradius : the maximum radius boundary :type: float
-        :param: latitude : the latitude of the point to check :type: float
-        :param: longitude : the longitude of the point to check :type: float
-        """
-        if minradius or maxradius or point_lat or point_lon:
-            # min radius default to 0.0
-            if not minradius:
-                minradius = 0.0
-            # make max radius default to min radius when not defined
-            if not maxradius:
-                maxradius = minradius
-            # latitude and longitude default to 0.0 when not defined
-            if not point_lat:
-                point_lat = 0.0
-            if not point_lon:
-                point_lon = 0.0
-            dist = locations2degrees(latitude, longitude, point_lat, point_lon)
-            if dist < minradius:
-                return False
-            elif dist > maxradius:
-                return False
-            else:
-                return True
-        else:
-            return True
-    
-    @classmethod
-    def is_rect_intersection(cls, minlat, maxlat, minlon, maxlon, latitude, longitude):
-        """
-        Checks if there is a radial intersection between a point radius boundary
-        and a latitude/longitude point.
-        :param: minlat : the minimum rectangular latitude :type: float
-        :param: maxlat : the maximum rectangular latitude :type: float
-        :param: minlon : the minimum rectangular longitude :type: float
-        :param: maxlon : the maximum rectangular longitude :type: float
-        :param: latitude : the latitude of the point to check :type: float
-        :param: longitude : the longitude of the point to check :type: float
-        """
-        if minlat and float(
-                minlat) > float(latitude):
-            return False
-        elif minlon and float(
-                minlon) > float(longitude):
-            return False
-        elif maxlat and float(
-                maxlat) < float(latitude):
-            return False
-        elif maxlon and float(
-                maxlon) < float(longitude):
-            return False
-        else:
-            return True
 
     def is_lat_lon_match(self, latitude, longitude):
         """
@@ -315,7 +230,7 @@ class PH5toStationXML(object):
         elif not  -180 <= float(longitude) <= 180:
             return False
         # if lat/lon box intersection  
-        elif not PH5toStationXML.is_rect_intersection(self.args.get('minlat'),
+        elif not ph5utils.is_rect_intersection(self.args.get('minlat'),
                                            self.args.get('maxlat'),
                                            self.args.get('minlon'),
                                            self.args.get('maxlon'),
@@ -323,7 +238,7 @@ class PH5toStationXML(object):
                                            longitude):
             return False
         # check if point/radius intersection
-        elif not PH5toStationXML.is_radial_intersection(self.args.get('latitude'),
+        elif not ph5utils.is_radial_intersection(self.args.get('latitude'),
                                              self.args.get('longitude'),
                                              self.args.get('minradius'),
                                              self.args.get('maxradius'),
@@ -493,11 +408,11 @@ class PH5toStationXML(object):
         location_patterns = self.args.get('location_list')
         for deployment in station_list:
             receiver_id=str(station_list[deployment][0]['id_s'])          
-            if not self.does_pattern_exists(receiver_list_patterns, receiver_id):
+            if not ph5utils.does_pattern_exists(receiver_list_patterns, receiver_id):
                 continue           
             
             c_id= str(station_list[deployment][0]['channel_number_i'])
-            if not self.does_pattern_exists(component_list_patterns, c_id):
+            if not ph5utils.does_pattern_exists(component_list_patterns, c_id):
                 continue   
 
             seed_channel = station_list[deployment][0]['seed_band_code_s']+station_list[deployment][0]['seed_instrument_code_s']+station_list[deployment][0]['seed_orientation_code_s']
@@ -512,7 +427,7 @@ class PH5toStationXML(object):
                     else:
                         location = ""
 
-                    if not self.does_pattern_exists(location_patterns, location):
+                    if not ph5utils.does_pattern_exists(location_patterns, location):
                         continue 
 
                     cha_longitude = station_list[deployment][
@@ -541,7 +456,7 @@ class PH5toStationXML(object):
 
             array = array_name[-3:]
             
-            if not self.does_pattern_exists(array_patterns, array):
+            if not ph5utils.does_pattern_exists(array_patterns, array):
                 continue
                 
             arraybyid = self.ph5.Array_t[array_name]['byid']
@@ -618,27 +533,27 @@ class PH5toStationXML(object):
         return final_list
 
     def read_networks(self, path):
-        network_patterns = self.args.get('network_list')
-        reportnum_patterns =  self.args.get('reportnum_list')
-        
         self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
-        self.ph5.read_array_t_names()
-        self.ph5.read_das_g_names()
         self.ph5.read_experiment_t()
-        self.read_arrays(None)
         self.experiment_t = self.ph5.Experiment_t['rows']
-        self.array_names = self.ph5.Array_t_names
-        self.array_names.sort()
-
+           
         # read network code and compare to network list
-        if not self.does_experiment_pattern_exists(network_patterns, 'net_code_s'):
+        network_patterns = self.args.get('network_list')     
+        if not ph5utils.does_pattern_exists(network_patterns, self.experiment_t[0]['net_code_s']):
             self.ph5.close()
             return
 
         # read reportnum and compare to reportnum list
-        if not self.does_experiment_pattern_exists(reportnum_patterns, 'experiment_id_s'):
+        reportnum_patterns =  self.args.get('reportnum_list')
+        if not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
             self.ph5.close()
             return
+
+        self.ph5.read_array_t_names()
+        self.ph5.read_das_g_names()
+        self.read_arrays(None)
+        self.array_names = self.ph5.Array_t_names
+        self.array_names.sort()
         
         sta_list = self.parse_station_list(self.args.get('sta_list'))
         obs_network = self.create_obs_network(sta_list)
@@ -685,30 +600,49 @@ class PH5toStationXML(object):
                     channel.response = None
         return network
  
-    def Process(self):
-        networks = []
-
-        basepaths = self.args.get('ph5path')
-        paths = []
-        for basepath in basepaths:
-            for dirName, subdirList, fileList in os.walk(basepath):
-                for fname in fileList:
-                    if fname == "master.ph5":
-                        paths.append(dirName)
-
-        for path in paths:
-            network = self.read_networks(path)
-            if network:
-                network = self.trim_to_level(network)
-                networks.append(network)
-        if networks:
-            inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
-                                                 sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
-                                                 module="PH5 WEB SERVICE: metadata | version: 1", module_uri=self.args.get('uri'))
-            return inv
+    def get_network(self, path):
+        network = self.read_networks(path)
+        if network:
+            network = self.trim_to_level(network)
+            return network
         else:
             return
 
+
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
+
+
+def run_ph5_to_stationxml(sta_xml_obj):
+    basepaths = sta_xml_obj.args.get('ph5path')
+    paths = []
+    for basepath in basepaths:
+        for dirName, _, fileList in os.walk(basepath):
+            for fname in fileList:
+                if fname == "master.ph5":
+                    paths.append(dirName)
+    if len(paths) < 10:
+        num_processes = len(paths)
+    else:
+        num_processes = 10
+    pool = multiprocessing.Pool(processes=num_processes)
+    networks = pool.map(sta_xml_obj.get_network, paths)
+    networks = [n for n in networks if n]
+    pool.close()
+    pool.join()
+    if networks:
+        inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
+                                             sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
+                                             module="PH5 WEB SERVICE: metadata | version: 1", module_uri=sta_xml_obj.args.get('uri'))
+        return inv
+    else:
+        return        
+        
                     
 if __name__ == '__main__':
 
@@ -742,16 +676,17 @@ if __name__ == '__main__':
     if args_dict.get('ph5path'):
         args_dict['ph5path'] = args_dict.get('ph5path').split(',')
 
-    ph5sxml = PH5toStationXML(args_dict)
-
-    inv = ph5sxml.Process()
+    try:
+        ph5sxml = PH5toStationXML(args_dict)
     
-    if args.out_format.upper() == "STATIONXML":
-        inv.write(args.outfile, format='STATIONXML', nsmap={'iris': ph5sxml.iris_custom_ns})
-
-    elif args.out_format.upper() == "KML":
-        inv.write(args.outfile, format='KML')
+        inv = run_ph5_to_stationxml(ph5sxml)
         
-    else:
-        print "Incorrect output format. Formats are STATIONXML or KML"
-        sys.exit()
+        if args.out_format.upper() == "STATIONXML":
+            inv.write(args.outfile, format='STATIONXML', nsmap={'iris': ph5sxml.iris_custom_ns})
+        elif args.out_format.upper() == "KML":
+            inv.write(args.outfile, format='KML')
+        else:
+            sys.stderr.write("Incorrect output format. Formats are STATIONXML or KML")
+            sys.exit()
+    except Exception as err:
+        sys.stderr.write(str("Error - {0}\n".format(err.message)))
