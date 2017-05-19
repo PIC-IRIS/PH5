@@ -30,40 +30,14 @@ from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy import UTCDateTime
 import ph5API
-import time
 from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
-import fnmatch
 import copy
 import itertools
+import ph5utils
 
 
-PROG_VERSION = "2017.132"
-
-
-def fdsntimetoepoch(fdsn_time):
-
-    pattern = "%Y-%m-%dT%H:%M:%S.%f"
-    epoch = float(time.mktime(time.strptime(fdsn_time, pattern)))
-    return epoch
-
-
-def doy_breakup(start_fepoch):
-
-    passcal_start = epoch2passcal(start_fepoch)
-    start_passcal_list = passcal_start.split(":")
-    start_doy = start_passcal_list[1]
-    year = start_passcal_list[0]
-    next_doy = int(start_doy) + 1
-    if next_doy > 365:
-        next_doy = 1
-        year = int(year) + 1
-
-    next_passcal_date = str(year) + ":" + str(next_doy) + ":00:00:00.000"
-    stop_fepoch = passcal2epoch(next_passcal_date)
-
-    seconds = stop_fepoch - start_fepoch
-    return stop_fepoch, seconds
+PROG_VERSION = "2017.134"
 
 
 class StationCut(object):
@@ -153,12 +127,6 @@ class PH5toMSeed(object):
                 os.mkdir(self.out_dir)
             except Exception:
                 raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
-
-    def does_pattern_exists(self, patterns_list, value):
-        for pattern in patterns_list:
-            if fnmatch.fnmatch(str(value), str(pattern)):
-                return True
-        return False
 
     def read_arrays(self, name):
 
@@ -429,18 +397,18 @@ class PH5toMSeed(object):
         
         if self.sample_rate_list:
             sample_list = self.sample_rate_list
-            if not self.does_pattern_exists(sample_list, sample_rate):
+            if not ph5utils.does_pattern_exists(sample_list, sample_rate):
                 return
             
         seed_channel, component = self.get_channel_and_component(station_list, deployment, st_num)
         
         if self.component:
             component_list = self.component
-            if not self.does_pattern_exists(component_list, component):
+            if not ph5utils.does_pattern_exists(component_list, component):
                 return
         if self.channel:
             cha_patterns = self.channel
-            if not self.does_pattern_exists(cha_patterns, seed_channel):
+            if not ph5utils.does_pattern_exists(cha_patterns, seed_channel):
                 return
         if self.das_sn and self.das_sn != das:
             return
@@ -457,9 +425,9 @@ class PH5toMSeed(object):
                         start_times.append(deploy)
             
                 else:
-                    check_start_time = fdsntimetoepoch(self.start_time)
+                    check_start_time = ph5utils.fdsntime_to_epoch(self.start_time)
                     if float(check_start_time) > float(deploy):
-                        start_times.append(fdsntimetoepoch(self.start_time))
+                        start_times.append(ph5utils.fdsntime_to_epoch(self.start_time))
                     else:
                         start_times.append(deploy)
                 if float(check_start_time) > float(pickup):
@@ -487,9 +455,9 @@ class PH5toMSeed(object):
                             stop_fepoch = pickup
             
                     else:
-                        check_end_time = fdsntimetoepoch(self.end_time)
+                        check_end_time = ph5utils.fdsntime_to_epoch(self.end_time)
                         if float(check_end_time) < float(pickup):
-                            stop_fepoch = fdsntimetoepoch(
+                            stop_fepoch = ph5utils.fdsntime_to_epoch(
                                 self.end_time)
                         else:
                             stop_fepoch = pickup
@@ -521,13 +489,13 @@ class PH5toMSeed(object):
                 seconds_covered = 0
                 total_seconds = stop_fepoch - start_fepoch
                 times_to_cut = []
-                stop_time, seconds = doy_breakup(start_fepoch)
+                stop_time, seconds = ph5utils.doy_breakup(start_fepoch)
                 seconds_covered = seconds_covered + seconds
                 times_to_cut.append([start_fepoch, stop_time])
                 start_time = stop_time
         
                 while seconds_covered < total_seconds:
-                    stop_time, seconds = doy_breakup(start_time)
+                    stop_time, seconds = ph5utils.doy_breakup(start_time)
                     seconds_covered += seconds
                     times_to_cut.append([start_time, stop_time])
                     start_time = stop_time
@@ -600,13 +568,13 @@ class PH5toMSeed(object):
             matched_shot_lines = []
             matched_shots = []
             for shot_line in shot_lines:
-                if not self.shotline or self.does_pattern_exists(self.shotline, shot_line[-3:]):
+                if not self.shotline or ph5utils.does_pattern_exists(self.shotline, shot_line[-3:]):
                     matched_shot_lines.append(shot_line)
                 else:
                     continue
                 event_t = self.ph5.Event_t[shot_line]['byid']
                 for shot_id, _ in event_t.iteritems():
-                    if not self.eventnumbers or self.does_pattern_exists(self.eventnumbers, shot_id):
+                    if not self.eventnumbers or ph5utils.does_pattern_exists(self.eventnumbers, shot_id):
                         matched_shots.append(shot_id)
                     else:
                         continue
@@ -619,7 +587,7 @@ class PH5toMSeed(object):
             if self.array:
                 array = array_name[-3:]
                 array_patterns = self.array
-                if not self.does_pattern_exists(array_patterns, str(array)):
+                if not ph5utils.does_pattern_exists(array_patterns, str(array)):
                     continue
 
             self.read_arrays(array_name)
@@ -630,7 +598,7 @@ class PH5toMSeed(object):
             for ph5_station in arrayorder:
                 if self.station_id:
                     sta_list = self.station_id
-                    if not self.does_pattern_exists(sta_list, ph5_station):
+                    if not ph5utils.does_pattern_exists(sta_list, ph5_station):
                         continue
 
                 station_list = arraybyid.get(ph5_station)
@@ -644,7 +612,7 @@ class PH5toMSeed(object):
 
                         if self.station:
                             sta_patterns = self.station
-                            if not self.does_pattern_exists(sta_patterns, 
+                            if not ph5utils.does_pattern_exists(sta_patterns, 
                                         station_list[deployment][st_num]['seed_station_name_s']):
                                 continue
                         if self.reqtype == "SHOT":

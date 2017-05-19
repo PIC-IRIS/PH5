@@ -20,18 +20,21 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 
 import os
 import ph5API
+import ph5utils
 import argparse
-import fnmatch
 from pykml.factory import KML_ElementMaker as KML
 from lxml import etree
 from datetime import datetime
 from obspy import Catalog, UTCDateTime
 import obspy.core.event
 import collections
-from obspy.geodetics import locations2degrees
+# functions for reading networks in parallel
+import multiprocessing
+import copy_reg
+import types
 
 
-PROG_VERSION = "2017.126 Developmental"
+PROG_VERSION = "2017.139"
 
 
 def get_args():
@@ -183,85 +186,6 @@ class PH5toexml(object):
             self.args['stop_time'] = datetime.strptime(
                     self.args.get('stop_time'), "%Y:%j:%H:%M:%S.%f")
 
-    def does_pattern_exists(self, patterns_list, value):
-        for pattern in patterns_list:
-            if fnmatch.fnmatch(value, pattern):
-                return True
-        return False
-
-    def does_experiment_pattern_exists(self, request_patterns, code):
-        l = []
-        for pattern in request_patterns:
-            if fnmatch.fnmatch(self.experiment_t[0][code], pattern):
-                l.append(1)
-        if not l:
-            return False
-        else:
-            return True
-      
-    @classmethod
-    def is_radial_intersection(cls, point_lat, point_lon, 
-                               minradius, maxradius, 
-                               latitude, longitude):
-        """
-        Checks if there is a radial intersection between a point radius boundary
-        and a latitude/longitude point.
-        :param: point_lat : the latitude of the point radius boundary :type: float
-        :param: point_lon : the longitude of the point radius boundary :type: float
-        :param: minradius : the minimum radius boundary :type: float
-        :param: maxradius : the maximum radius boundary :type: float
-        :param: latitude : the latitude of the point to check :type: float
-        :param: longitude : the longitude of the point to check :type: float
-        """
-        if minradius or maxradius or point_lat or point_lon:
-            # min radius default to 0.0
-            if not minradius:
-                minradius = 0.0
-            # make max radius default to min radius when not defined
-            if not maxradius:
-                maxradius = minradius
-            # latitude and longitude default to 0.0 when not defined
-            if not point_lat:
-                point_lat = 0.0
-            if not point_lon:
-                point_lon = 0.0
-            dist = locations2degrees(latitude, longitude, point_lat, point_lon)
-            if dist < minradius:
-                return False
-            elif dist > maxradius:
-                return False
-            else:
-                return True
-        else:
-            return True
-    
-    @classmethod
-    def is_rect_intersection(cls, minlat, maxlat, minlon, maxlon, latitude, longitude):
-        """
-        Checks if there is a radial intersection between a point radius boundary
-        and a latitude/longitude point.
-        :param: minlat : the minimum rectangular latitude :type: float
-        :param: maxlat : the maximum rectangular latitude :type: float
-        :param: minlon : the minimum rectangular longitude :type: float
-        :param: maxlon : the maximum rectangular longitude :type: float
-        :param: latitude : the latitude of the point to check :type: float
-        :param: longitude : the longitude of the point to check :type: float
-        """
-        if minlat and float(
-                minlat) > float(latitude):
-            return False
-        elif minlon and float(
-                minlon) > float(longitude):
-            return False
-        elif maxlat and float(
-                maxlat) < float(latitude):
-            return False
-        elif maxlon and float(
-                maxlon) < float(longitude):
-            return False
-        else:
-            return True
-
     def is_lat_lon_match(self, latitude, longitude):
         """
         Checks if the given latitude/longitude matches geographic query constraints
@@ -273,7 +197,7 @@ class PH5toexml(object):
         elif not  -180 <= float(longitude) <= 180:
             return False
         # if lat/lon box intersection  
-        elif not PH5toexml.is_rect_intersection(self.args.get('minlat'),
+        elif not ph5utils.is_rect_intersection(self.args.get('minlat'),
                                            self.args.get('maxlat'),
                                            self.args.get('minlon'),
                                            self.args.get('maxlon'),
@@ -281,7 +205,7 @@ class PH5toexml(object):
                                            longitude):
             return False
         # check if point/radius intersection
-        elif not PH5toexml.is_radial_intersection(self.args.get('latitude'),
+        elif not ph5utils.is_radial_intersection(self.args.get('latitude'),
                                              self.args.get('longitude'),
                                              self.args.get('minradius'),
                                              self.args.get('maxradius'),
@@ -302,7 +226,7 @@ class PH5toexml(object):
                         self.ph5.read_event_t(n)
                 else:
                     self.ph5.read_event_t(name) 
-            except Exception as e:            
+            except Exception:            
                 return -1
             return 0
 
@@ -333,18 +257,18 @@ class PH5toexml(object):
             return None
 
         if network_patterns and reportnum_patterns:
-            if not self.does_experiment_pattern_exists(network_patterns, 'net_code_s') and \
-               not self.does_experiment_pattern_exists(reportnum_patterns, 'experiment_id_s'):
+            if not ph5utils.does_pattern_exists(network_patterns, self.experiment_t[0]['net_code_s']) and \
+               not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
                 self.ph5.close()
                 return None
         elif network_patterns:
             # read network code and compare to network list
-            if not self.does_experiment_pattern_exists(network_patterns, 'net_code_s'):
+            if not ph5utils.does_pattern_exists(network_patterns, self.experiment_t[0]['net_code_s']):
                 self.ph5.close()
                 return None
         elif reportnum_patterns:
             # read reportnum and compare to reportnum list
-            if not self.does_experiment_pattern_exists(reportnum_patterns, 'experiment_id_s'):
+            if not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
                 self.ph5.close()
                 return None
         else:
@@ -362,11 +286,11 @@ class PH5toexml(object):
             sl=Shotline(shot_line)
             event_t = self.ph5.Event_t[shot_line]['byid']
             if self.args.get('shotline') and \
-               not self.does_pattern_exists(self.args.get('shotline'), str(shot_line[-3:])):
+               not ph5utils.does_pattern_exists(self.args.get('shotline'), str(shot_line[-3:])):
                 continue
             for key, value in event_t.iteritems():
                 if self.args.get('shotid') and \
-                    not self.does_pattern_exists(self.args.get('shotid'), key):
+                    not ph5utils.does_pattern_exists(self.args.get('shotid'), key):
                     continue
                 cha_longitude = float(value['location/X/value_d'])
                 cha_latitude = float(value['location/Y/value_d'])
@@ -409,23 +333,6 @@ class PH5toexml(object):
         self.ph5.close()
         
         return network
-
-    def Process(self):
-        networks = []
-        basepaths = self.args.get('ph5path')
-        paths = []
-        for basepath in basepaths:
-            for dirName, subdirList, fileList in os.walk(basepath):
-                for fname in fileList:
-                    if fname == "master.ph5":
-                        paths.append(dirName)
-
-        for path in paths:
-            network = self.Parse_Networks(path)
-            if network:
-                networks.append(network)
-
-        return networks
 
     def write(self,outfile, list_of_networks, out_format):
         
@@ -573,6 +480,38 @@ class PH5toexml(object):
         else:
             raise PH5toEventError("Output format not supported - {0}.".format(out_format.upper()))
 
+    def get_network(self, path):
+        return self.Parse_Networks(path)
+
+
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
+
+
+def run_ph5_to_event(ph5exml):
+    basepaths = ph5exml.args.get('ph5path')
+    paths = []
+    for basepath in basepaths:
+        for dirName, _, fileList in os.walk(basepath):
+            for fname in fileList:
+                if fname == "master.ph5":
+                    paths.append(dirName)
+    if len(paths) < 10:
+        num_processes = len(paths)
+    else:
+        num_processes = 10
+    pool = multiprocessing.Pool(processes=num_processes)
+    networks = pool.map(ph5exml.get_network, paths)
+    networks = [n for n in networks if n]
+    pool.close()
+    pool.join()
+    return networks
+
 
 if __name__ == '__main__':
 
@@ -580,6 +519,6 @@ if __name__ == '__main__':
     args_dict = vars(args)
     
     ph5exml = PH5toexml(args_dict)
-    networks= ph5exml.Process()
+    networks= run_ph5_to_event(ph5exml)
     ph5exml.write(args_dict.get('outfile'),networks, args_dict.get("format"))
     
