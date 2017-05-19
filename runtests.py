@@ -6,7 +6,7 @@ Script to run all tests in the entire project
 import unittest
 import argparse
 from kitchen.test_ph5tomsAPI import TestPH5toMSeed
-from kitchen.test_ph5tostationxml import TestPH5toStationXML
+from kitchen.test_ph5utils import TestPH5Utils
 
 
 def parse_arguments():
@@ -26,7 +26,7 @@ def run_test(class_name):
 
 if __name__ == '__main__':
     args = parse_arguments()
-    tests = [TestPH5toMSeed, TestPH5toStationXML]
+    tests = [TestPH5toMSeed, TestPH5Utils]
     passed = True
     for test_class in tests:
         test_result = run_test(test_class)
