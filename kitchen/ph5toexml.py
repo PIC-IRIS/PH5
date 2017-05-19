@@ -28,9 +28,13 @@ from datetime import datetime
 from obspy import Catalog, UTCDateTime
 import obspy.core.event
 import collections
+# functions for reading networks in parallel
+import multiprocessing
+import copy_reg
+import types
 
 
-PROG_VERSION = "2017.134"
+PROG_VERSION = "2017.139"
 
 
 def get_args():
@@ -330,23 +334,6 @@ class PH5toexml(object):
         
         return network
 
-    def Process(self):
-        networks = []
-        basepaths = self.args.get('ph5path')
-        paths = []
-        for basepath in basepaths:
-            for dirName, subdirList, fileList in os.walk(basepath):
-                for fname in fileList:
-                    if fname == "master.ph5":
-                        paths.append(dirName)
-
-        for path in paths:
-            network = self.Parse_Networks(path)
-            if network:
-                networks.append(network)
-
-        return networks
-
     def write(self,outfile, list_of_networks, out_format):
         
         def write_exml(list_of_networks):
@@ -493,6 +480,38 @@ class PH5toexml(object):
         else:
             raise PH5toEventError("Output format not supported - {0}.".format(out_format.upper()))
 
+    def get_network(self, path):
+        return self.Parse_Networks(path)
+
+
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
+
+
+def run_ph5_to_event(ph5exml):
+    basepaths = ph5exml.args.get('ph5path')
+    paths = []
+    for basepath in basepaths:
+        for dirName, _, fileList in os.walk(basepath):
+            for fname in fileList:
+                if fname == "master.ph5":
+                    paths.append(dirName)
+    if len(paths) < 10:
+        num_processes = len(paths)
+    else:
+        num_processes = 10
+    pool = multiprocessing.Pool(processes=num_processes)
+    networks = pool.map(ph5exml.get_network, paths)
+    networks = [n for n in networks if n]
+    pool.close()
+    pool.join()
+    return networks
+
 
 if __name__ == '__main__':
 
@@ -500,6 +519,6 @@ if __name__ == '__main__':
     args_dict = vars(args)
     
     ph5exml = PH5toexml(args_dict)
-    networks= ph5exml.Process()
+    networks= run_ph5_to_event(ph5exml)
     ph5exml.write(args_dict.get('outfile'),networks, args_dict.get("format"))
     

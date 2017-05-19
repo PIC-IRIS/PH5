@@ -33,7 +33,7 @@ import copy_reg
 import types
 
 
-PROG_VERSION = "2017.134"
+PROG_VERSION = "2017.139"
 
 
 def get_args():
@@ -608,6 +608,7 @@ class PH5toStationXML(object):
         else:
             return
 
+
 def _pickle_method(m):
     if m.im_self is None:
         return getattr, (m.im_class, m.im_func.func_name)
@@ -615,6 +616,7 @@ def _pickle_method(m):
         return getattr, (m.im_self, m.im_func.func_name)
 
 copy_reg.pickle(types.MethodType, _pickle_method)
+
 
 def run_ph5_to_stationxml(sta_xml_obj):
     basepaths = sta_xml_obj.args.get('ph5path')
@@ -624,10 +626,10 @@ def run_ph5_to_stationxml(sta_xml_obj):
             for fname in fileList:
                 if fname == "master.ph5":
                     paths.append(dirName)
-    if len(paths) < multiprocessing.cpu_count():
+    if len(paths) < 10:
         num_processes = len(paths)
     else:
-        num_processes = multiprocessing.cpu_count()
+        num_processes = 10
     pool = multiprocessing.Pool(processes=num_processes)
     networks = pool.map(sta_xml_obj.get_network, paths)
     networks = [n for n in networks if n]
