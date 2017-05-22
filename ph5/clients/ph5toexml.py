@@ -216,7 +216,8 @@ class PH5toexml(object):
             return True     
 
     def get_fdsn_time(self, epoch, microseconds):
-        fdsn_time=datetime.utcfromtimestamp(epoch+microseconds).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        seconds = microseconds/1000000.
+        fdsn_time=datetime.utcfromtimestamp(epoch+seconds).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return fdsn_time    
 
     def read_events(self, name):
