@@ -152,3 +152,13 @@ def doy_breakup(start_fepoch):
 
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
+
+
+def microsecs_to_sec(microsec):
+    """
+    Given mircoseonds returns seconds
+    :param: microseconds
+    :type: integer
+    :returns: seconds :type: integer
+    """
+    return microsec / 1000000
