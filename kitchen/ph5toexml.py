@@ -218,7 +218,14 @@ class PH5toexml(object):
     def get_fdsn_time(self, epoch, microseconds):
         seconds = microseconds/1000000.
         fdsn_time=datetime.utcfromtimestamp(epoch+seconds).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        return fdsn_time    
+        return fdsn_time   
+    
+    def read_arrays(self, name):
+        if name is None:
+            for n in self.ph5.Array_t_names:
+                self.ph5.read_array_t(n)
+        else:
+            self.ph5.read_array_t(name)    
 
     def read_events(self, name):
             try:
@@ -236,27 +243,25 @@ class PH5toexml(object):
         if isinstance(network_list, collections.Iterable):
             network_patterns = network_list
         else:
-            network_patterns = [x.strip()
-                        for x in self.args.get('network_list').split(',')]
+            network_patterns =self.args.get('network_list').split(',')
            
-        reportnum_list = self.args.get('reportnum_list') 
+        reportnum_list = self.args.get('reportnum_list')
         if isinstance(reportnum_list, collections.Iterable):
             reportnum_patterns = reportnum_list
         else:
-            reportnum_patterns = [x.strip()
-                        for x in self.args.get('reportnum_list').split(',')]
+            reportnum_patterns = self.args.get('reportnum_list').split(',')
         
         self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_experiment_t()
         self.experiment_t = self.ph5.Experiment_t['rows']
         self.ph5.read_event_t_names()
+        self.ph5.read_array_t_names()
         test=self.read_events(None)
         shot_lines = self.ph5.Event_t_names
         shot_lines.sort()  
         if test == -1: 
             self.ph5.close()
             return None
-
         if network_patterns and reportnum_patterns:
             if not ph5utils.does_pattern_exists(network_patterns, self.experiment_t[0]['net_code_s']) and \
                not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
@@ -268,6 +273,7 @@ class PH5toexml(object):
                 self.ph5.close()
                 return None
         elif reportnum_patterns:
+
             # read reportnum and compare to reportnum list
             if not ph5utils.does_pattern_exists(reportnum_patterns, self.experiment_t[0]['experiment_id_s']):
                 self.ph5.close()
@@ -275,7 +281,39 @@ class PH5toexml(object):
         else:
             self.ph5.close()
             return None
+        
+        self.read_arrays(None)
+        array_names = self.ph5.Array_t_names
+        array_names.sort()  
+        
+        earliest_deploy = None
+        latest_pickup =  None
+        for array_name in array_names:
+            array = array_name[-3:]
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order']
+            for x in arrayorder:
+                station = arraybyid.get(x)
+                if earliest_deploy == None:
+                    earliest_deploy = station[1][0]['deploy_time/epoch_l']+(station[1][0]['deploy_time/micro_seconds_i']/1000000)
+                elif earliest_deploy > (station[1][0]['deploy_time/epoch_l']+(station[1][0]['deploy_time/micro_seconds_i']/1000000)):
+                    earliest_deploy = station[1][0]['deploy_time/epoch_l']+(station[1][0]['deploy_time/micro_seconds_i']/1000000)  
+                if latest_pickup == None:
+                    latest_pickup = station[1][0]['pickup_time/epoch_l']+(station[1][0]['pickup_time/micro_seconds_i']/1000000)
+                elif latest_pickup < (station[1][0]['pickup_time/epoch_l']+(station[1][0]['pickup_time/micro_seconds_i']/1000000)):
+                    latest_pickup = station[1][0]['pickup_time/epoch_l']+(station[1][0]['pickup_time/micro_seconds_i']/1000000)
+      
+        
+        if args_dict.get('start_time') and args_dict.get('start_time') < datetime.fromtimestamp(earliest_deploy):
+            args_dict['start_time'] = datetime.fromtimestamp(earliest_deploy)
+            
+        if args_dict.get('stop_time') and args_dict.get('stop_time') > datetime.fromtimestamp(latest_pickup):
+            args_dict['stop_time'] = datetime.fromtimestamp(latest_pickup)
 
+
+            
+            
+                    
         network = Network(self.experiment_t[0]['net_code_s'], 
                          self.experiment_t[0]['experiment_id_s'],
                          self.experiment_t[0]['longname_s'])
@@ -301,7 +339,7 @@ class PH5toexml(object):
                 if self.args.get('start_time') and (
                     datetime.fromtimestamp(value['time/epoch_l']) < self.args.get('start_time')):
                     continue 
-                
+                    
                 if self.args.get('stop_time') and (
                     datetime.fromtimestamp(value['time/epoch_l']) > self.args.get('stop_time')):
                     continue
@@ -517,8 +555,23 @@ def run_ph5_to_event(ph5exml):
 if __name__ == '__main__':
 
     args = get_args()
-    args_dict = vars(args)
+    args_dict = vars(args) 
     
+    if args_dict.get('network_list'):
+        args_dict['network_list'] = [x.strip()
+                        for x in args_dict.get('network_list').split(',')]
+    if args_dict.get('reportnum_list'):
+        args_dict['reportnum_list'] = [x.strip()
+                        for x in args_dict.get('reportnum_list').split(',')]
+    if args_dict.get('ph5path'):
+        args_dict['ph5path'] = args_dict.get('ph5path').split(',')     
+    if args_dict.get('shotid'):
+        args_dict['shotid'] = [x.strip()
+                        for x in args_dict.get('shotid').split(',')]
+    if args_dict.get('shotline'):
+        args_dict['shotline'] = [x.strip()
+                        for x in args_dict.get('shotline').split(',')]    
+
     ph5exml = PH5toexml(args_dict)
     networks= run_ph5_to_event(ph5exml)
     ph5exml.write(args_dict.get('outfile'),networks, args_dict.get("format"))
