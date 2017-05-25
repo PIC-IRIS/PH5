@@ -28,7 +28,7 @@ from obspy.core.util import AttribDict
 from obspy.io.xseed import Parser
 import ph5utils
 # functions for reading networks in parallel
-import multiprocessing
+from multiprocessing.pool import ThreadPool
 import copy_reg
 import types
 
@@ -639,11 +639,13 @@ def run_ph5_to_stationxml(sta_xml_obj):
             num_processes = len(paths)
         else:
             num_processes = 10
-        pool = multiprocessing.Pool(processes=num_processes)
-        networks = pool.map(sta_xml_obj.get_network, paths)
-        networks = [n for n in networks if n]
+        pool = ThreadPool(processes=num_processes)
+        networks = []
+        for path in paths:
+            networks.append(pool.apply_async(sta_xml_obj.get_network, (path,)).get())
         pool.close()
         pool.join()
+        networks = [n for n in networks if n]
         if networks:
             inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
                                                  sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),

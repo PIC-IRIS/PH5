@@ -29,7 +29,7 @@ from obspy import Catalog, UTCDateTime
 import obspy.core.event
 import collections
 # functions for reading networks in parallel
-import multiprocessing
+from multiprocessing.pool import ThreadPool
 import copy_reg
 import types
 
@@ -537,11 +537,13 @@ def run_ph5_to_event(ph5exml):
             num_processes = len(paths)
         else:
             num_processes = 10
-        pool = multiprocessing.Pool(processes=num_processes)
-        networks = pool.map(ph5exml.get_network, paths)
-        networks = [n for n in networks if n]
+        pool = ThreadPool(processes=num_processes)
+        networks = []
+        for path in paths:
+            networks.append(pool.apply_async(ph5exml.get_network, (path,)).get())
         pool.close()
         pool.join()
+        networks = [n for n in networks if n]
         return networks
     else:
         raise PH5toEventError("No PH5 experiments were found "
