@@ -532,16 +532,20 @@ def run_ph5_to_event(ph5exml):
             for fname in fileList:
                 if fname == "master.ph5":
                     paths.append(dirName)
-    if len(paths) < 10:
-        num_processes = len(paths)
+    if paths:
+        if len(paths) < 10:
+            num_processes = len(paths)
+        else:
+            num_processes = 10
+        pool = multiprocessing.Pool(processes=num_processes)
+        networks = pool.map(ph5exml.get_network, paths)
+        networks = [n for n in networks if n]
+        pool.close()
+        pool.join()
+        return networks
     else:
-        num_processes = 10
-    pool = multiprocessing.Pool(processes=num_processes)
-    networks = pool.map(ph5exml.get_network, paths)
-    networks = [n for n in networks if n]
-    pool.close()
-    pool.join()
-    return networks
+        raise PH5toEventError("No PH5 experiments were found "
+                              "under basepath(s) {0}".format(basepaths))
 
 
 if __name__ == '__main__':

@@ -134,6 +134,14 @@ def get_args():
     return args
 
 
+class PH5toStationXMLError(Exception):
+    """Exception raised when there is a problem with the request.
+    :param: message -- explanation of the error
+    """
+    def __init__(self, message=""):
+        self.message = message
+
+
 class PH5ResponseManager(object):
     
     def __init__(self):
@@ -626,22 +634,26 @@ def run_ph5_to_stationxml(sta_xml_obj):
             for fname in fileList:
                 if fname == "master.ph5":
                     paths.append(dirName)
-    if len(paths) < 10:
-        num_processes = len(paths)
+    if paths:
+        if len(paths) < 10:
+            num_processes = len(paths)
+        else:
+            num_processes = 10
+        pool = multiprocessing.Pool(processes=num_processes)
+        networks = pool.map(sta_xml_obj.get_network, paths)
+        networks = [n for n in networks if n]
+        pool.close()
+        pool.join()
+        if networks:
+            inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
+                                                 sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
+                                                 module="PH5 WEB SERVICE: metadata | version: 1", module_uri=sta_xml_obj.args.get('uri'))
+            return inv
+        else:
+            return
     else:
-        num_processes = 10
-    pool = multiprocessing.Pool(processes=num_processes)
-    networks = pool.map(sta_xml_obj.get_network, paths)
-    networks = [n for n in networks if n]
-    pool.close()
-    pool.join()
-    if networks:
-        inv = obspy.core.inventory.Inventory(networks=networks, source="PIC-PH5",
-                                             sender="IRIS-PASSCAL-DMC-PH5", created=datetime.datetime.now(),
-                                             module="PH5 WEB SERVICE: metadata | version: 1", module_uri=sta_xml_obj.args.get('uri'))
-        return inv
-    else:
-        return        
+        raise PH5toStationXMLError("No PH5 experiments were found "
+                              "under basepath(s) {0}".format(basepaths))       
         
                     
 if __name__ == '__main__':
