@@ -506,7 +506,7 @@ class PH5toStationXML(object):
                                                       sta_longitude, sta_latitude,
                                                       sta_elevation)
                    
-                if self.args.get('level') == "RESPONSE" or self.args.get('level') == "CHANNEL" or \
+                if self.args.get('level').upper() == "RESPONSE" or self.args.get('level').upper() == "CHANNEL" or \
                    self.args.get('location_list') != ['*'] or self.args.get('channel_list') != ['*'] or \
                    self.args.get('component_list') != ['*'] or self.args.get('receiver_list') != ['*']:
                     obs_channels = self.read_channels(station_list)    
