@@ -66,7 +66,7 @@
 import tables, types
 import os, sys, string, copy
 
-PH5VERSION = '2016.244.1'
+PH5VERSION = '2017.150'
 PROG_VERSION = '2016.309 Developmental'
 
 #TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
@@ -477,6 +477,8 @@ class Array (tables.IsDescription) :
     seed_orientation_code_s = tables.StringCol (1, pos=12)
     seed_location_code_s    = tables.StringCol (2, pos=13)
     seed_station_name_s     = tables.StringCol (5, pos=14)
+    response_table_n_i      = tables.Int16Col ()                      #   Offset into Response_t
+    receiver_table_n_i      = tables.Int16Col ()                      #   Offset into Receiver_t
     description_s      = tables.StringCol (1024, pos=7)              #   Description of this station grouping
 
 class Event (tables.IsDescription) :
