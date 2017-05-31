@@ -317,11 +317,7 @@ class PH5toStationXML(object):
         obs_channel.sample_rate_ration = station_list[
             deployment][0]['sample_rate_multiplier_i']
         obs_channel.storage_format = "PH5"
-              
-        das= station_list[deployment][0]['das/serial_number_s']   
-    
-        channel_start = station_list[deployment][0]['deploy_time/epoch_l']
-        channel_end = station_list[deployment][0]['pickup_time/epoch_l']
+
         receiver_table_n_i =station_list[deployment][0]['receiver_table_n_i']  
         self.response_table_n_i= station_list[deployment][0]['response_table_n_i']
         Receiver_t=self.ph5.get_receiver_t_by_n_i (receiver_table_n_i)
@@ -362,10 +358,6 @@ class PH5toStationXML(object):
         return obs_channel
     
     def get_response_inv(self, obs_channel):
-        das = obs_channel.data_logger.serial_number
-        start = (obs_channel.start_date - datetime.datetime(1970,1,1)).total_seconds()
-        end = (obs_channel.end_date - datetime.datetime(1970,1,1)).total_seconds()
-        component = int(obs_channel.extra.PH5Component.value)
         self.ph5.read_response_t()
         Response_t = self.ph5.get_response_t_by_n_i(self.response_table_n_i)
         sensor_keys = [obs_channel.sensor.manufacturer,
@@ -559,7 +551,6 @@ class PH5toStationXML(object):
             return
 
         self.ph5.read_array_t_names()
-        self.ph5.read_das_g_names()
         self.read_arrays(None)
         self.array_names = self.ph5.Array_t_names
         self.array_names.sort()
@@ -579,7 +570,6 @@ class PH5toStationXML(object):
         max_end_time=0        
         
         for array_name in array_names:
-            array = array_name[-3:] 
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order'] 
             
