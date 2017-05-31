@@ -33,7 +33,7 @@ import copy_reg
 import types
 
 
-PROG_VERSION = "2017.139"
+PROG_VERSION = "2017.151"
 
 
 def get_args():
@@ -179,6 +179,8 @@ class PH5toStationXML(object):
         self.sta_list_set=1
         self.receiver_list_set=1
         self.location_list_set=1
+        self.response_table_n_i = None
+        self.receiver_table_n_i = None        
         self.resp_manager = PH5ResponseManager()
 
         nickname, ext = os.path.splitext(args.get('nickname'))
@@ -320,13 +322,11 @@ class PH5toStationXML(object):
     
         channel_start = station_list[deployment][0]['deploy_time/epoch_l']
         channel_end = station_list[deployment][0]['pickup_time/epoch_l']
-        self.ph5.read_das_t(das, channel_start, channel_end)
-        if self.ph5.Das_t.has_key(das):
-            Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
-                                        station_list[deployment][0]['channel_number_i'])
-            Receiver_t=self.ph5.get_receiver_t (Das_t[0], by_n_i=True)
-            obs_channel.azimuth=Receiver_t['orientation/azimuth/value_f']
-            obs_channel.dip=Receiver_t['orientation/dip/value_f']
+        receiver_table_n_i =station_list[deployment][0]['receiver_table_n_i']  
+        self.response_table_n_i= station_list[deployment][0]['response_table_n_i']
+        Receiver_t=self.ph5.get_receiver_t_by_n_i (receiver_table_n_i)
+        obs_channel.azimuth=Receiver_t['orientation/azimuth/value_f']
+        obs_channel.dip=Receiver_t['orientation/dip/value_f']        
         
         sensor_type =  " ".join([x for x in [station_list[deployment][0]['sensor/manufacturer_s'], 
                                           station_list[deployment][0]['sensor/model_s']] if x])
@@ -365,47 +365,45 @@ class PH5toStationXML(object):
         das = obs_channel.data_logger.serial_number
         start = (obs_channel.start_date - datetime.datetime(1970,1,1)).total_seconds()
         end = (obs_channel.end_date - datetime.datetime(1970,1,1)).total_seconds()
-        self.ph5.read_das_t(das, start, end,  reread=False)
-        if self.ph5.Das_t.get(das):
-            component = int(obs_channel.extra.PH5Component.value)
-            Das_t = ph5API.filter_das_t(self.ph5.Das_t[das]['rows'],
-                                       component)
-            self.ph5.read_response_t()
-            Response_t = self.ph5.get_response_t(Das_t[0])
-            sensor_keys = [obs_channel.sensor.manufacturer,
-                           obs_channel.sensor.model]
-            datalogger_keys = [obs_channel.data_logger.manufacturer,
-                               obs_channel.data_logger.model]
-            if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
-                response_file_das_a_name = Response_t.get('response_file_das_a', None)
-                response_file_sensor_a_name = Response_t.get('response_file_sensor_a', None)
-                # parse datalogger response
-                if response_file_das_a_name: 
-                    response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
-                    dl = Parser(response_file_das_a)
-                # parse sensor response if present
-                if response_file_sensor_a_name:
-                    response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
-                    sensor = Parser(response_file_sensor_a)
-                
-                inv_resp = None
-                if response_file_das_a_name and response_file_sensor_a_name:
-                    # both datalogger and sensor response
-                    comp_resp = Parser.combine_sensor_dl_resps(sensor=sensor, datalogger=dl)
-                    inv_resp = comp_resp.get_response()
-                elif response_file_das_a_name:
-                    # only datalogger response
-                    inv_resp = dl.get_response()
-                elif response_file_sensor_a_name:
-                    # only sensor response
-                    inv_resp = sensor.get_response()
-                
-                if inv_resp:
-                    # update response manager and return response
-                    self.resp_manager.add_response(sensor_keys, datalogger_keys, inv_resp)
-                    return inv_resp
-            else:
-                return self.resp_manager.get_response(sensor_keys, datalogger_keys)
+        component = int(obs_channel.extra.PH5Component.value)
+        self.ph5.read_response_t()
+        Response_t = self.ph5.get_response_t_by_n_i(self.response_table_n_i)
+        sensor_keys = [obs_channel.sensor.manufacturer,
+                       obs_channel.sensor.model]
+        datalogger_keys = [obs_channel.data_logger.manufacturer,
+                           obs_channel.data_logger.model]
+        if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
+            response_file_das_a_name = Response_t.get('response_file_das_a', None)
+            response_file_sensor_a_name = Response_t.get('response_file_sensor_a', None)
+            # parse datalogger response
+            if response_file_das_a_name: 
+                response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
+                dl = Parser(response_file_das_a)
+            # parse sensor response if present
+            if response_file_sensor_a_name:
+                response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
+                sensor = Parser(response_file_sensor_a)
+    
+            inv_resp = None
+            if response_file_das_a_name and response_file_sensor_a_name:
+                # both datalogger and sensor response
+                comp_resp = Parser.combine_sensor_dl_resps(sensor=sensor, datalogger=dl)
+                inv_resp = comp_resp.get_response()
+            elif response_file_das_a_name:
+                # only datalogger response
+                inv_resp = dl.get_response()
+            elif response_file_sensor_a_name:
+                # only sensor response
+                inv_resp = sensor.get_response()
+    
+            if inv_resp:
+                # update response manager and return response
+                self.resp_manager.add_response(sensor_keys, datalogger_keys, inv_resp)
+                return inv_resp
+        else:
+            return self.resp_manager.get_response(sensor_keys, datalogger_keys)
+        
+        
 
     def read_channels(self, station_list):
 
@@ -506,16 +504,19 @@ class PH5toStationXML(object):
                                                       sta_longitude, sta_latitude,
                                                       sta_elevation)
                    
-                obs_channels = self.read_channels(station_list)
-                
-                obs_station.total_number_of_channels = len(sta_list)
-                obs_station.selected_number_of_channels = len(obs_channels)
-
-                obs_station.channels = obs_channels
-                if obs_station and obs_station.selected_number_of_channels == 0:
-                    continue
+                if self.args.get('level').upper() == "RESPONSE" or self.args.get('level').upper() == "CHANNEL" or \
+                   self.args.get('location_list') != ['*'] or self.args.get('channel_list') != ['*'] or \
+                   self.args.get('component_list') != ['*'] or self.args.get('receiver_list') != ['*']:
+                    obs_channels = self.read_channels(station_list)    
+                    obs_station.channels = obs_channels
+                    obs_station.total_number_of_channels = len(sta_list)
+                    obs_station.selected_number_of_channels = len(obs_channels)
+                    if obs_station and obs_station.selected_number_of_channels == 0:
+                        continue
                 else:
-                    all_stations.append(obs_station)             
+                    obs_station.total_number_of_channels = len(sta_list)
+                    obs_station.selected_number_of_channels = 0
+                all_stations.append(obs_station)             
         return all_stations
 
     def parse_station_list(self, sta_list):
