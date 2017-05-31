@@ -558,13 +558,14 @@ class ph5 (Experiment.ExperimentGroup) :
            Returns:
               receiver_t
         '''
+        
         if not self.Receiver_t :
             self.read_receiver_t ()
         
         if by_n_i :    
             try :
                 
-                n_i = das_t[0]['receiver_table_n_i']
+                n_i = das_t['receiver_table_n_i']
                 
                 receiver_t = self.Receiver_t['rows'][n_i]
             except KeyError :
@@ -579,6 +580,24 @@ class ph5 (Experiment.ExperimentGroup) :
                 receiver_t = None
             
         return receiver_t
+    
+    def get_receiver_t_by_n_i (self, n_i) :
+        '''
+           Read Receiver_t to match n_i
+           Returns:
+              receiver_t
+        '''
+        
+        if not self.Receiver_t :
+            self.read_receiver_t ()
+            
+        try :
+            receiver_t = self.Receiver_t['rows'][n_i]
+        except KeyError :
+            receiver_t = None
+        
+            
+        return receiver_t    
         
     def read_response_t (self) :
         '''   Read Response_t
@@ -609,6 +628,26 @@ class ph5 (Experiment.ExperimentGroup) :
             response_t = None
         
         return response_t
+    
+    def get_response_t_by_n_i (self, n_i) :
+        '''
+           Read Response_t to match n_i
+           Returns:
+               response_t
+        '''
+        if not self.Response_t :
+            self.read_response_t ()
+            
+        try :
+            response_t = self.Response_t['rows'][n_i]
+            if response_t['n_i'] != n_i :
+                for response_t in self.Response_t['rows'] :
+                    if response_t['n_i'] == n_i :
+                        break
+        except KeyError :
+            response_t = None
+        
+        return response_t    
         
     def read_das_g_names (self) :
         '''   Read Das_g names   
