@@ -608,12 +608,16 @@ class PH5toMSeed(object):
                     station_len = len(station_list[deployment])
                     
                     for st_num in range(0,station_len):
-                        seed_station = station_list[deployment][st_num]['seed_station_name_s']
+                        
+                        if station_list[deployment][st_num]['seed_station_name_s']:
+                            seed_station = station_list[deployment][st_num]['seed_station_name_s']
+                        else:
+                            seed_station = station_list[deployment][st_num]['id_s']
 
                         if self.station:
                             sta_patterns = self.station
                             if not ph5utils.does_pattern_exists(sta_patterns, 
-                                        station_list[deployment][st_num]['seed_station_name_s']):
+                                        seed_station):
                                 continue
                         if self.reqtype == "SHOT":
                             # request by shot
