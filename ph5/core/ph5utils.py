@@ -5,7 +5,7 @@ ph5toexml.py.
 
 
 import fnmatch
-from datetime import datetime
+from datetime import datetime, timedelta
 from obspy.geodetics import locations2degrees
 from TimeDOY import epoch2passcal
 from TimeDOY import passcal2epoch
@@ -142,13 +142,12 @@ def doy_breakup(start_fepoch):
     start_passcal_list = passcal_start.split(":")
     start_doy = start_passcal_list[1]
     year = start_passcal_list[0]
-    next_doy = int(start_doy) + 1
-    if next_doy > 365:
-        next_doy = 1
-        year = int(year) + 1
+    datestr = "{0}:{1}".format(year, start_doy)
+    passcal_date = datetime.strptime(datestr, "%Y:%j")
+    next_passcal_date = passcal_date + timedelta(days=1)
 
-    next_passcal_date = str(year) + ":" + str(next_doy) + ":00:00:00.000"
-    stop_fepoch = passcal2epoch(next_passcal_date)
+    next_passcal_date_str = next_passcal_date.strftime("%Y:%j:00:00:00.000")
+    stop_fepoch = passcal2epoch(next_passcal_date_str)
 
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
