@@ -314,6 +314,8 @@ class PH5toMSeed(object):
                 start_time_micro_seconds = 0
     
             nt = stc.notimecorrect
+            
+            
             traces = self.ph5.cut(stc.das, start_time,
                                   stc.endtime,
                                   chan=stc.channel,
@@ -340,10 +342,8 @@ class PH5toMSeed(object):
                 obspy_trace.stats.coordinates.longitude = stc.longitude
                 obspy_trace.stats.channel = stc.seed_channel
                 obspy_trace.stats.network = stc.net_code
-                obspy_trace.stats.starttime = UTCDateTime(trace.start_time.epoch())
-    
-                obspy_trace.stats.starttime.microsecond = (
-                    start_time_micro_seconds)
+                obspy_trace.stats.starttime = UTCDateTime(trace.start_time.epoch(fepoch=True))
+            
     
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
