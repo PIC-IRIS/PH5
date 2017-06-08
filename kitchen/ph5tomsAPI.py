@@ -37,7 +37,7 @@ import itertools
 import ph5utils
 
 
-PROG_VERSION = "2017.134"
+PROG_VERSION = "2017.159 BETA"
 
 
 class StationCut(object):
@@ -122,6 +122,8 @@ class PH5toMSeed(object):
         if self.reqtype == "SHOT":    
             self.ph5.read_event_t_names()
             
+
+        
         if not self.stream and not os.path.exists(self.out_dir):
             try:
                 os.mkdir(self.out_dir)
@@ -464,9 +466,13 @@ class PH5toMSeed(object):
             
                     if float(check_end_time) < float(deploy):
                         continue
-                else:
+                elif self.length:
+                    stop_fepoch = start_fepoch + self.length  
+                else:     
                     stop_fepoch = ph5API.fepoch(pickup, pickup_micro)                
-
+            
+            
+            
             if (self.use_deploy_pickup is True and not
                     ((start_fepoch >= deploy and
                       stop_fepoch <= pickup))):
@@ -499,6 +505,8 @@ class PH5toMSeed(object):
                     seconds_covered += seconds
                     times_to_cut.append([start_time, stop_time])
                     start_time = stop_time
+                          
+                   
             else:
                 times_to_cut = [[start_fepoch, stop_fepoch]]
                 times_to_cut[-1][-1] = stop_fepoch
@@ -752,7 +760,7 @@ def get_args():
         type=float, default=-1., help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "-l", "--length", action="store", default=60,
+        "-l", "--length", action="store", default=None,
         type=int, dest="length", metavar="length")
 
     parser.add_argument(
@@ -826,9 +834,11 @@ if __name__ == '__main__':
         args.component = args.component.split(',')
     if args.channel:
         args.channel = args.channel.split(',')
+        
+
 
     try:
-        ph5ms = PH5toMSeed( ph5API_object, out_dir=".", reqtype=args.reqtype, 
+        ph5ms = PH5toMSeed( ph5API_object, out_dir=args.out_dir, reqtype=args.reqtype, 
                  netcode=args.network, station=args.sta_list, station_id=args.sta_id_list, 
                  channel=args.channel, component=args.component, array=args.array, 
                  shotline=args.shotline, eventnumbers=args.eventnumbers, length=args.length, 
@@ -885,3 +895,6 @@ if __name__ == '__main__':
         exit(-1)
 
     sys.stdout.write(str(tm() - then))
+    
+    ph5API_object.close()
+    
