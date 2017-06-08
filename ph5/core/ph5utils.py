@@ -140,15 +140,21 @@ def doy_breakup(start_fepoch):
     """
     passcal_start = epoch2passcal(start_fepoch)
     start_passcal_list = passcal_start.split(":")
+    start_year = start_passcal_list[0] 
     start_doy = start_passcal_list[1]
-    year = start_passcal_list[0]
-    datestr = "{0}:{1}".format(year, start_doy)
-    passcal_date = datetime.strptime(datestr, "%Y:%j")
+    start_hour = start_passcal_list[2]
+    start_minute = start_passcal_list[3]
+    start_second = start_passcal_list[4]
+
+    datestr = "{0}:{1}:{2}:{3}:{4}".format(start_year, start_doy, 
+                                               start_hour, start_minute, 
+                                               start_second)
+    passcal_date = datetime.strptime(datestr, "%Y:%j:%H:%M:%S")
+
     next_passcal_date = passcal_date + timedelta(days=1)
-
-    next_passcal_date_str = next_passcal_date.strftime("%Y:%j:00:00:00.000")
+    next_passcal_date_str = next_passcal_date.strftime("%Y:%j:%H:%M:%S.0")
+    
     stop_fepoch = passcal2epoch(next_passcal_date_str)
-
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
 
