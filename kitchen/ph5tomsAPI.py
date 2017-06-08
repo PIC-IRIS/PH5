@@ -37,7 +37,7 @@ import itertools
 import ph5utils
 
 
-PROG_VERSION = "2017.159 BETA"
+PROG_VERSION = "2017.159"
 
 
 class StationCut(object):
