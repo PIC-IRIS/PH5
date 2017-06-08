@@ -121,9 +121,7 @@ class PH5toMSeed(object):
         
         if self.reqtype == "SHOT":    
             self.ph5.read_event_t_names()
-            
 
-        
         if not self.stream and not os.path.exists(self.out_dir):
             try:
                 os.mkdir(self.out_dir)
@@ -316,8 +314,7 @@ class PH5toMSeed(object):
                 start_time_micro_seconds = 0
     
             nt = stc.notimecorrect
-            
-            
+
             traces = self.ph5.cut(stc.das, start_time,
                                   stc.endtime,
                                   chan=stc.channel,
@@ -345,8 +342,7 @@ class PH5toMSeed(object):
                 obspy_trace.stats.channel = stc.seed_channel
                 obspy_trace.stats.network = stc.net_code
                 obspy_trace.stats.starttime = UTCDateTime(trace.start_time.epoch(fepoch=True))
-            
-    
+
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)
@@ -470,9 +466,7 @@ class PH5toMSeed(object):
                     stop_fepoch = start_fepoch + self.length  
                 else:     
                     stop_fepoch = ph5API.fepoch(pickup, pickup_micro)                
-            
-            
-            
+
             if (self.use_deploy_pickup is True and not
                     ((start_fepoch >= deploy and
                       stop_fepoch <= pickup))):
@@ -505,8 +499,6 @@ class PH5toMSeed(object):
                     seconds_covered += seconds
                     times_to_cut.append([start_time, stop_time])
                     start_time = stop_time
-                          
-                   
             else:
                 times_to_cut = [[start_fepoch, stop_fepoch]]
                 times_to_cut[-1][-1] = stop_fepoch
@@ -834,8 +826,6 @@ if __name__ == '__main__':
         args.component = args.component.split(',')
     if args.channel:
         args.channel = args.channel.split(',')
-        
-
 
     try:
         ph5ms = PH5toMSeed( ph5API_object, out_dir=args.out_dir, reqtype=args.reqtype, 
@@ -849,7 +839,6 @@ if __name__ == '__main__':
 
         streams = ph5ms.process_all()
 
-
         if args.format and args.format.upper() == "MSEED":
             for t in streams:
                 if not args.stream:
@@ -862,7 +851,6 @@ if __name__ == '__main__':
     
                 else:
                     t.write(sys.stdout, format='MSEED', reclen=4096)
-    
         elif args.format and args.format.upper() == "SAC":
             for t in streams:
                 if not args.stream:
@@ -874,11 +862,8 @@ if __name__ == '__main__':
     
                 else:
                     t.write(sys.stdout, format='SAC')
-    
         else:
-    
             for t in streams:
-    
                 if not args.stream:
                     t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
                             reclen=4096)
@@ -897,4 +882,3 @@ if __name__ == '__main__':
     sys.stdout.write(str(tm() - then))
     
     ph5API_object.close()
-    
