@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2017.054 Developmental'
+PROG_VERSION = '2017.135 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -690,6 +690,7 @@ class ph5 (Experiment.ExperimentGroup) :
         
         if node == None : return None
         rows_keep = []
+        rows = []
         rk = {}
         if not self.Das_t_full.has_key (das) :
             rows, keys = self.ph5_g_receivers.read_das ()
@@ -1218,7 +1219,13 @@ def pad_traces (traces) :
     return ret
         
 def seed_channel_code (array_t) :
-    return array_t['seed_band_code_s'] + array_t['seed_instrument_code_s'] + array_t['seed_orientation_code_s']
+    try :
+        if len (array_t['seed_band_code_s']) == 1 and len (array_t['seed_instrument_code_s']) == 1 and len (array_t['seed_orientation_code_s']) == 1 :
+            return array_t['seed_band_code_s'] + array_t['seed_instrument_code_s'] + array_t['seed_orientation_code_s']
+        else :
+            return "---"
+    except KeyError :
+        return "---"
 
 def by_id (rows, key='id_s', secondary_key=None, unique_key=True) :
     '''   Order table info by id_s (usually) then if required a secondary key.
