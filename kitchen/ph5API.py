@@ -1486,7 +1486,20 @@ def filter_das_t (Das_t, chan) :
         else :
             return 0
         
-    ret = [das_t for das_t in Das_t if das_t['channel_number_i'] == chan]
+    ret = []    
+    Das_t = [das_t for das_t in Das_t if das_t['channel_number_i'] == chan]
+    
+    for das_t in Das_t :
+        if not ret :
+            ret.append (das_t)
+            continue
+        if (ret[-1]['sample_rate_i'] == das_t['sample_rate_i'] and 
+            ret[-1]['sample_rate_multiplier_i'] == das_t['sample_rate_multiplier_i'] and
+            ret[-1]['time/micro_seconds_i'] == das_t['time/micro_seconds_i'] and
+            ret[-1]['time/epoch_l'] == das_t['time/epoch_l']):
+            continue
+        else:
+            ret.append (das_t)
     
     ret.sort (cmp=sort_on_epoch)    
     
