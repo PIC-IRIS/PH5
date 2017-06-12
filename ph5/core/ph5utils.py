@@ -149,12 +149,12 @@ def doy_breakup(start_fepoch):
     datestr = "{0}:{1}:{2}:{3}:{4}".format(start_year, start_doy, 
                                                start_hour, start_minute, 
                                                start_second)
-    passcal_date = datetime.strptime(datestr, "%Y:%j:%H:%M:%S")
+    passcal_date = datetime.strptime(datestr, "%Y:%j:%H:%M:%S.%f")
 
     next_passcal_date = passcal_date + timedelta(days=1)
-    next_passcal_date_str = next_passcal_date.strftime("%Y:%j:%H:%M:%S.0")
+    next_passcal_date_str = next_passcal_date.strftime("%Y:%j:%H:%M:%S.%f")
     
-    stop_fepoch = passcal2epoch(next_passcal_date_str)
+    stop_fepoch = passcal2epoch(next_passcal_date_str, fepoch=True)
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
 

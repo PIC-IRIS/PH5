@@ -415,10 +415,10 @@ class PH5toMSeed(object):
             # trim user defined time range if it extends beyond the deploy/pickup times
             if self.start_time:    
                 if "T" not in self.start_time:
-                    check_start_time = passcal2epoch(self.start_time)
+                    check_start_time = passcal2epoch(self.start_time, fepoch=True)
                     if float(check_start_time) > float(deploy):
                         start_fepoch = self.start_time
-                        start_times.append(passcal2epoch(start_fepoch))
+                        start_times.append(passcal2epoch(start_fepoch, fepoch=True))
                     else:
                         start_times.append(deploy)
             
@@ -443,12 +443,13 @@ class PH5toMSeed(object):
             elif self.reqtype == "FDSN":
                 if self.end_time:
                     if "T" not in self.end_time:
-                        check_end_time = passcal2epoch(self.end_time)
-            
+                        check_end_time = passcal2epoch(self.end_time, fepoch=True)
+                        
                         if float(check_end_time) < float(pickup):
             
                             stop_fepoch = self.end_time
-                            stop_fepoch = passcal2epoch(stop_fepoch)
+                            stop_fepoch = passcal2epoch(stop_fepoch, fepoch=True)
+                            
                         else:
                             stop_fepoch = pickup
             
