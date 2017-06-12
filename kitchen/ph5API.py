@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2017.135 Developmental'
+PROG_VERSION = '2017.162 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -1486,210 +1486,242 @@ def filter_das_t (Das_t, chan) :
         else :
             return 0
         
-    ret = []
-    Das_t = [das_t for das_t in Das_t if das_t['channel_number_i'] == chan]
-    for das_t in Das_t :
-        if not ret :
-            ret.append (das_t)
-            continue
-        time0 = ret[-1]['time/epoch_l'] + (ret[-1]['time/micro_seconds_i'] / 1000000.)
-        time1 = das_t['time/epoch_l'] + (das_t['time/micro_seconds_i'] / 1000000.)
-        if time0 < time1 : ret.append (das_t)
+    ret = [das_t for das_t in Das_t if das_t['channel_number_i'] == chan]
     
     ret.sort (cmp=sort_on_epoch)    
     
     return ret
     
 if __name__ == '__main__' :
+    from obspy.core import Stream as OPStream, Trace as OPTrace, UTCDateTime
     #p = ph5 (path='/home/azevedo/Data/10-016', nickname='master.ph5')
     #O = p.calc_offsets ('Array_t_001', '101'); p.close ()
     #sys.exit ()
     ##   Initialize PH5
     #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
     #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Sigma', nickname='master.ph5')
-    p = ph5 (path='/run/media/azevedo/1TB_EXT4/Data/PABIP/PH5/', nickname='master.ph5')
-    p.read_array_t_names ()
-    for name in p.Array_t_names :
-        p.read_array_t (name)
-    p.read_event_t_names ()
-    for name in p.Event_t_names :
-        p.read_event_t (name)
-    #
-    ###    Receiver gather
-    #
-    for name in p.Array_t_names :
-        Array_t = p.Array_t[name]['byid']
-        order = p.Array_t[name]['order']
-        length = 905
-        #   Order of stations
-        for o in order :
-            chans = Array_t[o].keys ()
-            #   foreach channel
-            for c in chans :
-                #   foreach entry per station
-                #   o -> station, c -> channel
-                for array_t in Array_t[o][c] :
-                    print "Station:", array_t['id_s']
-                    for ename in p.Event_t_names :
-                        print "Shot line:", ename
-                        Css = p.receiver_cut (ename, array_t, length)
-                        for Cs in Css :
-                            print Cs
-                            #print "Shot:", Cs.id_s, Cs.start_fepoch, Cs.stop_fepoch
-                            #for win in Cs.das_t_times :
-                                #print win[0], win[1]
-                            #for msg in Cs.msg :
-                                #print msg
-    
-    raw_input ("P")
-    #
-    ###   Shot gather
-    #
-    for name in p.Event_t_names :
-        Event_t = p.Event_t[name]['byid']
-        order = p.Event_t[name]['order']
-        length = 905
-        for o in order :
-            event_t = Event_t[o]
-            start_time = fepoch (event_t['time/epoch_l'], event_t['time/micro_seconds_i'])
-            for aname in p.Array_t_names :
-                Css = p.shot_cut (aname, start_time, length)
-                for Cs in Css :
-                    print Cs
-                    #print "Station:", Cs.id_s, Cs.start_fepoch, Cs.stop_fepoch
-                    #for win in Cs.das_t_times :
-                        #print win[0], win[1]
-                    #for msg in Cs.msg :
-                        #print msg  
-    raw_input ("P")
-    p.close ()        
-    ##   Create dictionary to hold trace objects
-    #d = {}
-    ##   Cut Z
-    #d['Z'] = p.cut ('A123', TimeDOY.passcal2epoch ("2016:201:00:00:00.000", fepoch=True), TimeDOY.passcal2epoch ("2016:201:23:59:59.999", fepoch=True), chan=1, sample_rate=100)
-    #print
-    ##   Cut N
-    #d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2, sample_rate=250)
-    ##   Cut E
-    #d['E'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=3, sample_rate=250)
-    ##   Display trace data
-    #for c in ('Z', 'N', 'E') :
-        #print d[c].start_time.getISOTime ()
-        #i = 0
-        #for point in d[c].data :
-            #print i, point
-            #i += 1
-    ##   Close PH5
-    #p.close ()
-    #   Initialize new PH5
-    #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
+    p = ph5 (path='/home/azevedo/Data/WavefieldsSubset/', nickname='master.ph5')
+    das = p.read_das_t ('98EA')
+    stop = 0; start = sys.maxint
+    #print p.Das_t
+    #sr = p.Das_t[das]['rows'][0]['sample_rate_i']
+    sr = 1
+    for das_t in p.Das_t[das]['rows'] :
+        tmpsr = int (float (das_t['sample_rate_i'])/ float (das_t['sample_rate_multiplier_i']))
+        if tmpsr != sr :
+            continue
+        e = float (das_t['time/epoch_l']) + (float (das_t['time/micro_seconds_i']) / 1000000.)
+        if e > stop :
+            stop = e
+        if e < start :
+            start = e
+    t1 = start
+    #traces = []
+    t2 = t1 + 3600.
+    while t1 < stop :
+        cut_obj = p.cut (das, t1, t2, sample_rate=sr)
+        print t1, t2
+        print cut_obj
+
+        for co in cut_obj :
+            t = OPTrace (co.data)
+            t.stats.sampling_rate = co.sample_rate
+            e1 = co.start_time.epoch (fepoch=True)
+            t.stats.starttime = UTCDateTime (e1)
+            t.stats.station = das
+            t.stats.channel = co.das_t[0]['channel_number_i']
+            stringtime = co.start_time.getFdsnTime ()
+            filename = 'DATA/{0}_{1}_{2}.sac'.format (das, stringtime, co.das_t[0]['channel_number_i'])
+            #traces.append (t)
+            print co.start_time.epoch (fepoch=True), stringtime, t.stats.starttime, t.stats.endtime
+            t.write (filename, 'SAC')
+            
+        t1 = t2 + (1./float (sr))
+        t2 = t1 + 3600.        
+            
+    print
     #p.read_array_t_names ()
-    #p.read_array_t ('Array_t_007')
-    ##print p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['deploy_time/ascii_s'], '->', p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['pickup_time/ascii_s']
-    #array_t_0 = p.Array_t['Array_t_005']['byid']['5002'][1][0]
-    #array_t_1 = p.Array_t['Array_t_005']['byid']['5002'][1][-1]
-    #das = array_t_0['das/serial_number_s']
-    #sr = array_t_0['sample_rate_i'] / float (array_t_0['sample_rate_multiplier_i'])
-    #samples_per_day = int (86400 * sr)
-    #start_tdoy = TimeDOY.TimeDOY (epoch=array_t_0['deploy_time/epoch_l'])
-    #start_tdoy = TimeDOY.TimeDOY (year=start_tdoy.dtobject.year,
-                                  #hour=0,
-                                  #minute=0,
-                                  #second=0,
-                                  #microsecond=0,
-                                  #doy=start_tdoy.doy ())
-    #start_fepoch = start_tdoy.epoch (fepoch=True)
-    #stop_fepoch = start_fepoch + 86400.
-    #end_tdoy = TimeDOY.TimeDOY (epoch=array_t_1['pickup_time/epoch_l'])
-    #end_tdoy = TimeDOY.TimeDOY (year=end_tdoy.dtobject.year,
-                                #hour=23,
-                                #minute=59,
-                                #second=59,
-                                #microsecond=999999,
-                                #doy=end_tdoy.doy ())
-    #end_fepoch = end_tdoy.epoch (fepoch=True)
-    #while stop_fepoch < end_fepoch :
-        #traces = p.cut (das, start_fepoch, stop_fepoch, sample_rate=sr)
-        #for t in traces :
-            #print TimeDOY.epoch2passcal (start_fepoch), TimeDOY.epoch2passcal (stop_fepoch)
-            #print  '===>',t.start_time.getPasscalTime (ms=True),t.start_time.epoch (fepoch=True),t.sample_rate,t.nsamples,t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate),TimeDOY.epoch2passcal (t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate))
-            #samps = 0
-            #for d in t.das_t :
-                #samps += d['sample_count_i']
-                #tttttt = TimeDOY.TimeDOY (epoch=d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000.))
-                #print "\t", tttttt.getPasscalTime (ms=True), d['sample_rate_i'], d['sample_count_i']
-            #print "\t", samps
-            #if len (t.data) != samples_per_day :
-                #print "*\t===> {0} {1}".format (samples_per_day, len (t.data))
-        #start_fepoch += 86400.
-        #stop_fepoch += 86400.
-    ##Offset_t = p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
-    ##start = TimeDOY.TimeDOY (year=2016, 
-                             ##month=07, 
-                             ##day=28, 
-                             ##hour=0, 
-                             ##minute=0, 
-                             ##second=0, 
-                             ##microsecond=0)
-    ##traces = p.cut ('9389', start.epoch (fepoch=True), start.epoch (fepoch=True) + 3600., chan=1, sample_rate=100.)
-    #p.close (); sys.exit (-1)
-    #p = ph5 (path='/run/media/azevedo/1TB_EXT4/Data/SEGMeNT_onshore/Sigma-bak', nickname='master.ph5')
+    #for name in p.Array_t_names :
+        #p.read_array_t (name)
     #p.read_event_t_names ()
-    #print p.Event_t_names
-    #p.close ()
-    #sys.exit ()
-    ##t0 = p.read_t ("Offset_t")
-    ###print t0; sys.exit ()
-    ###   Read Experiment_t, return kef
-    ##t1 = p.read_t ("Experiment_t")
-    ###print t1
-    ###   Read Sort_t, return kef
-    ##t2 = p.read_t ("Sort_t")
-    ###   Read Event_t, return kef
-    ##t3 = p.read_t ("Event_t")
-    ###print t3
-    ###   Read Array_t_001, return kef
-    ##t4 = p.read_t ("Array_t", n=1)
-    ###   Read Response_t, return kef
-    ##t5 = p.read_t ("Response_t")
-    ###   Read Receiver_t, return kef
-    ##t6 = p.read_t ("Receiver_t")
-    ###   Read Index_t, return kef
-    ##t7 = p.read_t ("Index_t")
-    ###   Read Das_t for sn 10550, return kef
-    ##t8 = p.read_t ("Das_t", "10875")
-    ##print t8
-    ###   Read Time_t, return kef
-    ##t9 = p.read_t ("Time_t")
-    ##print t9
-    ##   Read data in shot order, return Trace object
-    #p.read_array_t_names ()
-    ##for n in p.Array_t_names :
-    #for n in ['Array_t_006'] :
-        #if not p.Array_t.has_key (n) :
-            #p.read_array_t (n)
-            
-        #array_t = p.Array_t[n]['byid']
-        #for k in array_t.keys () :
-            #das = array_t[k]['das/serial_number_s']
-            ##   Cut, DAS sn, start epoch, stop epoch
-            #d = p.cut (das, 1200913195.333, 1200913200.5, sample_rate=100)
-            #print d.nsamples
-    ###   Read data in receiver order, return Trace object
+    #for name in p.Event_t_names :
+        #p.read_event_t (name)
+    ##
+    ####    Receiver gather
+    ##
+    #for name in p.Array_t_names :
+        #Array_t = p.Array_t[name]['byid']
+        #order = p.Array_t[name]['order']
+        #length = 905
+        ##   Order of stations
+        #for o in order :
+            #chans = Array_t[o].keys ()
+            ##   foreach channel
+            #for c in chans :
+                ##   foreach entry per station
+                ##   o -> station, c -> channel
+                #for array_t in Array_t[o][c] :
+                    #print "Station:", array_t['id_s']
+                    #for ename in p.Event_t_names :
+                        #print "Shot line:", ename
+                        #Css = p.receiver_cut (ename, array_t, length)
+                        #for Cs in Css :
+                            #print Cs
+                            ##print "Shot:", Cs.id_s, Cs.start_fepoch, Cs.stop_fepoch
+                            ##for win in Cs.das_t_times :
+                                ##print win[0], win[1]
+                            ##for msg in Cs.msg :
+                                ##print msg
+    
+    #raw_input ("P")
+    ##
+    ####   Shot gather
+    ##
+    #for name in p.Event_t_names :
+        #Event_t = p.Event_t[name]['byid']
+        #order = p.Event_t[name]['order']
+        #length = 905
+        #for o in order :
+            #event_t = Event_t[o]
+            #start_time = fepoch (event_t['time/epoch_l'], event_t['time/micro_seconds_i'])
+            #for aname in p.Array_t_names :
+                #Css = p.shot_cut (aname, start_time, length)
+                #for Cs in Css :
+                    #print Cs
+                    ##print "Station:", Cs.id_s, Cs.start_fepoch, Cs.stop_fepoch
+                    ##for win in Cs.das_t_times :
+                        ##print win[0], win[1]
+                    ##for msg in Cs.msg :
+                        ##print msg  
+    #raw_input ("P")
+    #p.close ()        
+    ###   Create dictionary to hold trace objects
+    ##d = {}
+    ###   Cut Z
+    ##d['Z'] = p.cut ('A123', TimeDOY.passcal2epoch ("2016:201:00:00:00.000", fepoch=True), TimeDOY.passcal2epoch ("2016:201:23:59:59.999", fepoch=True), chan=1, sample_rate=100)
+    ##print
+    ###   Cut N
+    ##d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2, sample_rate=250)
+    ###   Cut E
+    ##d['E'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=3, sample_rate=250)
+    ###   Display trace data
+    ##for c in ('Z', 'N', 'E') :
+        ##print d[c].start_time.getISOTime ()
+        ##i = 0
+        ##for point in d[c].data :
+            ##print i, point
+            ##i += 1
+    ###   Close PH5
+    ##p.close ()
+    ##   Initialize new PH5
+    ##p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
+    ##p.read_array_t_names ()
+    ##p.read_array_t ('Array_t_007')
+    ###print p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['deploy_time/ascii_s'], '->', p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['pickup_time/ascii_s']
+    ##array_t_0 = p.Array_t['Array_t_005']['byid']['5002'][1][0]
+    ##array_t_1 = p.Array_t['Array_t_005']['byid']['5002'][1][-1]
+    ##das = array_t_0['das/serial_number_s']
+    ##sr = array_t_0['sample_rate_i'] / float (array_t_0['sample_rate_multiplier_i'])
+    ##samples_per_day = int (86400 * sr)
+    ##start_tdoy = TimeDOY.TimeDOY (epoch=array_t_0['deploy_time/epoch_l'])
+    ##start_tdoy = TimeDOY.TimeDOY (year=start_tdoy.dtobject.year,
+                                  ##hour=0,
+                                  ##minute=0,
+                                  ##second=0,
+                                  ##microsecond=0,
+                                  ##doy=start_tdoy.doy ())
+    ##start_fepoch = start_tdoy.epoch (fepoch=True)
+    ##stop_fepoch = start_fepoch + 86400.
+    ##end_tdoy = TimeDOY.TimeDOY (epoch=array_t_1['pickup_time/epoch_l'])
+    ##end_tdoy = TimeDOY.TimeDOY (year=end_tdoy.dtobject.year,
+                                ##hour=23,
+                                ##minute=59,
+                                ##second=59,
+                                ##microsecond=999999,
+                                ##doy=end_tdoy.doy ())
+    ##end_fepoch = end_tdoy.epoch (fepoch=True)
+    ##while stop_fepoch < end_fepoch :
+        ##traces = p.cut (das, start_fepoch, stop_fepoch, sample_rate=sr)
+        ##for t in traces :
+            ##print TimeDOY.epoch2passcal (start_fepoch), TimeDOY.epoch2passcal (stop_fepoch)
+            ##print  '===>',t.start_time.getPasscalTime (ms=True),t.start_time.epoch (fepoch=True),t.sample_rate,t.nsamples,t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate),TimeDOY.epoch2passcal (t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate))
+            ##samps = 0
+            ##for d in t.das_t :
+                ##samps += d['sample_count_i']
+                ##tttttt = TimeDOY.TimeDOY (epoch=d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000.))
+                ##print "\t", tttttt.getPasscalTime (ms=True), d['sample_rate_i'], d['sample_count_i']
+            ##print "\t", samps
+            ##if len (t.data) != samples_per_day :
+                ##print "*\t===> {0} {1}".format (samples_per_day, len (t.data))
+        ##start_fepoch += 86400.
+        ##stop_fepoch += 86400.
+    ###Offset_t = p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
+    ###start = TimeDOY.TimeDOY (year=2016, 
+                             ###month=07, 
+                             ###day=28, 
+                             ###hour=0, 
+                             ###minute=0, 
+                             ###second=0, 
+                             ###microsecond=0)
+    ###traces = p.cut ('9389', start.epoch (fepoch=True), start.epoch (fepoch=True) + 3600., chan=1, sample_rate=100.)
+    ##p.close (); sys.exit (-1)
+    ##p = ph5 (path='/run/media/azevedo/1TB_EXT4/Data/SEGMeNT_onshore/Sigma-bak', nickname='master.ph5')
     ##p.read_event_t_names ()
-    ##for n in p.Event_t_names :
-        ##if not p.Event_t.has_key (n) :
-            ##p.read_event_t (n)
+    ##print p.Event_t_names
+    ##p.close ()
+    ##sys.exit ()
+    ###t0 = p.read_t ("Offset_t")
+    ####print t0; sys.exit ()
+    ####   Read Experiment_t, return kef
+    ###t1 = p.read_t ("Experiment_t")
+    ####print t1
+    ####   Read Sort_t, return kef
+    ###t2 = p.read_t ("Sort_t")
+    ####   Read Event_t, return kef
+    ###t3 = p.read_t ("Event_t")
+    ####print t3
+    ####   Read Array_t_001, return kef
+    ###t4 = p.read_t ("Array_t", n=1)
+    ####   Read Response_t, return kef
+    ###t5 = p.read_t ("Response_t")
+    ####   Read Receiver_t, return kef
+    ###t6 = p.read_t ("Receiver_t")
+    ####   Read Index_t, return kef
+    ###t7 = p.read_t ("Index_t")
+    ####   Read Das_t for sn 10550, return kef
+    ###t8 = p.read_t ("Das_t", "10875")
+    ###print t8
+    ####   Read Time_t, return kef
+    ###t9 = p.read_t ("Time_t")
+    ###print t9
+    ###   Read data in shot order, return Trace object
+    ##p.read_array_t_names ()
+    ###for n in p.Array_t_names :
+    ##for n in ['Array_t_006'] :
+        ##if not p.Array_t.has_key (n) :
+            ##p.read_array_t (n)
             
-        ##event_t = p.Event_t[n]['byid']
-        ##for k in event_t.keys () :
-            ##t0 = fepoch (event_t[k]['time/epoch_l'], event_t[k]['time/micro_seconds_i'])
-            ###   Cut, DAS sn, event time (as epoch), event time + length
-            ##d = p.cut ('11809', t0, t0 + 10., sample_rate=100)
-            ##i = 0
-            ##print d.start_time.getFdsnTime ()
-            ##for point in d.data :
-                ##print i, point
-                ##i += 1
-            ##pass
-    #p.close ()
+        ##array_t = p.Array_t[n]['byid']
+        ##for k in array_t.keys () :
+            ##das = array_t[k]['das/serial_number_s']
+            ###   Cut, DAS sn, start epoch, stop epoch
+            ##d = p.cut (das, 1200913195.333, 1200913200.5, sample_rate=100)
+            ##print d.nsamples
+    ####   Read data in receiver order, return Trace object
+    ###p.read_event_t_names ()
+    ###for n in p.Event_t_names :
+        ###if not p.Event_t.has_key (n) :
+            ###p.read_event_t (n)
+            
+        ###event_t = p.Event_t[n]['byid']
+        ###for k in event_t.keys () :
+            ###t0 = fepoch (event_t[k]['time/epoch_l'], event_t[k]['time/micro_seconds_i'])
+            ####   Cut, DAS sn, event time (as epoch), event time + length
+            ###d = p.cut ('11809', t0, t0 + 10., sample_rate=100)
+            ###i = 0
+            ###print d.start_time.getFdsnTime ()
+            ###for point in d.data :
+                ###print i, point
+                ###i += 1
+            ###pass
+    ##p.close ()
