@@ -12,7 +12,40 @@ import sys, os
 sys.path.append (os.path.join (os.environ["KX"], "apps", "pn4"))
 import SegdReader
 
-PROG_VERSION = "2017.031 Developmental"
+PROG_VERSION = "2017.088 Developmental"
+
+def get_args () :
+    '''   Get inputs
+    '''
+    global ARGS
+
+    from argparse import ArgumentParser
+
+    aparser = ArgumentParser ()
+
+    aparser.add_argument ("-f", "--filelist", dest="segdfilelist",
+                          help = "The list of SEG-D files to link.",
+                          required=True)
+
+    aparser.add_argument ("-d", "--linkdir", dest="linkdirectory",
+                          help = "Name directory to place renamed links.",
+                          required=True)
+    
+    aparser.add_argument ("--hardlinks", dest="hardlinks", action="store_true",
+                          help="Create hard links inplace of soft links.")
+
+    ARGS = aparser.parse_args ()
+
+    if not os.path.exists (ARGS.segdfilelist) :
+        sys.stderr.write ("Error: Can not read {0}!".format (ARGS.segdfilelist))
+        sys.exit ()
+        
+    if not os.path.exists (ARGS.linkdirectory) :
+        try :
+            os.mkdir (ARGS.linkdirectory)
+        except Exception as e :
+            sys.stderr.write ("Error: {0}!\n".format (e.message))
+            sys.exit ()
 
 def print_container (container) :
     keys = container.keys ()
@@ -107,10 +140,10 @@ def trace_headers (sd) :
 if __name__ == '__main__' :
     global RH, TH
     TH = []
-    outpath = sys.argv[2]
-    if not os.path.exists (outpath) :
-        os.makedirs (outpath)
-    with open (sys.argv[1]) as fh :
+    get_args ()
+    outpath = ARGS.linkdirectory
+    
+    with open (ARGS.segdfilelist) as fh :
         lh = open ("unsimpleton.log", 'a+')  
         while True :
             line = fh.readline ()
@@ -145,8 +178,13 @@ if __name__ == '__main__' :
                 linkname = os.path.join (outpath, outfile)
               
             try :
-                print filename, '->', linkname
-                os.link (filename, linkname)
+                if ARGS.hardlinks == True :
+                    print filename, 'hard->', linkname
+                    os.link (filename, linkname)
+                else :
+                    print filename, 'soft->', linkname
+                    os.symlink (filename, linkname)
+                    
                 lh.write ("{0} -> {1}\n".format (filename, linkname))
             except Exception as e :
                 print e.message
