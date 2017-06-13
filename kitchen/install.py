@@ -3,7 +3,7 @@
 import shutil, os, stat, sys, time
 from compileall import *
 
-PROG_VERSION = '2016.133'
+PROG_VERSION = '2017.123'
 
 #   Location of PASSCAL distribution
 ROOTDIR = '/opt/k4'
@@ -23,6 +23,22 @@ BINDIR = os.path.join (ROOTDIR, 'bin')
 LIBPROG = os.path.join (LIBDIR, PROG)
 PYTHON = os.path.join (BINDIR, 'pnpython4')
 CONFIGDIR = os.path.join (ROOTDIR, 'config')
+
+command = 'mkdir -p ' + BINDIR
+os.system (command)
+if os.path.exists ('/opt/anaconda2/bin/python2.7') :
+    try :
+        os.symlink ('/opt/anaconda2/bin/python2.7', PYTHON)
+    except OSError :
+        pass
+elif os.path.exists ('/usr/bin/python2.7') :
+    try :
+        os.symlink ('/usr/bin/python2.7', PYTHON)
+    except OSError :
+        pass
+else :
+    sys.stderr.write ("Can't find python. Please create link for pnpython4.")
+    sys.exit ()
 
 PROGS = ('125a2ph5',
          '1302ph5',
@@ -66,7 +82,15 @@ PROGS = ('125a2ph5',
          'ph5view',
          'unsimpleton',
          'ph5torec',
-         'ph5toevt')
+         'ph5toevt',
+         'cross_check_event_array_data', 
+         'ccead',
+         'sort_array_t',
+         'set_n_i_response',
+         'kef2kml',
+         'seg2toph5',
+         'kefedit',
+         'load_Das_t')
 
 LIBS  = ('columns',
          'Dep',
@@ -97,7 +121,8 @@ LIBS  = ('columns',
          'ph5API',
 	 'pformaIO',
          'PMonitor',
-         'WatchIt')
+         'WatchIt',
+         'KefUtility')
 
 EXTS = ('surt_130_py.py', 'sufirfilt_py.py', 'surt_125a_py.py', 'suibm2ieee_py.py', 'subcd_py.py',)
 
@@ -180,3 +205,4 @@ else :
 #print "Installing PH5GUI..."
 #command = "cd PH5GUI; pnpython3 install.py"
 #os.system (command)
+
