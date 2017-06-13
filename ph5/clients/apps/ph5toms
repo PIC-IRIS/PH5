@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #   Version: 2016.133
-EXEC='ph5toms'
+EXEC='ph5tomsAPI.py'
 MOD='pn4'
 
 LD_LIBRARY_PATH=${KX}/lib
