@@ -1,9 +1,9 @@
 '''
-Tests for ph5tomsAPI
+Tests for ph5toms
 '''
 
 import unittest
-from ph5tomsAPI import StationCut, PH5toMSeed
+from ph5toms import StationCut, PH5toMSeed
 import copy
 
 class RestrictedRequest(object):
