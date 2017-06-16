@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-#   Version: 2016.264
-EXEC='recvorder'
+#   Version: 2017.167
+EXEC='ph5toms'
 MOD='pn4'
 
-echo "Depricated. Please use ph5torec."
-exit
-export LD_LIBRARY_PATH=${KX}/lib
+LD_LIBRARY_PATH=${KX}/lib
 
 h=$@
 
