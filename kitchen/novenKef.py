@@ -10,7 +10,7 @@
 import time, re, math
 import TimeDOY
 
-PROG_VERSION = '2017.074 Developmental'
+PROG_VERSION = '2017.086 Developmental'
 KEF_COLS = {}
 #   /Experiment_g/Sorts_g/Array_t_xxx columns as of Feb 2015
 KEF_COLS['receiver'] = ['id_s','location/X/value_d','location/X/units_s','location/Y/value_d','location/Y/units_s',
@@ -44,7 +44,16 @@ def get_times (key, value) :
     try :
         fepoch = TimeDOY.fdsn2epoch (value, fepoch=True)
     except TimeDOY.TimeError :
-        fepoch = TimeDOY.passcal2epoch (value, fepoch=True)
+        try :
+            fepoch = TimeDOY.passcal2epoch (value, fepoch=True)
+        except TimeDOY.TimeError :
+            #   This SHOULD never happen
+            sys.stderr.write ("Error: Bad time value for {0} {1}.".format (key, value))
+            line = "\t{0}/ascii_s = {1}\n".format (pre, time.ctime (int (0)))
+            line += "\t{0}/epoch_l = {1}\n".format (pre, int (0))
+            line += "\t{0}/micro_seconds_i = {1}\n".format (pre, int (0. * 1000000.))
+            line += "\t{0}/type_s = {1}\n".format (pre, 'BOTH')
+            return line
         
     f, i = math.modf (fepoch)
     pre = key.split ('/')[0]
