@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2017.162 Developmental'
+PROG_VERSION = '2017.170.a Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
@@ -624,7 +624,7 @@ class ph5 (Experiment.ExperimentGroup) :
                 for response_t in self.Response_t['rows'] :
                     if response_t['n_i'] == n_i :
                         break
-        except KeyError :
+        except (KeyError, IndexError) :
             response_t = None
         
         return response_t
