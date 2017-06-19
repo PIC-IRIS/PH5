@@ -14,7 +14,7 @@ import numpy as np
 sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 import ph5API, TimeDOY
 
-PROG_VERSION = "2017.050 Developmental"
+PROG_VERSION = "2017.135 Developmental"
 
 
 class PH5ReaderError (Exception) :
@@ -240,7 +240,7 @@ class PH5Reader () :
         
         lenlist = {'less': {ch:[]},'maybeless': {ch:[]} }
         info['numOfSamples'] = 0
-        info['noDataList'] = "" 
+        info['noDataList'] = [] 
         info['LEN'] = {ch:[]}
 
         #   If there is an associated event calculate offset distances
@@ -281,7 +281,10 @@ class PH5Reader () :
                     
                 if trace.nsamples == 0 : 
                     v = (ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
-                    info['noDataList'] += "\nEvent:%s  Array:%s  Das: %s  Station: %s  Chan: %s" % v
+                    noDataItem = "Event:%s  Array:%s  Das: %s  Station: %s  Chan: %s" % v
+                    
+                    if noDataItem not in info['noDataList']: 
+                        info['noDataList'].append(noDataItem)
                     continue
                 if sr == None :
                     sr = trace.sample_rate
@@ -361,7 +364,7 @@ class PH5Reader () :
         rows = self.fio.Array_t[a]['byid']
         order = self.fio.Array_t[a]['order']
         
-        listOfStations = PH5View.selectedArray['seclectedStations']
+        listOfStations = sorted(PH5View.selectedArray['seclectedStations'])
         self.metadata = [None] * len(listOfStations) 
         info['distanceOffset'] = [None] * len(listOfStations)
         
@@ -369,7 +372,7 @@ class PH5Reader () :
             startTime = orgStartT + offset
             stopTime = startTime + timeLen
         
-        info['noDataList'] = ""    
+        info['noDataList'] = []    
         listOfDataStations = []
         lenlist = {'less': {},'maybeless': {} }
         #   If there is an associated event calculate offset distances
@@ -383,26 +386,29 @@ class PH5Reader () :
 
             sr = None
             slen = None
-
+            
             count = 0
             for o in order :
                 for ch in self.CHANNEL:
+                    #processing = []
                     if ch not in self.data.keys():
                         self.data[ch] = [[]] * len(listOfStations)
-                        info['LEN'][ch] =[]
+                        info['LEN'][ch] =[0] * len(listOfStations)
                         lenlist['less'][ch] = []
                         lenlist['maybeless'][ch]= []
                         info['quickRemoved'][ch] = {}
                         info['deepRemoved'][ch] = []  
                 
                            
-                    for r in rows[o][ch]:
-                        ii = listOfStations.index(r['id_s']) 
+                    for r in rows[o][ch]: 
                         try:
                             if r['id_s'] not in PH5View.selectedArray['seclectedStations'] : raise PH5ReaderError("Continue")
- 
+                            ii = listOfStations.index(r['id_s'])
+                            
                             if not ph5API.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
                                 raise PH5ReaderError("Continue")
+                            
+                            
                             
                             das = r['das/serial_number_s']
                             corr = self.calcCorrection(ii, das, ch, Offset_t,a, r,startTime, 
@@ -416,7 +422,10 @@ class PH5Reader () :
 
                             if trace.nsamples == 0 : 
                                 v = (ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
-                                info['noDataList'] += "\nEvent:%s  Array:%s  Das: %s  Station: %s  Chan: %s" % v
+                                noDataItem = "Event:%s  Array:%s  Das: %s  Station: %s  Chan: %s" % v
+                                
+                                if noDataItem not in info['noDataList']: 
+                                    info['noDataList'].append(noDataItem)
                                 raise PH5ReaderError("Continue")
                             if sr == None :
                                 sr = trace.sample_rate
@@ -426,28 +435,42 @@ class PH5Reader () :
 
                             #self.metadata[ii]['removed'] = False
                             trace.data = np.array (trace.data, dtype=np.float32)
-                            self.data[ch][ii] = (trace.data)
-                            info['LEN'][ch].append(trace.nsamples)
-                            if r['id_s'] not in listOfDataStations: listOfDataStations.append(r['id_s'])
-                            if 'minmax' not in self.metadata[ii].keys():
-                                self.metadata[ii]['minmax'] = (np.amin(trace.data), np.amax(trace.data)) 
-                            else:
-                                minval = min( self.metadata[ii]['minmax'][0], np.amin(trace.data) )
-                                maxval = max( self.metadata[ii]['minmax'][1], np.amax(trace.data) )
-                                self.metadata[ii]['minmax'] = (minval, maxval)  
-                            
-                            #print "%s: %s: offset=%s" % (ii, r['id_s'], info['distanceOffset'][ii])
-                            count +=1
-                            if statusBar!=None and count % 10 == 0:
-                                statusMsg = beginMsg + ": reading data and metadata: %s station-channels" % count 
-                                statusBar.showMessage(statusMsg)
+                            if len(self.data[ch][ii]) < trace.nsamples:
+                                #processing.append(r['id_s'])
+                                self.data[ch][ii] = (trace.data)
+                                info['LEN'][ch][ii] = trace.nsamples
+                                if r['id_s'] not in listOfDataStations: listOfDataStations.append(r['id_s'])
+                                if 'minmax' not in self.metadata[ii].keys():
+                                    self.metadata[ii]['minmax'] = (np.amin(trace.data), np.amax(trace.data)) 
+                                else:
+                                    minval = min( self.metadata[ii]['minmax'][0], np.amin(trace.data) )
+                                    maxval = max( self.metadata[ii]['minmax'][1], np.amax(trace.data) )
+                                    self.metadata[ii]['minmax'] = (minval, maxval)  
+                                
+                                #print "%s: %s: offset=%s" % (ii, r['id_s'], info['distanceOffset'][ii])
+                                count +=1
+                                if statusBar!=None and count % 10 == 0:
+                                    statusMsg = beginMsg + ": reading data and metadata: %s station-channels" % count 
+                                    statusBar.showMessage(statusMsg)
+                            #else:
+                                #print "already has data, old len=%s new trace.nsamples=%s" % (len(self.data[ch][ii]),trace.nsamples)
+                                #print "self.data[ch][ii]:",self.data[ch][ii][10:20]
+                                #print "trace.data:", trace.data[10:20]
+                                #if np.array_equal(self.data[ch][ii], (trace.data)):
+                                    #print "same"
+                                #else: 
+                                    #print "different"
                         except PH5ReaderError, e:
                             if e.message == "Continue": 
                                 if r['id_s'] in listOfStations: #info['zerosList'].append(( ii, ch))
-                                    info['LEN'][ch].append(0)
+                                    #info['LEN'][ch].append(0)
                                     lenlist['less'][ch].append(ii)
                             else: raise e
-
+                            
+                #if processing !=[]: 
+                    #print "channel:", ch
+                    #print "processing:",processing
+        
         for ch in self.CHANNEL:
             for i in lenlist['less'][ch]:
                 replace = np.zeros(info['numOfSamples'])
