@@ -498,6 +498,9 @@ class PH5toMSeed(object):
                 while seconds_covered < total_seconds:
                     stop_time, seconds = ph5utils.doy_breakup(start_time)
                     seconds_covered += seconds
+                    if stop_time > stop_fepoch:
+                        times_to_cut.append([start_time, stop_fepoch])
+                        break;
                     times_to_cut.append([start_time, stop_time])
                     start_time = stop_time
             else:
