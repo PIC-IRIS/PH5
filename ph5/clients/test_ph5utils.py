@@ -45,6 +45,11 @@ class TestPH5Utils(unittest.TestCase):
         self.assertFalse(ph5utils.is_rect_intersection(34.0, 36.0,
                                                              -105.9, -100.0,
                                                              latitude, longitude))
+        
+        # all outside range
+        self.assertFalse(ph5utils.is_rect_intersection(0, 0,
+                                                       0, 0,
+                                                       latitude, longitude))
 
     def test_is_radial_intersection(self):
         """
@@ -87,6 +92,11 @@ class TestPH5Utils(unittest.TestCase):
         self.assertFalse(ph5utils.is_radial_intersection(34.946, -106.457,
                                                        1, None,
                                                        latitude, longitude))
+        
+        # all outside range
+        self.assertFalse(ph5utils.is_radial_intersection(0, 0,
+                                                         0, 0,
+                                                         latitude, longitude))
 
 if __name__ == "__main__":
     unittest.main()
