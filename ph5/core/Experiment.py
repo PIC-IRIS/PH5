@@ -1277,7 +1277,6 @@ class ResponsesGroup :
             a.attrs.description = description
             
         return a
-
     
     def initgroup (self) :
         #   Create response group
@@ -1531,8 +1530,6 @@ def get_nodes_by_name (filenode, where, RE, classname) :
             nodes[key] = n
             
     return nodes
-
-
         
 if __name__ == '__main__' :
     import os
