@@ -9,7 +9,7 @@ import sys, os, exceptions
 import SEGD_h
 import construct, numpy as np
 
-PROG_VERSION = "2016.195 Developmental"
+PROG_VERSION = "2017.114 Developmental"
 
 class InputsError (exceptions.Exception) :
     def __init__ (self, args = None) :
@@ -465,13 +465,13 @@ class Reader () :
             self.FH.close ()
             return True
         
-    def isSEGD (self) :
+    def isSEGD (self, expected_manufactures_code=0) :
         '''   Check to see if we are a Fairfield SEG-D file.   '''
         ret = False
         try :
             c = self.read_general_header_block_1 ()
             self.FH.seek (0)
-            if c['manufactures_code'] == 20 :
+            if c['manufactures_code'] == expected_manufactures_code :
                 ret = True
             else :
                 if self.FH != None : self.FH.close ()
