@@ -15,7 +15,7 @@ import Experiment, TimeDOY
 os.environ['TZ'] = 'UTM'
 time.tzset ()
 
-PROG_VERSION = '2016.350 Developmental'
+PROG_VERSION = '2017.089 Developmental'
 
 #   Match lines related to timing in SOH
 timetoRE = re.compile ("\d+:.*--\s+TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+(\d{4}/\d{4})\s+MS")
@@ -325,7 +325,12 @@ def print_it (soh, das) :
         #v = SOH_A[k]
         #print v, SOH_A
     for n in soh.keys () :
-        flds = process_SOH (soh[n])
+        try :
+            flds = process_SOH (soh[n])
+        except Exception as e :
+            sys.stderr.write ("Failed to process SOH messages for {0}.\n{1}\n".format (das[6:], e.message))
+            continue
+        
         if flds == None : 
             sys.stderr.write ("###   Warning: No time correction info for %s   ###\n" % das)
             continue
