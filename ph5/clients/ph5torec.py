@@ -9,7 +9,7 @@ import os, sys, logging
 #sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2017.034 Developmental"
+PROG_VERSION = "2017.135 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -265,7 +265,11 @@ def gather () :
 
                     ###   Need to apply reduction velocity here
                     if ARGS.red_vel > 0. :
-                        secs, errs = SEGYFactory.calc_red_vel_secs (Offset[o], ARGS.red_vel)
+                        try :
+                            secs, errs = SEGYFactory.calc_red_vel_secs (Offset[o], ARGS.red_vel)
+                        except Exception as e :
+                            secs = 0.
+                            errs = "Can not calculate reduction velocity: {0}.".format (e.message)
                         for e in errs : logging.info (e)
                         start_fepoch += secs
                         stop_fepoch += secs
