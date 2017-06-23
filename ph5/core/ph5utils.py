@@ -138,7 +138,7 @@ def doy_breakup(start_fepoch):
     :returns: stop_fepoch : next days stop epoch :type: float
               seconds: difference in seconds between the start and end epoch times :type: float
     """
-    passcal_start = epoch2passcal(start_fepoch)
+    passcal_start = epoch2passcal(float(start_fepoch))
     start_passcal_list = passcal_start.split(":")
     start_year = start_passcal_list[0] 
     start_doy = start_passcal_list[1]
