@@ -12,7 +12,7 @@ import Experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2017.075"
+PROG_VERSION = "2017.136"
 #
 #   These are to hold different parts of the meta-data
 #
@@ -382,7 +382,7 @@ def read_sort_table () :
     sorts, sorts_keys = EX.ph5_g_sorts.read_sorts ()
     
     rowskeys = rows_keys (sorts, sorts_keys)
-    
+
     SORT_T = rowskeys
     
 def read_sort_arrays () :
@@ -463,6 +463,97 @@ def read_receivers (das = None) :
 
         #   Read SOH file(s) for this das
         SOH_A[d] = EX.ph5_g_receivers.read_soh ()
+
+#####################################################
+# def readPH5
+# author: Lan Dam
+# updated: 201703
+# read data from exp(PH5) to use for KefUtility => KefEdit.py
+def readPH5(exp, filename, path, tableType, arg=None):
+    print "readPH5"
+    global EX, OFFSET_TABLE, EVENT_TABLE, ARRAY_TABLE, OFFSET_T, EVENT_T, ARRAY_T, DAS_T
+    
+    EX = exp
+    
+    
+    if tableType == "Experiment_t":
+        read_experiment_table ()
+        return EXPERIMENT_T
+        
+    if tableType == "Sort_t" :
+        read_sort_table ()
+        return SORT_T
+        
+    if tableType == "Offset_t" :
+        OFFSET_T = {}               # clear cache
+        OFFSET_TABLE = map (int, arg.split ("_"))
+        read_offset_table ()
+        keys = OFFSET_T.keys ()
+        return OFFSET_T
+        
+    if tableType == "Event_t":
+        EVENT_T = {}               # clear cache
+        EVENT_TABLE = int(arg)
+        read_event_table ()
+        return EVENT_T
+    
+    if tableType == "All_Event_t":
+        EVENT_T = {}               # clear cache
+        
+        for n in EX.Event_t_names:
+            if n == 'Event_t': EVENT_TABLE = 0
+            else: EVENT_TABLE = int( n.replace('Event_t_', '') )            
+            read_event_table()
+            
+        return EVENT_T
+        
+    if tableType == "Index_t":
+        read_index_table ()
+        return INDEX_T
+        
+    if tableType == "Map_Index_t":
+        read_m_index_table ()
+        return M_INDEX_T
+        
+    if tableType == "Time_t":
+        read_time_table ()
+        return TIME_T
+        
+    if tableType == "Array_t":
+        ARRAY_T = {}               # clear cache
+        ARRAY_TABLE = arg
+        read_sort_table ()
+        read_sort_arrays ()
+        arrays = ARRAY_T.keys ()
+        for a in arrays :
+            n = int (string.split (a, '_')[2])
+            if n == int (ARRAY_TABLE) :        
+                return ARRAY_T[a]
+            
+    if tableType == "All_Array_t":
+        ARRAY_T = {}               # clear cache
+        read_sort_table ()            
+        read_sort_arrays ()
+        arrays = ARRAY_T.keys ()            
+        return ARRAY_T       
+        
+    if tableType == "Response_t":
+        read_response_table ()
+        return RESPONSE_T
+        
+    if tableType == "Report_t":
+        read_report_table ()
+        return REPORT_T
+        
+    if tableType == "Receiver_t" :
+        read_receiver_table ()
+        return RECEIVER_T
+        
+    if tableType == "Das_t":
+        DAS_T = {}               # clear cache
+        read_receivers (arg)
+        return DAS_T
+            
         
 if __name__ == '__main__' :
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
