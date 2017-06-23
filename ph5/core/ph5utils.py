@@ -39,7 +39,7 @@ def is_radial_intersection(point_lat, point_lon,
     :param: latitude : the latitude of the point to check :type: float
     :param: longitude : the longitude of the point to check :type: float
     """
-    if minradius or maxradius or point_lat or point_lon:
+    if minradius != None or maxradius != None or point_lat != None or point_lon != None:
         # min radius default to 0.0
         if not minradius:
             minradius = 0.0
@@ -73,16 +73,16 @@ def is_rect_intersection(minlat, maxlat, minlon, maxlon, latitude, longitude):
     :param: latitude : the latitude of the point to check :type: float
     :param: longitude : the longitude of the point to check :type: float
     """
-    if minlat and float(
+    if minlat != None and float(
             minlat) > float(latitude):
         return False
-    elif minlon and float(
+    elif minlon != None and float(
             minlon) > float(longitude):
         return False
-    elif maxlat and float(
+    elif maxlat != None and float(
             maxlat) < float(latitude):
         return False
-    elif maxlon and float(
+    elif maxlon != None and float(
             maxlon) < float(longitude):
         return False
     else:
@@ -138,7 +138,7 @@ def doy_breakup(start_fepoch):
     :returns: stop_fepoch : next days stop epoch :type: float
               seconds: difference in seconds between the start and end epoch times :type: float
     """
-    passcal_start = epoch2passcal(start_fepoch)
+    passcal_start = epoch2passcal(float(start_fepoch))
     start_passcal_list = passcal_start.split(":")
     start_year = start_passcal_list[0] 
     start_doy = start_passcal_list[1]
