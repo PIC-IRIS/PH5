@@ -66,7 +66,7 @@
 import tables, types
 import os, sys, string, copy
 
-PH5VERSION = '2017.150'
+PH5VERSION = '2017.171'
 PROG_VERSION = '2016.309 Developmental'
 
 #TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
@@ -479,7 +479,7 @@ class Array (tables.IsDescription) :
     seed_station_name_s     = tables.StringCol (5, pos=14)
     response_table_n_i      = tables.Int32Col ()                      #   Offset into Response_t
     receiver_table_n_i      = tables.Int32Col ()                      #   Offset into Receiver_t
-    description_s      = tables.StringCol (1024, pos=7)              #   Description of this station grouping
+    description_s      = tables.StringCol (1024, pos=7)               #   Description of this station grouping
 
 class Event (tables.IsDescription) :
     '''   Table to describe an event, such as a shot   '''
@@ -575,9 +575,9 @@ class Response (tables.IsDescription) :
         units_s             = tables.StringCol (16)           #   Volts/Count?       
         value_d             = tables.Float64Col (pos=1)        
         
-    #response_file_a         = tables.StringCol (32)           #   Response file name
-    response_file_das_a         = tables.StringCol (128)           #   DAS Response file name
-    response_file_sensor_a      = tables.StringCol (128)           #   Sensor Response file name
+    response_file_a         = tables.StringCol (32)            #   Response file name
+    response_file_das_a     = tables.StringCol (128)           #   DAS Response file name
+    response_file_sensor_a  = tables.StringCol (128)           #   Sensor Response file name
     
 
 #
