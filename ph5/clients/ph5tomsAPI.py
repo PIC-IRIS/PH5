@@ -341,7 +341,7 @@ class PH5toMSeed(object):
                 obspy_trace.stats.coordinates.longitude = stc.longitude
                 obspy_trace.stats.channel = stc.seed_channel
                 obspy_trace.stats.network = stc.net_code
-                obspy_trace.stats.starttime = UTCDateTime(trace.start_time.epoch(fepoch=True))
+                obspy_trace.stats.starttime = trace.start_time.getFdsnTime()
 
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
