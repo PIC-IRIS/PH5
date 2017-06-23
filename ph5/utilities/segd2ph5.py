@@ -8,7 +8,7 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
-PROG_VERSION = "2017.074 Developmental"
+PROG_VERSION = "2017.114.1 Developmental"
 
 MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
@@ -37,6 +37,10 @@ LSB36 = 39. / (2**23)     #   36dB = 39mV full scale
 LSB = LSB36
 
 LSB_MAP = {36:LSB36, 24:LSB24, 12:LSB12, 0:LSB00}
+
+#   Manufacturers codes
+FAIRFIELD=20
+OTHER=0
 #
 #   To hold table rows and keys
 #
@@ -110,7 +114,7 @@ def read_infile (infile) :
     FILES.sort (fn_sort)
         
 def get_args () :
-    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND
+    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND, MANUFACTURERS_CODE
     
     TSPF = False
     
@@ -151,7 +155,11 @@ def get_args () :
                         metavar = "combine", type = 'int', default=APPEND)
     
     oparser.add_option ("-E", "--allevents", action="store_true", dest="all_events",
-                        default=False, metavar="all_events")    
+                        default=False, metavar="all_events")
+    
+    oparser.add_option ("--manufacturers_code", dest="manufacturers_code",
+                        help="Manufacturers code. Defaults to 20 for Fairfield. Most likely will not work for SEG-D written by other data loggers,",
+                        type='int', default=FAIRFIELD)
     
     options, args = oparser.parse_args ()
 
@@ -164,6 +172,7 @@ def get_args () :
     UTM = options.utm_zone
     TSPF = options.texas_spc
     APPEND = options.combine
+    MANUFACTURERS_CODE = options.manufacturers_code
     
     if options.infile != None :
         read_infile (options.infile)
@@ -457,16 +466,24 @@ def process_traces (rh, th, tr) :
         if rh.general_header_block_1.chan_sets_per_scan == 1 :
             #   Single channel
             p_das_t['receiver_table_n_i'] = 0   #   0 -> Z
-        else :
+        elif  rh.general_header_block_1.chan_sets_per_scan == 3 :
             #   1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5), 3 (Z Node) -> 0 (Z PH5)
             M = {1:1, 2:2, 3:0}
             p_das_t['receiver_table_n_i'] = M[th.trace_header.channel_set]
+        else :
+            p_das_t['receiver_table_n_i'] = 0   #   0 -> Z
+            logging.warn ("Header channel set: {0}. Check Receiver_t entries!".format (th.trace_header.channel_set))
             
         p_das_t['response_table_n_i'] = None
         p_das_t['time_table_n_i'] = 0
         p_das_t['time/type_s'] = 'BOTH'
         #trace_epoch = th.trace_header_N[2].gps_tim1 * 4294967296 + th.trace_header_N[2].gps_tim2
-        trace_epoch = th.trace_header_N[2].shot_epoch
+        try :
+            trace_epoch = th.trace_header_N[2].shot_epoch
+        except Exception as e :
+            logging.warn ("Failed to read shot epoch: {0}.".format (e.message))
+            trace_epoch = 0.
+            
         f, i = modf (trace_epoch / 1000000.)
         p_das_t['time/epoch_l'] = int (i)
         p_das_t['time/ascii_s'] = time.ctime (p_das_t['time/epoch_l'])
@@ -499,7 +516,13 @@ def process_traces (rh, th, tr) :
         except Exception as e :
             n_i = 0
         p_response_t['gain/units_s'] = 'dB'
-        p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
+        try :
+            p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
+        except Exception as e :
+            logging.warn ("Failed to read trace pre amp gain: {0}.".format (e.message))
+            p_response_t['gain/value_i'] = 0.
+            p_response_t['gain/units_s'] = 'Unknown'
+            
         p_response_t['bit_weight/units_s'] = 'mV/count'
         p_response_t['bit_weight/value_d'] = LSB
         if n_i < 0 :
@@ -630,12 +653,20 @@ def process_traces (rh, th, tr) :
         p_array_t['sample_rate_i'] = SD.sample_rate
         p_array_t['sample_rate_multiplier_i'] = 1
         p_array_t['deploy_time/type_s'] = 'BOTH'
-        f, i = modf (rh.extended_header_1.epoch_deploy / 1000000.)
+        try :
+            f, i = modf (rh.extended_header_1.epoch_deploy / 1000000.)
+        except Exception as e :
+            logging.warn ("Failed to read extended header 1 deploy epoch: {0}.".format (e.message))
+            f = i = 0.
         p_array_t['deploy_time/epoch_l'] = int (i)
         p_array_t['deploy_time/ascii_s'] = time.ctime (int(i))
         p_array_t['deploy_time/micro_seconds_i'] = int (f * 1000000.)
         p_array_t['pickup_time/type_s'] = 'BOTH'
-        f, i = modf (rh.extended_header_1.epoch_pickup / 1000000.)
+        try :
+            f, i = modf (rh.extended_header_1.epoch_pickup / 1000000.)
+        except Exception as e :
+            logging.warn ("Failed to read extended header 1 pickup epoch: {0}.".format (e.message))
+            f = i = 0.
         p_array_t['pickup_time/epoch_l'] = int (i)
         p_array_t['pickup_time/ascii_s'] = time.ctime (int(i))
         p_array_t['pickup_time/micro_seconds_i'] = int (f * 1000000.)
@@ -645,6 +676,7 @@ def process_traces (rh, th, tr) :
         try :
             p_array_t['das/model_s'] = DM[SD.chan_sets_per_scan]
         except Exception as e :
+            logging.warn ("Failed to read channel sets per scan: {0}.".format (e.message))
             p_array_t['das/model_s'] = 'zland-[13]C'
         p_array_t['das/serial_number_s'] = Das
         p_array_t['das/notes_s'] = "manufacturer and model not read from data file."
@@ -665,12 +697,26 @@ def process_traces (rh, th, tr) :
         p_array_t['location/Y/units_s'] = 'degrees'
         p_array_t['location/Y/value_d'] = LAT
         p_array_t['location/Z/units_s'] = 'unknown'
-        p_array_t['location/Z/value_d'] = th.trace_header_N[4].receiver_point_depth_final / 10.
+        try :
+            p_array_t['location/Z/value_d'] = th.trace_header_N[4].receiver_point_depth_final / 10.
+        except Exception as e :
+            logging.warn ("Failed to read receiver point depth: {0}.".format (e.message))
+            p_array_t['location/Z/value_d'] = 0.
+            
         p_array_t['channel_number_i'] = th.trace_header.channel_set
         #p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
-        p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format (Das, rh.extended_header_1.id_number)
+        try :
+            p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format (Das, rh.extended_header_1.id_number)
+        except Exception as e :
+            logging.warn ("Failed to read extended header 1 ID number: {0}.".format (e.message))
+            pass
         
-        line = th.trace_header_N[4].line_number
+        try :
+            line = th.trace_header_N[4].line_number
+        except Exception as e :
+            logging.warn ("Failed to read line number: {0}.".format (e.message))
+            line = 0
+            
         chan_set = th.trace_header.channel_set
         if not ARRAY_T.has_key (line) :
             ARRAY_T[line] = {}
@@ -761,7 +807,8 @@ def write_arrays (Array_t) :
     lines.sort ()
     #   Loop through arrays/lines
     for line in lines :
-        name = EX.ph5_g_sorts.nextName ()
+        #name = EX.ph5_g_sorts.nextName ()
+        name = "Array_t_{0:03d}".format (int(line))
         a = EX.ph5_g_sorts.newArraySort (name)
         stations = Array_t[line].keys ()
         stations.sort ()
@@ -956,7 +1003,7 @@ if __name__ == '__main__' :
             #DN = False; 
             RH = False
             #print "isSEGD"
-            if not SD.isSEGD () :
+            if not SD.isSEGD (expected_manufactures_code=MANUFACTURERS_CODE) :
                 sys.stdout.write (":<Error>: {0}\n".format (SD.name ())); sys.stdout.flush ()
                 logging.info ("{0} is not a Fairfield SEG-D file. Skipping.".format (SD.name ()))
                 continue
@@ -1029,17 +1076,20 @@ if __name__ == '__main__' :
                     break
                     
                 if not LAT and not LON :
-                    if UTM :
-                        #   UTM
-                        LAT, LON = utmcsptolatlon (SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.,
-                                                   SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.)
-                    elif TSPF :
-                        #   Texas State Plane coordinates
-                        LAT, LON = txncsptolatlon (SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.,
-                                                   SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.)
-                    else :
-                        LAT = SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.
-                        LON = SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.
+                    try :
+                        if UTM :
+                            #   UTM
+                            LAT, LON = utmcsptolatlon (SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.,
+                                                       SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.)
+                        elif TSPF :
+                            #   Texas State Plane coordinates
+                            LAT, LON = txncsptolatlon (SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.,
+                                                       SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.)
+                        else :
+                            LAT = SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.
+                            LON = SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.
+                    except Exception as e :
+                        logging.warn ("Failed to convert location: {0}.\n".format (e.message))
                 
                 trace_headers_list.append (SD.trace_headers)
                 #for cs in range (SD.chan_sets_per_scan) :
