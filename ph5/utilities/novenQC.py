@@ -14,7 +14,7 @@ import simplekml as kml
 
 import TimeDOY
 
-PROG_VERSION = "2016.286 Developmental"
+PROG_VERSION = "2017.086 Developmental"
 
 FACTS = { 'km':1000., 'm':1., 'dm':1./10., 'cm':1./100., 'mm':1./1000., 'kmi':1852.0, 'in':0.0254, 'ft':0.3048, 'yd':0.9144,
           'mi':1609.344, 'fath':1.8288, 'ch':20.1168, 'link':0.201168, 'us-in':1./39.37, 'us-ft':0.304800609601219, 'us-yd':0.914401828803658,
@@ -22,6 +22,8 @@ FACTS = { 'km':1000., 'm':1., 'dm':1./10., 'cm':1./100., 'mm':1./1000., 'kmi':18
 
 #  RE for type descripters, ie int31
 typeRE = re.compile ("(\D+)(\d+)")
+#
+timeRE = re.compile (".*time/ascii_s")
 
 #   List of table rows.
 TABLE = []
@@ -418,6 +420,15 @@ def qc_fields () :
             #   Check range
             if not match_range (v, rrange) :
                 ret.append ("{0}: Value of column {1} {2} does not match expected range. Range: {3}".format (n, key, v, rrange))
+            #   Check if ascii time
+            if timeRE.match (key) :
+                try :
+                    fepoch = TimeDOY.fdsn2epoch (v, fepoch=True)
+                except TimeDOY.TimeError :
+                    try :
+                        fepoch = TimeDOY.passcal2epoch (v, fepoch=True)
+                    except TimeDOY.TimeError :
+                        ret.append ("{0}: Value of column {1} {2} does not match expected time string".format (n, key, v))
                 
     return ret
 
