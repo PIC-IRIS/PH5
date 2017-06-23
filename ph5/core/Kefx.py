@@ -7,7 +7,7 @@
 import sys, os, string, re
 import columns
 
-PROG_VERSION = '2017.032 Developmental'
+PROG_VERSION = '2017.117 Developmental'
 
 #   This line contains a key/value entered as is
 #keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
@@ -63,7 +63,10 @@ class Kef :
         appnd = ""
         keyval = {}
         self.parsed = {}
-        path = None
+        self.keySets = {}                                # ADDED BY LAN
+        aKeySet = []                                     # ADDED BY LAN
+        self.pathCount = 0                                    # ADDED BY LAN
+        path = None     
  
         EOF = False
         sincepath = 0
@@ -103,9 +106,13 @@ class Kef :
                 
             #   This line contains the path to the table to update
             if line[0] == '/' :
+                self.pathCount += 1                          # ADDED BY LAN
                 if path :
                     self.parsed[path].append (keyval)
                     keyval = {}
+                    if not self.keySets.has_key(path):       # ADDED BY LAN
+                        self.keySets[path] = aKeySet         # ADDED BY LAN
+                        aKeySet = []                         # ADDED BY LAN
                     
                 path = line
                 sincepath = nchars * -1
@@ -125,11 +132,18 @@ class Kef :
                     self.parsed[path] = []
                     
                 keyval[key] = value
+                if not self.keySets.has_key(path):           # ADDED BY LAN
+                    aKeySet.append(key)                      # ADDED BY LAN
+                
             
         #   No limits on what to read
         if num == None or EOF :
             if keyval :
                 self.parsed[path].append (keyval)
+                if not self.keySets.has_key(path):           # ADDED BY LAN
+                    self.keySets[path] = aKeySet             # ADDED BY LAN
+                    aKeySet = []                             # ADDED BY LAN                
+                
         else :
             self.fh.seek (sincepath, os.SEEK_CUR)
         
