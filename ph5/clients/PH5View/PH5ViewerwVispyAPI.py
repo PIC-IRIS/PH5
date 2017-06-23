@@ -4,9 +4,9 @@
 #
 #   Lan Dam 
 #   
-#   Updated Feb 2017
+#   Updated May 2017
 
-PROG_VERSION = "2017.051 Developmental"
+PROG_VERSION = "2017.135 Developmental"
 
 import sys, os, time, math, gc, re
 sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
@@ -791,6 +791,7 @@ class Canvas(app.Canvas):
     #    self.timePos is used only in this function
     def timeDirection(self):
         #print "timeDirection"
+        if self.data == None: return
         if self.control.upRbtn.isChecked():
             if self.currDir == 'up':
                 f = 1
@@ -2017,6 +2018,7 @@ class Canvas(app.Canvas):
         conf = self.control.conf
 
         direct = -1 if self.control.upRbtn.isChecked() else 1
+        print "painting _ direct=", direct
         labelPos = self.labelPos
         if 'Z' in psType:   # paint the zoomed view
             v = self.defineViewWindow(0, 0, self.width, self.height)
@@ -2068,7 +2070,7 @@ class Canvas(app.Canvas):
                 or self.control.PH5Info['LEN'][ch][i]==0: continue
                 
                 p, = plt.plot(self.data[ch][i]['a_position'][:, 1], 
-                         direct*self.data[ch][i]['a_position'][:, 0],
+                         self.data[ch][i]['a_position'][:, 0],
                          c=self.data[ch][i]['a_color'][0], linewidth=thick)
                 if ch not in chLbls:
                     chLbls.append(ch)
@@ -2093,6 +2095,9 @@ class Canvas(app.Canvas):
         ax = plt.subplot(111)
         ax.set_xlim(minX, maxX)
         ax.set_ylim(minY, maxY)
+        
+        ax.set_ylim(ax.get_ylim()[::-1])
+            
         graphName = self.PH5View.graphName 
         if conf.has_key('addingInfo'): 
             graphName += conf['addingInfo']
@@ -2113,6 +2118,7 @@ class Canvas(app.Canvas):
                 if minY<=lbl['t']<=maxY:
                     y.append(lbl['t'])
                     yLabel.append(lbl['text'])
+
                 #else: print "[%s-%s] lbl['t']=%s" % (minY, maxY, lbl['t'])
             else:
                 if minX<=lbl['d']<=maxX:
@@ -2123,6 +2129,7 @@ class Canvas(app.Canvas):
         
         plt.tick_params(axis='both', which='major', labelsize=9)
         plt.xticks(x, xLabel)
+        if self.control.upRbtn.isChecked(): yLabel = yLabel[::-1]
         plt.yticks(y, yLabel)
         if legend:
             # http://matplotlib.org/api/pyplot_api.html: loc=2 => 'upper left'
@@ -2698,6 +2705,10 @@ class PH5Visualizer(QtGui.QMainWindow):
 
 
     def closeEvent(self, evt=None):
+        try:
+            for f in PH5VALFILES:
+                os.unlink(f)            # remove tmp file
+        except: pass
         QtCore.QCoreApplication.instance().quit()
         sys.exit(application.exec_())
 
@@ -2758,18 +2769,19 @@ class PH5Visualizer(QtGui.QMainWindow):
         
         if str(self.mainControl.velocityCtrl.text()).strip() in ['0','']:
             options['redVel'] = ''
+            options['offset'] = ''
         else:
             rv = float(self.mainControl.velocityCtrl.text())/1000.0
             options['redVel'] = '-V %f' % rv
+            options['offset'] = '-O %f' % float(self.mainControl.offsetCtrl.text())
 
         if self.submitGui == 'STATION':
             print "shot gather"
             #options['array'] = '-a %s' % self.selectedArray['arrayId']
             options['stations'] = '--station_list %s' % ','.join( PH5View.selectedArray['seclectedStations'] )
             options['event'] = '-e %s' % PH5View.selectedEvents[0]['eventId']
-            
             options['offset'] = '-O %f' % float(self.mainControl.offsetCtrl.text())
-
+            
             
             if self.mainControl.correctionCkb.isChecked():
                 options['timeCorrect'] = ''
@@ -2779,7 +2791,7 @@ class PH5Visualizer(QtGui.QMainWindow):
 
             #cmdStr = "ph5toseg %(event)s %(chan)s %(length)s %(offset)s %(stations)s" + \
                      #"%(redVel)s %(timeCorrect)s %(ph5Path)s %(nickname)s %(outputDir)s" 
-            cmdStr = "ph5toevt %(shotLine)s %(array)s %(event)s %(chan)s %(length)s %(offset)s %(stations)s" + \
+            cmdStr = "ph5toevt %(shotLine)s %(array)s %(event)s %(chan)s %(length)s %(offset)s %(stations)s " + \
                      "%(redVel)s %(timeCorrect)s %(ph5Path)s %(nickname)s %(outputDir)s"             
             
             
@@ -2792,11 +2804,24 @@ class PH5Visualizer(QtGui.QMainWindow):
             #cmdStr = "recvorder %(chan)s %(station)s %(events)s %(length)s " + \
                      #"%(redVel)s %(ph5Path)s %(nickname)s %(outputDir)s"            
             cmdStr = "ph5torec %(shotLine)s %(array)s %(chan)s %(station)s %(events)s %(length)s " + \
-                     "%(redVel)s %(ph5Path)s %(nickname)s %(outputDir)s"                
+                     "%(redVel)s %(offset)s %(ph5Path)s %(nickname)s %(outputDir)s"                
                 
-        print cmdStr % options
-        os.system(cmdStr % options)       
         
+        from subprocess import Popen, PIPE, STDOUT
+
+        p = Popen(cmdStr % options, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+        output = p.stdout.read()
+        print "The following command is running:"
+        print cmdStr % options
+        print "Output: ", output        
+        #os.system(cmdStr % options)       
+        if 'Done' in output:
+            msg = "SEGY file has been saved successfully into directory %s" % segyDir
+            QtGui.QMessageBox.warning(self, "Successfully Saving SEGY File", msg)
+        else:
+            msg = "Unsuccessfully creating SEGY file due to the error: %s" % output
+            QtGui.QMessageBox.warning(self, "Unsuccessfully Saving SEGY File", msg)
+            
     
     def onExplain(self):
         self.helpEnable = not self.helpEnable
@@ -3300,13 +3325,14 @@ class MainControl(QtGui.QMainWindow):
                               "Take effect right after selected"
         directionBox.addWidget(self.downRbtn)
         self.downRbtn.clicked.connect(self.onChangeDirection)
+        self.downRbtn.setChecked(True)
         
         self.upRbtn = QtGui.QRadioButton('Up   ')       ; self.upRbtn.installEventFilter(self)
         self.EXPL[self.upRbtn] = "Drawing with time grow from bottom to top.\n" +\
                               "Take effect right after selected"
         directionBox.addWidget(self.upRbtn)
         self.upRbtn.clicked.connect(self.onChangeDirection)
-        self.upRbtn.setChecked(True)
+        
         
         direction = QtGui.QButtonGroup(self)
         direction.addButton(self.downRbtn)
@@ -3389,10 +3415,22 @@ class MainControl(QtGui.QMainWindow):
         
         vbox.addStretch(1)
         mainbox.addStretch(1)
-        extraBox = QtGui.QVBoxLayout(); mainbox.addLayout(extraBox)
-        self.statusLbl = QtGui.QLabel()
-        extraBox.addWidget(self.statusLbl)
-        extraBox.addStretch(1)
+        #extraBox = QtGui.QVBoxLayout(); mainbox.addLayout(extraBox)
+        #self.statusLbl = QtGui.QLabel()
+        #extraBox.addWidget(self.statusLbl)
+        scrollArea = QtGui.QScrollArea(self)
+        mainbox.addWidget(scrollArea)
+        scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scrollArea.setWidgetResizable(True)
+    
+        itemsFrame = QtGui.QFrame(); scrollArea.setWidget(itemsFrame)
+        scrollBox = QtGui.QVBoxLayout() 
+        itemsFrame.setLayout(scrollBox)
+        self.statusLbl = QtGui.QLabel('', self)   
+        scrollBox.addWidget(self.statusLbl)
+               
+
+        scrollBox.addStretch(1)
         global statusBar
         statusBar = self.statusBar()
         self.setWidgetsEnabled(False)
@@ -3822,6 +3860,15 @@ class MainControl(QtGui.QMainWindow):
         keepList = {}
         prevVal = 0
         #print "len(val)=", len(val)
+        if simplFactor == 0 :
+            for ch in self.channels:
+                keepList[ch] = []
+                staNo = len(val[ch])                
+                for i in range(staNo):
+                    keepList[ch].append( range(len(val[ch][i])) )
+            return keepList
+        
+        
         for ch in self.channels:
             keepList[ch] = []
             staNo = len(val[ch])
@@ -3861,7 +3908,6 @@ class MainControl(QtGui.QMainWindow):
     
                 if i == staNo-1: break
         
-        #print "keepList =", keepList   
         return keepList
 
     ###################################
@@ -3924,8 +3970,8 @@ class MainControl(QtGui.QMainWindow):
                 #pass
             
         #print "len(zerolist)=",self.PH5Info['zerosList']
-        if self.PH5Info['noDataList'] != '':
-            msg = "The following items have no data return:" + self.PH5Info['noDataList']
+        if self.PH5Info['noDataList'] != []:
+            msg = "The following items have no data return:\n" + "\n".join(self.PH5Info['noDataList'])
             if len(self.PH5Info['noDataList'])<=1000:
                 QtGui.QMessageBox.question(self, 'Information', msg, QtGui.QMessageBox.Ok) 
             else:
@@ -4008,9 +4054,9 @@ class MainControl(QtGui.QMainWindow):
         
         start = time.time()
         if appNewSimpFactor or createFromBeg:
-            if self.distance2AvgSB.value() > 0:
-                simplFactor = self.distance2AvgSB.value()/100.
-                self.keepList = self.getKeepList(val, simplFactor)
+            simplFactor = self.distance2AvgSB.value()/100.
+            self.keepList = self.getKeepList(val, simplFactor)
+            #print "keepList:", self.keepList
 
         end = time.time()
         processInfo += "\nGetting keep list: %s seconds" % (end-start)
@@ -4566,9 +4612,9 @@ class Properties(QtGui.QDialog):
         if col.isValid():
             self.sender().setStyleSheet("QWidget { background-color: %s }" % col.name())
             
-        for ch in range(len(self.plotColBtns)):
-            for pb in self.plotColBtns[ch]:
-                pb.setStyleSheet("QWidget { background-color: %s }" % col.name())       
+        #for ch in range(len(self.plotColBtns)):
+            #for pb in self.plotColBtns[ch]:
+                #pb.setStyleSheet("QWidget { background-color: %s }" % col.name())       
             
 
     ###################################
@@ -4706,6 +4752,9 @@ class ArrayGui(QtGui.QWidget):
         self.statusCtrl.setText("Graph Name is '%s'. Click on Properties in Control tab to change name of the graph" % graphName)
 
 
+
+ENABLEDCOLOR = QtGui.QColor(100, 100, 250, 100 ).name()    
+DISABLEDCOLOR = QtGui.QColor(225, 225, 225, 100 ).name() 
 # Event_Station
 class ES_Gui(QtGui.QWidget):   
     def __init__(self, parent, ESType, array, submitType=False):     #ESType=EVENT/STATION; submitType=True/False
@@ -4984,19 +5033,20 @@ class ES_Gui(QtGui.QWidget):
         if self.submitType :
             allChk = QtGui.QCheckBox('')
             allChk.setChecked(True)
-            self.ESGrid.addWidget(allChk,0,0)
+            self.ESGrid.addWidget(allChk,0,1)
             allChk.installEventFilter(self)
             self.EXPL[allChk] = "Click to select/deselect ALL events"
             allChk.clicked.connect(self.onSelectAllEvents)
         else: eventGroup = QtGui.QButtonGroup(self)
         
-        self.ESGrid.addWidget(QtGui.QLabel('eventId'),0,1)
-        self.ESGrid.addWidget(QtGui.QLabel('Time'),0,2)
-        self.ESGrid.addWidget(QtGui.QLabel('Latitude'),0,3)
-        self.ESGrid.addWidget(QtGui.QLabel('Longitude'),0,4)
-        self.ESGrid.addWidget(QtGui.QLabel('Elevation(m)'),0,5)
-        self.ESGrid.addWidget(QtGui.QLabel('Mag'),0,6)
-        self.ESGrid.addWidget(QtGui.QLabel('Depth(m)'),0,7)
+        self.ESGrid.addWidget(QtGui.QLabel('eventId'),0,2)
+        self.ESGrid.addWidget(QtGui.QLabel('Time'),0,3)
+        self.ESGrid.addWidget(QtGui.QLabel('Latitude'),0,4)
+        self.ESGrid.addWidget(QtGui.QLabel('Longitude'),0,5)
+        self.ESGrid.addWidget(QtGui.QLabel('Elevation(m)'),0,6)
+        self.ESGrid.addWidget(QtGui.QLabel('Mag'),0,7)
+        self.ESGrid.addWidget(QtGui.QLabel('Depth(m)'),0,8)
+        
         self.eventChks = []
         self.evenIDList = []
         self.selectedEventChks = []        
@@ -5007,27 +5057,33 @@ class ES_Gui(QtGui.QWidget):
             if e['eStop']<self.array['deployT'] or e['eStart']>self.array['pickupT']: continue
             self.array['events'].append(e)
             self.evenIDList.append(e['eventId'])
+            e['markLbl'] = QtGui.QLabel(self.ESPane)
+            e['markLbl'].setFixedWidth(20)
+            e['markLbl'].setFixedHeight(20)
+            self.ESGrid.addWidget(e['markLbl'], lineSeq, 0)
+            
             if not self.submitType: # shot gather: user click on an event to open stations' form
                 e['eventRbtn'] = QtGui.QRadioButton(self.ESPane)
                 e['eventRbtn'].installEventFilter(self)
                 self.EXPL[e['eventRbtn']] = "Click this event to select/deselect."
                 e['eventRbtn'].clicked.connect(self.onSelectEvent)
-                self.ESGrid.addWidget(e['eventRbtn'], lineSeq, 0)
+                self.ESGrid.addWidget(e['eventRbtn'], lineSeq, 1)
                 eventGroup.addButton(e['eventRbtn'])
             else: # receiver gather. This form was opened when user select a station. User can select multi events befor submitting
                 e['eventChk'] = QtGui.QCheckBox('', self.ESPane)
+                self.eventChks.append(e['eventChk'])
                 e['eventChk'].setChecked(True)
                 e['eventChk'].installEventFilter(self)
                 e['eventChk'].clicked.connect(self.onSelectEventRange)
                 self.EXPL[e['eventChk']] = "Click to select this event"
-                self.ESGrid.addWidget(e['eventChk'], lineSeq, 0)
-            self.addLabel(self.ESGrid, str(e['eventId']), lineSeq, 1)
-            self.addLabel(self.ESGrid, TimeDOY.epoch2passcal(e['eStart']), lineSeq, 2)
-            self.addLabel(self.ESGrid, str(e['lat.']), lineSeq, 3)
-            self.addLabel(self.ESGrid, str(e['long.']), lineSeq, 4)
-            self.addLabel(self.ESGrid, str(e['elev.']), lineSeq, 5)
-            self.addLabel(self.ESGrid, str(e['mag.']), lineSeq, 6)
-            self.addLabel(self.ESGrid, str(e['depth']), lineSeq, 7)
+                self.ESGrid.addWidget(e['eventChk'], lineSeq, 1)
+            self.addLabel(self.ESGrid, str(e['eventId']), lineSeq, 2)
+            self.addLabel(self.ESGrid, TimeDOY.epoch2passcal(e['eStart']), lineSeq, 3)
+            self.addLabel(self.ESGrid, str(e['lat.']), lineSeq, 4)
+            self.addLabel(self.ESGrid, str(e['long.']), lineSeq, 5)
+            self.addLabel(self.ESGrid, str(e['elev.']), lineSeq, 6)
+            self.addLabel(self.ESGrid, str(e['mag.']), lineSeq, 7)
+            self.addLabel(self.ESGrid, str(e['depth']), lineSeq, 8)
             lineSeq += 1
         self.selectedEventChks = list(range(len(self.eventChks)))
         self.onSelectShot()
@@ -5228,7 +5284,6 @@ class ES_Gui(QtGui.QWidget):
             self.stationChks[i].setCheckState(QtCore.Qt.Checked)      
                 
                 
-                
     # def: onSelectShot
     # Author: Lan Dam
     # updated: 201702
@@ -5236,7 +5291,6 @@ class ES_Gui(QtGui.QWidget):
     # will be enabled otherwise will be disabled
     def onSelectShot(self, state=None):
         #print "onSelectShot"
-
         if state != None:
             index = self.shotCtrls.index(self.sender())
         else:
@@ -5251,9 +5305,11 @@ class ES_Gui(QtGui.QWidget):
             if e['shotlineId']== self.PH5View.events['shotLines'][index]:
                 e[ctrlName].setEnabled(True)
                 e[ctrlName].setChecked(True)
+                e['markLbl'].setStyleSheet(" background-color: %s" % ENABLEDCOLOR)
             else:
                 e[ctrlName].setEnabled(False)
                 e[ctrlName].setChecked(False)
+                e['markLbl'].setStyleSheet(" background-color: %s" % DISABLEDCOLOR)
 
             
                     
