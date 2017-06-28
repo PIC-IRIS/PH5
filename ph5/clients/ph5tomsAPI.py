@@ -37,7 +37,7 @@ import itertools
 import ph5utils
 
 
-PROG_VERSION = "2017.159"
+PROG_VERSION = "2017.179"
 
 
 class StationCut(object):
@@ -287,6 +287,7 @@ class PH5toMSeed(object):
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments([station_to_cut], self.restricted)
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
+            new_endtime= stc.endtime+(1/float(stc.sample_rate))
             self.ph5.read_das_t(stc.das, stc.starttime,
                                 stc.endtime, reread=False)
     
@@ -305,8 +306,7 @@ class PH5toMSeed(object):
                 start_time = das_t_start
                 start_time_no_micro = int(das_t_start_no_micro)
                 start_time_micro_seconds = int(das_t_start_micro_seconds)
-                if start_time_micro_seconds > 0:
-                    stc.endtime += .0001
+ 
     
             else:
                 start_time = stc.starttime
@@ -316,22 +316,27 @@ class PH5toMSeed(object):
             nt = stc.notimecorrect
 
             traces = self.ph5.cut(stc.das, start_time,
-                                  stc.endtime,
+                                  new_endtime,
                                   chan=stc.channel,
                                   sample_rate=stc.sample_rate,
                                   apply_time_correction=nt)
     
             if type(traces) is not list:
                 return
-    
+
             for trace in traces:
                 if trace.nsamples == 0:
                     continue
-    
+                # if start time is before requested start time move up 1 sample and delete first sample of data
+                if trace.start_time.epoch() < stc.starttime:
+                    trace.start_time = trace.start_time+(1/float(stc.sample_rate))
+                    trace.data=trace.data[1:]
+
                 try:
                     obspy_trace = Trace(data=trace.data)
                 except ValueError:
                     continue
+                
                 
                 obspy_trace.stats.sampling_rate = stc.sample_rate
                 obspy_trace.stats.location = stc.location
@@ -342,7 +347,6 @@ class PH5toMSeed(object):
                 obspy_trace.stats.channel = stc.seed_channel
                 obspy_trace.stats.network = stc.net_code
                 obspy_trace.stats.starttime = trace.start_time.getFdsnTime()
-
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)
