@@ -501,12 +501,12 @@ class PH5toStationXML(object):
                    self.args.get('component_list') != ['*'] or self.args.get('receiver_list') != ['*']:
                     obs_channels = self.read_channels(station_list)    
                     obs_station.channels = obs_channels
-                    obs_station.total_number_of_channels = len(sta_list)
+                    obs_station.total_number_of_channels = len(station_list)
                     obs_station.selected_number_of_channels = len(obs_channels)
                     if obs_station and obs_station.selected_number_of_channels == 0:
                         continue
                 else:
-                    obs_station.total_number_of_channels = len(sta_list)
+                    obs_station.total_number_of_channels = len(station_list)
                     obs_station.selected_number_of_channels = 0
                 all_stations.append(obs_station)             
         return all_stations
