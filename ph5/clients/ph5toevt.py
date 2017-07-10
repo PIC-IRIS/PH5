@@ -9,7 +9,7 @@ import os, sys, logging
 #sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2017.135 Developmental"
+PROG_VERSION = "2017.186 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -87,8 +87,8 @@ def get_args () :
                          help="Time in seconds from shot time to start the trace.",
                          type=float, default=0.)
     #   Do not time correct texan data
-    parser.add_argument ("-N", "--notimecorrect", action="store_true", default=False,
-                        dest="no_time_correct")
+    parser.add_argument ("-N", "--notimecorrect", action="store_false", default=True,
+                        dest="do_time_correct")
     #   Output directory
     parser.add_argument ("-o", "--out_dir", action="store", dest="out_dir", 
                          metavar="out_dir", type=str, default=".")
@@ -212,6 +212,7 @@ def gather () :
             event_tdoy = TimeDOY.TimeDOY (microsecond = event_t['time/micro_seconds_i'], 
                                           epoch = event_t['time/epoch_l'])
             Offset_t = P5.read_offsets_shot_order (ARGS.station_array, evt, ARGS.shot_line)
+            #Offset_t = P5.calc_offsets (ARGS.station_array, evt, ARGS.shot_line)
         else :
             event_tdoy = evt
             Offset_t = None
@@ -299,7 +300,8 @@ def gather () :
                     
                     if das_or_fail == None :
                         logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, TimeDOY.epoch2passcal (start_epoch), TimeDOY.epoch2passcal (stop_epoch)))
-                        continue                        
+                        continue
+                    
                     #   Sample rate
                     if P5.Das_t.has_key (array_t[c][t]['das/serial_number_s']) :
                         sr = float (P5.Das_t[array_t[c][t]['das/serial_number_s']]['rows'][0]['sample_rate_i']) / float (P5.Das_t[array_t[c][t]['das/serial_number_s']]['rows'][0]['sample_rate_multiplier_i'])     
@@ -315,27 +317,40 @@ def gather () :
                         logging.warn ("Warning: Sample rate for {0} is not {1}. Skipping.".format (das, sr))
                         continue
                     sf.set_length_points (int ((stop_fepoch - start_fepoch) * sr))
+                    
                     ###   Need to apply reduction velocity here
+                    #   Set cut start and stop times
+                    cut_start_fepoch = start_fepoch
+                    cut_stop_fepoch = stop_fepoch                                      
                     if ARGS.red_vel > 0. :
+                                               
                         try :
                             secs, errs = SEGYFactory.calc_red_vel_secs (offset_t, ARGS.red_vel)
                         except Exception as e :
                             secs = 0.
                             errs = "Can not calculate reduction velocity: {0}.".format (e.message)
                         for e in errs : logging.info (e)
-                        start_fepoch += secs
-                        stop_fepoch += secs  
+                        cut_start_fepoch += secs
+                        cut_stop_fepoch += secs  
                     #
-                    sf.set_cut_start_epoch (start_fepoch)
+                    sf.set_cut_start_epoch (cut_start_fepoch)
                     sf.set_array_t (array_t[c][t])
                     #
                     ###   Cut trace
                     #     Need to pad iff multiple traces
-                    traces = P5.cut (das, start_fepoch, stop_fepoch, chan=c, sample_rate=sr)
+                    traces = P5.cut (das, cut_start_fepoch, cut_stop_fepoch, chan=c, sample_rate=sr, apply_time_correction=ARGS.do_time_correct)
                     if len (traces[0].data) == 0 :
                         logging.warn ("Warning: No data found for {0} for station {1}.".format (das, sta))
                         continue
                     trace = ph5API.pad_traces (traces)
+                    if ARGS.do_time_correct :
+                        logging.info ("Applied time drift correction by shifting trace by {0} samples.".format (-1 * sr * (trace.time_correction_ms/1000.)))
+                        logging.info ("Correction is {0} ms.".format (trace.time_correction_ms))
+                        logging.info ("Clock drift (seconds/second): {0}".format (trace.clock.slope))
+                        for tccomment in trace.clock.comment :
+                            tccmt = tccomment.split ('\n')
+                            for tcc in tccmt :
+                                logging.info ("Clock comment: {0}".format (tcc))
                     if trace.padding != 0 :
                         logging.warn ("Warning: There were {0} samples of padding added to fill gap at middle or end of trace.".format (trace.padding))
                     ##   This may be a command line option later
@@ -403,7 +418,7 @@ def gather () :
                                 sys.exit (-1)
                         else :
                             #
-                            ###   Set up file nameing
+                            ###   Set up file naming
                             #
                             try :
                                 nickname = P5.Experiment_t['rows'][-1]['nickname_s']
