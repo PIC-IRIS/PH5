@@ -70,7 +70,7 @@ def read_infile (infile) :
         sys.stderr.write ("Warning: Failed to open %s\n" % infile)
         return
         
-    while 1 :
+    while True :
         line = fh.readline ()
         if not line : break
         line = line.strip ()
@@ -123,22 +123,22 @@ def get_args () :
     if args.outfile != None :
         PH5 = args.outfile
     
-        if PH5 == None :
-            #print H5, FILES
-            sys.stderr.write ("Error: Missing required option. Try --help\n")
-            sys.exit ()
+    if PH5 == None :
+        #print H5, FILES
+        sys.stderr.write ("Error: Missing required option. Try --help\n")
+        sys.exit ()
+        
+    if not os.path.exists (PH5) and not os.path.exists (PH5 + '.ph5') :
+        sys.stderr.write ("Error: %s does not exist!\n" % PH5)
+        sys.exit ()
             
-        if not os.path.exists (PH5) and not os.path.exists (PH5 + '.ph5') :
-            sys.stderr.write ("Error: %s does not exist!\n" % PH5)
-            sys.exit ()
-                
-        else :
-            #   Set up logging
-            logging.basicConfig (
-                filename = os.path.join ('.', "grao2ph5.log"),
-                format = "%(asctime)s %(message)s",
-                level = logging.INFO
-            )
+    else :
+        #   Set up logging
+        logging.basicConfig (
+            filename = os.path.join ('.', "grao2ph5.log"),
+            format = "%(asctime)s %(message)s",
+            level = logging.INFO
+        )
             
 def initializeExperiment () :
     global EX
@@ -450,7 +450,7 @@ if __name__ == '__main__' :
                     updatePH5 (stream)
                 else :
                     logging.info ("No data found for {0} at {1}.".format (flds[2],
-                                                                   start_time))
+                                                                          start_time))
                     time.sleep (3)
                 e = tdoy0.epoch (fepoch=True) + int (flds[7])
                 tdoy0 = TimeDOY.TimeDOY (epoch=e)
