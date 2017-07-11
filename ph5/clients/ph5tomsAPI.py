@@ -37,7 +37,7 @@ import itertools
 import ph5utils
 
 
-PROG_VERSION = "2017.179"
+PROG_VERSION = "2017.192"
 
 
 class StationCut(object):
@@ -314,11 +314,12 @@ class PH5toMSeed(object):
                 start_time_micro_seconds = 0
     
             nt = stc.notimecorrect
+            actual_sample_rate=float(stc.sample_rate)/float(stc.sample_rate_multiplier)
 
             traces = self.ph5.cut(stc.das, start_time,
                                   new_endtime,
                                   chan=stc.channel,
-                                  sample_rate=stc.sample_rate,
+                                  sample_rate=actual_sample_rate,
                                   apply_time_correction=nt)
     
             if type(traces) is not list:
@@ -338,7 +339,7 @@ class PH5toMSeed(object):
                     continue
                 
                 
-                obspy_trace.stats.sampling_rate = stc.sample_rate
+                obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
                 obspy_trace.stats.coordinates = AttribDict()
@@ -890,3 +891,4 @@ if __name__ == '__main__':
     sys.stdout.write(str(tm() - then))
     
     ph5API_object.close()
+
