@@ -312,8 +312,9 @@ class PH5toStationXML(object):
             station_list[deployment][0]['deploy_time/epoch_l'])
         obs_channel.end_date = datetime.datetime.fromtimestamp(
             station_list[deployment][0]['pickup_time/epoch_l'])
-        obs_channel.sample_rate = station_list[
-            deployment][0]['sample_rate_i']
+        obs_channel.sample_rate = float(station_list[
+            deployment][0]['sample_rate_i'])/float(station_list[
+            deployment][0]['sample_rate_multiplier_i'])
         obs_channel.sample_rate_ration = station_list[
             deployment][0]['sample_rate_multiplier_i']
         obs_channel.storage_format = "PH5"
