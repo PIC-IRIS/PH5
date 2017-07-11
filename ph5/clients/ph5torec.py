@@ -9,7 +9,7 @@ import os, sys, logging
 #sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 import ph5API, SEGYFactory, decimate, TimeDOY
 
-PROG_VERSION = "2017.135 Developmental"
+PROG_VERSION = "2017.186 Developmental"
 #   This should never get used. See ph5API.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -118,8 +118,8 @@ def get_args () :
     parser.add_argument ("--break_standard", action = "store_false", dest = "break_standard",
                          help = "Force traces to be no longer than 2^15 samples.", default = True)
     #   Do not time correct texan data
-    parser.add_argument ("-N", "--notimecorrect", action="store_true", default=False,
-                         dest="no_time_correct")
+    parser.add_argument ("-N", "--notimecorrect", action="store_false", default=True,
+                         dest="do_time_correct")
     parser.add_argument ("--debug", dest = "debug", action = "store_true", default = False)
     
     ARGS = parser.parse_args ()
@@ -284,6 +284,14 @@ def gather () :
                     #                    
                     traces = P5.cut (das, start_fepoch, stop_fepoch, chan=c, sample_rate=sr)
                     trace = ph5API.pad_traces (traces)
+                    if ARGS.do_time_correct :
+                        logging.info ("Applied time drift correction by shifting trace by {0} samples.".format (-1 * sr * (trace.time_correction_ms/1000.)))
+                        logging.info ("Correction is {0} ms.".format (trace.time_correction_ms))
+                        logging.info ("Clock drift (seconds/second): {0}".format (trace.clock.slope))
+                        for tccomment in trace.clock.comment :
+                            tccmt = tccomment.split ('\n')
+                            for tcc in tccmt :
+                                logging.info ("Clock comment: {0}".format (tcc))                    
                     if trace.nsamples == 0 :
                         logging.info ("No data found for DAS {0} between {1} and {2}.".format (das, event_tdoy.getPasscalTime (), end_tdoy.getPasscalTime ()))
                         continue
@@ -397,7 +405,7 @@ def gather () :
                             sys.exit ()
                 #
         #   Traces found does not match traces expected
-        if i != num_traces :
+        if fh and i != num_traces :
             #   Need to update reel_header
             logging.warn ("Wrote {0} of {1} traces listed in {2}.".format (i, num_traces, ARGS.station_array))
             sf.set_text_header (i)
@@ -407,7 +415,7 @@ def gather () :
             fh.seek (3200, os.SEEK_SET)
             sf.write_reel_header (fh)
             
-        fh.close ()
+        if fh : fh.close ()
 
 if __name__ == '__main__' :
     #global STATIONS_ALL, SHOTS_ALL

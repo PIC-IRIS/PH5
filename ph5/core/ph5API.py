@@ -10,11 +10,11 @@ import numpy as np
 from pyproj import Geod
 import columns, Experiment, TimeDOY
 
-PROG_VERSION = '2017.170.a Developmental'
+PROG_VERSION = '2017.188 Developmental'
 PH5VERSION = columns.PH5VERSION
 
-#   No time corrections applied if slope exceeds this value, normally 0.01 (1%)
-MAX_DRIFT_RATE = 0.01
+#   No time corrections applied if slope exceeds this value, normally 0.001 (.1%)
+MAX_DRIFT_RATE = 0.001
 
 __version__ = PROG_VERSION
 
@@ -99,12 +99,33 @@ class Cut (object) :
                                            TimeDOY.epoch2passcal (w[1]))
             
         return ret
+
+class Clock (object) :
+    '''   Clock performance
+          slope -> Drift rate in seconds/second
+          offset_secs -> The offset of the clock at offload
+          max_drift_rate_allowed -> The maximum allowed drift rate for time corrections
+          comment -> Comment on clock performance
+    '''
+    __slots__ = ('slope', 'offset_secs', 'max_drift_rate_allowed', 'comment')
+    def __init__ (self, slope=0., offset_secs=0., max_drift_rate_allowed=1.) :
+        self.slope = slope
+        self.offset_secs = offset_secs
+        self.max_drift_rate_allowed = max_drift_rate_allowed
+        self.comment = []
+        
+    def __repr__ (self) :
+        return "Slope: {0}\nMaximum slope: {1}\nOffload offset: {2}\nComment: {3}\n".format (self.slope,
+                                                                                             self.max_drift_rate_allowed,
+                                                                                             self.offset_secs,
+                                                                                             self.comment)
         
 class Trace (object) :
     '''   PH5 trace object:
           data -> Numpy array of trace data points
           start_time -> TimeDOY time object
           time_correction_ms -> The correction to account for ocillator drift
+          clock -> Clock performance object
           nsamples -> Number of data samples, ie. length of data
           padding -> Number of samples padding as a result of gaps
           sample_rate -> Number of samples per second as a float
@@ -116,11 +137,12 @@ class Trace (object) :
           Methods:
           time_correct -> Apply any time corrections and return a TimeDOY object
     '''
-    __slots__ = ('data', 'start_time', 'time_correction_ms', 'nsamples', 'padding', 'sample_rate', 'ttype', 'byteorder', 'das_t', 'receiver_t', 'response_t', 'time_correct')
-    def __init__ (self, data, fepoch, time_correction_ms, nsamples, sample_rate, ttype, byteorder, das_t, receiver_t, response_t) :
+    __slots__ = ('data', 'start_time', 'time_correction_ms', 'clock', 'nsamples', 'padding', 'sample_rate', 'ttype', 'byteorder', 'das_t', 'receiver_t', 'response_t', 'time_correct')
+    def __init__ (self, data, fepoch, time_correction_ms, nsamples, sample_rate, ttype, byteorder, das_t, receiver_t, response_t, clock=Clock ()) :
         self.data = data
         self.start_time = TimeDOY.TimeDOY (epoch=fepoch)
         self.time_correction_ms = time_correction_ms
+        self.clock = clock
         self.nsamples = nsamples
         self.sample_rate = sample_rate
         self.ttype = ttype
@@ -831,15 +853,27 @@ class ph5 (Experiment.ExperimentGroup) :
         if not self.Das_t.has_key (das) :   
             return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, [], None, None)]
         Das_t = filter_das_t (self.Das_t[das]['rows'], chan)
+        #
+        #   We shift the samples to match the requested start time to apply the time correction
+        #
+        clock = Clock ()
         if apply_time_correction :
             Time_t = self.get_time_t (das)
-            time_cor_guess_ms = _cor (start_fepoch, stop_fepoch, Time_t)
+            time_cor_guess_ms, clock = _cor (start_fepoch, stop_fepoch, Time_t)
             if self.Das_t.has_key (das) :
                 sr = sample_rate
-            else : sr = 0.
-            time_cor_guess_samples = sr * (time_cor_guess_ms / 1000.)
+                si = 1. / float (sr)
+            else : 
+                sr = 0.
+                si = 0.
+            time_cor_guess_secs = abs (time_cor_guess_ms / 1000.)
+            if time_cor_guess_secs > si :
+                time_cor_guess_samples = int ((sr * (time_cor_guess_ms / 1000.)) + 0.5)
+            else :
+                time_cor_guess_samples = 0
         else :
-            time_cor_guess_samples = 0.
+            clock.comment.append ("No time correction applied.")
+            time_cor_guess_samples = 0
             
         samples_read = 0
         first = True
@@ -882,8 +916,8 @@ class ph5 (Experiment.ExperimentGroup) :
             #
             if first :
                 #   Correct start time to 'actual' time of first sample
-                if not d['raw_file_name_s'].endswith('rg16'):
-                    start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
+                #start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
+                start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
                 if trace_start_fepoch == None :
                     trace_start_fepoch = start_fepoch            
                 #print TimeDOY.TimeDOY (epoch=start_fepoch)
@@ -917,7 +951,8 @@ class ph5 (Experiment.ExperimentGroup) :
                                    current_trace_byteorder, 
                                    das_t, 
                                    None,                    #   receiver_t
-                                   None)                    #   response_t
+                                   None,                    #   response_t
+                                   clock=clock)                    
                     traces.append (trace)
                     #
                     ###   Start of trace after gap
@@ -943,7 +978,7 @@ class ph5 (Experiment.ExperimentGroup) :
 
         #   Done reading all the traces catch the last bit
         if data is None:
-            return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, das_t, None, None)]
+            return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, das_t, None, None, clock=clock)]
         
         trace = Trace (data, 
                        trace_start_fepoch, 
@@ -954,7 +989,8 @@ class ph5 (Experiment.ExperimentGroup) :
                        current_trace_byteorder, 
                        das_t, 
                        None,                    #   receiver_t
-                       None)                    #   response_t
+                       None,                    #   response_t
+                       clock=clock)                    
         
         traces.append (trace)
         if das_t :
@@ -969,11 +1005,14 @@ class ph5 (Experiment.ExperimentGroup) :
             if apply_time_correction :
                 window_start_fepoch0 = t.start_time
                 window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
-                try :    
-                    time_correction = _cor (window_start_fepoch0, window_stop_fepoch, Time_t)
-                except APIError as e :
-                    sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
-                    time_correction = 0.
+                #try :    
+                time_correction, clock = _cor (window_start_fepoch0.epoch (fepoch=True), window_stop_fepoch.epoch (fepoch=True), Time_t)
+                if time_correction != time_cor_guess_ms :
+                    t.clock.comment.append ("Time correction mismatch. {0}ms/{1}ms".format (time_correction, time_cor_guess_ms))
+                    
+                #except APIError as e :
+                    #sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
+                    #time_correction = 0.
             else :
                 time_correction = 0.
             #   Set time correction    
@@ -1188,10 +1227,11 @@ def pad_traces (traces) :
                  0.,                      #   Gets set at end
                  traces[0].sample_rate,   #   Should not change 
                  traces[0].ttype,         #   Should not change
-                 traces[0].byteorder,      #   Should not change
+                 traces[0].byteorder,     #   Should not change
                  traces[0].das_t,         #   Gets appended to
                  traces[0].receiver_t,    #   Should not change
-                 traces[0].response_t)    #   Should not change
+                 traces[0].response_t,    #   Should not change
+                 clock=traces[0].clock)    
     ret.start_time = traces[0].start_time
     
     end_time0 = None
@@ -1444,10 +1484,11 @@ def fepoch (epoch, ms) :
     
     return epoch + secs
 
-def _cor (start_fepoch, stop_fepoch, Time_t) :
+def _cor (start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE) :
     '''   Calculate clock correction in miliseconds   '''
+    clock = Clock ()
     if not Time_t :
-        return 0
+        Time_t = []
     
     time_t = None
     for t in Time_t :
@@ -1458,19 +1499,23 @@ def _cor (start_fepoch, stop_fepoch, Time_t) :
             break
         
     if time_t == None :
-        return 0
+        clock.comment.append ("No clock drift information available.")
+        return 0., clock
+    
+    clock = Clock (slope=time_t['slope_d'], offset_secs=time_t['offset_d'], max_drift_rate_allowed=max_drift_rate)
     #   Handle fixed offset correction
     if time_t['slope_d'] == 0. and time_t['offset_d'] != 0. :
-        return 1000. * time_t['offset_d']
+        return 1000. * time_t['offset_d'], clock
     
     if abs (time_t['slope_d']) > MAX_DRIFT_RATE :
-        raise APIError (-2, "Drift rate exceeds {0} percent.".format (MAX_DRIFT_RATE * 100))
+        clock.comment.append ("Clock drift rate exceeds maximum drift rate.")
+        #raise APIError (-2, "Drift rate exceeds {0} percent.".format (MAX_DRIFT_RATE * 100))
     
     mid_fepoch = start_fepoch + ((stop_fepoch - start_fepoch) / 2.)
     delta_fepoch = mid_fepoch - data_start
     
-    time_correction_ms = int (time_t['slope_d'] * 1000. * delta_fepoch) * -1
-    return time_correction_ms
+    time_correction_ms = int (time_t['slope_d'] * (delta_fepoch * 1000.)) * -1
+    return time_correction_ms, clock
 #
 ###
 #
@@ -1514,12 +1559,12 @@ if __name__ == '__main__' :
     ##   Initialize PH5
     #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
     #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Sigma', nickname='master.ph5')
-    p = ph5 (path='/home/azevedo/Data/WavefieldsSubset/', nickname='master.ph5')
-    das = p.read_das_t ('98EA')
+    p = ph5 (path='/home/azevedo/Data/MATADORII/Nodes/PH5_2/Sigma/', nickname='master.ph5')
+    das = p.read_das_t ('947F')
     stop = 0; start = sys.maxint
     #print p.Das_t
     #sr = p.Das_t[das]['rows'][0]['sample_rate_i']
-    sr = 1
+    sr = 100
     for das_t in p.Das_t[das]['rows'] :
         tmpsr = int (float (das_t['sample_rate_i'])/ float (das_t['sample_rate_multiplier_i']))
         if tmpsr != sr :
@@ -1532,6 +1577,14 @@ if __name__ == '__main__' :
     t1 = start
     #traces = []
     t2 = t1 + 3600.
+    tdoy = TimeDOY.TimeDOY (year=2017,
+                            hour=0, 
+                            minute=0,
+                            second=0, 
+                            microsecond=0,
+                            doy=1)
+    t1 = tdoy.epoch (fepoch=True)
+    t2 = t1 + 86400.
     while t1 < stop :
         cut_obj = p.cut (das, t1, t2, sample_rate=sr)
         print t1, t2
@@ -1549,7 +1602,7 @@ if __name__ == '__main__' :
             #traces.append (t)
             print co.start_time.epoch (fepoch=True), stringtime, t.stats.starttime, t.stats.endtime
             t.write (filename, 'SAC')
-            
+        print    
         t1 = t2 + (1./float (sr))
         t2 = t1 + 3600.        
             
