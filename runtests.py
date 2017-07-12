@@ -5,8 +5,8 @@ Script to run all tests in the entire project
 
 import unittest
 import argparse
-from kitchen.test_ph5tomsAPI import TestPH5toMSeed
-from kitchen.test_ph5utils import TestPH5Utils
+from ph5.clients.tests.test_ph5tomsAPI import TestPH5toMSeed
+from ph5.core.tests.test_ph5utils import TestPH5Utils
 
 
 def parse_arguments():
