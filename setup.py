@@ -21,13 +21,6 @@ try:
 except ImportError:
     pass
 
-try:
-    import numpy  # @UnusedImport # NOQA
-except ImportError:
-    msg = ("No module named numpy. "
-           "Please install numpy first, it is needed before installing PH5.")
-    raise ImportError(msg)
-
 setup(
     name="ph5",
     version="4.0.0",
@@ -65,6 +58,7 @@ setup(
                'ph5/clients/ph5toevt.py',
                'ph5/clients/ph5tomsAPI.py',
                'ph5/clients/ph5torec.py',
+               'ph5/clients/ph5tostationxml.py',
                'ph5/utilities/125a2ph5.py',
                'ph5/utilities/1302ph5.py',
                'ph5/utilities/KefEdit.py',
@@ -104,27 +98,7 @@ setup(
                'ph5/utilities/time-kef-gen.py',
                'ph5/utilities/unsimpleton.py'],
 
-    packages=['ph5/clients', 'ph5/core', 'ph5/utilities'],
-
-    # Project uses reStructuredText, so ensure that the docutils get
-    # installed or upgraded on the target machine
-    install_requires=['docutils>=0.3',
-                      'six',
-                      'Cython',
-                      'nose',
-                      'numpy',
-                      'numexpr',
-                      'pyproj',
-                      'PySide',
-                      'psutil',
-                      'matplotlib',
-                      'basemap',
-                      'obspy',
-                      'vispy',
-                      'construct==2.5.1',
-                      'simplekml',
-                      'tables'],
-
+    packages=['ph5', 'ph5/clients', 'ph5/core', 'ph5/utilities'],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
