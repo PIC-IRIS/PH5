@@ -20,7 +20,6 @@
 #
 
 import os, sys, json
-sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 from ph5.core import TimeDOY
 from ph5.core.ph5API import is_in
 

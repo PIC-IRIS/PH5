@@ -11,7 +11,6 @@
 import sys, os, time
 #from numpy import array, vstack, amax, amin, float32
 import numpy as np
-sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 import ph5API, TimeDOY
 
 PROG_VERSION = "2017.135 Developmental"
