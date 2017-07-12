@@ -5,7 +5,7 @@
 #   Steve Azevedo, January 2007
 #
 
-import Experiment, Kefx, columns
+from ph5.core import Experiment, Kefx, columns
 import sys, os, os.path, time
 
 PROG_VERSION = '2016.113 Developmental'

@@ -2,7 +2,7 @@
 Tests for ph5tostationxml
 '''
 import unittest
-from ph5tostationxml import PH5toStationXML
+from ph5.clients.ph5tostationxml import PH5toStationXML
 
 
 class TestPH5toStationXML(unittest.TestCase):

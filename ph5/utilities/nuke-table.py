@@ -6,7 +6,7 @@
 #
 
 import os, sys
-import Experiment, columns
+from ph5.core import Experiment, columns
 
 PROG_VERSION = '2016.307'
 

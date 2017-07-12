@@ -21,8 +21,8 @@
 
 import os, sys, json
 sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
-import TimeDOY
-from ph5API import is_in
+from ph5.core import TimeDOY
+from ph5.core.ph5API import is_in
 
 PROG_VERSION = "2016.336.2"
 __version__ = PROG_VERSION

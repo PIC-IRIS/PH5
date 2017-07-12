@@ -18,10 +18,10 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtWebKit import QWebView
 
 # import from pn4
-import Experiment
+from ph5.core import Experiment
 
 # module(s) for KefEdit only
-import KefUtility
+from ph5.core import KefUtility
 
 
 ############### CLASS ####################

@@ -9,7 +9,7 @@
 #   Steve Azevedo, August 2007
 #
 
-import SEGY_h, ebcdic
+from ph5.core import SEGY_h, ebcdic
 #from cs2cs import *
 import math, numpy, os, time, string, sys
 

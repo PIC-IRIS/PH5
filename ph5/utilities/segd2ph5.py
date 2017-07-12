@@ -14,7 +14,7 @@ MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
 import os, sys, logging, time, json, re
 from math import modf
-import Experiment, columns, SegdReader
+from ph5.core import Experiment, columns, SegdReader
 from pyproj import Proj, transform
 
 os.environ['TZ'] = 'GMT'

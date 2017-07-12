@@ -6,9 +6,9 @@
 #
 
 import sys, os, exceptions
-import SEGY_h, ebcdic
 import construct, numpy as np
 import ibm2ieee_py
+from ph5.core import SEGY_h, ebcdic
 
 PROG_VERSION = '2014.138.a'
 

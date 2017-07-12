@@ -12,7 +12,7 @@ from ast import literal_eval
 from pyproj import Geod
 import simplekml as kml
 
-import TimeDOY
+from ph5.core import TimeDOY
 
 PROG_VERSION = "2017.086 Developmental"
 

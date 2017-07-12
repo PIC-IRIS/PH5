@@ -1,7 +1,7 @@
 #!/usr/bin/env pnpython2
 
 import os, os.path, sys, time, re
-import TimeDOY
+from ph5.core import TimeDOY
 
 PROG_VERSION = "2014.241 Developmental"
 

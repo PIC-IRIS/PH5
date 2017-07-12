@@ -2,7 +2,7 @@
 Tests for ph5utils
 '''
 import unittest
-import ph5utils
+from ph5.core import ph5utils
 
 
 class TestPH5Utils(unittest.TestCase):

@@ -6,7 +6,7 @@
 #
 import sys, os, os.path, time, math
 #   This provides the base functionality
-import Experiment
+from ph5.core import Experiment
 
 PROG_VERSION = "2016.334"
 

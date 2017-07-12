@@ -5,7 +5,7 @@
 #   Steve Azevedo, March 2012
 #
 import sys, os
-import Experiment
+from ph5.core import Experiment
 
 PROG_VERSION = "2012.069"
 

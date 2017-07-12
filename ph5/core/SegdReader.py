@@ -6,8 +6,8 @@
 #
 
 import sys, os, exceptions
-import SEGD_h
 import construct, numpy as np
+from ph5.core import SEGD_h
 
 PROG_VERSION = "2017.114 Developmental"
 

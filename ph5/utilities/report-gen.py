@@ -6,7 +6,7 @@
 
 import sys, os, os.path, time, string
 #   This provides the base functionality
-import Experiment, TimeDoy
+from ph5.core import Experiment, TimeDoy
 #   The wiggles are stored as numpy arrays
 import numpy
 

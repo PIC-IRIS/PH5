@@ -1,7 +1,7 @@
 #!/usr/bin/env pnpython3
 
 import sys, os, string, re
-import columns
+from ph5.core import columns
 
 PROG_VERSION = '2016.106 Developmental'
 

@@ -7,7 +7,7 @@
 #
 
 import sys, os
-import SACReader
+from ph5.core import SACReader
 import construct
 import numpy as np
 

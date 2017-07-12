@@ -6,7 +6,7 @@
 #
 import os, sys, logging, re, time, math
 import obspy
-import Experiment, TimeDOY
+from ph5.core import Experiment, TimeDOY
 
 PROG_VERSION = "2016.200 Developmental"
 #   Max size of each ph5 mini file

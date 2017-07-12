@@ -7,8 +7,7 @@ ph5toexml.py.
 import fnmatch
 from datetime import datetime, timedelta
 from obspy.geodetics import locations2degrees
-from TimeDOY import epoch2passcal
-from TimeDOY import passcal2epoch
+from ph5.core.TimeDOY import epoch2passcal, passcal2epoch
 import time
 
 

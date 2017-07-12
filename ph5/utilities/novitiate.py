@@ -16,7 +16,7 @@ import platform
 import sys, os, re, time
 from math import radians, cos, tan, sqrt, pi
 from PyQt4 import QtGui, QtCore, Qt
-import TimeDOY
+from ph5.core import TimeDOY
 
 #   Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000; MAX_DAS_SN = 20000

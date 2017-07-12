@@ -7,7 +7,7 @@
 
 import os, sys, simplekml, re
 sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
-import Kefx
+from ph5.core import Kefx
 
 PROG_VERSION = "2017.089"
 

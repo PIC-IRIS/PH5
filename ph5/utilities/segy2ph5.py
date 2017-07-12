@@ -23,7 +23,7 @@ DTYPE = { 1:'float32', 2:'int32', 3:'int16', 5:'float32', 8:'int8' }
 
 import os, sys, logging, time, json
 from math import modf
-import Experiment, columns, SegyReader, TimeDOY
+from ph5.core import Experiment, columns, SegyReader, TimeDOY
 
 os.environ['TZ'] = 'GMT'
 time.tzset ()

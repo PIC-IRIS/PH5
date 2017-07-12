@@ -3,7 +3,8 @@ import tables
 from PyQt4 import QtGui, QtCore
 
 # import from pn4
-import Kefx, tabletokef, ph5API
+from ph5.core import Kefx, ph5API
+from ph5.utilities import tabletokef
 
 
 PH5PATH = { "Experiment_t":"/Experiment_g/Experiment_t",

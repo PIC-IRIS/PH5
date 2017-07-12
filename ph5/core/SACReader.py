@@ -7,7 +7,7 @@
 #
 
 import sys, os, exceptions
-import SAC_h
+from ph5.core import SAC_h
 import numpy as np
 
 PROG_VERSION = "2013.360.a"

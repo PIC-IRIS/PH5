@@ -7,8 +7,8 @@
 import os, sys
 import numpy as npy
 sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
-import ph5API
-from columns import PH5VERSION as ph5version
+from ph5.core import ph5API
+from ph5.core.columns import PH5VERSION as ph5version
 
 PROG_VERSION = "2017.185.a Developmental"
 
