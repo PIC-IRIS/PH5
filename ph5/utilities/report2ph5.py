@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython3
 
-import Experiment, Kef, columns
+from ph5.core import Experiment, Kef, columns
 import numpy, sys, os.path, re, array, string, time
 
 PROG_VERSION = '2013.347'

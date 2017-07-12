@@ -18,19 +18,19 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 
 import sys
 import os
-import obspy 
-import ph5API
 import datetime
-from obspy import read_inventory
 import argparse
 import fnmatch
+import obspy
+from obspy import read_inventory
 from obspy.core.util import AttribDict
 from obspy.io.xseed import Parser
-import ph5utils
 # functions for reading networks in parallel
 import multiprocessing
 import copy_reg
 import types
+
+from ph5.core import ph5utils, ph5API
 
 
 PROG_VERSION = "2017.151"

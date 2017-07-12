@@ -24,17 +24,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 import sys
+print sys.path
 import os
 from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy import UTCDateTime
-import ph5API
-from TimeDOY import epoch2passcal
-from TimeDOY import passcal2epoch
 import copy
 import itertools
-import ph5utils
+from ph5.core import ph5utils
+from ph5.core import ph5API
+from ph5.core.TimeDOY import epoch2passcal, passcal2epoch
 
 
 PROG_VERSION = "2017.192"

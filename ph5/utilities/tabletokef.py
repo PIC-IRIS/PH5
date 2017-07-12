@@ -8,7 +8,7 @@
 
 import sys, os, os.path, string, time
 #   This provides the base functionality
-import Experiment
+from ph5.core import Experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 

@@ -7,7 +7,7 @@
 #
 
 import sys, os
-import SEGY_h, ibmfloat, ebcdic
+from ph5.core import SEGY_h, ibmfloat, ebcdic
 import construct
 
 PROG_VERSION = '2016.266'

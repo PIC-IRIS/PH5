@@ -7,7 +7,7 @@
 
 import os, sys, json, time
 from PyQt4 import QtGui, QtCore
-import novenQC, novenKef
+from ph5.utilities import novenQC, novenKef
 
 PROG_VERSION = '2017.074 Developmental'
 #   

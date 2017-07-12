@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 import matplotlib.dates as mdates
 
-import TimeDOY
+from ph5.core import TimeDOY
 
 PROG_VERSION = "2015.050 Developmental"
 

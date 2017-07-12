@@ -7,7 +7,7 @@
 #
 
 import os, sys, struct, string, exceptions
-import rt_125a_py
+from ph5.core import rt_125a_py
 
 PROG_VERSION = '2015.054'
 

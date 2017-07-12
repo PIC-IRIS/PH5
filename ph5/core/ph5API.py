@@ -8,7 +8,7 @@
 import sys, os, time, re, math
 import numpy as np
 from pyproj import Geod
-import columns, Experiment, TimeDOY
+from ph5.core import columns, Experiment, TimeDOY
 
 PROG_VERSION = '2017.188 Developmental'
 PH5VERSION = columns.PH5VERSION

@@ -7,8 +7,8 @@ import os, sys, time
 from PySide import QtCore, QtGui
 from psutil import cpu_count, cpu_percent
 #import pformaGUI_rc
-import PMonitor, pformaIO
-import WatchIt
+from ph5.core import PMonitor
+from ph5.utilities import pformaIO, WatchIt
 
 PROG_VERSION = "2017.032 Developmental"
 

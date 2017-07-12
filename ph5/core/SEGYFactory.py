@@ -9,10 +9,10 @@
 #   Steve Azevedo, August 2007
 #
 
-import SEGY_h, ebcdic
 import math, numpy, os, time, string, sys
 from pyproj import Geod
-from cs2cs import geod2utm
+from ph5.core.cs2cs import geod2utm
+from ph5.core import SEGY_h, ebcdic
 
 PROG_VERSION = "2016.328 Developmental"
 

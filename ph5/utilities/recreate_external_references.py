@@ -5,7 +5,7 @@
 #   Steve Azevedo, September 2012
 #
 import os, sys, time
-import Experiment
+from ph5.core import Experiment
 
 PROG_VERSION='2016.307'
 INDEX_T = {}

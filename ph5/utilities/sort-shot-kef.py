@@ -1,7 +1,7 @@
 #!/usr/bin/env pnpython3
 
 import os, sys
-import Kef
+from ph5.core import Kef
 
 PROG_VERSION = "2014.038.a"
 

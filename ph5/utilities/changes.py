@@ -2,7 +2,7 @@
 
 import sys
 import time
-import columns
+from ph5.core import columns
 from PyQt4 import QtGui, QtCore
 
 PROG_VERSION = "2016.245"

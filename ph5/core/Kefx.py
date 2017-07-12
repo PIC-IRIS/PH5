@@ -5,7 +5,7 @@
 #
 
 import sys, os, string, re
-import columns
+from ph5.core import columns
 
 PROG_VERSION = '2017.117 Developmental'
 

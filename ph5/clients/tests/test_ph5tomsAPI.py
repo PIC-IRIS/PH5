@@ -3,7 +3,7 @@ Tests for ph5tomsAPI
 '''
 
 import unittest
-from ph5tomsAPI import StationCut, PH5toMSeed
+from ph5.clients.ph5tomsAPI import StationCut, PH5toMSeed
 import copy
 
 class RestrictedRequest(object):

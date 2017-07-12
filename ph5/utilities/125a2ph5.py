@@ -7,8 +7,7 @@
 #
 
 import tables, sys, os, os.path, string, time, math, re, logging
-import columns
-import Experiment, Kef, pn125, TimeDOY
+from ph5.core import columns, Experiment, Kef, pn125, TimeDOY
 
 PROG_VERSION = '2016.200 Developmental'
 MAX_PH5_BYTES = 1073741824 * 2   #   GB (1024 X 1024 X 1024 X 2)

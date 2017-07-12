@@ -24,7 +24,7 @@ if val[0] == 2 and val[1] > 4 :
 #sys.path.append (os.path.join (".", "reconstruct-2.03dev-py2.6.egg"))
 #sys.path.append (os.path.join (os.environ['K3'], "apps", "pn3", "reconstruct-2.03dev-py2.6.egg"))
 import construct
-import ibmfloat, ebcdic
+from ph5.core import ibmfloat, ebcdic
 
 PROG_VERSION = '2014.261'
 

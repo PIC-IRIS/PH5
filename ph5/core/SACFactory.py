@@ -9,7 +9,7 @@
 #   Steve Azevedo, October 2013
 #
 
-import SAC_h
+from ph5.core import SAC_h
 import numpy, os, sys, time, copy, math
 
 PROG_VERSION = "2014.216.b"

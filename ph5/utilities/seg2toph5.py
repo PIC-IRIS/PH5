@@ -2,7 +2,7 @@
 
 import os, sys, warnings, logging, re, time, math, json
 from math import modf
-import Experiment, columns, TimeDOY
+from ph5.core import Experiment, columns, TimeDOY
 
 from obspy import read as readSEG2
 

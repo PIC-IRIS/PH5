@@ -6,7 +6,7 @@
 #
 import os, sys
 
-import pformaIO
+from ph5.utilities import pformaIO
 
 PROG_VERSION = "2016.049 Developmental"
 

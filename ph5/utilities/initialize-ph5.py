@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython3
 
-import Kef, Experiment
+from ph5.core import Kef, Experiment
 import sys, os
 
 PROG_VERSION = "2016.181 Developmental"

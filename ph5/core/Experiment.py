@@ -6,7 +6,8 @@
 #
 
 import tables, numpy
-import columns, os, os.path, time, sys, string, re
+import os, os.path, time, sys, string, re
+from ph5.core import columns
 try :
     import importlib.reload as reload
 except ImportError :

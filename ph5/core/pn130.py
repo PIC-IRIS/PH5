@@ -9,8 +9,8 @@
 #
 
 import os, zipfile, tarfile, re, exceptions
-import os.path, string, math
-import RT_130_h, sys, TimeDOY
+import os.path, string, math, sys
+from ph5.core import RT_130_h, TimeDOY
 
 PROG_VERSION = "2017.062 Developmental"
 

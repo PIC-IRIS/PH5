@@ -10,7 +10,7 @@
 #
 import sys, os
 sys.path.append (os.path.join (os.environ["KX"], "apps", "pn4"))
-import SegdReader
+from ph5.core import SegdReader
 
 PROG_VERSION = "2017.088 Developmental"
 

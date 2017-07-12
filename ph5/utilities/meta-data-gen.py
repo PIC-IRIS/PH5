@@ -6,7 +6,7 @@
 import sys, os, os.path, time, string, json
 #from collections import OrderedDict
 #   This provides the base functionality
-import Experiment, TimeDOY
+from ph5.core import Experiment, TimeDOY
 #   The wiggles are stored as numpy arrays
 import numpy
 

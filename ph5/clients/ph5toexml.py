@@ -19,8 +19,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 """
 
 import os
-import ph5API
-import ph5utils
 import argparse
 from pykml.factory import KML_ElementMaker as KML
 from lxml import etree
@@ -32,6 +30,8 @@ import collections
 import multiprocessing
 import copy_reg
 import types
+
+from ph5.core import ph5API, ph5utils
 
 
 PROG_VERSION = "2017.139"
