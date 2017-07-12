@@ -10,7 +10,6 @@
 
 import sys, os, os.path, string, time
 #   This provides the base functionality
-sys.path.append (os.path.join (os.environ['KX'], "apps", "pn4"))
 from ph5.core import Experiment
 
 PROG_VERSION = '2016.225 Developmental'

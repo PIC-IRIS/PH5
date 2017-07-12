@@ -7,7 +7,6 @@
 #
 
 import sys, os, re
-sys.path.append (os.path.join (os.environ['KX'], 'apps', 'pn4'))
 from ph5.core import ph5API
 
 PROG_VERSION = '2017.068a'

@@ -9,7 +9,6 @@
 PROG_VERSION = "2017.135 Developmental"
 
 import sys, os, time, math, gc, re
-sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 
 import Experiment, TimeDOY
 import PH5ReaderwVispyAPI, TimeDOY
