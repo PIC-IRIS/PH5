@@ -1,1 +1,4 @@
  *.pyc
+build
+dist
+ph5.egg-info
