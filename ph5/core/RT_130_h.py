@@ -23,7 +23,7 @@ if ver < 2.5 :
     sys.stderr.write ("Exiting: construct version is {0}\n".format (ver))
     sys.exit ()
     
-from ph5.core import rt_130_py
+import rt_130_py
 
 PROG_VERSION = '2014.299'
 

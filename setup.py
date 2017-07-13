@@ -100,7 +100,7 @@ setup(
             'sort-recv-kef = ph5.utilities.sort_recv_kef:main',
             'sort-shot-kef = ph5.utilities.sort_shot_kef:main',
             'sort_array_t = ph5.utilities.sort_array_t:main',
-            'tabletokef = ph5.utilities.tabletokef:main',
+            'table2kef = ph5.utilities.tabletokef:main',
             'time-kef-gen = ph5.utilities.time_kef_gen:main',
             'unsimpleton = ph5.utilities.unsimpleton.py:main',
         ],
