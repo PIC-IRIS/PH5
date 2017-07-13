@@ -33,7 +33,7 @@ import copy_reg
 import types
 
 
-PROG_VERSION = "2017.151"
+PROG_VERSION = "2017.194"
 
 
 def get_args():
@@ -297,7 +297,7 @@ class PH5toStationXML(object):
         }) 
         obs_station.extra=extra        
         obs_station.site = obspy.core.inventory.Site(
-            name=station_list[1][0]['seed_station_name_s'])     
+            name=station_list[1][0]['location/description_s'])     
 
         return obs_station     
 
@@ -328,7 +328,10 @@ class PH5toStationXML(object):
         sensor_type =  " ".join([x for x in [station_list[deployment][0]['sensor/manufacturer_s'], 
                                           station_list[deployment][0]['sensor/model_s']] if x])
         obs_channel.sensor = obspy.core.inventory.Equipment(
-            type=sensor_type, description="",
+            type=sensor_type, description=station_list[deployment][0]['sensor/manufacturer_s']+' '+
+                                          station_list[deployment][0]['sensor/model_s']+'/'+
+                                          station_list[deployment][0]['das/manufacturer_s']+' '+
+                                          station_list[deployment][0]['das/model_s'],
             manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
             serial_number=station_list[deployment][0][
                 'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
@@ -364,7 +367,8 @@ class PH5toStationXML(object):
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
-                           obs_channel.data_logger.model]
+                           obs_channel.data_logger.model,
+                           obs_channel.sample_rate]
         if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
             response_file_das_a_name = Response_t.get('response_file_das_a', None)
             response_file_sensor_a_name = Response_t.get('response_file_sensor_a', None)
