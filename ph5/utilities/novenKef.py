@@ -8,7 +8,7 @@
 #
 
 import time, re, math
-import TimeDOY
+from ph5.core import TimeDOY
 
 PROG_VERSION = '2017.086 Developmental'
 KEF_COLS = {}

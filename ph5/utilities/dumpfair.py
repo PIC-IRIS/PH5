@@ -99,8 +99,9 @@ def trace_headers (sd) :
             #print s    
             
     print "There were {0} traces.".format (n)
-    
-if __name__ == '__main__' :
+
+
+def main():
     global RH, TH
     TH = []
     
@@ -117,3 +118,7 @@ if __name__ == '__main__' :
     external_header (sd)
     trace_headers (sd)
     print "{0} bytes read.".format (sd.bytes_read)
+
+
+if __name__ == '__main__' :
+    main()

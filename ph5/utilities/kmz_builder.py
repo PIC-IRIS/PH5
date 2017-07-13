@@ -1034,7 +1034,8 @@ def kmlbody ():
     #print "at the ph5 shot shot section"
 #
 
-if __name__ == "__main__" :
+
+def main():
     #   Get program arguments
     get_args ()
     if PH5 != None:
@@ -1159,5 +1160,8 @@ if __name__ == "__main__" :
     i = 1
     while i <= 20:
       os.remove("station"+str(i)+".png")
-      i = i + 1
-    
+      i = i + 1   
+
+
+if __name__ == "__main__" :
+    main()

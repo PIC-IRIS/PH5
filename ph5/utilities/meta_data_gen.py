@@ -568,8 +568,9 @@ def write_experiment () :
             
     if L :
         fh.write (json.dumps (E.cough (), sort_keys = True, indent = 4))
-    
-if __name__ == '__main__' :
+
+
+def main():
     global DATA_GEN, EVENT_GEN, RECEIVER_GEN
     
     get_args ()
@@ -590,4 +591,8 @@ if __name__ == '__main__' :
         write_events ()
     if RECEIVER_GEN == True :
         write_arrays ()
+
+
+if __name__ == '__main__' :
+    main()
     

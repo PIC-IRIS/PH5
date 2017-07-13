@@ -79,9 +79,10 @@ def table_print (t, a) :
         #   Loop through each row column and print
         for k in a.keys :
             print "\t", k, "=", r[k]
-            
-if __name__ == '__main__' :
-    
+
+
+def main():
+        
     get_args ()
     
     initialize_ph5 (True)
@@ -90,4 +91,8 @@ if __name__ == '__main__' :
     EX.ph5_g_sorts.index_offset_table (name=NAME)
     
     EX.ph5close ()
+
+  
+if __name__ == '__main__' :
+    main()
     

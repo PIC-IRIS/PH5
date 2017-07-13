@@ -1010,9 +1010,9 @@ def update_external_references () :
             #EX.ph5_g_receivers.populateTime_t (b['Time_t'])
         #else :
             #sys.stderr.write ("Warning: No data for %s\n" % das)
-        
-            
-if __name__ == '__main__' :
+
+
+def main():
     #import cProfile, pstats
     #from muppy import tracker
     #import gc
@@ -1093,4 +1093,8 @@ if __name__ == '__main__' :
         #sys.stderr.write ("Psyco not available. Will run slowly.\n")
         
     prof ()
+
+
+if __name__ == '__main__' :
+    main()
     

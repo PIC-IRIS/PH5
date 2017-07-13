@@ -477,8 +477,9 @@ def gather () :
             pass
         #   sta
     #   evt
-    
-if __name__ == '__main__' :
+
+
+def main():
     get_args ()
     #   --stream set
     if ARGS.write_stdout :
@@ -529,3 +530,7 @@ if __name__ == '__main__' :
     logging.shutdown ()
     P5.close ()
     sys.stderr.write ("Done\n")
+
+
+if __name__ == '__main__' :
+    main()

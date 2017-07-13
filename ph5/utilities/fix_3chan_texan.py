@@ -159,8 +159,9 @@ def read_receivers (das = None) :
         return rowskeys
     
     return rows_keys ()
-        
-if __name__ == '__main__' :
+
+
+def main():
     global FH
     try :
         PH5 = sys.argv[1]
@@ -223,3 +224,7 @@ if __name__ == '__main__' :
             FH.close ()
 
     EX.ph5close ()
+
+
+if __name__ == '__main__' :
+    main()

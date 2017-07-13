@@ -488,7 +488,8 @@ def getLOG (Das) :
     log_array.set_attr ('rowsize', 128)
     return log_array, name
 
-if __name__ == '__main__' :
+
+def main():
     global F
     get_args ()
     initializeExperiment ()
@@ -538,3 +539,7 @@ if __name__ == '__main__' :
         #print
         update_external_references ()
         sys.stdout.write (":<Finished>: {0}\n".format (f)); sys.stdout.flush ()
+
+
+if __name__ == '__main__' :
+    main()

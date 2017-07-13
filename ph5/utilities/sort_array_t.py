@@ -10,7 +10,8 @@ from ph5.core import Kefx
 
 PROG_VERSION = "2017.033"
 
-if __name__ == "__main__" :
+
+def main():
     nodeIDRE = re.compile ("\d+X\d+")
     try :
         kefin = sys.argv[1]
@@ -28,3 +29,7 @@ if __name__ == "__main__" :
         if nodeIDRE.match (kv['id_s']) :
             kv['id_s'] = kv['id_s'].split ('X')[1]
         Kefx.print_kef (p, kv)
+
+
+if __name__ == "__main__" :
+    main()

@@ -230,8 +230,13 @@ def process_all () :
                     if len (gaps) != 0 :
                         for g in gaps :
                             print "\t", g[0], g[1]
-    
-if __name__ == "__main__" :
+
+
+def main():
     get_args ()
     read_json ()
     process_all ()
+
+
+if __name__ == "__main__" :
+    main()

@@ -416,7 +416,8 @@ def gather () :
             
         if fh : fh.close ()
 
-if __name__ == '__main__' :
+
+def main():
     #global STATIONS_ALL, SHOTS_ALL
     get_args ()
     #   --stream set
@@ -474,4 +475,8 @@ if __name__ == '__main__' :
     logging.shutdown ()
     P5.close ()
     sys.stderr.write ("Done\n")
+
+
+if __name__ == '__main__' :
+    main()
     

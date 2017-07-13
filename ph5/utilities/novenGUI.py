@@ -548,9 +548,12 @@ def main () :
     
     RECEIVER_CFG = read_cfg (os.path.join (os.environ['KX'], 'config', 'Receiver.cfg'))
     EVENT_CFG = read_cfg (os.path.join (os.environ['KX'], 'config', 'Event.cfg'))
-    
-if __name__ == '__main__' :
+
+def startapp():
     app = QtGui.QApplication(sys.argv)
     form = Novitiate ()
     form.show ()
     app.exec_ ()    
+    
+if __name__ == '__main__' :
+    startapp()

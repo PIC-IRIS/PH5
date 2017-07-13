@@ -646,10 +646,9 @@ def run_ph5_to_stationxml(sta_xml_obj):
     else:
         raise PH5toStationXMLError("No PH5 experiments were found "
                               "under basepath(s) {0}".format(basepaths))       
-        
-                    
-if __name__ == '__main__':
 
+
+def main():
     args = get_args()
     args_dict = vars(args) 
     
@@ -693,4 +692,8 @@ if __name__ == '__main__':
             sys.stderr.write("Incorrect output format. Formats are STATIONXML or KML")
             sys.exit()
     except Exception as err:
-        sys.stderr.write(str("Error - {0}\n".format(err.message)))
+        sys.stderr.write(str("Error - {0}\n".format(err.message)))        
+
+                   
+if __name__ == '__main__':
+    main()

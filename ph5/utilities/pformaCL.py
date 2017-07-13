@@ -148,7 +148,8 @@ def run (fio) :
         
     return xterms
         
-if __name__ == "__main__" :
+
+def main():
     if not exexists ('xterm') :
         sys.stderr.write ("The external program xterm required. Not found.\n")
         sys.exit ()
@@ -212,3 +213,7 @@ if __name__ == "__main__" :
         #   Unite all PH5 families to one...
         msgs = fio.unite ('Sigma')
         for m in msgs : print m
+
+
+if __name__ == "__main__" :
+    main()

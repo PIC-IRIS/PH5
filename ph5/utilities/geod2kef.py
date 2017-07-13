@@ -88,8 +88,9 @@ def write_log (array, shot_line, shot, offsets) :
             #print "\t{0} Station: {1} {2} Event: {3} Offset: {4}".format (array, offsets[0][i], shot_line, shot, offsets[2][i])
             
     print >>LOG, "-=" * 40
-        
-if __name__ == '__main__' :
+
+
+def main():
     global P5, N, LOG
     
     N = 0
@@ -123,3 +124,6 @@ if __name__ == '__main__' :
                     write_log (Array_t_name, Event_t_name, event_num, offsets)
             
     P5.close ()
+    
+if __name__ == '__main__' :
+    main()

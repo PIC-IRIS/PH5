@@ -10,8 +10,8 @@ PROG_VERSION = "2017.135 Developmental"
 
 import sys, os, time, math, gc, re
 
-import Experiment, TimeDOY
-import PH5ReaderwVispyAPI, TimeDOY
+from ph5.core import Experiment, TimeDOY
+from ph5.clients.PH5View import PH5ReaderwVispyAPI
 
 from copy import deepcopy
 
@@ -5348,7 +5348,7 @@ def changedFocusSlot(old, now):
         QtGui.QApplication.activeWindow().setFocus()
         
         
-if __name__ == '__main__':
+def startapp():
     global application #, pointerWidget
      
     application = QtGui.QApplication(sys.argv)
@@ -5360,3 +5360,6 @@ if __name__ == '__main__':
     app.run()
     app.deleteLater()
     sys.exit(application.exec_())
+        
+if __name__ == '__main__':
+    startapp()

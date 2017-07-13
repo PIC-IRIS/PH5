@@ -171,7 +171,8 @@ def report (stats, no_cor) :
                                                                                                                   start,
                                                                                                                   stop))
         
-if __name__ == '__main__' :
+
+def main():
     global P5
     get_args ()
     try :
@@ -206,3 +207,7 @@ if __name__ == '__main__' :
         report (stats, no_cor)
         
     P5.close ()
+
+
+if __name__ == '__main__' :
+    main()

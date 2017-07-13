@@ -105,10 +105,14 @@ def rename_miniPH5 () :
         ret = call (command, shell = True)
         if ret < 0 :
             sys.stderr.write ("File rename may have failed.\n")
-        
-if __name__ == '__main__' :
+
+
+def main():
     get_args ()
     dump_Index_t ()
     resequence_Index_t ()
     rename_miniPH5 ()
 
+
+if __name__ == '__main__' :
+    main()

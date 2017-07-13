@@ -304,8 +304,9 @@ def isEOF () :
         return False
     except EOFError :
         return True
-        
-if __name__ == "__main__" :
+
+
+def main():
     get_args ()
     
     text_container = read_text_header ()
@@ -366,3 +367,7 @@ if __name__ == "__main__" :
                 print t
                 
         if isEOF () : break
+
+        
+if __name__ == "__main__" :
+    main()

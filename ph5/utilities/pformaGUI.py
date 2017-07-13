@@ -521,7 +521,7 @@ def init_fio (f, d, utm=None, combine=None) :
     return fio, cmds, lsts
 
 
-if __name__ == '__main__':
+def startapp():
 
     import sys
 
@@ -529,3 +529,7 @@ if __name__ == '__main__':
     mainWin = MainWindow()
     mainWin.show()
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    startapp()

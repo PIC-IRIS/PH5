@@ -553,9 +553,9 @@ def readPH5(exp, filename, path, tableType, arg=None):
         DAS_T = {}               # clear cache
         read_receivers (arg)
         return DAS_T
-            
-        
-if __name__ == '__main__' :
+
+
+def main():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
            ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, INDEX_TABLE
     
@@ -640,3 +640,7 @@ if __name__ == '__main__' :
             table_print ("/Experiment_g/Receivers_g/Das_g_" + d + "/Das_t", DAS_T[d])
         
     EX.ph5close ()
+
+        
+if __name__ == '__main__' :
+    main()

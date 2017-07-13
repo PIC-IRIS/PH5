@@ -402,7 +402,8 @@ def get_ds (network, station, location, channel, starttime, length) :
     
     return stream
 
-if __name__ == '__main__' :
+
+def main():
     global RESP, INDEX_T, CURRENT_DAS, SIZE_GUESS, F
     
     get_args ()
@@ -463,3 +464,7 @@ if __name__ == '__main__' :
             #if CURRENT_DAS == None :
                 #continue
             #updatePH5 (f)
+
+
+if __name__ == '__main__' :
+    main()

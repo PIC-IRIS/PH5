@@ -136,8 +136,9 @@ def trace_headers (sd) :
             #print s    
             
     print "There were {0} traces.".format (n)
-    
-if __name__ == '__main__' :
+
+
+def main():
     global RH, TH
     TH = []
     get_args ()
@@ -190,3 +191,7 @@ if __name__ == '__main__' :
                 print e.message
                 
         lh.close ()
+
+
+if __name__ == '__main__' :
+    main()
