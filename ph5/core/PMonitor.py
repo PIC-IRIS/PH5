@@ -18,8 +18,8 @@ import sys, os, re
 import subprocess32 as subprocess
 from threading import Thread
 from Queue import Queue, Empty
-from pformaIO import guess_instrument_type
-import WatchIt
+from ph5.utilities.pformaIO import guess_instrument_type
+from ph5.utilities import WatchIt
 import time
 
 try :

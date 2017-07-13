@@ -1362,7 +1362,7 @@ html_whatsnew = """
 """
 
 
-def main():
+def startapp():
     application = QtGui.QApplication(sys.argv)
 
     win = KefEdit()
@@ -1371,4 +1371,4 @@ def main():
 
                    
 if __name__ == "__main__":
-    main()
+    startapp()

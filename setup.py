@@ -59,6 +59,7 @@ setup(
             'ph5view = ph5.clients.PH5View.PH5ViewerwVispyAPI:startapp',
             'novenGUI = ph5.utilities.novenGUI:startapp',
             'pformaGUI = ph5.utilities.pformaGUI:startapp',
+            'kefedit = ph5.utilities.KefEdit:startapp',
         ],
         'console_scripts': [
             # clients
@@ -79,7 +80,6 @@ setup(
             'grao2ph5 = ph5.utilities.grao2ph5:main',
             'index_offset_t = ph5.utilities.index_offset_t:main',
             'initialize-ph5 = ph5.utilities.initialize_ph5:main',
-            'kefedit = ph5.utilities.KefEdit:main',
             'kef2kml = ph5.utilities.kef2kml:main',
             'kef2ph5 = ph5.utilities.kef2ph5:main',
             'kmz-builder = ph5.utilities.kmz_builder:main',
@@ -88,7 +88,7 @@ setup(
             'nuke-table = ph5.utilities.nuke_table:main',
             'pformaCL = ph5.utilities.pformaCL:main',
             'ph5_merge_helper = ph5.utilities.ph5_merge_helper:main',
-            'ph5_total = ph5.utilities.ph5_total.py:main',
+            'ph5_total = ph5.utilities.ph5_total:main',
             'recreate_external_references = ph5.utilities.recreate_external_references:main',
             'report2ph5 = ph5.utilities.report2ph5:main',
             'seg2toph5 = ph5.utilities.seg2toph5:main',
