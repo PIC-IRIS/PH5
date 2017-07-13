@@ -11,7 +11,7 @@
 import sys, os, time
 #from numpy import array, vstack, amax, amin, float32
 import numpy as np
-import ph5API, TimeDOY
+from ph5.core import ph5API, TimeDOY
 
 PROG_VERSION = "2017.135 Developmental"
 

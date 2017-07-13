@@ -173,8 +173,7 @@ def initialize_ph5 (editmode = True) :
     #f.write(s)
 
 
-
-if __name__ == '__main__' :
+def main():
     get_args ()
     initialize_ph5 ()
     #   /Experiment_g/Experiment_t
@@ -236,4 +235,8 @@ if __name__ == '__main__' :
             EX.ph5_g_receivers.nuke_das_t (DAS_TABLE)
             
     EX.ph5close ()
+
+
+if __name__ == '__main__' :
+    main()
         

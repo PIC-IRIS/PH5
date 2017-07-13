@@ -961,7 +961,8 @@ def write_events (Event_t) :
     
     #EX.ph5_g_reports.populate (p_report_t)
 
-if __name__ == '__main__' :
+
+def main():
     def prof () :
         global INDEX_T_DAS, INDEX_T_MAP, RESP, EXREC, MINIPH5, ARRAY_T, EVENT_T, FIRST_TIME, LAST_TIME, Das
         FIRST_TIME = sys.maxint; LAST_TIME = 0
@@ -1075,3 +1076,7 @@ if __name__ == '__main__' :
         cp.run ('prof ()', filename='segy2ph5.profile', sort=-1)
     else :
         prof ()
+
+
+if __name__ == '__main__' :
+    main()

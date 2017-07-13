@@ -799,8 +799,7 @@ def get_args():
     return the_args
 
 
-if __name__ == '__main__':
-
+def main():
     from time import time as tm
 
     then = tm()
@@ -892,3 +891,6 @@ if __name__ == '__main__':
     
     ph5API_object.close()
 
+
+if __name__ == '__main__':
+    main()

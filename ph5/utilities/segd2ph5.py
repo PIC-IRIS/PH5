@@ -926,8 +926,9 @@ def correct_append_number () :
     traces = SD.reel_headers.extended_header_2['number_records']
     x = traces % APPEND
     A = APPEND - x
-    
-if __name__ == '__main__' :
+
+
+def main():
     import time
     then = time.time ()
     from numpy import append as npappend
@@ -1174,5 +1175,8 @@ if __name__ == '__main__' :
     
     #   No profile
     prof ()    
-    
+
+
+if __name__ == '__main__' :
+    main()    
     

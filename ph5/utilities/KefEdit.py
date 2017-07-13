@@ -1360,10 +1360,15 @@ html_whatsnew = """
 </body>
 </html>
 """
-                        
-if __name__ == "__main__":
+
+
+def main():
     application = QtGui.QApplication(sys.argv)
 
     win = KefEdit()
     
     sys.exit(application.exec_())
+
+                   
+if __name__ == "__main__":
+    main()

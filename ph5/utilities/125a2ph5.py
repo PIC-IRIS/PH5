@@ -787,10 +787,9 @@ def update_external_references () :
         #sys.exit ()
     #sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
     logging.info ("done, {0} nodes recreated.\n".format (n))
-        
-        
-if __name__ == '__main__' :
-    
+
+
+def main():
     def prof () :
         global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
         
@@ -852,3 +851,7 @@ if __name__ == '__main__' :
     '''
     #   No profile
     prof ()
+
+        
+if __name__ == '__main__' :
+    main()

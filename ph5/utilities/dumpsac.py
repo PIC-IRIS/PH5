@@ -42,8 +42,9 @@ def print_it (header) :
         for k in keys : print "{0:<12}\t{1:<12}".format (k, header[k])
     except AttributeError :
         for t in header : print t
-        
-if __name__ == '__main__' :
+
+
+def main():
     get_args ()
     sr = SACReader.Reader (infile=INFILE)
     print "Endianness: {0}".format (sr.endianness)
@@ -65,3 +66,6 @@ if __name__ == '__main__' :
         print "|Trace|"
         print "+-----+"
         print_it (sr.read_trace (ret['npts']))
+    
+if __name__ == '__main__' :
+    main()

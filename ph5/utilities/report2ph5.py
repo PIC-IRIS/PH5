@@ -168,9 +168,9 @@ def get_kef_info () :
     fh.close ()
     
     KEF = kef
-    
-        
-if __name__ == '__main__' :
+
+
+def main():
     global FILE, KEF, PATH, PH5, EX
     get_args ()
     initializeExperiment ()
@@ -191,4 +191,7 @@ if __name__ == '__main__' :
     #   Read kef file and populate ph5
     #   Close ph5
     EX.ph5close ()
-    
+
+        
+if __name__ == '__main__' :
+    main()

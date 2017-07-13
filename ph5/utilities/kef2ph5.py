@@ -153,11 +153,15 @@ def update_log () :
         fh.close ()
     except :
         sys.stderr.write ("Warning: Failed to write kef2ph5.log file.\n")
-        
-if __name__ == '__main__' :
+
+
+def main():
     get_args ()
     initializeExperiment ()
     populateTables ()
     closePH5 ()
     update_log ()
-    
+
+
+if __name__ == '__main__' :
+    main()

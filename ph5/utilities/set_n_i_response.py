@@ -183,7 +183,8 @@ def print_new_Das_t (P5) :
                     for k in keys :
                         fh.write ("\t{0}={1}\n".format (k, das_t[k]))
 
-if __name__ == '__main__' :
+
+def main():
     get_args ()
     os.chdir (ARGS.families_directory)
     dump_kefs ()
@@ -203,3 +204,7 @@ if __name__ == '__main__' :
         P5.close ()
         
     print_new_Response_t (n_i_map)
+
+
+if __name__ == '__main__' :
+    main()

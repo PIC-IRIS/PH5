@@ -92,7 +92,8 @@ def load_kefs () :
             if ret < 0 :
                 flush ("Command failed: {0}".format (ret))
 
-if __name__ == '__main__' :
+
+def main():
     global MASTER, RE
     get_args ()
     MASTER = os.path.join (ARGS.path, 'master.ph5')
@@ -101,3 +102,7 @@ if __name__ == '__main__' :
         save_kefs ()
     if not ARGS.onlysave :
         load_kefs ()
+
+
+if __name__ == '__main__' :
+    main()

@@ -292,7 +292,8 @@ def report_gin () :
                 #sys.stderr.write ("#\tArray: {0} Deploy: {1} Pickup: {2}\n".format (a, array_deploy, array_pickup))
                 #sys.stderr.write ("#DAS: {0} Deploy: {1} Pickup: {2}\n".format (array_t['das/serial_number_s'], d['time/epoch_l'], int_part))
 
-if __name__ == "__main__" :
+
+def main():
     global SN, EX, AUTO
     
     get_args ()
@@ -315,3 +316,7 @@ if __name__ == "__main__" :
     report_gin ()
         
     EX.ph5close ()
+
+
+if __name__ == "__main__" :
+    main()

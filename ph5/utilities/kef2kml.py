@@ -112,7 +112,12 @@ def process_kef () :
             
     KML.save (ARGS.title)
     
-if __name__ == '__main__' :
+    
+def main():
     get_args ()
     read_kef ()
     process_kef ()
+
+    
+if __name__ == '__main__' :
+    main()

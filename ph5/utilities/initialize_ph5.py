@@ -40,8 +40,9 @@ def get_args () :
         #print H5, FILES
         sys.stderr.write ("Error: Missing required option. Try --help\n")
         sys.exit ()
+        
 
-if __name__ == "__main__" :
+def main():
     global PH5, KEFFILE
     get_args ()
     #   Create ph5 file
@@ -69,3 +70,7 @@ if __name__ == "__main__" :
     #   Close PH5 file
     ex.ph5close ()
     print "Done..."
+    
+
+if __name__ == "__main__" :
+    main()

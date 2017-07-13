@@ -136,8 +136,9 @@ def barf (fh, of, dep_time, pu_time) :
                 of.write ("\tpickup_time/ascii_s = %s\n" % pu_time.ascii_s)
         else :
             of.write ("\t%s\n" % line)
-        
-if __name__ == '__main__' :
+
+
+def main():
     global ARRAY_FILE, DEPLOY, PICKUP
     
     get_args ()
@@ -160,4 +161,8 @@ if __name__ == '__main__' :
     barf (fh, of, dep_time, pu_time)
     
     of.close (); fh.close ()
+
+
+if __name__ == '__main__' :
+    main()
     

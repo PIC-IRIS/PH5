@@ -149,10 +149,15 @@ def get_args () :
     if PH5 == None :
         sys.stderr.write ("Error: Missing required option --nickname. Try --help\n")
         sys.exit (-1)
-        
-if __name__ == '__main__' :
+
+
+def main():
     get_args ()
     initialize_ph5 ()
     read_index_table ()
     read_m_index_table ()
     update_external_references ()
+
+
+if __name__ == '__main__' :
+    main()

@@ -339,8 +339,8 @@ def read_data () :
             
     return tmp, pts
 
-        
-if __name__ == "__main__" :
+
+def main():
     #   Get program arguments
     get_args ()
     #   Initialize ph5 file
@@ -386,3 +386,7 @@ if __name__ == "__main__" :
     
     EX.ph5close ()
     print 'Done...'
+
+        
+if __name__ == "__main__" :
+    main()
