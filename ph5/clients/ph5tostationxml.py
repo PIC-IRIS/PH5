@@ -33,7 +33,7 @@ import copy_reg
 import types
 
 
-PROG_VERSION = "2017.151"
+PROG_VERSION = "2017.194"
 
 
 def get_args():
@@ -328,7 +328,10 @@ class PH5toStationXML(object):
         sensor_type =  " ".join([x for x in [station_list[deployment][0]['sensor/manufacturer_s'], 
                                           station_list[deployment][0]['sensor/model_s']] if x])
         obs_channel.sensor = obspy.core.inventory.Equipment(
-            type=sensor_type, description="",
+            type=sensor_type, description=station_list[deployment][0]['sensor/manufacturer_s']+' '+
+                                          station_list[deployment][0]['sensor/model_s']+'/'+
+                                          station_list[deployment][0]['das/manufacturer_s']+' '+
+                                          station_list[deployment][0]['das/model_s'],
             manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
             serial_number=station_list[deployment][0][
                 'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
