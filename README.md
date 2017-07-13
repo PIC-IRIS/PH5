@@ -1,5 +1,5 @@
 # PH5 [![Build Status](https://travis-ci.org/PIC-IRIS/PH5.svg?branch=master)](https://travis-ci.org/PIC-IRIS/PH5)
-A library of command line utilities and apis for interacting with a PH5 dataset.
+A library of command line utilities and apis for interacting with a PH5 dataset. See the [PH5 Wiki](https://github.com/PIC-IRIS/PH5/wiki) for general information about PH5.
 
 # Detailed Installation Instructions
 
@@ -9,9 +9,6 @@ only cover installation of PH5 dependencies using Anaconda. This is because PH5 
 ## Anaconda is not a requirement
 Anaconda is not an absolute requirement to get PH5 to work. As long as you can get the necessary python dependencies installed, PH5 will work. If you want to install Anaconda, follow the Windows, Macs, and Linux instructions below.
 
-### Windows
-The Anaconda installer should be able to be double-clicked and installed. Use all of the defaults for installation except make sure to check Make Anaconda the default Python.
-
 ### Macs
 After downloading the installer, double click the .pkg file and follow the instructions on the screen. Use all of the defaults for installation.
 
@@ -19,6 +16,8 @@ After downloading the installer, double click the .pkg file and follow the instr
 After downloading the installer execute the associated shell script. For example, if the file downloaded were named Anaconda3-4.1.1-Linux-x86_64.sh you would enter bash Anaconda3-4.1.1-Linux-x86_64.sh in the directory where you downloaded the file.
 
 ## Installing PH5
+
+Below are explainations of the various ways you can install PH5. PH5 has several [system requirements](https://github.com/PIC-IRIS/PH5/wiki/PH5-Requirements) that are necessary for installation.
 
 ### Installing from source
 * Open a terminal and clone the PH5 project
