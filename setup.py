@@ -118,3 +118,14 @@ setup(
     
 )
 
+# install C dependencies
+from ph5.core.c_dependencies import subcd_py
+from ph5.core.c_dependencies import sufirfilt_py
+from ph5.core.c_dependencies import suibm2ieee_py
+from ph5.core.c_dependencies import surt_125a_py
+from ph5.core.c_dependencies import surt_130_py
+subcd_py.install()
+sufirfilt_py.install()
+suibm2ieee_py.install()
+surt_125a_py.install()
+surt_130_py.install()
