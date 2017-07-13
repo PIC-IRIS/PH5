@@ -297,7 +297,7 @@ class PH5toStationXML(object):
         }) 
         obs_station.extra=extra        
         obs_station.site = obspy.core.inventory.Site(
-            name=station_list[1][0]['seed_station_name_s'])     
+            name=station_list[1][0]['location/description_s'])     
 
         return obs_station     
 
@@ -364,7 +364,8 @@ class PH5toStationXML(object):
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
-                           obs_channel.data_logger.model]
+                           obs_channel.data_logger.model,
+                           obs_channel.sample_rate]
         if not self.resp_manager.is_already_requested(sensor_keys, datalogger_keys):
             response_file_das_a_name = Response_t.get('response_file_das_a', None)
             response_file_sensor_a_name = Response_t.get('response_file_sensor_a', None)
