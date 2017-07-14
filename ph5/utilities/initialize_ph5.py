@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython3
 
-import Kef, Experiment
+from ph5.core import Kef, Experiment
 import sys, os
 import tempfile
 
@@ -78,7 +78,8 @@ def get_args () :
         os.remove("kef.tmp")
         sys.exit ()
 
-if __name__ == "__main__" :
+
+def main():
     global PH5, KEFFILE
     get_args ()
     #   Create ph5 file
@@ -110,3 +111,6 @@ if __name__ == "__main__" :
     print "Done..."
     os.remove("kef.tmp")
 
+
+if __name__ == "__main__" :
+    main()
