@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2017 IRIS PASSCAL
+Copyright (c) 2015-2017 Robert Steven Azevedo, Derick Hess, Lloyd Carothers, Lan Dam, Nick Falco
 
 Permission is hereby granted, free of charge, to any person obtaining a 
 copy of this software and associated documentation files (the "Software"), 
