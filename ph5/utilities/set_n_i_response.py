@@ -188,7 +188,11 @@ def main():
     get_args ()
     os.chdir (ARGS.families_directory)
     dump_kefs ()
-    n_i_map = parse_kef ()
+    try:
+        n_i_map = parse_kef ()
+    except:
+        print "Cannot create n_i map. Make sure the directory is correct using -F flag"
+        sys.exit()
 
     for family in ALL_FAMILIES :
         #print ARGS.families_directory, family

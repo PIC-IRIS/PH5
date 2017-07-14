@@ -1,11 +1,47 @@
 #!/usr/bin/env pnpython3
 
-from ph5.core import Kef, Experiment
+import Kef, Experiment
 import sys, os
+import tempfile
 
 PROG_VERSION = "2016.181 Developmental"
 
-RECEIVER_T = os.path.join (os.environ['KX'], 'apps', 'pn4', 'Receiver_t.kef')
+
+
+RECEIVER_T="kef.tmp"
+RECEIVER_T_STRING = str("""
+#   Table row 1
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 0.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = 90.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = Z
+#   Table row 2
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 0.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = 0.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = N
+#   Table row 3
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 90.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = 0.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = E
+#   Table row 4
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 0.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = -90.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = Z
+        """)
+kef_file = open("kef.tmp", "w")
+kef_file.write(RECEIVER_T_STRING)
+kef_file.close()
 
 def get_args () :
     ''' Parse input args
@@ -39,10 +75,10 @@ def get_args () :
     if PH5 == None :
         #print H5, FILES
         sys.stderr.write ("Error: Missing required option. Try --help\n")
+        os.remove("kef.tmp")
         sys.exit ()
-        
 
-def main():
+if __name__ == "__main__" :
     global PH5, KEFFILE
     get_args ()
     #   Create ph5 file
@@ -57,7 +93,8 @@ def main():
         k.read ()
         k.batch_update ()
         k.close ()
-        
+    
+       
     if os.path.exists (RECEIVER_T) :
         k = Kef.Kef (RECEIVER_T)
         k.open ()
@@ -66,11 +103,10 @@ def main():
         k.close ()
     else :
         sys.stderr.write ("Warning: /Experiment_g/Receivers_g/Receiver_t not set!\n")
+        os.remove("kef.tmp")
         
     #   Close PH5 file
     ex.ph5close ()
     print "Done..."
-    
+    os.remove("kef.tmp")
 
-if __name__ == "__main__" :
-    main()

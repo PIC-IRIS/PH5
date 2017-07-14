@@ -52,10 +52,13 @@ def get_args () :
 def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
-    
-    EX = Experiment.ExperimentGroup (PATH, PH5)
-    EX.ph5open (editmode)
-    EX.initgroup ()
+    try: 
+        EX = Experiment.ExperimentGroup (PATH, PH5)
+        EX.ph5open (editmode)
+        EX.initgroup ()
+    except Exception:
+        print "Cannot open PH5 file. Use -h argument for help."
+        sys.exit()
 
 def info_print () :
     global EX
