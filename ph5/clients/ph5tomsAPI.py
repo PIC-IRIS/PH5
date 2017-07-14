@@ -24,7 +24,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 import sys
-print sys.path
 import os
 from obspy import Trace
 from obspy import Stream
