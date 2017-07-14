@@ -102,7 +102,7 @@ setup(
             'sort_array_t = ph5.utilities.sort_array_t:main',
             'table2kef = ph5.utilities.tabletokef:main',
             'time-kef-gen = ph5.utilities.time_kef_gen:main',
-            'unsimpleton = ph5.utilities.unsimpleton.py:main',
+            'unsimpleton = ph5.utilities.unsimpleton:main',
         ],
     },
 
