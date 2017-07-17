@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2015-2017 Robert Steven Azevedo, Derick Hess, Lloyd Carothers, Lan Dam, Nick Falco
+Copyright (c) <2015,2016,2017> <Steve Azevedo, Derick Hess, Nick Falco, Lloyd Carothers, Lan Dam>
 
 Permission is hereby granted, free of charge, to any person obtaining a 
 copy of this software and associated documentation files (the "Software"), 
