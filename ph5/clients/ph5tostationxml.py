@@ -25,6 +25,7 @@ from obspy import read_inventory
 import argparse
 import fnmatch
 from obspy.core.util import AttribDict
+from obspy.core import UTCDateTime
 from obspy.io.xseed import Parser
 import ph5utils
 # functions for reading networks in parallel
@@ -266,8 +267,8 @@ class PH5toStationXML(object):
             obs_network.alternate_code = self.experiment_t[0]['experiment_id_s']
             obs_network.description = self.experiment_t[0]['longname_s']
             start_time, end_time=self.get_network_date()   
-            obs_network.start_date=datetime.datetime.fromtimestamp(start_time)
-            obs_network.end_date=datetime.datetime.fromtimestamp(end_time)
+            obs_network.start_date=UTCDateTime(start_time)
+            obs_network.end_date=UTCDateTime(end_time)
             obs_network.total_number_of_stations = len(sta_list)
             obs_network.stations = obs_stations
             return obs_network
@@ -284,9 +285,9 @@ class PH5toStationXML(object):
                                                start_date=start_date,
                                                end_date=end_date,
                                                elevation=sta_elevation)                           
-        obs_station.creation_date = datetime.datetime.fromtimestamp(
+        obs_station.creation_date = UTCDateTime(
             station_list[1][0]['deploy_time/epoch_l'])
-        obs_station.termination_date = datetime.datetime.fromtimestamp(
+        obs_station.termination_date = UTCDateTime(
             station_list[1][0]['pickup_time/epoch_l'])
         extra = AttribDict({
             'PH5Array': {
@@ -308,9 +309,9 @@ class PH5toStationXML(object):
             latitude=cha_latitude,
             longitude=cha_longitude, elevation=cha_elevation,
             depth=0)
-        obs_channel.start_date = datetime.datetime.fromtimestamp(
+        obs_channel.start_date = UTCDateTime(
             station_list[deployment][0]['deploy_time/epoch_l'])
-        obs_channel.end_date = datetime.datetime.fromtimestamp(
+        obs_channel.end_date = UTCDateTime(
             station_list[deployment][0]['pickup_time/epoch_l'])
         obs_channel.sample_rate = float(station_list[
             deployment][0]['sample_rate_i'])/float(station_list[
@@ -334,16 +335,16 @@ class PH5toStationXML(object):
                                           station_list[deployment][0]['das/model_s'],
             manufacturer=station_list[deployment][0]['sensor/manufacturer_s'], vendor="", model=station_list[deployment][0]['sensor/model_s'],
             serial_number=station_list[deployment][0][
-                'sensor/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
-            removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
+                'sensor/serial_number_s'], installation_date=UTCDateTime(station_list[deployment][0]['deploy_time/epoch_l']),
+            removal_date=UTCDateTime(station_list[deployment][0]['pickup_time/epoch_l']))
         das_type =  " ".join([x for x in [station_list[deployment][0]['das/manufacturer_s'], 
                                           station_list[deployment][0]['das/model_s']] if x])
         obs_channel.data_logger = obspy.core.inventory.Equipment(
             type=das_type, description="",
             manufacturer=station_list[deployment][0]['das/manufacturer_s'], vendor="", model=station_list[deployment][0]['das/model_s'],
             serial_number=station_list[deployment][0][
-                'das/serial_number_s'], installation_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['deploy_time/epoch_l']),
-            removal_date=datetime.datetime.fromtimestamp(station_list[deployment][0]['pickup_time/epoch_l']))
+                'das/serial_number_s'], installation_date=UTCDateTime(station_list[deployment][0]['deploy_time/epoch_l']),
+            removal_date=UTCDateTime(station_list[deployment][0]['pickup_time/epoch_l']))
         extra = AttribDict({
                 'PH5Component': {
                     'value': str(station_list[deployment][0]['channel_number_i']),
@@ -485,9 +486,9 @@ class PH5toStationXML(object):
                     station_name = x
 
                 start_date = station_list[1][0]['deploy_time/epoch_l']
-                start_date = datetime.datetime.fromtimestamp(start_date)
+                start_date = UTCDateTime(start_date)
                 end_date = station_list[1][0]['pickup_time/epoch_l']
-                end_date = datetime.datetime.fromtimestamp(end_date)
+                end_date = UTCDateTime(end_date)
                 if self.args.get('start_time') and self.args.get('start_time') > end_date:
                     # chosen start time after pickup
                     continue
