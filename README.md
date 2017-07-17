@@ -20,7 +20,7 @@ After downloading the installer execute the associated shell script. For example
 Below are explainations of the various ways you can install PH5. PH5 has several [system requirements](https://github.com/PIC-IRIS/PH5/wiki/PH5-Requirements) that are necessary for installation.
 
 ### Installing from source
-* Open a terminal and clone the PH5 project
+* Open a terminal.
 * Clone the PH5 project from GitHub to your local machine.
 * Add the conda-forge channel to your Anaconda configuration by running `conda config --add channels conda-forge`
 * Create a new Anaconda Virtual Environment for ph5 by running `conda env create -q --name=ph5 python=2.7`
