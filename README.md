@@ -23,8 +23,8 @@ Below are explainations of the various ways you can install PH5. PH5 has several
 * Open a terminal and clone the PH5 project
 * Clone the PH5 project from GitHub to your local machine.
 * Add the conda-forge channel to your Anaconda configuration by running `conda config --add channels conda-forge`
-* Install PH5 Dependencies by running `conda env update -f=/path/to/ph5/environment.yml`. PH5 dependencies will be 
-created in a new Anaconda Virtual Environment called _ph5_
+* Create a new Anaconda Virtual Environment for ph5 by running `conda env create -q --name=ph5 python=2.7`
+* Install PH5 dependencies into the environment by running `conda env update --name=ph5 -f=/path/to/ph5/environment.yml`
 * Source the newly created ph5 environment by running `source activate ph5`
 * Install the PH5 python package by running `python setup.py install` in the cloned PH5 project root directory.
 
