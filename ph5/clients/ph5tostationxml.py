@@ -24,6 +24,7 @@ import fnmatch
 import obspy
 from obspy import read_inventory
 from obspy.core.util import AttribDict
+from obspy.core import UTCDateTime
 from obspy.io.xseed import Parser
 # functions for reading networks in parallel
 import multiprocessing
