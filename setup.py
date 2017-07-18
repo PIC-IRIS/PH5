@@ -57,8 +57,8 @@ setup(
     entry_points = {
         'gui_scripts': [
             'ph5view = ph5.clients.PH5View.PH5ViewerwVispyAPI:startapp',
-            'novenGUI = ph5.utilities.novenGUI:startapp',
-            'pformaGUI = ph5.utilities.pformaGUI:startapp',
+            'noven = ph5.utilities.novenGUI:startapp',
+            'pforma = ph5.utilities.pformaGUI:startapp',
             'kefedit = ph5.utilities.KefEdit:startapp',
         ],
         'console_scripts': [
@@ -97,8 +97,6 @@ setup(
             'set_deploy_pickup_times = ph5.utilities.set_deploy_pickup_times:main',
             'set_n_i_response = ph5.utilities.set_n_i_response:main',
             'sort-kef-gen = ph5.utilities.sort_kef_gen:main',
-            'sort-recv-kef = ph5.utilities.sort_recv_kef:main',
-            'sort-shot-kef = ph5.utilities.sort_shot_kef:main',
             'sort_array_t = ph5.utilities.sort_array_t:main',
             'table2kef = ph5.utilities.tabletokef:main',
             'time-kef-gen = ph5.utilities.time_kef_gen:main',
