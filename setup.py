@@ -74,6 +74,7 @@ setup(
             'dumpfair = ph5.utilities.dumpfair:main',
             'dumpsac = ph5.utilities.dumpsac:main',
             'dumpsgy = ph5.utilities.dumpsgy:main',
+            'experiment_t_gen = ph5.utilities.changes:main',
             'fix_3chan_texan = ph5.utilities.fix_3chan_texan:main',
             'fix_num_samples = ph5.utilities.fix_num_samples:main',
             'geod2kef = ph5.utilities.geod2kef:main',
