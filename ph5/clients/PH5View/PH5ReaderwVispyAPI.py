@@ -11,9 +11,10 @@
 import sys, os, time
 #from numpy import array, vstack, amax, amin, float32
 import numpy as np
+#sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 from ph5.core import ph5API, TimeDOY
 
-PROG_VERSION = "2017.135 Developmental"
+PROG_VERSION = "2017.199 Developmental"
 
 
 class PH5ReaderError (Exception) :

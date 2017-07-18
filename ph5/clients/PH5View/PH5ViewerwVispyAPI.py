@@ -6,9 +6,10 @@
 #   
 #   Updated May 2017
 
-PROG_VERSION = "2017.135 Developmental"
+PROG_VERSION = "2017.199 Developmental"
 
 import sys, os, time, math, gc, re
+#sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 
 from ph5.core import Experiment, TimeDOY
 from ph5.clients.PH5View import PH5ReaderwVispyAPI
@@ -29,6 +30,7 @@ from vispy.util.transforms import rotate
 #import vispy.mpl_plot as plt
 import matplotlib.pyplot as plt
 
+USERHOME = os.getenv("HOME")
 PH5VALFILES = [ path.join(mkdtemp(), 'PH5VAL%s.dat' % ch) for ch in range(3) ]    # to keep PH5 values for reuse
 
 #OpenGL vertex shader
@@ -2091,11 +2093,13 @@ class Canvas(app.Canvas):
                           [timeY[i], timeY[i]],'--',
                           c=QColor(conf['gridColor']).getRgbF()[:3], linewidth=thick)
             
-        ax = plt.subplot(111)
-        ax.set_xlim(minX, maxX)
-        ax.set_ylim(minY, maxY)
+        plt.axis((minX,maxX, maxY,minY))        
         
-        ax.set_ylim(ax.get_ylim()[::-1])
+        #ax = plt.subplot(111)
+        #ax.set_xlim(minX, maxX)
+        #ax.set_ylim(minY, maxY)
+        
+        #ax.set_ylim(ax.get_ylim()[::-1])
             
         graphName = self.PH5View.graphName 
         if conf.has_key('addingInfo'): 
@@ -2716,10 +2720,14 @@ class PH5Visualizer(QtGui.QMainWindow):
         segyDir = os.getcwd()
         
         try:
-            confFile = open('PH5Viewer.cfg', 'r+')
+            confFile = open(USERHOME + '/.PH5/PH5Viewer.cfg', 'r+')
         except IOError, e:
             return
          
+        print "fname:", self.fname
+        dataPath = os.path.dirname(os.path.abspath(str(self.fname)))
+        segyDir = dataPath + "/SEGY"
+        print "segyDir:", segyDir
         lines = confFile.readlines()
         confFile.seek(0)
         confFile.truncate()   
@@ -2845,7 +2853,11 @@ class PH5Visualizer(QtGui.QMainWindow):
         fname = dialog.getOpenFileName(self, 'Open', '/home/field/Desktop/data', 'master.ph5') 
         print fname
 
-        if fname == "": return
+        if fname == "": 
+            errorMsg = "Can't find the ph5 file: %s" % fname
+            QtGui.QMessageBox.question(self, 'Error', errorMsg, QtGui.QMessageBox.Ok)
+            return
+        
         self.fname = fname
         self.eventGui.clearArrays()
         self.stationGui.clearArrays()
@@ -3005,7 +3017,7 @@ class MainControl(QtGui.QMainWindow):
     # Author: Lan
     # def: setDefaultConf():201410
     # create default configuration for name and color properties
-    def initConfig(self):
+    def initConfig(self):      
         # setDefaultConf
         self.defaultConf = {}
         self.defaultConf['addingInfo'] = ""    # on the title bar or at the top of saved file/ print paper
@@ -3015,52 +3027,75 @@ class MainControl(QtGui.QMainWindow):
         self.defaultConf['plotThick'] = 0.6
         self.defaultConf['gridThick'] = 0.4
         self.defaultConf['gridColor'] = QColor(150,150,150).name()
+        #self.fileConf['pointColor'] = 
         self.defaultConf['showAbnormalStat'] = True
         
-        self.defaultConf['abnormalColor'] = ['#a0a0a4', '#ffff00', '#00ffff']
+        self.defaultConf['abnormalColor'] = '#ff0000'
         colorSet = ['#a0a0a4', '#ffff00', '#00ffff'] # gray, yellow, cyan
         self.defaultConf['plotColor'] = [[],[],[]]      # define color in the pattern
         for ch in range(len(self.defaultConf['plotColor'])):
             for i in range(self.defaultConf['patternSize']):
                 self.defaultConf['plotColor'][ch].append(colorSet[ch])
-        
-        # setFileConf
-        self.fileConf = {}
-        try:
-            confFile = open('PH5Viewer.cfg', 'r')
-        except IOError, e:
-            return
-        
-        self.fileConf['plotColor'] = []
-        ncolor = None
-        lines = confFile.readlines()
-        confFile.close()
-        for line in lines:
-            l = line.split(":") 
-            if l[0] == 'addingInfo': self.fileConf['addingInfo'] = l[1].strip()
-            elif l[0] == 'hLabel': self.fileConf['hLabel'] = l[1].strip()
-            elif l[0] == 'vLabel': self.fileConf['vLabel'] = l[1].strip()
-            elif l[0] == 'gridColor': self.fileConf['gridColor'] = l[1].strip()
-            elif l[0] == 'pointColor': self.fileConf['pointColor'] = l[1].strip()
-            elif l[0] == 'patternSize': self.fileConf['patternSize'] = int(l[1].strip())
-            elif l[0] == 'plotThick': self.fileConf['plotThick'] = float(l[1].strip())
-            elif l[0] == 'gridThick': self.fileConf['gridThick'] = float(l[1].strip())
-            elif l[0] == 'abnormalColor': self.fileConf['abnormalColor'] = l[1].strip()
-            elif 'plotColor' in l[0]: 
-                if ncolor != l[0][-1]: # plotColor1: 1 is channel, when channel index changed, create new list 
-                    ncolor = l[0][-1]
-                    self.fileConf['plotColor'].append([])
-                self.fileConf['plotColor'][-1].append( l[1].strip() )
+               
+        # preset FileConf with default value
+        self.fileConf = deepcopy(self.defaultConf)
 
-            elif l[0] == 'showAbnormalStat':
-                self.fileConf['showAbnormalStat'] = True if l[1].strip()=='True' else False
+        try:
+            confFile = open(USERHOME + '/.PH5/PH5Viewer.cfg', 'r')
+        
+        
+            #self.fileConf['plotColor'] = []
+            ncolor = None
+            lines = confFile.readlines()
+            confFile.close()
+            colorChan = -1
+            for line in lines:
+                l = line.split(":") 
+                if l[0] == 'addingInfo': self.fileConf['addingInfo'] = l[1].strip()
+                elif l[0] == 'hLabel': self.fileConf['hLabel'] = l[1].strip()
+                elif l[0] == 'vLabel': self.fileConf['vLabel'] = l[1].strip()
+                elif l[0] == 'gridColor': self.fileConf['gridColor'] = l[1].strip()
+                #elif l[0] == 'pointColor': self.fileConf['pointColor'] = l[1].strip()
+                elif l[0] == 'patternSize': self.fileConf['patternSize'] = int(l[1].strip())
+                elif l[0] == 'plotThick': self.fileConf['plotThick'] = float(l[1].strip())
+                elif l[0] == 'gridThick': self.fileConf['gridThick'] = float(l[1].strip())
+                elif l[0] == 'abnormalColor': self.fileConf['abnormalColor'] = l[1].strip()
+                elif 'plotColor' in l[0]:
+                    if ncolor != l[0][-1]: # plotColor1: 1 is channel, when channel index changed, create new list 
+                        ncolor = l[0][-1]
+                        colorChan += 1
+                        count = -1
+                        #self.fileConf['plotColor'][colorChan] = []
+                    count += 1
+                    try:
+                        self.fileConf['plotColor'][colorChan][count] = l[1].strip()   
+                    except: pass
     
-    
+                elif l[0] == 'showAbnormalStat':
+                    self.fileConf['showAbnormalStat'] = True if l[1].strip()=='True' else False
+                    
+            
+        except Exception, e:
+            print str(e)
+            pass   
+        
+        # each plotColor has been assiged default plotColor
+        if self.fileConf['patternSize'] < self.defaultConf['patternSize']:
+            # if new patternSize is smaller, need to trim the extra value assigned before
+            for plotColor in self.fileConf['plotColor']:
+                plotColor = plotColor[:self.fileConf['patternSize']]
+        elif self.fileConf['patternSize'] > self.defaultConf['patternSize']:
+            # if new patternSize is smaller, some missed channel need to be filled up
+            for ch in range(len(self.fileConf['plotColor'])):
+                plotColor = self.fileConf['plotColor'][ch]
+                if len(plotColor) < self.fileConf['patternSize']:
+                    plotColor[len(plotColor):self.fileConf['patternSize']] = self.defaultConf['plotColor'][ch]
+                        
 
     def onChangePropertyType(self, evt=None):
         #print "onChangePropertyType"
-        if self.defaultPropRbtn.isChecked():  self.conf = self.defaultConf
-        else: self.conf = self.fileConf   
+        if self.defaultPropRbtn.isChecked():  self.conf = deepcopy(self.defaultConf)
+        else: self.conf = deepcopy(self.fileConf)
         
         for ch in range(len(self.channels)):
             if ch < len(self.conf['plotColor']):
@@ -4562,7 +4597,9 @@ class Properties(QtGui.QDialog):
                 self.parent.fileConf['plotColor'][ch].append(cb.palette().color(1).name())
         
         # save to conf. file
-        confFile = open('PH5Viewer.cfg', 'w')
+        if not os.path.exists(USERHOME + '/.PH5'):
+            os.makedirs(USERHOME + '/.PH5')
+        confFile = open(USERHOME + '/.PH5/PH5Viewer.cfg', 'w')
         conf = self.parent.fileConf
         if conf.has_key('addingInfo'):
             confFile.write("\naddingInfo:%s" % conf['addingInfo'])
@@ -4593,14 +4630,22 @@ class Properties(QtGui.QDialog):
         self.parent.onChangePropertyType()
         self.close()
     
+    
+    ###################################
+    # Author: Lan
+    # def: onAllColorBtns():201707
+    # allColorBtns allow to set all the buttons in the channel's column to the "All" button's color
+    # (allColorBtns are set to the color of the first button in that channel)
     def onAllColorBtns(self, evt):
         col = QtGui.QColorDialog.getColor()
         if col.isValid():
             self.sender().setStyleSheet("QWidget { background-color: %s }" % col.name())
         
-        index = self.allColorBtns.index(self.sender())
-        for b in self.plotColBtns[index]:
-            b.setStyleSheet("QWidget { background-color: %s }" % col.name())
+        ch = self.allColorBtns.index(self.sender())
+        for bIndex in range(len(self.plotColBtns[ch])):
+            self.plotColBtns[ch][bIndex].setStyleSheet("QWidget { background-color: %s }" % col.name())
+            self.conf['plotColor'][ch][bIndex] = str(col.name())
+            
         
     ###################################
     # Author: Lan
@@ -4611,9 +4656,14 @@ class Properties(QtGui.QDialog):
         if col.isValid():
             self.sender().setStyleSheet("QWidget { background-color: %s }" % col.name())
             
-        #for ch in range(len(self.plotColBtns)):
-            #for pb in self.plotColBtns[ch]:
-                #pb.setStyleSheet("QWidget { background-color: %s }" % col.name())       
+        for ch in range(len(self.plotColBtns)):
+            if self.sender() in self.plotColBtns[ch]:
+                bIndex = self.plotColBtns[ch].index(self.sender())
+                self.conf['plotColor'][ch][bIndex] = str(col.name())
+                if bIndex == 0:
+                    # allColorBtns are set to the color of the first button in that channel
+                    # so when the first button's color is changed, the allColorBtns for that channel should be changed
+                    self.allColorBtns[ch].setStyleSheet("QWidget { background-color: %s }" % col.name())    
             
 
     ###################################
@@ -4621,13 +4671,12 @@ class Properties(QtGui.QDialog):
     # def: defaultChoice():201410
     # select default => use defaultConf created from PH5Visualizer      
     def selectConf(self, evt):
-        
         if self.defaultRbtn.isChecked():
             #print "select defaultConf"
-            self.conf = self.parent.defaultConf
+            self.conf = deepcopy(self.parent.defaultConf)
         else:
             #print "select fileConf"
-            self.conf = self.parent.fileConf
+            self.conf = deepcopy(self.parent.fileConf)
         self.setConf()
             
     ###################################
@@ -4673,6 +4722,7 @@ class Properties(QtGui.QDialog):
             
         self.plotColBtns = []
         for ch in range(len(self.parent.channels)):
+            # allColorBtns are set to the color of the first button in that channel
             if ch < len(self.conf['plotColor']):
                 self.allColorBtns[ch].setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][ch][0]).name())
             else:
@@ -4691,7 +4741,7 @@ class Properties(QtGui.QDialog):
                     if i < self.conf['patternSize']: 
                         cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][ch][i]).name())    
                     else:
-                        cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.parent.defaultConf['plotColor'][ch][0]).name())
+                        cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.conf['plotColor'][ch][0]).name())
                 else:
                     cb.setStyleSheet("QWidget { background-color: %s }" % QColor(self.parent.defaultConf['plotColor'][ch][0]).name())
             self.patternColorVBoxes[ch].addStretch(1)
@@ -4704,6 +4754,8 @@ class Properties(QtGui.QDialog):
     def onUpdate(self):
         pSize = int(self.patternSizeText.text())
         self.updatePlotColorButton(pSize)
+        
+        
 
 class ArrayGui(QtGui.QWidget): 
     def __init__(self, parent, ESType=None):    #ESType=EVENT/STATION
@@ -5348,7 +5400,7 @@ def changedFocusSlot(old, now):
         QtGui.QApplication.activeWindow().setFocus()
         
         
-def startapp():
+if __name__ == '__main__':
     global application #, pointerWidget
      
     application = QtGui.QApplication(sys.argv)
@@ -5360,6 +5412,3 @@ def startapp():
     app.run()
     app.deleteLater()
     sys.exit(application.exec_())
-        
-if __name__ == '__main__':
-    startapp()
