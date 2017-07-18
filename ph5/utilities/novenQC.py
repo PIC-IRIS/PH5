@@ -46,7 +46,8 @@ def qc_map (outfile) :
        Create a simple kml of events or receivers using simplekml
     '''
     try :
-        base = os.path.join (os.environ['KX'], 'apps/pn4/kmlicons')
+        base_path=os.path.dirname(os.path.abspath(__file__))
+        base = os.path.join (base_path, 'kmlicons')
     except Exception as e :
         sys.stderr.write (e.message)
         sys.exit ()

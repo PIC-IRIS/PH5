@@ -10,19 +10,6 @@
 #
 
 import sys, exceptions, os, os.path
-'''
-val = sys.version_info[:2]
-#   For python 2.4
-if val[0] == 2 and val[1] == 4 :
-    sys.path.append (os.path.join (os.environ['KITCHEN'], "apps", "pn2", "construct-2.0-2.4.zip"))
-#   For python 2.5
-if val[0] == 2 and val[1] > 4 :
-    sys.path.append (os.path.join (os.environ['KITCHEN'], "apps", "pn2", "construct-2.00-py2.5.egg"))
-'''
-#   For testing with python 2.5
-#sys.path.append (os.path.join (".", "construct-2.00-py2.5.egg"))
-#sys.path.append (os.path.join (".", "reconstruct-2.03dev-py2.6.egg"))
-#sys.path.append (os.path.join (os.environ['K3'], "apps", "pn3", "reconstruct-2.03dev-py2.6.egg"))
 import construct
 from ph5.core import ibmfloat, ebcdic
 

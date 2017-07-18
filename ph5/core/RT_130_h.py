@@ -8,14 +8,7 @@
 #
 
 import sys, exceptions, os, os.path, binascii, string
-#   For python 2.4
-#sys.path.append (os.path.join (os.environ['KITCHEN'], "apps", "pn2", "construct-2.0-2.4.zip"))
-#   For testing with python2.4
-#sys.path.append (os.path.join (".", "construct-2.0-2.4.zip"))
-#   For python 2.5
-#sys.path.append (os.path.join (os.environ['PASSCAL'], "lib", "python", "rt2ms", "construct-2.00-py2.5.egg"))
-#   For testing with python 2.5
-#sys.path.append (os.path.join (".", "construct-2.00-py2.5.egg"))
+
 import construct
 
 ver = construct.version[0] + construct.version[1] / 10.

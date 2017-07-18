@@ -82,7 +82,6 @@ setup(
             'initialize-ph5 = ph5.utilities.initialize_ph5:main',
             'kef2kml = ph5.utilities.kef2kml:main',
             'kef2ph5 = ph5.utilities.kef2ph5:main',
-            'kmz-builder = ph5.utilities.kmz_builder:main',
             'load_das_t = ph5.utilities.load_Das_t:main',
             'meta-data-gen = ph5.utilities.meta_data_gen:main',
             'nuke-table = ph5.utilities.nuke_table:main',

@@ -752,7 +752,6 @@ if __name__ == '__main__' :
     filename = "PIC_1_25_1941.0.0.rg16"
     print guess_instrument_type (filename)
     sys.exit ()
-    sys.path.append (os.path.join (os.environ['K3'], "apps/pn3"))
     
     import TimeDOY, time
     
