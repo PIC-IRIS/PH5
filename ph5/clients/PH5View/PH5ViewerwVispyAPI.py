@@ -6,13 +6,13 @@
 #   
 #   Updated May 2017
 
-PROG_VERSION = "2017.198 Developmental"
+PROG_VERSION = "2017.199 Developmental"
 
 import sys, os, time, math, gc, re
-sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
+#sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 
-import Experiment, TimeDOY
-import PH5ReaderwVispyAPI, TimeDOY
+from ph5.core import Experiment, TimeDOY
+from ph5.clients.PH5View import PH5ReaderwVispyAPI
 
 from copy import deepcopy
 
