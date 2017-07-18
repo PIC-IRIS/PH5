@@ -6,10 +6,186 @@
 #
 
 import os, sys, json, time
+from os.path import expanduser
 from PyQt4 import QtGui, QtCore
 from ph5.utilities import novenQC, novenKef
 
-PROG_VERSION = '2017.074 Developmental'
+PROG_VERSION = '2017.199'
+
+
+RECEIVER_CFG_S ='''
+{
+   "description_s": {
+      "required": "False", 
+      "type": "string1024", 
+      "help": "Station comments."
+   }, 
+   "pickup_time/ascii_s": {
+      "required": "True", 
+      "type": "string32", 
+      "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
+      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
+   }, 
+   "id_s": {
+      "required": "True", 
+      "type": "int15", 
+      "help": "Valid SEG-Y station number."
+   }, 
+   "deploy_time/ascii_s": {
+      "required": "True", 
+      "type": "string32", 
+      "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
+      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
+   }, 
+   "location/X/value_d": {
+      "required": "False", 
+      "type": "float64", 
+      "help": "Longitude in degrees."
+   }, 
+   "location/Y/value_d": {
+      "required": "False", 
+      "type": "float64", 
+      "help": "Latitude in degrees."
+   }, 
+   "location/Z/value_d": {
+      "required": "False",     
+      "type": "float64",                       
+      "help": "Elevation in meters."
+   },
+   "Array": {
+      "required": "True", 
+      "type": "int32", 
+      "help": "Array or line number."
+   }, 
+   "Deploy/Pickup" : {
+      "required": "False",
+      "type": "string1",
+      "help": "Deploy 'D' or Pickup 'P' notes.",
+      "re": "D|P"
+   },
+   "channel_number_i": {
+      "required": "True", 
+      "type": "int15", 
+      "help": "Component, Possibly as follows: 1 -> Z, 2 -> N/S, 3 -> E/W etc..",
+      "range": "1-6"
+   },
+   "das/serial_number_s": {
+      "required": "True",
+      "type": "string32",
+      "help": "Full serial number of the data logger, ie. texans are 5 digits."
+   },
+   "das/model_s": {
+      "required": "False",
+      "type": "string32",
+      "help": "The DAS model, rt-130, texan etc."
+   },
+   "das/manufacturer_s": {
+      "required": "False",
+      "type": "string32",
+      "help": "The Das manufacturer, RefTek, kelco etc."
+   },
+   "sensor/serial_number_s": {
+      "required": "False",
+      "type": "string64",
+      "help": "Full serial number of the sensor."
+   },
+   "sensor/model_s": {
+      "required": "False",
+      "type": "string64",
+      "help": "Sensor model."
+   },
+   "sensor/manufacturer_s": {
+      "required": "False",
+      "type": "string64",
+      "help": "Sensor manufacturer."
+   },
+   "SEED_Channel": {
+      "required": "False",
+      "type": "string3",
+      "help": "SEED channel as described in Appendix A of SEED manual."
+   },
+   "seed_location_code_s": {
+      "required": "False",
+      "type": "string2",
+      "help": "SEED location code as described in chapter 8 of the SEED manual."
+   },
+   "seed_station_name_s": {
+      "required": "False",
+      "type": "string5",
+      "help": "SEED channel name as described in chapter 8 of the SEED manual."
+   },
+   "sample_rate_i": {
+      "required": "False",
+      "type": "int16",
+      "help": "The sample rate in samples per second as an integer."
+   },
+   "sample_rate_multiplier_i": {
+      "required": "False",
+      "type": "int16",
+      "help": "Usually 1 unless the sample rate is less than 1."
+   }
+}
+
+'''
+
+EVENT_CFG_S='''
+{
+   "location/X/value_d": {
+      "required": "True", 
+      "type": "float64", 
+      "help": "Longitude in degrees."
+   }, 
+   "description_s": {
+      "required": "False", 
+      "type": "string1024", 
+      "help": "Comment."
+   }, 
+   "size/units_s": {
+      "required": "False", 
+      "type": "string32", 
+      "help": "kg, lbs, or magnitude."
+   }, 
+   "size/value_d": {
+      "required": "False", 
+      "type": "float64", 
+      "help": "Size of shot, kg, lbs, magnitude."
+   }, 
+   "location/Y/value_d": {
+      "required": "True", 
+      "type": "float64", 
+      "help": "Latitude in degrees."
+   }, 
+   "id_s": {
+      "required": "True", 
+      "type": "int31", 
+      "help": "Valid SEG-Y shot number."
+   }, 
+   "location/Z/value_d": {
+      "required": "False", 
+      "type": "float64", 
+      "help": "Elevation in meters."
+   }, 
+   "depth/value_d": {
+      "required": "False", 
+      "type": "float64", 
+      "help": "Depth of shot or event below surface in meters."
+   }, 
+   "Array": {
+      "required": "False", 
+      "type": "int32", 
+      "help": "The shot line or array number."
+   }, 
+   "time/ascii_s": {
+      "required": "True",
+      "type": "string32",
+      "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
+      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,3})|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})"
+   }
+}
+'''
+
+
+
 #   
 SEPMAP = {'tab':None, 'comma':',', 'semi-colon':';', 'colon':':', 'space':None}
 
@@ -544,12 +720,29 @@ def read_cfg (filename) :
     return ret
 
 def main () :
-    global RECEIVER_CFG, EVENT_CFG
-    
-    RECEIVER_CFG = read_cfg (os.path.join (os.environ['KX'], 'config', 'Receiver.cfg'))
-    EVENT_CFG = read_cfg (os.path.join (os.environ['KX'], 'config', 'Event.cfg'))
-
+    return
 def startapp():
+    global RECEIVER_CFG, EVENT_CFG
+    home = expanduser("~")
+    if not os.path.isfile(os.path.join (home,'.PH5', 'Receiver.cfg')) or not os.path.isfile(os.path.join (home,'.PH5', 'Event.cfg')):
+        create_config = raw_input("It appears your home directory doesn't contain config files for noven.\nIt is advised you have config files created. Do you want config files to be created for you(y/n)?:")
+        if create_config.upper() == "Y":
+            print "Installing to: "+str(os.path.join (home,'.PH5'))
+            if not os.path.exists(os.path.join (home,'.PH5')):
+                os.makedirs(os.path.join (home,'.PH5'))            
+            f = open(os.path.join (home,'.PH5', 'Receiver.cfg'), 'w')
+            f.write(str(RECEIVER_CFG_S))
+            f.close()
+            f = open(os.path.join (home,'.PH5', 'Event.cfg'), 'w')
+            f.write(str(EVENT_CFG_S))
+            f.close()
+        else:
+            RECEIVER_CFG = json.loads(RECEIVER_CFG_S)
+            EVENT_CFG = json.loads(EVENT_CFG_S)
+    else:
+        RECEIVER_CFG = read_cfg (os.path.join (home,'.PH5', 'Receiver.cfg'))
+        EVENT_CFG = read_cfg (os.path.join (home,'.PH5', 'Event.cfg'))
+    
     app = QtGui.QApplication(sys.argv)
     form = Novitiate ()
     form.show ()
