@@ -5390,17 +5390,14 @@ class ES_Gui(QtGui.QWidget):
             return True
         return False
 
-            
-        
-        
-            
+ 
 def changedFocusSlot(old, now):
     if (now==None and QtGui.QApplication.activeWindow()!=None):
         #print "set focus to the active window"
         QtGui.QApplication.activeWindow().setFocus()
-        
-        
-if __name__ == '__main__':
+
+
+def startapp():
     global application #, pointerWidget
      
     application = QtGui.QApplication(sys.argv)
@@ -5411,4 +5408,8 @@ if __name__ == '__main__':
     #win = OptionPanel(None)
     app.run()
     app.deleteLater()
-    sys.exit(application.exec_())
+    sys.exit(application.exec_())    
+
+
+if __name__ == '__main__':
+    startapp()
