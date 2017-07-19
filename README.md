@@ -16,8 +16,7 @@ After downloading the Anaconda version 2.7 installer from https://www.continuum.
 After downloading the Anaconda version 2.7 installer from https://www.continuum.io/downloads execute the associated shell script. For example, if the file downloaded were named Anaconda2-4.4.0-Linux-x86_64.sh you would run `bash Anaconda2-4.4.0-Linux-x86_64.sh` in the directory where you downloaded the file.
 
 ## Installing PH5
-
-Below are instructiosn for installing PH5 with Anaconda. PH5 has several [system requirements](https://github.com/PIC-IRIS/PH5/wiki/PH5-Requirements) that are necessary for installation. If you are using Anaconda these system requirements are preinstalled with Anaconda, making for a much simpler installation.
+Below are instructions for installing PH5 with Anaconda. PH5 has several [system requirements](https://github.com/PIC-IRIS/PH5/wiki/PH5-Requirements) that are necessary for installation. If you are using Anaconda these system requirements are pre-installed with Anaconda, making for a much simpler installation.
 
 ### Installing PH5 from source
 * Open a terminal.
