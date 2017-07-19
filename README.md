@@ -7,9 +7,9 @@ The easiest way to install PH5 is to use the Anaconda distribution of python. Th
 only cover installation of PH5 dependencies using Anaconda. This is because PH5 (and many python tools) require packages (aka modules) that have C dependencies.
 
 ## Anaconda is not a requirement
-Anaconda is not an absolute requirement to get PH5 to work. As long as you can get the necessary python dependencies installed, PH5 will work. If you want to install Anaconda, follow the Windows, Macs, and Linux instructions below.
+Anaconda is not an absolute requirement to get PH5 to work. As long as you can get the necessary python dependencies installed, PH5 will work. If you want to install Anaconda (highly recommended), follow the Mac or Linux instructions below.
 
-### Macs
+### Mac
 After downloading the installer, double click the .pkg file and follow the instructions on the screen. Use all of the defaults for installation.
 
 ### Linux
@@ -17,11 +17,11 @@ After downloading the installer execute the associated shell script. For example
 
 ## Installing PH5
 
-Below are explainations of the various ways you can install PH5. PH5 has several [system requirements](https://github.com/PIC-IRIS/PH5/wiki/PH5-Requirements) that are necessary for installation.
+Below are instructiosn for installing PH5 with Anaconda. PH5 has several [system requirements](https://github.com/PIC-IRIS/PH5/wiki/PH5-Requirements) that are necessary for installation. If you are using Anaconda these system requirements are preinstalled with Anaconda, making for a much simpler installation.
 
-### Installing from source
+### Installing PH5 from source
 * Open a terminal.
-* Clone the PH5 project from GitHub to your local machine.
+* Clone the PH5 project from GitHub to your local machine by running `git clone https://github.com/PIC-IRIS/PH5.git` or downloading the zip file from the main github page .
 * Add the conda-forge channel to your Anaconda configuration by running `conda config --add channels conda-forge`
 * Create a new Anaconda Virtual Environment for ph5 by running `conda create -q --name=ph5 python=2.7`
 * Install PH5 dependencies into the environment by running `conda env update --name=ph5 -f=/path/to/ph5/environment.yml`
