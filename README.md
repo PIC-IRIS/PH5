@@ -10,10 +10,10 @@ only cover installation of PH5 dependencies using Anaconda. This is because PH5 
 Anaconda is not an absolute requirement to get PH5 to work. As long as you can get the necessary python dependencies installed, PH5 will work. If you want to install Anaconda (highly recommended), follow the Mac or Linux instructions below.
 
 ### Mac
-After downloading the installer, double click the .pkg file and follow the instructions on the screen. Use all of the defaults for installation.
+After downloading the installer from https://www.continuum.io/downloads, double click the .pkg file and follow the instructions on the screen. Use all of the defaults for installation.
 
 ### Linux
-After downloading the installer execute the associated shell script. For example, if the file downloaded were named Anaconda3-4.1.1-Linux-x86_64.sh you would enter bash Anaconda3-4.1.1-Linux-x86_64.sh in the directory where you downloaded the file.
+After downloading the installer from https://www.continuum.io/downloads execute the associated shell script. For example, if the file downloaded were named Anaconda2-4.4.0-Linux-x86_64.sh you would run `bash Anaconda2-4.4.0-Linux-x86_64.sh` in the directory where you downloaded the file.
 
 ## Installing PH5
 
