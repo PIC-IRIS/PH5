@@ -7,10 +7,11 @@ dependencies:
  - pyproj
  - PySide
  - psutil
- - matplotlib
+ - matplotlib<2
  - basemap
  - obspy
  - vispy
+ - icu 58.*
  - pip:
    - construct==2.5.1
    - simplekml
