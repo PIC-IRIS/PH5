@@ -56,7 +56,7 @@ setup(
       
     entry_points = {
         'gui_scripts': [
-            'ph5view = ph5.clients.PH5View.ph5_viewer:startapp',
+            'ph5view = ph5.clients.ph5view.ph5_viewer:startapp',
             'noven = ph5.utilities.noven:startapp',
             'pforma = ph5.utilities.pformagui:startapp',
             'kefedit = ph5.utilities.kefedit:startapp',
@@ -104,7 +104,7 @@ setup(
         ],
     },
 
-    packages=['ph5', 'ph5/clients', 'ph5/clients/PH5View', 'ph5/core', 'ph5/utilities'],
+    packages=['ph5', 'ph5/clients', 'ph5/clients/ph5view', 'ph5/core', 'ph5/utilities'],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these

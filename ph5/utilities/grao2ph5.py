@@ -248,7 +248,7 @@ def update_external_references () :
         
 def update_index_t_info (starttime, samples, sps) :
     global DAS_INFO
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
@@ -427,12 +427,12 @@ def main():
             if len (flds) != 8 : continue
             deploy_flds = map (float, flds[5].split (':'))
             pickup_flds = map (float, flds[6].split (':'))
-            tdoy0 = timedoy.timedoy (year=int (deploy_flds[0]), 
+            tdoy0 = timedoy.TimeDOY (year=int (deploy_flds[0]), 
                                      hour=int (deploy_flds[2]), 
                                      minute=int (deploy_flds[3]), 
                                      second=deploy_flds[4], 
                                      doy=int (deploy_flds[1]))
-            tdoyN = timedoy.timedoy (year=int (pickup_flds[0]), 
+            tdoyN = timedoy.TimeDOY (year=int (pickup_flds[0]), 
                                      hour=int (pickup_flds[2]), 
                                      minute=int (pickup_flds[3]), 
                                      second=pickup_flds[4], 
@@ -454,7 +454,7 @@ def main():
                                                                           start_time))
                     time.sleep (3)
                 e = tdoy0.epoch (fepoch=True) + int (flds[7])
-                tdoy0 = timedoy.timedoy (epoch=e)
+                tdoy0 = timedoy.TimeDOY (epoch=e)
                 start_time = tdoy0.getFdsnTime ()
                 
         update_external_references ()        

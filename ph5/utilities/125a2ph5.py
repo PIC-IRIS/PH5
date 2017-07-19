@@ -110,7 +110,7 @@ def read_windows_file (f) :
             continue
         
         try :
-            tDOY = timedoy.timedoy (year=ttuple[0], 
+            tDOY = timedoy.TimeDOY (year=ttuple[0], 
                                     month=None, 
                                     day=None, 
                                     hour=ttuple[2], 
@@ -380,7 +380,7 @@ def window_contained (e) :
     #tdoy = TimeDoy.TimeDoy ()
     sample_rate = e.sampleRate
     sample_count = e.sampleCount
-    tDOY = timedoy.timedoy (year=e.year,
+    tDOY = timedoy.TimeDOY (year=e.year,
                             month=None, 
                             day=None, 
                             hour=e.hour, 
@@ -421,7 +421,7 @@ def window_contained (e) :
 
 def update_index_t_info (starttime, samples, sps) :
     global DAS_INFO
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
@@ -475,10 +475,10 @@ def writeEvent (trace, page) :
     p_das_t['sample_rate_i'] = trace.sampleRate
     p_das_t['sample_rate_multiplier_i'] = 1
     p_das_t['stream_number_i'] = trace.stream_number
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     #mo, da = tdoy.getMonthDay (trace.year, trace.doy)
     #p_das_t['time/epoch_l'] = int (time.mktime ((trace.year, mo, da, trace.hour, trace.minute, int (trace.seconds), -1, trace.doy, 0)))
-    tDOY = timedoy.timedoy (year=trace.year, 
+    tDOY = timedoy.TimeDOY (year=trace.year, 
                             month=None, 
                             day=None, 
                             hour=trace.hour, 

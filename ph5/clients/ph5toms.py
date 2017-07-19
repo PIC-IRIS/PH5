@@ -815,7 +815,7 @@ def main():
         sys.stderr.write("Error - {0} not found.\n".format(ph5file))
         sys.exit(-1)
 
-    ph5API_object = ph5api.ph5(path=args.ph5path, nickname=args.nickname)
+    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
 
     if args.array:
         args.array = args.array.split(',')

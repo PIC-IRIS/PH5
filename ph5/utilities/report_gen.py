@@ -429,7 +429,7 @@ def write_key_report () :
         array_i = int (k[-3:])
         A[array_i] = (start, stop)
     
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     fh.write ("shot|time|arrays\n")
     array_i_keys = A.keys ()
     for e in EVENT_T.rows :
@@ -478,7 +478,7 @@ def write_key_report () :
 def write_des_report () :
     global EXPERIMENT_T, ARRAY_T, EVENT_T
     
-    tdoy = TimeDoy.TimeDoy ()
+    tdoy = timedoy.TimeDOY ()
     
     A = {}
     for k in ARRAY_T.keys () :

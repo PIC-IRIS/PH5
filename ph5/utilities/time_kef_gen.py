@@ -71,7 +71,7 @@ def parse_soh (soh_buf) :
         '''   Convert colon separated string to epoch   '''
         yr, jd, hr, mn, sc, ms = map (int, t.split (":"))
         us = int (ms) * 1000
-        tdoy = timedoy.timedoy (year=int (yr),
+        tdoy = timedoy.TimeDOY (year=int (yr),
                                 hour=int (hr),
                                 minute=int (mn),
                                 second=int (sc),
@@ -176,7 +176,7 @@ def main():
     global P5
     get_args ()
     try :
-        P5 = ph5api.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
+        P5 = ph5api.PH5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)

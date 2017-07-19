@@ -107,7 +107,7 @@ def read_windows_file (f) :
     except :
         return w
     
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     while 1 :
         line = fh.readline ()
         if not line : break
@@ -123,7 +123,7 @@ def read_windows_file (f) :
             sys.stderr.write ("Error in window file: %s\n" % flds[0])
             continue
         
-        tDOY = timedoy.timedoy (year=int (ttuple[0]), 
+        tDOY = timedoy.TimeDOY (year=int (ttuple[0]), 
                                 month=None, 
                                 day=None, 
                                 hour=int (ttuple[2]), 
@@ -421,7 +421,7 @@ def closePH5 () :
 
 def update_index_t_info (starttime, samples, sps) :
     global DAS_INFO
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
@@ -523,10 +523,10 @@ def writeEvent (points, event) :
         p_das_t['sample_rate_multiplier_i'] = mult
         p_das_t['sample_count_i'] = int (event[c].sampleCount)
         p_das_t['stream_number_i'] = event[c].stream_number + 1
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         #mo, da = tdoy.getMonthDay (event[c].year, event[c].doy)
         #p_das_t['time/epoch_l'] = int (time.mktime ((event[c].year, mo, da, event[c].hour, event[c].minute, int (event[c].seconds), -1, event[c].doy, 0)))
-        tDOY = timedoy.timedoy (year=event[c].year, 
+        tDOY = timedoy.TimeDOY (year=event[c].year, 
                                 month=None, 
                                 day=None, 
                                 hour=event[c].hour, 
@@ -621,7 +621,7 @@ def window_contained (e) :
     if not e :
         return False
     
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     sample_rate = e.sampleRate
     sample_count = e.sampleCount
     #mo, da = tdoy.getMonthDay (e.year, e.doy)
@@ -634,7 +634,7 @@ def window_contained (e) :
                                       #-1,
                                       #e.doy,
                                       #0))
-    tDOY = timedoy.timedoy (year=e.year, 
+    tDOY = timedoy.TimeDOY (year=e.year, 
                             month=None, 
                             day=None, 
                             hour=e.hour, 
@@ -871,7 +871,7 @@ def updatePH5 (f) :
                 ok_write_stream (s, pts)
                 
     try :
-        pn = pn130.pn130 (f, verbose=int (VERBOSE), par=PARAMETERS)
+        pn = pn130.PN130 (f, verbose=int (VERBOSE), par=PARAMETERS)
     except Exception, e :
         sys.stderr.write ("Error: Can't open %s. %s\n" % (f, e))
         sys.stdout.write (":<Error>: {0}\n".format (f)); sys.stdout.flush ()

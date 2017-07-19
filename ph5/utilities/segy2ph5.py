@@ -314,7 +314,7 @@ def writeINDEX () :
 def update_index_t_info (starttime, samples, sps) :
     '''   Update info that gets saved in Index_t   '''
     global DAS_INFO, MAP_INFO
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     ph5map = '/Experiment_g/Maps_g/' + EXREC.ph5_g_maps.current_g_das._v_name
@@ -601,7 +601,7 @@ def process_trace (th, bh, rh, eh, tr) :
         p_event_t = {}
         
         p_event_t['id_s'] = rh['event_number']
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -630,7 +630,7 @@ def process_trace (th, bh, rh, eh, tr) :
             p_event_t['time/micro_seconds_i'] = 0
             
         #p_event_t['time/epoch_l'] = tdoy.epoch (year, doy, hour, minute, seconds)
-        tdoy = timedoy.timedoy (year=year, 
+        tdoy = timedoy.TimeDOY (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -717,13 +717,13 @@ def process_trace (th, bh, rh, eh, tr) :
         p_array_t['location/Z/value_d'] = rh['datumElevRec'] * elevationScale
         p_array_t['location/Z/units_s'] = MFEET[bh['mfeet']]
         
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
-        tdoy = timedoy.timedoy (year=year, 
+        tdoy = timedoy.TimeDOY (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -816,13 +816,13 @@ def process_trace (th, bh, rh, eh, tr) :
         ###p_das_t['array_name_log_a'] = log_name
         p_das_t['response_table_n_i'] = n_i
         #fsd = rh['traceWeightingFactor']
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
-        tdoy = timedoy.timedoy (year=year, 
+        tdoy = timedoy.TimeDOY (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 

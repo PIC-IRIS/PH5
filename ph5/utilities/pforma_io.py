@@ -891,7 +891,7 @@ if __name__ == '__main__' :
                         mo = processRE.match (line)
                         if mo :
                             flds = mo.groups ()
-                            tdoy = timedoy.timedoy (int (flds[0]), 
+                            tdoy = timedoy.TimeDOY (int (flds[0]), 
                                                     int (flds[1]), 
                                                     int (flds[2]), 
                                                     int (flds[3]),
@@ -905,7 +905,7 @@ if __name__ == '__main__' :
                 
                         elif doneRE.match (line) :
                             flds = doneRE.match (line).groups ()
-                            tdoy = timedoy.timedoy (int (flds[0]), 
+                            tdoy = timedoy.TimeDOY (int (flds[0]), 
                                                     int (flds[1]), 
                                                     int (flds[2]), 
                                                     int (flds[3]),

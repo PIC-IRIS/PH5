@@ -64,7 +64,7 @@ class PH5Reader () :
         pathname = os.path.dirname (str (path2file))
         master = os.path.basename (str (path2file))
         #try :
-        self.fio = ph5api.ph5 (path=pathname, nickname=master)
+        self.fio = ph5api.PH5 (path=pathname, nickname=master)
         
         self.fio.read_event_t_names ()
         for n in self.fio.Event_t_names :
@@ -90,7 +90,7 @@ class PH5Reader () :
         for n in self.fio.Array_t_names :
             for s in self.fio.Sort_t[n]['rows'] :
                 if event_epoch >= s['start_time/epoch_l'] and event_epoch <= s['end_time/epoch_l'] :
-                    tdoy = timedoy.timedoy (epoch=s['end_time/epoch_l'], microsecond=s['end_time/micro_seconds_i'])
+                    tdoy = timedoy.TimeDOY (epoch=s['end_time/epoch_l'], microsecond=s['end_time/micro_seconds_i'])
                     return tdoy.epoch (fepoch=True)
             
         return None
@@ -133,7 +133,7 @@ class PH5Reader () :
                 e['elev.'] = r['location/Z/value_d']
                 e['mag.'] = r['size/value_d']
                 e['depth'] = r['depth/value_d']
-                tdoy = timedoy.timedoy (epoch=r['time/epoch_l'], microsecond=r['time/micro_seconds_i'])
+                tdoy = timedoy.TimeDOY (epoch=r['time/epoch_l'], microsecond=r['time/micro_seconds_i'])
                 e['eStart'] = tdoy.epoch (fepoch=True)
                 e['eStop'] = self._event_stop (e['eStart'])
                 #print "event:%s (%s - %s)" % (e['eventId'], e['eStart'], e['eStop'])

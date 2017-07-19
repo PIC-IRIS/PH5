@@ -43,7 +43,7 @@ class BarData (object) :
     '''
     __slots__ = ('array', 'min', 'max', 'bar_info', 'shots')
     def __init__ (self) :
-        self.min = timedoy.timedoy (year=2019, 
+        self.min = timedoy.TimeDOY (year=2019, 
                                     month=01, 
                                     day=01, 
                                     hour=0, 
@@ -53,7 +53,7 @@ class BarData (object) :
                                     doy=None, 
                                     epoch=None, 
                                     dtobject=None)
-        self.max = timedoy.timedoy (year=1970, 
+        self.max = timedoy.TimeDOY (year=1970, 
                                     month=01, 
                                     day=01, 
                                     hour=0, 

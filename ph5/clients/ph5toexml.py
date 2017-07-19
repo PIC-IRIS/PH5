@@ -251,7 +251,7 @@ class PH5toexml(object):
         else:
             reportnum_patterns = self.args.get('reportnum_list').split(',')
         
-        self.ph5 = ph5api.ph5(path=path, nickname=self.args.get('nickname'))
+        self.ph5 = ph5api.PH5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_experiment_t()
         self.experiment_t = self.ph5.Experiment_t['rows']
         self.ph5.read_event_t_names()

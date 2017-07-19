@@ -12,7 +12,7 @@ import sys, os, time, math, gc, re
 #sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 
 from ph5.core import experiment, timedoy
-from ph5.clients.PH5View import ph5_viewer_reader
+from ph5.clients.ph5view import ph5_viewer_reader
 
 from copy import deepcopy
 

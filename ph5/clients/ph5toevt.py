@@ -136,7 +136,7 @@ def get_args () :
     ARGS = parser.parse_args ()  
     #print ARGS
     try :
-        P5 = ph5api.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
+        P5 = ph5api.PH5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)
@@ -146,7 +146,7 @@ def get_args () :
     elif ARGS.evt_list :
         ARGS.evt_list = map (str, ARGS.evt_list.split (','))
     elif ARGS.start_time :
-        ARGS.start_time = timedoy.timedoy (epoch=timedoy.passcal2epoch (ARGS.start_time, fepoch=True))
+        ARGS.start_time = timedoy.TimeDOY (epoch=timedoy.passcal2epoch (ARGS.start_time, fepoch=True))
         ARGS.evt_list = [ARGS.start_time]
     #   
     if not ARGS.evt_list and not ARGS.all_events :
@@ -208,7 +208,7 @@ def gather () :
         if event_t :
             sf.set_event_t (event_t)
             #   Event time
-            event_tdoy = timedoy.timedoy (microsecond = event_t['time/micro_seconds_i'], 
+            event_tdoy = timedoy.TimeDOY (microsecond = event_t['time/micro_seconds_i'], 
                                           epoch = event_t['time/epoch_l'])
             Offset_t = P5.read_offsets_shot_order (ARGS.station_array, evt, ARGS.shot_line)
             #Offset_t = P5.calc_offsets (ARGS.station_array, evt, ARGS.shot_line)

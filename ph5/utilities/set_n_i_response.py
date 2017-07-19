@@ -199,7 +199,7 @@ def main():
         ph5 = os.path.join (ARGS.families_directory, family)
         #print '#***' + ph5
         try :
-            P5 = ph5api.ph5 (path=ph5, nickname='master.ph5')
+            P5 = ph5api.PH5 (path=ph5, nickname='master.ph5')
         except Exception as e :
             sys.stderr.write ("Warning: {0}\n".format (e.msg))
             continue

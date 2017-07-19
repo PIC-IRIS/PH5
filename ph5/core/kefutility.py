@@ -3,7 +3,7 @@ import tables
 from PyQt4 import QtGui, QtCore
 
 # import from pn4
-from ph5.core import kef, ph5api
+from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
 
@@ -234,7 +234,7 @@ def _appendTable(table , ph5Val, path, statustext, count):
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5api.ph5 (path=path2file, nickname=filename, editmode=False)
+    ph5 = ph5api.PH5 (path=path2file, nickname=filename, editmode=False)
   
     # event
     ph5.read_event_t_names ()

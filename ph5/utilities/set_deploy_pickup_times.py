@@ -28,7 +28,7 @@ class ph5_time (object) :
             self.micro_seconds_i = 0
 
     def _passcal (self, passcal_s) :
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         flds = passcal_s.split (':')
         for i in range (5) :
             try :
@@ -36,7 +36,7 @@ class ph5_time (object) :
             except :
                 flds.append (0)
                 
-        tdoy = timedoy.timedoy (year=int (flds[0]), 
+        tdoy = timedoy.TimeDOY (year=int (flds[0]), 
                                 hour=int (flds[2]), 
                                 minute=int (flds[3]), 
                                 second=int (flds[4]), 

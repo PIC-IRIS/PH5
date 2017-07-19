@@ -493,7 +493,7 @@ def write_events () :
 def write_arrays () :
     global ARRAY_T
     
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     fh = sys.stdout
     A = {}
     for k in ARRAY_T.keys () :
@@ -510,8 +510,8 @@ def write_arrays () :
     for a in arrays :
         stations = []
         start, stop = A[int(a[-3:])]
-        ##start_tdoy = timedoy.timedoy (epoch=start)
-        #stop_tdoy = timedoy.timedoy (epoch=stop)
+        ##start_tdoy = timedoy.TimeDOY (epoch=start)
+        #stop_tdoy = timedoy.TimeDOY (epoch=stop)
         sample_rate = get_sample_rate (a, start, stop)
         try :
             deploy_time = timedoy.epoch2passcal (start)

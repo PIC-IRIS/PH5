@@ -124,7 +124,7 @@ def get_args () :
     ARGS = parser.parse_args ()
     #print ARGS
     try :
-        P5 = ph5api.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
+        P5 = ph5api.PH5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)
@@ -215,7 +215,7 @@ def gather () :
             #   Appropriate line from Event_t
             event_t = Event_t[o]
             ###   Need to handle time offset here, ARGS.seconds_offset_from_shot
-            event_tdoy = timedoy.timedoy (microsecond=event_t['time/micro_seconds_i'],  
+            event_tdoy = timedoy.TimeDOY (microsecond=event_t['time/micro_seconds_i'],  
                                           epoch=event_t['time/epoch_l'])
             #   Adjust start time based on offset entered on command line
             if ARGS.seconds_offset_from_shot : event_tdoy += ARGS.seconds_offset_from_shot

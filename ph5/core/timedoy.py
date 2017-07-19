@@ -37,7 +37,7 @@ class UTC(tzinfo):
     def dst(self, dt):
         return timedelta (0)
     
-class timedoy (object) :
+class TimeDOY (object) :
     '''
        Time conversions involving day of year
        Input:

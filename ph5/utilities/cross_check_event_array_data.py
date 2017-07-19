@@ -97,13 +97,13 @@ def read_json () :
         if not DATA.has_key (Data['das']) :
             DATA[Data['das']] = []
         yr, doy, hr, mn, sc = Data['first_sample'].split (':')
-        window_start = timedoy.timedoy (year=int (yr),
+        window_start = timedoy.TimeDOY (year=int (yr),
                                         doy=int (doy),
                                         hour=int (hr),
                                         minute=int (mn),
                                         second=float (sc))
         yr, doy, hr, mn, sc = Data['last_sample'].split (':')
-        window_stop = timedoy.timedoy (year=int (yr),
+        window_stop = timedoy.TimeDOY (year=int (yr),
                                         doy=int (doy),
                                         hour=int (hr),
                                         minute=int (mn),
@@ -175,7 +175,7 @@ def process_all () :
         shot_line_name = "Event_t_{0:03d}".format (int (shot_line))
         for event in Event['Events'] :
             yr, doy, hr, mn, sc = event['time'].split (':')
-            shot_time = timedoy.timedoy (year=int (yr),
+            shot_time = timedoy.TimeDOY (year=int (yr),
                                          doy=int (doy),
                                          hour=int (hr),
                                          minute=int (mn),

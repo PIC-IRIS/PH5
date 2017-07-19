@@ -644,7 +644,7 @@ class SortsGroup :
             return False
         
         
-class data_trace (object) :
+class Data_Trace (object) :
     __slots__ = ("das", "epoch", "length", "channel", "data_trace", "receiver", "keys")
     def __init__ (self) :
         das        = None                #   ASCII DAS serial number
@@ -877,8 +877,8 @@ class ReceiversGroup :
                 s = e + l
                 #   Does epoch fall in trace? epoch == None flag to get all
                 if (epoch >= e and epoch <= s) or epoch == None :
-                    #   Get an instance of our data_trace (structure?)
-                    dt = data_trace ()
+                    #   Get an instance of our Data_Trace (structure?)
+                    dt = Data_Trace ()
                     dt.das = g._v_name[6:]
                     dt.epoch = e
                     dt.length = l
