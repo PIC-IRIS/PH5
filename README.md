@@ -28,6 +28,14 @@ Below are explainations of the various ways you can install PH5. PH5 has several
 * Source the newly created ph5 environment by running `source activate ph5`
 * Install the PH5 python package by running `python setup.py install` in the cloned PH5 project root directory.
 
+### Special Obspy Instructions
+Currently PH5 uses a development branch of obspy that will not be official until obspy 1.10.
+In order to install this special branch you must do the following:
+* Open a terminal
+* Run `git clone https://github.com/obspy/obspy.git -b RESPtoInventoryResponse`
+* Run `python setup.py install` inside the obspy root directory to install new version of obspy
+
+
 ## Running PH5 Command Line Tools
 
 Once installed, executing command line tools in PH5 couldn't be easier. To run a utility, enter the name of the utility's executable that you wish to run anywhere on the command line.
