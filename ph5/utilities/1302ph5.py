@@ -33,7 +33,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = None, keys = None) :
         self.rows = rows
@@ -43,7 +43,7 @@ class rows_keys (object) :
         if rows != None : self.rows = rows
         if keys != None : self.keys = keys
 
-class index_t_info (object) :
+class Index_t_Info (object) :
     __slots__ = ('das', 'ph5file', 'ph5path', 'startepoch', 'stopepoch')
     def __init__ (self, das, ph5file, ph5path, startepoch, stopepoch) :
         self.das        = das
@@ -52,7 +52,7 @@ class index_t_info (object) :
         self.startepoch = startepoch
         self.stopepoch  = stopepoch
 
-class resp (object) :
+class Resp (object) :
     __slots__ = ('lines', 'keys', 't')
     def __init__ (self, t) :
         self.t = t
@@ -426,7 +426,7 @@ def update_index_t_info (starttime, samples, sps) :
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float (samples) / float (sps))
-    di = index_t_info (das, ph5file, ph5path, starttime, stoptime)
+    di = Index_t_Info (das, ph5file, ph5path, starttime, stoptime)
     if not DAS_INFO.has_key (das) :
         DAS_INFO[das] = []
         
@@ -802,7 +802,7 @@ def writeINDEX () :
         EX.ph5_g_receivers.populateIndex_t (i)
             
     rows, keys = EX.ph5_g_receivers.read_index ()
-    INDEX_T = rows_keys (rows, keys)
+    INDEX_T = Rows_Keys (rows, keys)
     
     DAS_INFO = {}
 
@@ -1032,9 +1032,9 @@ def main():
         
         fileprocessed = False
         if len (FILES) > 0 :
-            RESP = resp (EX.ph5_g_responses)
+            RESP = Resp (EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index ()
-            INDEX_T = rows_keys (rows, keys)
+            INDEX_T = Rows_Keys (rows, keys)
             #print "Processing RAW files..."
             
         for f in FILES :
@@ -1056,9 +1056,9 @@ def main():
                 
             closePH5 ()
             initializeExperiment (PH5)
-            RESP = resp (EX.ph5_g_responses) 
+            RESP = Resp (EX.ph5_g_responses) 
             rows, keys = EX.ph5_g_receivers.read_index ()
-            INDEX_T = rows_keys (rows, keys)
+            INDEX_T = Rows_Keys (rows, keys)
             fileprocessed = True
         
         if fileprocessed : update_external_references ()

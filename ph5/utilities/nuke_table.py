@@ -146,7 +146,7 @@ def initialize_ph5 (editmode = True) :
 
 
 ##
-##   Print rows_keys
+##   Print Rows_Keys
 ##
 #def table_print (t, a) :
     #global TABLE_KEY

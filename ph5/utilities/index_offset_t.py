@@ -65,7 +65,7 @@ def info_print () :
     
     print "#\n#\t%s\tph5 version: %s\n#" % (time.ctime (time.time ()), EX.version ())
 #
-#   Print rows_keys
+#   Print Rows_Keys
 #
 def table_print (t, a) :
     global TABLE_KEY

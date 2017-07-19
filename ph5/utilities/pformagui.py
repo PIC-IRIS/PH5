@@ -14,12 +14,12 @@ PROG_VERSION = "2017.032 Developmental"
 
 UTMZone = None
 
-class getInputs (QtGui.QWidget) :
+class GetInputs (QtGui.QWidget) :
     '''
        Widget to set name of lst file, processing directory, and to start run
     '''
     def __init__ (self, parent=None) :
-        super (getInputs, self).__init__ (parent)
+        super (GetInputs, self).__init__ (parent)
         
         #   Button to start run
         self.runButton = QtGui.QPushButton ("Run")
@@ -361,10 +361,10 @@ class MainWindow(QtGui.QMainWindow):
         
     def createDockWidget (self) :
         '''
-           Put getInputs widget in dock
+           Put GetInputs widget in dock
         '''
         self.dockWidget = QtGui.QDockWidget(self)
-        self.inputs = getInputs ()
+        self.inputs = GetInputs ()
         self.inputs.runButton.clicked.connect (self.newFamily)
         self.inputs.runButton.setStatusTip ("Initiate processing.")
         self.dockWidget.setWidget(self.inputs)
@@ -479,12 +479,12 @@ def init_fio (f, d, utm=None, combine=None) :
             f -> file name of file containing list of raw files
             d -> directory where families of PH5 files are processed
         Outputs:
-            fio -> an instance of formaIO
+            fio -> an instance of FormaIO
             cmds -> list of conversion commands
             lsts -> info about processing sub-lists and types of instruments
     '''
     #from multiprocessing import cpu_count
-    fio = pforma_io.formaIO (infile=f, outdir=d)
+    fio = pforma_io.FormaIO (infile=f, outdir=d)
     if utm : fio.set_utm (utm)
     if combine : fio.set_combine (combine)
     if cpu_count (logical=False) > 3 :
@@ -496,7 +496,7 @@ def init_fio (f, d, utm=None, combine=None) :
     
     try :
         fio.open ()
-    except pforma_io.formaIOError as e :
+    except pforma_io.FormaIOError as e :
         print e.errno, e.message
 
     try :
@@ -507,12 +507,12 @@ def init_fio (f, d, utm=None, combine=None) :
         #print "M:", fio.M
         #print "N:", fio.nmini
         #time.sleep (10)
-    except pforma_io.formaIOError as e :
+    except pforma_io.FormaIOError as e :
         print e.errno, e.message
     
     try :
         fio.readDB ()
-    except pforma_io.formaIOError as e :
+    except pforma_io.FormaIOError as e :
         print e.errno, e.message
         sys.exit (-1)
         

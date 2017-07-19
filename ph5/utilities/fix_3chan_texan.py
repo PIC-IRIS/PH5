@@ -32,7 +32,7 @@ PATH = '.'
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = [], keys = []) :
         self.rows = rows
@@ -45,7 +45,7 @@ class rows_keys (object) :
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
-class das_groups (object) :
+class Das_Groups (object) :
     __slots__ = ('das', 'node')
     def __init__ (self, das = None, node = None) :
         self.das = das
@@ -83,7 +83,7 @@ def save_orig (das, Das_t) :
     of.close ()
 
 #
-#   Print rows_keys
+#   Print Rows_Keys
 #
 def table_print (t, d, a, key) :
     #   Loop through table rows
@@ -118,7 +118,7 @@ def read_sort_arrays () :
         
         arrays, array_keys = EX.ph5_g_sorts.read_arrays (n)
         
-        rowskeys = rows_keys (arrays, array_keys)
+        rowskeys = Rows_Keys (arrays, array_keys)
         #   We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
         
@@ -145,7 +145,7 @@ def read_receivers (das = None) :
             continue
         
         g = DASGROUPS[d]
-        #dg = das_groups (d, g)
+        #dg = Das_Groups (d, g)
         #   Save a master list for later
         #DASS.append (dg)
         
@@ -154,11 +154,11 @@ def read_receivers (das = None) :
         
         #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das ()
-        rowskeys = rows_keys (das, das_keys)
+        rowskeys = Rows_Keys (das, das_keys)
         #DAS_T[d] = rowskeys
         return rowskeys
     
-    return rows_keys ()
+    return Rows_Keys ()
 
 
 def main():

@@ -11,7 +11,7 @@ time.tzset ()
 deployRE = re.compile ("deploy_time.*")
 pickupRE = re.compile ("pickup_time.*")
 
-class ph5_time (object) :
+class PH5_Time (object) :
     __slots__ = 'epoch_l', 'ascii_s', 'micro_seconds_i', 'type_s'
     
     def __init__ (self, passcal_s = None, epoch_l = None, ascii_s = None, micro_seconds_i = None) :
@@ -154,9 +154,9 @@ def main():
         of = open (os.path.join (mdir, base), 'w+')
         sys.stderr.write ("Opened: %s\n" % os.path.join (mdir, base))
         
-    dep_time = ph5_time (passcal_s = DEPLOY)
+    dep_time = PH5_Time (passcal_s = DEPLOY)
     
-    pu_time = ph5_time (passcal_s = PICKUP)
+    pu_time = PH5_Time (passcal_s = PICKUP)
     
     barf (fh, of, dep_time, pu_time)
     

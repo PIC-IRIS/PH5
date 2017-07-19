@@ -555,7 +555,7 @@ if __name__ == '__main__' :
     
     def init_fio (f, d) :
         from multiprocessing import cpu_count
-        fio = pforma_io.formaIO (infile=f, outdir=d)
+        fio = pforma_io.FormaIO (infile=f, outdir=d)
         if cpu_count () > 3 :
             fio.set_nmini (cpu_count () + 1)
         else :
@@ -565,7 +565,7 @@ if __name__ == '__main__' :
         
         try :
             fio.open ()
-        except pforma_io.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             print e.errno, e.message
     
         try :
@@ -574,12 +574,12 @@ if __name__ == '__main__' :
             #print "M:", fio.M
             #print "N:", fio.nmini
             #time.sleep (10)
-        except pforma_io.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             print e.errno, e.message
         
         try :
             fio.readDB ()
-        except pforma_io.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             print e.errno, e.message
             sys.exit (-1)
             
