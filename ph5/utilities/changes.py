@@ -270,7 +270,7 @@ class KefMaker(QtGui.QWidget):
         outFile.close()
 
 
-def main():
+def startapp():
     app = QtGui.QApplication(sys.argv)
     win = KefMaker()
     win.show()
@@ -278,4 +278,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    startapp()
