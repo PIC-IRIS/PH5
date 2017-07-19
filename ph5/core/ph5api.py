@@ -8,7 +8,7 @@
 import sys, os, time, re, math
 import numpy as np
 from pyproj import Geod
-from ph5.core import columns, Experiment, TimeDOY
+from ph5.core import columns, experiment, timedoy
 
 PROG_VERSION = '2017.188 Developmental'
 PH5VERSION = columns.PH5VERSION
@@ -89,14 +89,14 @@ class Cut (object) :
                                                                          self.id_s, 
                                                                          self.sample_rate,
                                                                          (1./self.sample_rate)*1000000)
-        ret += "Start: {0} Stop: {1}\n".format (TimeDOY.epoch2passcal (self.start_fepoch),
-                                                TimeDOY.epoch2passcal (self.stop_fepoch))
+        ret += "Start: {0} Stop: {1}\n".format (timedoy.epoch2passcal (self.start_fepoch),
+                                                timedoy.epoch2passcal (self.stop_fepoch))
         for m in self.msg :
             ret += m + '\n'
         ret += "DAS windows:\n"
         for w in self.das_t_times :
-            ret += "\t{0} - {1}\n".format (TimeDOY.epoch2passcal (w[0]),
-                                           TimeDOY.epoch2passcal (w[1]))
+            ret += "\t{0} - {1}\n".format (timedoy.epoch2passcal (w[0]),
+                                           timedoy.epoch2passcal (w[1]))
             
         return ret
 
@@ -123,7 +123,7 @@ class Clock (object) :
 class Trace (object) :
     '''   PH5 trace object:
           data -> Numpy array of trace data points
-          start_time -> TimeDOY time object
+          start_time -> timedoy time object
           time_correction_ms -> The correction to account for ocillator drift
           clock -> Clock performance object
           nsamples -> Number of data samples, ie. length of data
@@ -135,12 +135,12 @@ class Trace (object) :
           receiver_t -> Orientation
           response_t -> Gain and bit weight fo now.
           Methods:
-          time_correct -> Apply any time corrections and return a TimeDOY object
+          time_correct -> Apply any time corrections and return a timedoy object
     '''
     __slots__ = ('data', 'start_time', 'time_correction_ms', 'clock', 'nsamples', 'padding', 'sample_rate', 'ttype', 'byteorder', 'das_t', 'receiver_t', 'response_t', 'time_correct')
     def __init__ (self, data, fepoch, time_correction_ms, nsamples, sample_rate, ttype, byteorder, das_t, receiver_t, response_t, clock=Clock ()) :
         self.data = data
-        self.start_time = TimeDOY.TimeDOY (epoch=fepoch)
+        self.start_time = timedoy.TimeDOY (epoch=fepoch)
         self.time_correction_ms = time_correction_ms
         self.clock = clock
         self.nsamples = nsamples
@@ -152,7 +152,7 @@ class Trace (object) :
         self.response_t = response_t
         
     def __repr__ (self) :
-        end_time = TimeDOY.TimeDOY (epoch=(self.start_time.epoch (fepoch=True) + (float (self.nsamples) / self.sample_rate)))
+        end_time = timedoy.TimeDOY (epoch=(self.start_time.epoch (fepoch=True) + (float (self.nsamples) / self.sample_rate)))
         return "start_time: {0}\nend_time: {7}\nnsamples: {1}/{6}\nsample_rate: {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}".format (self.start_time,
                                                                                                                                                        self.nsamples,
                                                                                                                                                        self.sample_rate,
@@ -163,9 +163,9 @@ class Trace (object) :
                                                                                                                                                        end_time)
         
     def time_correct (self) :
-        return TimeDOY.timecorrect (self.start_time, self.time_correction_ms)
+        return timedoy.timecorrect (self.start_time, self.time_correction_ms)
         
-class ph5 (Experiment.ExperimentGroup) :
+class PH5 (experiment.ExperimentGroup) :
     das_gRE = re.compile ("Das_g_(.*)")
     def __init__ (self, path=None, nickname=None, editmode=False) :
         '''   path -> Path to ph5 file
@@ -174,7 +174,7 @@ class ph5 (Experiment.ExperimentGroup) :
         '''
         if not os.path.exists (os.path.join (path, nickname)) :
             raise APIError (0, "PH5 file does not exist: {0}".format (os.path.join (path, nickname)))
-        Experiment.ExperimentGroup.__init__ (self, currentpath=path, nickname=nickname)
+        experiment.ExperimentGroup.__init__ (self, currentpath=path, nickname=nickname)
         if self.currentpath != None and self.nickname != None :
             self.ph5open (editmode)
             self.initgroup ()
@@ -920,7 +920,7 @@ class ph5 (Experiment.ExperimentGroup) :
                 start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
                 if trace_start_fepoch == None :
                     trace_start_fepoch = start_fepoch            
-                #print TimeDOY.TimeDOY (epoch=start_fepoch)
+                #print timedoy.TimeDOY (epoch=start_fepoch)
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float' :
@@ -1078,7 +1078,7 @@ class ph5 (Experiment.ExperimentGroup) :
                     if delta < ((1. / das_sr) * 1.5) :
                         C.das_t_times[i-1][1] = window_stop_fepoch
                     else :
-                        C.msg.append ("Time gap or overlap of {1} seconds at {0}".format (TimeDOY.epoch2passcal (window_start_fepoch), delta))
+                        C.msg.append ("Time gap or overlap of {1} seconds at {0}".format (timedoy.epoch2passcal (window_start_fepoch), delta))
                         C.das_t_times.append ((window_start_fepoch, window_stop_fepoch))
                 C.channels[chan] = True 
                 
@@ -1124,7 +1124,7 @@ class ph5 (Experiment.ExperimentGroup) :
                     stop_time = start_time + length
                     #   Filter on deploy and pickup times
                     if not is_in (deploy_fepoch, pickup_fepoch, start_time, stop_time) :
-                        msg = "Start: {0} and Stop: {1} outside of deploy and pickup time.".format (TimeDOY.epoch2passcal (start_time), TimeDOY.epoch2passcal (stop_time))
+                        msg = "Start: {0} and Stop: {1} outside of deploy and pickup time.".format (timedoy.epoch2passcal (start_time), timedoy.epoch2passcal (stop_time))
                     else : msg = None
                     #   Get Cut object for time span, channel, and sample rate if available
                     C = self._Cut (das, start_time, stop_time, chan, sr=sr, msg=msg)
@@ -1181,7 +1181,7 @@ class ph5 (Experiment.ExperimentGroup) :
             pickup_fepoch = fepoch (array_t['pickup_time/epoch_l'], array_t['pickup_time/micro_seconds_i'])
             #   Filter on deploy and pickup time
             if not is_in (deploy_fepoch, pickup_fepoch, start_time, stop_time) :
-                msg = "Start: {0} and Stop: {1} outside of deploy and pickup time.".format (TimeDOY.epoch2passcal (start_time), TimeDOY.epoch2passcal (stop_time))
+                msg = "Start: {0} and Stop: {1} outside of deploy and pickup time.".format (timedoy.epoch2passcal (start_time), timedoy.epoch2passcal (stop_time))
             else : msg = None
             #   Get a Cut object for this time span, channel and sample rate if available
             C = self._Cut (das, start_time, stop_time, chan, sr=sr, msg=msg)
@@ -1459,8 +1459,8 @@ def build_kef (ts, rs) :
        ts -> table string
        rs -> rows object
     '''
-    tdoy = TimeDOY.TimeDOY (epoch=time.time ())
-    ret = "#\n###   Written by ph5API v{0} at {1}\n#\n".format (PROG_VERSION, tdoy.getFdsnTime ())
+    tdoy = timedoy.TimeDOY (epoch=time.time ())
+    ret = "#\n###   Written by ph5api v{0} at {1}\n#\n".format (PROG_VERSION, tdoy.getFdsnTime ())
     i = 0
     for r in rs :
         i += 1
@@ -1577,7 +1577,7 @@ if __name__ == '__main__' :
     t1 = start
     #traces = []
     t2 = t1 + 3600.
-    tdoy = TimeDOY.TimeDOY (year=2017,
+    tdoy = timedoy.TimeDOY (year=2017,
                             hour=0, 
                             minute=0,
                             second=0, 
@@ -1665,7 +1665,7 @@ if __name__ == '__main__' :
     ###   Create dictionary to hold trace objects
     ##d = {}
     ###   Cut Z
-    ##d['Z'] = p.cut ('A123', TimeDOY.passcal2epoch ("2016:201:00:00:00.000", fepoch=True), TimeDOY.passcal2epoch ("2016:201:23:59:59.999", fepoch=True), chan=1, sample_rate=100)
+    ##d['Z'] = p.cut ('A123', timedoy.passcal2epoch ("2016:201:00:00:00.000", fepoch=True), timedoy.passcal2epoch ("2016:201:23:59:59.999", fepoch=True), chan=1, sample_rate=100)
     ##print
     ###   Cut N
     ##d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2, sample_rate=250)
@@ -1690,8 +1690,8 @@ if __name__ == '__main__' :
     ##das = array_t_0['das/serial_number_s']
     ##sr = array_t_0['sample_rate_i'] / float (array_t_0['sample_rate_multiplier_i'])
     ##samples_per_day = int (86400 * sr)
-    ##start_tdoy = TimeDOY.TimeDOY (epoch=array_t_0['deploy_time/epoch_l'])
-    ##start_tdoy = TimeDOY.TimeDOY (year=start_tdoy.dtobject.year,
+    ##start_tdoy = timedoy.TimeDOY (epoch=array_t_0['deploy_time/epoch_l'])
+    ##start_tdoy = timedoy.TimeDOY (year=start_tdoy.dtobject.year,
                                   ##hour=0,
                                   ##minute=0,
                                   ##second=0,
@@ -1699,8 +1699,8 @@ if __name__ == '__main__' :
                                   ##doy=start_tdoy.doy ())
     ##start_fepoch = start_tdoy.epoch (fepoch=True)
     ##stop_fepoch = start_fepoch + 86400.
-    ##end_tdoy = TimeDOY.TimeDOY (epoch=array_t_1['pickup_time/epoch_l'])
-    ##end_tdoy = TimeDOY.TimeDOY (year=end_tdoy.dtobject.year,
+    ##end_tdoy = timedoy.TimeDOY (epoch=array_t_1['pickup_time/epoch_l'])
+    ##end_tdoy = timedoy.TimeDOY (year=end_tdoy.dtobject.year,
                                 ##hour=23,
                                 ##minute=59,
                                 ##second=59,
@@ -1710,12 +1710,12 @@ if __name__ == '__main__' :
     ##while stop_fepoch < end_fepoch :
         ##traces = p.cut (das, start_fepoch, stop_fepoch, sample_rate=sr)
         ##for t in traces :
-            ##print TimeDOY.epoch2passcal (start_fepoch), TimeDOY.epoch2passcal (stop_fepoch)
-            ##print  '===>',t.start_time.getPasscalTime (ms=True),t.start_time.epoch (fepoch=True),t.sample_rate,t.nsamples,t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate),TimeDOY.epoch2passcal (t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate))
+            ##print timedoy.epoch2passcal (start_fepoch), timedoy.epoch2passcal (stop_fepoch)
+            ##print  '===>',t.start_time.getPasscalTime (ms=True),t.start_time.epoch (fepoch=True),t.sample_rate,t.nsamples,t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate),timedoy.epoch2passcal (t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate))
             ##samps = 0
             ##for d in t.das_t :
                 ##samps += d['sample_count_i']
-                ##tttttt = TimeDOY.TimeDOY (epoch=d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000.))
+                ##tttttt = timedoy.TimeDOY (epoch=d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000.))
                 ##print "\t", tttttt.getPasscalTime (ms=True), d['sample_rate_i'], d['sample_count_i']
             ##print "\t", samps
             ##if len (t.data) != samples_per_day :
@@ -1723,7 +1723,7 @@ if __name__ == '__main__' :
         ##start_fepoch += 86400.
         ##stop_fepoch += 86400.
     ###Offset_t = p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
-    ###start = TimeDOY.TimeDOY (year=2016, 
+    ###start = timedoy.TimeDOY (year=2016, 
                              ###month=07, 
                              ###day=28, 
                              ###hour=0, 

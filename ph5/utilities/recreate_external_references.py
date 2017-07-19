@@ -5,7 +5,7 @@
 #   Steve Azevedo, September 2012
 #
 import os, sys, time
-from ph5.core import Experiment
+from ph5.core import experiment
 
 PROG_VERSION='2016.307'
 INDEX_T = {}
@@ -18,7 +18,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = None, keys = None) :
         self.rows = rows
@@ -33,13 +33,13 @@ def read_index_table () :
     global EX, INDEX_T
     
     rows, keys = EX.ph5_g_receivers.read_index ()
-    INDEX_T = rows_keys (rows, keys)        
+    INDEX_T = Rows_Keys (rows, keys)        
 #        
 def read_m_index_table () :
     global EX, M_INDEX_T
     
     rows, keys = EX.ph5_g_maps.read_index ()
-    M_INDEX_T = rows_keys (rows, keys)        
+    M_INDEX_T = Rows_Keys (rows, keys)        
 #        
 def update_external_references () :
     global EX, INDEX_T
@@ -107,7 +107,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (True)
     EX.initgroup ()
     

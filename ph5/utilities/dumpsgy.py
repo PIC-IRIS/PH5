@@ -7,7 +7,7 @@
 #
 
 import sys, os
-from ph5.core import SEGY_h, ibmfloat, ebcdic
+from ph5.core import segy_h, ibmfloat, ebcdic
 import construct
 
 PROG_VERSION = '2016.266'
@@ -104,7 +104,7 @@ def get_args () :
         
 def read_text_header () :
     buf = FH.read (3200)    
-    t = SEGY_h.Text ()
+    t = segy_h.Text ()
     
     return t.parse (buf)
 
@@ -112,7 +112,7 @@ def last_extended_header (container) :
     '''   Return True if this contains an EndText stanza?   '''
     import re
     lastRE = re.compile (".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
-    keys = SEGY_h.Text ().__keys__
+    keys = segy_h.Text ().__keys__
     for k in keys :
         what = "container.{0}".format (k)
         if EBCDIC :
@@ -126,7 +126,7 @@ def last_extended_header (container) :
 
 def print_text_header (container) :
     global TYPE
-    keys = SEGY_h.Text ().__keys__
+    keys = segy_h.Text ().__keys__
     print "--------------- Textural Header ---------------"
     for k in keys :
         what = "container.{0}".format (k)
@@ -162,7 +162,7 @@ def print_text_header (container) :
         
 def read_binary_header () :
     buf = FH.read (400)
-    b = SEGY_h.Reel (ENDIAN)
+    b = segy_h.Reel (ENDIAN)
     
     ret = None
     try :
@@ -174,7 +174,7 @@ def read_binary_header () :
 
 def print_binary_header (container) :
     if not container : return
-    keys = SEGY_h.Reel ().__keys__
+    keys = segy_h.Reel ().__keys__
     print "---------- Binary Header ----------"
     for k in keys :
         what = "container.{0}".format (k)
@@ -182,12 +182,12 @@ def print_binary_header (container) :
         
 def read_trace_header () :
     buf = FH.read (180)
-    t = SEGY_h.Trace (ENDIAN)
+    t = segy_h.Trace (ENDIAN)
     
     return t.parse (buf)
 
 def print_trace_header (container) :
-    keys = SEGY_h.Trace ().__keys__
+    keys = segy_h.Trace ().__keys__
     tt = 0
     print "---------- Trace Header ----------"
     for k in keys :
@@ -208,15 +208,15 @@ def read_extended_header () :
     buf = FH.read (60)
     
     if TYPE == 'U' :
-        e = SEGY_h.Menlo (ENDIAN)
+        e = segy_h.Menlo (ENDIAN)
     elif TYPE == 'S' :
-        e = SEGY_h.Seg (ENDIAN)
+        e = segy_h.Seg (ENDIAN)
     elif TYPE == 'P' :
-        e = SEGY_h.Passcal (ENDIAN)
+        e = segy_h.Passcal (ENDIAN)
     elif TYPE == 'I' :
-        e = SEGY_h.Sioseis (ENDIAN)
+        e = segy_h.Sioseis (ENDIAN)
     elif TYPE == 'N' :
-        e = SEGY_h.iNova (ENDIAN)
+        e = segy_h.iNova (ENDIAN)
     else :
         return None
     
@@ -224,15 +224,15 @@ def read_extended_header () :
 
 def print_extended_header (container) :
     if TYPE == 'U' :
-        keys = SEGY_h.Menlo ().__keys__
+        keys = segy_h.Menlo ().__keys__
     elif TYPE == 'S' :
-        keys = SEGY_h.Seg ().__keys__
+        keys = segy_h.Seg ().__keys__
     elif TYPE == 'P' :
-        keys = SEGY_h.Passcal ().__keys__
+        keys = segy_h.Passcal ().__keys__
     elif TYPE == 'I' :
-        keys = SEGY_h.Sioseis ().__keys__
+        keys = segy_h.Sioseis ().__keys__
     elif TYPE == 'N' :
-        keys = SEGY_h.iNova ().__keys__
+        keys = segy_h.iNova ().__keys__
     else :
         return None
     

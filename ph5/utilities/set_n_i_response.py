@@ -7,7 +7,7 @@
 #
 
 import sys, os, re
-from ph5.core import ph5API
+from ph5.core import ph5api
 
 PROG_VERSION = '2017.068a'
 
@@ -162,7 +162,7 @@ def print_new_Das_t (P5) :
         DAS_KEF = os.path.join (ARGS.families_directory, "RESPONSE_T_N_I", "Das_t_response_n_i_{0}.kef".format (das))
         sys.stderr.write ("Creating: {0}\n".format (DAS_KEF))
         with open (DAS_KEF, 'w+') as fh :
-            fh.write ("#   PH5VERSION: {0}\n".format (ph5API.PH5VERSION))
+            fh.write ("#   PH5VERSION: {0}\n".format (ph5api.PH5VERSION))
             keys = P5.Das_t[das]['keys']
             keys.sort ()
             i = 1
@@ -175,7 +175,7 @@ def print_new_Das_t (P5) :
                     for k in keys :
                         fh.write ("\t{0}={1}\n".format (k, das_t[k]))
                 except IndexError :
-                    sr = ph5API.fepoch (das_t['sample_rate_i'], das_t['sample_rate_multiplier_i'])
+                    sr = ph5api.fepoch (das_t['sample_rate_i'], das_t['sample_rate_multiplier_i'])
                     sys.stderr.write ("#   Index out of range for DAS: {0}, sample rate: {1}\n".format (das, sr))
                     sys.stderr.write ("#   Entry unchanged! Suspect data.\n")
                     fh.write ("#   {0} response_table_n_i entry suspect!\n".format (i)); i += 1
@@ -199,7 +199,7 @@ def main():
         ph5 = os.path.join (ARGS.families_directory, family)
         #print '#***' + ph5
         try :
-            P5 = ph5API.ph5 (path=ph5, nickname='master.ph5')
+            P5 = ph5api.PH5 (path=ph5, nickname='master.ph5')
         except Exception as e :
             sys.stderr.write ("Warning: {0}\n".format (e.msg))
             continue

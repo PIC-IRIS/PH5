@@ -8,7 +8,7 @@
 import sys, os, exceptions
 import construct, numpy as np
 import ibm2ieee_py
-from ph5.core import SEGY_h, ebcdic
+from ph5.core import segy_h, ebcdic
 
 PROG_VERSION = '2014.138.a'
 
@@ -146,11 +146,11 @@ class Reader () :
     def read_text_header (self) :
         ret = {}
         buf = self.read_buf (3200)    
-        t = SEGY_h.Text ()
+        t = segy_h.Text ()
         
         container = t.parse (buf)
         
-        keys = SEGY_h.Text ().__keys__
+        keys = segy_h.Text ().__keys__
         
         for k in keys :
             what = "container.{0}".format (k)
@@ -186,7 +186,7 @@ class Reader () :
         import re
         lastRE = re.compile (".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
         
-        keys = SEGY_h.Text ().__keys__
+        keys = segy_h.Text ().__keys__
         for k in keys :
             t = txt_hdr[k]
                 
@@ -196,12 +196,12 @@ class Reader () :
     
     def read_binary_header (self) :
         buf = self.read_buf (400)
-        b = SEGY_h.Reel (self.endianess)
+        b = segy_h.Reel (self.endianess)
         
         ret = {}
         container = b.parse (buf)
             
-        keys = SEGY_h.Reel ().__keys__
+        keys = segy_h.Reel ().__keys__
         for k in keys :
             what = "container.{0}".format (k)
             ret[k] = eval (what)
@@ -211,12 +211,12 @@ class Reader () :
     def read_trace_header (self) :
         buf = self.read_buf (180)
         if not buf : return {}
-        t = SEGY_h.Trace (self.endianess)
+        t = segy_h.Trace (self.endianess)
         
         ret = {}
         container = t.parse (buf)
         
-        keys = SEGY_h.Trace ().__keys__
+        keys = segy_h.Trace ().__keys__
         for k in keys :
             what = "container.{0}".format (k)
             ret[k] = eval (what)
@@ -227,23 +227,23 @@ class Reader () :
         ret = {}
         buf = self.read_buf (60)
         
-        e = SEGY_h.Seg (self.endianess)
-        keys = SEGY_h.Seg ().__keys__
+        e = segy_h.Seg (self.endianess)
+        keys = segy_h.Seg ().__keys__
         if self.ext_hdr_type == 'U' :
-            e = SEGY_h.Menlo (self.endianess)
-            keys = SEGY_h.Menlo ().__keys__
+            e = segy_h.Menlo (self.endianess)
+            keys = segy_h.Menlo ().__keys__
         elif self.ext_hdr_type == 'S' :
-            e = SEGY_h.Seg (self.endianess)
-            keys = SEGY_h.Seg ().__keys__
+            e = segy_h.Seg (self.endianess)
+            keys = segy_h.Seg ().__keys__
         elif self.ext_hdr_type == 'P' :
-            e = SEGY_h.Passcal (self.endianess)
-            keys = SEGY_h.Passcal ().__keys__
+            e = segy_h.Passcal (self.endianess)
+            keys = segy_h.Passcal ().__keys__
         elif self.ext_hdr_type == 'I' :
-            e = SEGY_h.Sioseis (self.endianess)
-            keys = SEGY_h.Sioseis ().__keys__
+            e = segy_h.Sioseis (self.endianess)
+            keys = segy_h.Sioseis ().__keys__
         elif self.ext_hdr_type == 'N' :
-            e = SEGY_h.iNova (self.endianess)
-            keys = SEGY_h.iNova ().__keys__
+            e = segy_h.iNova (self.endianess)
+            keys = segy_h.iNova ().__keys__
         
         container = e.parse (buf)
         

@@ -6,7 +6,7 @@
 #
 import os, sys
 
-from ph5.utilities import pformaIO
+from ph5.utilities import pforma_io
 
 PROG_VERSION = "2016.049 Developmental"
 
@@ -156,7 +156,7 @@ def main():
         
     get_args ()
     #   Inputs list of raw files and project directory
-    fio = pformaIO.formaIO (infile=RAW_LST, outdir=PROJECT)
+    fio = pforma_io.FormaIO (infile=RAW_LST, outdir=PROJECT)
     #   Number of families is (default) number of CPU's + 1 or set
     fio.set_nmini (NFAMILY)
     #   M is the number of mini ph5 files per family, otherwise set in fio.read
@@ -169,13 +169,13 @@ def main():
         #   Open list of input files
         try :
             fio.open ()
-        except pformaIO.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             sys.stderr.write ("Error: {0} Message: {1}\n".format (e.errno, e.message))
             sys.exit (1)
         #   Pre-process raw files
         try :
             fio.read ()
-        except pformaIO.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             sys.stderr.write ("Error: {0} Message: {1}\n".format (e.errno, e.message))
             sys.exit (1)
         #   Adjust the number M and the number of families if needed 
@@ -184,13 +184,13 @@ def main():
         #   Set up the processing directory structure, and reset M if mini files already exist
         try :
             fio.initialize_ph5 ()
-        except pformaIO.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             sys.stderr.write ("Error: {0} Message: {1}\n".format (e.errno, e.message))
             sys.exit (1)
         #   Read JSON db   
         try :
             fio.readDB ()
-        except pformaIO.formaIOError as e :
+        except pforma_io.FormaIOError as e :
             sys.stderr.write ("Error: {0} Message: {1}\n".format (e.errno, e.message))
             sys.exit (1)
         #   Resolve JSON db with list of files we are loading (have they been loaded already)    

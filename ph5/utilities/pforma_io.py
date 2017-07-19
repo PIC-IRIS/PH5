@@ -23,12 +23,12 @@ PROG2INST = {'125a2ph5':'texan', '1302ph5':'rt-130', 'segd2ph5':'nodal'}
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-class formaIOError (exceptions.Exception) :
+class FormaIOError (exceptions.Exception) :
     def __init__ (self, errno, msg) :
         self.errno = errno
         self.message = msg
         
-class formaIO () :
+class FormaIO () :
     '''
         Create a project to read RAW data into a PH5 file in parallel.
     '''
@@ -52,9 +52,9 @@ class formaIO () :
             self.M = int (self.cfg['M'])
         
         if self.cfg and self.cfg.has_key ('N') :
-            self.nmini = formaIO.MINIS[0:self.cfg['N']]
+            self.nmini = FormaIO.MINIS[0:self.cfg['N']]
         else :
-            self.nmini = formaIO.MINIS[0:4]
+            self.nmini = FormaIO.MINIS[0:4]
             
         #print 'cfg', self.cfg,; sys.exit ()
     
@@ -98,11 +98,11 @@ class formaIO () :
         
     def set_nmini (self, n) :
         '''
-            Set the self.nmini list of PH5 families from n and formaIO.MINIS.
+            Set the self.nmini list of PH5 families from n and FormaIO.MINIS.
             Use value for N from pforma.cfg if it exists.
         '''
         if not self.cfg.has_key ('N') :
-            self.nmini = formaIO.MINIS[0:n]
+            self.nmini = FormaIO.MINIS[0:n]
         
     def initialize_ph5 (self) :
         '''   Set up processing directory structure and set M from existing mini files   '''
@@ -111,7 +111,7 @@ class formaIO () :
             try :
                 os.makedirs (self.home)
             except Exception as e :
-                raise formaIOError (4, "Failed to create output directory: {0}".format (self.home))
+                raise FormaIOError (4, "Failed to create output directory: {0}".format (self.home))
             
         for m in self.nmini :
             os.chdir (self.home)
@@ -122,7 +122,7 @@ class formaIO () :
                 os.chdir (m)
                 subprocess.call ('initialize-ph5 -n master', shell=True, stdout=open (os.devnull, 'w'), stderr=open (os.devnull, 'w'))
             except Exception as e :
-                raise formaIOError (5, "Failed to initialize {0}".format (os.path.join (self.home, m)))
+                raise FormaIOError (5, "Failed to initialize {0}".format (os.path.join (self.home, m)))
             
             files = os.listdir ('.')
             minis = filter (lambda a : a[0:5] == 'miniP' and a[-3:] == 'ph5', files)
@@ -140,7 +140,7 @@ class formaIO () :
             self.M = int (m)
             #self.cfg['M'] = int (m)
         except Exception as e :
-            raise formaIOError (errno=10, msg="Failed to set M: {0}".format (e.message))
+            raise FormaIOError (errno=10, msg="Failed to set M: {0}".format (e.message))
 
     def run_simple (self, cmds, x, family) :
         '''
@@ -251,9 +251,9 @@ class formaIO () :
                     if r['mini'] :
                         continue
                 
-                    #if (r['size'] + tot[formaIO.MINIS[i]]) > ts :
+                    #if (r['size'] + tot[FormaIO.MINIS[i]]) > ts :
                         #i += 1
-                        #if i >= len (formaIO.MINIS) :
+                        #if i >= len (FormaIO.MINIS) :
                             #i -= 1
                         
                     if not ret[self.nmini[i]].has_key (d) :
@@ -371,14 +371,14 @@ class formaIO () :
             self.infh = open (self.infile, "Ur")
         except Exception as e :
             self.infh = None
-            raise formaIOError (errno=1, msg="Failed to open: {0}.".format (self.infile))
+            raise FormaIOError (errno=1, msg="Failed to open: {0}.".format (self.infile))
         
     def read (self) :
         '''   Read raw files   '''
         if self.infh == None :
             try :
                 self.open ()
-            except formaIOError as e :
+            except FormaIOError as e :
                 sys.stderr.write ("{0}: {1}".format (e.errno, e.message))
                 sys.exit ()
         if self.infh == None : return
@@ -397,14 +397,14 @@ class formaIO () :
             #das = str (int (raw_file[1:5]) + 10000)   #   Wrong!!! texan only
             #try :
             tp, das = guess_instrument_type (raw_file)
-            #except formaIOError as e :
+            #except FormaIOError as e :
                 #sys.stderr.write (e.message)
                 #sys.exit (e.errno)
             #print tp, das
             if das == 'lllsss' :
-                raise formaIOError (errno=4, msg="May be nodal SEG-D file but using simpleton file naming scheme. Please rename.")
+                raise FormaIOError (errno=4, msg="May be nodal SEG-D file but using simpleton file naming scheme. Please rename.")
             if tp == 'unknown' :
-                raise formaIOError (errno=3, msg="File in {1} does not have standard name: {0}".format (raw_file, self.infile))
+                raise FormaIOError (errno=3, msg="File in {1} does not have standard name: {0}".format (raw_file, self.infile))
             
             #   Save info about each raw file keyed by serial number in self.raw_files
             if not self.raw_files.has_key (das) :     #
@@ -445,7 +445,7 @@ class formaIO () :
             self.db_files = read_json (os.path.join (self.home, JSON_DB))
         except Exception as e :
             self.db_files = {}
-            raise formaIOError (2, "Failed to read {0}. {1}".format (self._json, e.message))
+            raise FormaIOError (2, "Failed to read {0}. {1}".format (self._json, e.message))
             
     def resolveDB (self) :
         '''   Resolve the list of raw files with the files already loaded   '''
@@ -548,7 +548,7 @@ class formaIO () :
                     try :
                         copy2 ('../A/master.ph5', './master.ph5')
                     except :
-                        raise formaIOError (errno=7, msg="Failed to copy A/master.ph5 to {0}/master.ph5.".format (TO))
+                        raise FormaIOError (errno=7, msg="Failed to copy A/master.ph5 to {0}/master.ph5.".format (TO))
                 
                 command = "kef2ph5 -n master.ph5 -k ../{0}/Index_t.kef".format (m)
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
@@ -612,7 +612,7 @@ class formaIO () :
                             os.link ("../{0}/{1}".format (m, mini), mini)
                             #os.link (mini, "../{0}/{1}".format (m, mini))
                         except Exception as e :
-                            raise formaIOError (errno=8, msg="Failed to move {0} to A.".format (mini))
+                            raise FormaIOError (errno=8, msg="Failed to move {0} to A.".format (mini))
                         
                         print "Hard link {0} to {2}, preserve {1}/master.ph5.".format (mini, m, TO)
                         msg.append ("Hard link {0} to {2}, preserve {1}/master.ph5.".format (mini, m, TO))
@@ -631,7 +631,7 @@ class formaIO () :
             ret = subprocess.Popen (command, shell=True, stdout=open (os.devnull, "w"), stderr=open (os.devnull, "w"))
             P.append (ret)
             #if ret :
-                #raise formaIOError (errno=9, msg="Failed to recreate external references.")
+                #raise FormaIOError (errno=9, msg="Failed to recreate external references.")
             
             msg.append ("Recreated external references in {0}/master.ph5.".format (TO))
             
@@ -717,7 +717,7 @@ def guess_instrument_type (filename) :
         return 'nodal', das    
     mo = simpletonodalRE.match (filename)
     if mo :
-        #raise formaIOError (-100, "Error: Nodal simpleton file naming scheme: {0}. Please rename files.")
+        #raise FormaIOError (-100, "Error: Nodal simpleton file naming scheme: {0}. Please rename files.")
         return 'nodal', 'lllsss'
     
     return 'unknown', None
@@ -753,16 +753,16 @@ if __name__ == '__main__' :
     print guess_instrument_type (filename)
     sys.exit ()
     
-    import TimeDOY, time
+    import timedoy, time
     
     #2015-08-10 18:18:59,197 Processing: /home/azevedo/Salt/Raw/D069-10Mar/Greg/I1700RAWDO69.TRD...
     processRE = re.compile ("(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\,\d\d\d Processing: (.*[TtZz][RrIi][DdPp])\.\.\..*")
     doneRE = re.compile ("(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d).*nodes recreated\..*")    
     
     
-    #fio = formaIO (infile = '/media/sf_ORANGE_MAC/short.lst')
-    #fio = formaIO (infile = '/media/sf_ORANGE_MAC/trd.lst')
-    fio = formaIO (infile = './trd2.lst', outdir = '/storage/Salt')
+    #fio = FormaIO (infile = '/media/sf_ORANGE_MAC/short.lst')
+    #fio = FormaIO (infile = '/media/sf_ORANGE_MAC/trd.lst')
+    fio = FormaIO (infile = './trd2.lst', outdir = '/storage/Salt')
     #fio.set_M (10)
     #num = int (raw_input ("Number of parts: "))
     #if num > 16 : num = 16
@@ -772,7 +772,7 @@ if __name__ == '__main__' :
     
     try :
         fio.open ()
-    except formaIOError as e :
+    except FormaIOError as e :
         print e.errno, e.message
     
     try :
@@ -780,12 +780,12 @@ if __name__ == '__main__' :
         print "Total raw: {0}GB".format (int (fio.total_raw / 1024 / 1024 / 1024))
         print "M:", fio.M
         time.sleep (10)
-    except formaIOError as e :
+    except FormaIOError as e :
         print e.errno, e.message
     
     try :
         fio.readDB ()
-    except formaIOError as e :
+    except FormaIOError as e :
         print e.errno, e.message
         sys.exit (-1)
     
@@ -891,7 +891,7 @@ if __name__ == '__main__' :
                         mo = processRE.match (line)
                         if mo :
                             flds = mo.groups ()
-                            tdoy = TimeDOY.TimeDOY (int (flds[0]), 
+                            tdoy = timedoy.TimeDOY (int (flds[0]), 
                                                     int (flds[1]), 
                                                     int (flds[2]), 
                                                     int (flds[3]),
@@ -905,7 +905,7 @@ if __name__ == '__main__' :
                 
                         elif doneRE.match (line) :
                             flds = doneRE.match (line).groups ()
-                            tdoy = TimeDOY.TimeDOY (int (flds[0]), 
+                            tdoy = timedoy.TimeDOY (int (flds[0]), 
                                                     int (flds[1]), 
                                                     int (flds[2]), 
                                                     int (flds[3]),

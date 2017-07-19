@@ -7,7 +7,7 @@
 #
 
 import sys, os, exceptions
-from ph5.core import SAC_h
+from ph5.core import sac_h
 import numpy as np
 
 PROG_VERSION = "2013.360.a"
@@ -61,10 +61,10 @@ class Reader (object) :
     def read_float_header (self) :
         ret = {}
         buf = self.read_buf (70 * 4)
-        f = SAC_h.SAC_float ()
+        f = sac_h.SAC_float ()
         
         container = f.parse (buf, byteorder=self.endianness)
-        keys = SAC_h.SAC_float ().__keys__
+        keys = sac_h.SAC_float ().__keys__
         
         for k in keys :
             what = "container.{0}".format (k)
@@ -77,10 +77,10 @@ class Reader (object) :
     def read_int_header (self) :
         ret = {}
         buf = self.read_buf (40 * 4)
-        i = SAC_h.SAC_int ()
+        i = sac_h.SAC_int ()
         
         container = i.parse (buf, byteorder=self.endianness)
-        keys = SAC_h.SAC_int ().__keys__
+        keys = sac_h.SAC_int ().__keys__
         
         for k in keys :
             what = "container.{0}".format (k)
@@ -93,10 +93,10 @@ class Reader (object) :
     def read_char_header (self) :
         ret = {}
         buf = self.read_buf (192)
-        c = SAC_h.SAC_char ()
+        c = sac_h.SAC_char ()
         
         container = c.parse (buf, byteorder=self.endianness)
-        keys = SAC_h.SAC_char ().__keys__
+        keys = sac_h.SAC_char ().__keys__
         
         for k in keys : 
             what = "container.{0}".format (k)

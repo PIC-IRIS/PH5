@@ -6,7 +6,7 @@
 import sys, os, os.path, time, string, json
 #from collections import OrderedDict
 #   This provides the base functionality
-from ph5.core import Experiment, TimeDOY
+from ph5.core import experiment, timedoy
 #   The wiggles are stored as numpy arrays
 import numpy
 
@@ -33,7 +33,7 @@ DAS_T = {}
 RECEIVER_T = {}
 #   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name) 
 SOH_A = {}
-#   A list of das_groups that refers to Das_g_[sn]'s
+#   A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = {}
 #
 INDEX_T = {}
@@ -43,7 +43,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = None, keys = None) :
         self.rows = rows
@@ -56,13 +56,13 @@ class rows_keys (object) :
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
-class das_groups (object) :
+class Das_Groups (object) :
     __slots__ = ('das', 'node')
     def __init__ (self, das = None, node = None) :
         self.das = das
         self.node = node
         
-class offset_azimuth (object) :
+class Offset_Azimuth (object) :
     __slots__ = ('offset', 'azimuth')
     def __init__ (self, offset = None, azimuth = None) :
         self.offset = offset
@@ -143,12 +143,12 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
 
 #
-#   Print rows_keys
+#   Print Rows_Keys
 #
 def debug_print (a) :
     i = 1
@@ -168,7 +168,7 @@ def info_print () :
     
     print "#\n#\t%s\tph5 version: %s\n#" % (time.ctime (time.time ()), EX.version ())
 #
-#   Print rows_keys
+#   Print Rows_Keys
 #
 def table_print (t, a) :
     i = 0
@@ -186,7 +186,7 @@ def read_index_table () :
     global EX, INDEX_T
     
     rows, keys = EX.ph5_g_receivers.read_index ()
-    INDEX_T = rows_keys (rows, keys)
+    INDEX_T = Rows_Keys (rows, keys)
     
 def read_experiment_table () :
     '''   Read /Experiment_g/Experiment_t   '''
@@ -194,7 +194,7 @@ def read_experiment_table () :
     
     exp, exp_keys = EX.read_experiment ()
     
-    rowskeys = rows_keys (exp, exp_keys)
+    rowskeys = Rows_Keys (exp, exp_keys)
     
     EXPERIMENT_T = rowskeys
     
@@ -205,7 +205,7 @@ def read_event_table () :
     names = EX.ph5_g_sorts.namesEvent_t ()
     for n in names :
         events, event_keys = EX.ph5_g_sorts.read_events (event_name=n)
-        rowskeys = rows_keys (events, event_keys)
+        rowskeys = Rows_Keys (events, event_keys)
         EVENT_T[n] = rowskeys
     
 def read_offset_table () :
@@ -215,7 +215,7 @@ def read_offset_table () :
     names = EX.ph5_g_sorts.namesOffset_t ()
     for n in names :
         offsets, offset_keys = EX.ph5_g_sorts.read_offset (offset_name=n)
-        rowskeys = rows_keys (offsets, offset_keys)
+        rowskeys = Rows_Keys (offsets, offset_keys)
         OFFSET_T[n] = rowskeys
     
 def read_sort_table () :
@@ -224,7 +224,7 @@ def read_sort_table () :
     
     sorts, sorts_keys = EX.ph5_g_sorts.read_sorts ()
     
-    rowskeys = rows_keys (sorts, sorts_keys)
+    rowskeys = Rows_Keys (sorts, sorts_keys)
     
     SORT_T = rowskeys
     
@@ -238,7 +238,7 @@ def read_sort_arrays () :
     for n in names :
         arrays, array_keys = EX.ph5_g_sorts.read_arrays (n)
         
-        rowskeys = rows_keys (arrays, array_keys)
+        rowskeys = Rows_Keys (arrays, array_keys)
         #   We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
     
@@ -248,7 +248,7 @@ def read_response_table () :
     
     response, response_keys = EX.ph5_g_responses.read_responses ()
     
-    rowskeys = rows_keys (response, response_keys)
+    rowskeys = Rows_Keys (response, response_keys)
     
     RESPONSE_T = rowskeys
 
@@ -265,7 +265,7 @@ def read_receivers () :
     for d in dass :
         #   Get node reference
         g = dasGroups[d]
-        dg = das_groups (d, g)
+        dg = Das_Groups (d, g)
         #   Save a master list for later
         DASS.append (dg)
         
@@ -274,12 +274,12 @@ def read_receivers () :
         
         #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das ()
-        rowskeys = rows_keys (das, das_keys)
+        rowskeys = Rows_Keys (das, das_keys)
         DAS_T[d] = rowskeys
         
         #   Read /Experiment_g/Receivers_g/Receiver_t
         receiver, receiver_keys = EX.ph5_g_receivers.read_receiver ()
-        rowskeys = rows_keys (receiver, receiver_keys)
+        rowskeys = Rows_Keys (receiver, receiver_keys)
         RECEIVER_T[d] = rowskeys
         
         #   Read SOH file(s) for this das
@@ -299,7 +299,7 @@ def read_das_table (das) :
     if DASS.has_key (das) :
         EX.ph5_g_receivers.setcurrent (DASS[das])
         das_r, das_keys = EX.ph5_g_receivers.read_das ()
-        return rows_keys (das_r, das_keys)
+        return Rows_Keys (das_r, das_keys)
     else :
         return None
         
@@ -324,7 +324,7 @@ def strip_offset_t () :
                 tmp.append (o)
                 
     if tmp != [] :
-        OFFSET_T = rows_keys (tmp, OFFSET_T.keys)
+        OFFSET_T = Rows_Keys (tmp, OFFSET_T.keys)
 
 def strip_array_t () :
     global ARRAY_T, STATION_ID, DAS_SN
@@ -348,7 +348,7 @@ def strip_array_t () :
                     tmp.append (a)
         
         if tmp != [] :
-            ARRAY_T[k] = rows_keys (tmp, ARRAY_T[k].keys)
+            ARRAY_T[k] = Rows_Keys (tmp, ARRAY_T[k].keys)
             
 def offset_t_sort (a, b) :
     return cmp (a['offset/value_d'], b['offset/value_d'])
@@ -381,7 +381,7 @@ def build_array_from_offset (array) :
         station = o['receiver_id_s']
         sorted_array.append (keyed_array[station])
         
-    return rows_keys (sorted_array, array.keys)
+    return Rows_Keys (sorted_array, array.keys)
 
 def array_start_stop (ar) :
     start = 2145916800; stop = 0
@@ -448,11 +448,11 @@ def write_data () :
                 #D = { 'das': d, 'first_sample': time.ctime (i['start_time/epoch_l']), 'last_sample': time.ctime (i['end_time/epoch_l']), 'first_epoch': i['start_time/epoch_l'], 'last_epoch': i['end_time/epoch_l'] }
                 try :
                     D = { 'das': d, 
-                          'first_sample': TimeDOY.epoch2passcal (i['start_time/epoch_l'] + (i['start_time/micro_seconds_i'] / 1000000.)), 
-                          'last_sample': TimeDOY.epoch2passcal (i['end_time/epoch_l'] + (i['end_time/micro_seconds_i'] / 1000000.)), 
+                          'first_sample': timedoy.epoch2passcal (i['start_time/epoch_l'] + (i['start_time/micro_seconds_i'] / 1000000.)), 
+                          'last_sample': timedoy.epoch2passcal (i['end_time/epoch_l'] + (i['end_time/micro_seconds_i'] / 1000000.)), 
                           'first_epoch': i['start_time/epoch_l'], 
                           'last_epoch': i['end_time/epoch_l'] }
-                except TimeDOY.TimeError as e :
+                except timedoy.TimeError as e :
                     sys.stderr.write ("{0}".format (e.message))
                     continue
                 
@@ -480,7 +480,7 @@ def write_events () :
         events = []
         this_line = { 'shot_line': str (sl[-3:]) }
         for e in EVENT_T[sl].rows :
-            pictime = TimeDOY.epoch2passcal (e['time/epoch_l'] + (e['time/micro_seconds_i'] / 1000000.))
+            pictime = timedoy.epoch2passcal (e['time/epoch_l'] + (e['time/micro_seconds_i'] / 1000000.))
     
             E = { 'id': e['id_s'], 'time': pictime, 'lat': e['location/Y/value_d'], 'lon': e['location/X/value_d'], 'elev': e['location/Z/value_d'], 'mag': e['size/value_d'], 'depth': e['depth/value_d'] }
             events.append (E)
@@ -493,7 +493,7 @@ def write_events () :
 def write_arrays () :
     global ARRAY_T
     
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     fh = sys.stdout
     A = {}
     for k in ARRAY_T.keys () :
@@ -510,18 +510,18 @@ def write_arrays () :
     for a in arrays :
         stations = []
         start, stop = A[int(a[-3:])]
-        ##start_tdoy = TimeDOY.TimeDOY (epoch=start)
-        #stop_tdoy = TimeDOY.TimeDOY (epoch=stop)
+        ##start_tdoy = timedoy.TimeDOY (epoch=start)
+        #stop_tdoy = timedoy.TimeDOY (epoch=stop)
         sample_rate = get_sample_rate (a, start, stop)
         try :
-            deploy_time = TimeDOY.epoch2passcal (start)
-        except TimeDOY.TimeError as e :
+            deploy_time = timedoy.epoch2passcal (start)
+        except timedoy.TimeError as e :
             sys.stderr.write ("Time conversion error {0}\n".format (e.message))
             deploy_time = ""
             
         try :
-            pickup_time = TimeDOY.epoch2passcal (stop)
-        except TimeDOY.TimeError as e :
+            pickup_time = timedoy.epoch2passcal (stop)
+        except timedoy.TimeError as e :
             sys.stderr.write ("Time conversion error {0}\n".format (e.message))
             pickup_time = ""
             

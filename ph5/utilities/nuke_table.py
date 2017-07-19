@@ -6,7 +6,7 @@
 #
 
 import os, sys
-from ph5.core import Experiment, columns
+from ph5.core import experiment, columns
 
 PROG_VERSION = '2016.307'
 
@@ -140,13 +140,13 @@ def initialize_ph5 (editmode = True) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
 
 
 ##
-##   Print rows_keys
+##   Print Rows_Keys
 ##
 #def table_print (t, a) :
     #global TABLE_KEY

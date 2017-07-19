@@ -12,7 +12,7 @@ from ast import literal_eval
 from pyproj import Geod
 import simplekml as kml
 
-from ph5.core import TimeDOY
+from ph5.core import timedoy
 
 PROG_VERSION = "2017.086 Developmental"
 
@@ -215,15 +215,15 @@ def qc_deploy_pickup (rows) :
            Measure difference between deployment and pickup times.
         '''
         try :
-            e1 = TimeDOY.fdsn2epoch (t1)
-        except TimeDOY.TimeError :
-            e1 = TimeDOY.passcal2epoch (t1)
+            e1 = timedoy.fdsn2epoch (t1)
+        except timedoy.TimeError :
+            e1 = timedoy.passcal2epoch (t1)
             
             
         try :
-            e2 = TimeDOY.fdsn2epoch (t2)
-        except TimeDOY.TimeError :
-            e2 = TimeDOY.passcal2epoch (t2)
+            e2 = timedoy.fdsn2epoch (t2)
+        except timedoy.TimeError :
+            e2 = timedoy.passcal2epoch (t2)
             
         return e2 - e1
         
@@ -424,11 +424,11 @@ def qc_fields () :
             #   Check if ascii time
             if timeRE.match (key) :
                 try :
-                    fepoch = TimeDOY.fdsn2epoch (v, fepoch=True)
-                except TimeDOY.TimeError :
+                    fepoch = timedoy.fdsn2epoch (v, fepoch=True)
+                except timedoy.TimeError :
                     try :
-                        fepoch = TimeDOY.passcal2epoch (v, fepoch=True)
-                    except TimeDOY.TimeError :
+                        fepoch = timedoy.passcal2epoch (v, fepoch=True)
+                    except timedoy.TimeError :
                         ret.append ("{0}: Value of column {1} {2} does not match expected time string".format (n, key, v))
                 
     return ret

@@ -18,10 +18,10 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtWebKit import QWebView
 
 # import from pn4
-from ph5.core import Experiment
+from ph5.core import experiment
 
 # module(s) for KefEdit only
-from ph5.core import KefUtility
+from ph5.core import kefutility
 
 
 ############### CLASS ####################
@@ -179,7 +179,7 @@ class KefEdit(QtGui.QMainWindow):
             self.ph5 = None
         self.openTableAction.setEnabled(False)
         #try:
-        self.dataTable, self.labelSets, self.totalLines = KefUtility.Kef2TableData(self.statusText, filename)            
+        self.dataTable, self.labelSets, self.totalLines = kefutility.Kef2TableData(self.statusText, filename)            
         #except Exception, e:
             #QtGui.QMessageBox.warning(self, "Error", str(e) )
             #return
@@ -211,7 +211,7 @@ class KefEdit(QtGui.QMainWindow):
             self.ph5.close()
             del self.ph5
             
-        self.ph5, availTables, arrays, shotLines, das = KefUtility.GetPrePH5Info( self.filename, self.path2file)
+        self.ph5, availTables, arrays, shotLines, das = kefutility.GetPrePH5Info( self.filename, self.path2file)
         
         self.selTableDlg = SelectTableDialog(self, availTables, arrays, shotLines, das)
         
@@ -307,7 +307,7 @@ class KefEdit(QtGui.QMainWindow):
         
         if path.exists(savefilename):
             # remove the table from the ph5 file
-            #exp = Experiment.ExperimentGroup (options['path2ph5'], options['outph5file'])
+            #exp = experiment.ExperimentGroup (options['path2ph5'], options['outph5file'])
             #exp.ph5open (editmode=True)
             #exp.initgroup ()            
             #for p in self.pathAll: 
@@ -318,7 +318,7 @@ class KefEdit(QtGui.QMainWindow):
             for p in self.pathAll:
                 print "Removing existing table %s from PH5file" % p
                 self.statusText.setText("Removing existing table %s from PH5file" % p)
-                delResult = KefUtility.NukeTable(self, options['outph5file'], options['path2ph5'], p)
+                delResult = kefutility.NukeTable(self, options['outph5file'], options['path2ph5'], p)
                 if delResult == False: return
         
         # add tables from kef file to ph5 file
@@ -1171,7 +1171,7 @@ class SelectTableDialog(QtGui.QDialog):
             return
         
         #try:
-        p.dataTable, p.labelSets, p.totalLines = KefUtility.PH5toTableData(p.statusText, p.ph5, p.filename, p.path2file, p.tableType, p.arg )            
+        p.dataTable, p.labelSets, p.totalLines = kefutility.PH5toTableData(p.statusText, p.ph5, p.filename, p.path2file, p.tableType, p.arg )            
         #except Exception, e:
             #QtGui.QMessageBox.warning(self, "Error", str(e) )
             #return

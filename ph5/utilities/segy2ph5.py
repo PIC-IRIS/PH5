@@ -23,7 +23,7 @@ DTYPE = { 1:'float32', 2:'int32', 3:'int16', 5:'float32', 8:'int8' }
 
 import os, sys, logging, time, json
 from math import modf
-from ph5.core import Experiment, columns, SegyReader, TimeDOY
+from ph5.core import experiment, columns, segyreader, timedoy
 
 os.environ['TZ'] = 'GMT'
 time.tzset ()
@@ -31,7 +31,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = None, keys = None) :
         self.rows = rows
@@ -41,7 +41,7 @@ class rows_keys (object) :
         if rows != None : self.rows = rows
         if keys != None : self.keys = keys
 
-class index_t_info (object) :
+class Index_t_Info (object) :
     __slots__ = ('das', 'ph5file', 'ph5path', 'startepoch', 'stopepoch')
     def __init__ (self, das, ph5file, ph5path, startepoch, stopepoch) :
         self.das        = das
@@ -50,7 +50,7 @@ class index_t_info (object) :
         self.startepoch = startepoch
         self.stopepoch  = stopepoch
         
-class resp (object) :
+class Resp (object) :
     __slots__ = ('lines', 'keys', 't')
     def __init__ (self, t) :
         self.t = t
@@ -123,7 +123,7 @@ def get_args () :
     try :
         #FH = open (options.infile, 'rb')
         SIZE = os.path.getsize (options.infile)
-        SR = SegyReader.Reader (options.infile)
+        SR = segyreader.Reader (options.infile)
         SR.open_infile ()
         if SR.FH == None :
             raise IOError ()
@@ -183,7 +183,7 @@ def reopenPH5s () :
     def reopen (ex) :
         filename = ex.filename
         ex.ph5close ()
-        ex = Experiment.ExperimentGroup (nickname = filename)
+        ex = experiment.ExperimentGroup (nickname = filename)
         ex.ph5open (True)
         ex.initgroup ()
         
@@ -196,7 +196,7 @@ def initializeExperiment () :
     '''   Open PH5 file, master.ph5   '''
     global EX, PH5
     
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
@@ -212,7 +212,7 @@ def openPH5 (filename) :
     except :
         pass    
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec
@@ -303,10 +303,10 @@ def writeINDEX () :
         EX.ph5_g_maps.populateIndex_t (mi)
             
     rows, keys = EX.ph5_g_receivers.read_index ()
-    INDEX_T_DAS = rows_keys (rows, keys)
+    INDEX_T_DAS = Rows_Keys (rows, keys)
     
     rows, keys = EX.ph5_g_maps.read_index ()
-    INDEX_T_MAP = rows_keys (rows, keys)    
+    INDEX_T_MAP = Rows_Keys (rows, keys)    
     
     DAS_INFO = {}
     MAP_INFO = {}
@@ -314,14 +314,14 @@ def writeINDEX () :
 def update_index_t_info (starttime, samples, sps) :
     '''   Update info that gets saved in Index_t   '''
     global DAS_INFO, MAP_INFO
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     ph5map = '/Experiment_g/Maps_g/' + EXREC.ph5_g_maps.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float (samples) / float (sps))
-    di = index_t_info (das, ph5file, ph5path, starttime, stoptime)
-    dm = index_t_info (das, ph5file, ph5map, starttime, stoptime)
+    di = Index_t_Info (das, ph5file, ph5path, starttime, stoptime)
+    dm = Index_t_Info (das, ph5file, ph5map, starttime, stoptime)
     if not DAS_INFO.has_key (das) :
         DAS_INFO[das] = []
         MAP_INFO[das] = []
@@ -601,7 +601,7 @@ def process_trace (th, bh, rh, eh, tr) :
         p_event_t = {}
         
         p_event_t['id_s'] = rh['event_number']
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -630,7 +630,7 @@ def process_trace (th, bh, rh, eh, tr) :
             p_event_t['time/micro_seconds_i'] = 0
             
         #p_event_t['time/epoch_l'] = tdoy.epoch (year, doy, hour, minute, seconds)
-        tdoy = TimeDOY.TimeDOY (year=year, 
+        tdoy = timedoy.TimeDOY (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -717,13 +717,13 @@ def process_trace (th, bh, rh, eh, tr) :
         p_array_t['location/Z/value_d'] = rh['datumElevRec'] * elevationScale
         p_array_t['location/Z/units_s'] = MFEET[bh['mfeet']]
         
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
-        tdoy = TimeDOY.TimeDOY (year=year, 
+        tdoy = timedoy.TimeDOY (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -816,13 +816,13 @@ def process_trace (th, bh, rh, eh, tr) :
         ###p_das_t['array_name_log_a'] = log_name
         p_das_t['response_table_n_i'] = n_i
         #fsd = rh['traceWeightingFactor']
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
-        tdoy = TimeDOY.TimeDOY (year=year, 
+        tdoy = timedoy.TimeDOY (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -976,11 +976,11 @@ def main():
         logging.info ("Opened: {0}".format (SR.infile))
         logging.info ("{0}".format (repr (sys.argv)))
         initializeExperiment ()
-        RESP = resp (EX.ph5_g_responses)
+        RESP = Resp (EX.ph5_g_responses)
         rows, keys = EX.ph5_g_receivers.read_index ()
-        INDEX_T_DAS = rows_keys (rows, keys)
+        INDEX_T_DAS = Rows_Keys (rows, keys)
         rows, keys = EX.ph5_g_maps.read_index ()
-        INDEX_T_MAP = rows_keys (rows, keys)
+        INDEX_T_MAP = Rows_Keys (rows, keys)
         #   Read text header
         th = SR.read_text_header ()
         if PRINT == True :

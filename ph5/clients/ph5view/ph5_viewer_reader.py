@@ -12,7 +12,7 @@ import sys, os, time
 #from numpy import array, vstack, amax, amin, float32
 import numpy as np
 #sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
-from ph5.core import ph5API, TimeDOY
+from ph5.core import ph5api, timedoy
 
 PROG_VERSION = "2017.199 Developmental"
 
@@ -30,7 +30,7 @@ class PH5Reader () :
     '''
     def __init__ (self) :
         #
-        #   This is the ph5API object.
+        #   This is the ph5api object.
         self.fio = None
         self.clear ()
         self.set ()
@@ -58,13 +58,13 @@ class PH5Reader () :
                     
     def initialize_ph5 (self, path2file) :
         '''
-           Initialize ph5API and read meta-data...
+           Initialize ph5api and read meta-data...
            path2file => Absolute path to the master ph5 file.
         '''
         pathname = os.path.dirname (str (path2file))
         master = os.path.basename (str (path2file))
         #try :
-        self.fio = ph5API.ph5 (path=pathname, nickname=master)
+        self.fio = ph5api.PH5 (path=pathname, nickname=master)
         
         self.fio.read_event_t_names ()
         for n in self.fio.Event_t_names :
@@ -90,7 +90,7 @@ class PH5Reader () :
         for n in self.fio.Array_t_names :
             for s in self.fio.Sort_t[n]['rows'] :
                 if event_epoch >= s['start_time/epoch_l'] and event_epoch <= s['end_time/epoch_l'] :
-                    tdoy = TimeDOY.TimeDOY (epoch=s['end_time/epoch_l'], microsecond=s['end_time/micro_seconds_i'])
+                    tdoy = timedoy.TimeDOY (epoch=s['end_time/epoch_l'], microsecond=s['end_time/micro_seconds_i'])
                     return tdoy.epoch (fepoch=True)
             
         return None
@@ -133,7 +133,7 @@ class PH5Reader () :
                 e['elev.'] = r['location/Z/value_d']
                 e['mag.'] = r['size/value_d']
                 e['depth'] = r['depth/value_d']
-                tdoy = TimeDOY.TimeDOY (epoch=r['time/epoch_l'], microsecond=r['time/micro_seconds_i'])
+                tdoy = timedoy.TimeDOY (epoch=r['time/epoch_l'], microsecond=r['time/micro_seconds_i'])
                 e['eStart'] = tdoy.epoch (fepoch=True)
                 e['eStop'] = self._event_stop (e['eStart'])
                 #print "event:%s (%s - %s)" % (e['eventId'], e['eStart'], e['eStop'])
@@ -265,7 +265,7 @@ class PH5Reader () :
                 
             try:
                 
-                if not ph5API.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
+                if not ph5api.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
                     continue
 
                 das = r['das/serial_number_s']
@@ -277,7 +277,7 @@ class PH5Reader () :
                 traces = self.fio.cut (das, startTime-corr[0]/1000., stopTime-corr[0]/1000. + 1.1/sampleRate, 
                                        ch, sampleRate, apply_time_correction=False)
                 
-                trace = ph5API.pad_traces(traces)
+                trace = ph5api.pad_traces(traces)
                     
                 if trace.nsamples == 0 : 
                     v = (ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
@@ -405,7 +405,7 @@ class PH5Reader () :
                             if r['id_s'] not in PH5View.selectedArray['seclectedStations'] : raise PH5ReaderError("Continue")
                             ii = listOfStations.index(r['id_s'])
                             
-                            if not ph5API.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
+                            if not ph5api.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
                                 raise PH5ReaderError("Continue")
                             
                             
@@ -418,7 +418,7 @@ class PH5Reader () :
                             traces = self.fio.cut (das, startTime-corr[0]/1000., stopTime-corr[0]/1000. + 1.1/sampleRate, 
                                                    ch, sampleRate, apply_time_correction=False)
                             
-                            trace = ph5API.pad_traces(traces)
+                            trace = ph5api.pad_traces(traces)
 
                             if trace.nsamples == 0 : 
                                 v = (ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
@@ -523,7 +523,7 @@ class PH5Reader () :
             self.metadata[ii]['totalCorr'] = corr[0]
             self.metadata[ii]['clockDriftCorr'] = corr[1]
             self.metadata[ii]['redVelCorr'] = corr[2]
-            self.metadata[ii]['absStartTime'] = TimeDOY.epoch2passcal (startTime)
+            self.metadata[ii]['absStartTime'] = timedoy.epoch2passcal (startTime)
             self.metadata[ii]['arrayId'] = a[-3:]
             self.metadata[ii]['stationId'] = r['id_s']
             self.metadata[ii]['eventId'] = ev['eventId']
@@ -614,7 +614,7 @@ class PH5Reader () :
         # check if apply_time_correction should be True or False
         #print "das:%s, startTime:%.5f, stoptime=%.5f, sc=%s, sampleRate=%s" % (das, startTime, startTime+1.1/sampleRate, c, sampleRate)
         traces = self.fio.cut (das, startTime, startTime+1.1/sampleRate, c, sampleRate, apply_time_correction=True)
-        trace = ph5API.pad_traces(traces)
+        trace = ph5api.pad_traces(traces)
         clockDriftCorr = trace.time_correction_ms
         if clockDriftCorr!=0: print "clockDritCorr:", clockDriftCorr
         if appClockDriftCorr: 

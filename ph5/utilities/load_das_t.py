@@ -18,7 +18,7 @@ def get_args () :
 
     parser = argparse.ArgumentParser ()
 
-    parser.usage = "v{0}: load_Das_t options\nLoad a batch of Das_t kef files.".format (PROG_VERSION)
+    parser.usage = "v{0}: load_das_t options\nLoad a batch of Das_t kef files.".format (PROG_VERSION)
     #   Path to family of ph5 files to modify.
     parser.add_argument ('--path', type=str, default='../Sigma',
                          help="Path to merged PH5 families. Normally in ../Sigma")

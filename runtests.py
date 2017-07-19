@@ -5,7 +5,7 @@ Script to run all tests in the entire project
 
 import unittest
 import argparse
-from ph5.clients.tests.test_ph5tomsAPI import TestPH5toMSeed
+from ph5.clients.tests.test_ph5toms import TestPH5toMSeed
 from ph5.core.tests.test_ph5utils import TestPH5Utils
 
 

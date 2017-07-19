@@ -7,7 +7,7 @@
 #
 
 import sys, os
-from ph5.core import SACReader
+from ph5.core import sacreader
 import construct
 import numpy as np
 
@@ -46,7 +46,7 @@ def print_it (header) :
 
 def main():
     get_args ()
-    sr = SACReader.Reader (infile=INFILE)
+    sr = sacreader.Reader (infile=INFILE)
     print "Endianness: {0}".format (sr.endianness)
     print "+------------+"
     print "|Float Header|"

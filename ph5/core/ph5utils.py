@@ -1,5 +1,5 @@
 '''
-A collection of common methods for ph5tomsAPI.py, ph5tostationxml.py and
+A collection of common methods for ph5toms.py, ph5tostationxml.py and
 ph5toexml.py.
 '''
 
@@ -7,7 +7,7 @@ ph5toexml.py.
 import fnmatch
 from datetime import datetime, timedelta
 from obspy.geodetics import locations2degrees
-from ph5.core.TimeDOY import epoch2passcal, passcal2epoch
+from ph5.core.timedoy import epoch2passcal, passcal2epoch
 import time
 
 

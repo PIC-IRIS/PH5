@@ -6,7 +6,7 @@
 
 import sys, os, os.path, time, string
 #   This provides the base functionality
-from ph5.core import Experiment, TimeDoy
+from ph5.core import experiment, TimeDoy
 #   The wiggles are stored as numpy arrays
 import numpy
 
@@ -33,7 +33,7 @@ DAS_T = {}
 RECEIVER_T = {}
 #   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name) 
 SOH_A = {}
-#   A list of das_groups that refers to Das_g_[sn]'s
+#   A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = {}
 
 os.environ['TZ'] = 'UTM'
@@ -41,7 +41,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = None, keys = None) :
         self.rows = rows
@@ -54,13 +54,13 @@ class rows_keys (object) :
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
-class das_groups (object) :
+class Das_Groups (object) :
     __slots__ = ('das', 'node')
     def __init__ (self, das = None, node = None) :
         self.das = das
         self.node = node
         
-class offset_azimuth (object) :
+class Offset_Azimuth (object) :
     __slots__ = ('offset', 'azimuth')
     def __init__ (self, offset = None, azimuth = None) :
         self.offset = offset
@@ -147,12 +147,12 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
 
 #
-#   Print rows_keys
+#   Print Rows_Keys
 #
 def debug_print (a) :
     i = 1
@@ -172,7 +172,7 @@ def info_print () :
     
     print "#\n#\t%s\tph5 version: %s\n#" % (time.ctime (time.time ()), EX.version ())
 #
-#   Print rows_keys
+#   Print Rows_Keys
 #
 def table_print (t, a) :
     i = 0
@@ -192,7 +192,7 @@ def read_experiment_table () :
     
     exp, exp_keys = EX.read_experiment ()
     
-    rowskeys = rows_keys (exp, exp_keys)
+    rowskeys = Rows_Keys (exp, exp_keys)
     
     EXPERIMENT_T = rowskeys
     
@@ -202,7 +202,7 @@ def read_event_table () :
     
     events, event_keys = EX.ph5_g_sorts.read_events ()
     
-    rowskeys = rows_keys (events, event_keys)
+    rowskeys = Rows_Keys (events, event_keys)
     
     EVENT_T = rowskeys
     
@@ -212,7 +212,7 @@ def read_offset_table () :
     
     offsets, offset_keys = EX.ph5_g_sorts.read_offsets ()
     
-    rowskeys = rows_keys (offsets, offset_keys)
+    rowskeys = Rows_Keys (offsets, offset_keys)
     
     OFFSET_T = rowskeys
     
@@ -222,7 +222,7 @@ def read_sort_table () :
     
     sorts, sorts_keys = EX.ph5_g_sorts.read_sorts ()
     
-    rowskeys = rows_keys (sorts, sorts_keys)
+    rowskeys = Rows_Keys (sorts, sorts_keys)
     
     SORT_T = rowskeys
     
@@ -236,7 +236,7 @@ def read_sort_arrays () :
     for n in names :
         arrays, array_keys = EX.ph5_g_sorts.read_arrays (n)
         
-        rowskeys = rows_keys (arrays, array_keys)
+        rowskeys = Rows_Keys (arrays, array_keys)
         #   We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
     
@@ -246,7 +246,7 @@ def read_response_table () :
     
     response, response_keys = EX.ph5_g_responses.read_responses ()
     
-    rowskeys = rows_keys (response, response_keys)
+    rowskeys = Rows_Keys (response, response_keys)
     
     RESPONSE_T = rowskeys
 
@@ -263,7 +263,7 @@ def read_receivers () :
     for d in dass :
         #   Get node reference
         g = dasGroups[d]
-        dg = das_groups (d, g)
+        dg = Das_Groups (d, g)
         #   Save a master list for later
         DASS.append (dg)
         
@@ -272,12 +272,12 @@ def read_receivers () :
         
         #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das ()
-        rowskeys = rows_keys (das, das_keys)
+        rowskeys = Rows_Keys (das, das_keys)
         DAS_T[d] = rowskeys
         
         #   Read /Experiment_g/Receivers_g/Receiver_t
         receiver, receiver_keys = EX.ph5_g_receivers.read_receiver ()
-        rowskeys = rows_keys (receiver, receiver_keys)
+        rowskeys = Rows_Keys (receiver, receiver_keys)
         RECEIVER_T[d] = rowskeys
         
         #   Read SOH file(s) for this das
@@ -296,7 +296,7 @@ def read_das_table (das) :
     if DASS.has_key (das) :
         EX.ph5_g_receivers.setcurrent (DASS[das])
         das_r, das_keys = EX.ph5_g_receivers.read_das ()
-        return rows_keys (das_r, das_keys)
+        return Rows_Keys (das_r, das_keys)
     else :
         return None
         
@@ -321,7 +321,7 @@ def strip_offset_t () :
                 tmp.append (o)
                 
     if tmp != [] :
-        OFFSET_T = rows_keys (tmp, OFFSET_T.keys)
+        OFFSET_T = Rows_Keys (tmp, OFFSET_T.keys)
 
 def strip_array_t () :
     global ARRAY_T, STATION_ID, DAS_SN
@@ -345,7 +345,7 @@ def strip_array_t () :
                     tmp.append (a)
         
         if tmp != [] :
-            ARRAY_T[k] = rows_keys (tmp, ARRAY_T[k].keys)
+            ARRAY_T[k] = Rows_Keys (tmp, ARRAY_T[k].keys)
             
 def offset_t_sort (a, b) :
     return cmp (a['offset/value_d'], b['offset/value_d'])
@@ -378,7 +378,7 @@ def build_array_from_offset (array) :
         station = o['receiver_id_s']
         sorted_array.append (keyed_array[station])
         
-    return rows_keys (sorted_array, array.keys)
+    return Rows_Keys (sorted_array, array.keys)
 
 def array_start_stop (ar) :
     start = 2145916800; stop = 0
@@ -429,7 +429,7 @@ def write_key_report () :
         array_i = int (k[-3:])
         A[array_i] = (start, stop)
     
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     fh.write ("shot|time|arrays\n")
     array_i_keys = A.keys ()
     for e in EVENT_T.rows :
@@ -478,7 +478,7 @@ def write_key_report () :
 def write_des_report () :
     global EXPERIMENT_T, ARRAY_T, EVENT_T
     
-    tdoy = TimeDoy.TimeDoy ()
+    tdoy = timedoy.TimeDOY ()
     
     A = {}
     for k in ARRAY_T.keys () :

@@ -30,7 +30,7 @@ setup(
     author_email="dhess@passcal.nmt.edu",
     description="A library of PH5 APIs",
     license="MIT",
-    keywords="ph5 IRIS miniSEED sac",
+    keywords="ph5 IRIS miniSEED sac segy seg-y segd seg-d",
     url="https://github.com/PIC-IRIS/PH5/",   # project home page, if any
     classifiers=[
         # How mature is this project? Common values are
@@ -56,15 +56,16 @@ setup(
       
     entry_points = {
         'gui_scripts': [
-            'ph5view = ph5.clients.PH5View.PH5ViewerwVispyAPI:startapp',
-            'noven = ph5.utilities.novenGUI:startapp',
-            'pforma = ph5.utilities.pformaGUI:startapp',
-            'kefedit = ph5.utilities.KefEdit:startapp',
+            'ph5view = ph5.clients.ph5view.ph5_viewer:startapp',
+            'noven = ph5.utilities.noven:startapp',
+            'pforma = ph5.utilities.pformagui:startapp',
+            'kefedit = ph5.utilities.kefedit:startapp',
+            'experiment_t_gen = ph5.utilities.changes:startapp',
         ],
         'console_scripts': [
             # clients
             'ph5toevt = ph5.clients.ph5toevt:main',
-            'ph5toms = ph5.clients.ph5tomsAPI:main',
+            'ph5toms = ph5.clients.ph5toms:main',
             'ph5torec = ph5.clients.ph5torec:main',
             'ph5tostationxml = ph5.clients.ph5tostationxml:main',
             # utilities
@@ -74,7 +75,6 @@ setup(
             'dumpfair = ph5.utilities.dumpfair:main',
             'dumpsac = ph5.utilities.dumpsac:main',
             'dumpsgy = ph5.utilities.dumpsgy:main',
-            'experiment_t_gen = ph5.utilities.changes:main',
             'fix_3chan_texan = ph5.utilities.fix_3chan_texan:main',
             'fix_num_samples = ph5.utilities.fix_num_samples:main',
             'geod2kef = ph5.utilities.geod2kef:main',
@@ -83,10 +83,10 @@ setup(
             'initialize-ph5 = ph5.utilities.initialize_ph5:main',
             'kef2kml = ph5.utilities.kef2kml:main',
             'kef2ph5 = ph5.utilities.kef2ph5:main',
-            'load_das_t = ph5.utilities.load_Das_t:main',
+            'load_das_t = ph5.utilities.load_das_t:main',
             'meta-data-gen = ph5.utilities.meta_data_gen:main',
             'nuke-table = ph5.utilities.nuke_table:main',
-            'pformaCL = ph5.utilities.pformaCL:main',
+            'pformaCL = ph5.utilities.pformacl:main',
             'ph5_merge_helper = ph5.utilities.ph5_merge_helper:main',
             'ph5_total = ph5.utilities.ph5_total:main',
             'recreate_external_references = ph5.utilities.recreate_external_references:main',
@@ -104,7 +104,7 @@ setup(
         ],
     },
 
-    packages=['ph5', 'ph5/clients', 'ph5/clients/PH5View', 'ph5/core', 'ph5/utilities'],
+    packages=['ph5', 'ph5/clients', 'ph5/clients/ph5view', 'ph5/core', 'ph5/utilities'],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these

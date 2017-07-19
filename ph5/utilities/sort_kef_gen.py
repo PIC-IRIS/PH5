@@ -6,7 +6,7 @@
 #
 import sys, os, os.path, time, math
 #   This provides the base functionality
-from ph5.core import Experiment
+from ph5.core import experiment
 
 PROG_VERSION = "2016.334"
 
@@ -17,7 +17,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = None, keys = None) :
         self.rows = rows
@@ -30,7 +30,7 @@ class rows_keys (object) :
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
-class das_groups (object) :
+class Das_Groups (object) :
     __slots__ = ('das', 'node')
     def __init__ (self, das = None, node = None) :
         self.das = das
@@ -104,7 +104,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
     
@@ -117,7 +117,7 @@ def read_sort_table () :
     
     if sorts == None : return False
     
-    rowskeys = rows_keys (sorts, sorts_keys)
+    rowskeys = Rows_Keys (sorts, sorts_keys)
     
     SORT_T = rowskeys
     
@@ -158,7 +158,7 @@ def read_das_table (das) :
         R.append (r0)
         
     k.append ('samples')
-    DAS_T = rows_keys (R, k)
+    DAS_T = Rows_Keys (R, k)
     
     return True
 
@@ -214,7 +214,7 @@ def read_all_das () :
         row.append (rows[e])
         
     #   Set DAS_T
-    DAS_T = rows_keys (row, k)
+    DAS_T = Rows_Keys (row, k)
     
     return True
         

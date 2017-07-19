@@ -16,7 +16,7 @@ import platform
 import sys, os, re, time
 from math import radians, cos, tan, sqrt, pi
 from PyQt4 import QtGui, QtCore, Qt
-from ph5.core import TimeDOY
+from ph5.core import timedoy
 
 #   Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000; MAX_DAS_SN = 20000
@@ -158,12 +158,12 @@ def get_event_row (vals) :
         coordinate_system = 'geodetic'
         ellipsoid = 'WGS84'
         
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     yr, doy, hr, mn, sc = vals['Time'].split (':')
     #f, i = modf (float (sc))
     #us = f * 1000000.
     yr, doy, hr, mn = map (int, [yr, doy, hr, mn])
-    tdoy = TimeDOY.TimeDOY (year=yr, 
+    tdoy = timedoy.TimeDOY (year=yr, 
                             month=None, 
                             day=None, 
                             hour=hr, 
@@ -229,11 +229,11 @@ def build_shot (order, line, n) :
     try :
         if not order.has_key ('STimeY:J:H:M:S.s') :
             yr = int (line[order['STimeYear']])
-            #tdoy = TimeDoy.TimeDoy ()
+            #tdoy = timedoy.TimeDOY ()
             if order.has_key ('STimeMo') :
                 mo = int (line[order['STimeMo']])
                 da = int (line[order['STimeDa']])
-                tdoy = TimeDOY.TimeDOY (year=yr, 
+                tdoy = timedoy.TimeDOY (year=yr, 
                                         month=mo, 
                                         day=da, 
                                         hour=0, 
@@ -406,10 +406,10 @@ def churn_recv (recvqc, recvkey) :
             ellipsoid = 'WGS84'
             
         #   Get deploy time epoch and us
-        #tdoy = TimeDoy.TimeDoy ()
+        #tdoy = timedoy.TimeDOY ()
         dyr, ddoy, dhr, dmn, dsc = vals_dep['DTime'].split (':')
         dyr, ddoy, dhr, dmn = map (int, [dyr, ddoy, dhr, dmn])
-        dtdoy = TimeDOY.TimeDOY (year=dyr, 
+        dtdoy = timedoy.TimeDOY (year=dyr, 
                                  month=None, 
                                  day=None, 
                                  hour=dhr, 
@@ -426,7 +426,7 @@ def churn_recv (recvqc, recvkey) :
         #   Get pickup time epoch and us
         pyr, pdoy, phr, pmn, psc = vals_pu['PUTime'].split (':')
         pyr, pdoy, phr, pmn = map (int, [pyr, pdoy, phr, pmn])
-        ptdoy = TimeDOY.TimeDOY (year=pyr, 
+        ptdoy = timedoy.TimeDOY (year=pyr, 
                                  month=None, 
                                  day=None, 
                                  hour=phr, 
@@ -726,13 +726,13 @@ def build_recv (order, line, n) :
         try :
             if not order.has_key ('DTimeY:J:H:M:S') and is_deploy (order, line) :
                 yr = int (line[order['TimeYear']])
-                #tdoy = TimeDoy.TimeDoy ()
+                #tdoy = timedoy.TimeDOY ()
                 if order.has_key ('TimeH:M') :
                     hr, mn = map (int, line[order['TimeH:M']].split (':'))
                     
                 if order.has_key ('TimeMo/Da') :
                     mo, da = map (int, line[order['TimeMo/Da']].split ('/'))
-                    tdoy = TimeDOY.TimeDOY (year=yr, 
+                    tdoy = timedoy.TimeDOY (year=yr, 
                                             month=mo, 
                                             day=da, 
                                             hour=hr, 
@@ -758,13 +758,13 @@ def build_recv (order, line, n) :
         
             if not order.has_key ('PTimeY:J:H:M:S') and not is_deploy (order, line) :
                 yr = int (line[order['TimeYear']])
-                #tdoy = TimeDoy.TimeDoy ()
+                #tdoy = timedoy.TimeDOY ()
                 if order.has_key ('TimeH:M') :
                     hr, mn = map (int, line[order['TimeH:M']].split (':'))
                     
                 if order.has_key ('TimeMo/Da') :
                     mo, da = map (int, line[order['TimeMo/Da']].split ('/'))
-                    tdoy = TimeDOY.TimeDOY (year=yr, 
+                    tdoy = timedoy.TimeDOY (year=yr, 
                                             month=mo, 
                                             day=da, 
                                             hour=hr, 

@@ -6,7 +6,7 @@
 #
 
 import os, sys, re
-from ph5.core import Kefx
+from ph5.core import kefx
 
 PROG_VERSION = "2017.033"
 
@@ -15,7 +15,7 @@ def main():
     nodeIDRE = re.compile ("\d+X\d+")
     try :
         kefin = sys.argv[1]
-        kx = Kefx.Kef (kefin)
+        kx = kefx.Kef (kefin)
         kx.open ()
     except :
         print "Version: {0} Usage: sort_array_t Array_t_unsorted.kef > Array_t_sorted.kef".format (PROG_VERSION)
@@ -28,7 +28,7 @@ def main():
     for p, kv in kx :
         if nodeIDRE.match (kv['id_s']) :
             kv['id_s'] = kv['id_s'].split ('X')[1]
-        Kefx.print_kef (p, kv)
+        kefx.print_kef (p, kv)
 
 
 if __name__ == "__main__" :

@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython3
 
-from ph5.core import Experiment, Kef, columns
+from ph5.core import experiment, kef, columns
 import numpy, sys, os.path, re, array, string, time
 
 PROG_VERSION = '2013.347'
@@ -69,7 +69,7 @@ def get_args () :
 def initializeExperiment () :
     global EX, PH5, PATH
     
-    EX = Experiment.ExperimentGroup (currentpath = PATH, nickname = PH5)
+    EX = experiment.ExperimentGroup (currentpath = PATH, nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
@@ -77,7 +77,7 @@ def initializeExperiment () :
 def update () :
     global EX, ARRAY_NAME, KEF
     #   There is a bug in batch update that kills kv
-    k = Kef.Kef (KEF)
+    k = kef.Kef (KEF)
     k.open ()
     k.read ()
     #k.batch_update ()

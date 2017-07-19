@@ -9,7 +9,7 @@
 #   Steve Azevedo, August 2016
 #
 import sys, os
-from ph5.core import SegdReader
+from ph5.core import segdreader
 
 PROG_VERSION = "2017.199"
 
@@ -152,9 +152,9 @@ def main():
             if not os.path.exists (filename) :
                 sys.stderr.write ("Warning: can't find: {0}\n".format (filename))
                 continue
-            RH = SegdReader.ReelHeaders () 
+            RH = segdreader.ReelHeaders () 
             try :
-                sd = SegdReader.Reader (infile=filename)
+                sd = segdreader.Reader (infile=filename)
             except :
                 sys.stderr.write ("Failed to properly read {0}.\n".format (filename))
                 sys.exit ()

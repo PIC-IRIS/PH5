@@ -9,7 +9,7 @@
 #   Steve Azevedo, October 2013
 #
 
-from ph5.core import SAC_h
+from ph5.core import sac_h
 import numpy, os, sys, time, copy, math
 
 PROG_VERSION = "2014.216.b"
@@ -54,15 +54,15 @@ class Ssac (object) :
         
     def init_float_header (self) :
         '''   '''
-        self.float_header = SAC_h.SAC_float ()
+        self.float_header = sac_h.SAC_float ()
         
     def init_int_header (self) :
         '''   '''
-        self.int_header = SAC_h.SAC_int ()
+        self.int_header = sac_h.SAC_int ()
         
     def init_char_header (self) :
         '''   '''
-        self.char_header = SAC_h.SAC_char ()
+        self.char_header = sac_h.SAC_char ()
         
     def set_sample_rate (self, sample_rate) :
         self.sample_rate = sample_rate
@@ -204,11 +204,11 @@ class Ssac (object) :
         #   Number of points
         i['npts'] = self.length_points_all
         #   Type of file
-        i['iftype'] = SAC_h.ICONSTANTS['ITIME']
+        i['iftype'] = sac_h.ICONSTANTS['ITIME']
         #   Type of dependent variable
-        i['idep'] = SAC_h.ICONSTANTS['IVOLTS']
+        i['idep'] = sac_h.ICONSTANTS['IVOLTS']
         #   Reference time
-        i['iztype'] = SAC_h.ICONSTANTS['IB']
+        i['iztype'] = sac_h.ICONSTANTS['IB']
         #   Is data evenly spaced
         i['leven'] = True
         #   Are Distance, Azimuth, calculated from station event coordinates

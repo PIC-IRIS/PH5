@@ -7,7 +7,7 @@
 
 import sys, os, exceptions
 import construct, numpy as np
-from ph5.core import SEGD_h
+from ph5.core import segd_h
 
 PROG_VERSION = "2017.114 Developmental"
 
@@ -101,10 +101,10 @@ class Reader () :
         '''   For tapes   '''
         ret = {}
         buf = self.read_buf (128)
-        sul = SEGD_h.Storage_unit_label ()
+        sul = segd_h.Storage_unit_label ()
         container = sul.parse (buf)
         
-        keys = SEGD_h.Storage_unit_label ().__keys__
+        keys = segd_h.Storage_unit_label ().__keys__
         
         for k in keys :
             what = 'container.{0}'.format (k)
@@ -115,7 +115,7 @@ class Reader () :
         ret = {}
         buf = self.read_buf (32)
             
-        ghb1 = SEGD_h.General_header_block_1 ()
+        ghb1 = segd_h.General_header_block_1 ()
         
         container = ghb1.parse (buf)
         
@@ -126,7 +126,7 @@ class Reader () :
         ret = {}
         buf = self.read_buf (32)
         
-        ghb1 = SEGD_h.General_header_block_2 ()
+        ghb1 = segd_h.General_header_block_2 ()
         
         container = ghb1.parse (buf)
         
@@ -136,7 +136,7 @@ class Reader () :
         '''   Read Channel set descriptor   '''
         ret = {}
         buf = self.read_buf (32)
-        csd = SEGD_h.Channel_set_descriptor ()
+        csd = segd_h.Channel_set_descriptor ()
         
         container = csd.parse (buf)
         
@@ -146,7 +146,7 @@ class Reader () :
         '''   Read first extended header   '''
         ret = {}
         buf = self.read_buf (32)
-        eh1 = SEGD_h.Extended_header_1 ()
+        eh1 = segd_h.Extended_header_1 ()
         
         container = eh1.parse (buf)
         
@@ -156,7 +156,7 @@ class Reader () :
         '''   Read second extended header   '''
         ret = {}
         buf = self.read_buf (32)
-        eh2 = SEGD_h.Extended_header_2 ()
+        eh2 = segd_h.Extended_header_2 ()
         
         container = eh2.parse (buf)
         
@@ -166,7 +166,7 @@ class Reader () :
         '''   Read third extended header   '''
         ret = {}
         buf = self.read_buf (32)
-        eh3 = SEGD_h.Extended_header_3 ()
+        eh3 = segd_h.Extended_header_3 ()
         
         container = eh3.parse (buf)
         
@@ -176,7 +176,7 @@ class Reader () :
         '''   Read forth extended header 0-n   '''
         ret = {}
         buf = self.read_buf (32)
-        eh4 = SEGD_h.Extended_header_4 ()
+        eh4 = segd_h.Extended_header_4 ()
         
         container = eh4.parse (buf)
         
@@ -186,7 +186,7 @@ class Reader () :
         '''   Read first external header   '''
         ret = {}
         buf = self.read_buf (32)
-        eh = SEGD_h.External_header ()
+        eh = segd_h.External_header ()
         
         container = eh.parse (buf)
         
@@ -196,7 +196,7 @@ class Reader () :
         '''   Read second external header   '''
         ret = {}
         buf = self.read_buf (32)
-        ehs = SEGD_h.External_header_shot ()
+        ehs = segd_h.External_header_shot ()
         
         container = ehs.parse (buf)
         
@@ -270,7 +270,7 @@ class Reader () :
         '''   Read 20 byte trace header   '''
         ret = {}
         buf = self.read_buf (20)
-        th = SEGD_h.Trace_header ()
+        th = segd_h.Trace_header ()
         
         container = th.parse (buf)
         
@@ -279,7 +279,7 @@ class Reader () :
     def read_trace_header_1 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th1 = SEGD_h.trace_header_1 ()
+        th1 = segd_h.trace_header_1 ()
         
         container = th1.parse (buf)
         
@@ -288,7 +288,7 @@ class Reader () :
     def read_trace_header_2 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th2 = SEGD_h.trace_header_2 ()
+        th2 = segd_h.trace_header_2 ()
         
         container = th2.parse (buf)
         
@@ -297,7 +297,7 @@ class Reader () :
     def read_trace_header_3 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th3 = SEGD_h.trace_header_3 ()
+        th3 = segd_h.trace_header_3 ()
         
         container = th3.parse (buf)
         
@@ -306,7 +306,7 @@ class Reader () :
     def read_trace_header_4 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th4 = SEGD_h.trace_header_4 ()
+        th4 = segd_h.trace_header_4 ()
         
         container = th4.parse (buf)
         
@@ -315,7 +315,7 @@ class Reader () :
     def read_trace_header_5 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th5 = SEGD_h.trace_header_5 ()
+        th5 = segd_h.trace_header_5 ()
         
         container = th5.parse (buf)
         
@@ -324,7 +324,7 @@ class Reader () :
     def read_trace_header_6 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th6 = SEGD_h.trace_header_6 ()
+        th6 = segd_h.trace_header_6 ()
         
         container = th6.parse (buf)
         
@@ -333,7 +333,7 @@ class Reader () :
     def read_trace_header_7 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th7 = SEGD_h.trace_header_7 ()
+        th7 = segd_h.trace_header_7 ()
         
         container = th7.parse (buf)
         
@@ -342,7 +342,7 @@ class Reader () :
     def read_trace_header_8 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th8 = SEGD_h.trace_header_8 ()
+        th8 = segd_h.trace_header_8 ()
         
         container = th8.parse (buf)
         
@@ -351,7 +351,7 @@ class Reader () :
     def read_trace_header_9 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th9 = SEGD_h.trace_header_9 ()
+        th9 = segd_h.trace_header_9 ()
         
         container = th9.parse (buf)
         
@@ -360,7 +360,7 @@ class Reader () :
     def read_trace_header_10 (self) :
         ret = {}
         buf = self.read_buf (32)
-        th10 = SEGD_h.trace_header_10 ()
+        th10 = segd_h.trace_header_10 ()
         
         container = th10.parse (buf)
         
@@ -484,25 +484,25 @@ class Reader () :
 #   Mix in's
 #
 def swap_bits (buf) :
-    b, l = SEGD_h.swap_block_bits ()
+    b, l = segd_h.swap_block_bits ()
     c = b.parse (buf)
     
     return l.build (c)
 
 def swap_64 (buf) :
-    b, l = SEGD_h.swap_block_64 ()
+    b, l = segd_h.swap_block_64 ()
     c = b.parse (buf)
     
     return l.build (c)
 
 def swap_32 (buf) :
-    b, l = SEGD_h.swap_block_32 ()
+    b, l = segd_h.swap_block_32 ()
     c = b.parse (buf)
     
     return l.build (c)
 
 def swap_16 (buf) :
-    b, l = SEGD_h.swap_block_16 ()
+    b, l = segd_h.swap_block_16 ()
     c = b.parse (buf)
     
     return l.build (c)

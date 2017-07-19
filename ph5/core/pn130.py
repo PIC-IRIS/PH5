@@ -10,7 +10,7 @@
 
 import os, zipfile, tarfile, re, exceptions
 import os.path, string, math, sys
-from ph5.core import RT_130_h, TimeDOY
+from ph5.core import rt_130_h, timedoy
 
 PROG_VERSION = "2017.062 Developmental"
 
@@ -38,13 +38,13 @@ IGNORE_PACKET = 5
 class REFError (exceptions.Exception) :
     pass
 
-class lastPacket (object) :
+class LastPacket (object) :
     __slots__ = 'header', 'payload'
     def __init__ (self) :
         self.header = None
         self.payload = None
 
-class timeCheck (object) :
+class TimeCheck (object) :
     __slots__ = 'start_time_asc', 'start_time_secs', 'start_time_ms', 'end_time_secs', 'end_time_ms', 'sample_interval', 'samples'
     
     def __init__ (self) :
@@ -56,7 +56,7 @@ class timeCheck (object) :
         self.sample_interval     = None
         self.samples             = 0
 
-class readBuffer (object) :
+class ReadBuffer (object) :
     '''   buf = string buffer
           ptr = next read position
           len = total len of buffer in bytes
@@ -82,7 +82,7 @@ class readBuffer (object) :
     def inc (self, n) :
         self.ptr += n
         
-class dataFile (object) :
+class DataFile (object) :
     __slots__ = 'basefile', 'subfiles', 'subfilesall', 'fh', 'kind', 'next'
     
     def __init__ (self, basefile = None) :
@@ -118,7 +118,7 @@ class dataFile (object) :
 
         return f
         
-class dataPacket (object) :
+class DataPacket (object) :
     '''   Keep start time for each packet of data   '''
     __slots__ = 'year', 'doy', 'hour', 'minute', 'seconds', 'milliseconds', 'trace'
     
@@ -131,7 +131,7 @@ class dataPacket (object) :
         self.milliseconds = p.ms
         self.trace = c.data
         
-class event130 (object) :
+class Event130 (object) :
     __slots__ = ('event', 'year', 'doy', 'hour', 'minute', 'seconds', 'sampleRate', 
                  'sampleCount', 'channel_number', 'stream_number', 'trace', 'gain', 
                  'bitWeight', 'unitID', 'last_sample_time', 'milliseconds')
@@ -148,14 +148,14 @@ class event130 (object) :
         self.sampleCount = None
         self.channel_number = None
         self.stream_number = None
-        #   trace is a list of dataPacket
+        #   trace is a list of DataPacket
         self.trace = []
         self.gain = None
         self.bitWeight = None
         self.unitID = None
         self.last_sample_time = None
 
-class log130 (object) :
+class Log130 (object) :
     __slots__ = 'year', 'doy', 'hour', 'minute', 'seconds', 'message'
     
     def __init__ (self) :
@@ -172,22 +172,22 @@ class streams (object) :
     def __init__ (self, stream) :
         self.channel = []
         for i in range (NUM_CHANNELS) :
-            t = event130 ()
+            t = Event130 ()
             t.channel_number = i
             t.stream_number = stream
             self.channel.append (t)
 '''
 validTypes = {'ZIP':'ZIP', 'tar':'tar', 'ref':'ref', 'RAW':'RAW'}
 
-class neoRAW :
+class NeoRAW :
     '''   rt-130 raw file reader   '''
     def __init__ (self, filename, verbose = False) :
         self.verbose = verbose
         #   The file/directory to read from
-        self.df = dataFile (filename)
+        self.df = DataFile (filename)
         self.df.kind = 'RAW'
         #   The buffer to read into
-        self.buf = readBuffer ()
+        self.buf = ReadBuffer ()
         self.ERRS = []
     #   Return any error messages
     def errors (self) :
@@ -297,15 +297,15 @@ class neoRAW :
                 self.close ()
                 self._get_rawfile_buf ()
                 
-class neoZIP :
+class NeoZIP :
     '''   rt-130 zip file reader
           Uses the module zipfile to process the contents
     '''
     def __init__ (self, filename, verbose = False) :
         self.verbose = verbose
-        self.df = dataFile (filename)
+        self.df = DataFile (filename)
         self.df.kind = 'ZIP'
-        self.buf = readBuffer ()
+        self.buf = ReadBuffer ()
         self.ERRS = []
     #   Return any error messages
     def errors (self) :
@@ -390,15 +390,15 @@ class neoZIP :
         zipnames.sort ()
         self.df.set (zipnames)
         
-class neoTAR :
+class NeoTAR :
     '''   rt-130 tar file reader
           Uses the module tarfile to process the contents
     '''
     def __init__ (self, filename, verbose = False) :
         self.verbose = verbose
-        self.df = dataFile (filename)
+        self.df = DataFile (filename)
         self.df.kind = 'tar'
-        self.buf = readBuffer ()
+        self.buf = ReadBuffer ()
         self.ERRS = []
     #   Return any error messages
     def errors (self) :
@@ -487,13 +487,13 @@ class neoTAR :
         members.sort (self._member_cmp)
         self.df.set (members)
         
-class neoREF :
+class NeoREF :
     '''   rt-130 raw ref file reader   '''
     def __init__ (self, filename, verbose = False) :
         self.verbose = verbose
-        self.df = dataFile (filename)
+        self.df = DataFile (filename)
         self.df.kind = 'ref'
-        self.buf = readBuffer ()
+        self.buf = ReadBuffer ()
         self.ERRS = []
     #   Return any error messages
     def errors (self) :
@@ -568,7 +568,7 @@ class neoREF :
             
         self.df.set ([self.df.basefile])
 
-class pn130 :
+class PN130 :
     '''   Process rt-130 data into events.
           self.reader -- read data from zip, tar, ref, or raw dir
                       -- provides: open -- Initialises input
@@ -593,13 +593,13 @@ class pn130 :
             filetype = self.guess_type (filename)
         #   Set the reader based on filetype
         if filetype == 'RAW' :
-            self.reader = neoRAW (filename, verbose)
+            self.reader = NeoRAW (filename, verbose)
         elif filetype == 'ZIP' :
-            self.reader = neoZIP (filename, verbose)
+            self.reader = NeoZIP (filename, verbose)
         elif filetype == 'tar' :
-            self.reader = neoTAR (filename, verbose)
+            self.reader = NeoTAR (filename, verbose)
         elif filetype == 'ref' :
-            self.reader = neoREF (filename, verbose)
+            self.reader = NeoREF (filename, verbose)
         else :
             self.reader = None
         
@@ -622,16 +622,16 @@ class pn130 :
         self.entry_num = 0
         self.points = [0] * NUM_STREAMS
                 
-        self.lastDT = lastPacket ()
-        self.lastAD = lastPacket ()
-        self.lastCD = lastPacket ()
-        self.lastEH = lastPacket ()
-        self.lastET = lastPacket ()
-        self.lastSH = lastPacket ()
-        self.lastSC = lastPacket ()
-        self.lastDS = lastPacket ()
-        self.lastFD = lastPacket ()
-        self.lastOM = lastPacket ()
+        self.lastDT = LastPacket ()
+        self.lastAD = LastPacket ()
+        self.lastCD = LastPacket ()
+        self.lastEH = LastPacket ()
+        self.lastET = LastPacket ()
+        self.lastSH = LastPacket ()
+        self.lastSC = LastPacket ()
+        self.lastDS = LastPacket ()
+        self.lastFD = LastPacket ()
+        self.lastOM = LastPacket ()
         
         self.open ()
     
@@ -674,7 +674,7 @@ class pn130 :
         #tdoy = TimeDoy.TimeDoy ()
         #epoch = tdoy.epoch (p.year, p.doy, p.hr, p.mn, p.sc)
         #try :
-        tdoy = TimeDOY.TimeDOY (year=p.year, 
+        tdoy = timedoy.TimeDOY (year=p.year, 
                                 month=None, 
                                 day=None, 
                                 hour=p.hr, 
@@ -906,7 +906,7 @@ class pn130 :
         #   This needs to move so we can check time on DT packets + events                                                                                     
         #   Calculate gaps/overlaps
         if end_of_event :
-            tdoy = TimeDoy.TimeDoy ()
+            tdoy = timedoy.TimeDOY ()
             #   Is there a last sample time?
             if t[0] != None :
                 for i in range (num_channels) :
@@ -1102,9 +1102,9 @@ class pn130 :
         k = "%s:%d:%d" % (das, channel, stream)
         if self.last_packet_time.has_key (k) :
             try :
-                tpl = timeCheck ()
+                tpl = TimeCheck ()
                 set_this_pig (tpl)
-            except TimeDOY.TimeError as e :
+            except timedoy.TimeError as e :
                 self.ERRS.append ("Failed to process packet: {0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("Failed to process packet: {0}".format (e.message))
@@ -1124,9 +1124,9 @@ class pn130 :
         else :
             #   First packet in event
             try :
-                self.last_packet_time[k] = timeCheck ()
+                self.last_packet_time[k] = TimeCheck ()
                 set_this_pig (self.last_packet_time[k])
-            except TimeDOY.TimeError as e :
+            except timedoy.TimeError as e :
                 self.ERRS.append ("Failed to process packet: {0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("Failed to process packet: {0}".format (e.message))
@@ -1134,7 +1134,7 @@ class pn130 :
                 return None
         
         #   Keep data points
-        trace = dataPacket (c, p)
+        trace = DataPacket (c, p)
         self.current_event[stream][channel].trace.append (trace)
         self.current_event[stream][channel].sampleCount += c.samples
         self.points[stream] += c.samples
@@ -1410,13 +1410,13 @@ class pn130 :
         end_of_event_bool = 0
         #   Decode packet header
         try :
-            ph = RT_130_h.PacketHeader ()
+            ph = rt_130_h.PacketHeader ()
             ret = ph.decode (pbuf)
             self.last_packet_header = ret
             self.entry_num += 1
             if  self.verbose == 2 :
                 sys.stderr.write ("\t\tParsing: Type: %s Unit: %s Sequence: %d\n" % (ret.type, ret.unit, ret.sequence))
-        except RT_130_h.HeaderError as e :
+        except rt_130_h.HeaderError as e :
             #
             if self.verbose :
                 sys.stderr.write ("Failed to parse packet header: Type: {0} Unit: {1} Sequence: {2}\n{3}\n".format (ret.type, 
@@ -1431,12 +1431,12 @@ class pn130 :
         if ret.type == 'DT' :
             self.DTcnt += 1
             try :
-                dt = RT_130_h.DT ()
+                dt = rt_130_h.DT ()
                 c = dt.decode (pbuf)
                 packet_data_stream = c.data_stream
                 packet_event_number = c.event
                 packet_channel_number = c.channel
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("Found corrupt packet. Discarding.")
                 if self.verbose :
                     sys.stderr.write ("Found corrupt packet. Discarding.\n")
@@ -1493,11 +1493,11 @@ class pn130 :
             self.EHcnt += 1
             #   Decode Packet payload into c
             try :
-                eh = RT_130_h.EH ()
+                eh = rt_130_h.EH ()
                 c = eh.decode (pbuf)
                 packet_data_stream = c.DataStream
                 packet_event_number = c.EventNumber
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1535,14 +1535,14 @@ class pn130 :
         elif ret.type == 'ET' :
             self.ETcnt += 1
             try :
-                et = RT_130_h.EH ()
+                et = rt_130_h.EH ()
                 c = et.decode (pbuf)
                 #   End of event
                 end_of_event_bool = END_OF_EVENT_ET
                 self.set_et_info (c, ret)
                 self.lastET.header = ret
                 self.lastET.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1552,12 +1552,12 @@ class pn130 :
         elif ret.type == 'SH' :
             self.SHcnt += 1
             try :
-                sh = RT_130_h.SH ()
+                sh = rt_130_h.SH ()
                 c = sh.parse (pbuf)
                 self.set_sh_info (c, ret)
                 self.lastSH.header = ret
                 self.lastSH.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1568,12 +1568,12 @@ class pn130 :
         elif ret.type == 'SC' :
             self.SCcnt += 1
             try :
-                sc = RT_130_h.SC ()
+                sc = rt_130_h.SC ()
                 c = sc.parse (pbuf)
                 self.set_sc_info (c, ret)
                 self.lastSC.header = ret
                 self.lastSC.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1583,12 +1583,12 @@ class pn130 :
         elif ret.type == 'AD' :
             self.ADcnt += 1
             try :
-                ad = RT_130_h.AD ()
+                ad = rt_130_h.AD ()
                 c = ad.parse (pbuf)
                 self.set_ad_info (c, ret)
                 self.lastAD.header = ret
                 self.lastAD.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1599,12 +1599,12 @@ class pn130 :
         elif ret.type == 'CD' :
             self.CDcnt += 1
             try :
-                cd = RT_130_h.CD ()
+                cd = rt_130_h.CD ()
                 c = cd.parse (pbuf)
                 self.set_cd_info (c, ret)
                 self.lastCD.header = ret
                 self.lastCD.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1615,12 +1615,12 @@ class pn130 :
         elif ret.type == 'DS' :
             self.DScnt += 1
             try :
-                ds = RT_130_h.DS ()
+                ds = rt_130_h.DS ()
                 c = ds.decode (pbuf)
                 self.set_ds_info (c, ret)
                 self.lastDS.header = ret
                 self.lastDS.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1630,12 +1630,12 @@ class pn130 :
         elif ret.type == 'FD' :
             self.FDcnt += 1
             try :
-                fd = RT_130_h.FD ()
+                fd = rt_130_h.FD ()
                 c = fd.decode (pbuf)
                 self.set_fd_info (c, ret)
                 self.lastFD.header = ret
                 self.lastFD.payload = c
-            except RT_130_h.HeaderError as e :
+            except rt_130_h.HeaderError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1646,12 +1646,12 @@ class pn130 :
         elif ret.type == 'OM' :
             try :
                 self.OMcnt += 1
-                om = RT_130_h.OM ()
+                om = rt_130_h.OM ()
                 c = om.parse (pbuf)
                 self.set_om_info (c, ret)
                 self.lastOM.header = ret
                 self.lastOM.payload = c
-            except RT_130_h.HeaderError as e :
+            except rt_130_h.HeaderError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1748,25 +1748,25 @@ class pn130 :
             #   Search for Event Trailer if no Event Header is found
             pbuf = self.reader.getPacket ()
             if not pbuf : return pbuf
-            ph = RT_130_h.PacketHeader ()
+            ph = rt_130_h.PacketHeader ()
             tmp = ph.decode (pbuf)
             #
             #   We are not starting with a data packet
             if tmp.type != 'DT' :
                 if tmp.type == 'EH' :
-                    eh = RT_130_h.EH ()
+                    eh = rt_130_h.EH ()
                     ttmp = eh.decode (pbuf)
                     #   Ok, found an Event Header so no need to look for the Event Trailers
                     self.SEEN[ttmp.DataStream] = True
                 elif tmp.type == 'ET' :
-                    et = RT_130_h.EH ()
+                    et = rt_130_h.EH ()
                     ttmp = et.decode (pbuf)
                     self.SEEN[ttmp.DataStream] = True
                     
                 return pbuf
             else :
                 ###
-                dt = RT_130_h.DT ()
+                dt = rt_130_h.DT ()
                 ttmp = dt.decode (pbuf)
                 if self.SEEN[ttmp.data_stream] == True :
                     return pbuf
@@ -1790,13 +1790,13 @@ class pn130 :
                         self.ERRS.append ("Error: No ET found. Yikes!")
                         return tpbuf
                     
-                    ph = RT_130_h.PacketHeader ()
+                    ph = rt_130_h.PacketHeader ()
                     tmp = ph.decode (tpbuf)
                 
                 #   Count this as an Event Header
                 self.EHcnt += 1
                 #   Decode Packet payload into c
-                eh = RT_130_h.EH ()
+                eh = rt_130_h.EH ()
                 c = eh.decode (tpbuf)
                 c.FirstSampleTime = tstr
                 tmp.year = yr
@@ -1882,16 +1882,16 @@ class pn130 :
 #   Mixins
 '''
 def build_empty_current_event () :
-    ret = [[event130 ()] * NUM_STREAMS] * NUM_CHANNELS
+    ret = [[Event130 ()] * NUM_STREAMS] * NUM_CHANNELS
     return ret
 '''
 def build_empty_current_stream () :
     
     ret = [None] * NUM_CHANNELS
     for i in range (NUM_CHANNELS) :
-        ret[i] = event130 ()
+        ret[i] = Event130 ()
     
-    #ret = [event130 ()] * NUM_CHANNELS
+    #ret = [Event130 ()] * NUM_CHANNELS
     
     return ret
     
@@ -1961,12 +1961,12 @@ if __name__ == "__main__" :
         #streamnine = "./RAW/RT_130/2008_154_20_57_9471.ref"
     
         now = time.time ()
-        #pn = pn130 (rawfilename)
-        pn = pn130 (zipfilename)
-        #pn = pn130 (tarfilename)
-        #pn = pn130 (reffilename)
-        #pn = pn130 (junkname)
-        #pn = pn130 (streamnine)
+        #pn = PN130 (rawfilename)
+        pn = PN130 (zipfilename)
+        #pn = PN130 (tarfilename)
+        #pn = PN130 (reffilename)
+        #pn = PN130 (junkname)
+        #pn = PN130 (streamnine)
         while 1 :
             #   Stream number, points
             s, p = pn.getEvent ()
@@ -2004,7 +2004,7 @@ if __name__ == "__main__" :
                         points = 0
                         first_time = ''
                         for n in t :
-                            #   n is a dataPacket
+                            #   n is a DataPacket
                             if first_time :
                                 last_time = "%04d:%03d:%02d:%02d:%02d.%03d" % (n.year,
                                                                                n.doy,

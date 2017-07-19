@@ -23,7 +23,7 @@ TRDBLOCK = TRDPAGE * 66
 class TRDError (exceptions.Exception) :
     pass
 
-class readBuffer (object) :
+class ReadBuffer (object) :
     '''   buf = string buffer
           ptr = next read position
           len = total len of buffer in bytes
@@ -60,7 +60,7 @@ class readBuffer (object) :
     def inc (self, n) :
         self.ptr += n
 
-class page125 (object) :
+class Page125 (object) :
     __slots__ = ('pageType', 'model', 'unitID', 'sequence', 'first', 'last', 'ext')
     '''   Page stuff   '''
     def __init__ (self) :
@@ -72,7 +72,7 @@ class page125 (object) :
         self.last = None
         self.ext = None
 
-class event125 (object) :
+class Event125 (object) :
     __slots__ = ('event', 'year', 'doy', 'hour', 'minute', 'seconds', 'sampleRate', 'sampleCount', 'channel_number', 'stream_number', 'trace', 'gain', 'fsd')
     '''   Event stuff   '''
     def __init__ (self) :
@@ -90,7 +90,7 @@ class event125 (object) :
         self.gain = None
         self.fsd = None
 
-class soh125 (object) :
+class SOH125 (object) :
     __slots__ = ('year', 'doy', 'hour', 'minute', 'seconds', 'message')
     '''   SOH stuff   '''
     def __init__ (self) :
@@ -101,7 +101,7 @@ class soh125 (object) :
         self.seconds = None
         self.message = ''
         
-class table125 (object) :
+class Table125 (object) :
     __slots__ = ('year', 'doy', 'hour', 'minute', 'seconds', 'action', 'parameter')
     '''   Event table   '''
     def __init__ (self) :
@@ -120,13 +120,13 @@ class pn125 :
         #   Open file handle
         self.pnfh = None
         #   Page stuff
-        self.page = page125 ()
+        self.page = Page125 ()
         #   Event stuff
-        self.trace = event125 ()
+        self.trace = Event125 ()
         #   State of Health Buffer
         self.sohbuf = []
         #   Raw data buffer
-        self.buf = readBuffer ()
+        self.buf = ReadBuffer ()
         #   Count of pages left in buffer
         self.bufPages = 0
         #   Event table buffer
@@ -197,7 +197,7 @@ class pn125 :
         b = b[7:]
         # Now process each line
         for i in range (e) :
-            nt = table125 ()
+            nt = Table125 ()
             # s holds time, a holds action, p holds parameter
             s, a, p = struct.unpack ("!6sBB", b[:8])
             b = b[8:]
@@ -255,7 +255,7 @@ class pn125 :
                 s[i] = s[i] + "\r\n" + s[i+1]
                 aflag = True
             
-            element = soh125 ()
+            element = SOH125 ()
             # 
             yr = 1984 + ord (s[i][0])
             

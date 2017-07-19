@@ -7,7 +7,7 @@
 #
 
 import tables, sys, os, os.path, string, time, math, re, logging
-from ph5.core import columns, Experiment, Kef, pn125, TimeDOY
+from ph5.core import columns, experiment, kef, pn125, timedoy
 
 PROG_VERSION = '2016.200 Developmental'
 MAX_PH5_BYTES = 1073741824 * 2   #   GB (1024 X 1024 X 1024 X 2)
@@ -29,7 +29,7 @@ time.tzset ()
 #
 #   To hold table rows and keys
 #
-class rows_keys (object) :
+class Rows_Keys (object) :
     __slots__ = ('rows', 'keys')
     def __init__ (self, rows = [], keys = None) :
         self.rows = rows
@@ -39,7 +39,7 @@ class rows_keys (object) :
         if rows != None : self.rows = rows
         if keys != None : self.keys = keys
 
-class index_t_info (object) :
+class Index_t_Info (object) :
     __slots__ = ('das', 'ph5file', 'ph5path', 'startepoch', 'stopepoch')
     def __init__ (self, das, ph5file, ph5path, startepoch, stopepoch) :
         self.das        = das
@@ -48,7 +48,7 @@ class index_t_info (object) :
         self.startepoch = startepoch
         self.stopepoch  = stopepoch
         
-class resp (object) :
+class Resp (object) :
     __slots__ = ('lines', 'keys', 't')
     def __init__ (self, t) :
         self.t = t
@@ -110,7 +110,7 @@ def read_windows_file (f) :
             continue
         
         try :
-            tDOY = TimeDOY.TimeDOY (year=ttuple[0], 
+            tDOY = timedoy.TimeDOY (year=ttuple[0], 
                                     month=None, 
                                     day=None, 
                                     hour=ttuple[2], 
@@ -213,7 +213,7 @@ def get_args () :
         PH5 = options.outfile
 
     if options.doprint != False :
-        ex = Experiment.ExperimentGroup ()
+        ex = experiment.ExperimentGroup ()
         ex.ph5open (True)
         ex.initgroup ()
         keys (ex)
@@ -321,14 +321,14 @@ def keys (ex) :
 def initializeExperiment () :
     global EX, PH5
     
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
     
 def populateExperimentTable () :
     global EX, KEFFILE
-    k = Kef.Kef (KEFFILE)
+    k = kef.Kef (KEFFILE)
     k.open ()
     k.read ()
     k.batch_update ()
@@ -380,7 +380,7 @@ def window_contained (e) :
     #tdoy = TimeDoy.TimeDoy ()
     sample_rate = e.sampleRate
     sample_count = e.sampleCount
-    tDOY = TimeDOY.TimeDOY (year=e.year,
+    tDOY = timedoy.TimeDOY (year=e.year,
                             month=None, 
                             day=None, 
                             hour=e.hour, 
@@ -421,12 +421,12 @@ def window_contained (e) :
 
 def update_index_t_info (starttime, samples, sps) :
     global DAS_INFO
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float (samples) / float (sps))
-    di = index_t_info (das, ph5file, ph5path, starttime, stoptime)
+    di = Index_t_Info (das, ph5file, ph5path, starttime, stoptime)
     if not DAS_INFO.has_key (das) :
         DAS_INFO[das] = []
         
@@ -475,10 +475,10 @@ def writeEvent (trace, page) :
     p_das_t['sample_rate_i'] = trace.sampleRate
     p_das_t['sample_rate_multiplier_i'] = 1
     p_das_t['stream_number_i'] = trace.stream_number
-    #tdoy = TimeDoy.TimeDoy ()
+    #tdoy = timedoy.TimeDOY ()
     #mo, da = tdoy.getMonthDay (trace.year, trace.doy)
     #p_das_t['time/epoch_l'] = int (time.mktime ((trace.year, mo, da, trace.hour, trace.minute, int (trace.seconds), -1, trace.doy, 0)))
-    tDOY = TimeDOY.TimeDOY (year=trace.year, 
+    tDOY = timedoy.TimeDOY (year=trace.year, 
                             month=None, 
                             day=None, 
                             hour=trace.hour, 
@@ -536,7 +536,7 @@ def writeET (et) :
     
 def openPH5 (filename) :
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec    
@@ -637,7 +637,7 @@ def writeINDEX () :
         EX.ph5_g_receivers.populateIndex_t (i)
             
     rows, keys = EX.ph5_g_receivers.read_index ()
-    INDEX_T = rows_keys (rows, keys)
+    INDEX_T = Rows_Keys (rows, keys)
     
     DAS_INFO = {}
         
@@ -800,9 +800,9 @@ def main():
         logging.info ("125a2ph5 {0}".format (PROG_VERSION))
         logging.info ("{0}".format (sys.argv))
         if len (FILES) > 0 :
-            RESP = resp (EX.ph5_g_responses)
+            RESP = Resp (EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index ()
-            INDEX_T = rows_keys (rows, keys)
+            INDEX_T = Rows_Keys (rows, keys)
             #print INDEX_T
             #print "Processing TRD files..."
             

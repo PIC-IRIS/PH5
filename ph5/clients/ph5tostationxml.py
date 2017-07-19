@@ -31,7 +31,7 @@ import multiprocessing
 import copy_reg
 import types
 
-from ph5.core import ph5utils, ph5API
+from ph5.core import ph5utils, ph5api
 
 
 PROG_VERSION = "2017.198"
@@ -540,7 +540,7 @@ class PH5toStationXML(object):
         return final_list
 
     def read_networks(self, path):
-        self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
+        self.ph5 = ph5api.PH5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_experiment_t()
         self.experiment_t = self.ph5.Experiment_t['rows']
            
