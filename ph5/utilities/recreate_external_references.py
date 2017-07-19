@@ -5,7 +5,7 @@
 #   Steve Azevedo, September 2012
 #
 import os, sys, time
-from ph5.core import Experiment
+from ph5.core import experiment
 
 PROG_VERSION='2016.307'
 INDEX_T = {}
@@ -107,7 +107,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (True)
     EX.initgroup ()
     

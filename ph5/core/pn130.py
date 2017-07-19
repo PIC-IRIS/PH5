@@ -10,7 +10,7 @@
 
 import os, zipfile, tarfile, re, exceptions
 import os.path, string, math, sys
-from ph5.core import RT_130_h, TimeDOY
+from ph5.core import rt_130_h, timedoy
 
 PROG_VERSION = "2017.062 Developmental"
 
@@ -674,7 +674,7 @@ class pn130 :
         #tdoy = TimeDoy.TimeDoy ()
         #epoch = tdoy.epoch (p.year, p.doy, p.hr, p.mn, p.sc)
         #try :
-        tdoy = TimeDOY.TimeDOY (year=p.year, 
+        tdoy = timedoy.timedoy (year=p.year, 
                                 month=None, 
                                 day=None, 
                                 hour=p.hr, 
@@ -1104,7 +1104,7 @@ class pn130 :
             try :
                 tpl = timeCheck ()
                 set_this_pig (tpl)
-            except TimeDOY.TimeError as e :
+            except timedoy.TimeError as e :
                 self.ERRS.append ("Failed to process packet: {0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("Failed to process packet: {0}".format (e.message))
@@ -1126,7 +1126,7 @@ class pn130 :
             try :
                 self.last_packet_time[k] = timeCheck ()
                 set_this_pig (self.last_packet_time[k])
-            except TimeDOY.TimeError as e :
+            except timedoy.TimeError as e :
                 self.ERRS.append ("Failed to process packet: {0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("Failed to process packet: {0}".format (e.message))
@@ -1410,13 +1410,13 @@ class pn130 :
         end_of_event_bool = 0
         #   Decode packet header
         try :
-            ph = RT_130_h.PacketHeader ()
+            ph = rt_130_h.PacketHeader ()
             ret = ph.decode (pbuf)
             self.last_packet_header = ret
             self.entry_num += 1
             if  self.verbose == 2 :
                 sys.stderr.write ("\t\tParsing: Type: %s Unit: %s Sequence: %d\n" % (ret.type, ret.unit, ret.sequence))
-        except RT_130_h.HeaderError as e :
+        except rt_130_h.HeaderError as e :
             #
             if self.verbose :
                 sys.stderr.write ("Failed to parse packet header: Type: {0} Unit: {1} Sequence: {2}\n{3}\n".format (ret.type, 
@@ -1431,12 +1431,12 @@ class pn130 :
         if ret.type == 'DT' :
             self.DTcnt += 1
             try :
-                dt = RT_130_h.DT ()
+                dt = rt_130_h.DT ()
                 c = dt.decode (pbuf)
                 packet_data_stream = c.data_stream
                 packet_event_number = c.event
                 packet_channel_number = c.channel
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("Found corrupt packet. Discarding.")
                 if self.verbose :
                     sys.stderr.write ("Found corrupt packet. Discarding.\n")
@@ -1493,11 +1493,11 @@ class pn130 :
             self.EHcnt += 1
             #   Decode Packet payload into c
             try :
-                eh = RT_130_h.EH ()
+                eh = rt_130_h.EH ()
                 c = eh.decode (pbuf)
                 packet_data_stream = c.DataStream
                 packet_event_number = c.EventNumber
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1535,14 +1535,14 @@ class pn130 :
         elif ret.type == 'ET' :
             self.ETcnt += 1
             try :
-                et = RT_130_h.EH ()
+                et = rt_130_h.EH ()
                 c = et.decode (pbuf)
                 #   End of event
                 end_of_event_bool = END_OF_EVENT_ET
                 self.set_et_info (c, ret)
                 self.lastET.header = ret
                 self.lastET.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1552,12 +1552,12 @@ class pn130 :
         elif ret.type == 'SH' :
             self.SHcnt += 1
             try :
-                sh = RT_130_h.SH ()
+                sh = rt_130_h.SH ()
                 c = sh.parse (pbuf)
                 self.set_sh_info (c, ret)
                 self.lastSH.header = ret
                 self.lastSH.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1568,12 +1568,12 @@ class pn130 :
         elif ret.type == 'SC' :
             self.SCcnt += 1
             try :
-                sc = RT_130_h.SC ()
+                sc = rt_130_h.SC ()
                 c = sc.parse (pbuf)
                 self.set_sc_info (c, ret)
                 self.lastSC.header = ret
                 self.lastSC.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1583,12 +1583,12 @@ class pn130 :
         elif ret.type == 'AD' :
             self.ADcnt += 1
             try :
-                ad = RT_130_h.AD ()
+                ad = rt_130_h.AD ()
                 c = ad.parse (pbuf)
                 self.set_ad_info (c, ret)
                 self.lastAD.header = ret
                 self.lastAD.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1599,12 +1599,12 @@ class pn130 :
         elif ret.type == 'CD' :
             self.CDcnt += 1
             try :
-                cd = RT_130_h.CD ()
+                cd = rt_130_h.CD ()
                 c = cd.parse (pbuf)
                 self.set_cd_info (c, ret)
                 self.lastCD.header = ret
                 self.lastCD.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1615,12 +1615,12 @@ class pn130 :
         elif ret.type == 'DS' :
             self.DScnt += 1
             try :
-                ds = RT_130_h.DS ()
+                ds = rt_130_h.DS ()
                 c = ds.decode (pbuf)
                 self.set_ds_info (c, ret)
                 self.lastDS.header = ret
                 self.lastDS.payload = c
-            except RT_130_h.CorruptPacketError as e :
+            except rt_130_h.CorruptPacketError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1630,12 +1630,12 @@ class pn130 :
         elif ret.type == 'FD' :
             self.FDcnt += 1
             try :
-                fd = RT_130_h.FD ()
+                fd = rt_130_h.FD ()
                 c = fd.decode (pbuf)
                 self.set_fd_info (c, ret)
                 self.lastFD.header = ret
                 self.lastFD.payload = c
-            except RT_130_h.HeaderError as e :
+            except rt_130_h.HeaderError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1646,12 +1646,12 @@ class pn130 :
         elif ret.type == 'OM' :
             try :
                 self.OMcnt += 1
-                om = RT_130_h.OM ()
+                om = rt_130_h.OM ()
                 c = om.parse (pbuf)
                 self.set_om_info (c, ret)
                 self.lastOM.header = ret
                 self.lastOM.payload = c
-            except RT_130_h.HeaderError as e :
+            except rt_130_h.HeaderError as e :
                 self.ERRS.append ("{0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("{0}\n".format (e.message))
@@ -1748,25 +1748,25 @@ class pn130 :
             #   Search for Event Trailer if no Event Header is found
             pbuf = self.reader.getPacket ()
             if not pbuf : return pbuf
-            ph = RT_130_h.PacketHeader ()
+            ph = rt_130_h.PacketHeader ()
             tmp = ph.decode (pbuf)
             #
             #   We are not starting with a data packet
             if tmp.type != 'DT' :
                 if tmp.type == 'EH' :
-                    eh = RT_130_h.EH ()
+                    eh = rt_130_h.EH ()
                     ttmp = eh.decode (pbuf)
                     #   Ok, found an Event Header so no need to look for the Event Trailers
                     self.SEEN[ttmp.DataStream] = True
                 elif tmp.type == 'ET' :
-                    et = RT_130_h.EH ()
+                    et = rt_130_h.EH ()
                     ttmp = et.decode (pbuf)
                     self.SEEN[ttmp.DataStream] = True
                     
                 return pbuf
             else :
                 ###
-                dt = RT_130_h.DT ()
+                dt = rt_130_h.DT ()
                 ttmp = dt.decode (pbuf)
                 if self.SEEN[ttmp.data_stream] == True :
                     return pbuf
@@ -1790,13 +1790,13 @@ class pn130 :
                         self.ERRS.append ("Error: No ET found. Yikes!")
                         return tpbuf
                     
-                    ph = RT_130_h.PacketHeader ()
+                    ph = rt_130_h.PacketHeader ()
                     tmp = ph.decode (tpbuf)
                 
                 #   Count this as an Event Header
                 self.EHcnt += 1
                 #   Decode Packet payload into c
-                eh = RT_130_h.EH ()
+                eh = rt_130_h.EH ()
                 c = eh.decode (tpbuf)
                 c.FirstSampleTime = tstr
                 tmp.year = yr

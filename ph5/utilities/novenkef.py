@@ -8,7 +8,7 @@
 #
 
 import time, re, math
-from ph5.core import TimeDOY
+from ph5.core import timedoy
 
 PROG_VERSION = '2017.086 Developmental'
 KEF_COLS = {}
@@ -34,7 +34,7 @@ elevationRE = re.compile ("(location/Z/).*")
 seed_channelRE = re.compile ("SEED_Channel")
 
 def get_header () :
-    header = "#   Written by novenKef v{0} at {1}\n".format (PROG_VERSION, TimeDOY.epoch2passcal (time.time ()))
+    header = "#   Written by novenkef v{0} at {1}\n".format (PROG_VERSION, timedoy.epoch2passcal (time.time ()))
     return header
 
 def get_times (key, value) :
@@ -42,11 +42,11 @@ def get_times (key, value) :
        Create time entries for Array_t_xxx or Event_t[_xxx]
     '''
     try :
-        fepoch = TimeDOY.fdsn2epoch (value, fepoch=True)
-    except TimeDOY.TimeError :
+        fepoch = timedoy.fdsn2epoch (value, fepoch=True)
+    except timedoy.TimeError :
         try :
-            fepoch = TimeDOY.passcal2epoch (value, fepoch=True)
-        except TimeDOY.TimeError :
+            fepoch = timedoy.passcal2epoch (value, fepoch=True)
+        except timedoy.TimeError :
             #   This SHOULD never happen
             sys.stderr.write ("Error: Bad time value for {0} {1}.".format (key, value))
             line = "\t{0}/ascii_s = {1}\n".format (pre, time.ctime (int (0)))

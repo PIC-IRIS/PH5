@@ -31,7 +31,7 @@ import multiprocessing
 import copy_reg
 import types
 
-from ph5.core import ph5API, ph5utils
+from ph5.core import ph5api, ph5utils
 
 
 PROG_VERSION = "2017.139"
@@ -251,7 +251,7 @@ class PH5toexml(object):
         else:
             reportnum_patterns = self.args.get('reportnum_list').split(',')
         
-        self.ph5 = ph5API.ph5(path=path, nickname=self.args.get('nickname'))
+        self.ph5 = ph5api.ph5(path=path, nickname=self.args.get('nickname'))
         self.ph5.read_experiment_t()
         self.experiment_t = self.ph5.Experiment_t['rows']
         self.ph5.read_event_t_names()

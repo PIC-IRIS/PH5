@@ -9,7 +9,7 @@
 #   Steve Azevedo, August 2007
 #
 
-from ph5.core import SEGY_h, ebcdic
+from ph5.core import segy_h, ebcdic
 #from cs2cs import *
 import math, numpy, os, time, string, sys
 
@@ -72,8 +72,8 @@ class Ssegy :
         self.pas = pas
         self.utm = utm
         self.seq = seq
-        self.text_header = SEGY_h.Text ()
-        self.reel_header = SEGY_h.Reel ()
+        self.text_header = segy_h.Text ()
+        self.reel_header = segy_h.Reel ()
         #   Allow non-standard SEG-Y
         self.break_standard = False
         self.trace_type = None              #   Current data trace type (int, float)
@@ -136,12 +136,12 @@ class Ssegy :
             x_d.tofile (file=fd)
             #   Get the number of points we wrote
             i += x_d.shape[0]
-            #x_d = [SEGY_h.build_int (x) for x in data]
+            #x_d = [segy_h.build_int (x) for x in data]
             #for x in x_d :
                 #os.write (fd, x)
                 
             #i += len (x_d)
-            #for x in map (SEGY_h.build_int, data) :
+            #for x in map (segy_h.build_int, data) :
                 #i += 1
                 #os.write (fd, x)
                 
@@ -199,12 +199,12 @@ class Ssegy :
             x_f.tofile (file=fd)
             i += x_f.shape[0]
             
-            #x_f = [SEGY_h.build_ieee (x) for x in data]
+            #x_f = [segy_h.build_ieee (x) for x in data]
             #for x in x_f :
                 #os.write (fd, x_f)
                 
             #i += len (x_f)
-            #for x in map (SEGY_h.build_ieee, data) :
+            #for x in map (segy_h.build_ieee, data) :
                 #i += 1
                 #os.write (fd, x)
                 
@@ -293,7 +293,7 @@ class Ssegy :
         
         try :
             self.text_header.set (txt)
-        except SEGY_h.HeaderError, e :
+        except segy_h.HeaderError, e :
             sys.stderr.write (e + "\n")
             
     def set_reel_header (self, traces) :
@@ -326,7 +326,7 @@ class Ssegy :
         
         try :
             self.reel_header.set (rel)
-        except SEGY_h.HeaderError, e :
+        except segy_h.HeaderError, e :
             sys.stderr.write (e + '\n')
     
     def set_break_standard (self, tof = False) :
@@ -379,7 +379,7 @@ class Ssegy :
     def set_ext_header_seg (self) :
         '''   SEG-Y rev 01 extended header   '''
         ext = {}
-        self.extended_header = SEGY_h.Seg ()
+        self.extended_header = segy_h.Seg ()
         #   Same as lino from reel header
         try :
             ext['Inn'] = int (self.sort_t['array_name_s'])
@@ -407,7 +407,7 @@ class Ssegy :
     
     def set_ext_header_pas (self) :
         ext = {}
-        self.extended_header = SEGY_h.Passcal ()
+        self.extended_header = segy_h.Passcal ()
         
         cor_low, cor_high, sort_start_time = self._cor ()
         if cor_high < -MAX_16 or cor_high > MAX_16 :
@@ -455,7 +455,7 @@ class Ssegy :
     def set_ext_header_menlo (self) :
         '''   Use USGS Menlo's idea of extended trace header   '''
         ext = {}
-        self.extended_header = SEGY_h.Menlo ()
+        self.extended_header = segy_h.Menlo ()
         
         #   Start of trace
         cor_low, cor_high, sort_start_time = self._cor ()
@@ -557,7 +557,7 @@ class Ssegy :
     def set_ext_header_sioseis (self) :
         '''   Use SIOSEIS extended header   '''
         ext = {}
-        self.extended_header = SEGY_h.Sioseis ()
+        self.extended_header = segy_h.Sioseis ()
         ext['sampleInt'] = 1.0 / self.sample_rate
         '''
         if self.seq >= traces :
@@ -570,7 +570,7 @@ class Ssegy :
            Set values in trace header.
         '''
         tra = {}
-        self.trace_header = SEGY_h.Trace ()
+        self.trace_header = segy_h.Trace ()
         
         #   Get time correction
         cor_low, cor_high, sort_start_time = self._cor ()

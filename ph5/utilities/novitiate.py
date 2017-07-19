@@ -16,7 +16,7 @@ import platform
 import sys, os, re, time
 from math import radians, cos, tan, sqrt, pi
 from PyQt4 import QtGui, QtCore, Qt
-from ph5.core import TimeDOY
+from ph5.core import timedoy
 
 #   Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000; MAX_DAS_SN = 20000
@@ -163,7 +163,7 @@ def get_event_row (vals) :
     #f, i = modf (float (sc))
     #us = f * 1000000.
     yr, doy, hr, mn = map (int, [yr, doy, hr, mn])
-    tdoy = TimeDOY.TimeDOY (year=yr, 
+    tdoy = timedoy.timedoy (year=yr, 
                             month=None, 
                             day=None, 
                             hour=hr, 
@@ -233,7 +233,7 @@ def build_shot (order, line, n) :
             if order.has_key ('STimeMo') :
                 mo = int (line[order['STimeMo']])
                 da = int (line[order['STimeDa']])
-                tdoy = TimeDOY.TimeDOY (year=yr, 
+                tdoy = timedoy.timedoy (year=yr, 
                                         month=mo, 
                                         day=da, 
                                         hour=0, 
@@ -409,7 +409,7 @@ def churn_recv (recvqc, recvkey) :
         #tdoy = TimeDoy.TimeDoy ()
         dyr, ddoy, dhr, dmn, dsc = vals_dep['DTime'].split (':')
         dyr, ddoy, dhr, dmn = map (int, [dyr, ddoy, dhr, dmn])
-        dtdoy = TimeDOY.TimeDOY (year=dyr, 
+        dtdoy = timedoy.timedoy (year=dyr, 
                                  month=None, 
                                  day=None, 
                                  hour=dhr, 
@@ -426,7 +426,7 @@ def churn_recv (recvqc, recvkey) :
         #   Get pickup time epoch and us
         pyr, pdoy, phr, pmn, psc = vals_pu['PUTime'].split (':')
         pyr, pdoy, phr, pmn = map (int, [pyr, pdoy, phr, pmn])
-        ptdoy = TimeDOY.TimeDOY (year=pyr, 
+        ptdoy = timedoy.timedoy (year=pyr, 
                                  month=None, 
                                  day=None, 
                                  hour=phr, 
@@ -732,7 +732,7 @@ def build_recv (order, line, n) :
                     
                 if order.has_key ('TimeMo/Da') :
                     mo, da = map (int, line[order['TimeMo/Da']].split ('/'))
-                    tdoy = TimeDOY.TimeDOY (year=yr, 
+                    tdoy = timedoy.timedoy (year=yr, 
                                             month=mo, 
                                             day=da, 
                                             hour=hr, 
@@ -764,7 +764,7 @@ def build_recv (order, line, n) :
                     
                 if order.has_key ('TimeMo/Da') :
                     mo, da = map (int, line[order['TimeMo/Da']].split ('/'))
-                    tdoy = TimeDOY.TimeDOY (year=yr, 
+                    tdoy = timedoy.timedoy (year=yr, 
                                             month=mo, 
                                             day=da, 
                                             hour=hr, 

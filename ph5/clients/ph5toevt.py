@@ -6,13 +6,13 @@
 #
 
 import os, sys, logging
-from ph5.core import ph5API, SEGYFactory, decimate, TimeDOY
+from ph5.core import ph5api, segyfactory, decimate, timedoy
 
 PROG_VERSION = "2017.186 Developmental"
-#   This should never get used. See ph5API.
+#   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
-DECIMATION_FACTORS = SEGYFactory.DECIMATION_FACTORS
+DECIMATION_FACTORS = segyfactory.DECIMATION_FACTORS
 
 def get_args () :
     '''   Read command line argments   '''
@@ -136,7 +136,7 @@ def get_args () :
     ARGS = parser.parse_args ()  
     #print ARGS
     try :
-        P5 = ph5API.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
+        P5 = ph5api.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)
@@ -146,7 +146,7 @@ def get_args () :
     elif ARGS.evt_list :
         ARGS.evt_list = map (str, ARGS.evt_list.split (','))
     elif ARGS.start_time :
-        ARGS.start_time = TimeDOY.TimeDOY (epoch=TimeDOY.passcal2epoch (ARGS.start_time, fepoch=True))
+        ARGS.start_time = timedoy.timedoy (epoch=timedoy.passcal2epoch (ARGS.start_time, fepoch=True))
         ARGS.evt_list = [ARGS.start_time]
     #   
     if not ARGS.evt_list and not ARGS.all_events :
@@ -199,7 +199,7 @@ def gather () :
         #   
         fh = None
         #   Initialize 
-        sf = SEGYFactory.Ssegy (None, event_t, utm = ARGS.use_utm)
+        sf = segyfactory.Ssegy (None, event_t, utm = ARGS.use_utm)
         #   Allow lenght of traces to be up to 2^16 samples long
         sf.set_break_standard (ARGS.break_standard)
         #   Set external header type
@@ -208,7 +208,7 @@ def gather () :
         if event_t :
             sf.set_event_t (event_t)
             #   Event time
-            event_tdoy = TimeDOY.TimeDOY (microsecond = event_t['time/micro_seconds_i'], 
+            event_tdoy = timedoy.timedoy (microsecond = event_t['time/micro_seconds_i'], 
                                           epoch = event_t['time/epoch_l'])
             Offset_t = P5.read_offsets_shot_order (ARGS.station_array, evt, ARGS.shot_line)
             #Offset_t = P5.calc_offsets (ARGS.station_array, evt, ARGS.shot_line)
@@ -267,7 +267,7 @@ def gather () :
                                                                                     c))
                         continue
                     #   Filter out unwanted seed channels
-                    seed_channel_code_s = ph5API.seed_channel_code (array_t[c][0])
+                    seed_channel_code_s = ph5api.seed_channel_code (array_t[c][0])
                     if ARGS.seed_channel and seed_channel_code_s != ARGS.seed_channel :
                         logging.info ("Channel code mismatch: {0}/{1}/{2}".format (array_t[c][0]['seed_channel_code_s'],
                                                                                    ARGS.seed_channel,
@@ -284,7 +284,7 @@ def gather () :
                     #   Pickup time
                     stop_epoch = array_t[c][t]['pickup_time/epoch_l']
                     #   Is this shot within the deploy and pickup times
-                    if not ph5API.is_in (start_epoch, stop_epoch, event_tdoy.epoch (), end_tdoy.epoch ()) :
+                    if not ph5api.is_in (start_epoch, stop_epoch, event_tdoy.epoch (), end_tdoy.epoch ()) :
                         logging.info ("Data logger {0} not deployed between {1} to {2} at {3}.".format (array_t[c][t]['das/serial_number_s'], event_tdoy, end_tdoy, sta))
                         if ARGS.deploy_pickup :
                             logging.info ("Skipping.")  
@@ -294,11 +294,11 @@ def gather () :
                     try :
                         das_or_fail = P5.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
                     except :
-                        logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, TimeDOY.epoch2passcal (start_epoch), TimeDOY.epoch2passcal (stop_epoch)))
+                        logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, timedoy.epoch2passcal (start_epoch), timedoy.epoch2passcal (stop_epoch)))
                         continue
                     
                     if das_or_fail == None :
-                        logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, TimeDOY.epoch2passcal (start_epoch), TimeDOY.epoch2passcal (stop_epoch)))
+                        logging.warn ("Failed to read DAS: {0} between {1} and {2}.".format (das, timedoy.epoch2passcal (start_epoch), timedoy.epoch2passcal (stop_epoch)))
                         continue
                     
                     #   Sample rate
@@ -324,7 +324,7 @@ def gather () :
                     if ARGS.red_vel > 0. :
                                                
                         try :
-                            secs, errs = SEGYFactory.calc_red_vel_secs (offset_t, ARGS.red_vel)
+                            secs, errs = segyfactory.calc_red_vel_secs (offset_t, ARGS.red_vel)
                         except Exception as e :
                             secs = 0.
                             errs = "Can not calculate reduction velocity: {0}.".format (e.message)
@@ -341,7 +341,7 @@ def gather () :
                     if len (traces[0].data) == 0 :
                         logging.warn ("Warning: No data found for {0} for station {1}.".format (das, sta))
                         continue
-                    trace = ph5API.pad_traces (traces)
+                    trace = ph5api.pad_traces (traces)
                     if ARGS.do_time_correct :
                         logging.info ("Applied time drift correction by shifting trace by {0} samples.".format (-1 * sr * (trace.time_correction_ms/1000.)))
                         logging.info ("Correction is {0} ms.".format (trace.time_correction_ms))
@@ -441,12 +441,12 @@ def gather () :
                                 sys.stderr.write ("Error: Failed to open {0}.\t{1}".format (outfilename, e.message))
                                 sys.exit () 
                         #   Write reel headers and first trace
-                        logs = SEGYFactory.write_segy_hdr (trace, fh, sf, num_traces)
+                        logs = segyfactory.write_segy_hdr (trace, fh, sf, num_traces)
                         #   Write any messages
                         for l in logs : logging.info (l)
                     else :
                         #   Write trace
-                        logs = SEGYFactory.write_segy (trace, fh, sf)
+                        logs = segyfactory.write_segy (trace, fh, sf)
                         for l in logs : logging.info (l) 
             #   chan
         #   Traces found does not match traces expected

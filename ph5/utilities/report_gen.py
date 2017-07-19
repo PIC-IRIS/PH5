@@ -6,7 +6,7 @@
 
 import sys, os, os.path, time, string
 #   This provides the base functionality
-from ph5.core import Experiment, TimeDoy
+from ph5.core import experiment, TimeDoy
 #   The wiggles are stored as numpy arrays
 import numpy
 
@@ -147,7 +147,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
 

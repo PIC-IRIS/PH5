@@ -6,7 +6,7 @@
 #
 import os, sys, logging, re, time, math
 import obspy
-from ph5.core import Experiment, TimeDOY
+from ph5.core import experiment, timedoy
 
 PROG_VERSION = "2016.200 Developmental"
 #   Max size of each ph5 mini file
@@ -143,14 +143,14 @@ def get_args () :
 def initializeExperiment () :
     global EX
     
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
     
 def openPH5 (filename) :
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec
@@ -346,7 +346,7 @@ def updatePH5 (stream) :
         p_das_t['sample_rate_i'] = trace.stats.sampling_rate
         p_das_t['sample_rate_multiplier_i'] = 1
         #
-        tdoy = TimeDOY.UTCDateTime2tdoy (trace.stats.starttime)
+        tdoy = timedoy.UTCDateTime2tdoy (trace.stats.starttime)
         p_das_t['time/epoch_l'] = tdoy.epoch ()
         #   XXX   need to cross check here   XXX
         p_das_t['time/ascii_s'] = time.asctime (time.gmtime (p_das_t['time/epoch_l']))
@@ -427,12 +427,12 @@ def main():
             if len (flds) != 8 : continue
             deploy_flds = map (float, flds[5].split (':'))
             pickup_flds = map (float, flds[6].split (':'))
-            tdoy0 = TimeDOY.TimeDOY (year=int (deploy_flds[0]), 
+            tdoy0 = timedoy.timedoy (year=int (deploy_flds[0]), 
                                      hour=int (deploy_flds[2]), 
                                      minute=int (deploy_flds[3]), 
                                      second=deploy_flds[4], 
                                      doy=int (deploy_flds[1]))
-            tdoyN = TimeDOY.TimeDOY (year=int (pickup_flds[0]), 
+            tdoyN = timedoy.timedoy (year=int (pickup_flds[0]), 
                                      hour=int (pickup_flds[2]), 
                                      minute=int (pickup_flds[3]), 
                                      second=pickup_flds[4], 
@@ -441,7 +441,7 @@ def main():
             #WS:net_code:station:location:channel:deploy_time:pickup_time:length
             start_time = tdoy0.getFdsnTime ()
             while True :
-                if TimeDOY.delta (tdoy0, tdoyN) <= 0 : break
+                if timedoy.delta (tdoy0, tdoyN) <= 0 : break
                 stream = get_ds (flds[1], flds[2], flds[3], flds[4], start_time, int (flds[7]))
                 if stream != None : 
                     logging.info ("Adding stream for {0}:{3} starting at {1} and ending at {2} to PH5".format (stream[0].stats.station,
@@ -454,7 +454,7 @@ def main():
                                                                           start_time))
                     time.sleep (3)
                 e = tdoy0.epoch (fepoch=True) + int (flds[7])
-                tdoy0 = TimeDOY.TimeDOY (epoch=e)
+                tdoy0 = timedoy.timedoy (epoch=e)
                 start_time = tdoy0.getFdsnTime ()
                 
         update_external_references ()        

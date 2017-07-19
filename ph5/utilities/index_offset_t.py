@@ -5,7 +5,7 @@
 #   Steve Azevedo, March 2012
 #
 import sys, os
-from ph5.core import Experiment
+from ph5.core import experiment
 
 PROG_VERSION = "2012.069"
 
@@ -53,7 +53,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     try: 
-        EX = Experiment.ExperimentGroup (PATH, PH5)
+        EX = experiment.ExperimentGroup (PATH, PH5)
         EX.ph5open (editmode)
         EX.initgroup ()
     except Exception:

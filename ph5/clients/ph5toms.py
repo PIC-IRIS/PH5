@@ -32,8 +32,8 @@ from obspy import UTCDateTime
 import copy
 import itertools
 from ph5.core import ph5utils
-from ph5.core import ph5API
-from ph5.core.TimeDOY import epoch2passcal, passcal2epoch
+from ph5.core import ph5api
+from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
 
 PROG_VERSION = "2017.192"
@@ -293,7 +293,7 @@ class PH5toMSeed(object):
             if not self.ph5.Das_t.has_key(stc.das):
                 return
     
-            Das_t = ph5API.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
+            Das_t = ph5api.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
                                         stc.channel)
     
             das_t_start_no_micro = float(Das_t[0]['time/epoch_l'])
@@ -435,7 +435,7 @@ class PH5toMSeed(object):
                 if float(check_start_time) > float(pickup):
                     return
             else:
-                start_times.append(ph5API.fepoch(deploy,deploy_micro))
+                start_times.append(ph5api.fepoch(deploy,deploy_micro))
         
         for start_fepoch in start_times:
         
@@ -470,7 +470,7 @@ class PH5toMSeed(object):
                 elif self.length:
                     stop_fepoch = start_fepoch + self.length  
                 else:     
-                    stop_fepoch = ph5API.fepoch(pickup, pickup_micro)                
+                    stop_fepoch = ph5api.fepoch(pickup, pickup_micro)                
 
             if (self.use_deploy_pickup is True and not
                     ((start_fepoch >= deploy and
@@ -662,7 +662,7 @@ def get_args():
 
     parser = argparse.ArgumentParser(
         description='Return mseed from a PH5 file.',
-        usage='Version: {0} ph5tomsAPI --nickname="Master_PH5_file" [options]'
+        usage='Version: {0} ph5toms --nickname="Master_PH5_file" [options]'
         .format(PROG_VERSION))
 
     parser.add_argument(
@@ -815,7 +815,7 @@ def main():
         sys.stderr.write("Error - {0} not found.\n".format(ph5file))
         sys.exit(-1)
 
-    ph5API_object = ph5API.ph5(path=args.ph5path, nickname=args.nickname)
+    ph5API_object = ph5api.ph5(path=args.ph5path, nickname=args.nickname)
 
     if args.array:
         args.array = args.array.split(',')

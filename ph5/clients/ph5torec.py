@@ -6,13 +6,13 @@
 #
 
 import os, sys, logging
-from ph5.core import ph5API, SEGYFactory, decimate, TimeDOY
+from ph5.core import ph5api, segyfactory, decimate, timedoy
 
 PROG_VERSION = "2017.186 Developmental"
-#   This should never get used. See ph5API.
+#   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
-DECIMATION_FACTORS = SEGYFactory.DECIMATION_FACTORS
+DECIMATION_FACTORS = segyfactory.DECIMATION_FACTORS
 
 def get_args () :
     '''
@@ -124,7 +124,7 @@ def get_args () :
     ARGS = parser.parse_args ()
     #print ARGS
     try :
-        P5 = ph5API.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
+        P5 = ph5api.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)
@@ -179,8 +179,8 @@ def gather () :
         ###
         i = 0   #   Number of traces found
         fh = None   #   SEG-Y file 
-        #   Get a mostly empty instance of SEGYFactory
-        sf = SEGYFactory.Ssegy (None, None, utm=ARGS.use_utm)
+        #   Get a mostly empty instance of segyfactory
+        sf = segyfactory.Ssegy (None, None, utm=ARGS.use_utm)
         #   Set the type of extended header to write
         sf.set_ext_header_type (ARGS.ext_header)
         #   Should we allow traces that are 2^16 samples long
@@ -215,7 +215,7 @@ def gather () :
             #   Appropriate line from Event_t
             event_t = Event_t[o]
             ###   Need to handle time offset here, ARGS.seconds_offset_from_shot
-            event_tdoy = TimeDOY.TimeDOY (microsecond=event_t['time/micro_seconds_i'],  
+            event_tdoy = timedoy.timedoy (microsecond=event_t['time/micro_seconds_i'],  
                                           epoch=event_t['time/epoch_l'])
             #   Adjust start time based on offset entered on command line
             if ARGS.seconds_offset_from_shot : event_tdoy += ARGS.seconds_offset_from_shot
@@ -223,7 +223,7 @@ def gather () :
             #
             start_fepoch = event_tdoy.epoch (fepoch=True)
             stop_fepoch = end_tdoy.epoch (fepoch=True)
-            #   Set start time in SEGYFactory
+            #   Set start time in segyfactory
             sf.set_cut_start_epoch (start_fepoch)
             #   Set event
             sf.set_event_t (event_t)
@@ -242,7 +242,7 @@ def gather () :
                                                                                 c))
                     continue
                 #   Filter out unwanted seed channels
-                seed_channel_code_s = ph5API.seed_channel_code (array_t[c][0])
+                seed_channel_code_s = ph5api.seed_channel_code (array_t[c][0])
                 if ARGS.seed_channel and seed_channel_code_s != ARGS.seed_channel :
                     logging.info ("Channel code mismatch: {0}/{1}/{2}".format (array_t[c][0]['seed_channel_code_s'],
                                                                                ARGS.seed_channel,
@@ -256,7 +256,7 @@ def gather () :
                     #   Pickup time
                     stop_epoch = array_t[c][t]['pickup_time/epoch_l']
                     #   Is this shot within the deploy and pickup times
-                    if not ph5API.is_in (start_epoch, stop_epoch, event_tdoy.epoch (), end_tdoy.epoch ()) :
+                    if not ph5api.is_in (start_epoch, stop_epoch, event_tdoy.epoch (), end_tdoy.epoch ()) :
                         logging.info ("Data logger {0} not deployed between {1} to {2} at {3}.".format (array_t[c][t]['das/serial_number_s'], event_tdoy, end_tdoy, sta))
                         if ARGS.deploy_pickup :
                             logging.info ("Skipping.")  
@@ -265,24 +265,24 @@ def gather () :
                     ###   Need to apply reduction velocity here
                     if ARGS.red_vel > 0. :
                         try :
-                            secs, errs = SEGYFactory.calc_red_vel_secs (Offset[o], ARGS.red_vel)
+                            secs, errs = segyfactory.calc_red_vel_secs (Offset[o], ARGS.red_vel)
                         except Exception as e :
                             secs = 0.
                             errs = "Can not calculate reduction velocity: {0}.".format (e.message)
                         for e in errs : logging.info (e)
                         start_fepoch += secs
                         stop_fepoch += secs
-                    #   Set array_t in SEGYFactory
+                    #   Set array_t in segyfactory
                     sf.set_array_t (array_t[c][t])
                     #   Read Das table
-                    #print ph5API.__version__
+                    #print ph5api.__version__
                     P5.forget_das_t (das)
                     #P5.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
                     #
                     ###   Cut trace
                     #                    
                     traces = P5.cut (das, start_fepoch, stop_fepoch, chan=c, sample_rate=sr)
-                    trace = ph5API.pad_traces (traces)
+                    trace = ph5api.pad_traces (traces)
                     if ARGS.do_time_correct :
                         logging.info ("Applied time drift correction by shifting trace by {0} samples.".format (-1 * sr * (trace.time_correction_ms/1000.)))
                         logging.info ("Correction is {0} ms.".format (trace.time_correction_ms))
@@ -324,7 +324,7 @@ def gather () :
                     #receiver_t = P5.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]
                     receiver_t = trace.receiver_t
                     response_t = P5.Response_t['rows'][trace.das_t[0]['response_table_n_i']]
-                    #   Set sort_t in SEGYFactory
+                    #   Set sort_t in segyfactory
                     sf.set_sort_t (P5.get_sort_t (start_fepoch, ARGS.station_array))
                     #   Set das_t
                     sf.set_das_t (trace.das_t[0])
@@ -387,19 +387,19 @@ def gather () :
                                 sys.exit ()
                         #   Write reel headers and first trace
                         try :
-                            logs = SEGYFactory.write_segy_hdr (trace, fh, sf, num_traces)
+                            logs = segyfactory.write_segy_hdr (trace, fh, sf, num_traces)
                             #   Write any messages
                             for l in logs : logging.info (l)
-                        except SEGYFactory.SEGYError as e :
+                        except segyfactory.SEGYError as e :
                             logging.error ("Error: Header write failure.")
                             sys.exit ()
                     else :
                         #   Write trace
                         try :
-                            logs = SEGYFactory.write_segy (trace, fh, sf)
+                            logs = segyfactory.write_segy (trace, fh, sf)
                             for l in logs : logging.info (l)
                             logging.info ('=-' * 40)
-                        except SEGYFactory.SEGYError as e :
+                        except segyfactory.SEGYError as e :
                             logging.error ("Error: Trace write failure.")
                             sys.exit ()
                 #

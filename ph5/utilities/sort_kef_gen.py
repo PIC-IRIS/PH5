@@ -6,7 +6,7 @@
 #
 import sys, os, os.path, time, math
 #   This provides the base functionality
-from ph5.core import Experiment
+from ph5.core import experiment
 
 PROG_VERSION = "2016.334"
 
@@ -104,7 +104,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
     

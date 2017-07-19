@@ -1,7 +1,7 @@
 #!/usr/bin/env pnpython2
 
 import os, os.path, sys, time, re
-from ph5.core import TimeDOY
+from ph5.core import timedoy
 
 PROG_VERSION = "2014.241 Developmental"
 
@@ -36,7 +36,7 @@ class ph5_time (object) :
             except :
                 flds.append (0)
                 
-        tdoy = TimeDOY.TimeDOY (year=int (flds[0]), 
+        tdoy = timedoy.timedoy (year=int (flds[0]), 
                                 hour=int (flds[2]), 
                                 minute=int (flds[3]), 
                                 second=int (flds[4]), 

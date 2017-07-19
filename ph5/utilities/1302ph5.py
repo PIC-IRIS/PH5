@@ -7,7 +7,7 @@
 #
 
 import tables, sys, os, os.path, string, time, math, numpy, re, logging
-from ph5.core import columns, Experiment, Kef, pn130, TimeDOY
+from ph5.core import columns, experiment, kef, pn130, timedoy
 
 PROG_VERSION = '2017.062 Developmental'
 MAX_PH5_BYTES = 1073741824 * 4   #   2GB (1024 X 1024 X 1024 X 4)
@@ -123,7 +123,7 @@ def read_windows_file (f) :
             sys.stderr.write ("Error in window file: %s\n" % flds[0])
             continue
         
-        tDOY = TimeDOY.TimeDOY (year=int (ttuple[0]), 
+        tDOY = timedoy.timedoy (year=int (ttuple[0]), 
                                 month=None, 
                                 day=None, 
                                 hour=int (ttuple[2]), 
@@ -360,7 +360,7 @@ def get_args () :
         WINDOWS = None
 
     if options.doprint != False :
-        ex = Experiment.ExperimentGroup ()
+        ex = experiment.ExperimentGroup ()
         ex.ph5open (True)
         ex.initgroup ()
         keys (ex)
@@ -402,14 +402,14 @@ def initializeExperiment (nickname) :
     global EX, PH5
     
     #reload (tables)
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
     
 def populateExperimentTable () :
     global EX, KEFFILE
-    k = Kef.Kef (KEFFILE)
+    k = kef.Kef (KEFFILE)
     k.open ()
     k.read ()
     k.batch_update ()
@@ -526,7 +526,7 @@ def writeEvent (points, event) :
         #tdoy = TimeDoy.TimeDoy ()
         #mo, da = tdoy.getMonthDay (event[c].year, event[c].doy)
         #p_das_t['time/epoch_l'] = int (time.mktime ((event[c].year, mo, da, event[c].hour, event[c].minute, int (event[c].seconds), -1, event[c].doy, 0)))
-        tDOY = TimeDOY.TimeDOY (year=event[c].year, 
+        tDOY = timedoy.timedoy (year=event[c].year, 
                                 month=None, 
                                 day=None, 
                                 hour=event[c].hour, 
@@ -634,7 +634,7 @@ def window_contained (e) :
                                       #-1,
                                       #e.doy,
                                       #0))
-    tDOY = TimeDOY.TimeDOY (year=e.year, 
+    tDOY = timedoy.timedoy (year=e.year, 
                             month=None, 
                             day=None, 
                             hour=e.hour, 
@@ -664,7 +664,7 @@ def window_contained (e) :
 
 def openPH5 (filename) :
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec

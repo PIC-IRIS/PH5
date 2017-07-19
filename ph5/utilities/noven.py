@@ -8,7 +8,7 @@
 import os, sys, json, time
 from os.path import expanduser
 from PyQt4 import QtGui, QtCore
-from ph5.utilities import novenQC, novenKef
+from ph5.utilities import novenqc, novenkef
 
 PROG_VERSION = '2017.199'
 
@@ -206,21 +206,21 @@ class MyWorker (QtCore.QThread) :
         if self.command == 'qc_receivers' :
             while self.working :
                 #print '*'
-                self.working = novenQC.qc_receivers (self.table, 
+                self.working = novenqc.qc_receivers (self.table, 
                                                      self.names, 
                                                      self.cols, 
                                                      self.sep)
         elif self.command == 'qc_shots' :
             while self.working :
                 #print '!'
-                self.working = novenQC.qc_shots (self.table, 
+                self.working = novenqc.qc_shots (self.table, 
                                                  self.names, 
                                                  self.cols, 
                                                  self.sep)
         elif self.command == 'qc_map' :
             #print '#'
             while self.working :
-                self.working = novenQC.qc_map (self.outfile)
+                self.working = novenqc.qc_map (self.outfile)
         else :
             print "Fail"
 
@@ -613,13 +613,13 @@ class Novitiate (QtGui.QMainWindow) :
         
     def qcDone (self) :
         self.status.showMessage ("Done")
-        if novenQC.ERR != None and len (novenQC.ERR) != 0 :
-            self.errorsDialog = ErrorsDialog (novenQC.ERR, self)
+        if novenqc.ERR != None and len (novenqc.ERR) != 0 :
+            self.errorsDialog = ErrorsDialog (novenqc.ERR, self)
             self.errorsDialog.show ()
         else :
             QtGui.QMessageBox.information(self, "Information", "Nothing funky found!")
     
-        self.TOP = novenQC.TOP
+        self.TOP = novenqc.TOP
             
     def openInfile (self) :
         #
@@ -655,7 +655,7 @@ class Novitiate (QtGui.QMainWindow) :
             #worker.finished.connect (self.qcDone)
             worker.start ()
             worker.wait ()
-            #novenQC.qc_map (outFileName)
+            #novenqc.qc_map (outFileName)
         
     def checkInFile (self) :
         if not self.readFileLines :
@@ -678,7 +678,7 @@ class Novitiate (QtGui.QMainWindow) :
                                names,
                                RECEIVER_CFG,
                                sep=SEPMAP[self.settings['colSep']])
-            #ret = novenQC.qc_receivers (self.readFileLines[self.settings['linesSkip']:], 
+            #ret = novenqc.qc_receivers (self.readFileLines[self.settings['linesSkip']:], 
                                         #map (lambda x : str (x.currentText ()), self.comboBoxes),
                                         #RECEIVER_CFG,
                                         #sep=SEPMAP[self.settings['colSep']])
@@ -689,7 +689,7 @@ class Novitiate (QtGui.QMainWindow) :
                                names,
                                EVENT_CFG,
                                sep=SEPMAP[self.settings['colSep']])
-            #ret = novenQC.qc_shots (self.readFileLines[self.settings['linesSkip']:], 
+            #ret = novenqc.qc_shots (self.readFileLines[self.settings['linesSkip']:], 
                                     #map (lambda x : str (x.currentText ()), self.comboBoxes),
                                     #EVENT_CFG,
                                     #sep=SEPMAP[self.settings['colSep']])
@@ -707,7 +707,7 @@ class Novitiate (QtGui.QMainWindow) :
             return  
         
         saveFileName = QtGui.QFileDialog.getSaveFileName(self, 'Save output as', os.getcwd (), filter="*.kef")
-        novenKef.write_kef (self.TOP, saveFileName)
+        novenkef.write_kef (self.TOP, saveFileName)
         
 #
 ###   Mix-ins

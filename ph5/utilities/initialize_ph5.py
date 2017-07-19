@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython3
 
-from ph5.core import Kef, Experiment
+from ph5.core import kef, experiment
 import sys, os
 import tempfile
 
@@ -53,7 +53,7 @@ def get_args () :
     from optparse import OptionParser
 
     oparser = OptionParser ()
-    oparser.usage = "Version: %s initialize_ph5 [--help]--kef kef_file --output output_file" % Experiment.PROG_VERSION
+    oparser.usage = "Version: %s initialize_ph5 [--help]--kef kef_file --output output_file" % experiment.PROG_VERSION
     oparser.description = "Program to initialize PH5 file at start of experiment. The kef file should contain information for experiment table /Experiment_g/Experiment_t."
     oparser.add_option ("-n", "--nickname", dest = "outfile",
                         help="Experiment nickname.",
@@ -84,12 +84,12 @@ def main():
     get_args ()
     #   Create ph5 file
     EDITMODE = True
-    ex = Experiment.ExperimentGroup (nickname = PH5)
+    ex = experiment.ExperimentGroup (nickname = PH5)
     ex.ph5open (EDITMODE)
     ex.initgroup ()
     #   Update Experiment_t
     if KEFFILE :
-        k = Kef.Kef (KEFFILE)
+        k = kef.Kef (KEFFILE)
         k.open ()
         k.read ()
         k.batch_update ()
@@ -97,7 +97,7 @@ def main():
     
        
     if os.path.exists (RECEIVER_T) :
-        k = Kef.Kef (RECEIVER_T)
+        k = kef.Kef (RECEIVER_T)
         k.open ()
         k.read ()
         k.batch_update ()

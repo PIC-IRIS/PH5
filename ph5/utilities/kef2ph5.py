@@ -5,7 +5,7 @@
 #   Steve Azevedo, January 2007
 #
 
-from ph5.core import Experiment, Kefx, columns
+from ph5.core import experiment, kefx, columns
 import sys, os, os.path, time
 
 PROG_VERSION = '2016.113 Developmental'
@@ -60,7 +60,7 @@ def get_args () :
 def initializeExperiment () :
     global EX, PH5, PATH
     
-    EX = Experiment.ExperimentGroup (nickname = PH5, currentpath = PATH)
+    EX = experiment.ExperimentGroup (nickname = PH5, currentpath = PATH)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
@@ -83,7 +83,7 @@ def add_references (rs) :
     
 def populateTables () :
     global EX, KEFFILE, TRACE
-    k = Kefx.Kef (KEFFILE)
+    k = kefx.Kef (KEFFILE)
     k.open ()
     
     while True :

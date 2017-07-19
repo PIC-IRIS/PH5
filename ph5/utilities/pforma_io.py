@@ -753,7 +753,7 @@ if __name__ == '__main__' :
     print guess_instrument_type (filename)
     sys.exit ()
     
-    import TimeDOY, time
+    import timedoy, time
     
     #2015-08-10 18:18:59,197 Processing: /home/azevedo/Salt/Raw/D069-10Mar/Greg/I1700RAWDO69.TRD...
     processRE = re.compile ("(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\,\d\d\d Processing: (.*[TtZz][RrIi][DdPp])\.\.\..*")
@@ -891,7 +891,7 @@ if __name__ == '__main__' :
                         mo = processRE.match (line)
                         if mo :
                             flds = mo.groups ()
-                            tdoy = TimeDOY.TimeDOY (int (flds[0]), 
+                            tdoy = timedoy.timedoy (int (flds[0]), 
                                                     int (flds[1]), 
                                                     int (flds[2]), 
                                                     int (flds[3]),
@@ -905,7 +905,7 @@ if __name__ == '__main__' :
                 
                         elif doneRE.match (line) :
                             flds = doneRE.match (line).groups ()
-                            tdoy = TimeDOY.TimeDOY (int (flds[0]), 
+                            tdoy = timedoy.timedoy (int (flds[0]), 
                                                     int (flds[1]), 
                                                     int (flds[2]), 
                                                     int (flds[3]),

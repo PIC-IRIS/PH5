@@ -2,7 +2,7 @@
 
 import os, sys, warnings, logging, re, time, math, json
 from math import modf
-from ph5.core import Experiment, columns, TimeDOY
+from ph5.core import experiment, columns, timedoy
 
 from obspy import read as readSEG2
 
@@ -143,7 +143,7 @@ def get_args () :
 def initializeExperiment () :
     global EX
     
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
@@ -151,7 +151,7 @@ def initializeExperiment () :
 def openPH5 (filename) :
     #filename = os.path.join (PATH, filename)
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec
@@ -451,7 +451,7 @@ def updatePH5 (stream) :
         p_das_t['sample_rate_i'] = int (trace.stats.sampling_rate)
         p_das_t['sample_rate_multiplier_i'] = 1
         #
-        tdoy = TimeDOY.UTCDateTime2tdoy (trace.stats.starttime)
+        tdoy = timedoy.UTCDateTime2tdoy (trace.stats.starttime)
         p_das_t['time/epoch_l'] = tdoy.epoch ()
         #   XXX   need to cross check here   XXX
         p_das_t['time/ascii_s'] = time.asctime (time.gmtime (p_das_t['time/epoch_l']))

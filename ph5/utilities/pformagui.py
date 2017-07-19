@@ -7,8 +7,8 @@ import os, sys, time
 from PySide import QtCore, QtGui
 from psutil import cpu_count, cpu_percent
 #import pformaGUI_rc
-from ph5.core import PMonitor
-from ph5.utilities import pformaIO, WatchIt
+from ph5.core import pmonitor
+from ph5.utilities import pforma_io, watchit
 
 PROG_VERSION = "2017.032 Developmental"
 
@@ -93,9 +93,9 @@ class getInputs (QtGui.QWidget) :
             self.dirCombo.setCurrentIndex(self.dirCombo.findText(directory)) 
         pass
     
-class MdiChild (PMonitor.Monitor) :
+class MdiChild (pmonitor.Monitor) :
     '''
-       Create instance of PMonitor.Monitor
+       Create instance of pmonitor.Monitor
     '''
     def __init__ (self, fio, cmds, info, title='X', mmax=100) :
         super (MdiChild, self).__init__ (fio, cmds, info, title, mmax)
@@ -114,7 +114,7 @@ class MdiChildDos (QtGui.QProgressDialog) :
             mess.exec_ ()
             self.good = False
         
-        #self.wd = WatchIt.Watchdog (3, userHandler=self.run)
+        #self.wd = watchit.Watchdog (3, userHandler=self.run)
         #self.wd.start ()
         
     def run (self) :
@@ -280,7 +280,7 @@ class MainWindow(QtGui.QMainWindow):
                 child.show()
                 self.children[T] = child
         #   Set up an after to check on children    
-        self.wd = WatchIt.Watchdog (12, userHandler=self.checkOnChildren)
+        self.wd = watchit.Watchdog (12, userHandler=self.checkOnChildren)
         self.wd.start ()
         self.statsig.emit ("Processing {0}".format ("/".join (self.children.keys ())))
 
@@ -296,7 +296,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def createMdiChild(self, c, i, t, m) :
         '''
-           Create an instance of PMonitor.Monitor
+           Create an instance of pmonitor.Monitor
         '''
         child = MdiChild(self.fio,
                          c,
@@ -484,7 +484,7 @@ def init_fio (f, d, utm=None, combine=None) :
             lsts -> info about processing sub-lists and types of instruments
     '''
     #from multiprocessing import cpu_count
-    fio = pformaIO.formaIO (infile=f, outdir=d)
+    fio = pforma_io.formaIO (infile=f, outdir=d)
     if utm : fio.set_utm (utm)
     if combine : fio.set_combine (combine)
     if cpu_count (logical=False) > 3 :
@@ -496,7 +496,7 @@ def init_fio (f, d, utm=None, combine=None) :
     
     try :
         fio.open ()
-    except pformaIO.formaIOError as e :
+    except pforma_io.formaIOError as e :
         print e.errno, e.message
 
     try :
@@ -507,12 +507,12 @@ def init_fio (f, d, utm=None, combine=None) :
         #print "M:", fio.M
         #print "N:", fio.nmini
         #time.sleep (10)
-    except pformaIO.formaIOError as e :
+    except pforma_io.formaIOError as e :
         print e.errno, e.message
     
     try :
         fio.readDB ()
-    except pformaIO.formaIOError as e :
+    except pforma_io.formaIOError as e :
         print e.errno, e.message
         sys.exit (-1)
         

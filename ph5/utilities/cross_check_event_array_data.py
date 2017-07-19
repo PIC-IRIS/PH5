@@ -20,8 +20,8 @@
 #
 
 import os, sys, json
-from ph5.core import TimeDOY
-from ph5.core.ph5API import is_in
+from ph5.core import timedoy
+from ph5.core.ph5api import is_in
 
 PROG_VERSION = "2016.336.2"
 __version__ = PROG_VERSION
@@ -97,18 +97,18 @@ def read_json () :
         if not DATA.has_key (Data['das']) :
             DATA[Data['das']] = []
         yr, doy, hr, mn, sc = Data['first_sample'].split (':')
-        window_start = TimeDOY.TimeDOY (year=int (yr),
+        window_start = timedoy.timedoy (year=int (yr),
                                         doy=int (doy),
                                         hour=int (hr),
                                         minute=int (mn),
                                         second=float (sc))
         yr, doy, hr, mn, sc = Data['last_sample'].split (':')
-        window_stop = TimeDOY.TimeDOY (year=int (yr),
+        window_stop = timedoy.timedoy (year=int (yr),
                                         doy=int (doy),
                                         hour=int (hr),
                                         minute=int (mn),
                                         second=float (sc))
-        #   Save window_start and window_stop as TimeDOY object
+        #   Save window_start and window_stop as timedoy object
         Data['window_start'] = window_start
         Data['window_stop'] = window_stop
         DATA[Data['das']].append (Data)
@@ -119,14 +119,14 @@ def _is_in (das, shot_time, length, si) :
        Check to see if there are any gaps greater than the sample interval.
        Inputs:
           das - The das serial number as a string
-          shot_time - The shot time as a TimeDOY object
+          shot_time - The shot time as a timedoy object
           length - Length is seconds as a float
           si - Sample interval in seconds
        Returns:
           A tuple containing:
-          Match first sample time as a TimeDOY object, None if no match
-          Match last sample time as a TimeDOY object, None if no match
-          Gaps as a list of start and end times as TimeDOY objects
+          Match first sample time as a timedoy object, None if no match
+          Match last sample time as a timedoy object, None if no match
+          Gaps as a list of start and end times as timedoy objects
     '''
     data = DATA[das]
     shot_start_epoch = shot_time.epoch (fepoch=True)
@@ -138,7 +138,7 @@ def _is_in (das, shot_time, length, si) :
     for d in data :
         data_start_epoch = d['window_start'].epoch (fepoch=True)
         data_stop_epoch = d['window_stop'].epoch (fepoch=True)
-        #   Call ph5API.is_in
+        #   Call ph5api.is_in
         if is_in (data_start_epoch, data_stop_epoch, shot_start_epoch, shot_stop_epoch) :
             hits.append (d)
     
@@ -175,7 +175,7 @@ def process_all () :
         shot_line_name = "Event_t_{0:03d}".format (int (shot_line))
         for event in Event['Events'] :
             yr, doy, hr, mn, sc = event['time'].split (':')
-            shot_time = TimeDOY.TimeDOY (year=int (yr),
+            shot_time = timedoy.timedoy (year=int (yr),
                                          doy=int (doy),
                                          hour=int (hr),
                                          minute=int (mn),
@@ -198,8 +198,8 @@ def process_all () :
                     if fs == None : fs = 'NA'
                     if ls == None : ls = 'NA'
                     if ARGS.epoch :
-                        if fs != 'NA' : fs = str (TimeDOY.passcal2epoch (fs, fepoch=True))
-                        if ls != 'NA' : ls = str (TimeDOY.passcal2epoch (ls, fepoch=True))
+                        if fs != 'NA' : fs = str (timedoy.passcal2epoch (fs, fepoch=True))
+                        if ls != 'NA' : ls = str (timedoy.passcal2epoch (ls, fepoch=True))
                         line = [shot_line_name, 
                                 shot_id, 
                                 str (shot_time.epoch (fepoch=True)), 

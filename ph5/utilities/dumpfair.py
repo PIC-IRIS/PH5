@@ -5,7 +5,7 @@
 #   Steve Azevedo, October 2014
 #
 import sys, os
-from ph5.core import SegdReader
+from ph5.core import segdreader
 
 PROG_VERSION = "2017.199"
 
@@ -104,9 +104,9 @@ def main():
     global RH, TH
     TH = []
     
-    RH = SegdReader.ReelHeaders () 
+    RH = segdreader.ReelHeaders () 
     try :
-        sd = SegdReader.Reader (infile=sys.argv[1])
+        sd = segdreader.Reader (infile=sys.argv[1])
     except :
         print "Usage: dumpfair fairfield_seg-d_file.rg16"
         sys.exit ()

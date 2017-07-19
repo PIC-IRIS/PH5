@@ -6,7 +6,7 @@
 #
 import os, sys
 import numpy as npy
-from ph5.core import ph5API
+from ph5.core import ph5api
 from ph5.core.columns import PH5VERSION as ph5version
 
 PROG_VERSION = "2017.185.a Developmental"
@@ -97,7 +97,7 @@ def main():
     
     get_args ()
     try :
-        P5 = ph5API.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
+        P5 = ph5api.ph5 (path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception as e :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)

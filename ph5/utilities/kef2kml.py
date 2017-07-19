@@ -6,7 +6,7 @@
 #
 
 import os, sys, simplekml, re
-from ph5.core import Kefx
+from ph5.core import kefx
 
 PROG_VERSION = "2017.089"
 
@@ -44,7 +44,7 @@ def read_kef () :
     '''
     global KEF
     try :
-        KEF = Kefx.Kef (ARGS.kefile)
+        KEF = kefx.Kef (ARGS.kefile)
         KEF.open ()
         KEF.read ()
         KEF.rewind ()

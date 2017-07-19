@@ -6,7 +6,7 @@
 import sys, os, os.path, time, string, json
 #from collections import OrderedDict
 #   This provides the base functionality
-from ph5.core import Experiment, TimeDOY
+from ph5.core import experiment, timedoy
 #   The wiggles are stored as numpy arrays
 import numpy
 
@@ -143,7 +143,7 @@ def initialize_ph5 (editmode = False) :
     '''   Initialize the ph5 file   '''
     global EX, PATH, PH5
     
-    EX = Experiment.ExperimentGroup (PATH, PH5)
+    EX = experiment.ExperimentGroup (PATH, PH5)
     EX.ph5open (editmode)
     EX.initgroup ()
 
@@ -448,11 +448,11 @@ def write_data () :
                 #D = { 'das': d, 'first_sample': time.ctime (i['start_time/epoch_l']), 'last_sample': time.ctime (i['end_time/epoch_l']), 'first_epoch': i['start_time/epoch_l'], 'last_epoch': i['end_time/epoch_l'] }
                 try :
                     D = { 'das': d, 
-                          'first_sample': TimeDOY.epoch2passcal (i['start_time/epoch_l'] + (i['start_time/micro_seconds_i'] / 1000000.)), 
-                          'last_sample': TimeDOY.epoch2passcal (i['end_time/epoch_l'] + (i['end_time/micro_seconds_i'] / 1000000.)), 
+                          'first_sample': timedoy.epoch2passcal (i['start_time/epoch_l'] + (i['start_time/micro_seconds_i'] / 1000000.)), 
+                          'last_sample': timedoy.epoch2passcal (i['end_time/epoch_l'] + (i['end_time/micro_seconds_i'] / 1000000.)), 
                           'first_epoch': i['start_time/epoch_l'], 
                           'last_epoch': i['end_time/epoch_l'] }
-                except TimeDOY.TimeError as e :
+                except timedoy.TimeError as e :
                     sys.stderr.write ("{0}".format (e.message))
                     continue
                 
@@ -480,7 +480,7 @@ def write_events () :
         events = []
         this_line = { 'shot_line': str (sl[-3:]) }
         for e in EVENT_T[sl].rows :
-            pictime = TimeDOY.epoch2passcal (e['time/epoch_l'] + (e['time/micro_seconds_i'] / 1000000.))
+            pictime = timedoy.epoch2passcal (e['time/epoch_l'] + (e['time/micro_seconds_i'] / 1000000.))
     
             E = { 'id': e['id_s'], 'time': pictime, 'lat': e['location/Y/value_d'], 'lon': e['location/X/value_d'], 'elev': e['location/Z/value_d'], 'mag': e['size/value_d'], 'depth': e['depth/value_d'] }
             events.append (E)
@@ -510,18 +510,18 @@ def write_arrays () :
     for a in arrays :
         stations = []
         start, stop = A[int(a[-3:])]
-        ##start_tdoy = TimeDOY.TimeDOY (epoch=start)
-        #stop_tdoy = TimeDOY.TimeDOY (epoch=stop)
+        ##start_tdoy = timedoy.timedoy (epoch=start)
+        #stop_tdoy = timedoy.timedoy (epoch=stop)
         sample_rate = get_sample_rate (a, start, stop)
         try :
-            deploy_time = TimeDOY.epoch2passcal (start)
-        except TimeDOY.TimeError as e :
+            deploy_time = timedoy.epoch2passcal (start)
+        except timedoy.TimeError as e :
             sys.stderr.write ("Time conversion error {0}\n".format (e.message))
             deploy_time = ""
             
         try :
-            pickup_time = TimeDOY.epoch2passcal (stop)
-        except TimeDOY.TimeError as e :
+            pickup_time = timedoy.epoch2passcal (stop)
+        except timedoy.TimeError as e :
             sys.stderr.write ("Time conversion error {0}\n".format (e.message))
             pickup_time = ""
             

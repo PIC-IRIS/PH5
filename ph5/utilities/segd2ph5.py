@@ -14,7 +14,7 @@ MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
 import os, sys, logging, time, json, re
 from math import modf
-from ph5.core import Experiment, columns, SegdReader
+from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
 os.environ['TZ'] = 'GMT'
@@ -203,7 +203,7 @@ def get_args () :
 def initializeExperiment () :
     global EX
     
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
@@ -219,7 +219,7 @@ def openPH5 (filename) :
     except :
         pass    
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec
@@ -999,7 +999,7 @@ def main():
                 logging.error ("Error: failed to read {0}, {1}. Skipping...\n".format (f, str (e.message)))
                 continue
             
-            SD = SegdReader.Reader (infile=f)
+            SD = segdreader.Reader (infile=f)
             LAT = None; LON = None
             #DN = False; 
             RH = False
@@ -1018,7 +1018,7 @@ def main():
                 SD.process_extended_headers ()
                 #print "external headers"
                 SD.process_external_headers ()
-            except SegdReader.InputsError as e :
+            except segdreader.InputsError as e :
                 sys.stdout.write (":<Error>: {0}\n".format ("".join (e.message))); sys.stdout.flush ()
                 logging.info ("Error: Possible bad SEG-D file -- {0}".format ("".join (e.message)))
                 continue
@@ -1070,7 +1070,7 @@ def main():
                 
                 try :
                     trace, cs = SD.process_trace ()
-                except SegdReader.InputsError as e :
+                except segdreader.InputsError as e :
                     #sys.stderr.write ("Error 2: Possible bad SEG-D file -- {0}".format ("".join (e)))
                     sys.stdout.write (":<Error:> {0}\n".format (F)); sys.stdout.flush ()
                     logging.info ("Error: Possible bad SEG-D file -- {0}".format ("".join (e.message)))

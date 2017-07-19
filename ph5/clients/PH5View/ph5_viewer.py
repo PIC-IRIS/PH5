@@ -11,8 +11,8 @@ PROG_VERSION = "2017.199 Developmental"
 import sys, os, time, math, gc, re
 #sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 
-from ph5.core import Experiment, TimeDOY
-from ph5.clients.PH5View import PH5ReaderwVispyAPI
+from ph5.core import experiment, timedoy
+from ph5.clients.PH5View import ph5_viewer_reader
 
 from copy import deepcopy
 
@@ -122,10 +122,10 @@ class ManWindow(QtGui.QWidget):
                       "becaulse the file PH5View_Manual.html is missing.\n" +\
                       "To move to the interested section, use scrollbar."
                 QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
-                view.setHtml(PH5ReaderwVispyAPI.html_manual)
+                view.setHtml(ph5_viewer_reader.html_manual)
         
         elif mantype=="whatsnew":
-            view.setHtml(PH5ReaderwVispyAPI.html_whatsnew % PROG_VERSION)
+            view.setHtml(ph5_viewer_reader.html_whatsnew % PROG_VERSION)
         self.layout = QtGui.QHBoxLayout()
         self.layout.addWidget(view)
 
@@ -1750,8 +1750,8 @@ class Canvas(app.Canvas):
                 info += "\nEventId: " + str( statData['eventId'])
                 info += "\nStationId: " + str(statData['stationId'])
                 info += "\nDasSerial: " + str(statData['dasSerial'])
-                #info += "\nStartTime: " + str(TimeDOY.epoch2passcal(statData['startTime']))
-                #info += "\nStopTime: " + str(TimeDOY.epoch2passcal(statData['stopTime']))
+                #info += "\nStartTime: " + str(timedoy.epoch2passcal(statData['startTime']))
+                #info += "\nStopTime: " + str(timedoy.epoch2passcal(statData['stopTime']))
                 if control.stationSpacingUnknownCkb.isChecked():
                     v = (control.nominalStaSpace.text(), 'm')
                 else:
@@ -2867,7 +2867,7 @@ class PH5Visualizer(QtGui.QMainWindow):
         except: pass
         gc.collect()
         
-        PH5Object = PH5ReaderwVispyAPI.PH5Reader()
+        PH5Object = ph5_viewer_reader.PH5Reader()
         PH5Object.initialize_ph5(self.fname)
         PH5Object.createGraphExperiment()
         PH5Object.createGraphEvents()
@@ -2893,7 +2893,7 @@ class PH5Visualizer(QtGui.QMainWindow):
         del PH5Object
         gc.collect()
         #print "begin testing"
-        #PH5Object = PH5ReaderwVispyAPI.PH5Reader()
+        #PH5Object = ph5_viewer_reader.PH5Reader()
         #PH5Object.initialize_ph5('/home/field/Desktop/data/10-016/master.ph5')
         #print "finish testing"
         
@@ -3566,7 +3566,7 @@ class MainControl(QtGui.QMainWindow):
         errorMsg = ""
         if self.PH5View.submitGui=='STATION' and checkTRange:
             try:
-                self.startTime = TimeDOY.passcal2epoch(self.startrangetimeCtrl.text())
+                self.startTime = timedoy.passcal2epoch(self.startrangetimeCtrl.text())
             except Exception,e:
                 errorMsg += "Start time format is invalid.Correct your format to:\n\tYYYY:DOY:HH:MM:SS[.MSE]\n"
             try:
@@ -3950,7 +3950,7 @@ class MainControl(QtGui.QMainWindow):
     #    => read PH5 data and metadata
     def getPH5Data(self, orgStartT, offset, timeLen, staSpc):
         # create PH5Object
-        PH5Object = PH5ReaderwVispyAPI.PH5Reader()
+        PH5Object = ph5_viewer_reader.PH5Reader()
         # initiate PH5Object with filename
         PH5Object.initialize_ph5(self.PH5View.fname)
 
@@ -4042,7 +4042,7 @@ class MainControl(QtGui.QMainWindow):
         overlap = self.overlapSB.value() / 100.0
         if createFromBeg:
             if self.PH5View.submitGui == 'STATION':
-                orgStartT = float(TimeDOY.passcal2epoch(self.startrangetimeCtrl.text())) 
+                orgStartT = float(timedoy.passcal2epoch(self.startrangetimeCtrl.text())) 
             elif self.PH5View.submitGui == 'EVENT': 
                 orgStartT = None
             else:
@@ -4255,7 +4255,7 @@ class MainControl(QtGui.QMainWindow):
     # def: setRealTime():201410
     def setRealTime(self, t, ctrl):
         realT = t/1000.0 + self.startTime
-        ctrl.setText(TimeDOY.epoch2passcal(realT))  
+        ctrl.setText(timedoy.epoch2passcal(realT))  
         
     ###################################
     # Author: Lan
@@ -4874,8 +4874,8 @@ class ES_Gui(QtGui.QWidget):
         self.headBox.addStretch(1)   
 
         if not self.submitType:
-            v = ( self.array['sampleRate'], TimeDOY.epoch2passcal(self.array['deployT']), 
-                  TimeDOY.epoch2passcal(self.array['pickupT']) )
+            v = ( self.array['sampleRate'], timedoy.epoch2passcal(self.array['deployT']), 
+                  timedoy.epoch2passcal(self.array['pickupT']) )
             mainVbox.addWidget(QtGui.QLabel("Array Info: %s sps || %s - %s" % v))
         
         scrollArea = QtGui.QScrollArea(self); mainVbox.addWidget(scrollArea)
@@ -5016,7 +5016,7 @@ class ES_Gui(QtGui.QWidget):
                 return
             
             e = PH5View.selectedEvents[0]           
-            control.startrangetimeCtrl.setText(TimeDOY.epoch2passcal(e['eStart']))
+            control.startrangetimeCtrl.setText(timedoy.epoch2passcal(e['eStart']))
             control.startrangetimeCtrl.setEnabled(True)
                 
             control.correctionCkb.setCheckState(QtCore.Qt.Checked)
@@ -5129,7 +5129,7 @@ class ES_Gui(QtGui.QWidget):
                 self.EXPL[e['eventChk']] = "Click to select this event"
                 self.ESGrid.addWidget(e['eventChk'], lineSeq, 1)
             self.addLabel(self.ESGrid, str(e['eventId']), lineSeq, 2)
-            self.addLabel(self.ESGrid, TimeDOY.epoch2passcal(e['eStart']), lineSeq, 3)
+            self.addLabel(self.ESGrid, timedoy.epoch2passcal(e['eStart']), lineSeq, 3)
             self.addLabel(self.ESGrid, str(e['lat.']), lineSeq, 4)
             self.addLabel(self.ESGrid, str(e['long.']), lineSeq, 5)
             self.addLabel(self.ESGrid, str(e['elev.']), lineSeq, 6)

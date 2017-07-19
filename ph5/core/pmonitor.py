@@ -18,8 +18,8 @@ import sys, os, re
 import subprocess32 as subprocess
 from threading import Thread
 from Queue import Queue, Empty
-from ph5.utilities.pformaIO import guess_instrument_type
-from ph5.utilities import WatchIt
+from ph5.utilities.pforma_io import guess_instrument_type
+from ph5.utilities import watchit
 import time
 
 try :
@@ -241,14 +241,14 @@ class Monitor (QtGui.QWidget) :
     #
     def __init__ (self, fio, cmds, info, title='X', mmax=100) :
         '''
-            fio -> pformaIO object
+            fio -> pforma_io object
             cmds -> list of commands
             title -> window title
             mmax -> max value for progress bar
         '''
         QtGui.QWidget.__init__ (self)
         #self.sizeHint ()
-        self.fio = fio                        #   pformaIO instance
+        self.fio = fio                        #   pforma_io instance
         self.cmds = cmds                      #   List of commands to monitor
         self.info = info                      #   Info about files to convert
         self.family = title                   #   Name of family A, B, C etc.
@@ -276,7 +276,7 @@ class Monitor (QtGui.QWidget) :
                                 QtCore.Qt.QueuedConnection)
                                               #   Wait for progress bar to display 
                                               #   before starting to monitor conversion
-        wd = WatchIt.Watchdog (1, userHandler=self.startConversion)
+        wd = watchit.Watchdog (1, userHandler=self.startConversion)
         wd.start ()
         self.setLayout (box)
         self.setWindowTitle (self.family)
@@ -538,14 +538,14 @@ def set_up_queue (fifo, timeout, handler) :
     #   Set up watchdog for each raw file conversion.
     if timeout > 0 :
     #if False :
-        wd = WatchIt.Watchdog (timeout, userHandler=handler)
+        wd = watchit.Watchdog (timeout, userHandler=handler)
         wd.start ()
     else : wd = None
     
     return q, t, wd
 
 if __name__ == '__main__' :
-    import pformaIO, signal
+    import pforma_io, signal
     
     
     def get_len (f) :
@@ -555,7 +555,7 @@ if __name__ == '__main__' :
     
     def init_fio (f, d) :
         from multiprocessing import cpu_count
-        fio = pformaIO.formaIO (infile=f, outdir=d)
+        fio = pforma_io.formaIO (infile=f, outdir=d)
         if cpu_count () > 3 :
             fio.set_nmini (cpu_count () + 1)
         else :
@@ -565,7 +565,7 @@ if __name__ == '__main__' :
         
         try :
             fio.open ()
-        except pformaIO.formaIOError as e :
+        except pforma_io.formaIOError as e :
             print e.errno, e.message
     
         try :
@@ -574,12 +574,12 @@ if __name__ == '__main__' :
             #print "M:", fio.M
             #print "N:", fio.nmini
             #time.sleep (10)
-        except pformaIO.formaIOError as e :
+        except pforma_io.formaIOError as e :
             print e.errno, e.message
         
         try :
             fio.readDB ()
-        except pformaIO.formaIOError as e :
+        except pforma_io.formaIOError as e :
             print e.errno, e.message
             sys.exit (-1)
             

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 import matplotlib.dates as mdates
 
-from ph5.core import TimeDOY
+from ph5.core import timedoy
 
 PROG_VERSION = "2015.050 Developmental"
 
@@ -17,8 +17,8 @@ class Shot (object) :
     
 class Bars (object) :
     '''
-       left  = start time as TimeDOY object
-       right = end time as TimeDOY object
+       left  = start time as timedoy object
+       right = end time as timedoy object
     '''
     __slots__ = ('left', 'right')
         
@@ -26,8 +26,8 @@ class BarInfo (object) :
     '''
        label = station ID
        bars  = list of Bars objects sorted on left
-       deploy = deploy time as TimeDOY object
-       pickup = pickup time as TimeDOY object
+       deploy = deploy time as timedoy object
+       pickup = pickup time as timedoy object
     '''
     __slots__ = ('label', 'das', 'bars', 'deploy', 'pickup')
     def __init__ (self, label) :
@@ -43,7 +43,7 @@ class BarData (object) :
     '''
     __slots__ = ('array', 'min', 'max', 'bar_info', 'shots')
     def __init__ (self) :
-        self.min = TimeDOY.TimeDOY (year=2019, 
+        self.min = timedoy.timedoy (year=2019, 
                                     month=01, 
                                     day=01, 
                                     hour=0, 
@@ -53,7 +53,7 @@ class BarData (object) :
                                     doy=None, 
                                     epoch=None, 
                                     dtobject=None)
-        self.max = TimeDOY.TimeDOY (year=1970, 
+        self.max = timedoy.timedoy (year=1970, 
                                     month=01, 
                                     day=01, 
                                     hour=0, 

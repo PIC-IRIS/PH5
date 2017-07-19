@@ -23,7 +23,7 @@ DTYPE = { 1:'float32', 2:'int32', 3:'int16', 5:'float32', 8:'int8' }
 
 import os, sys, logging, time, json
 from math import modf
-from ph5.core import Experiment, columns, SegyReader, TimeDOY
+from ph5.core import experiment, columns, segyreader, timedoy
 
 os.environ['TZ'] = 'GMT'
 time.tzset ()
@@ -123,7 +123,7 @@ def get_args () :
     try :
         #FH = open (options.infile, 'rb')
         SIZE = os.path.getsize (options.infile)
-        SR = SegyReader.Reader (options.infile)
+        SR = segyreader.Reader (options.infile)
         SR.open_infile ()
         if SR.FH == None :
             raise IOError ()
@@ -183,7 +183,7 @@ def reopenPH5s () :
     def reopen (ex) :
         filename = ex.filename
         ex.ph5close ()
-        ex = Experiment.ExperimentGroup (nickname = filename)
+        ex = experiment.ExperimentGroup (nickname = filename)
         ex.ph5open (True)
         ex.initgroup ()
         
@@ -196,7 +196,7 @@ def initializeExperiment () :
     '''   Open PH5 file, master.ph5   '''
     global EX, PH5
     
-    EX = Experiment.ExperimentGroup (nickname = PH5)
+    EX = experiment.ExperimentGroup (nickname = PH5)
     EDIT = True
     EX.ph5open (EDIT)
     EX.initgroup ()
@@ -212,7 +212,7 @@ def openPH5 (filename) :
     except :
         pass    
     #sys.stderr.write ("***   Opening: {0} ".format (filename))
-    exrec = Experiment.ExperimentGroup (nickname = filename)
+    exrec = experiment.ExperimentGroup (nickname = filename)
     exrec.ph5open (True)
     exrec.initgroup ()
     return exrec
@@ -630,7 +630,7 @@ def process_trace (th, bh, rh, eh, tr) :
             p_event_t['time/micro_seconds_i'] = 0
             
         #p_event_t['time/epoch_l'] = tdoy.epoch (year, doy, hour, minute, seconds)
-        tdoy = TimeDOY.TimeDOY (year=year, 
+        tdoy = timedoy.timedoy (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -723,7 +723,7 @@ def process_trace (th, bh, rh, eh, tr) :
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
-        tdoy = TimeDOY.TimeDOY (year=year, 
+        tdoy = timedoy.timedoy (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 
@@ -822,7 +822,7 @@ def process_trace (th, bh, rh, eh, tr) :
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
-        tdoy = TimeDOY.TimeDOY (year=year, 
+        tdoy = timedoy.timedoy (year=year, 
                                 month=None, 
                                 day=None, 
                                 hour=hour, 

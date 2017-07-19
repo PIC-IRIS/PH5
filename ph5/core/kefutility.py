@@ -3,7 +3,7 @@ import tables
 from PyQt4 import QtGui, QtCore
 
 # import from pn4
-from ph5.core import Kefx, ph5API
+from ph5.core import kef, ph5api
 from ph5.utilities import tabletokef
 
 
@@ -31,13 +31,13 @@ class KefUtilityError (Exception) :
 ########################################
 # def Kef2TableData
 # updated: 201703
-# use Kefx module to read the Kef file into [(path, dict of values), ...] to kef variable, 
+# use kefx module to read the Kef file into [(path, dict of values), ...] to kef variable, 
 # then convert to 
 # * table data {path1:[2_way_data], ...}: each row is a data set
 # * ketSets {path1:[labels], ...}: label for each column in table data
 def Kef2TableData(statustext, filename):
     try:
-        kef = Kefx.Kef (filename)
+        kef = kefx.Kef (filename)
         kef.open ()
         kef.read ()
         kef.rewind ()
@@ -62,7 +62,7 @@ def Kef2TableData(statustext, filename):
 ########################################
 # def Kef2TableData
 # updated: 201703
-# use Experiment.nuke_xxx depend on the table in path to remove the table from the PH5file
+# use experiment.nuke_xxx depend on the table in path to remove the table from the PH5file
 #def NukeTable(parent, PH5file, exp, path):
     #pathExist = True
     #try:
@@ -234,7 +234,7 @@ def _appendTable(table , ph5Val, path, statustext, count):
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5API.ph5 (path=path2file, nickname=filename, editmode=False)
+    ph5 = ph5api.ph5 (path=path2file, nickname=filename, editmode=False)
   
     # event
     ph5.read_event_t_names ()
