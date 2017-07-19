@@ -6,7 +6,7 @@ A library of command line utilities and APIs for building and interacting with P
 The easiest way to install PH5 is to use the Anaconda distribution of python. These instructions
 only cover installation of PH5 dependencies using Anaconda. This is because PH5 (and many python tools) require packages (aka modules) that have C dependencies.
 
-## Anaconda is not a requirement
+## Anaconda
 Anaconda is not an absolute requirement to get PH5 to work. As long as you can get the necessary python dependencies installed, PH5 will work. If you want to install Anaconda (highly recommended), follow the Mac or Linux instructions below.
 
 ### Mac
