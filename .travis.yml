@@ -22,7 +22,7 @@ install:
 
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n ph5 python=$TRAVIS_PYTHON_VERSION
-  - conda config --add channels obspy
+  - conda config --add channels conda-forge
   - conda env update --name ph5 --file environment.yml
   - source activate ph5
 # command to run tests
