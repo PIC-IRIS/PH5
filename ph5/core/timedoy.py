@@ -109,22 +109,22 @@ class TimeDOY (object) :
     def __rsub__ (self, other) :
         '''   Subtract seconds from self.  '''
         dt = self.dtobject - timedelta (0, other)
-        return timedoy (dtobject=dt)  
+        return TimeDOY (dtobject=dt)  
     
     def __rsub__ (self, other) :
         '''   Subtract seconds from self.  '''
         dt = self.dtobject - timedelta (0, other)
-        return timedoy (dtobject=dt)  
+        return TimeDOY (dtobject=dt)  
     
     def __radd__ (self, other) :
         '''   Add seconds to self   '''
         dt = self.dtobject + timedelta (0, other)
-        return timedoy (dtobject=dt)
+        return TimeDOY (dtobject=dt)
     
     def __add__ (self, other) :
         '''   Add seconds to self   '''
         dt = self.dtobject + timedelta (0, other)
-        return timedoy (dtobject=dt)
+        return TimeDOY (dtobject=dt)
     
     def is_leap_year (self, year) :
         '''   Aloysius Lilius   '''
@@ -235,7 +235,7 @@ def UTCDateTime2tdoy (udt) :
     
     ttuple = udt.timetuple ()
     ms = udt._get_microsecond ()
-    tdoy = timedoy (year=ttuple.tm_year,
+    tdoy = TimeDOY (year=ttuple.tm_year,
                     month=ttuple.tm_mon, 
                     day=ttuple.tm_mday, 
                     hour=ttuple.tm_hour, 
@@ -250,14 +250,14 @@ def timecorrect (tdoy, ms) :
        Apply time correction in milliseconds
     '''
     try :
-        return timedoy (dtobject=tdoy.dtobject + timedelta (0, 0, 0, ms))
+        return TimeDOY (dtobject=tdoy.dtobject + timedelta (0, 0, 0, ms))
     except Exception as e :
         print e.message
         return tdoy
     
 def delta (tdoy1, tdoy2) :
     '''
-       Subtract timedoy object 1 from timedoy object 2 and return seconds
+       Subtract TimeDOY object 1 from TimeDOY object 2 and return seconds
     '''
     d = tdoy2.dtobject - tdoy1.dtobject
     
@@ -266,7 +266,7 @@ def delta (tdoy1, tdoy2) :
     
 def compare (tdoy1, tdoy2) :
     '''
-       cmp timedoy1 to timedoy2
+       cmp TimeDOY1 to TimeDOY2
     '''
     d = delta (tdoy1, tdoy2)
     if d > 0 :
@@ -281,7 +281,7 @@ def yrdoyhrmnsc2epoch (yr, jd, hr, mn, sc, us=0, fepoch=False) :
        Convert year, doy, hour, minute, second, [microsecond]
        to epoch.
     '''
-    tdoy = timedoy (year=yr, 
+    tdoy = TimeDOY (year=yr, 
                     hour=hr, 
                     minute=mn, 
                     second=sc, 
@@ -302,7 +302,7 @@ def fdsn2epoch (fdsn, fepoch=False) :
     except Exception as e :
         raise TimeError
     
-    tdoy = timedoy (year=yr, 
+    tdoy = TimeDOY (year=yr, 
                     month=mo, 
                     day=da, 
                     hour=hr, 
@@ -322,7 +322,7 @@ def passcal2epoch (lopt, sep=':', fepoch=False) :
     except Exception as e :
         raise TimeError
     
-    tdoy = timedoy (year=yr, 
+    tdoy = TimeDOY (year=yr, 
                     hour=hr, 
                     minute=mn, 
                     second=sc, 
@@ -334,7 +334,7 @@ def epoch2passcal (epoch, sep=':') :
     '''
        Convert epoch to PASSCAL time format "YYYY:DOY:HH:MM:SS[.sss]".
     '''
-    tdoy = timedoy (epoch=epoch)
+    tdoy = TimeDOY (epoch=epoch)
     if isinstance (epoch, float) :
         ms = True
     else : ms = False
@@ -349,25 +349,25 @@ def inrange (value, low, high) :
     
 if __name__ == "__main__" :
     import sys, os
-    tdoy = timedoy (microsecond=400000, epoch=1469645921)
+    tdoy = TimeDOY (microsecond=400000, epoch=1469645921)
     print tdoy
     sys.exit ()
-    tdoy = timedoy (microsecond=231034, epoch=1402509329)
+    tdoy = TimeDOY (microsecond=231034, epoch=1402509329)
     print "Should return", '2014:162:17:55:29'
     print tdoy.getPasscalTime ()
     print "Should return", '231034'
     print tdoy.dtobject.microsecond
     
-    tdoy = timedoy (year=2014, hour=17, minute=55, second=29, doy=162, microsecond=123456)
+    tdoy = TimeDOY (year=2014, hour=17, minute=55, second=29, doy=162, microsecond=123456)
     print "Should return", '1402509329'
     print tdoy.epoch ()
     print tdoy.getFdsnTime ()
     print tdoy.getPasscalTime (ms=True)
     
-    tdoy = timedoy (year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    tdoy = TimeDOY (year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     print "Should return 0"
     print tdoy.epoch ()
-    tdoy = timedoy (year=None, 
+    tdoy = TimeDOY (year=None, 
                     month=None, 
                     day=None, 
                     hour=0, 
@@ -378,13 +378,13 @@ if __name__ == "__main__" :
                     epoch=36)
     print tdoy.getISOTime ()
     
-    tdoy1 = timedoy (year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-    tdoy2 = timedoy (year=1970, month=1, day=1, hour=1, minute=1, second=1, microsecond=1001)
+    tdoy1 = TimeDOY (year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    tdoy2 = TimeDOY (year=1970, month=1, day=1, hour=1, minute=1, second=1, microsecond=1001)
     s = delta (tdoy1, tdoy2)
     print s
     print compare (tdoy1, tdoy2), compare (tdoy2, tdoy1)
     import time as t
-    print timedoy (epoch=t.time ()).getPasscalTime (ms=True)
+    print TimeDOY (epoch=t.time ()).getPasscalTime (ms=True)
     print passcal2epoch ("2014:213:06:47:40.32", fepoch=True)
     print epoch2passcal (passcal2epoch ("2014:213:06:47:40.32", fepoch=True))
     print fdsn2epoch ("1970-01-01T00:00:00.000001", fepoch=True)
