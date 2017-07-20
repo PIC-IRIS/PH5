@@ -26,7 +26,6 @@ Below are instructions for installing PH5 with Anaconda. PH5 has several [system
 * Install PH5 dependencies into the environment by running `conda env update --name=ph5 -f=/path/to/ph5/environment.yml`
 * Source the newly created ph5 environment by running `source activate ph5`
 * Install the PH5 python package by running `python setup.py install` in the cloned PH5 project root directory.
-* run `conda install 'matplotlib<2' 'icu=56.*' 'libxslt=1.1.29=2'`
 
 ### Special Obspy Instructions
 Currently PH5 uses a development branch of obspy that will not be official until obspy 1.10.
