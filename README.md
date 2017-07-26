@@ -1,5 +1,7 @@
 # PH5 [![Build Status](https://travis-ci.org/PIC-IRIS/PH5.svg?branch=master)](https://travis-ci.org/PIC-IRIS/PH5)
-A library of command line utilities and APIs for building and interacting with PH5 datasets. See the [PH5 Wiki](https://github.com/PIC-IRIS/PH5/wiki) for general information about PH5.
+A library of command line utilities and APIs for building and interacting with PH5 datasets. 
+
+**See the [PH5 Wiki](https://github.com/PIC-IRIS/PH5/wiki) for information about the sturcuture and use of PH5**
 
 # Detailed Installation Instructions
 
