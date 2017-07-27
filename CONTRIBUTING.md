@@ -22,10 +22,10 @@ If your pull request is related to a current issue or one you have just submitte
 1. Clone and install a development version of PH5 from the `master` branch
 2. Create a new branch based on `master`
 3. Add your change to this branch. If you are creating new files please make sure you follow pep8 conventions.
-4. When editing current files please make sure you update the `PROG_VERSION` string at teh top fo the file with the current year and day of the year (eg: 2017.207)
+4. When editing current files please make sure you update the `PROG_VERSION` string at the top fo the file with the current year and day of the year (eg: 2017.207)
 5. Create a unit test for your contribution and make sure it passes.
 6. Push your branch and the submit a pull request from github. Again make sure your base brach is `master`
-7. Wait for developer and community review. WE may suggest changes or improvements to your code. Note that this may be an interative process and discussion will take place in the pull request.
+7. Wait for developer and community review. We may suggest changes or improvements to your code. Note that this may be an interative process and discussion will take place in the pull request.
 8. Once your changes are accepted they wil be scheduled to be added to a future release of PH5 or an incremental release in the case of a bug fix.
 
 We ask that you keep file sizes as small as possible, especially when creating tests. Large files create issues in git.
