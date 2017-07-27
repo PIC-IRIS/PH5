@@ -19,7 +19,7 @@ Pull requests help keep code contributions organized and allow for efficient dis
 
 If your pull request is related to a current issue or one you have just submitted please make not of this in the issue.
 
-1. CLone and install a development version of PH5 from the `master` branch
+1. Clone and install a development version of PH5 from the `master` branch
 2. Create a new branch based on `master`
 3. Add your change to this branch. If you are creating new files please make sure you follow pep8 conventions.
 4. When editing current files please make sure you update the `PROG_VERSION` string at teh top fo the file with the current year and day of the year (eg: 2017.207)
