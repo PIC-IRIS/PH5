@@ -1115,7 +1115,7 @@ class PN130 :
                 set_this_pig (tpl)
                 #if tpl.start_time_asc == "2017:001:09:43:05:165" or tpl.start_time_asc == "2017:001:09:43:06:885" or tpl.start_time_asc == "2017:001:09:43:07:765" :
                     #xxx = ''
-            except TimeDOY.TimeError as e :
+            except timedoy.TimeError as e :
                 self.ERRS.append ("Failed to process packet: {0}".format (e.message))
                 if self.verbose :
                     sys.stderr.write ("Failed to process packet: {0}".format (e.message))
