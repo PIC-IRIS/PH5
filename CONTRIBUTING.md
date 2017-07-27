@@ -9,9 +9,9 @@ The goal of this document is to give an overview and basic guidelines for contri
 * Clone and install a development version of PH5 using `python setup.py develop`
 
 ## Submitting a Bug Report or Issue
-If you finda bug or have issues using PH5 please first look through the issues tab in github to see if the problem you are encountering is already there. If it is you may find a work around has already been found or someone is currently contributing a fix. Or you may be able to contribute to the discussion of the issue to help resolve it. 
+If you find a bug or have issues using PH5 please first look through the issues tab in github to see if the problem you are encountering is already there. If it, is you may find a work around has already been found or someone is currently contributing a fix. Or you may be able to contribute to the discussion of the issue to help resolve it. 
 
-If there is no current issue for your particular bug or issue please creat a new issue. Make your title short but descriptive and in the description go into as much detail as you can. This will help the community and developers quickly address your issue. If you have already started workign on a fix for the issue we thank you! Please still submit an issue and then follow the guideliens below for c reating a pull request for you code contribution.
+If there is no current issue for your particular bug or issue please create a new issue. Make your title short but descriptive and in the description go into as much detail as you can. This will help the community and developers quickly address your issue. If you have already started workign on a fix for the issue we thank you! Please still submit an issue and then follow the guideliens below for c reating a pull request for you code contribution.
 
 ## Submitting a Pull Request
 
