@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2017.188 Developmental'
+PROG_VERSION = '2017.208 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.001 (.1%)
@@ -917,7 +917,9 @@ class PH5 (experiment.ExperimentGroup) :
             if first :
                 #   Correct start time to 'actual' time of first sample
                 #start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
-                start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
+                #start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
+                if not d['raw_file_name_s'].endswith('rg16'):
+	            start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
                 if trace_start_fepoch == None :
                     trace_start_fepoch = start_fepoch            
                 #print timedoy.TimeDOY (epoch=start_fepoch)
