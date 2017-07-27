@@ -1,7 +1,7 @@
 # Contributing to PH5
 First, thank you for considering contributing to PH5. Community development from people like you help make PH5 a great data format and software suite.
 
-The goal of this document is to give an overview and basic guidelines for contributing to PH5. By following the guidelines below you help the developers and fellow community members quickly and efficiently address issues you may foind or review code you would like to contribute.
+The goal of this document is to give an overview and basic guidelines for contributing to PH5. By following the guidelines below you help the developers and fellow community members quickly and efficiently address issues you may find or review code you would like to contribute.
 
 ## Getting Started
 * Create Github account if you do not already have one
