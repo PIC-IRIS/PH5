@@ -6,17 +6,20 @@
 #   
 #   Updated May 2017
 
-PROG_VERSION = "2017.199 Developmental"
+PROG_VERSION = "2017.209 Developmental"
 
 import sys, os, time, math, gc, re
-#sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
+#sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))    #comment out in git
 
+#import experiment, timedoy
+#import ph5_viewer_reader
+# git
 from ph5.core import experiment, timedoy
-from ph5.clients.ph5view import ph5_viewer_reader
+from ph5.clients.ph5view import ph5_viewer_reader  
+
 
 from copy import deepcopy
 
-from PyQt4.QtWebKit import QWebView
 from PyQt4 import QtGui, QtCore, Qt,QtSvg
 from PyQt4.QtCore import QPoint,QRectF, QUrl
 from PyQt4.QtGui import QPolygon, QImage, QPixmap, QColor, QPalette
@@ -106,31 +109,28 @@ def showStatus(curMsg, nextMsg):
 # Author: Lan
 # Updated: 201702
 # CLASS: ManWindow - show Manual of the app..
+############### CLASS ####################
+# Author: Lan
+# Updated: 201707
+# CLASS: ManWindow - show Manual of the app. (reuse from PH5View)
 class ManWindow(QtGui.QWidget):
     def __init__(self, mantype=""):
         QtGui.QWidget.__init__(self)
-
-        view = QWebView(self)
+        self.setGeometry(100,100,900,700)
+        view = QtGui.QTextBrowser(self)
+        
         if mantype=="manual":
-            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "PH5View_Manual.html"))
-            if os.path.isfile(file_path): 
-                local_url = QUrl.fromLocalFile(file_path)   
-                #view.load(local_url )
-                view.setUrl(local_url)
-            else:
-                msg = "The hyperlinks to bookmarks in the manual cannot work \n" + \
-                      "becaulse the file PH5View_Manual.html is missing.\n" +\
-                      "To move to the interested section, use scrollbar."
-                QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
-                view.setHtml(ph5_viewer_reader.html_manual)
+            view.setText(ph5_viewer_reader.html_manual)
         
         elif mantype=="whatsnew":
-            view.setHtml(ph5_viewer_reader.html_whatsnew % PROG_VERSION)
+            view.setText(ph5_viewer_reader.html_whatsnew % PROG_VERSION)
+            
         self.layout = QtGui.QHBoxLayout()
         self.layout.addWidget(view)
 
         self.setLayout(self.layout)
-        self.show()  
+        self.show() 
+        
 
 
 ##########################################
@@ -5388,16 +5388,15 @@ class ES_Gui(QtGui.QWidget):
                 QtGui.QToolTip.showText(self.mapToGlobal(QtCore.QPoint(P.x(), P.y()+20)), self.EXPL[object])
 
             return True
-        return False
-
- 
+        return False  
+        
+            
 def changedFocusSlot(old, now):
     if (now==None and QtGui.QApplication.activeWindow()!=None):
         #print "set focus to the active window"
         QtGui.QApplication.activeWindow().setFocus()
-
-
-def startapp():
+        
+def startapp():  
     global application #, pointerWidget
      
     application = QtGui.QApplication(sys.argv)
@@ -5408,8 +5407,8 @@ def startapp():
     #win = OptionPanel(None)
     app.run()
     app.deleteLater()
-    sys.exit(application.exec_())    
-
-
+    sys.exit(application.exec_())
+    
+    
 if __name__ == '__main__':
     startapp()
