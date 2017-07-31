@@ -5,9 +5,9 @@
 #   Credit: Lan Dam 
 #   
 #   Updated Feb 2017
-PROG_VERSION = "2017.115 Developmental"
+PROG_VERSION = "2017.209 Developmental"
 # import from python packages
-import sys, os, time
+import sys, os, time, numpy
 import os.path as path
 
 keftmpfile = 'tmp/temp.kef'
@@ -15,15 +15,19 @@ from copy import deepcopy
 from operator import itemgetter
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtWebKit import QWebView
 
 # import from pn4
-from ph5.core import experiment
+#import columns
+# git: 
+from ph5.core import columns
 
 # module(s) for KefEdit only
+#import kefutility
+# git:
 from ph5.core import kefutility
 
 
+EXPL = {}
 ############### CLASS ####################
 # Author: Lan
 # Updated: 201702
@@ -36,7 +40,7 @@ class KefEdit(QtGui.QMainWindow):
         self.setWindowTitle("KEF Editor Ver. %s" % PROG_VERSION)        
         
         self.path_tabs = []     # to keep the tabwidget to delete
-        self.ph5 = None         # to resue when open tables from the current opened ph5
+        self.ph5api = None         # to resue when open tables from the current opened ph5
         self.notsave = True     # to identify if the open data are save
         
         self.initMenu()
@@ -44,59 +48,85 @@ class KefEdit(QtGui.QMainWindow):
         mainLayout = QtGui.QVBoxLayout(); mainFrame.setLayout(mainLayout)
         
         statusLayout = QtGui.QHBoxLayout(); mainLayout.addLayout(statusLayout)
+        statusLayout.addWidget( QtGui.QLabel("Color keys:") )
         
         updateCol = QtGui.QLabel("UPDATE")
+        updateCol.installEventFilter(self)
+        EXPL[updateCol] = "Color for Changed Row"
         updateCol.setAlignment(QtCore.Qt.AlignHCenter)
         updateCol.setFixedWidth(85)
         updateCol.setStyleSheet(" background-color: %s" % updateColName)
         statusLayout.addWidget(updateCol)
         
         deleteCol = QtGui.QLabel("DELETE")
+        deleteCol.installEventFilter(self)
+        EXPL[deleteCol] = "Color for Deleted Row"        
         deleteCol.setAlignment(QtCore.Qt.AlignHCenter)
         deleteCol.setFixedWidth(85)
         deleteCol.setStyleSheet(" background-color: %s" % deleteColName)
         statusLayout.addWidget(deleteCol) 
         
-        statusLayout.addSpacing(50)
-        self.statusText = QtGui.QLabel()
-        statusLayout.addWidget(self.statusText)
+        #statusLayout.addSpacing(50)
+        #self.statusText = QtGui.QLabel()
+        #statusLayout.addWidget(self.statusText)
 
         statusLayout.addStretch(1)
 
         self.path_tabWidget = QtGui.QTabWidget()        # each tab keep a table
         mainLayout.addWidget(self.path_tabWidget)
+        
+        self.statusBar = self.statusBar()
+        
         self.setGeometry(0, 0,1200, 900)
         self.showMaximized()  
 
+
+    def eventFilter(self, object, event):        
+        if event.type() == QtCore.QEvent.Enter:
+            if object not in EXPL.keys(): return False
+            #print object
+            P = object.pos()
+            #print P
+            QtGui.QToolTip.showText(self.mapToGlobal(QtCore.QPoint(P.x(), P.y()+20)), EXPL[object])
+            return True 
+        return False
 
 
     def initMenu(self):
         ################## HELP MENU  #################
         manualAction = QtGui.QAction('Manual', self)
         manualAction.setShortcut('F1')
-        manualAction.triggered.connect(self.onManual)
+        manualAction.triggered.connect(self.OnManual)
         
         whatsnewAction = QtGui.QAction("What's new?", self)
         whatsnewAction.setShortcut('F1')
-        whatsnewAction.triggered.connect(self.onWhatsnew)        
+        whatsnewAction.triggered.connect(self.OnWhatsnew)        
         ################## FILE MENU  #################
         openKefAction = QtGui.QAction('Open Kef File', self)        
-        openKefAction.triggered.connect(self.onOpenKef)
+        openKefAction.triggered.connect(self.OnOpenKef)
         
         openPH5Action = QtGui.QAction('Open PH5 File', self)
-        openPH5Action.triggered.connect(self.onOpenPH5)
+        openPH5Action.triggered.connect(self.OnOpenPH5)
         
         self.openTableAction = QtGui.QAction('Open table(s) in the current PH5 File', self)
-        self.openTableAction.triggered.connect(self.onOpenCurrPH5)  
+        self.openTableAction.triggered.connect(self.OnOpenCurrPH5)  
         self.openTableAction.setEnabled(False)
         #---------------- Save ----------------
         self.saveKefAction = QtGui.QAction('Save as Kef File', self)
-        self.saveKefAction.triggered.connect(self.onSaveKef)  
+        self.saveKefAction.triggered.connect(self.OnSaveKef)  
         self.saveKefAction.setEnabled(False)  
         
         self.savePH5Action = QtGui.QAction('Save as PH5 File', self)
-        self.savePH5Action.triggered.connect(self.onSavePH5)  
+        self.savePH5Action.triggered.connect(self.OnSavePH5)  
         self.savePH5Action.setEnabled(False) 
+        
+        self.updatePH5Action = QtGui.QAction('Update the Current PH5 File', self)
+        self.updatePH5Action.triggered.connect(self.OnUpdatePH5)  
+        self.updatePH5Action.setEnabled(False)     
+        
+        self.saveCSVAction = QtGui.QAction('Save as CSV File', self)
+        self.saveCSVAction.triggered.connect(self.OnSaveCSV)  
+        self.saveCSVAction.setEnabled(False)           
         #---------------- exit ----------------
         exitAction = QtGui.QAction( '&Exit', self)        
         exitAction.setShortcut('Ctrl+Q')
@@ -115,6 +145,8 @@ class KefEdit(QtGui.QMainWindow):
         
         fileMenu.addAction(self.saveKefAction)
         fileMenu.addAction(self.savePH5Action)
+        fileMenu.addAction(self.updatePH5Action)
+        fileMenu.addAction(self.saveCSVAction)
         
         fileMenu.addAction(exitAction)
                
@@ -148,24 +180,24 @@ class KefEdit(QtGui.QMainWindow):
         sys.exit(application.exec_())
         
 
-    def onManual(self):
+    def OnManual(self):
         print "onManual"
         self.manualWin = ManWindow("manual")
         
         
-    def onWhatsnew(self):
+    def OnWhatsnew(self):
         print "onWhatsnew"
         self.whatsnewWin = ManWindow("whatsnew")
         
         
     ###############################
-    # def onOpenKef
+    # def OnOpenKef
     # author: Lan Dam
     # updated: 201702
     # * open Kef file, read data into self.dataTabel, keySets then into labelSets
     #   (each set represent for data in a path)
     # * then call self.setData() to set the given data in display
-    def onOpenKef(self):
+    def OnOpenKef(self):
         #print "onOpenKef"
         filename = str(QtGui.QFileDialog.getOpenFileName(directory="/home/", filter="Kef Files(*.kef)"))
         if not filename: return
@@ -173,13 +205,14 @@ class KefEdit(QtGui.QMainWindow):
         self.path2file = os.path.dirname (str (filename))
         self.filename = os.path.basename (str (filename)) 
         
-        if self.ph5 != None: 
-            self.ph5.close()
-            del self.ph5
-            self.ph5 = None
+        if self.ph5api != None: 
+            self.ph5api.close()
+            del self.ph5api
+            self.ph5api = None
         self.openTableAction.setEnabled(False)
+        self.updatePH5Action.setEnabled(False)
         #try:
-        self.dataTable, self.labelSets, self.totalLines = kefutility.Kef2TableData(self.statusText, filename)            
+        self.dataTable, self.labelSets, self.totalLines, self.types = kefutility.Kef2TableData(self.statusBar, filename)            
         #except Exception, e:
             #QtGui.QMessageBox.warning(self, "Error", str(e) )
             #return
@@ -189,36 +222,36 @@ class KefEdit(QtGui.QMainWindow):
 
         
     ###############################
-    # def onOpenPH5
+    # def OnOpenPH5
     # author: Lan Dam
     # updated: 201703
     # Open PH5 file
-    # * use KefUtility.GetPrePH5Info give user list of tables and info to select
-    #   to get info from KefUtility.PH5toDataTable
+    # * use kefutility.GetPrePH5Info give user list of tables and info to select
+    #   to get info from kefutility.PH5toDataTable
     # * call SelectTableDialog for user to select which table(s) to display
     # * in SelectTableDialog, the following tasks will be perfomed:
     #   [Read data into self.dataTable, keySets into labelSets
     #   (each set represent for data in a path)
     #   then call self.setData() to set the given data in display]
-    def onOpenPH5(self):
+    def OnOpenPH5(self):
         #print "onOpenPH5"
         filename = str(QtGui.QFileDialog.getOpenFileName(directory="/home/", filter="PH5 Files(*.ph5)"))
         if not filename: return        
         
         self.path2file = os.path.dirname (str (filename))
         self.filename = os.path.basename (str (filename))
-        if self.ph5 != None: 
-            self.ph5.close()
-            del self.ph5
+        if self.ph5api != None: 
+            self.ph5api.close()
+            del self.ph5api
             
-        self.ph5, availTables, arrays, shotLines, das = kefutility.GetPrePH5Info( self.filename, self.path2file)
+        self.ph5api, availTables, arrays, shotLines, offsets, das = kefutility.GetPrePH5Info( self.filename, self.path2file)
         
-        self.selTableDlg = SelectTableDialog(self, availTables, arrays, shotLines, das)
+        self.selTableDlg = SelectTableDialog(self, availTables, arrays, shotLines, offsets, das)
         
         
 
     ###############################
-    # def onOpenCurrPH5
+    # def OnOpenCurrPH5
     # author: Lan Dam
     # updated: 201704
     # Open other tables on the current opened PH5 File
@@ -228,24 +261,24 @@ class KefEdit(QtGui.QMainWindow):
     #   [Read data into self.dataTable, keySets into labelSets
     #    (each set represent for data in a path)
     #    then call self.setData() to set the given data in display]        
-    def onOpenCurrPH5(self):
+    def OnOpenCurrPH5(self):
         self.selTableDlg.show()
         self.selTableDlg.move(70,70) # to move to the same position when create new
         
         
         
     ###############################
-    # def onSaveKef
+    # def OnSaveKef
     # author: Lan Dam
     # updated: 201704
     # save current table(s) into a kef file
     # * user choose filename
     # * call _saveKeffile() to save kef format into the filename
     # * inform when successfully save and ask to close KefEdit
-    def onSaveKef(self):
+    def OnSaveKef(self):
         #print "onSaveKef"
         if not self._checkAddTableView(): return
-
+        
         # created suggestedFileName to recommend to user
         if 'kef' in self.filename:
             ss = self.filename.split(".")
@@ -263,61 +296,84 @@ class KefEdit(QtGui.QMainWindow):
                                                          filter="Kef Files(*.kef)"))
     
         if not savefilename: return        
-
+        #if '.kef' not in savefilename: savefilename += '.kef'
+        
+        START = time.time()
         # start kef file with the version of KefEdit
         currText = "#\n#\t%s\tKefEdit version: %s" % (time.ctime (time.time ()), PROG_VERSION)
 
         result = self._saveKeffile(savefilename, currText)
         if result == False: return
+        END = time.time()
+        self.statusBar.showMessage("Successfully saving Kef file. Total processing time %s seconds" % (END-START) )        
         
         msg = "File %s has been saved successfully. \nDo you want to close KEF Editor?" % savefilename
         result = QtGui.QMessageBox.question(self, "Successfully Save File", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No) 
         
         self.notsave = False        # after saving, reset notsave
-        self.statusText.setText("")
+        
         if result == QtGui.QMessageBox.Yes:
-            if self.ph5 != None: self.ph5.close()
+            if self.ph5api != None: self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
             sys.exit(application.exec_())            
 
-        
+
+
+
     ###############################
-    # def onSavePH5
+    # def OnSavePH5
     # author: Lan Dam
     # updated: 201704
-    # update currently opened table(s) to a PH5 file, or create new PH5 file from the opened table(s)
+    # update currently opened table(s) the current PH5 file using tab.UpdatePH5()
+    def OnUpdatePH5(self):
+        START = time.time()
+        for tab in self.path_tabs :
+            tab.UpdatePH5()
+        
+        END = time.time()
+        savefilename = self.path2file + "/" + self.filename
+        self.statusBar.showMessage("Successfully updating the current PH5 file. Total processing time %s seconds" % (END-START) )        
+        msg = "File %s has been updated successfully. \nDo you want to close KEF Editor?" % savefilename
+        result = QtGui.QMessageBox.question(self, "Successfully Save File", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No) 
+        
+        self.notsave = False        # after saving, reset notsave
+        
+        if result == QtGui.QMessageBox.Yes: doclose = True        
+        
+    ###############################
+    # def OnSavePH5
+    # author: Lan Dam
+    # updated: 201704
+    # update currently opened table(s) to an existing PH5 file, or create new PH5 file from the opened table(s)
+    # ** if it is the currently opened one, call self.OnUpdatePH5 instead
     # * user choose filename to save
     # * call _saveKeffile() to save all tables into the a temp file in kef format
-    # * For each table (tab/path) call KefUtility.NukeTable() to remove the table from the PH5 file
+    # * For each table (tab/path) call kefutility.NukeTable() to remove the table from the PH5 file
     # * call os.system() to run kef2ph5 script to add the tables in temp. kef file to the filename that user chose
-    def onSavePH5(self):
+    def OnSavePH5(self):
         #print "onSavePH5"
         if not self._checkAddTableView(): return
         
         savefilename = str(QtGui.QFileDialog.getSaveFileName(self,"Save File", self.path2file ,
                                                          filter="PH5 Files(*.ph5)"))
         if not savefilename: return 
+        START = time.time()
         options = {}        
         options['path2ph5'] = os.path.dirname (str (savefilename))
         options['outph5file'] = os.path.basename (str (savefilename))        
+        
+        # the file that user choose is the currently opened one => update the file
+        if self.path2file == options['path2ph5'] and self.filename == options['outph5file']:
+            self.OnUpdatePH5()
+            return
         
         # save in a temp kef file
         options['keffile'] = keftmpfile
         self._saveKeffile(keftmpfile)
         
         if path.exists(savefilename):
-            # remove the table from the ph5 file
-            #exp = experiment.ExperimentGroup (options['path2ph5'], options['outph5file'])
-            #exp.ph5open (editmode=True)
-            #exp.initgroup ()            
-            #for p in self.pathAll: 
-                #delResult = KefUtility.NukeTable(self, savefilename, exp, p)
-                #if delResult == False: return
-            #exp.ph5close ()
-            #del exp
             for p in self.pathAll:
-                print "Removing existing table %s from PH5file" % p
-                self.statusText.setText("Removing existing table %s from PH5file" % p)
+                self.statusBar.showMessage("Removing existing table %s from PH5file" % p)
                 delResult = kefutility.NukeTable(self, options['outph5file'], options['path2ph5'], p)
                 if delResult == False: return
         
@@ -329,7 +385,7 @@ class KefEdit(QtGui.QMainWindow):
         from subprocess import Popen, PIPE, STDOUT
         
         cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s" % options  
-        self.statusText.setText("Inserting new table %s into PH5file" % p)
+        self.statusBar.showMessage("Inserting new table %s into PH5file" % p)
         print "Inserting new table %s into PH5file" % p
         p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         output = p.stdout.read()
@@ -351,9 +407,10 @@ class KefEdit(QtGui.QMainWindow):
                         
             if result == QtGui.QMessageBox.Yes: doclose = True            
             
-        self.statusText.setText("")     
+        END = time.time()
+        self.statusBar.showMessage("Successfully saving PH5 file. Total processing time %s seconds" % (END-START) )   
         if doclose:
-            if self.ph5 != None: self.ph5.close()
+            if self.ph5api != None: self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
             sys.exit(application.exec_())      
             os.unlink(keftmpfile)           # remove keftmpfile
@@ -401,7 +458,48 @@ class KefEdit(QtGui.QMainWindow):
         saveFile.close() 
         return True
 
-
+    def OnSaveCSV(self):
+        if not self._checkAddTableView(): return
+    
+        error = ""       
+        
+        START = time.time()
+        try:
+            for tab in self.path_tabs :
+                # created suggestedFileName to recommend to user
+                suggestedFileName = tab.path.split("/")[-1]
+            
+                suggestedFileName = self.path2file + "/" + suggestedFileName + '.csv'
+            
+                savefilename = str(QtGui.QFileDialog.getSaveFileName(self,"Save File on Path: %s" % tab.path, suggestedFileName ,
+                                                                         filter="CSV Files(*.csv)"))                   
+                if not savefilename: continue
+                tab.SaveCSV(savefilename)
+        except Exception, e:
+            error = str(e)
+        
+        
+        if error == "":
+            msg = "File %s has been saved successfully. \nDo you want to close KEF Editor?" % savefilename
+            result = QtGui.QMessageBox.warning(self, "Successfully Save File", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No) 
+            
+            if result == QtGui.QMessageBox.Yes: doclose = True
+        else:
+            QtGui.QMessageBox.warning(self, "Error in saving as CSV file", output)
+            msg = "Do you want to close KEF Editor?"
+            result = QtGui.QMessageBox.question(self, "", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No) 
+                        
+            if result == QtGui.QMessageBox.Yes: doclose = True            
+            
+        END = time.time()
+        self.statusBar.showMessage("Successfully saving as CSV file. Total processing time %s seconds" % (END-START) ) 
+        
+        if doclose:
+            if self.ph5api != None: self.ph5api.close()
+            QtCore.QCoreApplication.instance().quit()
+            sys.exit(application.exec_())         
+       
+              
     ###############################
     # def setData
     # author: Lan Dam
@@ -427,13 +525,14 @@ class KefEdit(QtGui.QMainWindow):
                 errMsg = "There are no data for path %s.\n Please check if the selected PH5 is a master file."
                 QtGui.QMessageBox.warning(self, "Error", errMsg % p)
                 return      
-            pathWidget = TablePanel(self, p, self.dataTable[p], self.labelSets[p])
+            pathWidget = TablePanel(self, p, self.dataTable[p], self.labelSets[p], self.types[p])
             self.path_tabWidget.addTab(pathWidget, p)
             self.path_tabs.append(pathWidget)
             
         self.saveKefAction.setEnabled(True)
         self.savePH5Action.setEnabled(True) 
-        self.statusText.setText("")
+        self.saveCSVAction.setEnabled(True)
+        self.statusBar.showMessage("")
 
         
         
@@ -447,13 +546,16 @@ DELETECOLOR = QtGui.QBrush( QtGui.QColor(70, 10, 70, 100 ) )      # light purple
 #     table: data in list
 #     labels: list of columns/keys
 class TablePanel(QtGui.QMainWindow):
-    def __init__(self, parent, path, table, labels):
+    def __init__(self, parent, path, table, labels, types):
         QtGui.QMainWindow.__init__(self)
         self.parent = parent
         self.path = path
         self.table = table
+        self.updatedTable = numpy.array(table)
         self.labels = labels
+        self.types = types
         self.selectedCells = []
+        self.minChangedRowId = None
         self.updateList = []    # list of rows that have been updated
         self.deleteList = []    # list of rows to delete
         self.addDataList = []   # list of data to add
@@ -464,6 +566,8 @@ class TablePanel(QtGui.QMainWindow):
         
         # set mainTableView
         self.mainTableView = QtGui.QTableWidget(self)
+        self.mainTableView.installEventFilter(self)
+        EXPL[self.mainTableView] = "MainView where main data are displayed."         
         self.mainTableView.cellClicked.connect(self.OnMainTableClick)
         #self.mainTableView.cellChanged.connect(self.OnCellChanged)
         self.mainTableView.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
@@ -477,9 +581,11 @@ class TablePanel(QtGui.QMainWindow):
         for r in range( len(self.table) ):
             parent.processedLine += 1
             if parent.processedLine % 50 == 0: 
-                parent.statusText.setText("Displaying Data on TableView: %s/%s" % (parent.processedLine, parent.totalLines))
+                parent.statusBar.showMessage("Displaying Data on TableView: %s/%s" % (parent.processedLine, parent.totalLines))
             for c in range( len(self.labels) ):
-                self.mainTableView.setItem(r, c, QtGui.QTableWidgetItem(self.table[r][c]))
+                item = QtGui.QTableWidgetItem(self.table[r][c])
+                item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )      # disable cell editing
+                self.mainTableView.setItem(r, c, item)
 
         # change to fit columns with its contents instead of having same default size for all columns   
         self.mainTableView.resizeColumnsToContents()
@@ -494,16 +600,20 @@ class TablePanel(QtGui.QMainWindow):
 
         ###################### change tools ######################
         changeBox = QtGui.QHBoxLayout(); mainLayout.addLayout(changeBox)
-        changeBox.setSpacing(40)
+        changeBox.setSpacing(25)
         
         changeBox.addStretch(1)
         changeBox.addWidget(QtGui.QLabel("Select Types:"))
 
         self.singleCell = QtGui.QRadioButton('Single Cell')
+        self.singleCell.installEventFilter(self)
+        EXPL[self.singleCell] = "Select one Single Cell only. (in either MainView or AddRowView)"        
         self.singleCell.clicked.connect(self.OnClearSelected)
         changeBox.addWidget(self.singleCell)
         
         self.allInStation = QtGui.QRadioButton('All Similar Cells in Station')
+        self.allInStation.installEventFilter(self)
+        EXPL[self.allInStation] = "All cells that have the same station id and value with the clicked cell will be selected. Avalaible only for Array Table.(in either MainView or AddRowView)"        
         self.allInStation.clicked.connect(self.OnClearSelected)
         changeBox.addWidget(self.allInStation)
         
@@ -513,32 +623,123 @@ class TablePanel(QtGui.QMainWindow):
             self.allInStation.setEnabled(False)
         
         self.allInColumn = QtGui.QRadioButton('All Similar Cells in Column')
+        self.allInColumn.installEventFilter(self)
+        EXPL[self.allInColumn] = "All cells that have the same value and column with the clicked cell will be selected.(in either MainView or AddRowView)"        
+        
         self.allInColumn.clicked.connect(self.OnClearSelected)
         changeBox.addWidget(self.allInColumn)  
         
         self.changedValCtrl = QtGui.QLineEdit('')
+        self.changedValCtrl.installEventFilter(self)
+        EXPL[self.changedValCtrl] = "Values in the selected items will be change to the value in this box when 'Change' button is clicked."        
         self.changedValCtrl.setFixedWidth(400)
         changeBox.addWidget(self.changedValCtrl)
         
         self.changeBtn = QtGui.QPushButton('Change', self)
+        self.changeBtn.installEventFilter(self)
+        EXPL[self.changeBtn] = "Apply changing values in the selected items (in either MainView or AddRowView)."     
         self.changeBtn.clicked.connect(self.OnChange)
-        changeBox.addWidget(self.changeBtn)        
+        changeBox.addWidget(self.changeBtn)
+        
+        self.back2orgBtn = QtGui.QPushButton('Back to Org', self)
+        self.back2orgBtn.installEventFilter(self)
+        EXPL[self.back2orgBtn] = "Reset selected items back to their original values."      
+        self.back2orgBtn.clicked.connect(self.OnBack2org)
+        changeBox.addWidget(self.back2orgBtn)           
         
         changeBox.addStretch(1)
         
         mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
+        ###################### column tools ######################  
+        columnBox1 = QtGui.QHBoxLayout(); mainLayout.addLayout(columnBox1)
+                
+        columnBox1.addStretch(1)   
         
+        columnBox1.addWidget(QtGui.QLabel("Selected Column"))
+        self.selectedColumnCtrl = QtGui.QLineEdit('')
+        self.selectedColumnCtrl.installEventFilter(self)
+        EXPL[self.selectedColumnCtrl] = "The label of the selected column."         
+        self.selectedColumnCtrl.setReadOnly(True)
+        self.selectedColumnCtrl.setFixedWidth(250)
+        columnBox1.addWidget(self.selectedColumnCtrl)        
+        
+        columnBox1.addWidget(QtGui.QLabel("    Position of Char. to change"))
+        self.characterOrderCtrl = QtGui.QComboBox(self)
+        self.characterOrderCtrl.installEventFilter(self)
+        EXPL[self.characterOrderCtrl] = "The first position of character(s) to change."         
+        self.characterOrderCtrl.currentIndexChanged.connect(self.OnChangeCharOrder)
+        columnBox1.addWidget(self.characterOrderCtrl)
+        
+        columnBox1.addWidget(QtGui.QLabel("    Number of Char. to change"))
+        self.noOfCharsCtrl = QtGui.QComboBox(self)
+        self.noOfCharsCtrl.installEventFilter(self)
+        EXPL[self.noOfCharsCtrl] = "The number of character(s) to change."         
+        self.noOfCharsCtrl.currentIndexChanged.connect(self.OnChangeNoOfChars)
+        columnBox1.addWidget(self.noOfCharsCtrl)        
+        
+        columnBox1.addWidget(QtGui.QLabel("   X"))
+        self.XCtrl = QtGui.QLineEdit('')
+        self.XCtrl.installEventFilter(self)
+        EXPL[self.XCtrl] = "The value to be applied in column changing."                 
+        self.XCtrl.textChanged.connect(self.OnXChanged)
+        self.XCtrl.setFixedWidth(400)
+        columnBox1.addWidget(self.XCtrl)  
+        columnBox1.addStretch(1)
+        
+        columnBox2 = QtGui.QHBoxLayout(); mainLayout.addLayout(columnBox2)
+        
+        columnBox2.addStretch(1)
+        
+        columnBox2.setSpacing(40)
+        self.changeChar2XBtn = QtGui.QPushButton('Change Char. to X', self)
+        self.changeChar2XBtn.installEventFilter(self)
+        EXPL[self.changeChar2XBtn] = "Change the selected character(s) in each item of the selected column to X."  
+        self.changeChar2XBtn.clicked.connect(self.OnChangeChar2X)
+        columnBox2.addWidget(self.changeChar2XBtn)
+        
+        self.plusX2CharBtn = QtGui.QPushButton('Plus X to Char.', self)
+        self.plusX2CharBtn.installEventFilter(self)
+        EXPL[self.plusX2CharBtn] = "Plus X to the selected character(s) in each item of the selected column."  
+        self.plusX2CharBtn.clicked.connect(self.OnPlusX2Char)
+        columnBox2.addWidget(self.plusX2CharBtn)         
+        
+        self.changeCol2XBtn = QtGui.QPushButton('Change Column to X', self)
+        self.changeCol2XBtn.installEventFilter(self)
+        EXPL[self.changeCol2XBtn] = "Change each item of the selected column to X."          
+        self.changeCol2XBtn.clicked.connect(self.OnChangeCol2X)
+        columnBox2.addWidget(self.changeCol2XBtn)     
+        
+        self.plusX2ColBtn = QtGui.QPushButton('Plus X to Column', self)
+        self.plusX2ColBtn.installEventFilter(self)
+        EXPL[self.plusX2ColBtn] = "Plus X to each item of the selected column."          
+        self.plusX2ColBtn.clicked.connect(self.OnPlusX2Col)
+        columnBox2.addWidget(self.plusX2ColBtn)        
+
+        self.resetColBtn = QtGui.QPushButton('Reset Column', self)
+        self.resetColBtn.installEventFilter(self)
+        EXPL[self.resetColBtn] = "Reset each item of the selected column back to its original value."          
+        self.resetColBtn.clicked.connect(self.OnResetCol)
+        columnBox2.addWidget(self.resetColBtn)           
+
+        columnBox2.addStretch(1)
+    
+        mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))        
         ###################### move tools ######################
         moveBox = QtGui.QHBoxLayout(); mainLayout.addLayout(moveBox)
         
         moveBox.addStretch(1)
         moveBox.addWidget(QtGui.QLabel("Selected Row(s)"))
         self.selectedRowsCtrl = QtGui.QLineEdit('')
+        self.selectedRowsCtrl.installEventFilter(self)
+        EXPL[self.selectedRowsCtrl] = "Show list of Selected Items' rows. (User may want to look at these rows when moving them to a position under another row.)"          
+        self.selectedRowsCtrl.setReadOnly(True)
         self.selectedRowsCtrl.setFixedWidth(500)
         moveBox.addWidget(self.selectedRowsCtrl)
 
         moveBox.addWidget(QtGui.QLabel("         Move Selected Row(s) under Line No"))
         self.moveLineCtrl = QtGui.QComboBox(self)
+        self.moveLineCtrl.installEventFilter(self)
+        EXPL[self.moveLineCtrl] = "Line Number under which the Selected Row(s) will be moved to. "          
         self.moveLineCtrl.currentIndexChanged.connect(self.OnSelectMoveLine)
         self.moveLineCtrl.clear()
         lineNoList = [str(n) for n in [' top ']+range(1,len(self.table)+1)]
@@ -546,12 +747,14 @@ class TablePanel(QtGui.QMainWindow):
         moveBox.addWidget(self.moveLineCtrl)  
     
         self.moveBtn = QtGui.QPushButton('Move', self)
+        self.moveBtn.installEventFilter(self)
+        EXPL[self.moveBtn] = "Move the Selected Row(s) to under the Selected Line No."          
         self.moveBtn.setFixedWidth(90)
         self.moveBtn.clicked.connect(self.OnMove)
         moveBox.addWidget(self.moveBtn) 
         
         moveBox.addStretch(1)
-        
+                
         mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
         
         ###################### delete tools ######################
@@ -559,12 +762,16 @@ class TablePanel(QtGui.QMainWindow):
         
         deleteBox.addStretch(1) 
         self.deleteBtn = QtGui.QPushButton('Delete Row(s) on Selected Cell(s)', self)
+        self.deleteBtn.installEventFilter(self)
+        EXPL[self.deleteBtn] = "Mark deleted for the Selected Rows."          
         self.deleteBtn.setFixedWidth(400)
         self.deleteBtn.clicked.connect(self.OnDelete)
         deleteBox.addWidget(self.deleteBtn)
         
         deleteBox.addSpacing(250)
         self.unDeleteBtn = QtGui.QPushButton('UnDelete', self)
+        self.unDeleteBtn.installEventFilter(self)
+        EXPL[self.unDeleteBtn] = "UnMark deleted for the Selected Rows."          
         self.unDeleteBtn.setFixedWidth(400)
         self.unDeleteBtn.clicked.connect(self.OnUndelete)
         deleteBox.addWidget(self.unDeleteBtn)        
@@ -578,6 +785,8 @@ class TablePanel(QtGui.QMainWindow):
         
         addBox.addStretch(1) 
         self.addBtn = QtGui.QPushButton('Add Row(s) with Data Copy from Selected Cell(s)', self)
+        self.addBtn.installEventFilter(self)
+        EXPL[self.addBtn] = "Copy Selected Row(s) in MainView to the AddRowView at the bottom."          
         self.addBtn.setFixedWidth(400)
         self.addBtn.clicked.connect(self.OnAdd)
         addBox.addWidget(self.addBtn)
@@ -585,6 +794,8 @@ class TablePanel(QtGui.QMainWindow):
         addBox.addSpacing(250)
         addBox.addWidget(QtGui.QLabel("Insert Selected Row(s) under Line No"))
         self.insertLineCtrl = QtGui.QComboBox(self)
+        self.insertLineCtrl.installEventFilter(self)
+        EXPL[self.insertLineCtrl] = "Select the Line No under which the selected rows in AddRowView will be inserted to."          
         self.insertLineCtrl.currentIndexChanged.connect(self.OnSelectAddLine)
         self.insertLineCtrl.clear()
         lineNoList = [str(n) for n in [' top ']+range(1,len(self.table)+1)]
@@ -592,6 +803,8 @@ class TablePanel(QtGui.QMainWindow):
         addBox.addWidget(self.insertLineCtrl)  
     
         self.insertBtn = QtGui.QPushButton('Insert', self)
+        self.insertBtn.installEventFilter(self)
+        EXPL[self.insertBtn] = "Move the Selected Row(s) from AddRowView to under the Selected Line No in MainView."          
         self.insertBtn.setFixedWidth(90)
         self.insertBtn.clicked.connect(self.OnInsert)
         addBox.addWidget(self.insertBtn) 
@@ -600,6 +813,8 @@ class TablePanel(QtGui.QMainWindow):
         
         # addTableView: to view all rows to add
         self.addTableView = QtGui.QTableWidget(self)
+        self.addTableView.installEventFilter(self)
+        EXPL[self.addTableView] = "AddRowView, where the rows to be added to MainView can be editted before adding to table."          
         self.addTableView.setMaximumHeight(200)
         self.addTableView.cellClicked.connect(self.OnAddTableClick)
         self.addTableView.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
@@ -607,7 +822,16 @@ class TablePanel(QtGui.QMainWindow):
         
         self._setButtonsDisabled()
         
-        
+    
+    def eventFilter(self, object, event):        
+        if event.type() == QtCore.QEvent.Enter:
+            if object not in EXPL.keys(): return False
+            P = object.pos()
+            QtGui.QToolTip.showText(self.mapToGlobal(QtCore.QPoint(P.x(), P.y()+20)), EXPL[object])
+            return True 
+        return False        
+
+
     ###############################
     # def _setButtonsDisabled
     # author: Lan Dam
@@ -622,7 +846,16 @@ class TablePanel(QtGui.QMainWindow):
         self.addBtn.setEnabled(False)
         self.insertBtn.setEnabled(False)
         self.insertLineCtrl.setEnabled(False)
-
+        self.characterOrderCtrl.setEnabled(False)
+        self.changeChar2XBtn.setEnabled(False)
+        self.plusX2CharBtn.setEnabled(False)
+        self.plusX2ColBtn.setEnabled(False)
+        self.changeCol2XBtn.setEnabled(False)
+        self.changeChar2XBtn.setEnabled(False)
+        self.XCtrl.setEnabled(False)
+        self.back2orgBtn.setEnabled(False)
+        self.resetColBtn.setEnabled(False)
+        
 
     ###############################
     # def OnClearSelected
@@ -647,7 +880,12 @@ class TablePanel(QtGui.QMainWindow):
         #print "OnMainTableClick"
         self.changeBtn.setEnabled(True)
         self.insertBtn.setEnabled(False)
-        self.insertLineCtrl.setEnabled(False) 
+        self.insertLineCtrl.setEnabled(False)
+        self.XCtrl.setEnabled(True)
+        self.changeCol2XBtn.setEnabled(True)
+        self.back2orgBtn.setEnabled(True)
+        self.resetColBtn.setEnabled(True)
+        
 
         # clear selection in addTableView if there is some
         if self.addCells != None:
@@ -665,7 +903,7 @@ class TablePanel(QtGui.QMainWindow):
             statCol = self.labels.index('id_s')
             statName = self.mainTableView.item(row,statCol).text()
             # statRowList: all rows with station id similar to selected row's stationid
-            statRowList = [i for i in range(len(self.table)) if self.table[i][statCol]==statName]
+            statRowList = [i for i in range(len(self.updatedTable)) if self.updatedTable[i][statCol]==statName]
             # mark selected for that station's cells that have the same value
             self.selectedCells, selectedRows = self._selectMatchInList(value, column, statRowList, self.mainTableView)
                     
@@ -675,6 +913,11 @@ class TablePanel(QtGui.QMainWindow):
             
         self.changedValCtrl.setText(value)
         self.selectedRowsCtrl.setText('-'.join(selectedRows))
+        
+        ### column tools
+        self.selectedCol = column
+        self.selectedColumnCtrl.setText(self.labels[column])
+        self._afterUpdateCol()
         
         ### Identify which options should be enable
         if self.allInStation.isChecked() or self.singleCell.isChecked():
@@ -729,6 +972,12 @@ class TablePanel(QtGui.QMainWindow):
         self.unDeleteBtn.setEnabled(False)
         self.insertBtn.setEnabled(True)
         self.insertLineCtrl.setEnabled(True)
+        self.characterOrderCtrl.setEnabled(False)
+        self.XCtrl.setEnabled(False)
+        self.changeCol2XBtn.setEnabled(False)
+        self.changeChar2XBtn.setEnabled(False)
+        self.back2orgBtn.setEnabled(False)
+        self.resetColBtn.setEnabled(False)        
         
         # clear selection in mainTableView
         self.mainTableView.clearSelection()
@@ -769,6 +1018,280 @@ class TablePanel(QtGui.QMainWindow):
                 #print "%s-%s" % (self.table[r][0], self.table[r][-1])
         return selectedCells, selectedRows
                 
+    
+    ###############################
+    # def OnXChanged
+    # author: Lan Dam
+    # updated: 201705
+    # check condition to decide to enable plusX__ buttons in need
+    # if XCtrl is integer:
+    #   * enable plusX2CharBtn if all chars at the selected position(s) of the selected column are digit
+    #   * enable plusX2ColBtn if type of col is int or float, in case of the str type, check if all column's values are digit
+    def OnXChanged(self, arg):
+        #print "OnXChanged:", arg
+        self.plusX2CharBtn.setEnabled(False)
+        self.plusX2ColBtn.setEnabled(False)
+        try: int(self.XCtrl.text())
+        except: return
+        
+        if self.nondigitList == [] : self.plusX2CharBtn.setEnabled(True)        
+            
+        type_ = self.types[ self.labels.index( str(self.selectedColumnCtrl.text()) ) ]
+        if type_ in [float, int]: self.plusX2ColBtn.setEnabled(True)
+        else:
+            col_nondigitList = [colVal for colVal in self.selectedColList if not colVal.isdigit()]
+            if col_nondigitList == []: self.plusX2ColBtn.setEnabled(True)
+
+        
+    ###############################
+    # def OnChangeCharOrder
+    # author: Lan Dam
+    # updated: 201705
+    # when characterOrderCtrl is changed:
+    #    * change item list of noOfCharsCtrl
+    #    * reset nondigitList (list of chars at the selected position(s) of the selected column that are non-digit)
+    def OnChangeCharOrder(self, arg):
+        #print "OnChangeCharOrder", arg
+        if not self.characterOrderCtrl.isEnabled(): return
+        self.noOfCharsCtrl.clear()
+        self.nondigitList = []
+        self.noOfCharsCtrl.addItems( [str(item) for item in range(1, len(self.selectedColList[0])-arg + 1)] )
+        
+        
+    ###############################
+    # def OnChangeNoOfChars
+    # author: Lan Dam
+    # updated: 201705   
+    # when select characterOrderCtrl, build up nondigitList (list of chars at the selected position(s) of the selected column that are non-digit)
+    # if nondigitList is [] (all are digit, enable plus2CharBtn according to XCtrl)
+    def OnChangeNoOfChars(self, arg):
+        #print "OnChangeNoOfChars"
+        order = self.characterOrderCtrl.currentIndex()
+        noOfChars = arg + 1
+        
+        self.nondigitList = [i for i in range(len(self.selectedColList)) 
+                        if not str(self.selectedColList[i][order:order+noOfChars]).isdigit()]
+        
+        self.plusX2CharBtn.setEnabled(False)
+        if self.nondigitList == []:
+            try:
+                int(self.XCtrl.text())
+                self.plusX2CharBtn.setEnabled(True)
+            except: pass
+            
+            
+    ###############################
+    # def OnChangeChar2X
+    # author: Lan Dam
+    # updated: 201705
+    # change selected chars in selected column to XCtrl.text()
+    # convert new col value to right type of column
+    # need to do it through newColumnList to be able to keep original value in case checking type has error
+    # then _updateColItem
+    def OnChangeChar2X(self):
+        #print "OnChangeChar2X"
+        if not self._checkEmpty("character"): return
+        # check type
+        type_ = self.types[ self.labels.index( str(self.selectedColumnCtrl.text()) ) ]
+        try:
+            index = 0
+            newColumnList = []
+            for val in self.selectedColList:
+                val = str(val)
+                order = self.characterOrderCtrl.currentIndex()
+                noOfChars = self.noOfCharsCtrl.currentIndex() + 1
+                if len( str(self.XCtrl.text()) ) != noOfChars:
+                    msg = "On line %s, the character(s) need to change is/are '%s'," + \
+                          "\nwhile the replace character(s) is/are '%s' of which length is different."
+                    QtGui.QMessageBox.warning( self, "Error", msg % (index+1, val[order:order+noOfChars], str(self.XCtrl.text())) )
+                    return                 
+                val = list(val)
+                val[order:order+noOfChars] = str(self.XCtrl.text())
+                val = ''.join(val)
+                newColumnList.append( type_(val) )                
+                index += 1
+        except ValueError:
+            msg = "The new value of '%s', line %s is '%s' which doesn't match the required type: %s"
+            QtGui.QMessageBox.warning(self, "Error", msg % (self.selectedColumnCtrl.text(), index+1, val, type_.__name__))
+            return
+        
+        for r in range(len(self.updatedTable)):
+            self._updateColItem(r, newColumnList[r])
+        self._afterUpdateCol()
+        
+ 
+    ###############################
+    # def OnPlusX2Char
+    # author: Lan Dam
+    # updated: 201705
+    # plus selected chars in selected column to XCtrl.text()
+    # check the number of new chars is the same
+    # convert new col value to right type of column
+    # need to do it through newColumnList to be able to keep original value in case checking type has error
+    # then _updateColItem
+    def OnPlusX2Char(self):
+        #print "OnPlusX2Char"
+        type_ = self.types[ self.labels.index( str(self.selectedColumnCtrl.text()) ) ]
+        try:
+            index = 0
+            newColumnList = []
+            for val in self.selectedColList:
+                val = str(val)
+                order = self.characterOrderCtrl.currentIndex()
+                noOfChars = self.noOfCharsCtrl.currentIndex() + 1
+                insertChars = str( int(val[order:order+noOfChars]) + int(self.XCtrl.text()) )
+                if len( insertChars ) > noOfChars:
+                    msg = "On line %s, the character(s) need to change is '%s'," + \
+                          "\nwhile the replace character(s) is/are %s of which length is different."
+                    QtGui.QMessageBox.warning(self, "Error", msg % (index+1, val[order:order+noOfChars], insertChars))
+                    return     
+                
+                val = list(val)
+                val[order:order+noOfChars] = insertChars.zfill(noOfChars)
+                val = ''.join(val)
+                newColumnList.append( type_(val) )
+                index += 1
+        except ValueError:
+            msg = "The new value of '%s', line %s is '%s' which doesn't match the required type: %s"
+            QtGui.QMessageBox.warning(self, "Error", msg % (self.selectedColumnCtrl.text(), index+1, val, type_.__name__))
+            return
+        
+        for r in range(len(self.updatedTable)):
+            self._updateColItem(r, newColumnList[r])
+        self._afterUpdateCol()
+        
+        
+    ###############################
+    # def _checkEmpty
+    # author: Lan Dam
+    # updated: 201705
+    # return False if the value in XCtrl is empty
+    def _checkEmpty(self, ctrlName):
+        if str(self.XCtrl.text()).strip() == "":
+            msg = "The value in the X box is '%s'.\n Are you sure you want to change the selected %s to it?" % (self.XCtrl.text(), ctrlName)
+            result = QtGui.QMessageBox.question(self, "Are you sure?", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.Cancel )
+            if result == QtGui.QMessagedBox.Cancel: return False
+        
+        return True
+            
+            
+    ###############################
+    # def OnChangeCol2X
+    # author: Lan Dam
+    # updated: 201705
+    # change the cells value of the selectedCol to the value in XCtrl
+    def OnChangeCol2X(self):
+        #print "OnChangeCol2X"
+        if not self._checkEmpty("column"): return
+        
+        type_ = self.types[ self.labels.index( str(self.selectedColumnCtrl.text()) ) ]         
+    
+        try:
+            newVal = type_(self.XCtrl.text())
+        except ValueError:
+            msg = "The new value of all cells in '%s' is '%s',\nwhich doesn't match the required type: %s"
+            QtGui.QMessageBox.warning(self, "Error", msg % (self.selectedColumnCtrl.text(), self.XCtrl.text(), type_.__name__))
+            return         
+        
+        for r in range(len(self.updatedTable)):
+            self._updateColItem(r, newVal)
+        self._afterUpdateCol()
+        
+            
+    ###############################
+    # def OnResetCol
+    # author: Lan Dam
+    # updated: 201705 
+    # reset the values of cells on the selectedCol back to theirs original values
+    def OnResetCol(self): 
+        for r in range(len(self.updatedTable)):
+            self._updateColItem(r, self.table[r][self.selectedCol]) 
+        self._afterUpdateCol()
+            
+
+    ###############################
+    # def OnPlusX2Col
+    # author: Lan Dam
+    # updated: 201705  
+    # plus the value in X to all cell in the selectedCol
+    # plus as int first to avoid the result in float format then as float
+    # (the button only available if value in XCtrl and in selectedColList are number)
+    def OnPlusX2Col(self):    
+        type_ = self.types[ self.labels.index( str(self.selectedColumnCtrl.text()) ) ]
+        index = 0
+        newColumnList = []        
+        for r in range(len(self.updatedTable)): 
+            try:
+                newVal = int(self.XCtrl.text()) + int(self.selectedColList[r])
+            except ValueError:
+                newVal = float(self.XCtrl.text()) + float(self.selectedColList[r])
+            
+            try:                                        
+                newColumnList.append(type_(newVal))
+            except ValueError:
+                msg = "The new value of %s, line %s is %s,\nwhich doesn't match the required type: %s"
+                QtGui.QMessageBox.warning(self, "Error", msg % (self.selectedColumnCtrl.text(), index+1, newVal, type_.__name__))
+                return        
+        
+        for r in range(len(self.updatedTable)):
+            self._updateColItem(r, newColumnList[r])
+        self._afterUpdateCol()
+            
+
+    ###############################
+    # def _updateColItem
+    # author: Lan Dam
+    # updated: 201705
+    # update the item on given row, selectedCol to newVal
+    # change color depend on the changed value is the original value or not
+    def _updateColItem(self, r, newVal):
+        currItem = self.mainTableView.item(r, self.selectedCol)
+        currItem.setText(str(newVal))
+        self.updatedTable[r][self.selectedCol] = newVal
+        if self.table[r][self.selectedCol] != newVal:            
+            currItem.setForeground(QtCore.Qt.red)
+            if r not in self.deleteList:
+                self._changeRowBackground(r, UPDATECOLOR)
+            if r not in self.updateList: self.updateList.append(r)
+        else:
+            currItem.setForeground(QtCore.Qt.black)
+            updated = False
+            for l in range(len(self.labels)):
+                if self.updatedTable[r][l] != self.table[r][l]:
+                    updated = True
+                    break
+            if updated == False:
+                if r not in self.deleteList:
+                    self._changeRowBackground(r, QtCore.Qt.white)
+                if r in self.updateList: self.updateList.remove(r)                
+
+    
+    ###############################
+    # def _afterUpdateCol
+    # author: Lan Dam
+    # updated: 201705
+    # update selectedColList
+    # set characterOrderCtrl, changeChar2XBtn, plusX2ColBtn, plusX2Col depend on type and length of the selectedColList
+    def _afterUpdateCol(self):
+        # print "_afterUpdateCol"
+        self.selectedColList = self.updatedTable[:,self.selectedCol]
+        difLen = [len(item) for item in self.selectedColList if len(item.strip()) != len(self.selectedColList[0].strip())]
+        if difLen == []:
+            self.changeChar2XBtn.setEnabled(True)
+            self.characterOrderCtrl.setEnabled(True)
+            self.characterOrderCtrl.clear()
+            self.characterOrderCtrl.addItems([ str(i+1) for i in range( len(self.selectedColList[0]) )])
+        else:
+            self.characterOrderCtrl.clear()
+            self.characterOrderCtrl.setEnabled(False)
+            self.changeChar2XBtn.setEnabled(False)
+    
+        self.plusX2ColBtn.setEnabled(False)
+        type_ = self.types[ self.labels.index( str(self.selectedColumnCtrl.text()) ) ]
+        if str(self.XCtrl.text()).isdigit() and  type_ in [float, int]: 
+            self.plusX2ColBtn.setEnabled(True)
+            
+                
                 
     ###############################
     # def OnChange
@@ -779,9 +1302,10 @@ class TablePanel(QtGui.QMainWindow):
     #     * not change if there are any rows deleted
     #     * change text in cell(s)
     #     * if the change is back to the orginal value, cell color will be resetted (then rows => remove from updateList)
-    #     * else: change foreground color of cell(s), change background color of row(s) => add to updateList if not in updateList yet
+    #     * else: change foreground color of cell(s), change background color of row(s)  => add to updateList if not in updateList yet
+    #        => get the rowdata from the table with the new value at the col, but the type keep the same
     #    on AddTableView if self.addCells != None
-    #     * change text & color in cell(s)
+    #     * change text & color in cell(s) and change the column value to the one in changedValCtrl but type keep the same
     def OnChange(self, event):
         if self.addCells == None:
             for r,c in self.selectedCells:
@@ -789,16 +1313,16 @@ class TablePanel(QtGui.QMainWindow):
                     msg = "Because the row %s has been deleted, cell (%s,%s) can't be changed." % (r+1, r+1,c+1)
                     QtGui.QMessageBox.warning(self, "Warning", msg )
                     continue                
-   
-                self.mainTableView.item(r,c).setText(self.changedValCtrl.text())
-                # colors are changed in OnCellChanged
+                
                 currItem = self.mainTableView.item(r,c)
+                currItem.setText(self.changedValCtrl.text())
+                self.updatedTable[r][c] = type(self.updatedTable[r][c])(self.changedValCtrl.text())
                 
                 if currItem.text() == self.table[r][c]:
                     currItem.setForeground(QtCore.Qt.black)
                     updated = False
                     for l in range(len(self.labels)):
-                        if self.mainTableView.item(r,l).text() != self.table[r][l]:
+                        if self.updatedTable[r][l] != self.table[r][l]:
                             updated = True
                             break
                     if updated == False:
@@ -807,15 +1331,40 @@ class TablePanel(QtGui.QMainWindow):
                 else:
                     currItem.setForeground(QtCore.Qt.red)
                     self._changeRowBackground(r, UPDATECOLOR)
-                    if r not in self.updateList: self.updateList.append(r)                
+                    if r not in self.updateList: self.updateList.append(r)                 
 
         else:
             for r,c in self.addCells:
                 currItem = self.addTableView.item(r,c)
                 currItem.setText(self.changedValCtrl.text())
                 currItem.setForeground(QtCore.Qt.red)
-                self.addDataList[r][c] = str(self.changedValCtrl.text())
+                self.addDataList[r][c] = type(self.addDataList[r][c])(self.changedValCtrl.text())
                 
+                
+    ###############################
+    # def OnBack2org
+    # author: Lan Dam
+    # updated: 201705 
+    # reset all changes in selectedCells back to original (self.table)
+    # accept change in delete rows, but still keep them as deleted
+    # change the text color to black (unchanged)
+    # but the row color change or not depend on other cells in the row
+    def OnBack2org(self, event):    
+        for r,c in self.selectedCells:
+            currItem = self.mainTableView.item(r,c)
+            currItem.setText(str(self.table[r][c]))
+            self.updatedTable[r][c] = self.table[r][c]
+            currItem.setForeground(QtCore.Qt.black)
+            updated = False
+            for l in range(len(self.labels)):
+                if self.updatedTable[r][l] != self.table[r][l]:
+                    updated = True
+                    break    
+            if updated == False:
+                if r not in self.deleteList: 
+                    self._changeRowBackground(r, QtCore.Qt.white)
+                if r in self.updateList: self.updateList.remove(r)            
+
             
     ###############################
     # def OnDelete
@@ -844,7 +1393,7 @@ class TablePanel(QtGui.QMainWindow):
     def OnUndelete(self, event):
         for row,column in self.selectedCells:
             currItem = self.mainTableView.item(row,column)
-            if row in self.updateList: 
+            if row in self.updateList:  
                 self._changeRowBackground(row, UPDATECOLOR)
             else:
                 self._changeRowBackground(row, QtCore.Qt.white)
@@ -863,7 +1412,7 @@ class TablePanel(QtGui.QMainWindow):
     # * clear AddTableView and display addDataList in AddTableView
     def OnAdd(self, event):
         for row, column in self.selectedCells:
-            self.addDataList.append(deepcopy(self.table[row]))
+            self.addDataList.append(deepcopy(self.updatedTable[row]))
         
         # clear existing data
         self.addTableView.clear()
@@ -875,7 +1424,9 @@ class TablePanel(QtGui.QMainWindow):
         # set data into cells
         for r in range( len(self.addDataList) ):
             for c in range( len(self.labels) ):
-                self.addTableView.setItem(r, c, QtGui.QTableWidgetItem(self.addDataList[r][c]))
+                item = QtGui.QTableWidgetItem(self.addDataList[r][c])
+                item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )      # disable cell editing
+                self.addTableView.setItem(r, c, item)
 
         # change to fit columns with its contents instead of having same default size for all columns
         self.addTableView.resizeColumnsToContents()
@@ -937,6 +1488,9 @@ class TablePanel(QtGui.QMainWindow):
     # * insert into new postions in MainTableView    
     def OnInsert(self, event):
         insertLineId = self.insertLineCtrl.currentIndex()
+        if self.minChangedRowId == None: self.minChangedRowId = insertLineId
+        if self.minChangedRowId > insertLineId: self.minChangedRowId = insertLineId
+        
         self.addCells.sort(key=itemgetter(0),reverse=True)
         
         # identify data to insert to mainTableView and 
@@ -949,7 +1503,7 @@ class TablePanel(QtGui.QMainWindow):
             self.addTableView.removeRow(r)
         
         # insert the data to MainTableView
-        self._insertDataToTable(insertLineId, insertedData, len(insertedData))
+        self._insertDataToTable(insertLineId, insertedData, insertedData, len(insertedData))
         
         
     ###############################    
@@ -972,17 +1526,25 @@ class TablePanel(QtGui.QMainWindow):
         # reidentify new moveLineId when pop the selected Rows from table 
         if moveLineId > max(selectedRows): moveLineId -= len(selectedRows)
         
+        minId = min(selectedRows + [moveLineId])
+        if self.minChangedRowId == None: self.minChangedRowId = minId
+        if self.minChangedRowId > minId: self.minChangedRowId = minId
+        
         # identify data to insert to mainTableView and 
         # remove data from its current position in table and mainTableView
         insertedData = []
+        insertedUpdData = []
         for r in selectedRows:
             rowData = deepcopy(self.table[r])
             insertedData.append( rowData )
-            self.table.remove(rowData) 
+            rowData = deepcopy(self.updatedTable[r])
+            insertedUpdData.append(rowData)
+            self.table.pop(r) 
+            self.updatedTable = numpy.delete( self.updatedTable, (r), axis=0)
             self.mainTableView.removeRow(r)        
         
         # insert the data to MainTableView
-        self._insertDataToTable( moveLineId, insertedData, len(selectedRows), max(selectedRows) )
+        self._insertDataToTable( moveLineId, insertedData, insertedUpdData, len(selectedRows), max(selectedRows) )
                         
 
     ###############################    
@@ -990,17 +1552,20 @@ class TablePanel(QtGui.QMainWindow):
     # author: Lan Dam
     # updated: 201704    
     # insert the passed insertData into the passed lineId in MainTableView
-    def _insertDataToTable(self, lineId, insertData, lenInsert, maxRemovedRow=None):
-        for rowData in insertData:  
+    def _insertDataToTable(self, lineId, insertData, insertedUpdData, lenInsert, maxRemovedRow=None):
+        for i in range(len(insertData)):  
             # add inserted data into self.table 
             # since insertData in backward order, the previous insert can be moved downward
             # lineId can be used for inserting without any changes 
-            self.table.insert(lineId, rowData)    
+            self.table.insert(lineId, insertData[i])   
+            self.updatedTable = numpy.insert(self.updatedTable, lineId, insertedUpdData[i], 0)
             # create new empty row in mainTableView
             self.mainTableView.insertRow(lineId)
-            # fill value in rowData into the empty row
+            # fill value in insertedUpdData[i] into the empty row
             for c in range( len(self.labels) ):
-                self.mainTableView.setItem(lineId, c, QtGui.QTableWidgetItem(rowData[c]))
+                item = QtGui.QTableWidgetItem(insertedUpdData[i][c])
+                item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )      # disable cell editing
+                self.mainTableView.setItem(lineId, c, item )
         
         # update values in deleteList and updateList
         lineId -= 1
@@ -1010,7 +1575,7 @@ class TablePanel(QtGui.QMainWindow):
             # delete row ids should be moved upward when there are rows removed before them
             if maxRemovedRow!=None and self.deleteList[i] > maxRemovedRow: self.deleteList[i] -= lenInsert
             
-        for i in range(len(self.updateList)):
+        for k in self.updateList:
             # update row ids should be moved downward when there are rows inserted before them
             if self.updateList[i] > lineId: self.updateList[i] += lenInsert 
             # update row ids should be moved upward when there are rows removed before them
@@ -1032,32 +1597,98 @@ class TablePanel(QtGui.QMainWindow):
     # author: Lan Dam
     # updated: 201703
     # convert the data in mainTableViews to string in kef format
+    # * use data from updatedTable
     # * if the row in deleteList, skip
-    # * if the row in updateList, its values are in the tableViews so just keep converting from mainTableView
     def ToString(self, currText, tableCount):
-        for r in range( self.mainTableView.rowCount() ):
+        for r in range( len(self.updatedTable) ):
             if r in self.deleteList: continue
             tableCount += 1
             if tableCount % 100 == 0: 
-                self.parent.statusText.setText("Saving Kef file: %s/%s" % ( tableCount, self.parent.totalLines))     
+                self.parent.statusBar.showMessage("Saving Kef file: %s/%s" % ( tableCount, self.parent.totalLines))     
                 print "Saving Kef file: %s/%s" % ( tableCount, self.parent.totalLines)             
             currText += "\n#   Table row %d" % tableCount            
             #   Print table name
             currText += "\n" + self.path
-            for c in range( self.mainTableView.columnCount() ):  
-                val = self.mainTableView.item(r,c).text()
-                currText += "\n\t%s=%s" % (self.labels[c], val)
-        
+            for c in range( len(self.labels) ):
+                currText += "\n\t%s=%s" % (self.labels[c], self.updatedTable[r][c])                    
+ 
         return currText, tableCount
 
 
+    ###############################    
+    # def SaveCSV
+    # author: Lan Dam
+    # updated: 201705
+    # save data into a CSV file with delimeter=';'
+    def SaveCSV(self, savedFileName):
+        # use updated data from updated table
+        DAT = self.updatedTable              
+        # delete row in deleteList
+        DAT = numpy.delete(DAT, self.deleteList, axis=0)
+        # combine with labels
+        DAT = numpy.vstack((numpy.array(self.labels), DAT))
+        # save into a text file with the given savedFileName, delimiter=';'
+        numpy.savetxt(savedFileName, DAT, fmt='%s', delimiter=';', 
+                     header="KEF Editor Ver. %s" % PROG_VERSION)
+        
+        
+    ###############################    
+    # def UpdatePH5
+    # author: Lan Dam
+    # updated: 201705
+    # update the table into the current PH5 file
+    # (use data from updatedTable, the type already convert to org type when updating)
+    def UpdatePH5(self):
+        pp = self.path.split('/')
+        name = pp[-1]
+        path = self.path.replace('/' + name, '' )
+        
+        # get the node for the path
+        ph5 = self.parent.ph5api.ph5
+        node = ph5.get_node(where = path, name = name,classname = 'Table')
+        
+        # remove all the rows follow the lowest insert row because tables class doesn't allow inserting
+        if self.minChangedRowId != None: node.remove_rows(self.minChangedRowId)
+        # r: rowId
+        # row: row in node
+        r = 0
+        #vtypes = node.coltypes
+        for row in node.iterrows():
+            # remove row in deleteList
+            if r in self.deleteList:
+                node.remove_row(r)
+            # update item in updateList
+            if r in self.updateList:
+                for c in range(len(self.labels)):
+                    try:
+                        row.__setitem__(self.labels[c], self.updatedTable[r][c])
+                    except IndexError as e: pass
+                row.update()
+            r += 1
+
+        # from lowest insert row, start to append the rest of the updated Table
+        if self.minChangedRowId != None:
+            row = node.row
+            for r in range(self.minChangedRowId, len(self.updatedTable)):  
+                if r in self.deleteList: continue
+                try:
+                    for c in range(len(self.labels)):
+                        row[self.labels[c]] = self.updatedTable[r][c]
+                except Exception, e:
+                    sys.stderr.write("Warning in append: Exception \'%s\'\n" % e)
+                row.append()
+
+        # flush all changes
+        node.flush()
+        
+        
 ##########################################
 ############### CLASS ####################
 # Author: Lan
 # Updated: 201703
 # CLASS: SelectTableDialog - GUI for user to select parameters for table
 class SelectTableDialog(QtGui.QDialog):
-    def __init__(self, parent, availTables, arrays, shotLines, das):
+    def __init__(self, parent, availTables, arrays, shotLines, offsets, das):
         
         QtGui.QWidget.__init__(self)
         self.setWindowTitle("Select Tables")
@@ -1083,6 +1714,11 @@ class SelectTableDialog(QtGui.QDialog):
         self.shotLineCtrl.clear()
         self.shotLineCtrl.addItems( [''] + shotLines )
         formLayout.addRow("ShotLine", self.shotLineCtrl) 
+        
+        self.offsetCtrl = QtGui.QComboBox(self)
+        self.offsetCtrl.clear()
+        self.offsetCtrl.addItems( [''] + offsets )
+        formLayout.addRow("Offset (array_event)", self.offsetCtrl)         
 
         self.dasCtrl = QtGui.QComboBox(self)
         self.dasCtrl.clear()
@@ -1114,6 +1750,7 @@ class SelectTableDialog(QtGui.QDialog):
         self.arrayCtrl.setEnabled(False)
         self.shotLineCtrl.setEnabled(False)
         self.dasCtrl.setEnabled(False)
+        self.offsetCtrl.setEnabled(False)
         
         
     ###############################    
@@ -1131,53 +1768,49 @@ class SelectTableDialog(QtGui.QDialog):
         elif tableType == 'Das_t':   
             self.dasCtrl.setEnabled(True)
         elif tableType == 'Offset_t': 
-            self.arrayCtrl.setEnabled(True)
-            self.shotLineCtrl.setEnabled(True)
+            self.offsetCtrl.setEnabled(True)
 
         
     ###############################    
     # def OnSubmit
     # author: Lan Dam
     # updated: 201703   
-    # use KefUtility.PH5toTableData to read the required table into dataTable
+    # use kefutility.PH5toTableData to read the required table into dataTable
     # call parent.setData() to set dataTable into MainTableView
     def OnSubmit(self, evt):
         p = self.parent
         p.tableType = str( self.tableCtrl.currentText() )
-        
-        errorCtrls = []
+        errorCtrl = None
         if p.tableType == 'Array_t':     
             p.arg = str( self.arrayCtrl.currentText() )
-            if p.arg == "": errorCtrls.append('Array')
+            if p.arg == "": errorCtrl = 'Array'
         elif p.tableType == 'Event_t':   
             p.arg = str( self.shotLineCtrl.currentText() )
-            if p.arg == "": errorCtrls.append('ShotLine')
+            if p.arg == "": errorCtrl = 'ShotLine'
         elif p.tableType == 'Das_t':   
             p.arg = str( self.dasCtrl.currentText() )
-            if p.arg == "": errorCtrls.append('Das')
+            if p.arg == "": errorCtrl = 'Das'
         elif p.tableType == 'Offset_t': 
-            a = str( self.arrayCtrl.currentText() )
-            if a == "": errorCtrls.append("Array")
-            s = str( self.shotLineCtrl.currentText() )
-            if a == "": errorCtrls.append("ShotLine")
-            p.arg = "%s_%s" % (a,s)
+            p.arg = str( self.offsetCtrl.currentText() )
+            if p.arg == "": errorCtrl = 'Offset'
         else:
             p.arg = None
             
-            
-        if errorCtrls != []:
-            msg = "For Table '%s', %s must be selected." % (p.tableType, ' and '.join(errorCtrls))
+        print p.arg
+        if errorCtrl != None:
+            msg = "For Table '%s', %s must be selected." % (p.tableType, errorCtrl)
             QtGui.QMessageBox.warning(self, "Warning", msg )
             return
         
         #try:
-        p.dataTable, p.labelSets, p.totalLines = kefutility.PH5toTableData(p.statusText, p.ph5, p.filename, p.path2file, p.tableType, p.arg )            
+        p.dataTable, p.labelSets, p.totalLines, p.types = kefutility.PH5toTableData(p.statusBar, p.ph5api, p.filename, p.path2file, p.tableType, p.arg )            
         #except Exception, e:
             #QtGui.QMessageBox.warning(self, "Error", str(e) )
             #return
 
         p.setData() 
         p.openTableAction.setEnabled(True)
+        p.updatePH5Action.setEnabled(True)         
         p.notsave == True
         self.close()
 
@@ -1204,28 +1837,20 @@ class Seperator(QtGui.QFrame):
 ##########################################
 ############### CLASS ####################
 # Author: Lan
-# Updated: 201702
+# Updated: 201707
 # CLASS: ManWindow - show Manual of the app. (reuse from PH5View)
 class ManWindow(QtGui.QWidget):
     def __init__(self, mantype=""):
         QtGui.QWidget.__init__(self)
-
-        view = QWebView(self)
+        self.setGeometry(100,100,900,700)
+        view = QtGui.QTextBrowser(self)
+        
         if mantype=="manual":
-            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "KefEdit_Manual.html"))
-            if os.path.isfile(file_path): 
-                local_url = QtCore.QUrl.fromLocalFile(file_path)   
-                #view.load(local_url )
-                view.setUrl(local_url)
-            else:
-                msg = "The hyperlinks to bookmarks in the manual cannot work \n" + \
-                      "becaulse the file KefEdit_Manual.html is missing.\n" +\
-                      "To move to the interested section, use scrollbar."
-                QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
-                view.setHtml(html_manual)
+            view.setText(kefutility.html_manual)
         
         elif mantype=="whatsnew":
-            view.setHtml(html_whatsnew % PROG_VERSION)
+            view.setText(kefutility.html_whatsnew % PROG_VERSION)
+            
         self.layout = QtGui.QHBoxLayout()
         self.layout.addWidget(view)
 
@@ -1233,142 +1858,15 @@ class ManWindow(QtGui.QWidget):
         self.show() 
         
 
-html_manual = '''
-<html>
-<head>
-<style>
-table, th, td {
-    border: 1px solid black;
-}
-</style>
-<title>Manual Page</title>
-</head>
-<body>
-<h2>Manual</h2>
-<hr />
-
-<h2><a id="contents">Contents:</a></h2>
-<ul>
-    <li><a href="#OpenKef">Open Kef File</a></li> 	
-    <li><a href="#OpenPH5">Open PH5 File</a></li>
-    <li><a href="#OpenTableInCurr">Open table(s) in the current PH5 File</a></li>
-    <li><a href="#SaveKef">Save as Kef File</a></li>
-    <li><a href="#SavePH5">Save as PH5 File</a></li>
-    <li><a href="#EditTable">Edit Table</a></li>
-    <ul>
-        <li><a href="#Select">Select Cell(s)</a></li> 
-        <li><a href="#Change">Change value in (a) cell(s)</a></li> 
-        <li><a href="#Move">Move Selected Row(s) to a new position</a></li> 
-        <li><a href="#Delete">Delete Row(s) on Selected Cell(s)</a></li>
-        <li><a href="#Add">Add Row(s) with Data Copy from Selected Cell(s)</a></li>
-    </ul>
-</ul>
-
-&nbsp;
-<table style="width:100%">
-<tbody>
-<tr>
-<td>
-<h2><a id="OpenKef">Open Kef File</a></h2>
-<div>Select Menu File - Open Kef File: to open all tables in a Kef file for editing. Each table is placed in a tab.</div>
-<div align="right"><a href="#contents">Contents</a></div>
-<div>&nbsp;</div>
-</td>
-</tr>
-<tr>
-<td>
-<h2><a id="OpenPH5">Open PH5 File</a></h2>
-<div>Select Menu File - Open PH5 File: to open (a) table(s) in a PH5 File for editing. Each table is placed in a tab.</div>
-<div align="right"><a href="#contents">Contents</a></div>
-<div>&nbsp;</div>
-</td>
-</tr>
-<tr>
-<td>
-<h2><a id="OpenTableInCurr">Open table(s) in the current PH5 File</a></h2>
-<div>Open (a) different table(s) in the currently opened PH5 File for editing. Similar to Open a PH5 File but user doenn't need to select a file to open, the app. doesn't need to reopen the file.</div>
-<div align="right"><a href="#contents">Contents</a></div>
-<div>&nbsp;</div>
-</td>
-</tr>
-<tr>
-<td>
-<h2><a id="SaveKef">Save Kef File</a></h2>
-<div>Save the opened table(s) to a Kef File.</div>
-<div align="right"><a href="#contents">Contents</a></div>
-<div>&nbsp;</div>
-</td>
-</tr>
-<tr>
-<td>
-<h2><a id="SavePH5">Save PH5 File</a></h2>
-<div>Update the a PH5 file with the opened tables OR create a new PH5 file from the tables. </div>
-<div align="right"><a href="#contents">Contents</a></div>
-<div>&nbsp;</div>
-</td>
-</tr>
-<tr>
-<td>
-<h2><a id="EditTable">Edit Table</a></h2>
-
-<h3><a id="Select">Select Cell(s)</a></h3> 
-<div>Select Type: Define which cell(s) will be selected when click on a cell.</div>
-<ul>
-    <li>Single Cell: Only that cell will be selected.</li>
-    <li>All Similar Cells in Station: All similar value cells that have the same station id with the clicked cell will be selected. Avalaible only for Array Table.</li>
-    <li>All Similar Cells in Column: All similar value cells in that column will be selected. (E.g. when user want to change value for time, this option allow user to make sure all the necessary times are changed consistently.) When this option is selected, move, delete and add options are disabled to prevent going out of control.
-</ul>
-
-<h3><a id="Change">Change value in (a) cell(s)</a></h3>
-<div>When a cell is clicked, its value will appear in the text box next to the three Select Types so that its value can be editted.</div>
-<div>User can click on button 'Change' to update the new value to the selected cell(s). If the new value is different with the original values, the row(s) on the selected cell(s) will change color to pink.</div>
-
-<h3><a id="Move">Move Selected Row(s) to a new position</a></h3>
-<div>When cell(s) are selected, the corresponding row(s) will be shown in Selected Rows (for the ease of following up).</div>
-<div>User will choose the Line No (next to 'Move Selected Row(s) under Line No') under which the row(s) will be moved to, then click 'Move'.</div>
-
-<h3><a id="delete">Delete Row(s) on Selected Cell(s)</a></h3>
-<div>To delete Selected Row(s), just click on 'Delete Row(s) on Selected Cell(s)', the row(s) will change color to purple to mark that the row(s) are deleted.</div>
-<div>User can change their mind by selecting the deleted row(s) again and click on 'UnDelete'.</div>
-
-<h3><a id="Add">Add Row(s) with Data Copy from Selected Cell(s)</a></h3>
-<ul>
-    <li>Move Selected Row(s) to the Add Row View at the bottom of the GUI by clicking on 'Add Row(s) with Data Copy from Selected Cell(s)'</li>
-    <li>Change value of (a) cell(s) in Add Row View by click on cell(s) to change its/their value(s) in the text box similar to 'Change value in (a) cell(s)' described <a href="#Change">above</a></li>
-    <li>Insert Selected Rows in Add Row View to the Main View by select the the Line No (next to 'Insert Selected Row(s) under Line No') under which the row(s) will be inserted to, then click 'Insert'.</div>
-</ul>
-
-<div align="right"><a href="#contents">Contents</a></div>
-<div>&nbsp;</div>
-</td>
-</tr>
-</tbody>
-</table>
-</body>
-</html>
-'''
-
-html_whatsnew = """
-<html>
-<head>
-<title>What's new? Page</title>
-</head>
-<body>
-<h2>What's new in version %s?</h2>
-<hr />
-<div>This is the first version of KefEdit. Changes will be updated in need.</div>
-</body>
-</html>
-"""
-
-
+                        
 def startapp():
+    
     application = QtGui.QApplication(sys.argv)
 
     win = KefEdit()
     
     sys.exit(application.exec_())
 
-                   
+
 if __name__ == "__main__":
     startapp()
