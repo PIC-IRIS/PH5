@@ -495,7 +495,7 @@ class PH5toexml(object):
                 catalog.events=events
             
             if catalog.events:
-                catalog.write(outfile, "QUAKEML",  nsmap={"PH5": iris_custom_ns})
+                catalog.write(outfile, "QUAKEML",  nsmap={"iris": iris_custom_ns})
             else:
                 raise NoDataError()
         
