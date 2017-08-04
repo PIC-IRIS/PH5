@@ -504,7 +504,7 @@ class PH5toexml(object):
             write_exml(list_of_networks)
         elif out_format.upper() == "KML":
             write_kml(list_of_networks)
-        elif out_format.upper() == "SHOTTEXT":
+        elif out_format.upper() == "TEXT":
             write_text(list_of_networks)  
         elif out_format.upper() == "XML":
             write_quakeml(list_of_networks)          
