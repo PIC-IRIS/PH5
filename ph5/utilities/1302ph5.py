@@ -9,7 +9,8 @@
 import tables, sys, os, os.path, string, time, math, numpy, re, logging
 from ph5.core import columns, experiment, kef, pn130, timedoy
 
-PROG_VERSION = '2017.207 Developmental'
+
+PROG_VERSION = '2017.214 Developmental'
 MAX_PH5_BYTES = 1073741824 * 4   #   2GB (1024 X 1024 X 1024 X 4)
 NUM_CHANNELS = pn130.NUM_CHANNELS
 NUM_STREAMS = pn130.NUM_STREAMS
@@ -621,10 +622,7 @@ def writeEvent (points, event) :
             #   XXX   Need to check if array name exists and generate unique name.   XXX
             p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray ('Data_a_')
             des = "Epoch: " + str (p_das_t['time/epoch_l']) + " Stream: " + str (event[c].stream_number) + " Channel: " + str (event[c].channel_number)
-            
-            #   XXX   This should be changed to handle exceptions   XXX
-            EXREC.ph5_g_receivers.populateDas_t (p_das_t)
-            
+
             #   XXX   Write data   XXX
             t = event[c].trace[ii][0]
             if DEBUG :
@@ -644,6 +642,9 @@ def writeEvent (points, event) :
                                                                                                  p_das_t['sample_count_i'],
                                                                                                  tcount))
                 sys.stderr.flush ()
+            #   XXX   This should be changed to handle exceptions   XXX
+            p_das_t['sample_count_i'] = earray.nrows
+            EXREC.ph5_g_receivers.populateDas_t (p_das_t)            
             if p_das_t['channel_number_i'] == 1 :
                 update_index_t_info (p_das_t['time/epoch_l'] + (float (p_das_t['time/micro_seconds_i']) / 1000000.), p_das_t['sample_count_i'], float (p_das_t['sample_rate_i']) / float (p_das_t['sample_rate_multiplier_i']))
         
