@@ -1,4 +1,7 @@
-# PH5 [![Build Status](https://travis-ci.org/PIC-IRIS/PH5.svg?branch=master)](https://travis-ci.org/PIC-IRIS/PH5) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+# PH5 
+[![Build Status](https://travis-ci.org/PIC-IRIS/PH5.svg?branch=master)](https://travis-ci.org/PIC-IRIS/PH5) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/ph5.svg)](https://pypi.python.org/pypi/ph5/)[![PyPI Version](https://img.shields.io/pypi/v/ph5.svg)](https://pypi.python.org/pypi/ph5)
+
 A library of command line utilities and APIs for building and interacting with PH5 datasets. 
 
 **See the [PH5 Wiki](https://github.com/PIC-IRIS/PH5/wiki) for information about the sturcuture and use of PH5**
