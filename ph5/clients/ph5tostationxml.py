@@ -224,6 +224,7 @@ class PH5toStationXML(object):
             self.args['stop_time'] = ph5utils.datestring_to_datetime(self.args.get('stop_time'))
             
     def get_response(self, datalogger_resp, s_resp):
+        "modified from LLoyd's nrl client get_response code in obspy as of now tehre are no public methods to combine responses in obspy"
         
         # Parse both to inventory objects.
         with io.BytesIO(datalogger_resp) as buf:
@@ -264,7 +265,7 @@ class PH5toStationXML(object):
                 if i_u and i_u.upper() in value:
                     unit = key
             if not unit:
-                msg = ("ObsPy does not know how to map unit '%s' to "
+                msg = ("Do not know how to map unit '%s' to "
                        "displacement, velocity, or acceleration - overall "
                        "sensitivity will not be recalculated.") % i_u
                 warnings.warn(msg)
