@@ -17,6 +17,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 """
 
 import sys
+import io
 import os
 import datetime
 import argparse
@@ -25,7 +26,6 @@ import obspy
 from obspy import read_inventory
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
-from obspy.io.xseed import Parser
 # functions for reading networks in parallel
 import multiprocessing
 import copy_reg
@@ -34,7 +34,7 @@ import types
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.198"
+PROG_VERSION = "2017.221"
 
 
 def get_args():
@@ -222,6 +222,87 @@ class PH5toStationXML(object):
 
         if self.args.get('stop_time'):
             self.args['stop_time'] = ph5utils.datestring_to_datetime(self.args.get('stop_time'))
+            
+    def get_response(self, datalogger_resp, s_resp):
+        
+        # Parse both to inventory objects.
+        with io.BytesIO(datalogger_resp) as buf:
+            buf.seek(0, 0)
+            dl_resp = obspy.read_inventory(buf, format="RESP")
+        with io.BytesIO(s_resp) as buf:
+            buf.seek(0, 0)
+            sensor_resp = obspy.read_inventory(buf, format="RESP")
+    
+        # Both can by construction only contain a single channel with a
+        # response object.
+        dl_resp = dl_resp[0][0][0].response
+        sensor_resp = sensor_resp[0][0][0].response
+    
+        # Combine both by replace stage one in the data logger with stage
+        # one of the sensor.
+        dl_resp.response_stages.pop(0)
+        dl_resp.response_stages.insert(0, sensor_resp.response_stages[0])
+    
+        if not hasattr(dl_resp, "instrument_sensitivity"):
+            msg = "Could not find an instrument sensitivity - will not " \
+                "recalculate the overall sensitivity."
+            warnings.warn(msg)
+        elif not dl_resp.instrument_sensitivity.input_units:
+            msg = "Could not determine input units - will not " \
+                "recalculate the overall sensitivity."
+            warnings.warn(msg)
+        else:
+            i_u = dl_resp.instrument_sensitivity.input_units
+    
+            unit_map = {
+                "DISP": ["M"],
+                "VEL": ["M/S", "M/SEC"],
+                "ACC": ["M/S**2", "M/(S**2)", "M/SEC**2", "M/(SEC**2)",
+                        "M/S/S"]}
+            unit = None
+            for key, value in unit_map.items():
+                if i_u and i_u.upper() in value:
+                    unit = key
+            if not unit:
+                msg = ("ObsPy does not know how to map unit '%s' to "
+                       "displacement, velocity, or acceleration - overall "
+                       "sensitivity will not be recalculated.") % i_u
+                warnings.warn(msg)
+            else:
+                # lookup normalization frequency of sensor's poles-and-zeros
+                # stage, it should be in the flat part of the response
+                stage_one = dl_resp.response_stages[0]
+                try:
+                    frequency = stage_one.normalization_frequency
+                except AttributeError:
+                    frequency = None
+                for stage in dl_resp.response_stages[::-1]:
+                    # determine sampling rate
+                    try:
+                        sampling_rate = (
+                            stage.decimation_input_sample_rate /
+                            stage.decimation_factor)
+                        break
+                    except:
+                        continue
+                else:
+                    sampling_rate = None
+                if sampling_rate:
+                    # if sensor's normalization frequency is above 0.5*nyquist,
+                    # use that instead (e.g. to avoid computing an overall
+                    # sensitivity above nyquist)
+                    if frequency:
+                        nyquist = sampling_rate / 2.0
+                        frequency = min(frequency, nyquist / 2.0)
+                    else:
+                        frequency = nyquist / 2.0
+                freq, gain = \
+                    dl_resp._get_overall_sensitivity_and_gain(
+                        output=unit, frequency=frequency)
+                dl_resp.instrument_sensitivity.value = gain
+                dl_resp.instrument_sensitivity.frequency = freq
+    
+        return dl_resp    
 
     def read_arrays(self, name):
         if name is None:
@@ -376,23 +457,28 @@ class PH5toStationXML(object):
             # parse datalogger response
             if response_file_das_a_name: 
                 response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
-                dl = Parser(response_file_das_a)
+               
             # parse sensor response if present
             if response_file_sensor_a_name:
                 response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
-                sensor = Parser(response_file_sensor_a)
-    
+
             inv_resp = None
             if response_file_das_a_name and response_file_sensor_a_name:
                 # both datalogger and sensor response
-                comp_resp = Parser.combine_sensor_dl_resps(sensor=sensor, datalogger=dl)
-                inv_resp = comp_resp.get_response()
+                inv_resp = self.get_response(response_file_das_a, response_file_sensor_a )
             elif response_file_das_a_name:
                 # only datalogger response
-                inv_resp = dl.get_response()
+                with io.BytesIO(response_file_das_a) as buf:
+                    buf.seek(0, 0)
+                    dl_resp = obspy.read_inventory(buf, format="RESP")                
+                inv_resp = dl_resp[0][0][0].response
+                
             elif response_file_sensor_a_name:
                 # only sensor response
-                inv_resp = sensor.get_response()
+                with io.BytesIO(response_file_sensor_aa) as buf:
+                    buf.seek(0, 0)
+                    s_resp = obspy.read_inventory(buf, format="RESP")                
+                inv_resp = s_resp[0][0][0].response                
     
             if inv_resp:
                 # update response manager and return response
