@@ -24,7 +24,7 @@ Below are instructions for installing PH5 with Anaconda. PH5 has several [system
 
 ### Installing PH5 from source
 * Open a terminal.
-* Install [Git](https://git-scm.com/downloads) if you don not have it
+* Install [Git](https://git-scm.com/downloads) if you do not have it
 * Clone the PH5 project from GitHub to your local machine by running `git clone https://github.com/PIC-IRIS/PH5.git` or downloading the zip file from the main github page .
 * Add the conda-forge channel to your Anaconda configuration by running `conda config --add channels conda-forge`
 * Create a new Anaconda Virtual Environment for ph5 by running `conda create -q --name=ph5 python=2.7`
