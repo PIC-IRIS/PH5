@@ -36,7 +36,7 @@ Below are instructions for installing PH5 with Anaconda. PH5 has several [system
 Currently PH5 uses a development branch of obspy that will not be official until obspy 1.10.
 In order to install this special branch you must do the following:
 * Open a terminal
-* Run `source activate ph5` if you havebnt already done so
+* Run `source activate ph5` if you haven't already done so
 * Run `conda uninstall obspy` to make sure any previous version of obspy is removed
 * Run `git clone https://github.com/obspy/obspy.git -b RESPtoInventoryResponse`
 * Run `python setup.py install` inside the obspy root directory to install new version of obspy
