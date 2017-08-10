@@ -17,6 +17,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 """
 
 import sys
+import io
 import os
 import datetime
 import argparse
@@ -25,7 +26,6 @@ import obspy
 from obspy import read_inventory
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
-from obspy.io.xseed import Parser
 # functions for reading networks in parallel
 import multiprocessing
 import copy_reg
@@ -34,7 +34,7 @@ import types
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.198"
+PROG_VERSION = "2017.222"
 
 
 def get_args():
@@ -376,23 +376,34 @@ class PH5toStationXML(object):
             # parse datalogger response
             if response_file_das_a_name: 
                 response_file_das_a = self.ph5.ph5_g_responses.get_response(response_file_das_a_name)
-                dl = Parser(response_file_das_a)
+                with io.BytesIO(response_file_das_a) as buf:
+                    buf.seek(0, 0)
+                    dl_resp = obspy.read_inventory(buf, format="RESP")  
+                dl_resp = dl_resp[0][0][0].response
+                                       
+                
+               
             # parse sensor response if present
             if response_file_sensor_a_name:
                 response_file_sensor_a = self.ph5.ph5_g_responses.get_response(response_file_sensor_a_name)
-                sensor = Parser(response_file_sensor_a)
-    
+                with io.BytesIO(response_file_sensor_a) as buf:
+                    buf.seek(0, 0)
+                    sensor_resp = obspy.read_inventory(buf, format="RESP") 
+                sensor_resp = sensor_resp[0][0][0].response 
+
             inv_resp = None
             if response_file_das_a_name and response_file_sensor_a_name:
                 # both datalogger and sensor response
-                comp_resp = Parser.combine_sensor_dl_resps(sensor=sensor, datalogger=dl)
-                inv_resp = comp_resp.get_response()
+                dl_resp.response_stages.pop(0)
+                dl_resp.response_stages.insert(0, sensor_resp.response_stages[0])
+                dl_resp.recalculate_overall_sensitivity()
+                inv_resp = dl_resp
             elif response_file_das_a_name:
-                # only datalogger response
-                inv_resp = dl.get_response()
+                # only datalogger response              
+                inv_resp = dl_resp
             elif response_file_sensor_a_name:
-                # only sensor response
-                inv_resp = sensor.get_response()
+                # only sensor response              
+                inv_resp = sensor_resp              
     
             if inv_resp:
                 # update response manager and return response
