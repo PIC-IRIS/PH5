@@ -1,5 +1,6 @@
 # PH5 
-[![Build Status](https://travis-ci.org/PIC-IRIS/PH5.svg?branch=master)](https://travis-ci.org/PIC-IRIS/PH5) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://travis-ci.org/PIC-IRIS/PH5.svg?branch=master)](https://travis-ci.org/PIC-IRIS/PH5) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/66882151.svg)](https://zenodo.org/badge/latestdoi/66882151)
+
 
 A library of command line utilities and APIs for building and interacting with PH5 datasets. 
 
