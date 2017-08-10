@@ -302,7 +302,7 @@ class PH5toStationXML(object):
                         output=unit, frequency=frequency)
                 dl_resp.instrument_sensitivity.value = gain
                 dl_resp.instrument_sensitivity.frequency = freq
-    
+                dl_resp.recalculate_overall_sensitivity()
         return dl_resp    
 
     def read_arrays(self, name):
