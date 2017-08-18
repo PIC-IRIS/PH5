@@ -34,7 +34,7 @@ import types
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.222"
+PROG_VERSION = "2017.230"
 
 
 def get_args():
@@ -294,8 +294,9 @@ class PH5toStationXML(object):
                 'value': str(array_name)[-3:],
                 'namespace': self.iris_custom_ns,
                 'type': 'attribute'
-            }
+            }           
         }) 
+        
         obs_station.extra=extra        
         obs_station.site = obspy.core.inventory.Site(
             name=station_list[1][0]['location/description_s'])     
@@ -303,7 +304,7 @@ class PH5toStationXML(object):
         return obs_station     
 
     def create_obs_channel(self, station_list, deployment, cha_code, loc_code,
-                           cha_longitude, cha_latitude, cha_elevation):       
+                           cha_longitude, cha_latitude, cha_elevation, receiver_id):       
         obs_channel = obspy.core.inventory.Channel(
             code=cha_code, location_code=loc_code,
             latitude=cha_latitude,
@@ -350,7 +351,12 @@ class PH5toStationXML(object):
                     'value': str(station_list[deployment][0]['channel_number_i']),
                     'namespace': self.iris_custom_ns,
                     'type': 'attribute'
-                }
+                },
+                'PH5ReceiverId': {
+                    'value': str(receiver_id),
+                    'namespace': self.iris_custom_ns,
+                    'type': 'attribute'
+                }                  
             }) 
         obs_channel.extra=extra
         
@@ -457,7 +463,7 @@ class PH5toStationXML(object):
 
                     obs_channel = self.create_obs_channel(station_list, deployment,
                                                           seed_channel, location, cha_longitude, 
-                                                          cha_latitude, cha_elevation)
+                                                          cha_latitude, cha_elevation, receiver_id)
                     
                     obs_channels.append(obs_channel)
         return obs_channels
@@ -483,7 +489,6 @@ class PH5toStationXML(object):
 
                 if x not in sta_list:
                     continue
-                
                 sta_longitude = station_list[1][0]['location/X/value_d']
                 sta_latitude = station_list[1][0]['location/Y/value_d']
                 sta_elevation = station_list[1][0]['location/Z/value_d']
