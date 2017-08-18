@@ -34,7 +34,7 @@ import types
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.222"
+PROG_VERSION = "2017.230"
 
 
 def get_args():
@@ -277,7 +277,7 @@ class PH5toStationXML(object):
 
     def create_obs_station(self, station_list, sta_code, 
                            array_name, start_date, end_date, sta_longitude,
-                           sta_latitude, sta_elevation):
+                           sta_latitude, sta_elevation, receiver_id):
 
         obs_station = obspy.core.inventory.Station(sta_code,
                                                latitude=sta_latitude,
@@ -294,8 +294,15 @@ class PH5toStationXML(object):
                 'value': str(array_name)[-3:],
                 'namespace': self.iris_custom_ns,
                 'type': 'attribute'
-            }
+            },
+            'PH5ReceiverId': {
+                'value': str(receiver_id),
+                'namespace': self.iris_custom_ns,
+                'type': 'attribute'
+            }            
+            
         }) 
+        
         obs_station.extra=extra        
         obs_station.site = obspy.core.inventory.Site(
             name=station_list[1][0]['location/description_s'])     
@@ -483,7 +490,7 @@ class PH5toStationXML(object):
 
                 if x not in sta_list:
                     continue
-                
+                receiver_id = station_list[1][0]['id_s']
                 sta_longitude = station_list[1][0]['location/X/value_d']
                 sta_latitude = station_list[1][0]['location/Y/value_d']
                 sta_elevation = station_list[1][0]['location/Z/value_d']
@@ -511,7 +518,7 @@ class PH5toStationXML(object):
                                                       station_name, array_name, 
                                                       start_date, end_date,
                                                       sta_longitude, sta_latitude,
-                                                      sta_elevation)
+                                                      sta_elevation, receiver_id)
                    
                 if self.args.get('level').upper() == "RESPONSE" or self.args.get('level').upper() == "CHANNEL" or \
                    self.args.get('location_list') != ['*'] or self.args.get('channel_list') != ['*'] or \
