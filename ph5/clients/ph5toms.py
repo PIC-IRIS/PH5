@@ -125,27 +125,7 @@ class PH5toMSeed(object):
                 os.mkdir(self.out_dir)
             except Exception:
                 raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
-            
-    def clear(self):
-        del self.chan_map 
-        del self.reqtype
-        del self.array 
-        del self.component 
-        del self.use_deploy_pickup 
-        del self.offset
-        del self.das_sn 
-        del self.station 
-        del self.station_id 
-        del self.sample_rate_list 
-        del self.doy_keep
-        del self.channel
-        del self.netcode
-        del self.length 
-        del self.start_time 
-        del self.end_time 
-        del self.shotline 
-        del self.eventnumbers
-        
+             
     def read_arrays(self, name):
 
         if name is None:
@@ -663,14 +643,11 @@ class PH5toMSeed(object):
                             # fdsn request
                             stations_list = self.create_cut(seed_network, ph5_station, seed_station,
                                                    start_times, station_list, deployment, st_num)
-                            for station in stations_list:
-                                cuts_generator.append(station)
+                            if stations_list is not None:
+                                for station in stations_list:
+                                    cuts_generator.append(station)
 
-        del self.ph5.Experiment_t
-        del self.ph5.Array_t
-        del self.ph5.Event_t
         self.ph5.clear()
-        self.clear()
         return cuts_generator
 
     def process_all(self):
@@ -679,8 +656,8 @@ class PH5toMSeed(object):
             stream = self.create_trace(cut)
             if stream is not None:
                 yield stream
-                del stream
-
+            self.ph5.clear()
+               
 
 def get_args():
 
