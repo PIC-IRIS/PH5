@@ -1,7 +1,7 @@
 v4.0.2
--ph5.clients.ph5toms
+-ph5.clients.ph5toms (issue #100)
  * Fixed memory leak bug and reduced memory usage
--ph5.clients.ph5tostationxml
+-ph5.clients.ph5tostationxml (issue #107)
  * added receiver-id to obspy inventory and added an extra atribute at teh station level
 -ph5.clients.ph5toexml
  * added to setup.py
