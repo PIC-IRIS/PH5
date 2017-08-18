@@ -277,7 +277,7 @@ class PH5toStationXML(object):
 
     def create_obs_station(self, station_list, sta_code, 
                            array_name, start_date, end_date, sta_longitude,
-                           sta_latitude, sta_elevation, receiver_id):
+                           sta_latitude, sta_elevation):
 
         obs_station = obspy.core.inventory.Station(sta_code,
                                                latitude=sta_latitude,
@@ -294,13 +294,7 @@ class PH5toStationXML(object):
                 'value': str(array_name)[-3:],
                 'namespace': self.iris_custom_ns,
                 'type': 'attribute'
-            },
-            'PH5ReceiverId': {
-                'value': str(receiver_id),
-                'namespace': self.iris_custom_ns,
-                'type': 'attribute'
-            }            
-            
+            }           
         }) 
         
         obs_station.extra=extra        
@@ -310,7 +304,7 @@ class PH5toStationXML(object):
         return obs_station     
 
     def create_obs_channel(self, station_list, deployment, cha_code, loc_code,
-                           cha_longitude, cha_latitude, cha_elevation):       
+                           cha_longitude, cha_latitude, cha_elevation, receiver_id):       
         obs_channel = obspy.core.inventory.Channel(
             code=cha_code, location_code=loc_code,
             latitude=cha_latitude,
@@ -357,7 +351,12 @@ class PH5toStationXML(object):
                     'value': str(station_list[deployment][0]['channel_number_i']),
                     'namespace': self.iris_custom_ns,
                     'type': 'attribute'
-                }
+                },
+                'PH5ReceiverId': {
+                    'value': str(receiver_id),
+                    'namespace': self.iris_custom_ns,
+                    'type': 'attribute'
+                }                  
             }) 
         obs_channel.extra=extra
         
@@ -464,7 +463,7 @@ class PH5toStationXML(object):
 
                     obs_channel = self.create_obs_channel(station_list, deployment,
                                                           seed_channel, location, cha_longitude, 
-                                                          cha_latitude, cha_elevation)
+                                                          cha_latitude, cha_elevation, receiver_id)
                     
                     obs_channels.append(obs_channel)
         return obs_channels
@@ -490,7 +489,6 @@ class PH5toStationXML(object):
 
                 if x not in sta_list:
                     continue
-                receiver_id = station_list[1][0]['id_s']
                 sta_longitude = station_list[1][0]['location/X/value_d']
                 sta_latitude = station_list[1][0]['location/Y/value_d']
                 sta_elevation = station_list[1][0]['location/Z/value_d']
@@ -518,7 +516,7 @@ class PH5toStationXML(object):
                                                       station_name, array_name, 
                                                       start_date, end_date,
                                                       sta_longitude, sta_latitude,
-                                                      sta_elevation, receiver_id)
+                                                      sta_elevation)
                    
                 if self.args.get('level').upper() == "RESPONSE" or self.args.get('level').upper() == "CHANNEL" or \
                    self.args.get('location_list') != ['*'] or self.args.get('channel_list') != ['*'] or \
