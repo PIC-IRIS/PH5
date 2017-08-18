@@ -30,13 +30,12 @@ from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy import UTCDateTime
 import copy
-import itertools
 from ph5.core import ph5utils
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
 
-PROG_VERSION = "2017.192"
+PROG_VERSION = "2017.230"
 
 
 class StationCut(object):
@@ -126,7 +125,27 @@ class PH5toMSeed(object):
                 os.mkdir(self.out_dir)
             except Exception:
                 raise PH5toMSAPIError("Error - Cannot create {0}.".format(self.out_dir))
-
+            
+    def clear(self):
+        del self.chan_map 
+        del self.reqtype
+        del self.array 
+        del self.component 
+        del self.use_deploy_pickup 
+        del self.offset
+        del self.das_sn 
+        del self.station 
+        del self.station_id 
+        del self.sample_rate_list 
+        del self.doy_keep
+        del self.channel
+        del self.netcode
+        del self.length 
+        del self.start_time 
+        del self.end_time 
+        del self.shotline 
+        del self.eventnumbers
+        
     def read_arrays(self, name):
 
         if name is None:
@@ -305,8 +324,7 @@ class PH5toMSeed(object):
                 start_time = das_t_start
                 start_time_no_micro = int(das_t_start_no_micro)
                 start_time_micro_seconds = int(das_t_start_micro_seconds)
- 
-    
+
             else:
                 start_time = stc.starttime
                 start_time_no_micro = stc.starttime
@@ -337,7 +355,6 @@ class PH5toMSeed(object):
                 except ValueError:
                     continue
                 
-                
                 obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
@@ -350,10 +367,9 @@ class PH5toMSeed(object):
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)
-    
+            self.ph5.forget_das_t(stc.das)
         if len(obspy_stream.traces) < 1:
             return
-
         return obspy_stream
     
     def get_channel_and_component(self, station_list, deployment, st_num):
@@ -519,7 +535,8 @@ class PH5toMSeed(object):
                 st_num]['location/Y/value_d']
             longitude = station_list[deployment][
                 st_num]['location/X/value_d']
-        
+            
+            stations =[]
             for starttime, endtime in tuple(times_to_cut):
                 
                 self.ph5.read_das_t(das,
@@ -529,7 +546,7 @@ class PH5toMSeed(object):
                 
                 if not self.ph5.Das_t.has_key(das):
                     continue
-                
+                self.ph5.forget_das_t(das)
                 station_x = StationCut(
                     seed_network,
                     ph5_station,
@@ -546,7 +563,8 @@ class PH5toMSeed(object):
                     latitude,
                     longitude)
 
-                yield station_x
+                stations.append(station_x)
+        return stations
                                 
     def create_cut_list(self):
         cuts_generator = []
@@ -643,10 +661,17 @@ class PH5toMSeed(object):
                                                        start_times, station_list, deployment, st_num))
                         elif self.reqtype == "FDSN":
                             # fdsn request
-                            cuts_generator.append(self.create_cut(seed_network, ph5_station, seed_station,
-                                                   start_times, station_list, deployment, st_num))
-                            
-        return itertools.chain.from_iterable(cuts_generator)
+                            stations_list = self.create_cut(seed_network, ph5_station, seed_station,
+                                                   start_times, station_list, deployment, st_num)
+                            for station in stations_list:
+                                cuts_generator.append(station)
+
+        del self.ph5.Experiment_t
+        del self.ph5.Array_t
+        del self.ph5.Event_t
+        self.ph5.clear()
+        self.clear()
+        return cuts_generator
 
     def process_all(self):
         cuts = self.create_cut_list()
@@ -654,6 +679,7 @@ class PH5toMSeed(object):
             stream = self.create_trace(cut)
             if stream is not None:
                 yield stream
+                del stream
 
 
 def get_args():
@@ -858,6 +884,7 @@ def main():
     
                 else:
                     t.write(sys.stdout, format='MSEED', reclen=4096)
+                del t
         elif args.format and args.format.upper() == "SAC":
             for t in streams:
                 if not args.stream:
@@ -869,6 +896,7 @@ def main():
     
                 else:
                     t.write(sys.stdout, format='SAC')
+                del t
         else:
             for t in streams:
                 if not args.stream:
@@ -881,6 +909,7 @@ def main():
                                face_color="#DCD3ED")
                 else:
                     t.write(sys.stdout, format='MSEED', reclen=4096)
+                del t
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
