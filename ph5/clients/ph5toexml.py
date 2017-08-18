@@ -548,8 +548,7 @@ def run_ph5_to_event(ph5exml):
                               "under basepath(s) {0}".format(basepaths))
 
 
-if __name__ == '__main__':
-
+def main():
     args = get_args()
     args_dict = vars(args) 
     
@@ -571,4 +570,7 @@ if __name__ == '__main__':
     ph5exml = PH5toexml(args_dict)
     networks= run_ph5_to_event(ph5exml)
     ph5exml.write(args_dict.get('outfile'),networks, args_dict.get("format"))
-    
+
+
+if __name__ == '__main__':
+    main()
