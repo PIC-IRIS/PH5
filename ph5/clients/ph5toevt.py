@@ -8,7 +8,7 @@
 import os, sys, logging
 from ph5.core import ph5api, segyfactory, decimate, timedoy
 
-PROG_VERSION = "2017.186 Developmental"
+PROG_VERSION = "2017.235 Developmental"
 #   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -403,7 +403,8 @@ def gather () :
                     logging.info ("Lat: %f Lon: %f Elev: %f %s" % (array_t[c][t]['location/Y/value_d'],
                                                                    array_t[c][t]['location/X/value_d'],
                                                                    array_t[c][t]['location/Z/value_d'],
-                                                                   array_t[c][t]['location/Z/units_s'].strip ())) 
+                                                                   array_t[c][t]['location/Z/units_s'].strip ()))
+                    logging.info ("{0}".format (array_t[c][t]['description_s']))
                     #
                     ###   Open SEG-Y file
                     #
