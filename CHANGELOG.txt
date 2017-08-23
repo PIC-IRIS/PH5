@@ -1,3 +1,9 @@
+v4.0.3
+-ph5.clients.ph5torec
+  * Write node ID to log file
+-ph5.clients.ph5toevt
+  * Write node ID to log file
+
 v4.0.2
 -ph5.clients.ph5toms (issue #100)
  * Fixed memory leak bug and reduced memory usage
