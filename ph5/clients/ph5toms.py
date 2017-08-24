@@ -1,5 +1,10 @@
 # Derick Hess, Oct 2016
 
+"""
+Extracts data from PH5 in miniSEED and SAC formats.
+Also allows for creation of preview png images of traces.
+"""
+
 import sys
 import os
 from obspy import Trace
