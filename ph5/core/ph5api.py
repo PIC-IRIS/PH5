@@ -1356,7 +1356,7 @@ def linreg(X, Y):
         
     det = Sxx * N - Sx * Sx
     if det == 0 :
-        return 0.0, 0.0
+        return 0.0, 0.0, None
     
     a, b = (Sxy * N - Sy * Sx)/det, (Sxx * Sy - Sx * Sxy)/det 
     

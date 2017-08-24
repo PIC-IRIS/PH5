@@ -68,6 +68,7 @@ setup(
             'ph5toms = ph5.clients.ph5toms:main',
             'ph5torec = ph5.clients.ph5torec:main',
             'ph5tostationxml = ph5.clients.ph5tostationxml:main',
+            'ph5toexml = ph5.clients.ph5toexml:main',
             # utilities
             '125a2ph5 = ph5.utilities.125a2ph5:main',
             '1302ph5 = ph5.utilities.1302ph5:main',

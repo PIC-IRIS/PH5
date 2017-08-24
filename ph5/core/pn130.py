@@ -12,7 +12,7 @@ import os, zipfile, tarfile, re, exceptions
 import os.path, string, math, sys
 from ph5.core import rt_130_h, timedoy
 
-PROG_VERSION = "2017.062 Developmental"
+PROG_VERSION = "2017.205 Developmental"
 
 fileRE = re.compile (".*\w{9}_\w{8}$")
 sohRE = re.compile (".*[Ss][Oo][Hh]\.[Rr][Tt]$")
@@ -34,6 +34,10 @@ END_OF_EVENT_DT = 3
 CORRUPT_PACKET = 4
 #   Ignore this packet
 IGNORE_PACKET = 5
+#   End of event Gap
+END_OF_EVENT_GAP = 6
+#   End of event overlap
+END_OF_EVENT_OVERLAP = 7
 
 class REFError (exceptions.Exception) :
     pass
@@ -621,6 +625,8 @@ class PN130 :
         #self.num_end_of_event = [-1] * NUM_STREAMS
         self.entry_num = 0
         self.points = [0] * NUM_STREAMS
+        ##   Which channels have been seen for this event
+        #self.das_channel_stream_seen = {}
                 
         self.lastDT = LastPacket ()
         self.lastAD = LastPacket ()
@@ -1014,6 +1020,16 @@ class PN130 :
         self.current_event[ds] = new_event
         
         return ret
+    
+    def end_event (self, stream, event, channel) :
+        self.previous_event[stream] = self.current_event[stream]
+        for tchan in range (NUM_CHANNELS) :
+            #   Set to current event so this only gets triggered
+            #   for the first DT packet with a missing EH and ET
+            if self.current_event[stream][tchan].event != None :
+                self.current_event[stream][tchan].event = event
+                self.current_event[stream][channel].trace = []
+                self.current_event[stream][channel].sampleCount = 0    
         
     def set_dt_info (self, c, p) :
         '''   Set info from data packet and check for gaps/overlaps.   '''
@@ -1038,15 +1054,8 @@ class PN130 :
             pass
         
         #   We have a new DT packet without a EH or ET so close the old event
-        if eoe :
-            self.previous_event[stream] = self.current_event[stream]
-            for tchan in range (NUM_CHANNELS) :
-                #   Set to current event so this only gets triggered
-                #   for the first DT packet with a missing EH and ET
-                if self.current_event[stream][tchan].event != None :
-                    self.current_event[stream][tchan].event = event
-                    self.current_event[stream][channel].trace = []
-                    self.current_event[stream][channel].sampleCount = 0
+        #if eoe :
+            #self.end_event (stream)
         #
         #   Check to see if we have a sample rate from the event header
         #   If not we are missing the event header
@@ -1104,6 +1113,8 @@ class PN130 :
             try :
                 tpl = TimeCheck ()
                 set_this_pig (tpl)
+                #if tpl.start_time_asc == "2017:001:09:43:05:165" or tpl.start_time_asc == "2017:001:09:43:06:885" or tpl.start_time_asc == "2017:001:09:43:07:765" :
+                    #xxx = ''
             except timedoy.TimeError as e :
                 self.ERRS.append ("Failed to process packet: {0}".format (e.message))
                 if self.verbose :
@@ -1113,13 +1124,33 @@ class PN130 :
             delta_secs = tpl.start_time_secs - self.last_packet_time[k].end_time_secs
             delta_secs += (tpl.start_time_ms - self.last_packet_time[k].end_time_ms) / 1000.
             
+            #if not self.das_channel_stream_seen.has_key (das) :
+                #self.das_channel_stream_seen[das] = {}
+            #if not self.das_channel_stream_seen[das].has_key (stream) :
+                #self.das_channel_stream_seen[das] = {}
+                #self.das_channel_stream_seen[das][stream] = {}
+                
             if delta_secs > 0 :
+                #   Gap
+                if self.verbose :
+                    sys.stderr.write ("%s Chan: %d Strm: %d Time gap: %s of %7.3f secs\n" % (das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
                 self.ERRS.append ("%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" % (das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
+                eoe = END_OF_EVENT_GAP
+                
+                #self.das_channel_stream_seen[das][stream][channel] = True                
                 #print "%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" % (das, channel + 1, stream, tpl.start_time_asc, delta_secs)
             elif delta_secs < 0 :
+                #   Overlap
+                if self.verbose :
+                    sys.stderr.write ("%s Chan: %d Strm: %d Time overlap: %s of %7.3f secs\n" % (das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
                 self.ERRS.append ("%s Chan: %d Strm: %d Time overlap: %s of %7.3f secs" % (das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs)) 
+                eoe = END_OF_EVENT_OVERLAP
+
+                #self.das_channel_stream_seen[das][stream][channel] = True                
                 #print "%s Chan: %d Strm: %d Time overlap: %s of %7.3f" % (das, channel + 1, stream, tpl.start_time_asc, delta_secs)
-              
+            #else :
+                #self.das_channel_stream_seen[das][stream][channel] = False                
+            
             self.last_packet_time[k] = tpl
         else :
             #   First packet in event
@@ -1740,7 +1771,38 @@ class PN130 :
         return pbuf
                 
     def getEvent (self) :
-        #self.openEvent ()
+        ##self.openEvent ()
+        #def all_channels_read () :
+            ##   Check to see if all channels have been read for this event
+            #try :
+                #lstream = self.lastDT.payload.data_stream
+                #lchannel = self.lastDT.payload.channel
+                #ldas = self.lastDT.header.unit
+                ##   Channels seen so far
+                #if lstream >= 4 :
+                    ##   Stream 9?
+                    #strm = 0
+                #else :
+                    #strm = lstream
+                    
+                ##lchannels = self.das_channel_stream_seen[ldas][lstream].keys ()
+                #tmp = self.lastDS.payload[strm].ChannelsIncluded.split (',')
+                #tmp = tmp[:-1]
+                #ichannels = map (int, tmp)
+                #for ic in ichannels :
+                    #ic -= 1
+                    #if not self.das_channel_stream_seen[ldas][lstream].has_key (ic) :
+                        #return False
+                    #else :
+                        #if not self.das_channel_stream_seen[ldas][lstream][ic] :
+                            #return False
+                    
+                #self.das_channel_stream_seen = {}
+                #return True
+            #except Exception as e :
+                #sys.stderr.write ("Error: {0}\n".format (e.message))
+                #return False
+            
         #
         #   Work around events split across CF cards, ie. no event header
         #
@@ -1848,8 +1910,12 @@ class PN130 :
             
             #   End of file, close all streams
             if not pbuf :
-                stream = self.lastDT.payload.data_stream
-                num_points_stream = sum (self.points)
+                if not self.lastDT.header :
+                    stream = None
+                    num_points_stream = None
+                else :
+                    stream = self.lastDT.payload.data_stream
+                    num_points_stream = sum (self.points)
                 
                 return stream, num_points_stream, True
                 
@@ -1858,9 +1924,33 @@ class PN130 :
             if end_of_event == 0 :
                 #   Not end of event
                 continue
+            elif end_of_event == END_OF_EVENT_GAP :
+                #print "Gap"
+                continue
+                #if not all_channels_read () :
+                    #continue
+                #stream = self.lastDT.payload.data_stream
+                #event = self.lastDT.payload.event
+                #channel = self.lastDT.payload.channel
+                #self.end_event (stream, event, channel)
+            elif end_of_event == END_OF_EVENT_OVERLAP :
+                #print "Overlap"
+                continue
+                #if not all_channels_read () :
+                    #continue
+                #dt_strm = self.lastDT.payload.data_stream
+                #if self.previous_event[dt_strm] == None :
+                    #continue
+                #stream = self.lastDT.payload.data_stream
+                #event = self.lastDT.payload.event
+                #channel = self.lastDT.payload.channel
+                #self.end_event (stream, event, channel)
             elif end_of_event == END_OF_EVENT_DT :
                 #   We found a DT packet for a new event
                 stream = self.lastDT.payload.data_stream
+                event = self.lastDT.payload.event
+                channel = self.lastDT.payload.channel
+                self.end_event (stream, event, channel)
             elif end_of_event == END_OF_EVENT_EH :
                 #   We found a EH for a new event
                 stream = self.lastEH.payload.DataStream
