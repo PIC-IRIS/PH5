@@ -36,7 +36,7 @@ from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
 
-PROG_VERSION = "2017.192"
+PROG_VERSION = "2017.230B"
 
 
 class StationCut(object):
@@ -350,7 +350,7 @@ class PH5toMSeed(object):
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)
-    
+        self.ph5.Das_t={}
         if len(obspy_stream.traces) < 1:
             return
 
@@ -529,7 +529,7 @@ class PH5toMSeed(object):
                 
                 if not self.ph5.Das_t.has_key(das):
                     continue
-                
+                self.ph5.Das_t={}
                 station_x = StationCut(
                     seed_network,
                     ph5_station,
@@ -651,6 +651,7 @@ class PH5toMSeed(object):
     def process_all(self):
         cuts = self.create_cut_list()
         for cut in cuts:
+            self.ph5.clear()
             stream = self.create_trace(cut)
             if stream is not None:
                 yield stream

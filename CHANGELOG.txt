@@ -1,0 +1,20 @@
+Master:
+-ph5.clients.ph5torec
+  * Write node ID to log file
+-ph5.clients.ph5toevt
+  * Write node ID to log file
+
+v4.0.2
+-ph5.clients.ph5toms (issue #100)
+ * Fixed memory leak bug and reduced memory usage
+-ph5.clients.ph5tostationxml (issue #107)
+ * added receiver-id to obspy inventory and added an extra attribute at the channel level
+-ph5.clients.ph5toexml
+ * added to setup.py
+
+v4.0.1
+- ph5.clients.ph5tostationxml
+  * updated to work with latest obspy response code 
+
+v4.0.0
+- Initial Release

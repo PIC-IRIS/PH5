@@ -8,7 +8,7 @@
 import os, sys, logging
 from ph5.core import ph5api, segyfactory, decimate, timedoy
 
-PROG_VERSION = "2017.186 Developmental"
+PROG_VERSION = "2017.235 Developmental"
 #   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -167,7 +167,8 @@ def gather () :
                 logging.info ("DAS: {0} component: {1}".format (array_t[c][0]['das/serial_number_s'], c))
                 logging.info ("Lat: {0} Lon: {1} Elev: {2}".format (array_t[c][0]['location/Y/value_d'],
                                                                     array_t[c][0]['location/X/value_d'],
-                                                                    array_t[c][0]['location/Z/value_d']))   
+                                                                    array_t[c][0]['location/Z/value_d'])) 
+                logging.info ("{0}".format (array_t[c][0]['description_s']))
             #   Read the appropriate line from Das_t and get the sample rate
             P5.read_das_t (array_t[c][0]['das/serial_number_s'],
                            array_t[c][0]['deploy_time/epoch_l'],
@@ -348,7 +349,7 @@ def gather () :
                     logging.info ("Lat: %f Lon: %f Elev: %f %s" % (event_t['location/Y/value_d'],
                                                                    event_t['location/X/value_d'],
                                                                    event_t['location/Z/value_d'],
-                                                                   event_t['location/Z/units_s'].strip ()))                
+                                                                   event_t['location/Z/units_s'].strip ()))
                     #
                     ###   Open SEG-Y file
                     #

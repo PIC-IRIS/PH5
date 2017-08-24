@@ -1,4 +1,4 @@
-#!/usr/bin/env pnpython3
+#!/usr/bin/env pnpython4
 
 #
 #   Read rt-130 data into a ph5 file
@@ -9,7 +9,8 @@
 import tables, sys, os, os.path, string, time, math, numpy, re, logging
 from ph5.core import columns, experiment, kef, pn130, timedoy
 
-PROG_VERSION = '2017.062 Developmental'
+
+PROG_VERSION = '2017.214 Developmental'
 MAX_PH5_BYTES = 1073741824 * 4   #   2GB (1024 X 1024 X 1024 X 4)
 NUM_CHANNELS = pn130.NUM_CHANNELS
 NUM_STREAMS = pn130.NUM_STREAMS
@@ -107,7 +108,6 @@ def read_windows_file (f) :
     except :
         return w
     
-    #tdoy = timedoy.TimeDOY ()
     while 1 :
         line = fh.readline ()
         if not line : break
@@ -417,11 +417,14 @@ def populateExperimentTable () :
     
 def closePH5 () :
     global EX
-    EX.ph5close ()
+    try :
+        EX.ph5close ()
+        EXREC.ph5close ()
+    except :
+        pass
 
 def update_index_t_info (starttime, samples, sps) :
     global DAS_INFO
-    #tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
@@ -439,7 +442,78 @@ def update_index_t_info (starttime, samples, sps) :
     #ptimestart = tdoy.epoch2PasscalTime (startsecs, startms)
     #ptimestop  = tdoy.epoch2PasscalTime (stopsecs, stopms)
     #print ph5file, ph5path, ptimestart, ptimestop
-
+    
+#   YYY   YYY
+def gwriteEvent (points, event) :
+    '''   Create an event list with all the gaps and overlaps cleansed   '''
+    def clone (event) :
+        #   Clone event list but without the traces
+        clean_event = []
+        for i in range (pn130.NUM_CHANNELS) :
+            clean_event.append (pn130.Event130 ())
+            clean_event[i].bitWeight = event[i].bitWeight
+            clean_event[i].channel_number = event[i].channel_number
+            clean_event[i].doy = event[i].doy
+            clean_event[i].event = event[i].event
+            clean_event[i].gain = event[i].gain
+            clean_event[i].hour = event[i].hour
+            clean_event[i].last_sample_time = event[i].last_sample_time
+            clean_event[i].milliseconds = event[i].milliseconds
+            clean_event[i].minute = event[i].minute
+            clean_event[i].sampleCount = event[i].sampleCount
+            clean_event[i].sampleRate = event[i].sampleRate
+            clean_event[i].seconds = event[i].seconds
+            clean_event[i].stream_number = event[i].stream_number
+            clean_event[i].trace = {}
+            clean_event[i].unitID = event[i].unitID
+            clean_event[i].year = event[i].year
+            
+        return clean_event
+        
+    clean_event = clone (event)
+    for c in range (NUM_CHANNELS) :
+        if not event[c].unitID :
+            continue
+        sample_rate = event[c].sampleRate
+        sample_interval = 1. / float (sample_rate)
+        tdoy1 = None
+        #   Prepare new trace structure that allows us to break it up on gaps and overlaps
+        i = 0
+        clean_event[c].trace[i] = []
+        for t in event[c].trace :
+            tdoy0 = timedoy.TimeDOY (year=t.year, 
+                                     month=None, 
+                                     day=None, 
+                                     hour=t.hour, 
+                                     minute=t.minute, 
+                                     second=int (t.seconds), 
+                                     microsecond=t.milliseconds * 1000,
+                                     doy=t.doy, 
+                                     epoch=None)
+            if tdoy1 != None :
+                #print tdoy0, tdoy1
+                #   Start of this DT packet
+                fepoch0 = tdoy0.epoch (fepoch=True)
+                #   Calculated start of packet from last DT packet
+                fepoch1 = tdoy1.epoch (fepoch=True)
+                delta = fepoch1 - fepoch0
+                if delta < 0. :
+                    #
+                    i += 1
+                    clean_event[c].trace[i] = []
+                elif delta > 0. :
+                    #
+                    i += 1
+                    clean_event[c].trace[i] = []
+                
+            clean_event[c].trace[i].append (t)
+            num_samples = len (t.trace)
+            secs = float (num_samples) * sample_interval
+            tdoy1 = tdoy0 + secs
+            event[c].trace = []
+            
+    writeEvent (points, clean_event)
+    
 #   XXX   XXX
 def writeEvent (points, event) :
     global EX, EXREC, RESP, SR
@@ -464,100 +538,116 @@ def writeEvent (points, event) :
     
     #w = event.channel
     for c in range (NUM_CHANNELS) :
-        
-        if SR != None and event[c].sampleRate != None :
-            #print event[c].sampleRate, int (SR)
-            if float (event[c].sampleRate) != float (SR) :
-                #print "No Match"
+        if not event[c].unitID :
+            continue
+        iis = event[c].trace.keys ()
+        iis.sort ()
+        for ii in iis :
+            if SR != None and event[c].sampleRate != None :
+                #print event[c].sampleRate, int (SR)
+                if float (event[c].sampleRate) != float (SR) :
+                    #print "No Match"
+                    continue
+                
+            das_number = event[c].unitID
+            if das_number == None or event[c].sampleCount == 0 :
                 continue
             
-        das_number = event[c].unitID
-        if das_number == None or event[c].sampleCount == 0 :
-            continue
-        
-        try :
-            #   XXX   Debug
-            #print event[c].gain
-            if event[c].gain[0] == 'x' :
-                #   Gain times
-                gain = int (event[c].gain[1:])
-            else :
-                #   Gain dB
-                gain = int (event[c].gain[:-2])
-        except Exception, e :
-            sys.stderr.write ("\nWarning: Can't determine gain from gain value '{0:s}'. Exception: {1:s}\n".format (event[c].gain, e))
-            gain = 0
+            try :
+                #   XXX   Debug
+                #print event[c].gain
+                if event[c].gain[0] == 'x' :
+                    #   Gain times
+                    gain = int (event[c].gain[1:])
+                else :
+                    #   Gain dB
+                    gain = int (event[c].gain[:-2])
+            except Exception, e :
+                sys.stderr.write ("\nWarning: Can't determine gain from gain value '{0:s}'. Exception: {1:s}\n".format (event[c].gain, e))
+                gain = 0
+                
+            #   The gain and bit weight
+            p_response_t['gain/value_i'] = gain
+            try :
+                p_response_t['bit_weight/units_s'] = '%s/count' % event[c].bitWeight[-2:]
+                p_response_t['bit_weight/value_d'] = float (event[c].bitWeight[:-2]) 
+                
+                n_i = RESP.match (p_response_t['bit_weight/value_d'], p_response_t['gain/value_i'])
+                if n_i < 0 :
+                    RESP.update ()
+                    n_i = RESP.next_i ()
+                    p_response_t['n_i'] = n_i
+                    EX.ph5_g_responses.populateResponse_t (p_response_t)
+                    RESP.update ()
+            except Exception, e :
+                sys.stderr.write ("\nWarning: bit weight undefined. Can't convert '{1:s}'. Exception: {0:s}\n\n".format (e, event[c].bitWeight))
+                #p_response_t['bit_weight/units_s'] = ''
+                #p_response_t['bit_weight/value_d'] = 0
+                #p_response_t['n_i'] = -1
             
-        #   The gain and bit weight
-        p_response_t['gain/value_i'] = gain
-        try :
-            p_response_t['bit_weight/units_s'] = '%s/count' % event[c].bitWeight[-2:]
-            p_response_t['bit_weight/value_d'] = float (event[c].bitWeight[:-2]) 
-            
-            n_i = RESP.match (p_response_t['bit_weight/value_d'], p_response_t['gain/value_i'])
-            if n_i < 0 :
-                RESP.update ()
-                n_i = RESP.next_i ()
-                p_response_t['n_i'] = n_i
-                EX.ph5_g_responses.populateResponse_t (p_response_t)
-                RESP.update ()
-        except Exception, e :
-            sys.stderr.write ("\nWarning: bit weight undefined. Can't convert '{1:s}'. Exception: {0:s}\n\n".format (e, event[c].bitWeight))
-            #p_response_t['bit_weight/units_s'] = ''
-            #p_response_t['bit_weight/value_d'] = 0
-            #p_response_t['n_i'] = -1
+            #   Check to see if group exists for this das, if not build it
+            das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas (das_number)
+            #   Fill in das_t
+            p_das_t['raw_file_name_s'] = os.path.basename (F)
+            p_das_t['array_name_SOH_a'] = EXREC.ph5_g_receivers.nextarray ('SOH_a_')
+            p_das_t['array_name_log_a'] = EXREC.ph5_g_receivers.nextarray ('Log_a_')
+            p_das_t['response_table_n_i'] = n_i
+            p_das_t['receiver_table_n_i'] = c
+            p_das_t['channel_number_i'] = event[c].channel_number + 1
+            p_das_t['event_number_i'] = event[c].event
+            #   force sample rate to 1 sps or greater
+            irate, mult = as_ints (float (event[c].sampleRate))
+            p_das_t['sample_rate_i'] = irate
+            p_das_t['sample_rate_multiplier_i'] = mult
+            p_das_t['sample_count_i'] = int (event[c].sampleCount)
+            p_das_t['stream_number_i'] = event[c].stream_number + 1
+            #mo, da = tdoy.getMonthDay (event[c].year, event[c].doy)
+            #p_das_t['time/epoch_l'] = int (time.mktime ((event[c].year, mo, da, event[c].hour, event[c].minute, int (event[c].seconds), -1, event[c].doy, 0)))
+            #   Note: We use the time of the first trace. This is because rtleap fix only changes DT packets!
+            tDOY = timedoy.TimeDOY (year=event[c].trace[ii][0].year, 
+                                    month=None, 
+                                    day=None, 
+                                    hour=event[c].trace[ii][0].hour, 
+                                    minute=event[c].trace[ii][0].minute, 
+                                    second=int (event[c].trace[ii][0].seconds), 
+                                    microsecond=event[c].trace[ii][0].milliseconds * 1000,
+                                    doy=event[c].trace[ii][0].doy, 
+                                    epoch=None)
+            p_das_t['time/epoch_l'] = tDOY.epoch (fepoch=False)
+            #   XXX   need to cross check here   XXX
+            p_das_t['time/ascii_s'] = time.asctime (time.gmtime (p_das_t['time/epoch_l']))
+            p_das_t['time/type_s'] = 'BOTH'
+            #   XXX   Should this get set????   XXX
+            p_das_t['time/micro_seconds_i'] = event[c].trace[ii][0].milliseconds * 1000
+            #   XXX   Need to check if array name exists and generate unique name.   XXX
+            p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray ('Data_a_')
+            des = "Epoch: " + str (p_das_t['time/epoch_l']) + " Stream: " + str (event[c].stream_number) + " Channel: " + str (event[c].channel_number)
+
+            #   XXX   Write data   XXX
+            t = event[c].trace[ii][0]
+            if DEBUG :
+                tcount = len (t.trace)
+            #data = numpy.fromiter (t.trace, dtype='i')
+            earray = EXREC.ph5_g_receivers.newarray (p_das_t['array_name_data_a'], t.trace, dtype = 'int32')
+            for t in event[c].trace[ii][1:] :
+                #d = numpy.fromiter (t.trace, dtype='i')
+                if DEBUG :
+                    tcount += len (t.trace)
+                earray.append (t.trace)
+            if DEBUG :
+                sys.stderr.flush ()
+                sys.stderr.write ("{0} SR: {1:12.2f}sps Channel: {2} Samples: {3}/{4}\n".format (tDOY,
+                                                                                                 float (irate)/float (mult),
+                                                                                                 p_das_t['channel_number_i'],
+                                                                                                 p_das_t['sample_count_i'],
+                                                                                                 tcount))
+                sys.stderr.flush ()
+            #   XXX   This should be changed to handle exceptions   XXX
+            p_das_t['sample_count_i'] = earray.nrows
+            EXREC.ph5_g_receivers.populateDas_t (p_das_t)            
+            if p_das_t['channel_number_i'] == 1 :
+                update_index_t_info (p_das_t['time/epoch_l'] + (float (p_das_t['time/micro_seconds_i']) / 1000000.), p_das_t['sample_count_i'], float (p_das_t['sample_rate_i']) / float (p_das_t['sample_rate_multiplier_i']))
         
-        #   Check to see if group exists for this das, if not build it
-        das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas (das_number)
-        #   Fill in das_t
-        p_das_t['raw_file_name_s'] = os.path.basename (F)
-        p_das_t['array_name_SOH_a'] = EXREC.ph5_g_receivers.nextarray ('SOH_a_')
-        p_das_t['array_name_log_a'] = EXREC.ph5_g_receivers.nextarray ('Log_a_')
-        p_das_t['response_table_n_i'] = n_i
-        p_das_t['receiver_table_n_i'] = c
-        p_das_t['channel_number_i'] = event[c].channel_number + 1
-        p_das_t['event_number_i'] = event[c].event
-        #   force sample rate to 1 sps or greater
-        irate, mult = as_ints (float (event[c].sampleRate))
-        p_das_t['sample_rate_i'] = irate
-        p_das_t['sample_rate_multiplier_i'] = mult
-        p_das_t['sample_count_i'] = int (event[c].sampleCount)
-        p_das_t['stream_number_i'] = event[c].stream_number + 1
-        #tdoy = timedoy.TimeDOY ()
-        #mo, da = tdoy.getMonthDay (event[c].year, event[c].doy)
-        #p_das_t['time/epoch_l'] = int (time.mktime ((event[c].year, mo, da, event[c].hour, event[c].minute, int (event[c].seconds), -1, event[c].doy, 0)))
-        tDOY = timedoy.TimeDOY (year=event[c].year, 
-                                month=None, 
-                                day=None, 
-                                hour=event[c].hour, 
-                                minute=event[c].minute, 
-                                second=int (event[c].seconds), 
-                                microsecond=0, 
-                                doy=event[c].doy, 
-                                epoch=None)
-        p_das_t['time/epoch_l'] = tDOY.epoch ()
-        #   XXX   need to cross check here   XXX
-        p_das_t['time/ascii_s'] = time.asctime (time.gmtime (p_das_t['time/epoch_l']))
-        p_das_t['time/type_s'] = 'BOTH'
-        #   XXX   Should this get set????   XXX
-        p_das_t['time/micro_seconds_i'] = event[c].milliseconds * 1000
-        #   XXX   Need to check if array name exists and generate unique name.   XXX
-        p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray ('Data_a_')
-        des = "Epoch: " + str (p_das_t['time/epoch_l']) + " Stream: " + str (event[c].stream_number) + " Channel: " + str (event[c].channel_number)
-        #   XXX   This should be changed to handle exceptions   XXX
-        EXREC.ph5_g_receivers.populateDas_t (p_das_t)
-        
-        #   XXX   Write data   XXX
-        t = event[c].trace[0]
-        #data = numpy.fromiter (t.trace, dtype='i')
-        earray = EXREC.ph5_g_receivers.newarray (p_das_t['array_name_data_a'], t.trace, dtype = 'int32')
-        for t in event[c].trace[1:] :
-            #d = numpy.fromiter (t.trace, dtype='i')
-            earray.append (t.trace)
-        
-        if p_das_t['channel_number_i'] == 1 :
-            update_index_t_info (p_das_t['time/epoch_l'] + (float (p_das_t['time/micro_seconds_i']) / 1000000.), p_das_t['sample_count_i'], float (p_das_t['sample_rate_i']) / float (p_das_t['sample_rate_multiplier_i']))
-    
     #EXREC.ph5flush ()     
         #for t in event[c].trace :
             #data = numpy.fromiter (t.trace, dtype='i')
@@ -621,7 +711,6 @@ def window_contained (e) :
     if not e :
         return False
     
-    #tdoy = timedoy.TimeDOY ()
     sample_rate = e.sampleRate
     sample_count = e.sampleCount
     #mo, da = tdoy.getMonthDay (e.year, e.doy)
@@ -834,6 +923,7 @@ def updatePH5 (f) :
         streams = events.keys ()
         for s in streams :
             event = events[s]
+            if not event : continue
             log = pn.get_logs ()
             soh = pn.get_soh ()
             #   XXX   Debug
@@ -845,7 +935,8 @@ def updatePH5 (f) :
                 logging.error ("*" * 15 + "   END   " + "*" * 15)
                 
             if window_contained (event[0]) :
-                writeEvent (points, event)
+                gwriteEvent (points, event)
+                #writeEvent (points, event)
                 if log_array == None :
                     log_array = getLOG ()
                     if log_array == None : continue
