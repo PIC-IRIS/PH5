@@ -1,4 +1,4 @@
-H#!/usr/bin/env pnpython3
+#!/usr/bin/env pnpython3
 #
 #   Plotting PH5 data
 #
