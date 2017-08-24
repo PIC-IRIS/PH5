@@ -2,7 +2,7 @@
 # Oct 2016
 
 """
-Extracts shotmetadata from PH5 as QuakeML and other formats
+Extracts shot metadata from PH5 as QuakeML and other formats
 """
 
 import os
