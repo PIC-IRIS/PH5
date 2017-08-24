@@ -1,4 +1,4 @@
-#!/usr/bin/env pnpython3
+H#!/usr/bin/env pnpython3
 #
 #   Plotting PH5 data
 #
@@ -9,14 +9,9 @@
 PROG_VERSION = "2017.236 Developmental"
 
 import sys, os, time, math, gc, re
-sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))    #comment out in git
 
-import experiment, timedoy
-import ph5_viewer_reader
-# git
-#from ph5.core import experiment, timedoy
-#from ph5.clients.ph5view import ph5_viewer_reader  
-
+from ph5.core import experiment, timedoy
+from ph5.clients.ph5view import ph5_viewer_reader  
 
 from copy import deepcopy
 
