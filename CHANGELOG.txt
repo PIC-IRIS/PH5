@@ -3,7 +3,7 @@ Master:
   * Write node ID to log file
 -ph5.clients.ph5toevt
   * Write node ID to log file
--ph5.clients.ph5view.ph5_viewer
+-ph5.clients.ph5view.ph5_viewer (issue #116)
   * if no config file is present create a default config file
 
 v4.0.2
