@@ -1,6 +1,10 @@
 # Derick Hess
 # Oct 2016
 
+"""
+Extracts shotmetadata from PH5 as QuakeML and other formats
+"""
+
 import os
 import argparse
 from pykml.factory import KML_ElementMaker as KML
