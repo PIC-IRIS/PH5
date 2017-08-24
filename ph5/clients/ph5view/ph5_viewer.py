@@ -6,16 +6,16 @@
 #   
 #   Updated May 2017
 
-PROG_VERSION = "2017.209 Developmental"
+PROG_VERSION = "2017.236 Developmental"
 
 import sys, os, time, math, gc, re
-#sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))    #comment out in git
+sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))    #comment out in git
 
-#import experiment, timedoy
-#import ph5_viewer_reader
+import experiment, timedoy
+import ph5_viewer_reader
 # git
-from ph5.core import experiment, timedoy
-from ph5.clients.ph5view import ph5_viewer_reader  
+#from ph5.core import experiment, timedoy
+#from ph5.clients.ph5view import ph5_viewer_reader  
 
 
 from copy import deepcopy
@@ -102,8 +102,45 @@ def showStatus(curMsg, nextMsg):
     global statusMsg
     statusMsg = "%s %s" % (curMsg , nextMsg)
     statusBar.showMessage(statusMsg)        
-    
 
+
+###################################
+# Author: Lan
+# def: saveConfFile():201708
+# save configuration file according to the configuration passed    
+def saveConfFile(conf):
+    # save to conf. file
+    if not os.path.exists(USERHOME + '/.PH5'):
+        os.makedirs(USERHOME + '/.PH5')
+    confFile = open(USERHOME + '/.PH5/PH5Viewer.cfg', 'w')
+
+    if conf.has_key('addingInfo'):
+        confFile.write("\naddingInfo:%s" % conf['addingInfo'])
+    if conf.has_key("hLabel"):
+        confFile.write("\nhLabel:%s" % conf['hLabel'])
+    if conf.has_key("vLabel"):
+        confFile.write("\nvLabel:%s" % conf['vLabel'])
+    if conf.has_key("showAbnormalStat"):
+        confFile.write("\nshowAbnormalStat:%s" % conf['showAbnormalStat'])
+    if conf.has_key("gridColor"):
+        confFile.write("\ngridColor:%s" % conf['gridColor'])
+    if conf.has_key("abnormalColor"):
+        confFile.write("\nabnormalColor:%s" % conf['abnormalColor'])
+    if conf.has_key('patternSize'):
+        confFile.write('\npatternSize:%s' % conf['patternSize'])
+    if conf.has_key('plotThick'):
+        confFile.write("\nplotThick:%s" % conf['plotThick'])
+    if conf.has_key('gridThick'):
+        confFile.write("\ngridThick:%s" % conf['gridThick'])
+        
+    for ch in range(len(conf['plotColor'])):
+        for pc in conf['plotColor'][ch]:
+            confFile.write("\nplotColor%s:%s" % (ch,pc))
+        
+    print "create PH5Viewer.cfg"
+    confFile.close()
+    
+    
 ##########################################
 ############### CLASS ####################
 # Author: Lan
@@ -3076,8 +3113,8 @@ class MainControl(QtGui.QMainWindow):
                     
             
         except Exception, e:
-            print str(e)
-            pass   
+            print "PH5Viewer.cfg does not exist."
+            saveConfFile(self.fileConf)    
         
         # each plotColor has been assiged default plotColor
         if self.fileConf['patternSize'] < self.defaultConf['patternSize']:
@@ -4564,7 +4601,7 @@ class Properties(QtGui.QDialog):
     # Author: Lan
     # def: onApply():201410
     # save info from GUI to parent.conf
-    # call parent.saveConfFile() to save that info to file
+    # call saveConfFile() to save that info to file
     # set plot.plottingPanel.clear=true to not start painting on panel right away
     # set the data for plot
     def onApply(self, evt):
@@ -4596,40 +4633,11 @@ class Properties(QtGui.QDialog):
             for cb in self.plotColBtns[ch]:
                 self.parent.fileConf['plotColor'][ch].append(cb.palette().color(1).name())
         
-        # save to conf. file
-        if not os.path.exists(USERHOME + '/.PH5'):
-            os.makedirs(USERHOME + '/.PH5')
-        confFile = open(USERHOME + '/.PH5/PH5Viewer.cfg', 'w')
-        conf = self.parent.fileConf
-        if conf.has_key('addingInfo'):
-            confFile.write("\naddingInfo:%s" % conf['addingInfo'])
-        if conf.has_key("hLabel"):
-            confFile.write("\nhLabel:%s" % conf['hLabel'])
-        if conf.has_key("vLabel"):
-            confFile.write("\nvLabel:%s" % conf['vLabel'])
-        if conf.has_key("showAbnormalStat"):
-            confFile.write("\nshowAbnormalStat:%s" % conf['showAbnormalStat'])
-        if conf.has_key("gridColor"):
-            confFile.write("\ngridColor:%s" % conf['gridColor'])
-        if conf.has_key("abnormalColor"):
-            confFile.write("\nabnormalColor:%s" % conf['abnormalColor'])
-        if conf.has_key('patternSize'):
-            confFile.write('\npatternSize:%s' % conf['patternSize'])
-        if conf.has_key('plotThick'):
-            confFile.write("\nplotThick:%s" % conf['plotThick'])
-        if conf.has_key('gridThick'):
-            confFile.write("\ngridThick:%s" % conf['gridThick'])
-            
-        for ch in range(len(conf['plotColor'])):
-            for pc in conf['plotColor'][ch]:
-                confFile.write("\nplotColor%s:%s" % (ch,pc))
-            
-        confFile.close()
-        
+        saveConfFile(self.parent.fileConf)
         self.parent.fromFilePropRbtn.setChecked(True)
         self.parent.onChangePropertyType()
-        self.close()
-    
+        self.close()        
+
     
     ###################################
     # Author: Lan
