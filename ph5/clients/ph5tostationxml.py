@@ -21,7 +21,7 @@ import types
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.236"
+PROG_VERSION = "2017.237"
 
 
 def get_args():
@@ -874,7 +874,7 @@ def main():
         args_dict_list = [args_dict]
         out_format = args_dict.get('out_format').upper()
         level = args_dict.get('level').upper()
-        uri = args_dict_list.get('uri')
+        uri = args_dict.get('uri')
 
         inv = run_ph5_to_stationxml(paths,
                                     nickname,
