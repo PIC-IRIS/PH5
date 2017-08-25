@@ -14,7 +14,6 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 # functions for reading networks in parallel
 import multiprocessing
-from itertools import product
 import copy_reg
 import types
 
@@ -184,7 +183,7 @@ class PH5Response(object):
 
 class PH5toStationXMLRequest(object):
 
-    def __init__(self, network_list=None, reportnum_list=None, 
+    def __init__(self, network_list=None, reportnum_list=None,
                  station_list=None, location_list=None, channel_list=None,
                  component_list=None, receiver_list=None, array_list=None,
                  minlatitude=None, maxlatitude=None, minlongitude=None,
@@ -211,7 +210,7 @@ class PH5toStationXMLRequest(object):
         self.start_time = start_time
         self.end_time = end_time
         self.ph5_station_id_list = []  # updated by PH5toStationXMLParser
-        
+
         # assign default values
         if not self.network_list:
             self.network_list = ["*"]
@@ -235,10 +234,9 @@ class PH5toStationXMLRequest(object):
             self.end_time = ph5utils.datestring_to_datetime(end_time)
 
 
-
 class PH5toStationXMLRequestManager(object):
     """
-    Manager for for the list of PH5toStationXMLRequest objects and 
+    Manager for for the list of PH5toStationXMLRequest objects and
     ph5 api instance
     """
 
@@ -423,7 +421,7 @@ class PH5toStationXMLParser(object):
         obs_channel.extra = extra
 
         if self.manager.level == "RESPONSE" or \
-                (self.manager.level== "CHANNEL" and
+                (self.manager.level == "CHANNEL" and
                  self.manager.format == "TEXT"):
             # read response and add it to obspy channel inventory
             obs_channel.response = self.get_response_inv(obs_channel)
@@ -432,7 +430,8 @@ class PH5toStationXMLParser(object):
 
     def get_response_inv(self, obs_channel):
         self.manager.ph5.read_response_t()
-        Response_t = self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+        Response_t = \
+            self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
@@ -559,7 +558,7 @@ class PH5toStationXMLParser(object):
                 array = array_name[-3:]
                 if not ph5utils.does_pattern_exists(array_patterns, array):
                     continue
-    
+
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arrayorder = self.manager.ph5.Array_t[array_name]['order']
@@ -570,21 +569,21 @@ class PH5toStationXMLParser(object):
                     if x not in sta_xml_obj.ph5_station_id_list:
                         continue
 
-
                     sta_longitude = station_list[1][0]['location/X/value_d']
                     sta_latitude = station_list[1][0]['location/Y/value_d']
                     sta_elevation = station_list[1][0]['location/Z/value_d']
-    
+
                     if not self.is_lat_lon_match(sta_xml_obj,
                                                  sta_latitude,
                                                  sta_longitude):
                         continue
-    
+
                     if station_list[1][0]['seed_station_name_s']:
-                        station_name = station_list[1][0]['seed_station_name_s']
+                        station_name = \
+                            station_list[1][0]['seed_station_name_s']
                     else:
                         station_name = x
-    
+
                     start_date = station_list[1][0]['deploy_time/epoch_l']
                     start_date = UTCDateTime(start_date)
                     end_date = station_list[1][0]['pickup_time/epoch_l']
@@ -597,7 +596,7 @@ class PH5toStationXMLParser(object):
                             sta_xml_obj.end_time < start_date:
                         # chosen end time before pickup
                         continue
-    
+
                     obs_station = self.create_obs_station(station_list,
                                                           station_name,
                                                           array_name,
@@ -606,22 +605,29 @@ class PH5toStationXMLParser(object):
                                                           sta_longitude,
                                                           sta_latitude,
                                                           sta_elevation)
-    
+
                     if self.manager.level.upper() == "RESPONSE" or \
                        self.manager.level.upper() == "CHANNEL" or \
                        sta_xml_obj.location_list != ['*'] or \
                        sta_xml_obj.channel_list != ['*'] or \
                        sta_xml_obj.component_list != ['*'] or \
                        sta_xml_obj.receiver_list != ['*']:
-                        obs_channels = self.read_channels(sta_xml_obj, station_list)
+                        obs_channels = self.read_channels(sta_xml_obj,
+                                                          station_list)
                         obs_station.channels = obs_channels
-                        obs_station.total_number_of_channels = len(station_list)
-                        obs_station.selected_number_of_channels = len(obs_channels)
+                        obs_station.total_number_of_channels = len(
+                                                                station_list
+                                                               )
+                        obs_station.selected_number_of_channels = len(
+                                                                   obs_channels
+                                                                )
                         if obs_station and \
                                 obs_station.selected_number_of_channels == 0:
                             continue
                     else:
-                        obs_station.total_number_of_channels = len(station_list)
+                        obs_station.total_number_of_channels = len(
+                                                                station_list
+                                                               )
                         obs_station.selected_number_of_channels = 0
                     all_stations.append(obs_station)
         return all_stations
@@ -635,14 +641,13 @@ class PH5toStationXMLParser(object):
 
     def add_ph5_stationids(self):
         """
-        For each PH5toStationXML object in self.manager.request_list add the 
+        For each PH5toStationXML object in self.manager.request_list add the
         respective ph5 station ids for the requested stations in the object.
         """
         self.manager.ph5.read_array_t_names()
         self.read_arrays(None)
         self.array_names = self.manager.ph5.Array_t_names
         self.array_names.sort()
-        l = []
         for sta_xml_obj in self.manager.request_list:
             for array_name in self.array_names:
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
@@ -652,17 +657,23 @@ class PH5toStationXMLParser(object):
                     station_list = arraybyid.get(station)
                     for deployment in station_list:
                         for sta_pattern in sta_xml_obj.station_list:
-                            if not station_list[deployment][0]['seed_station_name_s'] and \
-                                    fnmatch.fnmatch(str(station), str(sta_pattern)):
-                                # no seed station code defined so compare against
-                                # ph5 station-id
-                                sta_xml_obj.ph5_station_id_list.extend([station])
+                            if not station_list[deployment][0][
+                                                'seed_station_name_s'] and \
+                                    fnmatch.fnmatch(str(station),
+                                                    str(sta_pattern)):
+                                # no seed station code defined so compare
+                                # against ph5 station-id
+                                sta_xml_obj.ph5_station_id_list.extend(
+                                                                [station]
+                                                            )
                             elif fnmatch.fnmatch((station_list[deployment][0]
                                                   ['seed_station_name_s']),
-                                                  sta_pattern):
-                                sta_xml_obj.ph5_station_id_list.extend([station])
+                                                 sta_pattern):
+                                sta_xml_obj.ph5_station_id_list.extend(
+                                                                    [station]
+                                                                )
             sta_xml_obj.ph5_station_id_list = \
-                        sorted(set(sta_xml_obj.ph5_station_id_list))
+                sorted(set(sta_xml_obj.ph5_station_id_list))
 
     def read_networks(self, path):
         self.manager.ph5.read_experiment_t()
@@ -692,7 +703,7 @@ class PH5toStationXMLParser(object):
 
         # update requests list to include ph5 station ids
         self.add_ph5_stationids()
-        
+
         obs_network = self.create_obs_network()
 
         self.manager.ph5.close()
@@ -761,7 +772,7 @@ copy_reg.pickle(types.MethodType, _pickle_method)
 def execute(args_dict_list, path, nickname, level, out_format):
     ph5sxml = [PH5toStationXMLRequest(
                             network_list=args_dict.get('network_list'),
-                            reportnum_list=args_dict.get('reportnum_list'), 
+                            reportnum_list=args_dict.get('reportnum_list'),
                             station_list=args_dict.get('station_list'),
                             location_list=args_dict.get('location_list'),
                             channel_list=args_dict.get('channel_list'),
@@ -778,11 +789,11 @@ def execute(args_dict_list, path, nickname, level, out_format):
                             minradius=args_dict.get('minradius'),
                             start_time=args_dict.get('start_time'),
                             end_time=args_dict.get('end_time')
-                            ) 
+                            )
                for args_dict in args_dict_list]
 
     ph5sxmlmanager = PH5toStationXMLRequestManager(
-                                                    sta_xml_obj_list=ph5sxml, 
+                                                    sta_xml_obj_list=ph5sxml,
                                                     ph5path=path,
                                                     nickname=nickname,
                                                     level=level,
@@ -796,7 +807,8 @@ def execute_unpack(args):
     return execute(*args)
 
 
-def run_ph5_to_stationxml(paths, nickname, out_format, level, uri, args_dict_list):
+def run_ph5_to_stationxml(paths, nickname, out_format,
+                          level, uri, args_dict_list):
     if paths:
         if len(paths) < 10:
             num_processes = len(paths)
@@ -826,7 +838,7 @@ def run_ph5_to_stationxml(paths, nickname, out_format, level, uri, args_dict_lis
             return
     else:
         raise PH5toStationXMLError("No PH5 experiments were found "
-                                   "under basepath(s) {0}".format(basepaths))
+                                   "under path(s) {0}".format(paths))
 
 
 def main():
