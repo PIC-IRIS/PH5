@@ -652,7 +652,6 @@ class PH5toStationXMLParser(object):
             for array_name in self.array_names:
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arrayorder = self.manager.ph5.Array_t[array_name]['order']
-                self.total_number_stations += 1
                 for station in arrayorder:
                     station_list = arraybyid.get(station)
                     for deployment in station_list:
@@ -672,8 +671,12 @@ class PH5toStationXMLParser(object):
                                 sta_xml_obj.ph5_station_id_list.extend(
                                                                     [station]
                                                                 )
+
             sta_xml_obj.ph5_station_id_list = \
                 sorted(set(sta_xml_obj.ph5_station_id_list))
+        self.total_number_stations = max([len(sta_xml_obj.ph5_station_id_list) 
+                                          for sta_xml_obj in
+                                          self.manager.request_list])
 
     def read_networks(self, path):
         self.manager.ph5.read_experiment_t()
