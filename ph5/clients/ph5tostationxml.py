@@ -14,6 +14,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 # functions for reading networks in parallel
 import multiprocessing
+from itertools import product
 import copy_reg
 import types
 
@@ -30,7 +31,7 @@ def get_args():
                    '[options]'.format(PROG_VERSION))
             )
     parser.add_argument("-n", "--nickname", action="store", required=True,
-                        type=str, metavar="nickname")
+                        type=str, default="master.ph5", metavar="nickname")
 
     parser.add_argument("-p", "--ph5path", action="store",
                         help=("Comma separated list of paths to ph5 "
@@ -181,42 +182,26 @@ class PH5Response(object):
         self.response = response
 
 
-class PH5toStationXML(object):
+class PH5toStationXMLRequest(object):
 
     def __init__(self, args):
 
         self.args = args
-        self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
-        self.cha_list_set = 1
-        self.sta_list_set = 1
-        self.receiver_list_set = 1
-        self.location_list_set = 1
-        self.response_table_n_i = None
-        self.receiver_table_n_i = None
         self.resp_manager = PH5ResponseManager()
 
-        nickname, ext = os.path.splitext(args.get('nickname'))
-        if ext != 'ph5':
-            args['nickname'] = nickname + '.ph5'
-
         if not self.args.get('channel_list'):
-            self.cha_list_set = 0
             self.args['channel_list'] = ["*"]
 
         if not self.args.get('component_list'):
-            self.component_list_set = 0
             self.args['component_list'] = ["*"]
 
         if not self.args.get('sta_list'):
-            self.sta_list_set = 0
             self.args['sta_list'] = ["*"]
 
         if not self.args.get('receiver_list'):
-            self.receiver_list_set = 0
             self.args['receiver_list'] = ["*"]
 
         if not self.args.get('location_list'):
-            self.location_list_set = 0
             self.args['location_list'] = ["*"]
 
         if not self.args.get('network_list'):
@@ -236,15 +221,33 @@ class PH5toStationXML(object):
             self.args['stop_time'] = ph5utils.datestring_to_datetime(
                                                 self.args.get('stop_time')
                                             )
+        self.args['ph5_station_id_list'] = []
 
-    def read_arrays(self, name):
-        if name is None:
-            for n in self.ph5.Array_t_names:
-                self.ph5.read_array_t(n)
-        else:
-            self.ph5.read_array_t(name)
 
-    def is_lat_lon_match(self, latitude, longitude):
+class PH5toStationXMLRequestManager(object):
+    """
+    Manager for for the list of PH5toStationXMLRequest objects and 
+    ph5 api instance
+    """
+
+    def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format):
+        self.request_list = sta_xml_obj_list
+        self.ph5 = ph5api.PH5(path=ph5path, nickname=nickname)
+        self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
+        self.level = level.upper()
+        self.format = format.upper()
+        self.nickname = nickname
+
+
+class PH5toStationXMLParser(object):
+
+    def __init__(self, manager):
+        self.manager = manager
+        self.response_table_n_i = None
+        self.receiver_table_n_i = None
+        self.total_number_stations = 0
+
+    def is_lat_lon_match(self, sta_xml_obj, latitude, longitude):
         """
         Checks if the given latitude/longitude matches geographic query
         constraints
@@ -258,26 +261,26 @@ class PH5toStationXML(object):
         elif not -180 <= float(longitude) <= 180:
             return False
         # if lat/lon box intersection
-        elif not ph5utils.is_rect_intersection(self.args.get('minlat'),
-                                               self.args.get('maxlat'),
-                                               self.args.get('minlon'),
-                                               self.args.get('maxlon'),
+        elif not ph5utils.is_rect_intersection(sta_xml_obj.args.get('minlat'),
+                                               sta_xml_obj.args.get('maxlat'),
+                                               sta_xml_obj.args.get('minlon'),
+                                               sta_xml_obj.args.get('maxlon'),
                                                latitude,
                                                longitude):
             return False
         # check if point/radius intersection
-        elif not ph5utils.is_radial_intersection(self.args.get('latitude'),
-                                                 self.args.get('longitude'),
-                                                 self.args.get('minradius'),
-                                                 self.args.get('maxradius'),
+        elif not ph5utils.is_radial_intersection(sta_xml_obj.args.get('latitude'),
+                                                 sta_xml_obj.args.get('longitude'),
+                                                 sta_xml_obj.args.get('minradius'),
+                                                 sta_xml_obj.args.get('maxradius'),
                                                  latitude,
                                                  longitude):
             return False
         else:
             return True
 
-    def create_obs_network(self, sta_list):
-        obs_stations = self.read_stations(sta_list)
+    def create_obs_network(self):
+        obs_stations = self.read_stations()
         if obs_stations:
             obs_network = obspy.core.inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -287,7 +290,7 @@ class PH5toStationXML(object):
             start_time, end_time = self.get_network_date()
             obs_network.start_date = UTCDateTime(start_time)
             obs_network.end_date = UTCDateTime(end_time)
-            obs_network.total_number_of_stations = len(sta_list)
+            obs_network.total_number_of_stations = self.total_number_stations
             obs_network.stations = obs_stations
             return obs_network
         else:
@@ -310,7 +313,7 @@ class PH5toStationXML(object):
         extra = AttribDict({
             'PH5Array': {
                 'value': str(array_name)[-3:],
-                'namespace': self.iris_custom_ns,
+                'namespace': self.manager.iris_custom_ns,
                 'type': 'attribute'
             }
         })
@@ -346,7 +349,7 @@ class PH5toStationXML(object):
         receiver_table_n_i = station_list[deployment][0]['receiver_table_n_i']
         self.response_table_n_i = \
             station_list[deployment][0]['response_table_n_i']
-        Receiver_t = self.ph5.get_receiver_t_by_n_i(receiver_table_n_i)
+        Receiver_t = self.manager.ph5.get_receiver_t_by_n_i(receiver_table_n_i)
         obs_channel.azimuth = Receiver_t['orientation/azimuth/value_f']
         obs_channel.dip = Receiver_t['orientation/dip/value_f']
 
@@ -395,28 +398,28 @@ class PH5toStationXML(object):
                 'PH5Component': {
                     'value': str(station_list[deployment][0]
                                  ['channel_number_i']),
-                    'namespace': self.iris_custom_ns,
+                    'namespace': self.manager.iris_custom_ns,
                     'type': 'attribute'
                 },
                 'PH5ReceiverId': {
                     'value': str(receiver_id),
-                    'namespace': self.iris_custom_ns,
+                    'namespace': self.manager.iris_custom_ns,
                     'type': 'attribute'
                 }
             })
         obs_channel.extra = extra
 
-        if self.args.get('level').upper() == "RESPONSE" or \
-                (self.args.get('level').upper() == "CHANNEL" and
-                 self.args.get('out_format').upper() == "TEXT"):
+        if self.manager.level == "RESPONSE" or \
+                (self.manager.level== "CHANNEL" and
+                 self.manager.format == "TEXT"):
             # read response and add it to obspy channel inventory
             obs_channel.response = self.get_response_inv(obs_channel)
 
         return obs_channel
 
     def get_response_inv(self, obs_channel):
-        self.ph5.read_response_t()
-        Response_t = self.ph5.get_response_t_by_n_i(self.response_table_n_i)
+        self.manager.ph5.read_response_t()
+        Response_t = self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
@@ -432,7 +435,7 @@ class PH5toStationXML(object):
             # parse datalogger response
             if response_file_das_a_name:
                 response_file_das_a = \
-                    self.ph5.ph5_g_responses.get_response(
+                    self.manager.ph5.ph5_g_responses.get_response(
                                                     response_file_das_a_name
                                             )
                 with io.BytesIO(response_file_das_a) as buf:
@@ -442,7 +445,7 @@ class PH5toStationXML(object):
             # parse sensor response if present
             if response_file_sensor_a_name:
                 response_file_sensor_a = \
-                    self.ph5.ph5_g_responses.get_response(
+                    self.manager.ph5.ph5_g_responses.get_response(
                                                 response_file_sensor_a_name
                                             )
                 with io.BytesIO(response_file_sensor_a) as buf:
@@ -475,13 +478,13 @@ class PH5toStationXML(object):
             return self.resp_manager.get_response(sensor_keys,
                                                   datalogger_keys)
 
-    def read_channels(self, station_list):
+    def read_channels(self, sta_xml_obj, station_list):
 
         obs_channels = []
-        cha_list_patterns = self.args.get('channel_list')
-        component_list_patterns = self.args.get('component_list')
-        receiver_list_patterns = self.args.get('receiver_list')
-        location_patterns = self.args.get('location_list')
+        cha_list_patterns = sta_xml_obj.args.get('channel_list')
+        component_list_patterns = sta_xml_obj.args.get('component_list')
+        receiver_list_patterns = sta_xml_obj.args.get('receiver_list')
+        location_patterns = sta_xml_obj.args.get('location_list')
         for deployment in station_list:
             receiver_id = str(station_list[deployment][0]['id_s'])
             if not ph5utils.does_pattern_exists(receiver_list_patterns,
@@ -518,7 +521,9 @@ class PH5toStationXML(object):
                     cha_elevation = \
                         station_list[deployment][0]['location/Z/value_d']
 
-                    if not self.is_lat_lon_match(cha_latitude, cha_longitude):
+                    if not self.is_lat_lon_match(sta_xml_obj,
+                                                 cha_latitude,
+                                                 cha_longitude):
                         continue
 
                     obs_channel = self.create_obs_channel(station_list,
@@ -532,144 +537,165 @@ class PH5toStationXML(object):
                     obs_channels.append(obs_channel)
         return obs_channels
 
-    def read_stations(self, sta_list):
+    def read_stations(self):
 
         all_stations = []
-        array_patterns = self.args.get('array_list')
-
-        for array_name in self.array_names:
-            array = array_name[-3:]
-
-            if not ph5utils.does_pattern_exists(array_patterns, array):
-                continue
-
-            arraybyid = self.ph5.Array_t[array_name]['byid']
-            arrayorder = self.ph5.Array_t[array_name]['order']
-            for x in arrayorder:
-                station_list = arraybyid.get(x)
-                obs_channels = []
-
-                if x not in sta_list:
+        for sta_xml_obj in self.manager.request_list:
+            array_patterns = sta_xml_obj.args.get('array_list')
+            for array_name in self.array_names:
+                array = array_name[-3:]
+                if not ph5utils.does_pattern_exists(array_patterns, array):
                     continue
-                sta_longitude = station_list[1][0]['location/X/value_d']
-                sta_latitude = station_list[1][0]['location/Y/value_d']
-                sta_elevation = station_list[1][0]['location/Z/value_d']
+    
+                arraybyid = self.manager.ph5.Array_t[array_name]['byid']
+                arraybyid = self.manager.ph5.Array_t[array_name]['byid']
+                arrayorder = self.manager.ph5.Array_t[array_name]['order']
+                for x in arrayorder:
 
-                if not self.is_lat_lon_match(sta_latitude, sta_longitude):
-                    continue
-
-                if station_list[1][0]['seed_station_name_s']:
-                    station_name = station_list[1][0]['seed_station_name_s']
-                else:
-                    station_name = x
-
-                start_date = station_list[1][0]['deploy_time/epoch_l']
-                start_date = UTCDateTime(start_date)
-                end_date = station_list[1][0]['pickup_time/epoch_l']
-                end_date = UTCDateTime(end_date)
-                if self.args.get('start_time') and \
-                        self.args.get('start_time') > end_date:
-                    # chosen start time after pickup
-                    continue
-                elif self.args.get('stop_time') and \
-                        self.args.get('stop_time') < start_date:
-                    # chosen end time before pickup
-                    continue
-
-                obs_station = self.create_obs_station(station_list,
-                                                      station_name,
-                                                      array_name,
-                                                      start_date,
-                                                      end_date,
-                                                      sta_longitude,
-                                                      sta_latitude,
-                                                      sta_elevation)
-
-                if self.args.get('level').upper() == "RESPONSE" or \
-                   self.args.get('level').upper() == "CHANNEL" or \
-                   self.args.get('location_list') != ['*'] or \
-                   self.args.get('channel_list') != ['*'] or \
-                   self.args.get('component_list') != ['*'] or \
-                   self.args.get('receiver_list') != ['*']:
-                    obs_channels = self.read_channels(station_list)
-                    obs_station.channels = obs_channels
-                    obs_station.total_number_of_channels = len(station_list)
-                    obs_station.selected_number_of_channels = len(obs_channels)
-                    if obs_station and \
-                            obs_station.selected_number_of_channels == 0:
+                    station_list = arraybyid.get(x)
+                    obs_channels = []
+                    if x not in sta_xml_obj.args.get('ph5_station_id_list'):
                         continue
-                else:
-                    obs_station.total_number_of_channels = len(station_list)
-                    obs_station.selected_number_of_channels = 0
-                all_stations.append(obs_station)
+
+
+                    sta_longitude = station_list[1][0]['location/X/value_d']
+                    sta_latitude = station_list[1][0]['location/Y/value_d']
+                    sta_elevation = station_list[1][0]['location/Z/value_d']
+    
+                    if not self.is_lat_lon_match(sta_xml_obj,
+                                                 sta_latitude,
+                                                 sta_longitude):
+                        continue
+    
+                    if station_list[1][0]['seed_station_name_s']:
+                        station_name = station_list[1][0]['seed_station_name_s']
+                    else:
+                        station_name = x
+    
+                    start_date = station_list[1][0]['deploy_time/epoch_l']
+                    start_date = UTCDateTime(start_date)
+                    end_date = station_list[1][0]['pickup_time/epoch_l']
+                    end_date = UTCDateTime(end_date)
+                    if sta_xml_obj.args.get('start_time') and \
+                            sta_xml_obj.args.get('start_time') > end_date:
+                        # chosen start time after pickup
+                        continue
+                    elif sta_xml_obj.args.get('stop_time') and \
+                            sta_xml_obj.args.get('stop_time') < start_date:
+                        # chosen end time before pickup
+                        continue
+    
+                    obs_station = self.create_obs_station(station_list,
+                                                          station_name,
+                                                          array_name,
+                                                          start_date,
+                                                          end_date,
+                                                          sta_longitude,
+                                                          sta_latitude,
+                                                          sta_elevation)
+    
+                    if sta_xml_obj.args.get('level').upper() == "RESPONSE" or \
+                       sta_xml_obj.args.get('level').upper() == "CHANNEL" or \
+                       sta_xml_obj.args.get('location_list') != ['*'] or \
+                       sta_xml_obj.args.get('channel_list') != ['*'] or \
+                       sta_xml_obj.args.get('component_list') != ['*'] or \
+                       sta_xml_obj.args.get('receiver_list') != ['*']:
+                        obs_channels = self.read_channels(sta_xml_obj, station_list)
+                        obs_station.channels = obs_channels
+                        obs_station.total_number_of_channels = len(station_list)
+                        obs_station.selected_number_of_channels = len(obs_channels)
+                        if obs_station and \
+                                obs_station.selected_number_of_channels == 0:
+                            continue
+                    else:
+                        obs_station.total_number_of_channels = len(station_list)
+                        obs_station.selected_number_of_channels = 0
+                    all_stations.append(obs_station)
         return all_stations
 
-    def parse_station_list(self, sta_list):
+    def read_arrays(self, name):
+        if name is None:
+            for n in self.manager.ph5.Array_t_names:
+                self.manager.ph5.read_array_t(n)
+        else:
+            self.manager.ph5.read_array_t(name)
+
+    def add_ph5_stationids(self):
+        """
+        For each PH5toStationXML object in self.manager.request_list add the 
+        respective ph5 station ids for the requested stations in the object.
+        """
+        self.manager.ph5.read_array_t_names()
+        self.read_arrays(None)
+        self.array_names = self.manager.ph5.Array_t_names
+        self.array_names.sort()
         l = []
-        sta_list_patterns = sta_list
-
-        for array_name in self.array_names:
-            arraybyid = self.ph5.Array_t[array_name]['byid']
-            arrayorder = self.ph5.Array_t[array_name]['order']
-
-            for station in arrayorder:
-                station_list = arraybyid.get(station)
-                for deployment in station_list:
-                    for pattern in sta_list_patterns:
-                        if not station_list[deployment][0]['seed_station_name_s'] and \
-                                fnmatch.fnmatch(str(station), str(pattern)):
-                            # no seed station code defined so compare against
-                            # ph5 station-id
-                            l.append(station)
-                        elif fnmatch.fnmatch((station_list[deployment][0]
-                                              ['seed_station_name_s']),
-                                             pattern):
-                            l.append(station)
-        final_list = sorted(set(l))
-        return final_list
+        for sta_xml_obj in self.manager.request_list:
+            for array_name in self.array_names:
+                arraybyid = self.manager.ph5.Array_t[array_name]['byid']
+                arrayorder = self.manager.ph5.Array_t[array_name]['order']
+                for station in arrayorder:
+                    station_list = arraybyid.get(station)
+                    for deployment in station_list:
+                        for sta_pattern in sta_xml_obj.args.get('sta_list'):
+                            if not station_list[deployment][0]['seed_station_name_s'] and \
+                                    fnmatch.fnmatch(str(station), str(sta_pattern)):
+                                # no seed station code defined so compare against
+                                # ph5 station-id
+                                sta_xml_obj.args['ph5_station_id_list'].extend([station])
+                                self.total_number_stations += 1
+                            elif fnmatch.fnmatch((station_list[deployment][0]
+                                                  ['seed_station_name_s']),
+                                                  sta_pattern):
+                                sta_xml_obj.args['ph5_station_id_list'].extend([station])
+                                self.total_number_stations += 1
+            sta_xml_obj.args['ph5_station_id_list'] = \
+                        sorted(set(sta_xml_obj.args['ph5_station_id_list']))
 
     def read_networks(self, path):
-        self.ph5 = ph5api.PH5(path=path, nickname=self.args.get('nickname'))
-        self.ph5.read_experiment_t()
-        self.experiment_t = self.ph5.Experiment_t['rows']
+        self.manager.ph5.read_experiment_t()
+        self.experiment_t = self.manager.ph5.Experiment_t['rows']
 
-        # read network code and compare to network list
-        network_patterns = self.args.get('network_list')
+        # read network codes and compare to network list
+        network_patterns = []
+        for obj in self.manager.request_list:
+            netcode_list = obj.args.get('network_list')
+            network_patterns.extend(netcode_list)
         if not ph5utils.does_pattern_exists(
                                     network_patterns,
                                     self.experiment_t[0]['net_code_s']):
-            self.ph5.close()
+            self.manager.ph5.close()
             return
 
-        # read reportnum and compare to reportnum list
-        reportnum_patterns = self.args.get('reportnum_list')
+        # read reportnums and compare to reportnum list
+        reportnum_patterns = []
+        for obj in self.manager.request_list:
+            reportnum_list = obj.args.get('reportnum_list')
+            reportnum_patterns.extend(reportnum_list)
         if not ph5utils.does_pattern_exists(
-                                    reportnum_patterns,
+                                    reportnum_list,
                                     self.experiment_t[0]['experiment_id_s']):
-            self.ph5.close()
+            self.manager.ph5.close()
             return
 
-        self.ph5.read_array_t_names()
-        self.read_arrays(None)
-        self.array_names = self.ph5.Array_t_names
-        self.array_names.sort()
+        # update requests list to include ph5 station ids
+        self.add_ph5_stationids()
+        
+        obs_network = self.create_obs_network()
 
-        sta_list = self.parse_station_list(self.args.get('sta_list'))
-        obs_network = self.create_obs_network(sta_list)
-
-        self.ph5.close()
+        self.manager.ph5.close()
 
         return obs_network
 
     def get_network_date(self):
         self.read_arrays(None)
-        array_names = self.ph5.Array_t_names
+        array_names = self.manager.ph5.Array_t_names
         array_names.sort()
         min_start_time = 7289567999
         max_end_time = 0
         for array_name in array_names:
-            arraybyid = self.ph5.Array_t[array_name]['byid']
-            arrayorder = self.ph5.Array_t[array_name]['order']
+            arraybyid = self.manager.ph5.Array_t[array_name]['byid']
+            arrayorder = self.manager.ph5.Array_t[array_name]['order']
 
             for station in arrayorder:
                 station_list = arraybyid.get(station)
@@ -687,15 +713,15 @@ class PH5toStationXML(object):
         return min_start_time, max_end_time
 
     def trim_to_level(self, network):
-        if self.args.get('level').upper() == "NETWORK":
+        if self.manager.level == "NETWORK":
             network.stations = []
-        elif self.args.get('level').upper() == "STATION":
+        elif self.manager.level == "STATION":
             # for station level show the selected_number_of_channels element
             for station in network.stations:
                 station.selected_number_of_channels = 0
                 station.channels = []
-        elif self.args.get('level').upper() == "CHANNEL" and \
-                self.args.get('out_format').upper() != "TEXT":
+        elif self.manager.level == "CHANNEL" and \
+                self.manager.format != "TEXT":
             for station in network.stations:
                 for channel in station.channels:
                     channel.response = None
@@ -720,21 +746,36 @@ def _pickle_method(m):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 
-def run_ph5_to_stationxml(sta_xml_obj):
-    basepaths = sta_xml_obj.args.get('ph5path')
-    paths = []
-    for basepath in basepaths:
-        for dirName, _, fileList in os.walk(basepath):
-            for fname in fileList:
-                if fname == "master.ph5":
-                    paths.append(dirName)
+def execute(args_dict_list, path, nickname, level, out_format):
+    ph5sxml = [PH5toStationXMLRequest(args_dict) for args_dict in args_dict_list]
+    ph5xsmlmanager = PH5toStationXMLRequestManager(
+                                                    sta_xml_obj_list=ph5sxml, 
+                                                    ph5path=path,
+                                                    nickname=nickname,
+                                                    level=level,
+                                                    format=out_format
+                                                  )
+    ph5sxmlparser = PH5toStationXMLParser(ph5xsmlmanager)
+    return ph5sxmlparser.get_network(path)
+
+
+def execute_unpack(args):
+    return execute(*args)
+
+
+def run_ph5_to_stationxml(paths, nickname, out_format, level, uri, args_dict_list):
     if paths:
         if len(paths) < 10:
             num_processes = len(paths)
         else:
             num_processes = 10
         pool = multiprocessing.Pool(processes=num_processes)
-        networks = pool.map(sta_xml_obj.get_network, paths)
+        args = [(args_dict_list,
+                 path,
+                 nickname,
+                 level,
+                 out_format) for path in paths]
+        networks = pool.map(execute_unpack, args)
         networks = [n for n in networks if n]
         pool.close()
         pool.join()
@@ -746,7 +787,7 @@ def run_ph5_to_stationxml(sta_xml_obj):
                                         created=datetime.datetime.now(),
                                         module=("PH5 WEB SERVICE: metadata "
                                                 "| version: 1"),
-                                        module_uri=sta_xml_obj.args.get('uri'))
+                                        module_uri=uri)
             return inv
         else:
             return
@@ -786,16 +827,36 @@ def main():
     if args_dict.get('ph5path'):
         args_dict['ph5path'] = args_dict.get('ph5path').split(',')
 
+    nickname, ext = os.path.splitext(args_dict.get('nickname'))
+    if ext != 'ph5':
+        nickname = nickname + '.ph5'
+
     try:
-        ph5sxml = PH5toStationXML(args_dict)
+        basepaths = args_dict.get('ph5path')
+        paths = []
+        for basepath in basepaths:
+            for dirName, _, fileList in os.walk(basepath):
+                for fname in fileList:
+                    if fname == nickname:
+                        paths.append(dirName)
 
-        inv = run_ph5_to_stationxml(ph5sxml)
+        args_dict_list = [args_dict]
+        out_format = args_dict.get('out_format').upper()
+        level = args_dict.get('level').upper()
+        uri = args_dict_list.get('uri')
 
-        if args.out_format.upper() == "STATIONXML":
+        inv = run_ph5_to_stationxml(paths,
+                                    nickname,
+                                    out_format,
+                                    level,
+                                    uri,
+                                    args_dict_list)
+
+        if out_format == "STATIONXML":
             inv.write(args.outfile,
                       format='STATIONXML',
-                      nsmap={'iris': ph5sxml.iris_custom_ns})
-        elif args.out_format.upper() == "KML":
+                      nsmap={'iris': ph5xsmlmanager.iris_custom_ns})
+        elif out_format == "KML":
             inv.write(args.outfile, format='KML')
         else:
             sys.stderr.write("Incorrect output format. "
