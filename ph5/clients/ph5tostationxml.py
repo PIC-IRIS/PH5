@@ -634,6 +634,7 @@ class PH5toStationXMLParser(object):
             for array_name in self.array_names:
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arrayorder = self.manager.ph5.Array_t[array_name]['order']
+                self.total_number_stations += len(arrayorder)
                 for station in arrayorder:
                     station_list = arraybyid.get(station)
                     for deployment in station_list:
@@ -643,12 +644,10 @@ class PH5toStationXMLParser(object):
                                 # no seed station code defined so compare against
                                 # ph5 station-id
                                 sta_xml_obj.args['ph5_station_id_list'].extend([station])
-                                self.total_number_stations += 1
                             elif fnmatch.fnmatch((station_list[deployment][0]
                                                   ['seed_station_name_s']),
                                                   sta_pattern):
                                 sta_xml_obj.args['ph5_station_id_list'].extend([station])
-                                self.total_number_stations += 1
             sta_xml_obj.args['ph5_station_id_list'] = \
                         sorted(set(sta_xml_obj.args['ph5_station_id_list']))
 
