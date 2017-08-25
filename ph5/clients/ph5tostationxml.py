@@ -63,7 +63,7 @@ def get_args():
     parser.add_argument("--station", action="store", dest="station_list",
                         help=("Comma separated list of stations. Wildcards "
                               "accepted"),
-                        type=str, metavar="sta_list")
+                        type=str, metavar="station_list")
 
     parser.add_argument("--receiver", action="store", dest="receiver_list",
                         help=("Comma separated list of receiver id's. "
@@ -104,22 +104,22 @@ def get_args():
     parser.add_argument("--minlat", action="store",
                         help=("Limit to stations with a latitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, dest="minlatitude", metavar="minlatitude")
+                        type=float, dest="minlat", metavar="minlat")
 
     parser.add_argument("--maxlat", action="store",
                         help=("Limit to stations with a latitude smaller than "
                               "or equal to the specified maximum."),
-                        type=float, dest="maxlatitude", metavar="maxlatitude")
+                        type=float, dest="maxlat", metavar="maxlat")
 
     parser.add_argument("--minlon", action="store",
                         help=("Limit to stations with a longitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, dest="minlongitude", metavar="minlongitude")
+                        type=float, dest="minlon", metavar="minlon")
 
     parser.add_argument("--maxlon", action="store",
                         help=("Limit to stations with a longitude smaller "
                               "than or equal to the specified maximum."),
-                        type=float, dest="maxlongitude", metavar="maxlongitude")
+                        type=float, dest="maxlon", metavar="maxlon")
 
     parser.add_argument("--latitude", action="store",
                         help=("Specify the central latitude point for a "
@@ -233,6 +233,7 @@ class PH5toStationXMLRequest(object):
             self.start_time = ph5utils.datestring_to_datetime(start_time)
         if self.end_time:
             self.end_time = ph5utils.datestring_to_datetime(end_time)
+
 
 
 class PH5toStationXMLRequestManager(object):
@@ -646,7 +647,7 @@ class PH5toStationXMLParser(object):
             for array_name in self.array_names:
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arrayorder = self.manager.ph5.Array_t[array_name]['order']
-                self.total_number_stations += len(arrayorder)
+                self.total_number_stations += 1
                 for station in arrayorder:
                     station_list = arraybyid.get(station)
                     for deployment in station_list:
@@ -767,10 +768,10 @@ def execute(args_dict_list, path, nickname, level, out_format):
                             component_list=args_dict.get('component_list'),
                             receiver_list=args_dict.get('receiver_list'),
                             array_list=args_dict.get('array_list'),
-                            minlatitude=args_dict.get('minlatitude'),
-                            maxlatitude=args_dict.get('maxlatitude'),
-                            minlongitude=args_dict.get('minlongitude'),
-                            maxlongitude=args_dict.get('maxlongitude'),
+                            minlatitude=args_dict.get('minlat'),
+                            maxlatitude=args_dict.get('maxlat'),
+                            minlongitude=args_dict.get('minlon'),
+                            maxlongitude=args_dict.get('maxlon'),
                             latitude=args_dict.get('latitude'),
                             longitude=args_dict.get('longitude'),
                             maxradius=args_dict.get('maxradius'),
@@ -779,14 +780,15 @@ def execute(args_dict_list, path, nickname, level, out_format):
                             end_time=args_dict.get('end_time')
                             ) 
                for args_dict in args_dict_list]
-    ph5xsmlmanager = PH5toStationXMLRequestManager(
+
+    ph5sxmlmanager = PH5toStationXMLRequestManager(
                                                     sta_xml_obj_list=ph5sxml, 
                                                     ph5path=path,
                                                     nickname=nickname,
                                                     level=level,
                                                     format=out_format
                                                   )
-    ph5sxmlparser = PH5toStationXMLParser(ph5xsmlmanager)
+    ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
     return ph5sxmlparser.get_network(path)
 
 
@@ -837,8 +839,8 @@ def main():
     if args_dict.get('reportnum_list'):
         args_dict['reportnum_list'] = \
             [x.strip() for x in args_dict.get('reportnum_list').split(',')]
-    if args_dict.get('sta_list'):
-        args_dict['sta_list'] = \
+    if args_dict.get('station_list'):
+        args_dict['station_list'] = \
             [x.strip() for x in args_dict.get('station_list').split(',')]
     if args_dict.get('receiver_list'):
         args_dict['receiver_list'] = \
@@ -886,7 +888,7 @@ def main():
         if out_format == "STATIONXML":
             inv.write(args.outfile,
                       format='STATIONXML',
-                      nsmap={'iris': ph5xsmlmanager.iris_custom_ns})
+                      nsmap={'iris': "http://www.fdsn.org/xml/station/1/iris"})
         elif out_format == "KML":
             inv.write(args.outfile, format='KML')
         else:
