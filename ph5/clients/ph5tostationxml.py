@@ -60,7 +60,7 @@ def get_args():
                         help="Comma separated list of arrays.",
                         type=str, metavar="array_list")
 
-    parser.add_argument("--station", action="store", dest="sta_list",
+    parser.add_argument("--station", action="store", dest="station_list",
                         help=("Comma separated list of stations. Wildcards "
                               "accepted"),
                         type=str, metavar="sta_list")
@@ -91,10 +91,10 @@ def get_args():
                               "time format"),
                         type=str, dest="start_time", metavar="start_time")
 
-    parser.add_argument("-t", "--stoptime", action="store",
+    parser.add_argument("-t", "--endtime", action="store",
                         help=("stop time in FDSN time format or PASSCAL "
                               "time format"),
-                        type=str, dest="stop_time", metavar="stop_time")
+                        type=str, dest="end_time", metavar="end_time")
 
     parser.add_argument("--level", action="store", default="channel",
                         help=("Specify level of detail using network, "
@@ -104,22 +104,22 @@ def get_args():
     parser.add_argument("--minlat", action="store",
                         help=("Limit to stations with a latitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, dest="minlat", metavar="minlat")
+                        type=float, dest="minlatitude", metavar="minlatitude")
 
     parser.add_argument("--maxlat", action="store",
                         help=("Limit to stations with a latitude smaller than "
                               "or equal to the specified maximum."),
-                        type=float, dest="maxlat", metavar="maxlat")
+                        type=float, dest="maxlatitude", metavar="maxlatitude")
 
     parser.add_argument("--minlon", action="store",
                         help=("Limit to stations with a longitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, dest="minlon", metavar="minlon")
+                        type=float, dest="minlongitude", metavar="minlongitude")
 
     parser.add_argument("--maxlon", action="store",
                         help=("Limit to stations with a longitude smaller "
                               "than or equal to the specified maximum."),
-                        type=float, dest="maxlon", metavar="maxlon")
+                        type=float, dest="maxlongitude", metavar="maxlongitude")
 
     parser.add_argument("--latitude", action="store",
                         help=("Specify the central latitude point for a "
@@ -184,44 +184,55 @@ class PH5Response(object):
 
 class PH5toStationXMLRequest(object):
 
-    def __init__(self, args):
+    def __init__(self, network_list=None, reportnum_list=None, 
+                 station_list=None, location_list=None, channel_list=None,
+                 component_list=None, receiver_list=None, array_list=None,
+                 minlatitude=None, maxlatitude=None, minlongitude=None,
+                 maxlongitude=None, latitude=None, longitude=None,
+                 minradius=None, maxradius=None, start_time=None,
+                 end_time=None):
 
-        self.args = args
-        self.resp_manager = PH5ResponseManager()
-
-        if not self.args.get('channel_list'):
-            self.args['channel_list'] = ["*"]
-
-        if not self.args.get('component_list'):
-            self.args['component_list'] = ["*"]
-
-        if not self.args.get('sta_list'):
-            self.args['sta_list'] = ["*"]
-
-        if not self.args.get('receiver_list'):
-            self.args['receiver_list'] = ["*"]
-
-        if not self.args.get('location_list'):
-            self.args['location_list'] = ["*"]
-
-        if not self.args.get('network_list'):
-            self.args['network_list'] = ["*"]
-
-        if not self.args.get('reportnum_list'):
-            self.args['reportnum_list'] = ["*"]
-
-        if not self.args.get('array_list'):
-            self.args['array_list'] = ["*"]
-
-        if self.args.get('start_time'):
-            self.args['start_time'] = ph5utils.datestring_to_datetime(
-                                                self.args.get('start_time')
-                                            )
-        if self.args.get('stop_time'):
-            self.args['stop_time'] = ph5utils.datestring_to_datetime(
-                                                self.args.get('stop_time')
-                                            )
-        self.args['ph5_station_id_list'] = []
+        self.network_list = network_list
+        self.reportnum_list = reportnum_list
+        self.station_list = station_list
+        self.location_list = location_list
+        self.channel_list = channel_list
+        self.component_list = component_list
+        self.receiver_list = receiver_list
+        self.array_list = array_list
+        self.minlatitude = minlatitude
+        self.maxlatitude = maxlatitude
+        self.minlongitude = minlongitude
+        self.maxlongitude = maxlongitude
+        self.latitude = latitude
+        self.longitude = longitude
+        self.minradius = minradius
+        self.maxradius = maxradius
+        self.start_time = start_time
+        self.end_time = end_time
+        self.ph5_station_id_list = []  # updated by PH5toStationXMLParser
+        
+        # assign default values
+        if not self.network_list:
+            self.network_list = ["*"]
+        if not self.reportnum_list:
+            self.reportnum_list = ["*"]
+        if not self.station_list:
+            self.station_list = ["*"]
+        if not self.location_list:
+            self.location_list = ["*"]
+        if not self.channel_list:
+            self.channel_list = ["*"]
+        if not self.component_list:
+            self.component_list = ["*"]
+        if not self.receiver_list:
+            self.receiver_list = ["*"]
+        if not self.array_list:
+            self.array_list = ["*"]
+        if self.start_time:
+            self.start_time = ph5utils.datestring_to_datetime(start_time)
+        if self.end_time:
+            self.end_time = ph5utils.datestring_to_datetime(end_time)
 
 
 class PH5toStationXMLRequestManager(object):
@@ -243,6 +254,7 @@ class PH5toStationXMLParser(object):
 
     def __init__(self, manager):
         self.manager = manager
+        self.resp_manager = PH5ResponseManager()
         self.response_table_n_i = None
         self.receiver_table_n_i = None
         self.total_number_stations = 0
@@ -261,18 +273,18 @@ class PH5toStationXMLParser(object):
         elif not -180 <= float(longitude) <= 180:
             return False
         # if lat/lon box intersection
-        elif not ph5utils.is_rect_intersection(sta_xml_obj.args.get('minlat'),
-                                               sta_xml_obj.args.get('maxlat'),
-                                               sta_xml_obj.args.get('minlon'),
-                                               sta_xml_obj.args.get('maxlon'),
+        elif not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
+                                               sta_xml_obj.maxlatitude,
+                                               sta_xml_obj.minlongitude,
+                                               sta_xml_obj.maxlongitude,
                                                latitude,
                                                longitude):
             return False
         # check if point/radius intersection
-        elif not ph5utils.is_radial_intersection(sta_xml_obj.args.get('latitude'),
-                                                 sta_xml_obj.args.get('longitude'),
-                                                 sta_xml_obj.args.get('minradius'),
-                                                 sta_xml_obj.args.get('maxradius'),
+        elif not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
+                                                 sta_xml_obj.longitude,
+                                                 sta_xml_obj.minradius,
+                                                 sta_xml_obj.maxradius,
                                                  latitude,
                                                  longitude):
             return False
@@ -481,10 +493,10 @@ class PH5toStationXMLParser(object):
     def read_channels(self, sta_xml_obj, station_list):
 
         obs_channels = []
-        cha_list_patterns = sta_xml_obj.args.get('channel_list')
-        component_list_patterns = sta_xml_obj.args.get('component_list')
-        receiver_list_patterns = sta_xml_obj.args.get('receiver_list')
-        location_patterns = sta_xml_obj.args.get('location_list')
+        cha_list_patterns = sta_xml_obj.channel_list
+        component_list_patterns = sta_xml_obj.component_list
+        receiver_list_patterns = sta_xml_obj.receiver_list
+        location_patterns = sta_xml_obj.location_list
         for deployment in station_list:
             receiver_id = str(station_list[deployment][0]['id_s'])
             if not ph5utils.does_pattern_exists(receiver_list_patterns,
@@ -541,7 +553,7 @@ class PH5toStationXMLParser(object):
 
         all_stations = []
         for sta_xml_obj in self.manager.request_list:
-            array_patterns = sta_xml_obj.args.get('array_list')
+            array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
                 array = array_name[-3:]
                 if not ph5utils.does_pattern_exists(array_patterns, array):
@@ -554,7 +566,7 @@ class PH5toStationXMLParser(object):
 
                     station_list = arraybyid.get(x)
                     obs_channels = []
-                    if x not in sta_xml_obj.args.get('ph5_station_id_list'):
+                    if x not in sta_xml_obj.ph5_station_id_list:
                         continue
 
 
@@ -576,12 +588,12 @@ class PH5toStationXMLParser(object):
                     start_date = UTCDateTime(start_date)
                     end_date = station_list[1][0]['pickup_time/epoch_l']
                     end_date = UTCDateTime(end_date)
-                    if sta_xml_obj.args.get('start_time') and \
-                            sta_xml_obj.args.get('start_time') > end_date:
+                    if sta_xml_obj.start_time and \
+                            sta_xml_obj.start_time > end_date:
                         # chosen start time after pickup
                         continue
-                    elif sta_xml_obj.args.get('stop_time') and \
-                            sta_xml_obj.args.get('stop_time') < start_date:
+                    elif sta_xml_obj.end_time and \
+                            sta_xml_obj.end_time < start_date:
                         # chosen end time before pickup
                         continue
     
@@ -594,12 +606,12 @@ class PH5toStationXMLParser(object):
                                                           sta_latitude,
                                                           sta_elevation)
     
-                    if sta_xml_obj.args.get('level').upper() == "RESPONSE" or \
-                       sta_xml_obj.args.get('level').upper() == "CHANNEL" or \
-                       sta_xml_obj.args.get('location_list') != ['*'] or \
-                       sta_xml_obj.args.get('channel_list') != ['*'] or \
-                       sta_xml_obj.args.get('component_list') != ['*'] or \
-                       sta_xml_obj.args.get('receiver_list') != ['*']:
+                    if self.manager.level.upper() == "RESPONSE" or \
+                       self.manager.level.upper() == "CHANNEL" or \
+                       sta_xml_obj.location_list != ['*'] or \
+                       sta_xml_obj.channel_list != ['*'] or \
+                       sta_xml_obj.component_list != ['*'] or \
+                       sta_xml_obj.receiver_list != ['*']:
                         obs_channels = self.read_channels(sta_xml_obj, station_list)
                         obs_station.channels = obs_channels
                         obs_station.total_number_of_channels = len(station_list)
@@ -638,18 +650,18 @@ class PH5toStationXMLParser(object):
                 for station in arrayorder:
                     station_list = arraybyid.get(station)
                     for deployment in station_list:
-                        for sta_pattern in sta_xml_obj.args.get('sta_list'):
+                        for sta_pattern in sta_xml_obj.station_list:
                             if not station_list[deployment][0]['seed_station_name_s'] and \
                                     fnmatch.fnmatch(str(station), str(sta_pattern)):
                                 # no seed station code defined so compare against
                                 # ph5 station-id
-                                sta_xml_obj.args['ph5_station_id_list'].extend([station])
+                                sta_xml_obj.ph5_station_id_list.extend([station])
                             elif fnmatch.fnmatch((station_list[deployment][0]
                                                   ['seed_station_name_s']),
                                                   sta_pattern):
-                                sta_xml_obj.args['ph5_station_id_list'].extend([station])
-            sta_xml_obj.args['ph5_station_id_list'] = \
-                        sorted(set(sta_xml_obj.args['ph5_station_id_list']))
+                                sta_xml_obj.ph5_station_id_list.extend([station])
+            sta_xml_obj.ph5_station_id_list = \
+                        sorted(set(sta_xml_obj.ph5_station_id_list))
 
     def read_networks(self, path):
         self.manager.ph5.read_experiment_t()
@@ -658,7 +670,7 @@ class PH5toStationXMLParser(object):
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
-            netcode_list = obj.args.get('network_list')
+            netcode_list = obj.network_list
             network_patterns.extend(netcode_list)
         if not ph5utils.does_pattern_exists(
                                     network_patterns,
@@ -669,7 +681,7 @@ class PH5toStationXMLParser(object):
         # read reportnums and compare to reportnum list
         reportnum_patterns = []
         for obj in self.manager.request_list:
-            reportnum_list = obj.args.get('reportnum_list')
+            reportnum_list = obj.reportnum_list
             reportnum_patterns.extend(reportnum_list)
         if not ph5utils.does_pattern_exists(
                                     reportnum_list,
@@ -746,7 +758,27 @@ copy_reg.pickle(types.MethodType, _pickle_method)
 
 
 def execute(args_dict_list, path, nickname, level, out_format):
-    ph5sxml = [PH5toStationXMLRequest(args_dict) for args_dict in args_dict_list]
+    ph5sxml = [PH5toStationXMLRequest(
+                            network_list=args_dict.get('network_list'),
+                            reportnum_list=args_dict.get('reportnum_list'), 
+                            station_list=args_dict.get('station_list'),
+                            location_list=args_dict.get('location_list'),
+                            channel_list=args_dict.get('channel_list'),
+                            component_list=args_dict.get('component_list'),
+                            receiver_list=args_dict.get('receiver_list'),
+                            array_list=args_dict.get('array_list'),
+                            minlatitude=args_dict.get('minlatitude'),
+                            maxlatitude=args_dict.get('maxlatitude'),
+                            minlongitude=args_dict.get('minlongitude'),
+                            maxlongitude=args_dict.get('maxlongitude'),
+                            latitude=args_dict.get('latitude'),
+                            longitude=args_dict.get('longitude'),
+                            maxradius=args_dict.get('maxradius'),
+                            minradius=args_dict.get('minradius'),
+                            start_time=args_dict.get('start_time'),
+                            end_time=args_dict.get('end_time')
+                            ) 
+               for args_dict in args_dict_list]
     ph5xsmlmanager = PH5toStationXMLRequestManager(
                                                     sta_xml_obj_list=ph5sxml, 
                                                     ph5path=path,
@@ -807,7 +839,7 @@ def main():
             [x.strip() for x in args_dict.get('reportnum_list').split(',')]
     if args_dict.get('sta_list'):
         args_dict['sta_list'] = \
-            [x.strip() for x in args_dict.get('sta_list').split(',')]
+            [x.strip() for x in args_dict.get('station_list').split(',')]
     if args_dict.get('receiver_list'):
         args_dict['receiver_list'] = \
             [x.strip() for x in args_dict.get('receiver_list').split(',')]
