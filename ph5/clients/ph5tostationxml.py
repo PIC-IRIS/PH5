@@ -14,6 +14,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 # functions for reading networks in parallel
 import multiprocessing
+from functools import partial
 import copy_reg
 import types
 
@@ -772,7 +773,7 @@ def _pickle_method(m):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 
-def execute(args_dict_list, path, nickname, level, out_format):
+def execute(path, args_dict_list, nickname, level, out_format):
     ph5sxml = [PH5toStationXMLRequest(
                             network_list=args_dict.get('network_list'),
                             reportnum_list=args_dict.get('reportnum_list'),
@@ -806,10 +807,6 @@ def execute(args_dict_list, path, nickname, level, out_format):
     return ph5sxmlparser.get_network(path)
 
 
-def execute_unpack(args):
-    return execute(*args)
-
-
 def run_ph5_to_stationxml(paths, nickname, out_format,
                           level, uri, args_dict_list):
     if paths:
@@ -818,15 +815,16 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
         else:
             num_processes = 10
         pool = multiprocessing.Pool(processes=num_processes)
-        args = [(args_dict_list,
-                 path,
-                 nickname,
-                 level,
-                 out_format) for path in paths]
-        networks = pool.map(execute_unpack, args)
+        networks = pool.map(partial(execute,
+                                    args_dict_list=args_dict_list,
+                                    nickname=nickname,
+                                    level=level,
+                                    out_format=out_format),
+                            paths)
         networks = [n for n in networks if n]
         pool.close()
         pool.join()
+
         if networks:
             inv = obspy.core.inventory.Inventory(
                                         networks=networks,
