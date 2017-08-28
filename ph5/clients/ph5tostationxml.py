@@ -12,11 +12,7 @@ import obspy
 from obspy import read_inventory  # noqa
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
-# functions for reading networks in parallel
 import multiprocessing
-from functools import partial
-import copy_reg
-import types
 
 from ph5.core import ph5utils, ph5api
 
@@ -763,17 +759,7 @@ class PH5toStationXMLParser(object):
             return
 
 
-def _pickle_method(m):
-    if m.im_self is None:
-        return getattr, (m.im_class, m.im_func.func_name)
-    else:
-        return getattr, (m.im_self, m.im_func.func_name)
-
-
-copy_reg.pickle(types.MethodType, _pickle_method)
-
-
-def execute(path, args_dict_list, nickname, level, out_format):
+def execute(path, args_dict_list, nickname, level, out_format, out_q):
     ph5sxml = [PH5toStationXMLRequest(
                             network_list=args_dict.get('network_list'),
                             reportnum_list=args_dict.get('reportnum_list'),
@@ -804,26 +790,31 @@ def execute(path, args_dict_list, nickname, level, out_format):
                                                     format=out_format
                                                   )
     ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
-    return ph5sxmlparser.get_network(path)
+    out_q.put(ph5sxmlparser.get_network(path))
 
 
 def run_ph5_to_stationxml(paths, nickname, out_format,
                           level, uri, args_dict_list):
     if paths:
-        if len(paths) < 10:
-            num_processes = len(paths)
-        else:
-            num_processes = 10
-        pool = multiprocessing.Pool(processes=num_processes)
-        networks = pool.map(partial(execute,
-                                    args_dict_list=args_dict_list,
-                                    nickname=nickname,
-                                    level=level,
-                                    out_format=out_format),
-                            paths)
-        networks = [n for n in networks if n]
-        pool.close()
-        pool.join()
+        processes = []
+        out_q = multiprocessing.Queue()
+        for path in paths:
+            p = multiprocessing.Process(target=execute,
+                                        args=(path,
+                                              args_dict_list,
+                                              nickname,
+                                              level,
+                                              out_format,
+                                              out_q)
+                                        )
+            processes.append(p)
+            p.start()
+
+        results = [out_q.get() for proc in processes]
+        networks = [n for n in results if n]
+
+        for p in processes:
+            p.join()
 
         if networks:
             inv = obspy.core.inventory.Inventory(
