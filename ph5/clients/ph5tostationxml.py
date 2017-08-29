@@ -368,7 +368,7 @@ class PH5toStationXMLParser(object):
 
         obs_channel.sensor = obspy.core.inventory.Equipment(
             type=sensor_type,
-            description=("%s %s / %s %s" %
+            description=("%s %s/%s %s" %
                          (station_list[deployment][0]['sensor/manufacturer_s'],
                           station_list[deployment][0]['sensor/model_s'],
                           station_list[deployment][0]['das/manufacturer_s'],
