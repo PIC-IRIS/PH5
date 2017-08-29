@@ -17,7 +17,7 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.237"
+PROG_VERSION = "2017.241"
 
 
 def get_args():
@@ -811,14 +811,13 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
             p.start()
 
         results = [out_q.get() for proc in processes]
-        networks = [n for n in results if n]
 
         for p in processes:
             p.join()
 
-        if networks:
+        if results:
             inv = obspy.core.inventory.Inventory(
-                                        networks=networks,
+                                        networks=results,
                                         source="PIC-PH5",
                                         sender="IRIS-PASSCAL-DMC-PH5",
                                         created=datetime.datetime.now(),
