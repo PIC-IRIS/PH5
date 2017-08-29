@@ -812,12 +812,15 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
 
         results = [out_q.get() for proc in processes]
 
+        networks = [n for n in results if
+                    isinstance(n, obspy.core.inventory.network.Network)]
+
         for p in processes:
             p.join()
 
-        if results:
+        if networks:
             inv = obspy.core.inventory.Inventory(
-                                        networks=results,
+                                        networks=networks,
                                         source="PIC-PH5",
                                         sender="IRIS-PASSCAL-DMC-PH5",
                                         created=datetime.datetime.now(),
