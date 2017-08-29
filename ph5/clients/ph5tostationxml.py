@@ -812,8 +812,7 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
 
         results = [out_q.get() for proc in processes]
 
-        networks = [n for n in results if
-                    isinstance(n, obspy.core.inventory.network.Network)]
+        networks = [n for n in results if n is not None]
 
         for p in processes:
             p.join()
