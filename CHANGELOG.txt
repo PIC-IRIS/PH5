@@ -1,3 +1,7 @@
+Master:
+-setup.py
+  * Standardized GUI and command line names
+
 v4.0.3:
 -ph5.clients.ph5tostationxml (issue #111)
   * ph5tostationxml accepts list of requests for given experiment
