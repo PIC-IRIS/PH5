@@ -9,7 +9,7 @@ import json, time
 import subprocess32 as subprocess
 #import subprocess
 
-PROG_VERSION = '2017.249a Developmental'
+PROG_VERSION = '2017.249b Developmental'
 
 #JSON_DB = 'pforma.json'
 HOME = os.environ['HOME']
@@ -530,7 +530,7 @@ class FormaIO () :
                 #if m == 'A' :
                     #continue
                 os.chdir (os.path.join (self.home, m))
-                command = "table2kef -n master.ph5 -I > Index_t.kef"
+                command = "ph5tokef -n master.ph5 -I > Index_t.kef"
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 msg.append ("Extracting Index_t for {0}".format (m))
@@ -554,7 +554,7 @@ class FormaIO () :
                     except :
                         raise FormaIOError (errno=7, msg="Failed to copy A/master.ph5 to {0}/master.ph5.".format (TO))
                 
-                command = "kef2ph5 -n master.ph5 -k ../{0}/Index_t.kef".format (m)
+                command = "keftoph5 -n master.ph5 -k ../{0}/Index_t.kef".format (m)
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 #   Load one at a time
@@ -571,7 +571,7 @@ class FormaIO () :
             P = []
             for m in self.nmini :
                 os.chdir (os.path.join (self.home, m))
-                command = "table2kef -n master.ph5 --all_arrays > Array_t_cat.kef"
+                command = "ph5tokef -n master.ph5 --all_arrays > Array_t_cat.kef"
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 msg.append ("Extracting all Array_t for {0} to Array_t_cat.kef".format (m))
@@ -589,7 +589,7 @@ class FormaIO () :
                 
             os.chdir (os.path.join (self.home, TO))
             for m in self.nmini :
-                command = "kef2ph5 -n master.ph5 -k ../{0}/Array_t_cat.kef".format (m)
+                command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef".format (m)
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 #   Load one at a time
