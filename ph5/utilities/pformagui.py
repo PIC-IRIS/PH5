@@ -10,7 +10,7 @@ from psutil import cpu_count, cpu_percent
 from ph5.core import pmonitor
 from ph5.utilities import pforma_io, watchit
 
-PROG_VERSION = "2017.032 Developmental"
+PROG_VERSION = "2017.249a Developmental"
 
 UTMZone = None
 
