@@ -9,7 +9,7 @@
 import sys, os, re
 from ph5.core import ph5api
 
-PROG_VERSION = '2017.068a'
+PROG_VERSION = '2017.250'
 
 ALL_FAMILIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
 def get_args () :
@@ -53,7 +53,7 @@ def dump_kefs () :
                 if first :
                     fh.write ("## {0}\n".format (here))
                     first = False
-                command = "table2kef -n {0}/master.ph5 -R".format (fam)
+                command = "ph5tokef -n {0}/master.ph5 -R".format (fam)
                 fh.write ("## {0}\n".format (fam))
                 pipeh = os.popen (command)
                 if pipeh :
@@ -144,7 +144,7 @@ def print_new_Response_t (n_i_map) :
                 for k in keys :
                     fh.write ("\t{0}={1}\n".format (k, kv[k]))
                     
-def print_new_Das_t (P5) :
+def print_new_Das_t (P5, n_i_map, family) :
     '''   Print Das_t corrected for Response_t n_i
     '''
     P5.read_das_g_names ()
@@ -204,7 +204,7 @@ def main():
             sys.stderr.write ("Warning: {0}\n".format (e.msg))
             continue
         
-        print_new_Das_t (P5)
+        print_new_Das_t (P5, n_i_map, family)
         P5.close ()
         
     print_new_Response_t (n_i_map)
