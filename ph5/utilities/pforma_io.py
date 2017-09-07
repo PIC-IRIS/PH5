@@ -9,7 +9,7 @@ import json, time
 import subprocess32 as subprocess
 #import subprocess
 
-PROG_VERSION = '2017.032 Developmental'
+PROG_VERSION = '2017.249b Developmental'
 
 #JSON_DB = 'pforma.json'
 HOME = os.environ['HOME']
@@ -19,7 +19,8 @@ JSON_DB = 'pforma.json'
 #JSON_CFG = os.path.join (HOME, 'Svn/pn3-devel/Forma', 'pforma.cfg') 
 JSON_CFG = 'pforma.cfg'
 
-PROG2INST = {'125a2ph5':'texan', '1302ph5':'rt-130', 'segd2ph5':'nodal'}
+PROG2INST = {'125atoph5':'texan', '130toph5':'rt-130', 'segdtoph5':'nodal'}
+INST2PROG = {'texan':'125atoph5', 'rt-130':'130toph5', 'nodal':'segdtoph5'}
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -120,7 +121,7 @@ class FormaIO () :
             
             try :
                 os.chdir (m)
-                subprocess.call ('initialize-ph5 -n master', shell=True, stdout=open (os.devnull, 'w'), stderr=open (os.devnull, 'w'))
+                subprocess.call ('initialize_ph5 -n master', shell=True, stdout=open (os.devnull, 'w'), stderr=open (os.devnull, 'w'))
             except Exception as e :
                 raise FormaIOError (5, "Failed to initialize {0}".format (os.path.join (self.home, m)))
             
@@ -314,20 +315,23 @@ class FormaIO () :
                 if lst.has_key ('texan') :
                     lists.append (lst['texan'])
                     instruments.append ('texan')
-                    cmd.append ("125a2ph5 -n master.ph5 -f {0} -M {1} -S {2} --overide 2>&1".format (lst['texan'], self.M, ess))
+                    clprog = INST2PROG['texan']
+                    cmd.append ("{3} -n master.ph5 -f {0} -M {1} -S {2} --overide 2>&1".format (lst['texan'], self.M, ess, clprog))
                 if lst.has_key ('rt-130') :
                     lists.append (lst['rt-130'])
-                    instruments.append ('rt-130')                    
-                    cmd.append ("1302ph5 -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format (lst['rt-130'], self.M, ess))
+                    instruments.append ('rt-130')
+                    clprog = INST2PROG['rt-130']
+                    cmd.append ("{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format (lst['rt-130'], self.M, ess, clprog))
                 if lst.has_key ('nodal') :
                     lists.append (lst['nodal'])
-                    instruments.append ('nodal')                    
+                    instruments.append ('nodal')   
+                    clprog = INST2PROG['nodal']
                     if self.UTM :
-                        cmd.append ("segd2ph5 -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c {4} 2>&1".format (lst['nodal'], self.M, ess, self.UTM, self.COMBINE))
+                        cmd.append ("{5} -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c {4} 2>&1".format (lst['nodal'], self.M, ess, self.UTM, self.COMBINE, clprog))
                     elif self.TSPF :
-                        cmd.append ("segd2ph5 -n master.ph5 -f {0} -M {1} -T -S {2} -c {3} 2>&1".format (lst['nodal'], self.M, ess, self.COMBINE))
+                        cmd.append ("{4} -n master.ph5 -f {0} -M {1} -T -S {2} -c {3} 2>&1".format (lst['nodal'], self.M, ess, self.COMBINE, clprog))
                     else :
-                        cmd.append ("segd2ph5 -n master.ph5 -f {0} -M {1} -S {2} -c {3} 2>&1".format (lst['nodal'], self.M, ess, self.COMBINE))
+                        cmd.append ("{4} -n master.ph5 -f {0} -M {1} -S {2} -c {3} 2>&1".format (lst['nodal'], self.M, ess, self.COMBINE, clprog))
                 #if len (cmd) != 0 :
                 ret[m] = cmd
                 if not info.has_key (m) :
@@ -526,7 +530,7 @@ class FormaIO () :
                 #if m == 'A' :
                     #continue
                 os.chdir (os.path.join (self.home, m))
-                command = "table2kef -n master.ph5 -I > Index_t.kef"
+                command = "ph5tokef -n master.ph5 -I > Index_t.kef"
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 msg.append ("Extracting Index_t for {0}".format (m))
@@ -550,7 +554,7 @@ class FormaIO () :
                     except :
                         raise FormaIOError (errno=7, msg="Failed to copy A/master.ph5 to {0}/master.ph5.".format (TO))
                 
-                command = "kef2ph5 -n master.ph5 -k ../{0}/Index_t.kef".format (m)
+                command = "keftoph5 -n master.ph5 -k ../{0}/Index_t.kef".format (m)
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 #   Load one at a time
@@ -567,7 +571,7 @@ class FormaIO () :
             P = []
             for m in self.nmini :
                 os.chdir (os.path.join (self.home, m))
-                command = "table2kef -n master.ph5 --all_arrays > Array_t_cat.kef"
+                command = "ph5tokef -n master.ph5 --all_arrays > Array_t_cat.kef"
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 msg.append ("Extracting all Array_t for {0} to Array_t_cat.kef".format (m))
@@ -585,7 +589,7 @@ class FormaIO () :
                 
             os.chdir (os.path.join (self.home, TO))
             for m in self.nmini :
-                command = "kef2ph5 -n master.ph5 -k ../{0}/Array_t_cat.kef".format (m)
+                command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef".format (m)
                 ret = subprocess.Popen (command, shell=True, stderr=open (os.devnull, "w"))
                 P.append (ret)
                 #   Load one at a time
@@ -877,7 +881,7 @@ if __name__ == '__main__' :
             mmin = sys.maxint
             mmax = 0
             #try :
-            for dataloggerlog in ('125a2ph5.log', '1302ph5.log', 'segd2ph5.log') :
+            for dataloggerlog in ('125atoph5.log', '130toph5.log', 'segdtoph5.log') :
                 if not os.path.exists (os.path.join (fio.home, m, dataloggerlog)) :
                     continue
                 with open (os.path.join (fio.home, m, dataloggerlog)) as fh :
