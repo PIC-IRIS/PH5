@@ -489,7 +489,7 @@ class PH5toStationXMLParser(object):
 
     def read_channels(self, sta_xml_obj, station_list):
 
-        obs_channels = []
+        all_channels = []
         cha_list_patterns = sta_xml_obj.channel_list
         component_list_patterns = sta_xml_obj.component_list
         receiver_list_patterns = sta_xml_obj.receiver_list
@@ -543,8 +543,9 @@ class PH5toStationXMLParser(object):
                                                           cha_latitude,
                                                           cha_elevation,
                                                           receiver_id)
-                    obs_channels.append(obs_channel)
-        return obs_channels
+                    if obs_channel not in all_channels:
+                        all_channels.append(obs_channel)
+        return all_channels
 
     def read_stations(self):
 
@@ -626,7 +627,8 @@ class PH5toStationXMLParser(object):
                                                                 station_list
                                                                )
                         obs_station.selected_number_of_channels = 0
-                    all_stations.append(obs_station)
+                    if obs_station not in all_stations:
+                        all_stations.append(obs_station)
         return all_stations
 
     def read_arrays(self, name):
