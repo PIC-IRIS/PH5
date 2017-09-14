@@ -11,7 +11,7 @@
 import sys, os
 from ph5.core import segdreader
 
-PROG_VERSION = "2017.199"
+PROG_VERSION = "2017.257"
 
 def get_args () :
     '''   Get inputs
@@ -180,10 +180,18 @@ def main():
             try :
                 if ARGS.hardlinks == True :
                     print filename, 'hard->', linkname
-                    os.link (filename, linkname)
+                    try :
+                        os.link (filename, linkname)
+                    except Exception as e :
+                        sys.stderr.write ("Failed to create HARD link:\n{0}\n".format (e.message))
+                        sys.exit ()
                 else :
                     print filename, 'soft->', linkname
-                    os.symlink (filename, linkname)
+                    try :
+                        os.symlink (filename, linkname)
+                    except Exception as e :
+                        sys.stderr.write ("Failed to create soft link:\n{0}\n".format (e.message))
+                        sys.exit ()                        
                     
                 lh.write ("{0} -> {1}\n".format (filename, linkname))
             except Exception as e :
