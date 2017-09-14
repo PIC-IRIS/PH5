@@ -10,14 +10,7 @@ import sys, os
 from ph5.core import segy_h, ibmfloat, ebcdic
 import construct
 
-PROG_VERSION = '2016.266'
-
-FH = None
-TYPE = None
-PRINT = False
-L = None
-T = None
-F = None
+PROG_VERSION = '2017.256'
 
 SAMPLE_LENGTH = { 1:4, 2:4, 3:2, 4:4, 5:4, 8:1 }
 
@@ -47,6 +40,13 @@ SIZEOF = {  "lineSeq":32, "reelSeq":32, "event_number":32, "channel_number":32, 
 
 def get_args () :
     global FH, TYPE, PRINT, L, T, F, ENDIAN, EBCDIC
+    
+    FH = None
+    TYPE = None
+    PRINT = False
+    L = None
+    T = None
+    F = None
     
     from optparse import OptionParser
     oparser = OptionParser ()
@@ -307,6 +307,8 @@ def isEOF () :
 
 
 def main():
+    global L, F, T
+    
     get_args ()
     
     text_container = read_text_header ()
