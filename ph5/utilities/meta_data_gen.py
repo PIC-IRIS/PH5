@@ -10,7 +10,7 @@ from ph5.core import experiment, timedoy
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = '2016.247 Developmental'
+PROG_VERSION = '2017.257 Developmental'
 
 #
 #   These are to hold different parts of the meta-data
@@ -571,7 +571,7 @@ def write_experiment () :
 
 
 def main():
-    global DATA_GEN, EVENT_GEN, RECEIVER_GEN
+    global DATA_GEN, EVENT_GEN, RECEIVER_GEN, DASS
     
     get_args ()
     
@@ -591,6 +591,8 @@ def main():
         write_events ()
     if RECEIVER_GEN == True :
         write_arrays ()
+        
+    EX.ph5close ()
 
 
 if __name__ == '__main__' :
