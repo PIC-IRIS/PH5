@@ -12,7 +12,7 @@ import sys, os, os.path, string, time
 #   This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2016.225 Developmental'
+PROG_VERSION = '2017.257 Developmental'
 #   Valid horizontal channel numbers
 HORIZ = [ 2, 3, 5, 6 ]
 #   Array_t_xxxx keyed on xxxx 
@@ -162,7 +162,7 @@ def read_receivers (das = None) :
 
 
 def main():
-    global FH
+    global FH, PH5, DASGROUPS
     try :
         PH5 = sys.argv[1]
     except IndexError :
