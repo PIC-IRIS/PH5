@@ -1,6 +1,24 @@
 Master:
 -setup.py
   * Standardized GUI and command line names
+-ph5.utilities.pforma_io
+  * Fix renaming of cl programs
+-ph5.utilities.set_n_i_response
+  * Fix renaming of cl programs
+-ph5.clients.ph5tostationxml (issue #126)
+  * Only add a network, station, or channel to inventory if it hasn;t already been added
+-ph5.utilities.dumpsgy
+  * Fix issues caused by adding main procedure
+-ph5.utilities.ph5_merge_helper
+  * Fix issues caused by adding main procedure
+-ph5.utilities.fix_3chan_texan
+  * Fix issues caused by adding main procedure
+-ph5.utilities.index_offset_t
+  * Make offset table name required
+-ph5.utilities.meta_data_gen
+  * Fix issues caused by adding main procedure
+-ph5.utilities.unsimpleton
+  * Check for failure to create hard link
 
 v4.0.3:
 -ph5.clients.ph5tostationxml (issue #111)
