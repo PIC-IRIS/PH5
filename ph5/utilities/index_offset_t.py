@@ -7,7 +7,7 @@
 import sys, os
 from ph5.core import experiment
 
-PROG_VERSION = "2012.069"
+PROG_VERSION = "2017.257"
 
 EX = None; PH5 = None; PATH = None
 
@@ -45,6 +45,9 @@ def get_args () :
         PATH = "."
         
     NAME = options.offset_table_name
+    if NAME == None :
+        sys.stderr.write ("Required option missing: --offset_table.\n")
+        sys.exit ()
         
 #
 #   Initialize ph5 file
