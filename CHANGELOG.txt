@@ -1,4 +1,6 @@
 Master:
+-ph5.core.ph5api(issue #134)
+  * fixes error catching in response table function
 -setup.py
   * Standardized GUI and command line names
 -ph5.utilities.pforma_io
