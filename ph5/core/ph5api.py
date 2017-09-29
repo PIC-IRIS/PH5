@@ -640,7 +640,7 @@ class PH5 (experiment.ExperimentGroup) :
             self.read_response_t ()
             
         try :
-            n_i = das_t['response_table_n_i']
+            n_i = das_t[0]['response_table_n_i']
             response_t = self.Response_t['rows'][n_i]
             if response_t['n_i'] != n_i :
                 for response_t in self.Response_t['rows'] :
@@ -666,7 +666,7 @@ class PH5 (experiment.ExperimentGroup) :
                 for response_t in self.Response_t['rows'] :
                     if response_t['n_i'] == n_i :
                         break
-        except KeyError :
+        except:
             response_t = None
         
         return response_t    
