@@ -1,4 +1,4 @@
-Master:
+v4.0.4:
 -ph5.core.ph5api(issue #134)
   * fixes error catching in response table function
 -setup.py
