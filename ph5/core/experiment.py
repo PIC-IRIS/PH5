@@ -172,7 +172,7 @@ class MapsGroup :
                                  self.current_g_das,
                                  name,
                                  batom=batom,
-                                 expectedrows=120)
+                                 expectedrows=2000)
         
         if description != None :
             a.attrs.description = description
