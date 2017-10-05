@@ -1,3 +1,7 @@
+Master:
+-ph5.utilities.resp_load (issue #114)
+  * New software added
+
 v4.0.4:
 -ph5.core.ph5api(issue #134)
   * fixes error catching in response table function
