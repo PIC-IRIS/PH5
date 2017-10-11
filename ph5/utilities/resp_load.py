@@ -14,7 +14,7 @@ import logging
 
 logging.basicConfig(filename='resp_load.log', level=logging.DEBUG)
 logging.info("###################################################\n\n")
-PROG_VERSION = "2017.268"
+PROG_VERSION = "2017.284"
 
 
 class Station(object):
@@ -72,7 +72,7 @@ class n_i_fix(object):
         stations = []
         for array_name in array_names:
             if self.array:
-                array = array_name[-3:]
+                array = str(int(array_name[-3:]))
                 array_patterns = self.array
                 if not ph5utils.does_pattern_exists(
                         array_patterns, str(array)):
