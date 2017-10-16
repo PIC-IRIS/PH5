@@ -17,7 +17,7 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.241"
+PROG_VERSION = "2017.289"
 
 
 def get_args():
@@ -426,9 +426,7 @@ class PH5toStationXMLParser(object):
         return obs_channel
 
     def get_response_inv(self, obs_channel):
-        self.manager.ph5.read_response_t()
-        Response_t = \
-            self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
@@ -436,6 +434,10 @@ class PH5toStationXMLParser(object):
                            obs_channel.sample_rate]
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
+            self.manager.ph5.read_response_t()
+            Response_t = \
+                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+            
             response_file_das_a_name = Response_t.get('response_file_das_a',
                                                       None)
             response_file_sensor_a_name = Response_t.get(
