@@ -8,7 +8,7 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
-PROG_VERSION = "2017.114.1 Developmental"
+PROG_VERSION = "2017.289 Developmental"
 
 MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
@@ -650,6 +650,7 @@ def process_traces (rh, th, tr) :
         p_array_t['seed_band_code_s'] = band_code
         p_array_t['seed_instrument_code_s'] = instrument_code
         p_array_t['seed_orientation_code_s'] = orientation_code
+        p_array_t['seed_station_name_s'] = Das.split ('X')[1]
         p_array_t['sample_rate_i'] = SD.sample_rate
         p_array_t['sample_rate_multiplier_i'] = 1
         p_array_t['deploy_time/type_s'] = 'BOTH'
