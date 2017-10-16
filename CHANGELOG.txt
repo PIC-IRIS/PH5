@@ -1,4 +1,6 @@
 Master:
+-ph5.core.ph5api (issue #141)
+  * Addressed bug not reading all data of channels < 1 sps
 -ph5.utilities.segd2ph5 (issue #138)
   * Added SEED station name to array creation
 -ph5.utilities.resp_load
