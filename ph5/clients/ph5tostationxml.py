@@ -17,6 +17,7 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
+
 PROG_VERSION = "2017.290"
 
 
@@ -426,9 +427,7 @@ class PH5toStationXMLParser(object):
         return obs_channel
 
     def get_response_inv(self, obs_channel):
-        self.manager.ph5.read_response_t()
-        Response_t = \
-            self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
@@ -436,6 +435,10 @@ class PH5toStationXMLParser(object):
                            obs_channel.sample_rate]
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
+            self.manager.ph5.read_response_t()
+            Response_t = \
+                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+            
             response_file_das_a_name = Response_t.get('response_file_das_a',
                                                       None)
             response_file_sensor_a_name = Response_t.get(
@@ -549,7 +552,7 @@ class PH5toStationXMLParser(object):
 
     def read_stations(self):
 
-        all_stations = []
+        all_stations = set()
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
@@ -628,8 +631,11 @@ class PH5toStationXMLParser(object):
                                                                )
                         obs_station.selected_number_of_channels = 0
                     if obs_station not in all_stations:
-                        all_stations.append(obs_station)
-        return all_stations
+                        all_stations.add(obs_station)
+        all_stations_list = list(all_stations)
+        all_stations_list.sort()
+        return all_stations_list                        
+ 
 
     def read_arrays(self, name):
         if name is None:
