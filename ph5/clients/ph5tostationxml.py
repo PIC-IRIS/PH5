@@ -17,7 +17,7 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.241"
+PROG_VERSION = "2017.290"
 
 
 def get_args():
@@ -320,7 +320,7 @@ class PH5toStationXMLParser(object):
             station_list[1][0]['pickup_time/epoch_l'])
         extra = AttribDict({
             'PH5Array': {
-                'value': str(array_name)[-3:],
+                'value': str(array_name)[8:],
                 'namespace': self.manager.iris_custom_ns,
                 'type': 'attribute'
             }
@@ -553,7 +553,7 @@ class PH5toStationXMLParser(object):
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
-                array = array_name[-3:]
+                array = array_name[8:]
                 if not ph5utils.does_pattern_exists(array_patterns, array):
                     continue
 

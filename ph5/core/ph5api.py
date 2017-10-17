@@ -10,7 +10,7 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2017.289 Developmental'
+PROG_VERSION = '2017.290 Developmental'
 PH5VERSION = columns.PH5VERSION
 
 #   No time corrections applied if slope exceeds this value, normally 0.001 (.1%)
@@ -843,7 +843,7 @@ class PH5 (experiment.ExperimentGroup) :
         else :
             return None
 
-    def cut (self, das, start_fepoch, stop_fepoch, chan=1, sample_rate=None, apply_time_correction = True) :
+    def cut (self, das, start_fepoch, stop_fepoch, chan=1, sample_rate=None, apply_time_correction = True, das_t=None) :
         '''   Cut trace data and return a Trace object
               Inputs:
                  das -> data logger serial number
@@ -855,10 +855,13 @@ class PH5 (experiment.ExperimentGroup) :
               Returns:
                  A list of PH5 trace objects split on gaps
         '''
-        self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
-        if not self.Das_t.has_key (das) :   
-            return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, [], None, None)]
-        Das_t = filter_das_t (self.Das_t[das]['rows'], chan)
+        if not das_t:
+            self.read_das_t (das, start_epoch=start_fepoch, stop_epoch=stop_fepoch, reread=False)
+            if not self.Das_t.has_key (das) :   
+                return [Trace (np.array ([]), start_fepoch, 0., 0, sample_rate, None, None, [], None, None)]
+            Das_t = filter_das_t (self.Das_t[das]['rows'], chan)
+        else:
+            Das_t = das_t
         #
         #   We shift the samples to match the requested start time to apply the time correction
         #
