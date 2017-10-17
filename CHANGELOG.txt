@@ -1,8 +1,11 @@
 Master:
+-ph5.core.experiment
+  * add expectedrows when creating tables
 -ph5.core.ph5utils
   * doy_breakup can now accept vairable time lengths for breakup. Default is 1 day
 -ph5.clients.ph5tostationxml
   * fixed array number bug
+  * USe set in read_stations for speedup
 -ph5.clients.ph5toms
   * fixed array number bug
   * added LENGTH global variable to adjust file cuts
