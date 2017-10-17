@@ -320,7 +320,7 @@ class PH5toStationXMLParser(object):
             station_list[1][0]['pickup_time/epoch_l'])
         extra = AttribDict({
             'PH5Array': {
-                'value': str(array_name)[-3:],
+                'value': str(array_name)[8:],
                 'namespace': self.manager.iris_custom_ns,
                 'type': 'attribute'
             }
@@ -551,11 +551,11 @@ class PH5toStationXMLParser(object):
 
     def read_stations(self):
 
-        all_stations = []
+        all_stations = set()
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
-                array = array_name[-3:]
+                array = array_name[8:]
                 if not ph5utils.does_pattern_exists(array_patterns, array):
                     continue
 
@@ -630,8 +630,11 @@ class PH5toStationXMLParser(object):
                                                                )
                         obs_station.selected_number_of_channels = 0
                     if obs_station not in all_stations:
-                        all_stations.append(obs_station)
-        return all_stations
+                        all_stations.add(obs_station)
+        all_stations_list = list(all_stations)
+        all_stations_list.sort()
+        return all_stations_list                        
+ 
 
     def read_arrays(self, name):
         if name is None:
