@@ -17,7 +17,8 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.289"
+
+PROG_VERSION = "2017.290"
 
 
 def get_args():

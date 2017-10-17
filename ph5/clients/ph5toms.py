@@ -17,7 +17,8 @@ from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
 
-PROG_VERSION = "2017.236"
+PROG_VERSION = "2017.290"
+LENGTH = int(86400)
 
 
 class StationCut(object):
@@ -309,7 +310,7 @@ class PH5toMSeed(object):
                                   new_endtime,
                                   chan=stc.channel,
                                   sample_rate=actual_sample_rate,
-                                  apply_time_correction=nt)
+                                  apply_time_correction=nt, das_t=Das_t)
 
             if not isinstance(traces, list):
                 return
@@ -372,6 +373,7 @@ class PH5toMSeed(object):
 
     def create_cut(self, seed_network, ph5_station, seed_station,
                    start_times, station_list, deployment, st_num):
+        global LENGTH
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
         deploy_micro = station_list[deployment][
             st_num]['deploy_time/micro_seconds_i']
@@ -499,13 +501,14 @@ class PH5toMSeed(object):
                 seconds_covered = 0
                 total_seconds = stop_fepoch - start_fepoch
                 times_to_cut = []
-                stop_time, seconds = ph5utils.doy_breakup(start_fepoch)
+                stop_time, seconds = ph5utils.doy_breakup(start_fepoch, LENGTH)
                 seconds_covered = seconds_covered + seconds
                 times_to_cut.append([start_fepoch, stop_time])
                 start_time = stop_time
 
                 while seconds_covered < total_seconds:
-                    stop_time, seconds = ph5utils.doy_breakup(start_time)
+                    stop_time, seconds = ph5utils.doy_breakup(start_time,
+                                                              LENGTH)
                     seconds_covered += seconds
                     if stop_time > stop_fepoch:
                         times_to_cut.append([start_time, stop_fepoch])
@@ -602,7 +605,7 @@ class PH5toMSeed(object):
 
         for array_name in array_names:
             if self.array:
-                array = array_name[-3:]
+                array = array_name[8:]
                 array_patterns = self.array
                 if not ph5utils.does_pattern_exists(
                         array_patterns, str(array)):
@@ -821,7 +824,7 @@ def get_args():
 
 def main():
     from time import time as tm
-
+    global LENGTH
     then = tm()
 
     args = get_args()

@@ -128,7 +128,7 @@ def fdsntime_to_epoch(fdsn_time):
     return epoch
 
 
-def doy_breakup(start_fepoch):
+def doy_breakup(start_fepoch, length=86400):
     """
     Given a start time epoch returns a next days equivalent epoch time and the
     difference in seconds between the start and stop epoch times.
@@ -150,7 +150,7 @@ def doy_breakup(start_fepoch):
                                                start_second)
     passcal_date = datetime.strptime(datestr, "%Y:%j:%H:%M:%S.%f")
 
-    next_passcal_date = passcal_date + timedelta(days=1)
+    next_passcal_date = passcal_date + timedelta(seconds=length)
     next_passcal_date_str = next_passcal_date.strftime("%Y:%j:%H:%M:%S.%f")
     
     stop_fepoch = passcal2epoch(next_passcal_date_str, fepoch=True)
