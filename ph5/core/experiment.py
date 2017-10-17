@@ -172,7 +172,7 @@ class MapsGroup :
                                  self.current_g_das,
                                  name,
                                  batom=batom,
-                                 expectedrows=120)
+                                 expectedrows=2000)
         
         if description != None :
             a.attrs.description = description
@@ -948,7 +948,7 @@ class ReceiversGroup :
         t = initialize_table (self.ph5, 
                               '/Experiment_g/Receivers_g/' + sn, 
                               'Das_t', 
-                              columns.Data)
+                              columns.Data, expectedrows=1000)
         return t
     #   New das group and tables 
     def newdas (self, sn) :
@@ -962,7 +962,7 @@ class ReceiversGroup :
         t = initialize_table (self.ph5, 
                               '/Experiment_g/Receivers_g/' + sn, 
                               'Das_t', 
-                              columns.Data)
+                              columns.Data, expectedrows=1000)
         
         self.current_g_das = d
         self.current_t_das = t
@@ -1120,7 +1120,8 @@ class ReceiversGroup :
         self.ph5_t_receiver = initialize_table (self.ph5, 
                                                 '/Experiment_g/Receivers_g', 
                                                 'Receiver_t', 
-                                                columns.Receiver)
+                                                columns.Receiver,
+                                                expectedrows=1)
         #   Create time table
         self.ph5_t_time = initialize_table (self.ph5, 
                                             '/Experiment_g/Receivers_g', 
@@ -1232,7 +1233,8 @@ class ReportsGroup :
         self.ph5_t_report = initialize_table (self.ph5, 
                                               '/Experiment_g/Reports_g', 
                                               'Report_t', 
-                                              columns.Report)
+                                              columns.Report,
+                                              expectedrows=1)
             
         columns.add_reference ('/Experiment_g/Reports_g/Report_t', self.ph5_t_report)
         
@@ -1272,7 +1274,7 @@ class ResponsesGroup :
                                  self.current_g_das,
                                  name,
                                  batom=batom,
-                                 expectedrows=120)
+                                 expectedrows=2000)
         
         if description != None :
             a.attrs.description = description
@@ -1288,7 +1290,8 @@ class ResponsesGroup :
         self.ph5_t_response = initialize_table (self.ph5, 
                                                 '/Experiment_g/Responses_g', 
                                                 'Response_t', 
-                                                columns.Response)
+                                                columns.Response,
+                                                expectedrows=1)
             
         columns.add_reference ('/Experiment_g/Responses_g/Response_t', self.ph5_t_response)
         
@@ -1390,7 +1393,8 @@ class ExperimentGroup :
         self.ph5_t_experiment = initialize_table (self.ph5, 
                                                   '/Experiment_g', 
                                                   'Experiment_t', 
-                                                  columns.Experiment)
+                                                  columns.Experiment,
+                                                  expectedrows=1)
         
         #   Put handle in lookup table columns.TABLE   
         columns.add_reference ('/Experiment_g/Experiment_t', self.ph5_t_experiment)
@@ -1421,7 +1425,8 @@ class ExperimentGroup :
         self.ph5_t_experiment = initialize_table (self.ph5, 
                                                   '/Experiment_g', 
                                                   'Experiment_t', 
-                                                  columns.Experiment)
+                                                  columns.Experiment,
+                                                  expectedrows=1)
         
         #   Put handle in lookup table columns.TABLE   
         columns.add_reference ('/Experiment_g/Experiment_t', self.ph5_t_experiment)
