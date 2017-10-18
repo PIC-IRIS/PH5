@@ -553,6 +553,7 @@ class PH5toStationXMLParser(object):
     def read_stations(self):
 
         all_stations = set()
+        all_stations_keys = []
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
@@ -630,7 +631,14 @@ class PH5toStationXMLParser(object):
                                                                 station_list
                                                                )
                         obs_station.selected_number_of_channels = 0
-                    if obs_station not in all_stations:
+                    hash = "{}.{}.{}.{}.{}.{}".format(obs_station.code,
+                                                      obs_station.latitude,
+                                                      obs_station.longitude,
+                                                      obs_station.start_date,
+                                                      obs_station.end_date,
+                                                      obs_station.elevation)
+                    if hash not in all_stations_keys:
+                        all_stations_keys.append(hash)
                         all_stations.add(obs_station)
         all_stations_list = list(all_stations)
         all_stations_list.sort()
