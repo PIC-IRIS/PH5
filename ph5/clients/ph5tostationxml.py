@@ -552,7 +552,7 @@ class PH5toStationXMLParser(object):
 
     def read_stations(self):
 
-        all_stations = set()
+        all_stations = []
         all_stations_keys = []
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
@@ -639,10 +639,8 @@ class PH5toStationXMLParser(object):
                                                       obs_station.elevation)
                     if hash not in all_stations_keys:
                         all_stations_keys.append(hash)
-                        all_stations.add(obs_station)
-        all_stations_list = list(all_stations)
-        all_stations_list.sort()
-        return all_stations_list                        
+                        all_stations.append(obs_station)
+        return all_stations                        
  
 
     def read_arrays(self, name):
