@@ -5,7 +5,7 @@ Master:
   * Doy_breakup can now accept variable time lengths for breakup. Default is 1 day
 -ph5.clients.ph5tostationxml
   * Fixed array number bug
-  * Use set in read_stations for speedup
+  * Use Hash for station comparison to speed up read_stations()
 -ph5.clients.ph5toms
   * Fixed array number bug
   * Added LENGTH global variable to adjust file cuts
