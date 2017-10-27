@@ -51,7 +51,7 @@ def get_args():
                         default="STATIONXML", dest="out_format",
                         type=str, metavar="out_format",
                         help="Output format: STATIONXML," +
-                              "STATIONTXT, SACPZ, or KML")
+                              "TEXT, SACPZ, or KML")
 
     parser.add_argument("--array", action="store", dest="array_list",
                         help="Comma separated list of arrays.",
@@ -910,7 +910,7 @@ def main():
             inv.write(args.outfile, format='KML')
         elif out_format == "SACPZ":
             inv.write(args.outfile, format="SACPZ")
-        elif out_format == "STATIONTXT":
+        elif out_format == "TEXT":
             inv.write(args.outfile, format="STATIONTXT")
         else:
             sys.stderr.write("Incorrect output format. "
