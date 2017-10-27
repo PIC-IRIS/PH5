@@ -1,4 +1,6 @@
 Master:
+-ph5.clients.ph5tostationxml
+  * Added SACPZ and stationtxt to command line output option
 -ph5.core.experiment
   * Add expectedrows when creating tables
 -ph5.core.ph5utils

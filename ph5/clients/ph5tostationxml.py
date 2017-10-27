@@ -50,7 +50,8 @@ def get_args():
     parser.add_argument("-f", "--format", action="store",
                         default="STATIONXML", dest="out_format",
                         type=str, metavar="out_format",
-                        help="Output format: STATIONXML or KML")
+                        help="Output format: STATIONXML," +
+                              "STATIONTXT, SACPZ, or KML")
 
     parser.add_argument("--array", action="store", dest="array_list",
                         help="Comma separated list of arrays.",
