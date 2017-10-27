@@ -17,8 +17,7 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
-
-PROG_VERSION = "2017.290"
+PROG_VERSION = "2017.300"
 
 
 def get_args():
@@ -51,7 +50,8 @@ def get_args():
     parser.add_argument("-f", "--format", action="store",
                         default="STATIONXML", dest="out_format",
                         type=str, metavar="out_format",
-                        help="Output format: STATIONXML or KML")
+                        help="Output format: STATIONXML," +
+                              "TEXT, SACPZ, or KML")
 
     parser.add_argument("--array", action="store", dest="array_list",
                         help="Comma separated list of arrays.",
@@ -438,7 +438,6 @@ class PH5toStationXMLParser(object):
             self.manager.ph5.read_response_t()
             Response_t = \
                 self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
-            
             response_file_das_a_name = Response_t.get('response_file_das_a',
                                                       None)
             response_file_sensor_a_name = Response_t.get(
@@ -640,8 +639,7 @@ class PH5toStationXMLParser(object):
                     if hash not in all_stations_keys:
                         all_stations_keys.append(hash)
                         all_stations.append(obs_station)
-        return all_stations                        
- 
+        return all_stations
 
     def read_arrays(self, name):
         if name is None:
@@ -910,6 +908,10 @@ def main():
                       nsmap={'iris': "http://www.fdsn.org/xml/station/1/iris"})
         elif out_format == "KML":
             inv.write(args.outfile, format='KML')
+        elif out_format == "SACPZ":
+            inv.write(args.outfile, format="SACPZ")
+        elif out_format == "TEXT":
+            inv.write(args.outfile, format="STATIONTXT")
         else:
             sys.stderr.write("Incorrect output format. "
                              "Formats are STATIONXML or KML")
