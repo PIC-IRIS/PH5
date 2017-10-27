@@ -4,7 +4,7 @@
 
 A library of command line utilities and APIs for building and interacting with PH5 datasets. 
 
-**See the [PH5 Wiki](https://github.com/PIC-IRIS/PH5/wiki) for information about the sturcuture and use of PH5**
+**See the [PH5 Wiki](https://github.com/PIC-IRIS/PH5/wiki) for information about the strucuture and use of PH5**
 
 # Detailed Installation Instructions
 
