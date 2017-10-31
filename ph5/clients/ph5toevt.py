@@ -8,7 +8,7 @@
 import os, sys, logging
 from ph5.core import ph5api, segyfactory, decimate, timedoy
 
-PROG_VERSION = "2017.235 Developmental"
+PROG_VERSION = "2017.304 Developmental"
 #   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -385,7 +385,11 @@ def gather () :
                     else :
                         logging.warning ("No sensor orientation found in ph5 file. Contact PIC.")
                     #   Read gain and bit weight
-                    response_t = trace.response_t
+                    
+                    if array_t[c][t]['response_table_n_i'] is not None:
+                        response_t = P5.get_response_t_by_n_i(int(array_t[c][t]['response_table_n_i']))
+                    else:
+                        response_t = trace.response_t
                     if response_t :
                         sf.set_response_t (response_t)
                     else :

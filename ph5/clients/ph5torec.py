@@ -8,7 +8,7 @@
 import os, sys, logging
 from ph5.core import ph5api, segyfactory, decimate, timedoy
 
-PROG_VERSION = "2017.235 Developmental"
+PROG_VERSION = "2017.304 Developmental"
 #   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -324,7 +324,10 @@ def gather () :
                     #   Read receiver and response tables
                     #receiver_t = P5.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]
                     receiver_t = trace.receiver_t
-                    response_t = P5.Response_t['rows'][trace.das_t[0]['response_table_n_i']]
+                    if array_t[c][t]['response_table_n_i'] is not None:
+                        response_t = P5.get_response_t_by_n_i(int(array_t[c][t]['response_table_n_i']))
+                    else:
+                        response_t = P5.Response_t['rows'][trace.das_t[0]['response_table_n_i']]
                     #   Set sort_t in segyfactory
                     sf.set_sort_t (P5.get_sort_t (start_fepoch, ARGS.station_array))
                     #   Set das_t
