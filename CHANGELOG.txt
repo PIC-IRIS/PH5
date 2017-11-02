@@ -1,4 +1,8 @@
 Master:
+-ph5.clients.ph5toevt
+  * Updated to check the array table for response_n_i
+-ph5.clients.ph5torec
+  * Updated to check the array table for response_n_i
 -ph5.clients.ph5tostationxml
   * Added SACPZ and stationtxt to command line output option
 -ph5.core.experiment
