@@ -23,7 +23,7 @@ import os, sys, json
 from ph5.core import timedoy
 from ph5.core.ph5api import is_in
 
-PROG_VERSION = "2016.336.2"
+PROG_VERSION = "2017.311 Developmental"
 __version__ = PROG_VERSION
 
 def get_args () :
@@ -128,7 +128,8 @@ def _is_in (das, shot_time, length, si) :
           Match last sample time as a timedoy object, None if no match
           Gaps as a list of start and end times as timedoy objects
     '''
-    data = DATA[das]
+    if DATA.has_key (das) : data = DATA[das] 
+    else : data = []
     shot_start_epoch = shot_time.epoch (fepoch=True)
     shot_stop_epoch = shot_start_epoch + length
     
@@ -157,7 +158,7 @@ def _is_in (das, shot_time, length, si) :
                 fs = h['first_sample']
             if ls == None :
                 ls = h['last_sample']
-            delta = h['last_sample'] - ls
+            delta = abs (timedoy.passcal2epoch (h['last_sample']) - timedoy.passcal2epoch (ls))
             if delta > si :
                 gaps.append ((ls, h['last_sample']))
                 
