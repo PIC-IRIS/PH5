@@ -365,17 +365,14 @@ class PH5toMSeed(object):
         self.ph5.Das_t = {}
         if len(obspy_stream.traces) < 1:
             return
-        
-        if mp == True:
+        if mp is True:
             if self.format and self.format.upper() == "MSEED":
                 obspy_stream.write(self.filenamemseed_gen(obspy_stream),
                                    format='MSEED', reclen=4096)
-                
             elif self.format and self.format.upper() == "SAC":
                     for trace in obspy_stream:
                         sac = SACTrace.from_obspy_trace(trace)
                         sac.write(self.filenamesac_gen(trace))
-                    
         return obspy_stream
 
     def get_channel_and_component(self, station_list, deployment, st_num):
@@ -715,16 +712,15 @@ class PH5toMSeed(object):
             stream = self.create_trace(cut)
             if stream is not None:
                 yield stream
-                
-    def process_all_mp(self):      
+
+    def process_all_mp(self):
         cuts = self.create_cut_list()
         jobs = []
         for cut in cuts:
             self.ph5.clear()
-            p = mp.Process(target=self.create_trace, args=(cut,True))
+            p = mp.Process(target=self.create_trace, args=(cut, True))
             jobs.append(p)
-            p.start()            
-        
+            p.start()
 
 
 def get_args():
@@ -913,7 +909,7 @@ def main():
                            notimecorrect=args.notimecorrect,
                            format=args.format.upper())
 
-        streams = ph5ms.process_all_mp()
+        ph5ms.process_all_mp()
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
