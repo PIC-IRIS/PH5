@@ -1,4 +1,10 @@
 Master:
+-ph5.clients.ph5toevt
+ * Updated to also accept external shot files
+-ph5.clients.ph5torec
+ * Updated to also accept external shot files
+-ph5.core.external_file
+ * new core component for external array or shot files
 -ph5.clients.ph5toms
  * ph5toms now uses multiprocessing
 -ph5.clients.ph5toms (issue #127)

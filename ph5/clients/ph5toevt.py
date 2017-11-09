@@ -6,9 +6,10 @@
 #
 
 import os, sys, logging
-from ph5.core import ph5api, segyfactory, decimate, timedoy
+from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
+#import external_file
 
-PROG_VERSION = "2017.304 Developmental"
+PROG_VERSION = "2017.312 Developmental"
 #   This should never get used. See ph5api.
 CHAN_MAP = { 1:'Z', 2:'N', 3:'E', 4:'Z', 5:'N', 6:'E' }
 
@@ -71,6 +72,10 @@ def get_args () :
     parser.add_argument ("--shot_line", dest="shot_line", action="store",
                          help = "The shot line number that holds the shots.",
                          type=int, metavar="shot_line")
+    #   External shot line file
+    parser.add_argument ("--shot_file", dest="shot_file", action="store",
+                         help="Input an external kef file that contains event information, Event_t.kef.",
+                         type=str, metavar="shot_file")
     #   Extract data for all stations starting at this time
     parser.add_argument ("-s", "--starttime", action="store", dest="start_time",
                         type=str, metavar="start_time")
@@ -141,6 +146,16 @@ def get_args () :
         sys.stderr.write ("Error: Can't open {0} at {1}.".format (ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit (-1)
     #
+    if ARGS.shot_file :
+        if not ARGS.shot_line :
+            sys.stderr.write ("Error: Shot line switch, --shot_line, required when using external shot file.")
+            sys.exit (-3)
+        external = external_file.External (ARGS.shot_file)
+        ARGS.shot_file = external.Event_t
+        P5.Event_t_names = ARGS.shot_file.keys ()
+    else :
+        P5.read_event_t_names ()
+    #
     if ARGS.event_number :
         ARGS.evt_list = list ([str (ARGS.event_number)])
     elif ARGS.evt_list :
@@ -158,7 +173,7 @@ def get_args () :
             ARGS.shot_line = "Event_t"
         else :
             ARGS.shot_line = "Event_t_{0:03d}".format (ARGS.shot_line)
-        
+        #
     elif not ARGS.start_time :
         sys.stderr.write ("Error: Shot line or start time required.")
         sys.exit (-2)
@@ -182,14 +197,11 @@ def gather () :
         ARGS.stations_to_gather = P5.Array_t[ARGS.station_array]['order']
     if ARGS.all_events :
         ARGS.evt_list = P5.Event_t[ARGS.shot_line]['order']
+    
     for evt in ARGS.evt_list :
         try :
             if not ARGS.start_time :
-                if P5.Event_t.has_key (ARGS.shot_line) :
-                    event_t = P5.Event_t[ARGS.shot_line]['byid'][evt]
-                else :
-                    P5.read_event_t (ARGS.shot_line)
-                    event_t = P5.Event_t[ARGS.shot_line]['byid'][evt]
+                event_t = P5.Event_t[ARGS.shot_line]['byid'][evt]
             else : event_t = None
                 
             logging.info ("Extracting receivers for event {0:s}.".format (evt))
@@ -386,10 +398,11 @@ def gather () :
                         logging.warning ("No sensor orientation found in ph5 file. Contact PIC.")
                     #   Read gain and bit weight
                     
-                    if array_t[c][t]['response_table_n_i'] is not None:
+                    if array_t[c][t].has_key ('response_table_n_i') and array_t[c][t]['response_table_n_i'] is not -1 :
                         response_t = P5.get_response_t_by_n_i(int(array_t[c][t]['response_table_n_i']))
                     else:
                         response_t = trace.response_t
+                        
                     if response_t :
                         sf.set_response_t (response_t)
                     else :
@@ -502,13 +515,16 @@ def main():
         )
     ###
     logging.info ("{0}: {1}".format (PROG_VERSION, sys.argv))
-    P5.read_event_t_names ()
+    #P5.read_event_t_names ()
     if not ARGS.start_time :
         if not ARGS.shot_line in P5.Event_t_names :
             logging.error ("Error: {0} not found. {1}\n".format (ARGS.shot_line, " ".join (P5.Event_t_names)))
             sys.exit (-1)
         else :
-            P5.read_event_t (ARGS.shot_line)
+            if not ARGS.shot_file :
+                P5.read_event_t (ARGS.shot_line)
+            else :
+                P5.Event_t = ARGS.shot_file
             #SHOTS_ALL = P5.Event_t[ARGS.shot_line]['byid'].keys ()
     P5.read_array_t_names ()
     if not ARGS.station_array in P5.Array_t_names :
@@ -516,6 +532,7 @@ def main():
         sys.exit (-1)
     else :
         P5.read_array_t (ARGS.station_array)
+        
         #STATIONS_ALL = P5.Array_t[ARGS.station_array]['byid'].keys ()
        
     P5.read_receiver_t ()
