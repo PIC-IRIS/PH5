@@ -1,4 +1,6 @@
 Master:
+-ph5.clients.ph5toms
+ * ph5toms now uses multiprocessing
 -ph5.clients.ph5toms (issue #127)
  * Updated ph5toms to write SAC header values properly
 -ph5.clients.ph5toevt
