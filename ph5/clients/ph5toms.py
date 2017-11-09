@@ -16,9 +16,10 @@ import itertools
 from ph5.core import ph5utils
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
+import multiprocessing as mp
 
 
-PROG_VERSION = "2017.311"
+PROG_VERSION = "2017.312"
 LENGTH = int(86400)
 
 
@@ -284,7 +285,7 @@ class PH5toMSeed(object):
         else:
             return station_to_cut_list
 
-    def create_trace(self, station_to_cut):
+    def create_trace(self, station_to_cut, mp=False):
 
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments(
             [station_to_cut], self.restricted)
@@ -364,7 +365,14 @@ class PH5toMSeed(object):
         self.ph5.Das_t = {}
         if len(obspy_stream.traces) < 1:
             return
-
+        if mp is True:
+            if self.format and self.format.upper() == "MSEED":
+                obspy_stream.write(self.filenamemseed_gen(obspy_stream),
+                                   format='MSEED', reclen=4096)
+            elif self.format and self.format.upper() == "SAC":
+                    for trace in obspy_stream:
+                        sac = SACTrace.from_obspy_trace(trace)
+                        sac.write(self.filenamesac_gen(trace))
         return obspy_stream
 
     def get_channel_and_component(self, station_list, deployment, st_num):
@@ -705,6 +713,15 @@ class PH5toMSeed(object):
             if stream is not None:
                 yield stream
 
+    def process_all_mp(self):
+        cuts = self.create_cut_list()
+        jobs = []
+        for cut in cuts:
+            self.ph5.clear()
+            p = mp.Process(target=self.create_trace, args=(cut, True))
+            jobs.append(p)
+            p.start()
+
 
 def get_args():
 
@@ -837,22 +854,13 @@ def get_args():
         help="SAC or MSEED",
         metavar="format", type=str, default="MSEED")
 
-    parser.add_argument(
-        "--previewimages",
-        help="produce png images of traces",
-        action="store_true",
-        default=False)
-
     the_args = parser.parse_args()
 
     return the_args
 
 
 def main():
-    from time import time as tm
     global LENGTH
-    then = tm()
-
     args = get_args()
 
     if args.nickname[-3:] == 'ph5':
@@ -901,51 +909,11 @@ def main():
                            notimecorrect=args.notimecorrect,
                            format=args.format.upper())
 
-        streams = ph5ms.process_all()
-
-        if args.format and args.format.upper() == "MSEED":
-            for t in streams:
-                if not args.stream:
-                    t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                            reclen=4096)
-                    if args.previewimages is True:
-                        t.plot(outfile=ph5ms.filenamemsimg_gen(t),
-                               bgcolor="#DCD3ED", color="#272727",
-                               face_color="#DCD3ED")
-
-                else:
-                    t.write(sys.stdout, format='MSEED', reclen=4096)
-        elif args.format and args.format.upper() == "SAC":
-            for t in streams:
-                if not args.stream:
-                    for trace in t:
-                        sac = SACTrace.from_obspy_trace(trace)
-                        sac.write(ph5ms.filenamesac_gen(trace))
-                        if args.previewimages is True:
-                            trace.plot(outfile=ph5ms.filenamesacimg_gen(trace),
-                                       bgcolor="#DCD3ED", color="#272727",
-                                       face_color="#DCD3ED")
-
-                else:
-                    sac.write(sys.stdout)
-        else:
-            for t in streams:
-                if not args.stream:
-                    t.write(ph5ms.filenamemseed_gen(t), format='MSEED',
-                            reclen=4096)
-
-                    if args.previewimages is True:
-                        t.plot(outfile=ph5ms.filenamemsimg_gen(t),
-                               bgcolor="#DCD3ED", color="#272727",
-                               face_color="#DCD3ED")
-                else:
-                    t.write(sys.stdout, format='MSEED', reclen=4096)
+        ph5ms.process_all_mp()
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
         exit(-1)
-
-    sys.stdout.write(str(tm() - then))
 
     ph5API_object.close()
 
