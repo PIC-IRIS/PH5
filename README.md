@@ -33,18 +33,12 @@ Below are instructions for installing PH5 with Anaconda. PH5 has several [system
 * Source the newly created ph5 environment by running `source activate ph5` (note that your are required to use bash shell for this to work)
 * Install the PH5 python package by running `python setup.py install` in the cloned PH5 project root directory.
 
-### Special Obspy Instructions
-You will need to grab the latest master branch of obspy as it has needed code that is in future obspy release 1.10 In order to install this special branch you must do the following:
-* Open a terminal
-* Run `source activate ph5` if you haven't already done so
-* Run `conda uninstall obspy` to make sure any previous version of obspy is removed
-* Run `git clone https://github.com/obspy/obspy.git`
-* Run `python setup.py install` inside the obspy root directory to install new version of obspy
-
-
-
 ## Running PH5 Command Line Tools
 
 Once installed, executing command line tools in PH5 couldn't be easier. To run a utility, enter the name of the utility's executable that you wish to run anywhere on the command line.
 
-For example, to run the ph5tostationxml.py utility the user would enter `ph5tostationxml` on the command line.
+Lists of command line utilities may be found at the links below:
+* [Data/Metadata Ingestion](https://github.com/PIC-IRIS/PH5/wiki/Data-and-Metadata-Ingestion)
+* [Data/Metadata QC](https://github.com/PIC-IRIS/PH5/wiki/Data-and-Metadata-QC)
+* [Editing and Manipulation](https://github.com/PIC-IRIS/PH5/wiki/PH5-Editing-and-Manipulation)
+* [Data Extraction](https://github.com/PIC-IRIS/PH5/wiki/Data-Extraction)

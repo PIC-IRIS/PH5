@@ -10,6 +10,7 @@ import os
 from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
+from obspy.io.sac import SACTrace
 import copy
 import itertools
 from ph5.core import ph5utils
@@ -17,7 +18,7 @@ from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
 
-PROG_VERSION = "2017.290"
+PROG_VERSION = "2017.311"
 LENGTH = int(86400)
 
 
@@ -26,7 +27,8 @@ class StationCut(object):
     def __init__(self, net_code, station, seed_station, das, channel,
                  seed_channel, starttime, endtime,
                  sample_rate, sample_rate_multiplier,
-                 notimecorrect, location, latitude, longitude):
+                 notimecorrect, location, latitude, longitude, elev,
+                 receiver_n_i, response_n_i):
 
         self.net_code = net_code
         self.station = station
@@ -42,6 +44,9 @@ class StationCut(object):
         self.location = location
         self.latitude = latitude
         self.longitude = longitude
+        self.elev = elev
+        self.receiver_n_i = receiver_n_i
+        self.response_n_i = response_n_i
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -64,7 +69,8 @@ class PH5toMSeed(object):
                  length=None, starttime=None, stoptime=None, offset=None,
                  das_sn=None, use_deploy_pickup=False, decimation=None,
                  sample_rate_keep=None, doy_keep=[], stream=False,
-                 reduction_velocity=-1., notimecorrect=False, restricted=[]):
+                 reduction_velocity=-1., notimecorrect=False,
+                 restricted=[], format='MSEED'):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.reqtype = reqtype.upper()
@@ -90,6 +96,7 @@ class PH5toMSeed(object):
         self.eventnumbers = eventnumbers
         self.ph5 = ph5API_object
         self.restricted = restricted
+        self.format = format
 
         if self.reqtype != "SHOT" and self.reqtype != "FDSN":
             raise PH5toMSAPIError("Error - Invalid request type {0}. "
@@ -139,9 +146,9 @@ class PH5toMSeed(object):
             ret = os.path.join(self.out_dir, ret)
         return ret
 
-    def filenamesac_gen(self, stream):
+    def filenamesac_gen(self, trace):
 
-        s = stream.traces[0].stats
+        s = trace.stats
         secs = int(s.starttime.timestamp)
         pre = epoch2passcal(secs, sep='.')
         ret = "{0}.{1}.{2}.{3}.{4}.SAC".format(
@@ -165,9 +172,9 @@ class PH5toMSeed(object):
             ret = os.path.join(self.out_dir, "preview_images", ret)
         return ret
 
-    def filenamesacimg_gen(self, stream):
+    def filenamesacimg_gen(self, trace):
 
-        s = stream.traces[0].stats
+        s = trace.stats
         secs = int(s.starttime.timestamp)
         pre = epoch2passcal(secs, sep='.')
         ret = "{0}.{1}.{2}.{3}.{4}.png".format(
@@ -329,7 +336,19 @@ class PH5toMSeed(object):
                     obspy_trace = Trace(data=trace.data)
                 except ValueError:
                     continue
-
+                if self.format == "SAC":
+                    Receiver_t = \
+                        self.ph5.get_receiver_t_by_n_i(stc.receiver_n_i)
+                    azimuth = Receiver_t['orientation/azimuth/value_f']
+                    dip = Receiver_t['orientation/dip/value_f']
+                    obspy_trace.stats.sac = {'kstnm': stc.seed_station,
+                                             'kcmpnm': stc.seed_channel,
+                                             'knetwk': stc.net_code,
+                                             'stla': float(stc.latitude),
+                                             'stlo': float(stc.longitude),
+                                             'stel': float(stc.elev),
+                                             'cmpaz': float(azimuth),
+                                             'cmpinc': float(dip)}
                 obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
@@ -383,6 +402,8 @@ class PH5toMSeed(object):
         location = station_list[deployment][
             st_num]['seed_location_code_s']
         das = station_list[deployment][st_num]['das/serial_number_s']
+        receiver_n_i = station_list[deployment][st_num]['receiver_table_n_i']
+        response_n_i = station_list[deployment][st_num]['response_table_n_i']
 
         if 'sample_rate_i' in station_list[deployment][0]:
             sample_rate = station_list[deployment][st_num]['sample_rate_i']
@@ -527,6 +548,8 @@ class PH5toMSeed(object):
                 st_num]['location/Y/value_d']
             longitude = station_list[deployment][
                 st_num]['location/X/value_d']
+            elev = station_list[deployment][
+                st_num]['location/Z/value_d']
 
             for starttime, endtime in tuple(times_to_cut):
 
@@ -552,7 +575,10 @@ class PH5toMSeed(object):
                     self.notimecorrect,
                     location,
                     latitude,
-                    longitude)
+                    longitude,
+                    elev,
+                    receiver_n_i,
+                    response_n_i)
 
                 yield station_x
 
@@ -872,7 +898,8 @@ def main():
                            sample_rate_keep=args.sample_rate,
                            doy_keep=args.doy_keep, stream=args.stream,
                            reduction_velocity=args.red_vel,
-                           notimecorrect=args.notimecorrect)
+                           notimecorrect=args.notimecorrect,
+                           format=args.format.upper())
 
         streams = ph5ms.process_all()
 
@@ -891,14 +918,16 @@ def main():
         elif args.format and args.format.upper() == "SAC":
             for t in streams:
                 if not args.stream:
-                    t.write(ph5ms.filenamesac_gen(t), format='SAC')
-                    if args.previewimages is True:
-                        t.plot(outfile=ph5ms.filenamesacimg_gen(t),
-                               bgcolor="#DCD3ED", color="#272727",
-                               face_color="#DCD3ED")
+                    for trace in t:
+                        sac = SACTrace.from_obspy_trace(trace)
+                        sac.write(ph5ms.filenamesac_gen(trace))
+                        if args.previewimages is True:
+                            trace.plot(outfile=ph5ms.filenamesacimg_gen(trace),
+                                       bgcolor="#DCD3ED", color="#272727",
+                                       face_color="#DCD3ED")
 
                 else:
-                    t.write(sys.stdout, format='SAC')
+                    sac.write(sys.stdout)
         else:
             for t in streams:
                 if not args.stream:
