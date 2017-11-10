@@ -570,25 +570,31 @@ class PH5toStationXMLParser(object):
                     if x not in sta_xml_obj.ph5_station_id_list:
                         continue
                     for deployment in station_list:
-                        
-                        sta_longitude = station_list[deployment][0]['location/X/value_d']
-                        sta_latitude = station_list[deployment][0]['location/Y/value_d']
-                        sta_elevation = station_list[deployment][0]['location/Z/value_d']
-    
+
+                        sta_longitude = station_list[deployment][0][
+                            'location/X/value_d']
+                        sta_latitude = station_list[deployment][0][
+                            'location/Y/value_d']
+                        sta_elevation = station_list[deployment][0][
+                            'location/Z/value_d']
+
                         if not self.is_lat_lon_match(sta_xml_obj,
                                                      sta_latitude,
                                                      sta_longitude):
                             continue
-    
+
                         if station_list[deployment][0]['seed_station_name_s']:
                             station_name = \
-                                station_list[deployment][0]['seed_station_name_s']
+                                station_list[deployment][0][
+                                    'seed_station_name_s']
                         else:
                             station_name = x
-    
-                        start_date = station_list[deployment][0]['deploy_time/epoch_l']
+
+                        start_date = station_list[deployment][0][
+                            'deploy_time/epoch_l']
                         start_date = UTCDateTime(start_date)
-                        end_date = station_list[deployment][0]['pickup_time/epoch_l']
+                        end_date = station_list[deployment][0][
+                            'pickup_time/epoch_l']
                         end_date = UTCDateTime(end_date)
                         if sta_xml_obj.start_time and \
                                 sta_xml_obj.start_time > end_date:
@@ -598,7 +604,7 @@ class PH5toStationXMLParser(object):
                                 sta_xml_obj.end_time < start_date:
                             # chosen end time before pickup
                             continue
-    
+
                         obs_station = self.create_obs_station(station_list,
                                                               station_name,
                                                               array_name,
@@ -608,7 +614,7 @@ class PH5toStationXMLParser(object):
                                                               sta_latitude,
                                                               sta_elevation,
                                                               deployment)
-    
+
                         if self.manager.level.upper() == "RESPONSE" or \
                            self.manager.level.upper() == "CHANNEL" or \
                            sta_xml_obj.location_list != ['*'] or \
@@ -619,25 +625,24 @@ class PH5toStationXMLParser(object):
                                                               station_list)
                             obs_station.channels = obs_channels
                             obs_station.total_number_of_channels = len(
-                                                                    station_list
-                                                                   )
+                                station_list)
                             obs_station.selected_number_of_channels = len(
-                                                                       obs_channels
-                                                                    )
+                                obs_channels)
                             if obs_station and \
-                                    obs_station.selected_number_of_channels == 0:
+                                    obs_station.selected_number_of_channels \
+                                    == 0:
                                 continue
                         else:
                             obs_station.total_number_of_channels = len(
-                                                                    station_list
-                                                                   )
+                                station_list)
                             obs_station.selected_number_of_channels = 0
-                        hash = "{}.{}.{}.{}.{}.{}".format(obs_station.code,
-                                                          obs_station.latitude,
-                                                          obs_station.longitude,
-                                                          obs_station.start_date,
-                                                          obs_station.end_date,
-                                                          obs_station.elevation)
+                        hash = "{}.{}.{}.{}.{}.{}".format(
+                            obs_station.code,
+                            obs_station.latitude,
+                            obs_station.longitude,
+                            obs_station.start_date,
+                            obs_station.end_date,
+                            obs_station.elevation)
                         if hash not in all_stations_keys:
                             all_stations_keys.append(hash)
                             all_stations.append(obs_station)
