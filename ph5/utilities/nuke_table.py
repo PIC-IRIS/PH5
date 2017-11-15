@@ -5,18 +5,23 @@
 #   Steve Azevedo, February 2013
 #
 
-import os, sys
-from ph5.core import experiment, columns
+import os, sys, time
+from ph5.core import experiment, columns, timedoy
+#from ph5.utilities import tabletokef as T2K
+import tabletokef as T2K
 
-PROG_VERSION = '2016.307'
+PROG_VERSION = '2017.319 Developmental'
 
+if float (T2K.PROG_VERSION[0:8]) < 2017.317 :
+    sys.stderr.write ("Found old version of tabletokef.py. Requires version 2017.317 or newer.")
+    sys.exit (-2)
 #
 #   Read Command line arguments
 #
 def get_args () :
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
            ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE, \
-           INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
+           INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE, NO_BACKUP
     
     from optparse import OptionParser
     
@@ -35,6 +40,9 @@ def get_args () :
                         metavar = "ph5_path")
     
     oparser.add_option ("-d", dest = "debug", action = "store_true", default = False)
+    
+    oparser.add_option ("-N", "--no_backup", dest="no_backup", action="store_true", default=False,
+                        help="Do NOT create a kef file backup of the table.")
     
     oparser.add_option ("-E", "--Experiment_t", dest = "experiment_t", action = "store_true",
                         default = False,
@@ -132,6 +140,8 @@ def get_args () :
     if PH5 == None :
         sys.stderr.write ("Error: Missing required option. Try --help\n")
         sys.exit (-1)
+        
+    NO_BACKUP = options.no_backup
 
 #
 #   Initialize ph5 file
@@ -144,67 +154,95 @@ def initialize_ph5 (editmode = True) :
     EX.ph5open (editmode)
     EX.initgroup ()
 
-
-##
-##   Print Rows_Keys
-##
-#def table_print (t, a) :
-    #global TABLE_KEY
-    #global PATH
-    #global EX
-    #i = 0
-    #s=''
-    #s=s+"#\n#\t%s\tph5 version: %s\n#\n" % (time.ctime (time.time ()), EX.version ())
-    ##   Loop through table rows
-    #for r in a.rows :
-        #i += 1
-        
-        #s= s+"#   Table row %d\n" % i
-        ##   Print table name
-        #if TABLE_KEY in a.keys :
-            #s=s+ "{0}:Update:{1} \n".format (t, TABLE_KEY)
-        #else :
-            #s=s+ t+"\n"
-        ##   Loop through each row column and print
-        #for k in a.keys :
-            #s=s+"\t" + str(k) + "=" + str(r[k])+"\n"
-    #print s
-    #f=open(PATH+"/temp.kef", "w")
-    #f.write(s)
-
-
+def backup (table_type, table_path, table) :
+    '''   Create a backup in kef format. File has year and doy in name.
+    '''
+    if NO_BACKUP or table.rows == [] : return
+    tdoy = timedoy.TimeDOY (epoch=time.time ())
+    tt = "{0:04d}{1:03d}".format (tdoy.dtobject.year, tdoy.dtobject.day)
+    prefix = "{0}_{1}".format (table_type, tt)
+    outfile = "{0}_00.kef".format (prefix)
+    #   Do not overwite existing file
+    i = 1
+    while os.path.exists (outfile) : 
+        outfile = "{0}_{1:02d}.kef".format (prefix, i)
+        i += 1
+    #   Exit if we can't write backup kef
+    if os.access (os.getcwd (), os.W_OK) :
+        print "Writing table backup: {0}.".format (os.path.join (outfile))
+    else :
+        sys.stderr.write ("Can't write: {0}.\nExiting!\n".format (os.getcwd (), outfile))
+        sys.exit (-3)
+    #
+    try :
+        fh = open (outfile, 'w')
+        T2K.table_print (table_path, table, fh=fh)
+        fh.close ()
+    except Exception as e :
+        sys.stderr.write ("Failed to save {0}.\ne.message\nExiting!\n".format (os.getcwd (), outfile))
+        sys.exit (-4)
+    
 def main():
     get_args ()
     initialize_ph5 ()
+    T2K.init_local ()
+    T2K.EX = EX
     #   /Experiment_g/Experiment_t
     if EXPERIMENT_TABLE :
+        table_type = 'Experiment_t'
+        T2K.read_experiment_table ()
+        backup (table_type, '/Experiment_g/Experiment_t', T2K.EXPERIMENT_T)
         EX.nuke_experiment_t ()
     #   /Experiment_g/Sorts_g/Sort_t
     if SORT_TABLE :
+        table_type = 'Sort_t'
+        T2K.read_sort_table ()
+        backup (table_type, '/Experiment_g/Sorts_g/Sort_t', T2K.SORT_T)
         EX.ph5_g_sorts.nuke_sort_t ()
     #   /Experiment_g/Sorts_g/Offset_t
     if OFFSET_TABLE != None :
+        T2K.OFFSET_TABLE = OFFSET_TABLE
+        T2K.read_offset_table ()
         if OFFSET_TABLE[0] == 0 :
+            table_type = 'Offset_t'
+            if T2K.OFFSET_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/Offset_t', T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t () :
                 print "{0} I am become Death, the Destroyer of Worlds.".format (OFFSET_TABLE)
             else :
                 print "{0} Not found.".format (OFFSET_TABLE)                
         else :
+            table_type = "Offset_t_{0:03d}_{1:03d}".format (OFFSET_TABLE[0], OFFSET_TABLE[1])
+            if T2K.OFFSET_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t ("Offset_t_{0:03d}_{1:03d}".format (OFFSET_TABLE[0], OFFSET_TABLE[1])) :
                 print "{0} I am become Death, the Destroyer of Worlds.".format (OFFSET_TABLE)
             else :
                 print "{0} Not found.".format (OFFSET_TABLE)                
     #   /Experiment_g/Sorts_g/Event_t
     if EVENT_TABLE != None :
+        T2K.EVENT_TABLE = EVENT_TABLE
+        T2K.read_event_table ()
         if EVENT_TABLE == 0 :
+            table_type = 'Event_t'
+            if T2K.EVENT_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/Event_t', T2K.EVENT_T[table_type])
             EX.ph5_g_sorts.nuke_event_t ()
         else :
+            table_type = "Event_t_{0:03d}".format (EVENT_TABLE)
+            if T2K.EVENT_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.EVENT_T[table_type])
             if EX.ph5_g_sorts.nuke_event_t ("Event_t_{0:03d}".format (EVENT_TABLE)) :
                 print "{0} I am become Death, the Destroyer of Worlds.".format (EVENT_TABLE)
             else :
                 print "{0} Not found.".format (EVENT_TABLE)                
     #   /Experiment_g/Sorts_g/Array_t_xxx
     if ARRAY_TABLE :
+        T2K.ARRAY_TABLE = ARRAY_TABLE
+        T2K.read_sort_arrays ()
+        table_type = 'Array_t_{0:03d}'.format (ARRAY_TABLE)
+        if T2K.ARRAY_T.has_key (table_type) :
+            backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.ARRAY_T[table_type])
         if EX.ph5_g_sorts.nuke_array_t (ARRAY_TABLE) :
             print "{0} I am become Death, the Destroyer of Worlds.".format (ARRAY_TABLE)
         else :
@@ -212,26 +250,49 @@ def main():
             
     #   /Experiment_g/Receivers_g/Time_t
     if TIME_TABLE :
+        table_type = 'Time_t'
+        T2K.read_time_table ()
+        backup (table_type, '/Experiment_g/Receivers_g/Time_t', T2K.TIME_T)
         EX.ph5_g_receivers.nuke_time_t ()
     #   /Experiment_g/Receivers_g/Index_t
     if INDEX_TABLE :
+        table_type = 'Index_t'
+        T2K.read_index_table ()
+        backup (table_type, '/Experiment_g/Receivers_g/Index_t', T2K.INDEX_T)
         EX.ph5_g_receivers.nuke_index_t ()
     #   /Experiment_g/Maps_g/Index_t
     if M_INDEX_TABLE :
+        table_type = 'M_Index_t'
+        T2K.read_m_index_table ()
+        backup (table_type, '/Experiment_g/Maps_g/Index_t', T2K.M_INDEX_T)
         EX.ph5_g_maps.nuke_index_t ()
     #   /Experiment_g/Receivers_g/Receiver_t
     if RECEIVER_TABLE :
+        table_type = 'Receiver_t'
+        T2K.read_receiver_table ()
+        backup (table_type, '/Experiment_g/Receivers_g/Receiver_t', T2K.RECEIVER_T)
         EX.ph5_g_receivers.nuke_receiver_t ()
     #   /Experiment_g/Responses_g/Response_t
     if RESPONSE_TABLE :
+        table_type = 'Response_t'
+        T2K.read_response_table ()
+        backup (table_type, '/Experiment_g/Responses_g/Response_t', T2K.RESPONSE_T)
         EX.ph5_g_responses.nuke_response_t ()
     #   /Experiment_g/Reports_g/Report_t
     if REPORT_TABLE :
+        table_type = 'Report_t'
+        T2K.read_report_table ()
+        backup (table_type, '/Experiment_g/Reports_g/Report_t', T2K.REPORT_T)
         EX.ph5_g_reports.nuke_report_t ()
     #   
     if DAS_TABLE :
         yon = raw_input ("Are you sure you want to delete all data in Das_t for das {0}? y/n ".format (DAS_TABLE))
         if yon == 'y' :
+            table_type = 'Das_t_{0}'.format (DAS_TABLE)
+            T2K.DAS_TABLE = DAS_TABLE
+            T2K.read_receivers (DAS_TABLE)
+            if T2K.DAS_T.has_key (DAS_TABLE) :
+                backup (table_type, '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format (DAS_TABLE), T2K.DAS_T[DAS_TABLE])
             EX.ph5_g_receivers.nuke_das_t (DAS_TABLE)
             
     EX.ph5close ()
