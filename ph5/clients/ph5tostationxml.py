@@ -17,7 +17,7 @@ import multiprocessing
 from ph5.core import ph5utils, ph5api
 
 
-PROG_VERSION = "2017.300"
+PROG_VERSION = "2017.314"
 
 
 def get_args():
@@ -307,7 +307,7 @@ class PH5toStationXMLParser(object):
 
     def create_obs_station(self, station_list, sta_code, array_name,
                            start_date, end_date, sta_longitude,
-                           sta_latitude, sta_elevation):
+                           sta_latitude, sta_elevation, deployment):
 
         obs_station = obspy.core.inventory.Station(sta_code,
                                                    latitude=sta_latitude,
@@ -316,9 +316,9 @@ class PH5toStationXMLParser(object):
                                                    end_date=end_date,
                                                    elevation=sta_elevation)
         obs_station.creation_date = UTCDateTime(
-            station_list[1][0]['deploy_time/epoch_l'])
+            station_list[deployment][0]['deploy_time/epoch_l'])
         obs_station.termination_date = UTCDateTime(
-            station_list[1][0]['pickup_time/epoch_l'])
+            station_list[deployment][0]['pickup_time/epoch_l'])
         extra = AttribDict({
             'PH5Array': {
                 'value': str(array_name)[8:],
@@ -328,7 +328,7 @@ class PH5toStationXMLParser(object):
         })
         obs_station.extra = extra
         obs_station.site = obspy.core.inventory.Site(
-            name=station_list[1][0]['location/description_s'])
+            name=station_list[deployment][0]['location/description_s'])
         return obs_station
 
     def create_obs_channel(self, station_list, deployment, cha_code, loc_code,
@@ -569,76 +569,83 @@ class PH5toStationXMLParser(object):
                     obs_channels = []
                     if x not in sta_xml_obj.ph5_station_id_list:
                         continue
+                    for deployment in station_list:
 
-                    sta_longitude = station_list[1][0]['location/X/value_d']
-                    sta_latitude = station_list[1][0]['location/Y/value_d']
-                    sta_elevation = station_list[1][0]['location/Z/value_d']
+                        sta_longitude = station_list[deployment][0][
+                            'location/X/value_d']
+                        sta_latitude = station_list[deployment][0][
+                            'location/Y/value_d']
+                        sta_elevation = station_list[deployment][0][
+                            'location/Z/value_d']
 
-                    if not self.is_lat_lon_match(sta_xml_obj,
-                                                 sta_latitude,
-                                                 sta_longitude):
-                        continue
-
-                    if station_list[1][0]['seed_station_name_s']:
-                        station_name = \
-                            station_list[1][0]['seed_station_name_s']
-                    else:
-                        station_name = x
-
-                    start_date = station_list[1][0]['deploy_time/epoch_l']
-                    start_date = UTCDateTime(start_date)
-                    end_date = station_list[1][0]['pickup_time/epoch_l']
-                    end_date = UTCDateTime(end_date)
-                    if sta_xml_obj.start_time and \
-                            sta_xml_obj.start_time > end_date:
-                        # chosen start time after pickup
-                        continue
-                    elif sta_xml_obj.end_time and \
-                            sta_xml_obj.end_time < start_date:
-                        # chosen end time before pickup
-                        continue
-
-                    obs_station = self.create_obs_station(station_list,
-                                                          station_name,
-                                                          array_name,
-                                                          start_date,
-                                                          end_date,
-                                                          sta_longitude,
-                                                          sta_latitude,
-                                                          sta_elevation)
-
-                    if self.manager.level.upper() == "RESPONSE" or \
-                       self.manager.level.upper() == "CHANNEL" or \
-                       sta_xml_obj.location_list != ['*'] or \
-                       sta_xml_obj.channel_list != ['*'] or \
-                       sta_xml_obj.component_list != ['*'] or \
-                       sta_xml_obj.receiver_list != ['*']:
-                        obs_channels = self.read_channels(sta_xml_obj,
-                                                          station_list)
-                        obs_station.channels = obs_channels
-                        obs_station.total_number_of_channels = len(
-                                                                station_list
-                                                               )
-                        obs_station.selected_number_of_channels = len(
-                                                                   obs_channels
-                                                                )
-                        if obs_station and \
-                                obs_station.selected_number_of_channels == 0:
+                        if not self.is_lat_lon_match(sta_xml_obj,
+                                                     sta_latitude,
+                                                     sta_longitude):
                             continue
-                    else:
-                        obs_station.total_number_of_channels = len(
-                                                                station_list
-                                                               )
-                        obs_station.selected_number_of_channels = 0
-                    hash = "{}.{}.{}.{}.{}.{}".format(obs_station.code,
-                                                      obs_station.latitude,
-                                                      obs_station.longitude,
-                                                      obs_station.start_date,
-                                                      obs_station.end_date,
-                                                      obs_station.elevation)
-                    if hash not in all_stations_keys:
-                        all_stations_keys.append(hash)
-                        all_stations.append(obs_station)
+
+                        if station_list[deployment][0]['seed_station_name_s']:
+                            station_name = \
+                                station_list[deployment][0][
+                                    'seed_station_name_s']
+                        else:
+                            station_name = x
+
+                        start_date = station_list[deployment][0][
+                            'deploy_time/epoch_l']
+                        start_date = UTCDateTime(start_date)
+                        end_date = station_list[deployment][0][
+                            'pickup_time/epoch_l']
+                        end_date = UTCDateTime(end_date)
+                        if sta_xml_obj.start_time and \
+                                sta_xml_obj.start_time > end_date:
+                            # chosen start time after pickup
+                            continue
+                        elif sta_xml_obj.end_time and \
+                                sta_xml_obj.end_time < start_date:
+                            # chosen end time before pickup
+                            continue
+
+                        obs_station = self.create_obs_station(station_list,
+                                                              station_name,
+                                                              array_name,
+                                                              start_date,
+                                                              end_date,
+                                                              sta_longitude,
+                                                              sta_latitude,
+                                                              sta_elevation,
+                                                              deployment)
+
+                        if self.manager.level.upper() == "RESPONSE" or \
+                           self.manager.level.upper() == "CHANNEL" or \
+                           sta_xml_obj.location_list != ['*'] or \
+                           sta_xml_obj.channel_list != ['*'] or \
+                           sta_xml_obj.component_list != ['*'] or \
+                           sta_xml_obj.receiver_list != ['*']:
+                            obs_channels = self.read_channels(sta_xml_obj,
+                                                              station_list)
+                            obs_station.channels = obs_channels
+                            obs_station.total_number_of_channels = len(
+                                station_list)
+                            obs_station.selected_number_of_channels = len(
+                                obs_channels)
+                            if obs_station and \
+                                    obs_station.selected_number_of_channels \
+                                    == 0:
+                                continue
+                        else:
+                            obs_station.total_number_of_channels = len(
+                                station_list)
+                            obs_station.selected_number_of_channels = 0
+                        hash = "{}.{}.{}.{}.{}.{}".format(
+                            obs_station.code,
+                            obs_station.latitude,
+                            obs_station.longitude,
+                            obs_station.start_date,
+                            obs_station.end_date,
+                            obs_station.elevation)
+                        if hash not in all_stations_keys:
+                            all_stations_keys.append(hash)
+                            all_stations.append(obs_station)
         return all_stations
 
     def read_arrays(self, name):
