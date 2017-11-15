@@ -12,7 +12,7 @@ from ph5.core import experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2017.136"
+PROG_VERSION = "2017.317 Developmental"
 #
 #   These are to hold different parts of the meta-data
 #
@@ -232,7 +232,7 @@ def initialize_ph5 (editmode = False) :
 #
 #   Print Rows_Keys
 #
-def table_print (t, a) :
+def table_print (t, a, fh=None) :
     global TABLE_KEY
     global PATH
     global EX
@@ -252,7 +252,10 @@ def table_print (t, a) :
         #   Loop through each row column and print
         for k in a.keys :
             s=s+"\t" + str(k) + "=" + str(r[k])+"\n"
-        print s,; s = ''
+        if fh == None :
+            print s,; s = ''
+        else :
+            fh.write (s); s = ''
     #f=open(PATH+"/temp.kef", "w")
     #f.write(s)
 
