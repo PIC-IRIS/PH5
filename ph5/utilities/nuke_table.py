@@ -10,7 +10,7 @@ from ph5.core import experiment, columns, timedoy
 #from ph5.utilities import tabletokef as T2K
 import tabletokef as T2K
 
-PROG_VERSION = '2017.318 Developmental'
+PROG_VERSION = '2017.319 Developmental'
 
 if float (T2K.PROG_VERSION[0:8]) < 2017.317 :
     sys.stderr.write ("Found old version of tabletokef.py. Requires version 2017.317 or newer.")
@@ -155,19 +155,32 @@ def initialize_ph5 (editmode = True) :
     EX.initgroup ()
 
 def backup (table_type, table_path, table) :
+    '''   Create a backup in kef format. File has year and doy in name.
+    '''
     if NO_BACKUP or table.rows == [] : return
     tdoy = timedoy.TimeDOY (epoch=time.time ())
     tt = "{0:04d}{1:03d}".format (tdoy.dtobject.year, tdoy.dtobject.day)
     prefix = "{0}_{1}".format (table_type, tt)
     outfile = "{0}_00.kef".format (prefix)
+    #   Do not overwite existing file
     i = 1
     while os.path.exists (outfile) : 
         outfile = "{0}_{1:02d}.kef".format (prefix, i)
         i += 1
-    print "Writing table backup: {0}.".format (outfile)
-    fh = open (outfile, 'w')
-    T2K.table_print (table_path, table, fh=fh)
-    fh.close ()
+    #   Exit if we can't write backup kef
+    if os.access (os.getcwd (), os.W_OK) :
+        print "Writing table backup: {0}.".format (os.path.join (outfile))
+    else :
+        sys.stderr.write ("Can't write: {0}.\nExiting!\n".format (os.getcwd (), outfile))
+        sys.exit (-3)
+    #
+    try :
+        fh = open (outfile, 'w')
+        T2K.table_print (table_path, table, fh=fh)
+        fh.close ()
+    except Exception as e :
+        sys.stderr.write ("Failed to save {0}.\ne.message\nExiting!\n".format (os.getcwd (), outfile))
+        sys.exit (-4)
     
 def main():
     get_args ()
@@ -192,14 +205,16 @@ def main():
         T2K.read_offset_table ()
         if OFFSET_TABLE[0] == 0 :
             table_type = 'Offset_t'
-            backup (table_type, '/Experiment_g/Sorts_g/Offset_t', T2K.OFFSET_T[table_type])
+            if T2K.OFFSET_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/Offset_t', T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t () :
                 print "{0} I am become Death, the Destroyer of Worlds.".format (OFFSET_TABLE)
             else :
                 print "{0} Not found.".format (OFFSET_TABLE)                
         else :
             table_type = "Offset_t_{0:03d}_{1:03d}".format (OFFSET_TABLE[0], OFFSET_TABLE[1])
-            backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.OFFSET_T[table_type])
+            if T2K.OFFSET_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t ("Offset_t_{0:03d}_{1:03d}".format (OFFSET_TABLE[0], OFFSET_TABLE[1])) :
                 print "{0} I am become Death, the Destroyer of Worlds.".format (OFFSET_TABLE)
             else :
@@ -210,11 +225,13 @@ def main():
         T2K.read_event_table ()
         if EVENT_TABLE == 0 :
             table_type = 'Event_t'
-            backup (table_type, '/Experiment_g/Sorts_g/Event_t', T2K.EVENT_T[table_type])
+            if T2K.EVENT_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/Event_t', T2K.EVENT_T[table_type])
             EX.ph5_g_sorts.nuke_event_t ()
         else :
             table_type = "Event_t_{0:03d}".format (EVENT_TABLE)
-            backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.EVENT_T[table_type])
+            if T2K.EVENT_T.has_key (table_type) :
+                backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.EVENT_T[table_type])
             if EX.ph5_g_sorts.nuke_event_t ("Event_t_{0:03d}".format (EVENT_TABLE)) :
                 print "{0} I am become Death, the Destroyer of Worlds.".format (EVENT_TABLE)
             else :
@@ -224,7 +241,8 @@ def main():
         T2K.ARRAY_TABLE = ARRAY_TABLE
         T2K.read_sort_arrays ()
         table_type = 'Array_t_{0:03d}'.format (ARRAY_TABLE)
-        backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.ARRAY_T[table_type])
+        if T2K.ARRAY_T.has_key (table_type) :
+            backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.ARRAY_T[table_type])
         if EX.ph5_g_sorts.nuke_array_t (ARRAY_TABLE) :
             print "{0} I am become Death, the Destroyer of Worlds.".format (ARRAY_TABLE)
         else :
@@ -273,7 +291,8 @@ def main():
             table_type = 'Das_t_{0}'.format (DAS_TABLE)
             T2K.DAS_TABLE = DAS_TABLE
             T2K.read_receivers (DAS_TABLE)
-            backup (table_type, '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format (DAS_TABLE), T2K.DAS_T[DAS_TABLE])
+            if T2K.DAS_T.has_key (DAS_TABLE) :
+                backup (table_type, '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format (DAS_TABLE), T2K.DAS_T[DAS_TABLE])
             EX.ph5_g_receivers.nuke_das_t (DAS_TABLE)
             
     EX.ph5close ()
