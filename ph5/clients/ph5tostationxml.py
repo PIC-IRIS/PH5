@@ -227,7 +227,8 @@ class PH5toStationXMLRequest(object):
         if not self.array_list:
             self.array_list = ["*"]
         if self.start_time:
-            self.start_time = UTCDateTime(ns=ph5utils.sec_to_nanosec(start_time))
+            self.start_time = UTCDateTime(
+                                    ns=ph5utils.sec_to_nanosec(start_time))
         if self.end_time:
             self.end_time = UTCDateTime(ns=ph5utils.sec_to_nanosec(end_time))
 
@@ -320,10 +321,10 @@ class PH5toStationXMLParser(object):
 
         obs_station.creation_date = UTCDateTime(
             ns=ph5utils.sec_to_nanosec(station_list[deployment][0]
-                                    ['deploy_time/epoch_l']))
+                                       ['deploy_time/epoch_l']))
         obs_station.termination_date = UTCDateTime(
             ns=ph5utils.sec_to_nanosec(station_list[deployment][0]
-                                    ['pickup_time/epoch_l']))
+                                       ['pickup_time/epoch_l']))
 
         extra = AttribDict({
             'PH5Array': {
@@ -351,10 +352,10 @@ class PH5toStationXMLParser(object):
                                             )
         obs_channel.start_date = UTCDateTime(
             ns=ph5utils.sec_to_nanosec(station_list[deployment][0]
-                                    ['deploy_time/epoch_l']))
+                                       ['deploy_time/epoch_l']))
         obs_channel.end_date = UTCDateTime(
             ns=ph5utils.sec_to_nanosec(station_list[deployment][0]
-                                    ['pickup_time/epoch_l']))
+                                       ['pickup_time/epoch_l']))
 
         # compute sample rate
         sample_rate_multiplier = float(station_list[deployment]
@@ -396,7 +397,7 @@ class PH5toStationXMLParser(object):
                                                     ['deploy_time/epoch_l'])),
             removal_date=UTCDateTime(ns=ph5utils.sec_to_nanosec(
                                         station_list[deployment][0]
-                                                   ['pickup_time/epoch_l'])))
+                                        ['pickup_time/epoch_l'])))
         das_type = " ".join([x for x in [station_list[deployment][0]
                                                      ['das/manufacturer_s'],
                                          station_list[deployment][0]
@@ -598,17 +599,19 @@ class PH5toStationXMLParser(object):
                                                      sta_latitude,
                                                      sta_longitude):
                             continue
-    
+
                         if station_list[deployment][0]['seed_station_name_s']:
-                            station_name = \
-                                station_list[deployment][0]['seed_station_name_s']
+                            station_name = station_list[deployment][0][
+                                                        'seed_station_name_s']
                         else:
                             station_name = x
-    
-                        start_date = station_list[deployment][0]['deploy_time/epoch_l']
+
+                        start_date = station_list[deployment][0][
+                                                        'deploy_time/epoch_l']
                         start_date = UTCDateTime(ns=ph5utils.sec_to_nanosec(
                                                                 start_date))
-                        end_date = station_list[deployment][0]['pickup_time/epoch_l']
+                        end_date = station_list[deployment][0][
+                                                        'pickup_time/epoch_l']
                         end_date = UTCDateTime(ns=ph5utils.sec_to_nanosec(
                                                                 end_date))
                         if sta_xml_obj.start_time and \
@@ -619,7 +622,6 @@ class PH5toStationXMLParser(object):
                                 sta_xml_obj.end_time < start_date:
                             # chosen end time before pickup
                             continue
-
 
                         obs_station = self.create_obs_station(station_list,
                                                               station_name,
