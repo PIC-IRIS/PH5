@@ -1,4 +1,9 @@
 Master:
+
+-ph5.clients.ph5tostationxml
+ * Always takes in to account deployments
+-ph5.utilities.nuke_table
+ * Nuke_table now creates file back ups
 -ph5.clients.ph5toevt
  * Updated to also accept external shot files
 -ph5.clients.ph5torec
