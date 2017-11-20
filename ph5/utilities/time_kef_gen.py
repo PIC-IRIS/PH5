@@ -11,7 +11,7 @@ import numpy as npy
 from ph5.core import ph5api, timedoy
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = "2017.181 Developmental"
+PROG_VERSION = "2017.324 Developmental"
 
 #   Match lines related to timing in SOH
 timetoRE = re.compile (".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+(\d{4}/\d{4})\s+MS")
@@ -97,6 +97,7 @@ def parse_soh (soh_buf) :
 def process_soh (soh) :
     '''   Parse TO's and FROM's
     '''
+    tos = []; fos = []
     soh_array_names = soh.keys ()
     for soh_array_name in soh_array_names :
         soh_buf = soh[soh_array_name]
