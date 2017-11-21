@@ -10,7 +10,7 @@ from ph5.core import experiment, columns, timedoy
 #from ph5.utilities import tabletokef as T2K
 import tabletokef as T2K
 
-PROG_VERSION = '2017.319 Developmental'
+PROG_VERSION = '2017.325 Developmental'
 
 if float (T2K.PROG_VERSION[0:8]) < 2017.317 :
     sys.stderr.write ("Found old version of tabletokef.py. Requires version 2017.317 or newer.")
@@ -27,7 +27,7 @@ def get_args () :
     
     oparser = OptionParser ()
     
-    oparser.usage = "Version: {0}\nnuke-table --nickname ph5-file-prefix options".format (PROG_VERSION)
+    oparser.usage = "Version: {0}\ndelete_table --nickname ph5-file-prefix options".format (PROG_VERSION)
     
     oparser.description = "Initialize a table in a ph5 file. Caution: Deletes contents of table!"
     
@@ -181,7 +181,13 @@ def backup (table_type, table_path, table) :
     except Exception as e :
         sys.stderr.write ("Failed to save {0}.\ne.message\nExiting!\n".format (os.getcwd (), outfile))
         sys.exit (-4)
-    
+
+def exclaim (n) :
+    if (int (time.time ()) % 235) == 0 :
+        print "{0} I am become Death, the Destroyer of Worlds.".format (n)
+    else :
+        print "{0} It worked.".format (n)
+        
 def main():
     get_args ()
     initialize_ph5 ()
@@ -208,7 +214,7 @@ def main():
             if T2K.OFFSET_T.has_key (table_type) :
                 backup (table_type, '/Experiment_g/Sorts_g/Offset_t', T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t () :
-                print "{0} I am become Death, the Destroyer of Worlds.".format (OFFSET_TABLE)
+                exclaim (OFFSET_TABLE)
             else :
                 print "{0} Not found.".format (OFFSET_TABLE)                
         else :
@@ -216,7 +222,7 @@ def main():
             if T2K.OFFSET_T.has_key (table_type) :
                 backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t ("Offset_t_{0:03d}_{1:03d}".format (OFFSET_TABLE[0], OFFSET_TABLE[1])) :
-                print "{0} I am become Death, the Destroyer of Worlds.".format (OFFSET_TABLE)
+                exclaim (OFFSET_TABLE)
             else :
                 print "{0} Not found.".format (OFFSET_TABLE)                
     #   /Experiment_g/Sorts_g/Event_t
@@ -233,7 +239,7 @@ def main():
             if T2K.EVENT_T.has_key (table_type) :
                 backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.EVENT_T[table_type])
             if EX.ph5_g_sorts.nuke_event_t ("Event_t_{0:03d}".format (EVENT_TABLE)) :
-                print "{0} I am become Death, the Destroyer of Worlds.".format (EVENT_TABLE)
+                exclaim (EVENT_TABLE)
             else :
                 print "{0} Not found.".format (EVENT_TABLE)                
     #   /Experiment_g/Sorts_g/Array_t_xxx
@@ -244,7 +250,7 @@ def main():
         if T2K.ARRAY_T.has_key (table_type) :
             backup (table_type, '/Experiment_g/Sorts_g/{0}'.format (table_type), T2K.ARRAY_T[table_type])
         if EX.ph5_g_sorts.nuke_array_t (ARRAY_TABLE) :
-            print "{0} I am become Death, the Destroyer of Worlds.".format (ARRAY_TABLE)
+            exclaim (ARRAY_TABLE)
         else :
             print "{0} Not found.".format (ARRAY_TABLE)
             

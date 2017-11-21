@@ -1,4 +1,12 @@
 Master:
+-ph5.utilities.pforma
+ * Skip files that do not exist
+-ph5.utilities.nuke_table
+ * Remove Oppenheimer/Bhagavad Gita references.
+-setup.py
+ * Add delete_table as alias for nuke_table
+-ph5.utilities.dumpfair
+ * Print trace values
 -ph5.utilities.time_kef_gen
  * Fixed bug caused by attemtping to run time_kef_gen on node data
 -ph5.clients.ph5tostationxml
