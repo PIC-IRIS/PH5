@@ -86,6 +86,7 @@ setup(
             'load_das_t = ph5.utilities.load_das_t:main',
             'meta_data_gen = ph5.utilities.meta_data_gen:main',
             'nuke_table = ph5.utilities.nuke_table:main',
+            'delete_table = ph5.utilities.nuke_table:main',
             'pformacl = ph5.utilities.pformacl:main',
             'ph5_merge_helper = ph5.utilities.ph5_merge_helper:main',
             'ph5_total = ph5.utilities.ph5_total:main',
