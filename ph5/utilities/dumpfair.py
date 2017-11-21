@@ -7,7 +7,7 @@
 import sys, os
 from ph5.core import segdreader
 
-PROG_VERSION = "2017.199"
+PROG_VERSION = "2017.321"
 
 def print_container (container) :
     keys = container.keys ()
@@ -78,8 +78,9 @@ def trace_headers (sd) :
         print_container (c)
         
     trace = sd.read_trace (sd.samples)
-    #for s in trace :
-        #print s
+    if os.environ.has_key ('fairprint') :
+        for s in trace :
+            print s
     #n += 1
     while True :
         if sd.isEOF () :
@@ -94,8 +95,9 @@ def trace_headers (sd) :
         
         n += 1    
         trace = sd.read_trace (sd.samples)
-        #for s in trace :
-            #print s    
+        if os.environ.has_key ('fairprint') :
+            for s in trace :
+                print s    
             
     print "There were {0} traces.".format (n)
 
@@ -109,6 +111,7 @@ def main():
         sd = segdreader.Reader (infile=sys.argv[1])
     except :
         print "Usage: dumpfair fairfield_seg-d_file.rg16"
+        print "To also print traces: set environment variable fairprint. This will run slowly."
         sys.exit ()
     
     general_headers (sd)
