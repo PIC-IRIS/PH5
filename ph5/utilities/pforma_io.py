@@ -9,7 +9,7 @@ import json, time
 import subprocess32 as subprocess
 #import subprocess
 
-PROG_VERSION = '2017.249b Developmental'
+PROG_VERSION = '2017.324 Developmental'
 
 #JSON_DB = 'pforma.json'
 HOME = os.environ['HOME']
@@ -395,6 +395,10 @@ class FormaIO () :
             line = line.strip ()
             #   Skip empty line
             if not line : continue
+            #   Skip files that do not exist
+            if not os.path.exists (line) :
+                sys.stderr.write ("Warning: {0} not found. Skipping.\n".format (line))
+                continue
             n += 1
             #   Try to guess data logger type and serial number based on file name
             raw_file = os.path.basename (line)        #
