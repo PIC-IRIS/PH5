@@ -1,5 +1,6 @@
 Master:
-
+-ph5.utilities.ph5validate
+ * New validation utility
 -ph5.clients.ph5tostationxml
  * Always takes in to account deployments
 -ph5.utilities.nuke_table
