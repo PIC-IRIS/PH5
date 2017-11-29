@@ -14,7 +14,7 @@ import logging
 
 logging.basicConfig(filename='resp_load.log', level=logging.DEBUG)
 logging.info("###################################################\n\n")
-PROG_VERSION = "2017.284"
+PROG_VERSION = "2017.325"
 
 
 class Station(object):
@@ -33,7 +33,8 @@ class Station(object):
             receiver_n_i,
             bit_weight,
             bit_weight_units,
-            gain_units):
+            gain_units,
+            serial):
         self.id_s = id_s
         self.array = array
         self.channel = channel
@@ -49,6 +50,7 @@ class Station(object):
         self.gain_units = gain_units
         self.response_file_das_a = None
         self.response_file_sensor_a = None
+        self.serial = serial
 
 
 class n_i_fix(object):
@@ -127,10 +129,13 @@ class n_i_fix(object):
                                 " channel " +
                                 str(channel) +
                                 ".\n")
+                        for entry in Das_t:
+                            if (entry['sample_rate_i'] == sample_rate and entry['sample_rate_multiplier_i'] == sample_rate_multiplier and entry['channel_number_i'] == channel):
+                                response_n_i = entry['response_table_n_i']
+                                receiver_n_i = entry['receiver_table_n_i'] 
+                                break
 
-                        response_n_i = Das_t[0]['response_table_n_i']
-                        receiver_n_i = Das_t[0]['receiver_table_n_i']
-                        Response_t = self.ph5.get_response_t(Das_t)
+                        Response_t = self.ph5.get_response_t_by_n_i(response_n_i)
                         if Response_t:
                             gain = Response_t['gain/value_i']
                             bit_weight = Response_t['bit_weight/value_d']
@@ -164,7 +169,8 @@ class n_i_fix(object):
                                 receiver_n_i,
                                 bit_weight,
                                 bit_weight_units,
-                                gain_units))
+                                gain_units,
+                                serial))
         return stations
 
     def update_kefs(self, path, arrays, data):
@@ -240,23 +246,43 @@ class n_i_fix(object):
                                     str(station.response_n_i) + '\n')
                                 break
                             else:
-                                new_kef.append("        response_table_n_i=\n")
+                                new_kef.append("        response_table_n_i=0\n")
+                                break
+                elif "receiver_table_n_i=" in line:
+
+                    for station in data:
+
+                        if int(
+                                station.id_s) == id_s and int(
+                                station.channel) == channel and int(x) == int(
+                                station.array):
+                            if station.receiver_n_i:
+                                new_kef.append(
+                                    "        receiver_table_n_i=" +
+                                    str(station.receiver_n_i) + '\n')
+                                break
+                            else:
+                                new_kef.append("        receiver_table_n_i=0\n")
                                 break
                 else:
                     new_kef.append(line)
             outfile = open("array_t_" + str(x) + ".kef", 'w')
+            file_name = "array_t_" + str(x) + ".kef"
             for line in new_kef:
                 outfile.write("%s" % line)
+
+            command = "nuke_table -n master.ph5 -p {0} -A {1}".format (path, str(x))
+            ret = subprocess.call (command, shell=True)
+            command = "keftoph5 -n master.ph5 -p {1} -k {0}".format (file_name, path)
+            ret = subprocess.call (command, shell=True)
             logging.info(
                 "array_t_" +
                 str(x) +
-                ".kef written. You will need to nuke_table the" +
-                "old kef and use keftoph5 to load the new one.")
+                " Loaded into PH5\n")
             sys.stdout.write(
                 "array_t_" +
                 str(x) +
-                ".kef written. You will need to nuke_table the old kef" +
-                "and use keftoph5 to load the new one.\n\n")
+                " Loaded into PH5\n")
 
     def create_template(self, data):
         data_list = []
@@ -271,8 +297,7 @@ class n_i_fix(object):
                               ""])
         unique_list = [list(x) for x in set(tuple(x) for x in data_list)]
         for x in unique_list:
-            if float(x[2])/float(x[3]) >= 1.0:
-                unique_list_complete.append(x)
+            unique_list_complete.append(x)
         outfile = open("input.csv", 'w')
         outfile.write(
             "Das Model, Sensor Model, Sample Rate, sample rate multiplier," +
@@ -463,12 +488,17 @@ class n_i_fix(object):
         outfile = open("response_t.kef", 'w')
         for line in new_kef:
             outfile.write("%s" % line)
+
+        command = "nuke_table -n master.ph5 -p {0} -R".format (path)
+        ret = subprocess.call (command, shell=True)
+
+        command = "keftoph5 -n master.ph5 -p {0} -k response_t.kef".format (path)
+        ret = subprocess.Popen(command, shell=True)
+
         logging.info(
-            "response_t.kef written. You will need to nuke_table the old" +
-            " kef and use keftoph5 to load the new one.")
+            "response_t.kef written into PH5")
         sys.stdout.write(
-            "response_t.kef written. You will need to nuke_table the old" +
-            " kef and use keftoph5 to load the new one.\n\n")
+            "response_t.kef written into PH5\n\n")
 
         for station in data:
             for x in data_update:
