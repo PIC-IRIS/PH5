@@ -172,13 +172,3 @@ def microsecs_to_sec(microsec):
     :returns: seconds :type: integer
     """
     return microsec / 1000000
-
-
-def sec_to_nanosec(sec):
-    """
-    Given seconds returns nanoseconds
-    :param: secons
-    :type: integer
-    :returns: nano-seconds :type: integer
-    """
-    return int(sec * 10**9)
