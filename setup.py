@@ -90,6 +90,7 @@ setup(
             'pformacl = ph5.utilities.pformacl:main',
             'ph5_merge_helper = ph5.utilities.ph5_merge_helper:main',
             'ph5_total = ph5.utilities.ph5_total:main',
+            'ph5_validate = ph5.utilities.ph5validate:main',
             'recreate_external_references = ph5.utilities.recreate_external_references:main',
             'reporttoph5 = ph5.utilities.report2ph5:main',
             'resp_load = ph5.utilities.resp_load:main',

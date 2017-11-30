@@ -1,4 +1,7 @@
 Master:
+
+-ph5.utilities.ph5validate
+ * New validation utility
 -ph5.utilities.pforma
  * Skip files that do not exist
 -ph5.utilities.nuke_table
