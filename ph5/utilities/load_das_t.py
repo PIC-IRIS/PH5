@@ -7,7 +7,7 @@
 
 import os, sys, re, time, subprocess
 
-PROG_VERSION = '2017.128'
+PROG_VERSION = '2017.342'
 
 all = os.listdir ('.')
 
@@ -48,7 +48,7 @@ def save_kefs () :
             das = mo.groups ()[0]
             #   Save table as kef (S stands for saved)
             new = "Das_t_S_{0}.kef".format (das)
-            command = "table2kef -n {2} -D {0} > {1}".format (das, new, MASTER)
+            command = "ph5tokef -n {2} -D {0} > {1}".format (das, new, MASTER)
             flush (command)
             #ret = os.system (command)
             ret = subprocess.call (command, shell=True)
@@ -56,7 +56,7 @@ def save_kefs () :
                 flush ("Command failed: {0}".format (ret))
                 continue
             #   Clear existing table
-            command = "nuke-table -n {1} -D {0}".format (das, MASTER)
+            command = "delete_table -n {1} -D {0}".format (das, MASTER)
             flush (command)
             #p = os.popen (command + '2>&1 > /dev/null', 'w')
             try :
@@ -85,7 +85,7 @@ def load_kefs () :
     for f in all :
         mo = RE.match (f)
         if mo :
-            command = "kef2ph5 -n {1} -k {0}".format (f, MASTER)
+            command = "keftoph5 -n {1} -k {0}".format (f, MASTER)
             flush (command)
             #ret = os.system (command)
             ret = subprocess.call (command, shell=True)
