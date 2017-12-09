@@ -10,7 +10,7 @@ from os.path import expanduser
 from PyQt4 import QtGui, QtCore
 from ph5.utilities import novenqc, novenkef
 
-PROG_VERSION = '2017.199'
+PROG_VERSION = '2017.342'
 
 
 RECEIVER_CFG_S ='''
@@ -736,7 +736,7 @@ def startapp():
             f = open(os.path.join (home,'.PH5', 'Event.cfg'), 'w')
             f.write(str(EVENT_CFG_S))
             f.close()
-        else:
+        #else:
             RECEIVER_CFG = json.loads(RECEIVER_CFG_S)
             EVENT_CFG = json.loads(EVENT_CFG_S)
     else:
