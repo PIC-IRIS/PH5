@@ -1,3 +1,7 @@
+Master:
+-ph5.utilities.ph5_validate
+ * New functionality for checking stations
+
 v4.1.0:
 -ph5.utilities.resp_load
  * resp_load now handles nuking and loading tables for the user
