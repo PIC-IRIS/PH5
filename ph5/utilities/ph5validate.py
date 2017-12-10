@@ -9,7 +9,7 @@ import subprocess
 import sys
 from ph5.core import ph5api
 
-PROG_VERSION = "2017.333"
+PROG_VERSION = "2017.344"
 
 # Set up logging. Do not append
 logging.basicConfig(filename='PH5Validate.log',
@@ -48,6 +48,10 @@ class PH5Validate(object):
     def check_experiment_t(self):
         experiment_t = self.ph5.Experiment_t['rows']
         logging.info("Checking Experiment Table")
+        if len(experiment_t) == 0:
+            logging.error("Experiment_t does not exist. " +
+                          "run experiment_t_gen to create table")
+            return
         if not experiment_t[0]['net_code_s']:
             logging.error('Network code was not found: ' +
                           'A 2 character network code is required.')
@@ -179,7 +183,69 @@ class PH5Validate(object):
         return
 
     def checK_stations(self):
-        return
+            logging.info("Checking Stations...")
+            array_names = sorted(self.ph5.Array_t_names)
+
+            for array_name in array_names:
+                self.read_arrays(array_name)
+                arraybyid = self.ph5.Array_t[array_name]['byid']
+                arrayorder = self.ph5.Array_t[array_name]['order']
+                for ph5_station in arrayorder:
+                    station_list = arraybyid.get(ph5_station)
+                    for deployment in station_list:
+                        station_len = len(station_list[deployment])
+                        for st_num in range(0, station_len):
+                            station_id = station_list[deployment][
+                                st_num]['id_s']
+                            serial = station_list[deployment][
+                                st_num]['das/serial_number_s']
+                            channel = station_list[deployment][
+                                st_num]['channel_number_i']
+                            logging.info("\n##############")
+                            logging.info("Station " + str(station_id) +
+                                         " Channel " + str(channel) + "\n")
+                            if not station_list[deployment][
+                                   st_num]['seed_station_name_s']:
+                                logging.error("SEED station name required.")
+
+                            response_t = self.ph5.get_response_t_by_n_i(
+                                         station_list[deployment][
+                                             st_num]['response_table_n_i'])
+                            if response_t is None:
+                                logging.error("No Response table found." +
+                                              "Have you run load_resp yet?")
+
+                            deploy_time = station_list[deployment][
+                                         st_num]['deploy_time/epoch_l']
+                            pickup_time = station_list[deployment][
+                                         st_num]['pickup_time/epoch_l']
+
+                            self.ph5.read_das_t(serial, deploy_time,
+                                                pickup_time, reread=False)
+
+                            if serial not in self.ph5.Das_t:
+                                logging.error("No Data found. You may need " +
+                                              "to reload the raw data for " +
+                                              "this station.")
+
+                            Das_t = ph5api.filter_das_t(self.ph5.Das_t[
+                                                        serial]['rows'],
+                                                        channel)
+
+                            if len(Das_t) < 1:
+                                logging.error("NO Data found for channel. " +
+                                              "Other channels seem to exist")
+                            if station_list[deployment][
+                                         st_num]['sample_rate_i'] == 0:
+                                logging.warning("Sample rate seems to be 0." +
+                                                " Is this correct???")
+                            if station_list[deployment][
+                                         st_num][
+                                         'sample_rate_multiplier_i'] == 0:
+                                logging.warning("Sample rate multiplier 0." +
+                                                " Is this correct???")
+
+            return
 
 
 def get_args():
@@ -208,6 +274,7 @@ def main():
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
     ph5validate = PH5Validate(ph5API_object, args.ph5path)
     ph5validate.check_experiment_t()
+    ph5validate.checK_stations()
     ph5API_object.close()
     sys.stdout.write("\nWarnings, Errors and suggests written to logfile: " +
                      "PH5Validate.log\n\n")
