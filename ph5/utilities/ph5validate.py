@@ -11,15 +11,19 @@ from ph5.core import ph5api
 
 PROG_VERSION = "2017.344"
 
-# Set up logging. Do not append
-logging.basicConfig(filename='PH5Validate.log',
-                    format='%(levelname)s: %(message)s',
-                    filemode='w',
-                    level=logging.DEBUG)
-
 
 class PH5Validate(object):
-    def __init__(self, ph5API_object, ph5path):
+    def __init__(self, ph5API_object, ph5path, level):
+        if level == "error":
+            logging.basicConfig(filename='PH5Validate.log',
+                                format='%(levelname)s: %(message)s',
+                                filemode='w',
+                                level=logging.ERROR)
+        else:
+            logging.basicConfig(filename='PH5Validate.log',
+                                format='%(levelname)s: %(message)s',
+                                filemode='w',
+                                level=logging.DEBUG)
 
         self.ph5 = ph5API_object
         self.path = ph5path
@@ -27,6 +31,8 @@ class PH5Validate(object):
             self.ph5.read_array_t_names()
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
+        # Set up logging. Do not append
+
         return
 
     def read_arrays(self, name):
@@ -224,17 +230,20 @@ class PH5Validate(object):
                                                 pickup_time, reread=False)
 
                             if serial not in self.ph5.Das_t:
-                                logging.error("No Data found. You may need " +
+                                logging.error("No Data found for: " +
+                                              str(station_id) +
+                                              " You may need " +
                                               "to reload the raw data for " +
                                               "this station.")
+                            try:
+                                ph5api.filter_das_t(self.ph5.Das_t[
+                                                    serial]['rows'],
+                                                    channel)
+                            except:
+                                logging.error("NO Data found for channel " +
+                                              str(channel) +
+                                              " Other channels seem to exist")
 
-                            Das_t = ph5api.filter_das_t(self.ph5.Das_t[
-                                                        serial]['rows'],
-                                                        channel)
-
-                            if len(Das_t) < 1:
-                                logging.error("NO Data found for channel. " +
-                                              "Other channels seem to exist")
                             if station_list[deployment][
                                          st_num]['sample_rate_i'] == 0:
                                 logging.warning("Sample rate seems to be 0." +
@@ -265,14 +274,18 @@ def get_args():
         "-p", "--ph5path", action="store", default=".",
         type=str, metavar="ph5_path")
 
+    parser.add_argument(
+        "-l", "--level", action="store", default="error",
+        type=str, metavar="level")
+
     the_args = parser.parse_args()
     return the_args
 
 
 def main():
     args = get_args()
-    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
-    ph5validate = PH5Validate(ph5API_object, args.ph5path)
+    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname,)
+    ph5validate = PH5Validate(ph5API_object, args.ph5path, level=args.level)
     ph5validate.check_experiment_t()
     ph5validate.checK_stations()
     ph5API_object.close()
