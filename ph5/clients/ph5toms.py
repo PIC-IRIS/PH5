@@ -909,7 +909,7 @@ def main():
                            notimecorrect=args.notimecorrect,
                            format=args.format.upper())
 
-        ph5ms.process_all_mp()
+        ph5ms.process_all()
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
