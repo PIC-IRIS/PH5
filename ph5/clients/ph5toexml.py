@@ -302,16 +302,17 @@ class PH5toexml(object):
             arrayorder = self.ph5.Array_t[array_name]['order']
             for x in arrayorder:
                 station = arraybyid.get(x)
-                micro = ph5utils.microsecs_to_sec(
-                    station[1][0]['deploy_time/micro_seconds_i'])
-                deploy_time = station[1][0]['deploy_time/epoch_l'] + micro
-                micro = ph5utils.microsecs_to_sec(
-                    station[1][0]['pickup_time/micro_seconds_i'])
-                pickup_time = station[1][0]['pickup_time/epoch_l'] + micro
-                if earliest_deploy is None or earliest_deploy > deploy_time:
-                    earliest_deploy = deploy_time
-                if latest_pickup is None or latest_pickup < pickup_time:
-                    latest_pickup = pickup_time
+                for idx in station:
+                    micro = ph5utils.microsecs_to_sec(
+                        station[idx][0]['deploy_time/micro_seconds_i'])
+                    deploy_time = station[idx][0]['deploy_time/epoch_l'] + micro
+                    micro = ph5utils.microsecs_to_sec(
+                        station[idx][0]['pickup_time/micro_seconds_i'])
+                    pickup_time = station[idx][0]['pickup_time/epoch_l'] + micro
+                    if earliest_deploy is None or earliest_deploy > deploy_time:
+                        earliest_deploy = deploy_time
+                    if latest_pickup is None or latest_pickup < pickup_time:
+                        latest_pickup = pickup_time
 
         if self.args.get('start_time') and self.args.get(
                 'start_time') < datetime.fromtimestamp(earliest_deploy):
