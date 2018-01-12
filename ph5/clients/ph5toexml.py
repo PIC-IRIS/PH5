@@ -6,6 +6,7 @@ Extracts shot metadata from PH5 as QuakeML and other formats
 """
 
 import os
+import sys
 import argparse
 from pykml.factory import KML_ElementMaker as KML
 from lxml import etree
@@ -20,7 +21,12 @@ import types
 from ph5.core import ph5api, ph5utils
 
 
-PROG_VERSION = "2017.139"
+PROG_VERSION = "2018.012"
+
+
+def exit_with_error(err_msg, error_code):
+    sys.stderr.write(err_msg)
+    exit(error_code)
 
 
 def get_args():
@@ -38,7 +44,6 @@ def get_args():
                         type=str, metavar="ph5path")
 
     parser.add_argument("-o", "--outfile", action="store",
-                        default="something.xml",
                         type=str, metavar="outfile")
 
     parser.add_argument("--network", action="store", dest="network_list",
@@ -126,7 +131,7 @@ class Network(object):
 
     def __init__(self, code, reportnum, description):
         self.code = code
-        self. reportnum = reportnum
+        self.reportnum = reportnum
         self.description = description
         self.shot_lines = []
 
@@ -286,9 +291,6 @@ class PH5toexml(object):
                     self.experiment_t[0]['experiment_id_s']):
                 self.ph5.close()
                 return None
-        else:
-            self.ph5.close()
-            return None
 
         self.read_arrays(None)
         array_names = self.ph5.Array_t_names
@@ -398,6 +400,7 @@ class PH5toexml(object):
 
         def write_exml(list_of_networks):
             out = []
+            has_data = False
 
             out.append("<?xml version='1.0' encoding='UTF-8'?>")
             out.append(
@@ -447,15 +450,18 @@ class PH5toexml(object):
                                    str(shot.mag) +
                                    "</Magnitude>")
                         out.append("      </Shot>")
+                        has_data = True
                     out.append("    </ShotLine>")
                 out.append("  </Network>")
             out.append("</PH5eventXML>")
 
-            if out:
-                if hasattr(outfile, 'write'):
+            if has_data:
+                if outfile and hasattr(outfile, 'write'):
                     target = outfile
-                else:
+                elif outfile:
                     target = open(outfile, 'w')
+                else:
+                    target = sys.stdout
 
                 for line in out:
                     target.write(
@@ -463,9 +469,10 @@ class PH5toexml(object):
                             encoding='UTF-8',
                             errors='strict') + "\n")
             else:
-                raise NoDataError()
+                raise NoDataError("Request resulted in no data being returned")
 
         def write_kml(list_of_networks):
+            has_data = False
 
             doc = KML.Document(
                 KML.name("PH5 Events"),
@@ -509,24 +516,59 @@ class PH5toexml(object):
                             )
                         ))
                         folder.append(place_marker)
+                        has_data = True
                     network_folder.append(folder)
                 doc.append(network_folder)
 
-            if doc:
-                if hasattr(outfile, 'write'):
+            if has_data:
+                if outfile and hasattr(outfile, 'write'):
                     target = outfile
-                else:
+                elif outfile:
                     target = open(outfile, 'w')
+                else:
+                    target = sys.stdout
 
                 target.write(
                     etree.tostring(
                         etree.ElementTree(doc),
                         pretty_print=True))
             else:
-                raise NoDataError()
+                raise NoDataError("Request resulted in no data being returned")
 
         def write_text(list_of_networks):
+            out = []
 
+            for network in list_of_networks:
+                for shot_line in network.shot_lines:
+                    for shot in shot_line.shots:
+                        out.append(str(network.code) + "|" +
+                                   network.reportnum +
+                                   "|" + str(shot_line.name[-3:]) + "|" +
+                                   str(shot.shot_id) + "|" + shot.start_time +
+                                   "|" + str(shot.lat) + "|" + str(shot.lon) +
+                                   "|" + str(shot.elev) + "|" + str(shot.mag) +
+                                   "|" + shot.mag_units)
+            if out:
+                header = [
+                    "#Network|ReportNum|ShotLine|Shot|ShotTime|Latitude|"
+                    "Longitude|Elevation|ShotSize|ShotUnits"]
+                out = header + out
+                if outfile and hasattr(outfile, 'write'):
+                    target = outfile
+                elif outfile:
+                    target = open(outfile, 'w')
+                else:
+                    target = sys.stdout
+
+                for line in out:
+                    target.write(
+                        line.encode(
+                            encoding='UTF-8',
+                            errors='strict') + "\n")
+            else:
+                raise NoDataError("Request resulted in no data being returned")
+
+        def write_geocsv(list_of_networks):
             out = []
             for network in list_of_networks:
                 for shot_line in network.shot_lines:
@@ -540,13 +582,22 @@ class PH5toexml(object):
                                    "|" + shot.mag_units)
             if out:
                 header = [
-                    "#Network|ReportNum|ShotLine|Shot|ShotTime|Latitude|" +
+                    "#dataset: GeoCSV 2.0\n"
+                    "#delimiter: |\n"
+                    "#field_unit: unitless | unitless | unitless | unitless | "
+                    "ISO_8601 | degrees_north | degrees_east | meters | \n"
+                    "float | unitless\n"
+                    "#field_type: string | string | string | string | "
+                    "datetime | float | float | float | float | string\n"
+                    "Network|ReportNum|ShotLine|Shot|ShotTime|Latitude|"
                     "Longitude|Elevation|ShotSize|ShotUnits"]
                 out = header + out
-                if hasattr(outfile, 'write'):
+                if outfile and hasattr(outfile, 'write'):
                     target = outfile
-                else:
+                elif outfile:
                     target = open(outfile, 'w')
+                else:
+                    target = sys.stdout
 
                 for line in out:
                     target.write(
@@ -554,7 +605,7 @@ class PH5toexml(object):
                             encoding='UTF-8',
                             errors='strict') + "\n")
             else:
-                raise NoDataError()
+                raise NoDataError("Request resulted in no data being returned")
 
         def write_quakeml(list_of_networks):
             events = []
@@ -611,11 +662,16 @@ class PH5toexml(object):
                 catalog.events = events
 
             if catalog.events:
+                if outfile:
+                    target = outfile
+                else:
+                    target = sys.stdout
+
                 catalog.write(
-                    outfile, "QUAKEML", nsmap={
+                    target, "QUAKEML", nsmap={
                         "iris": iris_custom_ns})
             else:
-                raise NoDataError()
+                raise NoDataError("Request resulted in no data being returned")
 
         if out_format.upper() == "EXML":
             write_exml(list_of_networks)
@@ -625,6 +681,8 @@ class PH5toexml(object):
             write_text(list_of_networks)
         elif out_format.upper() == "XML":
             write_quakeml(list_of_networks)
+        elif out_format.upper() == "GEOCSV":
+            write_geocsv(list_of_networks)
         else:
             raise PH5toEventError(
                 "Output format not supported - {0}."
@@ -676,6 +734,7 @@ def main():
         args_dict['network_list'] = [x.strip()
                                      for x in
                                      args_dict.get('network_list').split(',')]
+
     if args_dict.get('reportnum_list'):
         args_dict['reportnum_list'] = [x.strip()
                                        for x in
@@ -692,7 +751,12 @@ def main():
 
     ph5exml = PH5toexml(args_dict)
     networks = run_ph5_to_event(ph5exml)
-    ph5exml.write(args_dict.get('outfile'), networks, args_dict.get("format"))
+    try:
+        ph5exml.write(args_dict.get('outfile'),
+                      networks,
+                      args_dict.get("format"))
+    except Exception as err:
+        exit_with_error(err.message, 1)
 
 
 if __name__ == '__main__':
