@@ -99,11 +99,6 @@ class PH5toMSeed(object):
         self.restricted = restricted
         self.format = format
 
-        if self.reqtype != "SHOT" and self.reqtype != "FDSN":
-            raise PH5toMSAPIError("Error - Invalid request type {0}. "
-                                  "Choose from FDSN or SHOT."
-                                  .format(self.reqtype))
-
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
 
@@ -365,14 +360,6 @@ class PH5toMSeed(object):
         self.ph5.Das_t = {}
         if len(obspy_stream.traces) < 1:
             return
-        if mp is True:
-            if self.format and self.format.upper() == "MSEED":
-                obspy_stream.write(self.filenamemseed_gen(obspy_stream),
-                                   format='MSEED', reclen=4096)
-            elif self.format and self.format.upper() == "SAC":
-                    for trace in obspy_stream:
-                        sac = SACTrace.from_obspy_trace(trace)
-                        sac.write(self.filenamesac_gen(trace))
         return obspy_stream
 
     def get_channel_and_component(self, station_list, deployment, st_num):
@@ -707,20 +694,14 @@ class PH5toMSeed(object):
 
     def process_all(self):
         cuts = self.create_cut_list()
-        for cut in cuts:
-            self.ph5.clear()
-            stream = self.create_trace(cut)
-            if stream is not None:
-                yield stream
-
-    def process_all_mp(self):
-        cuts = self.create_cut_list()
-        jobs = []
-        for cut in cuts:
-            self.ph5.clear()
-            p = mp.Process(target=self.create_trace, args=(cut, True))
-            jobs.append(p)
-            p.start()
+        if cuts:
+            for cut in cuts:
+                self.ph5.clear()
+                stream = self.create_trace(cut)
+                if stream is not None:
+                    yield stream
+        else:
+           raise PH5toMSAPIError("Request resulted in no data.") 
 
 
 def get_args():
@@ -733,8 +714,8 @@ def get_args():
         .format(PROG_VERSION))
 
     parser.add_argument(
-        "-n", "--nickname", action="store", required=True,
-        type=str, metavar="nickname")
+        "-n", "--nickname", action="store",
+        type=str, metavar="nickname", default="master.ph5")
 
     parser.add_argument(
         "-p", "--ph5path", action="store", default=".",
@@ -891,8 +872,21 @@ def main():
         args.component = args.component.split(',')
     if args.channel:
         args.channel = args.channel.split(',')
+        
+    args.reqtype = args.reqtype.upper()
+    args.format = args.format.upper()
 
     try:
+        if args.reqtype != "SHOT" and args.reqtype != "FDSN":
+            raise PH5toMSAPIError("Error - Invalid request type {0}. "
+                                  "Choose from FDSN or SHOT."
+                                  .format(args.reqtype))
+
+        if args.format != "MSEED" and args.format != "SAC":
+            raise PH5toMSAPIError("Error - Invalid data format {0}. "
+                      "Choose from MSEED or SAC."
+                      .format(args.format))
+
         ph5ms = PH5toMSeed(ph5API_object, out_dir=args.out_dir,
                            reqtype=args.reqtype, netcode=args.network,
                            station=args.sta_list, station_id=args.sta_id_list,
@@ -907,9 +901,16 @@ def main():
                            doy_keep=args.doy_keep, stream=args.stream,
                            reduction_velocity=args.red_vel,
                            notimecorrect=args.notimecorrect,
-                           format=args.format.upper())
+                           format=args.format)
 
-        ph5ms.process_all()
+        for stream in ph5ms.process_all():
+            if args.format.upper() == "MSEED":
+                stream.write(ph5ms.filenamemseed_gen(stream),
+                                   format='MSEED', reclen=4096)
+            elif args.format.upper() == "SAC":
+                    for trace in stream:
+                        sac = SACTrace.from_obspy_trace(trace)
+                        sac.write(ph5ms.filenamesac_gen(trace))
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
