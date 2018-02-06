@@ -5,7 +5,7 @@
 #   Credit: Lan Dam 
 #   
 #   Updated Feb 2017
-PROG_VERSION = "2017.209 Developmental"
+PROG_VERSION = "2018.037 Developmental"
 # import from python packages
 import sys, os, time, numpy
 import os.path as path
