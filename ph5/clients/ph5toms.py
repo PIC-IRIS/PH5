@@ -19,7 +19,7 @@ from ph5.core.timedoy import epoch2passcal, passcal2epoch
 import multiprocessing as mp
 
 
-PROG_VERSION = "2017.312"
+PROG_VERSION = "2018.038"
 LENGTH = int(86400)
 
 
@@ -295,9 +295,15 @@ class PH5toMSeed(object):
 
             Das_t = ph5api.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
                                         stc.channel)
-
-            das_t_start = (float(Das_t[0]['time/epoch_l']) +
-                           float(Das_t[0]['time/micro_seconds_i']) / 1000000)
+            #Das_t = [x for x in Das_t]
+            
+            Das_t = [x for x in Das_t]
+            Das_tf = next(iter(Das_t or []), None)
+            if Das_tf == None:
+                return
+            else:
+                das_t_start = (float(Das_tf['time/epoch_l']) +
+                               float(Das_tf['time/micro_seconds_i']) / 1000000)
 
             if float(das_t_start) > float(stc.starttime):
                 start_time = das_t_start
