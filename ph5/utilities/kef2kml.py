@@ -8,13 +8,13 @@
 import os, sys, simplekml, re
 from ph5.core import kefx
 
-PROG_VERSION = "2017.089"
+PROG_VERSION = "2018.029"
 
 arrayRE = re.compile (".*Array_t_*(\d+)*")
 eventRE = re.compile (".*Event_t_*(\d+)*")
 
 #   Point colors
-COLORS = {1:simplekml.Color.blue, 2:simplekml.Color.green, 3:simplekml.Color.plum, 4:simplekml.Color.lightblue, 5:simplekml.Color.grey, 6:simplekml.Color.purple, 7:simplekml.Color.pink, 8:simplekml.Color.brown, 9:simplekml.Color.darkolivegreen, 10:simplekml.Color.wheat}
+COLORS = {0:simplekml.Color.whitesmoke, 1:simplekml.Color.blue, 2:simplekml.Color.green, 3:simplekml.Color.plum, 4:simplekml.Color.lightblue, 5:simplekml.Color.grey, 6:simplekml.Color.purple, 7:simplekml.Color.pink, 8:simplekml.Color.brown, 9:simplekml.Color.darkolivegreen, 10:simplekml.Color.wheat}
 
 def get_args () :
     '''   Get inputs
@@ -63,6 +63,11 @@ def parseArray (kv, a) :
     lon = kv['location/X/value_d']
     ele = kv['location/Z/value_d']
     x = a % len (COLORS)
+    while True :
+        if x <= 10 :
+            break
+        else :
+            x -= 10
     #print "Array:", a, "Color:", x, "Length:", len (COLORS)
     col = COLORS[x]
     

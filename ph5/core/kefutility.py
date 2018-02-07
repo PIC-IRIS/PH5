@@ -1,12 +1,15 @@
 # import from python packages
+# version: 2018.037
 import tables
 from PyQt4 import QtGui, QtCore
 
 # import from pn4
+#import kefx, ph5api, tabletokef
+# git:
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
-
+PH5TYPE = {'_s':str, '_a':str, '_d': float, '_f': float, '_l':int,'_i':int }  
 PH5PATH = { "Experiment_t":"/Experiment_g/Experiment_t",
             "Sort_t":"/Experiment_g/Sorts_g/Sort_t",
             "Offset_t" :"/Experiment_g/Sorts_g/%s",
@@ -35,7 +38,7 @@ class KefUtilityError (Exception) :
 # then convert to 
 # * table data {path1:[2_way_data], ...}: each row is a data set
 # * ketSets {path1:[labels], ...}: label for each column in table data
-def Kef2TableData(statustext, filename):
+def Kef2TableData(statusbar, filename):
     try:
         kef = kefx.Kef (filename)
         kef.open ()
@@ -44,20 +47,26 @@ def Kef2TableData(statustext, filename):
     except Exception: raise
     
     tables ={}
+    types = {}
     count = 0
     totalLines = kef.pathCount
     for path, kVal in kef :
         if not tables.has_key(path):
             tables[path]=[]
+            types[path] = []
+        if types[path] == []:
+            for label in kef.keySets[path]:
+                types[path].append(PH5TYPE[label[-2:]])
+
         entry =[] 
         for label in kef.keySets[path] :
             entry.append( kVal[label] )
         tables[path].append(entry)
         count += 1
-        if count % 100 == 0: statustext.setText("Converting Kef to Data: %s/%s" % (count, totalLines))
+        if count % 100 == 0: statusbar.showMessage("Converting Kef to Data: %s/%s" % (count, totalLines))
 
     kef.close()
-    return tables, kef.keySets, totalLines
+    return tables, kef.keySets, totalLines, types
 
 ########################################
 # def Kef2TableData
