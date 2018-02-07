@@ -295,11 +295,10 @@ class PH5toMSeed(object):
 
             Das_t = ph5api.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
                                         stc.channel)
-            #Das_t = [x for x in Das_t]
-            
+
             Das_t = [x for x in Das_t]
             Das_tf = next(iter(Das_t or []), None)
-            if Das_tf == None:
+            if Das_tf is None:
                 return
             else:
                 das_t_start = (float(Das_tf['time/epoch_l']) +
@@ -707,7 +706,7 @@ class PH5toMSeed(object):
                 if stream is not None:
                     yield stream
         else:
-           raise PH5toMSAPIError("Request resulted in no data.") 
+            raise PH5toMSAPIError("Request resulted in no data.")
 
 
 def get_args():
@@ -878,7 +877,7 @@ def main():
         args.component = args.component.split(',')
     if args.channel:
         args.channel = args.channel.split(',')
-        
+
     args.reqtype = args.reqtype.upper()
     args.format = args.format.upper()
 
@@ -890,8 +889,8 @@ def main():
 
         if args.format != "MSEED" and args.format != "SAC":
             raise PH5toMSAPIError("Error - Invalid data format {0}. "
-                      "Choose from MSEED or SAC."
-                      .format(args.format))
+                                  "Choose from MSEED or SAC."
+                                  .format(args.format))
 
         ph5ms = PH5toMSeed(ph5API_object, out_dir=args.out_dir,
                            reqtype=args.reqtype, netcode=args.network,
@@ -912,7 +911,7 @@ def main():
         for stream in ph5ms.process_all():
             if args.format.upper() == "MSEED":
                 stream.write(ph5ms.filenamemseed_gen(stream),
-                                   format='MSEED', reclen=4096)
+                             format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
                     for trace in stream:
                         sac = SACTrace.from_obspy_trace(trace)
