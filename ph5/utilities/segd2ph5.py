@@ -8,7 +8,7 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
-PROG_VERSION = "2017.289 Developmental"
+PROG_VERSION = "2018.039 Developmental"
 
 MAX_PH5_BYTES = 1073741824 * 100.   #   100 GB (1024 X 1024 X 1024 X 2)
 
@@ -432,6 +432,15 @@ def process_traces (rh, th, tr) :
            th -> first trace header
            tr -> trace data
     '''
+    def get_true_channel () :
+        #   Find channel by mapping to streamer_cable_number
+        try :
+            true_channel = rh.channel_set_to_streamer_cable_map[th.trace_header.channel_set]
+        except Exception as e :
+            logging.warn ("There may be a problem with reel header channel_set_to_streamer_cable_map.\nUsing channel set read from the trace header.\n{0}\n".format (e.message))
+            true_channel = th.trace_header.channel_set
+        #print rh.channel_set_to_streamer_cable_map, th.trace_header.channel_set, true_channel
+        return true_channel
     
     def process_das () :
         global LSB
@@ -459,6 +468,7 @@ def process_traces (rh, th, tr) :
                 array_name_event_a
                 array_name_log_a 
         '''
+            
         #   Check to see if group exists for this das, if not build it
         das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas (str (Das))
         #   Build maps group (XXX)
@@ -466,11 +476,11 @@ def process_traces (rh, th, tr) :
         if rh.general_header_block_1.chan_sets_per_scan == 1 :
             #   Single channel
             p_das_t['receiver_table_n_i'] = 0   #   0 -> Z
-        elif  rh.general_header_block_1.chan_sets_per_scan == 3 :
+        elif  rh.general_header_block_1.chan_sets_per_scan >= 3 :
             #   1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5), 3 (Z Node) -> 0 (Z PH5)
             M = {1:1, 2:2, 3:0}
-            p_das_t['receiver_table_n_i'] = M[th.trace_header.channel_set]
-        else :
+            p_das_t['receiver_table_n_i'] = M[get_true_channel ()]
+        else  :
             p_das_t['receiver_table_n_i'] = 0   #   0 -> Z
             logging.warn ("Header channel set: {0}. Check Receiver_t entries!".format (th.trace_header.channel_set))
             
@@ -489,7 +499,7 @@ def process_traces (rh, th, tr) :
         p_das_t['time/ascii_s'] = time.ctime (p_das_t['time/epoch_l'])
         p_das_t['time/micro_seconds_i'] = int (f * 1000000.)
         p_das_t['event_number_i'] = th.trace_header_N[1].shot_point
-        p_das_t['channel_number_i'] = th.trace_header.channel_set
+        p_das_t['channel_number_i'] = get_true_channel ()
         p_das_t['sample_rate_i'] = SD.sample_rate
         p_das_t['sample_rate_multiplier_i'] = 1
         p_das_t['sample_count_i'] = len (tr)
@@ -636,16 +646,17 @@ def process_traces (rh, th, tr) :
         or
            chan 1 -> Z
         '''
-        if SD.chan_sets_per_scan == 3 :
+        if SD.chan_sets_per_scan >= 3 :
+            #true_chan = get_true_channel ()
             OM = { 1:'1', 2:'2', 3:'Z' }
         elif SD.chan_sets_per_scan == 1 :
             OM = { 1:'Z' }
         else :
             OM = None
         if OM == None :
-            orientation_code = th.trace_header.channel_set
+            orientation_code = get_true_channel ()
         else :
-            orientation_code = OM[th.trace_header.channel_set]
+            orientation_code = OM[get_true_channel ()]
         #for cs in range (SD.chan_sets_per_scan) :
         p_array_t['seed_band_code_s'] = band_code
         p_array_t['seed_instrument_code_s'] = instrument_code
@@ -675,7 +686,10 @@ def process_traces (rh, th, tr) :
         p_array_t['das/manufacturer_s'] = 'FairfieldNodal'
         DM = { 1:'ZLAND 1C', 3:"ZLAND 3C" }
         try :
-            p_array_t['das/model_s'] = DM[SD.chan_sets_per_scan]
+            if SD.chan_sets_per_scan >= 3 :
+                p_array_t['das/model_s'] = DM[3]
+            else :
+                p_array_t['das/model_s'] = DM[1]
         except Exception as e :
             logging.warn ("Failed to read channel sets per scan: {0}.".format (e.message))
             p_array_t['das/model_s'] = 'zland-[13]C'
@@ -704,7 +718,7 @@ def process_traces (rh, th, tr) :
             logging.warn ("Failed to read receiver point depth: {0}.".format (e.message))
             p_array_t['location/Z/value_d'] = 0.
             
-        p_array_t['channel_number_i'] = th.trace_header.channel_set
+        p_array_t['channel_number_i'] = get_true_channel ()
         #p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
         try :
             p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format (Das, rh.extended_header_1.id_number)
@@ -718,7 +732,7 @@ def process_traces (rh, th, tr) :
             logging.warn ("Failed to read line number: {0}.".format (e.message))
             line = 0
             
-        chan_set = th.trace_header.channel_set
+        chan_set = get_true_channel ()
         if not ARRAY_T.has_key (line) :
             ARRAY_T[line] = {}
         if not ARRAY_T[line].has_key (Das) :
