@@ -9,7 +9,7 @@ import sys, os, exceptions
 import construct, numpy as np
 from ph5.core import segd_h
 
-PROG_VERSION = "2017.114 Developmental"
+PROG_VERSION = "2018.039 Developmental"
 
 class InputsError (exceptions.Exception) :
     def __init__ (self, args = None) :
@@ -19,7 +19,7 @@ class ReelHeaders (object) :
     '''   Container to hold receiver record related headers   '''
     __slots__ = ['storage_unit_label', 'general_header_block_1', 'general_header_block_2', 'channel_set_descriptor',
                  'extended_header_1', 'extended_header_2', 'extended_header_3', 'extended_header_4', 'external_header',
-                 'external_header_shot', 'general_header_block_N']
+                 'external_header_shot', 'general_header_block_N', 'channel_set_to_streamer_cable_map']
     
     def __init__ (self) :
         self.storage_unit_label = None
@@ -33,6 +33,7 @@ class ReelHeaders (object) :
         self.extended_header_4 = []
         self.external_header = None
         self.external_header_shot = []
+        self.channel_set_to_streamer_cable_map = None
         
 class TraceHeaders (object) :
     '''   Container to hold trace related headers   '''
@@ -236,6 +237,15 @@ class Reader () :
         self.sample_rate = int ((1. / (self.reel_headers.general_header_block_1.base_scan_interval / 16.)) * 1000.)
             
     def process_channel_set_descriptors (self) :
+        def create_key () :
+            #   Create a mapping between channel sets to streamer cable numbers
+            kv = {}
+            for cs in self.reel_headers.channel_set_descriptor :
+                k = cs.chan_set_number; v = cs.streamer_cable_number
+                kv[k] = v
+                
+            return kv
+        
         for i in range (self.chan_sets_per_scan) :
             cs = self.read_channel_set_descriptor ()
             self.reel_headers.channel_set_descriptor.append (cs)
@@ -245,6 +255,7 @@ class Reader () :
             #   Channel set end time in seconds
             self.channel_set_end_time_sec = self.reel_headers.channel_set_descriptor[i].chan_set_end_time * 0.002
             #   ***   Calculate scale factor for mili-volts. Fairfield data recorded as mili-volts   ***
+        self.reel_headers.channel_set_to_streamer_cable_map = create_key ()
             
     def process_extended_headers (self) :
         if self.extended_header_blocks > 0 :
