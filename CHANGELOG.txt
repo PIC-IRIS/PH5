@@ -1,8 +1,19 @@
-Master:
+v4.1.1:
 -ph5.clients.ph5toexml
  * Fix case where station does not have a key of 1
+ * Add geocsv format to ph5toexml that is equivalent to the shottext format
+ * No longer require the user to enter a network or report number
+ * No longer print to a file by default, but still provide an option. Instead print the event data to stdout by default.
+ * No longer show users a stack trace. Instead show a shortened error message.
+-ph5.clients.ph5toms
+ * Fix ph5toms not returning data
+ * Fix bug that caused ph5toms to crash when passed an empty DAS_t after filtering
 -ph5.utilities.ph5_validate
  * New functionality for checking stations
+-ph5.utilities.kef2kml
+ * Fix bug reading kef
+-ph5.utilities.kefedit
+ * Fix bug reading kef
 
 v4.1.0:
 -ph5.utilities.resp_load
