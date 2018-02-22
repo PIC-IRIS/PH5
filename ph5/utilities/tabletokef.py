@@ -8,6 +8,8 @@
 
 import sys, os, os.path, string, time
 #   This provides the base functionality
+#import Experiment as experiment
+# git:
 from ph5.core import experiment
 #   The wiggles are stored as numpy arrays
 import numpy
@@ -501,7 +503,7 @@ def readPH5(exp, filename, path, tableType, arg=None):
     
     if tableType == "All_Offset_t":
         OFFSET_T = {}              # clear cache
-        arrays = ARRAY_T.keys ()
+        #arrays = ARRAY_T.keys ()
         for o in EX.Offset_t_names :
 	    if o=="Offset_t":
 		OFFSET_TABLE = [0];

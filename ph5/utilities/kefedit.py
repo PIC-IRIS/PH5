@@ -5,7 +5,7 @@
 #   Credit: Lan Dam 
 #   
 #   Updated Feb 2017
-PROG_VERSION = "2018.037 Developmental"
+PROG_VERSION = "2018.053 Developmental"
 # import from python packages
 import sys, os, time, numpy
 import os.path as path
@@ -181,12 +181,12 @@ class KefEdit(QtGui.QMainWindow):
         
 
     def OnManual(self):
-        print "onManual"
+        #print "onManual"
         self.manualWin = ManWindow("manual")
         
         
     def OnWhatsnew(self):
-        print "onWhatsnew"
+        #print "onWhatsnew"
         self.whatsnewWin = ManWindow("whatsnew")
         
         
@@ -1796,7 +1796,7 @@ class SelectTableDialog(QtGui.QDialog):
         else:
             p.arg = None
             
-        print p.arg
+        #print p.arg
         if errorCtrl != None:
             msg = "For Table '%s', %s must be selected." % (p.tableType, errorCtrl)
             QtGui.QMessageBox.warning(self, "Warning", msg )
@@ -1860,7 +1860,7 @@ class ManWindow(QtGui.QWidget):
 
                         
 def startapp():
-    
+    global application
     application = QtGui.QApplication(sys.argv)
 
     win = KefEdit()
