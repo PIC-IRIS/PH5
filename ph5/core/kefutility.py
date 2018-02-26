@@ -1,11 +1,12 @@
 # import from python packages
-# version: 2018.053
+VER = 2018057
 import tables
 from PyQt4 import QtGui, QtCore
 
-# import from pn4
-#import kefx, ph5api, tabletokef
-# git:
+###### import from pn4
+#import kefx, ph5api
+#import tabletokef
+###### git:
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
@@ -65,7 +66,10 @@ def Kef2TableData(statusbar, filename):
             entry.append( kVal[label] )
         tables[path].append(entry)
         count += 1
-        if count % 100 == 0: statusbar.showMessage("Converting Kef to Data: %s/%s" % (count, totalLines))
+        
+        if count % 10000 == 0: 
+            msg = "Converting Kef to Data: %s/%s."
+            statusbar.showMessage(msg % (count, totalLines))
 
     kef.close()
     return tables, kef.keySets, totalLines, types
@@ -166,7 +170,7 @@ def _appendTable(table , ph5Val, path, statusbar, count):
             entry.append( str(r[label]) )
         table.append(entry)    
         count += 1
-        if count % 100 == 0: statusbar.showMessage("Converting PH5 to Data in %s: %s/%s" % (path, count, totalLines))
+        if count % 10000 == 0: statusbar.showMessage("Converting PH5 to Data in %s: %s/%s" % (path, count, totalLines))
     return count, totalLines, type_
         
 ########################################
@@ -178,7 +182,7 @@ def _appendTable(table , ph5Val, path, statusbar, count):
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5api.ph5 (path=path2file, nickname=filename, editmode=False)
+    ph5 = ph5api.PH5 (path=path2file, nickname=filename, editmode=False)
   
     # event
     ph5.read_event_t_names ()
@@ -245,20 +249,180 @@ def GetPrePH5Info(filename, path2file=""):
     return ph5, sorted( availTables ), arrays, shotLines, offsets, das
 
 
-if __name__ == '__main__' :
-    path2file = "/home/field/Desktop/data/Sigma"
-    #path2file = "/home/field/Desktop/data/10-016"
-    #path2file = "/home/field/Desktop/data/13-005"
-    filename = 'master.ph5'
-    #tableType = "All_Array"
-    #tableType = "Das_t"
-    #PH5toDataTable(filename, path2file, tableType, '9D5B')
-    #tables, labels =PH5toDataTable(filename, path2file, tableType )
-    #t = tabletokef.readPH5(filename, path, tableType,"1")
+html_manual = '''
+<html>
+<head>
+<style>
+table, th, td {
+    border: 1px solid black;
+}
+</style>
+<title>Manual Page</title>
+</head>
+<body>
+<h2>Manual</h2>
+<hr />
 
-    
-    #path2file = "/home/field/Desktop/KefEdit/KeftestingFile"
-    #filename = 'testph5.ph5'
-    GetPrePH5Info(filename, path2file)
-    
-    #print "Available Tables:", availTables
+<h2><a id="contents">Contents:</a></h2>
+<ul>
+    <li><a href="#OpenKef">Open Kef File</a></li> 	
+    <li><a href="#OpenPH5">Open PH5 File</a></li>
+    <li><a href="#OpenTableInCurr">Open table(s) in the current PH5 File</a></li>
+    <li><a href="#SaveKef">Save as Kef File</a></li>
+    <li><a href="#SavePH5">Save as PH5 File</a></li>
+    <li><a href="#UpdatePH5">Update the current PH5 File</a></li>
+    <li><a href="#SaveCSV">Save as CSV file</a></li>
+    <li><a href="#EditTable">Edit Table</a></li>
+    <ul>
+        <li><a href="#Select">Select Cell(s)</a></li> 
+        <li><a href="#Change">Change value in (a) cell(s)</a></li> 
+        <li><a href="#EditCol">Editting the whole column</a></li>
+        <li><a href="#Move">Move Selected Row(s) to a new position</a></li> 
+        <li><a href="#Delete">Delete Row(s) on Selected Cell(s)</a></li>
+        <li><a href="#Add">Add Row(s) with Data Copy from Selected Cell(s)</a></li>
+    </ul>
+</ul>
+
+&nbsp;
+<table style="width:100%">
+<tbody>
+<tr>
+<td>
+<h2><a id="OpenKef">Open Kef File</a></h2>
+<div>Select Menu File - Open Kef File: to open all tables in a Kef file for editing. Each table is placed in a tab.</div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="OpenPH5">Open PH5 File</a></h2>
+<div>Select Menu File - Open PH5 File: to open (a) table(s) in a PH5 File for editing. Each table is placed in a tab.</div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="OpenTableInCurr">Open table(s) in the current PH5 File</a></h2>
+<div>Open (a) different table(s) in the currently opened PH5 File for editing. Similar to Open a PH5 File but user doenn't need to select a file to open, the app. doesn't need to reopen the file.</div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="SaveKef">Save as Kef File</a></h2>
+<div>Save the opened table(s) to a Kef File.</div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="SavePH5">Save as PH5 File</a></h2>
+<div>Update the a PH5 file with the opened tables OR create a new PH5 file from the tables. </div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="UpdatePH5">Update the current PH5 File</a></h2>
+<div>This option is similar to Save as PH5 File when choosing the current opened file's name. This will run faster than saving as a different PH5 file for it skip the step of removing table(s) and create kef file for new table(s). </div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="SaveCSV">Save as CSV File</a></h2>
+<div>Save each current tables in a CSV file with ";" deliminators. </div>
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+<tr>
+<td>
+<h2><a id="EditTable">Edit Table</a></h2>
+
+<h3><a id="Select">Select Cell(s)</a></h3> 
+<div>Select Type: Define which cell(s) will be selected when click on a cell.</div>
+<ul>
+    <li>Single Cell: Only that cell will be selected.</li>
+    <li>All Similar Cells in Station: All cells that have the same station id and value with the clicked cell will be selected. Avalaible only for Array Table.</li>
+    <li>All Similar Cells in Column: All cells that have the same value and column with the clicked cell will be selected. (E.g. when user want to change value for time, this option allow user to make sure all the necessary times are changed consistently.) When this option is selected, move, delete and add options are disabled to prevent going out of control.
+</ul>
+
+<h3><a id="Change">Change value in (a) cell(s)</a></h3>
+<div>When a cell is clicked, its value will appear in the text box next to the three Select Types so that its value can be editted.</div>
+<div>User can click on button 'Change' to update the new value to the selected cell(s). If the new value is different with the original values, the row(s) on the selected cell(s) will change color to pink.</div>
+
+<h3><a id="EditCol">Editting the whole column</a></h3>
+<ul>
+    <li>Selected Column: Show the label of the selected column.</li>
+    <li>Position of Char. to change: Select the first position of character(s) to change.</li>
+    <li>Number of Char. to change: Select the number of character(s) to change.</li>
+    <li>X: The value to be applied in column changing.</li>
+    <li>Change Char. to X: Change the selected character(s) in each item of the selected column to X.</li>
+    <li>Plus X to Char.: Plus X to the selected character(s) in each item of the selected column.</li>
+    <li>Change Column to X: Change each item of the selected column to X.</li>
+    <li>Plus X to Column: Plus X to each item of the selected column.</li>
+    <li>Reset Column: Reset each item of the selected column back to its original value.</li>
+</ul>
+
+<h3><a id="Move">Move Selected Row(s) to a new position</a></h3>
+<div>When cell(s) are selected, the corresponding row(s) will be shown in Selected Rows (for the ease of following up).</div>
+<div>User will choose the Line No (next to 'Move Selected Row(s) under Line No') under which the row(s) will be moved to, then click 'Move'.</div>
+
+<h3><a id="delete">Delete Row(s) on Selected Cell(s)</a></h3>
+<div>To delete Selected Row(s), just click on 'Delete Row(s) on Selected Cell(s)', the row(s) will change color to purple to mark that the row(s) are deleted.</div>
+<div>User can change their mind by selecting the deleted row(s) again and click on 'UnDelete'.</div>
+
+<h3><a id="Add">Add Row(s) with Data Copy from Selected Cell(s)</a></h3>
+<ul>
+    <li>Copy Selected Row(s) to the Add Row View at the bottom of the GUI by clicking on 'Add Row(s) with Data Copy from Selected Cell(s)'</li>
+    <li>Change value of (a) cell(s) in Add Row View by click on cell(s) to change its/their value(s) in the text box similar to 'Change value in (a) cell(s)' described <a href="#Change">above</a></li>
+    <li>Insert Selected Rows in Add Row View to the Main View by select the the Line No (next to 'Insert Selected Row(s) under Line No') under which the row(s) will be inserted to, then click 'Insert'.</div>
+</ul>
+
+<div align="right"><a href="#contents">Contents</a></div>
+<div>&nbsp;</div>
+</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
+'''
+
+html_whatsnew = """
+<html>
+<head>
+<title>What's new? Page</title>
+</head>
+<body>
+<h2>What's new in version %s?</h2>
+<hr />
+<li>Menu File - Update the Current PH5 File:</li>
+<ul>This option is similar to Save as PH5 File when choosing the current opened file's name. This will run faster than saving as a different PH5 file for it skip the step of removing table(s) and create kef file for new table(s).</ul>
+<li>Save as CSV file:</li>
+<ul>Save each current tables in a CSV file with ";" deliminators.</ul>
+<li>Add table options</li>
+<ul>When PH5 file is read, the following table option have been added: All_Offset_t and All_Event_t
+<li>Editting the whole column:</li>
+<ul>
+    <li>Selected Column: Show the label of selected column.</li>
+    <li>Position of Char. to change: Select the first position of character(s) to change.</li>
+    <li>Number of Char. to change: Select the number of character(s) to change.</li>
+    <li>X: X: The value to be applied in column changing.</li>
+    <li>Change Char. to X: Change the selected character(s) in each item of the selected column to X.</li>
+    <li>Plus X to Char.: Plus X to the selected character(s) in each item of the selected column.</li>
+    <li>Change Column to X: Change each item of the selected column to X.</li>
+    <li>Plus X to Column: Plus X to each item of the selected column.</li>
+    <li>Reset Column: Reset each item of the selected column back to its original value.</li>
+</ul>
+<li>Back to Org: Reset selected items back to their original values.</li>
+</body>
+</html>
+"""
