@@ -8,13 +8,11 @@
 
 import sys, os, os.path, string, time
 #   This provides the base functionality
-#import Experiment as experiment
-# git:
 from ph5.core import experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2017.317 Developmental"
+PROG_VERSION = "2018.057 Developmental"
 #
 #   These are to hold different parts of the meta-data
 #
@@ -475,7 +473,7 @@ def read_receivers (das = None) :
 # updated: 201802
 # read data from exp(PH5) to use for KefUtility => KefEdit.py
 def readPH5(exp, filename, path, tableType, arg=None):
-    print "readPH5"
+    #print "readPH5"
     global EX, OFFSET_TABLE, EVENT_TABLE, ARRAY_TABLE, OFFSET_T, EVENT_T, ARRAY_T, DAS_T
     
     EX = exp
@@ -495,7 +493,6 @@ def readPH5(exp, filename, path, tableType, arg=None):
 	    OFFSET_TABLE = [0];
 	else:
             OFFSET_TABLE = map (int, arg.split ("_"))
-        print "OFFSET_TABLE:", OFFSET_TABLE
         # read_offset_table() will read from global var. OFFSET_TABLE to add new item into dict. OFFSET_T
         read_offset_table ()
         #keys = OFFSET_T.keys ()
@@ -510,7 +507,7 @@ def readPH5(exp, filename, path, tableType, arg=None):
 		read_offset_table ()
 		break;
             OFFSET_TABLE= map (int, o.replace("Offset_t_", "").split ("_"))
-            read_offset_table ()
+	    read_offset_table ()
         return OFFSET_T
         
     if tableType == "Event_t":
