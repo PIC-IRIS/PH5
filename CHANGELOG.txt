@@ -1,3 +1,7 @@
+Master:
+-ph5.utilities.kefedit
+ * Fix bugs caused when loading PH5 experiment without offset tables
+ 
 v4.1.1:
 -ph5.clients.ph5toexml
  * Fix case where station does not have a key of 1
