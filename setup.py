@@ -23,7 +23,7 @@ except ImportError:
 
 setup(
     name="ph5",
-    version="4.1.0",
+    version="4.1.1",
     # metadata for upload to PyPI
     author="IRIS PASSCAL Instrument Center",
     author_email="dhess@passcal.nmt.edu",
