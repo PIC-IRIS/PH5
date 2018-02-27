@@ -4,7 +4,7 @@
 #   Dump tables in ph5 file to kef format.
 #
 #   Steve Azevedo, April 2007
-#
+#   readPH5() edited by Lan Dam on 02/22/2018
 
 import sys, os, os.path, string, time
 #   This provides the base functionality
@@ -12,7 +12,7 @@ from ph5.core import experiment
 #   The wiggles are stored as numpy arrays
 import numpy
 
-PROG_VERSION = "2017.317 Developmental"
+PROG_VERSION = "2018.057 Developmental"
 #
 #   These are to hold different parts of the meta-data
 #
@@ -470,10 +470,10 @@ def read_receivers (das = None) :
 #####################################################
 # def readPH5
 # author: Lan Dam
-# updated: 201703
+# updated: 201802
 # read data from exp(PH5) to use for KefUtility => KefEdit.py
 def readPH5(exp, filename, path, tableType, arg=None):
-    print "readPH5"
+    #print "readPH5"
     global EX, OFFSET_TABLE, EVENT_TABLE, ARRAY_TABLE, OFFSET_T, EVENT_T, ARRAY_T, DAS_T
     
     EX = exp
@@ -489,14 +489,32 @@ def readPH5(exp, filename, path, tableType, arg=None):
         
     if tableType == "Offset_t" :
         OFFSET_T = {}               # clear cache
-        OFFSET_TABLE = map (int, arg.split ("_"))
+	if arg=="Offset_t":
+	    OFFSET_TABLE = [0];
+	else:
+            OFFSET_TABLE = map (int, arg.split ("_"))
+        # read_offset_table() will read from global var. OFFSET_TABLE to add new item into dict. OFFSET_T
         read_offset_table ()
-        keys = OFFSET_T.keys ()
+        #keys = OFFSET_T.keys ()
+        return OFFSET_T
+    
+    if tableType == "All_Offset_t":
+        OFFSET_T = {}              # clear cache
+        #arrays = ARRAY_T.keys ()
+        for o in EX.Offset_t_names :
+	    if o=="Offset_t":
+		OFFSET_TABLE = [0];
+		read_offset_table ()
+		break;
+            OFFSET_TABLE= map (int, o.replace("Offset_t_", "").split ("_"))
+	    read_offset_table ()
         return OFFSET_T
         
     if tableType == "Event_t":
         EVENT_T = {}               # clear cache
-        EVENT_TABLE = int(arg)
+        EVENT_TABLE = int(arg)     
+        
+        # read_event_table() will read from global var. EVENT_TABLE to add new item into dict. EVENT_T
         read_event_table ()
         return EVENT_T
     
@@ -556,7 +574,6 @@ def readPH5(exp, filename, path, tableType, arg=None):
         DAS_T = {}               # clear cache
         read_receivers (arg)
         return DAS_T
-
 
 def main():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \

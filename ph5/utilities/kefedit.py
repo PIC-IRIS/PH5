@@ -4,28 +4,34 @@
 #
 #   Credit: Lan Dam 
 #   
-#   Updated Feb 2017
-PROG_VERSION = "2018.037 Developmental"
+#   Updated Feb 2018
+
 # import from python packages
 import sys, os, time, numpy
 import os.path as path
+from tempfile import mkdtemp
 
-keftmpfile = 'tmp/temp.kef'
+# added on 20180226 so that temp.kef will always be available
+keftmpfile = path.join(mkdtemp(), 'temp.kef')
 from copy import deepcopy
 from operator import itemgetter
 
 from PyQt4 import QtGui, QtCore
 
-# import from pn4
-#import columns
-# git: 
+
 from ph5.core import columns
 
-# module(s) for KefEdit only
+######## module(s) for KefEdit only
 #import kefutility
-# git:
+######## git:
 from ph5.core import kefutility
 
+
+VER = 2018057
+if kefutility.VER > VER: VER = kefutility.VER
+VER_str = str(VER)
+VER_str = VER_str[:4] + '.' + VER_str[4:]
+PROG_VERSION = "%s Developmental" % VER_str
 
 EXPL = {}
 ############### CLASS ####################
@@ -39,6 +45,7 @@ class KefEdit(QtGui.QMainWindow):
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setWindowTitle("KEF Editor Ver. %s" % PROG_VERSION)        
         
+        self.kefFilename = None;
         self.path_tabs = []     # to keep the tabwidget to delete
         self.ph5api = None         # to resue when open tables from the current opened ph5
         self.notsave = True     # to identify if the open data are save
@@ -181,12 +188,12 @@ class KefEdit(QtGui.QMainWindow):
         
 
     def OnManual(self):
-        print "onManual"
+        #print "onManual"
         self.manualWin = ManWindow("manual")
         
         
     def OnWhatsnew(self):
-        print "onWhatsnew"
+        #print "onWhatsnew"
         self.whatsnewWin = ManWindow("whatsnew")
         
         
@@ -199,7 +206,7 @@ class KefEdit(QtGui.QMainWindow):
     # * then call self.setData() to set the given data in display
     def OnOpenKef(self):
         #print "onOpenKef"
-        filename = str(QtGui.QFileDialog.getOpenFileName(directory="/home/", filter="Kef Files(*.kef)"))
+        self.kefFilename = filename = str(QtGui.QFileDialog.getOpenFileName(directory="/home/", filter="Kef Files(*.kef)"))
         if not filename: return
         
         self.path2file = os.path.dirname (str (filename))
@@ -216,9 +223,10 @@ class KefEdit(QtGui.QMainWindow):
         #except Exception, e:
             #QtGui.QMessageBox.warning(self, "Error", str(e) )
             #return
-        
+        if self.totalLines > 10000: self.statusBar.showMessage("Please be patient while displaying...")
         self.setData()
         self.notsave = True
+
 
         
     ###############################
@@ -247,7 +255,7 @@ class KefEdit(QtGui.QMainWindow):
         self.ph5api, availTables, arrays, shotLines, offsets, das = kefutility.GetPrePH5Info( self.filename, self.path2file)
         
         self.selTableDlg = SelectTableDialog(self, availTables, arrays, shotLines, offsets, das)
-        
+        self.kefFilename = None
         
 
     ###############################
@@ -343,7 +351,7 @@ class KefEdit(QtGui.QMainWindow):
     ###############################
     # def OnSavePH5
     # author: Lan Dam
-    # updated: 201704
+    # updated: 201802
     # update currently opened table(s) to an existing PH5 file, or create new PH5 file from the opened table(s)
     # ** if it is the currently opened one, call self.OnUpdatePH5 instead
     # * user choose filename to save
@@ -368,8 +376,12 @@ class KefEdit(QtGui.QMainWindow):
             return
         
         # save in a temp kef file
-        options['keffile'] = keftmpfile
-        self._saveKeffile(keftmpfile)
+        if not self.kefFilename:
+            options['keffile'] = keftmpfile
+            self._saveKeffile(keftmpfile)
+        else:
+            # add on 20180226 to reduce step when the opened file is a kef file
+            options['keffile'] = self.kefFilename
         
         if path.exists(savefilename):
             for p in self.pathAll:
@@ -384,9 +396,10 @@ class KefEdit(QtGui.QMainWindow):
         
         from subprocess import Popen, PIPE, STDOUT
         
+        pathStr = ','.join(self.pathAll)
         cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s" % options  
-        self.statusBar.showMessage("Inserting new table %s into PH5file" % p)
-        print "Inserting new table %s into PH5file" % p
+        self.statusBar.showMessage("Inserting new table(s) %s into PH5file" % pathStr)
+        print "Inserting new table(s) %s into PH5file" % pathStr
         p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         output = p.stdout.read()
         print "The following command is running:\n", cmdStr    
@@ -412,8 +425,9 @@ class KefEdit(QtGui.QMainWindow):
         if doclose:
             if self.ph5api != None: self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
-            sys.exit(application.exec_())      
-            os.unlink(keftmpfile)           # remove keftmpfile
+            sys.exit(application.exec_())  
+            try: os.unlink(keftmpfile)           # remove keftmpfile
+            except: pass
         
         
     ###############################
@@ -510,6 +524,10 @@ class KefEdit(QtGui.QMainWindow):
     # * add the tab to self.path_tabs to delete the tabWidget after removeTab
     # * enable save options
     def setData(self):
+        self.addMsg = ""
+        if self.totalLines>100000:
+            self.addMsg = "It will take a couple of minutes  to populate the table(s). Please wait..."
+            
         # remove existing tab
         while self.path_tabs != []:
             self.path_tabWidget.removeTab(len(self.path_tabs)-1)
@@ -525,6 +543,7 @@ class KefEdit(QtGui.QMainWindow):
                 errMsg = "There are no data for path %s.\n Please check if the selected PH5 is a master file."
                 QtGui.QMessageBox.warning(self, "Error", errMsg % p)
                 return      
+            #print "path:%s **** %s" % (p, len(self.dataTable[p]))
             pathWidget = TablePanel(self, p, self.dataTable[p], self.labelSets[p], self.types[p])
             self.path_tabWidget.addTab(pathWidget, p)
             self.path_tabs.append(pathWidget)
@@ -533,6 +552,8 @@ class KefEdit(QtGui.QMainWindow):
         self.savePH5Action.setEnabled(True) 
         self.saveCSVAction.setEnabled(True)
         self.statusBar.showMessage("")
+        if self.totalLines > 100000:
+            self.statusBar.showMessage("Please be patient when clicking on each tab. Initially it takes some time to process.")
 
         
         
@@ -580,8 +601,9 @@ class TablePanel(QtGui.QMainWindow):
         # set data into cells
         for r in range( len(self.table) ):
             parent.processedLine += 1
-            if parent.processedLine % 50 == 0: 
-                parent.statusBar.showMessage("Displaying Data on TableView: %s/%s" % (parent.processedLine, parent.totalLines))
+            if parent.processedLine % 10000 == 0: 
+                msg = "Displaying Data on TableView: %s/%s rows. %s" % (parent.processedLine, parent.totalLines, parent.addMsg)
+                parent.statusBar.showMessage(msg)
             for c in range( len(self.labels) ):
                 item = QtGui.QTableWidgetItem(self.table[r][c])
                 item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )      # disable cell editing
@@ -1796,7 +1818,7 @@ class SelectTableDialog(QtGui.QDialog):
         else:
             p.arg = None
             
-        print p.arg
+        #print p.arg
         if errorCtrl != None:
             msg = "For Table '%s', %s must be selected." % (p.tableType, errorCtrl)
             QtGui.QMessageBox.warning(self, "Warning", msg )
@@ -1807,6 +1829,7 @@ class SelectTableDialog(QtGui.QDialog):
         #except Exception, e:
             #QtGui.QMessageBox.warning(self, "Error", str(e) )
             #return
+        #print "totalLInes: %s" % p.totalLines
 
         p.setData() 
         p.openTableAction.setEnabled(True)
@@ -1860,7 +1883,7 @@ class ManWindow(QtGui.QWidget):
 
                         
 def startapp():
-    
+    global application
     application = QtGui.QApplication(sys.argv)
 
     win = KefEdit()
