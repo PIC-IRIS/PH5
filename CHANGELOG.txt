@@ -1,6 +1,9 @@
 Master:
 -ph5.utilities.kefedit
  * Fix bugs caused when loading PH5 experiment without offset tables
+-ph5.clients.ph5tostationxml
+ * Address issue #181
+ * print to stdout by default
  
 v4.1.1:
 -ph5.clients.ph5toexml
