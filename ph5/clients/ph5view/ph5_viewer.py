@@ -4,14 +4,21 @@
 #
 #   Lan Dam 
 #   
-#   Updated May 2017
+#   Updated March 2018
 
-PROG_VERSION = "2017.236 Developmental"
+VER = 2018067
 
-import sys, os, time, math, gc, re
+import sys, os, time, math, gc, warnings
 
 from ph5.core import experiment, timedoy
+#import ph5_viewer_reader 
+########### git:
 from ph5.clients.ph5view import ph5_viewer_reader  
+
+if ph5_viewer_reader.VER > VER: VER = ph5_viewer_reader.VER
+VER_str = str(VER)
+VER_str = VER_str[:4] + '.' + VER_str[4:]
+PROG_VERSION = "%s Developmental" % VER_str
 
 from copy import deepcopy
 
@@ -156,7 +163,7 @@ class ManWindow(QtGui.QWidget):
             view.setText(ph5_viewer_reader.html_manual)
         
         elif mantype=="whatsnew":
-            view.setText(ph5_viewer_reader.html_whatsnew % PROG_VERSION)
+            view.setText(ph5_viewer_reader.html_versionTraces)
             
         self.layout = QtGui.QHBoxLayout()
         self.layout.addWidget(view)
@@ -311,7 +318,7 @@ class InfoPanel(QtGui.QFrame):
     # def: onQuickRemove():201409  
     # call quickRemove in canvas to turn the color of the trace to 'white'
     def onQuickRemove(self, evt):
-        print "onQuickRemove"
+        #print "onQuickRemove"
         if not self.allowRemove: return
         chIndex = self.quickRemCkbs.index(self.sender())
 
@@ -586,7 +593,7 @@ class Canvas(app.Canvas):
         self.parent.setWindowTitle('Main Window:  %s %s' % (self.PH5View.graphName,self.control.conf['addingInfo']))
         if val!=None and len(t)!=0:
             self.reset(needUpdate=False)
-            print "onGetnPlot(), onApplySimplify_Replot"
+            #print "onGetnPlot(), onApplySimplify_Replot"
             #self.startStatId = self.parent.startStatId= 0
             if not deepRemoving:
                 self.startStatId= 0
@@ -808,12 +815,14 @@ class Canvas(app.Canvas):
         self.gtProgram['u_model'] = self.model
         self.gtProgram['u_pan'] = (tPan, vPan)        # time,val  
         self.gtProgram['u_scale'] = (tScale, vScale)      # time, val
-        if self.gdData != np.zeros(0):
-            self.gdProgram = gloo.Program(VERT_SHADER, FRAG_SHADER)
-            self.gdProgram.bind(gloo.VertexBuffer(self.gdData))
-            self.gdProgram['u_model'] = self.model
-            self.gdProgram['u_pan'] = (tPan, vPan)        # time,val  
-            self.gdProgram['u_scale'] = (tScale, vScale)      # time, val
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=FutureWarning)
+            if self.gdData != np.zeros(0):
+                self.gdProgram = gloo.Program(VERT_SHADER, FRAG_SHADER)
+                self.gdProgram.bind(gloo.VertexBuffer(self.gdData))
+                self.gdProgram['u_model'] = self.model
+                self.gdProgram['u_pan'] = (tPan, vPan)        # time,val  
+                self.gdProgram['u_scale'] = (tScale, vScale)      # time, val
             
     ###################################
     # Author: Lan
@@ -2188,7 +2197,7 @@ class Canvas(app.Canvas):
     #    => b/c there are 2 canvas, item might already be deleted from quickRemoved List
     def quickRemove(self, ch, statId, removedStatus, c=0):
         #print "canvas.quickRemove: ch=%s, statId=%s, removedStatus=%s, c=%s" % (ch, statId, removedStatus, c)
-        if not self.enableDrawing:  print "quickRemove return 1";return 1
+        if not self.enableDrawing:  return 1
        
         canvId = statId - self.startStatId
         #print "canvId=", canvId
@@ -2219,6 +2228,7 @@ class Canvas(app.Canvas):
                 return 3
                 
         return 0         
+    
 
     def updateData(self):
         if not self.enableDrawing: return
@@ -2733,6 +2743,9 @@ class PH5Visualizer(QtGui.QMainWindow):
         
         self.stationGui = ArrayGui(self, ESType='STATION')
         self.tabWidget.addTab(self.stationGui, 'Receiver Gather')
+        
+        self.loiEventGui = ArrayGui(self, ESType='EVENT_LOI')  # LOI: lack of info
+        self.tabWidget.addTab(self.loiEventGui, 'Event LOI')
          
         self.setGeometry(0, 0,700, 700)
 
@@ -2881,6 +2894,7 @@ class PH5Visualizer(QtGui.QMainWindow):
         self.whatsnewWin = ManWindow("whatsnew")
             
     def onFile(self):
+        self.isLoiEvent = False
         dialog = QtGui.QFileDialog(self)
         dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
         fname = dialog.getOpenFileName(self, 'Open', '/home/field/Desktop/data', 'master.ph5') 
@@ -2892,8 +2906,10 @@ class PH5Visualizer(QtGui.QMainWindow):
             return
         
         self.fname = fname
-        self.eventGui.clearArrays()
-        self.stationGui.clearArrays()
+        
+        self.eventGui.clearArrayTabs()
+        self.stationGui.clearArrayTabs()
+        self.loiEventGui.clearArrayTabs()
         try: del self.arrays
         except: pass
         try: del self.events
@@ -2901,34 +2917,83 @@ class PH5Visualizer(QtGui.QMainWindow):
         gc.collect()
         
         PH5Object = ph5_viewer_reader.PH5Reader()
-        PH5Object.initialize_ph5(self.fname)
-        PH5Object.createGraphExperiment()
-        PH5Object.createGraphEvents()
-        PH5Object.createGraphArraysNStations()
+        try:
+            PH5Object.initialize_ph5(self.fname)
+        except ph5_viewer_reader.PH5ReaderError, e:
+            msg = e.message + "\n\nYou should choose another dataset (ph5 file) to view."
+            QtGui.QMessageBox.warning(self, "No Das_t", msg)
+
+            
+        try:
+            PH5Object.createGraphExperiment()
+        except ph5_viewer_reader.PH5ReaderError, e:
+            msg = e.message + "\n\nThe graphic will be named UNTITLED."
+            QtGui.QMessageBox.warning(self, "No Experiment_t", msg)
+
+
+        try:
+            PH5Object.createGraphArraysNStations()
+        except ph5_viewer_reader.PH5ReaderError, e:
+            msg = e.message + "\n\nYou should choose another dataset (ph5 file) to view."
+            QtGui.QMessageBox.warning(self, "No Das_t", msg)
+            self.tabWidget.setTabEnabled(1,False) #enable shot gather tab
+            self.tabWidget.setTabEnabled(2,False) #enable receiver gather tab
+            self.tabWidget.setTabEnabled(3,False) #disable non-event_t tab
+            self._closePH5(PH5Object)
+            self.tabWidget.setCurrentIndex(0)    # view tab Events
+            return
+        
+            
+        try:
+            PH5Object.createGraphEvents()
+            self.tabWidget.setTabEnabled(1,True) #enable shot gather tab
+            self.tabWidget.setTabEnabled(2,True) #enable receiver gather tab
+            self.tabWidget.setTabEnabled(3,False) #disable non-event_t tab
+            self.tabWidget.setCurrentIndex(1)    # view tab Events
+        except ph5_viewer_reader.PH5ReaderError, e:
+            msg = e.message + "\n\nThe time in the 'Start time' box is the array's deploy time" + \
+                  "\n\nYou need to enter the shot's time yourself to set up window time for the graph." + \
+                  "\n\nP.S. LOI stands for Lack Of Information"
+            QtGui.QMessageBox.warning(self, "Lack of Events' information", msg)
+            self.tabWidget.setTabEnabled(1,False) #disable shot gather tab
+            self.tabWidget.setTabEnabled(2,False) #disable receiver gather tab
+            self.tabWidget.setTabEnabled(3,True) #enable non-event_t tab
+            self.tabWidget.setCurrentIndex(3)    # view tab Events
+            self.isLoiEvent = True
+            
+            
         self.arrays = deepcopy(PH5Object.graphArrays)
         self.events = deepcopy(PH5Object.graphEvents)
-        #self.eventGui.setChannels()
-        #self.stationGui.setChannels()
-        
-        self.eventGui.setArrays()
-        self.stationGui.setArrays()
 
-        self.tabWidget.setCurrentIndex(1)    # view tab Events
+        if self.isLoiEvent: self.loiEventGui.setArrays()
+        else:
+            self.eventGui.setArrays()
+            self.stationGui.setArrays()
+        
+        
         self.mainControl.setWidgetsEnabled(False)
-        self.graphName = "%s %s" % (PH5Object.graphExperiment['experiment_id_s'], PH5Object.graphExperiment['nickname_s'])
+        
+        self.graphName = "UNTITLED"
+        if PH5Object.graphExperiment != None:
+            self.graphName = "%s %s" % (PH5Object.graphExperiment['experiment_id_s'], PH5Object.graphExperiment['nickname_s'])
         
         self.eventGui.setNotice(self.graphName)
         self.stationGui.setNotice(self.graphName)
+        self.loiEventGui.setNotice(self.graphName)
         self.mainControl.mainPlot.setWindowTitle('Main Window -  %s' % (self.graphName))
         self.mainControl.supportPlot.setWindowTitle('Support Window -  %s' % (self.graphName))
         # close all opened files and remove PH5Object when done to save resources
-        PH5Object.ph5close()
-        del PH5Object
-        gc.collect()
+        self._closePH5(PH5Object)
         #print "begin testing"
         #PH5Object = ph5_viewer_reader.PH5Reader()
         #PH5Object.initialize_ph5('/home/field/Desktop/data/10-016/master.ph5')
         #print "finish testing"
+        
+        
+    def _closePH5(self, PH5Object):
+        PH5Object.ph5close()
+        del PH5Object
+        gc.collect()
         
     ###################################
     # Author: Lan
@@ -3979,25 +4044,40 @@ class MainControl(QtGui.QMainWindow):
 
     ###################################
     # Author: Lan
-    # def: getPH5Data():201504
+    # def: getPH5Data():
+    # updated: 201803
     #    => read PH5 data and metadata
     def getPH5Data(self, orgStartT, offset, timeLen, staSpc):
         # create PH5Object
         PH5Object = ph5_viewer_reader.PH5Reader()
         # initiate PH5Object with filename
-        PH5Object.initialize_ph5(self.PH5View.fname)
+        try:
+            PH5Object.initialize_ph5(self.PH5View.fname)
+        except ph5_viewer_reader.PH5ReaderError, e:
+            msg = e.message + "\nPlease choose another dataset (ph5 file) to view."
+            QtGui.QMessageBox.warning(self, "No Das_t", msg)
+            return False
 
         PH5Object.set(self.channels, ['Array_t_' + self.PH5View.selectedArray['arrayId']])
         # read trunk of data 
-        #try:
-        if self.gather == "shot":
-            self.PH5Info = PH5Object.readData_shotGather(orgStartT,offset, timeLen, staSpc, 
-                                self.correctionCkb.isChecked(), 
-                                self.vel, self.PH5View, statusBar, statusMsg)
-        else:
-            self.PH5Info = PH5Object.readData_receiverGather(orgStartT,offset, timeLen, staSpc, 
-                                self.correctionCkb.isChecked(), 
-                                self.vel, self.PH5View, statusBar, statusMsg)            
+        try:
+            if self.gather == 'shot':
+                self.PH5Info = PH5Object.readData_shotGather(orgStartT,offset, timeLen, staSpc, 
+                                    self.correctionCkb.isChecked(), 
+                                    self.vel, self.PH5View, statusBar, statusMsg)
+            elif self.gather == 'receiver':
+                self.PH5Info = PH5Object.readData_receiverGather(orgStartT,offset, timeLen, staSpc, 
+                                    self.correctionCkb.isChecked(), 
+                                    self.vel, self.PH5View, statusBar, statusMsg)            
+            elif self.gather == 'event_loi':
+                self.PH5Info = PH5Object.readData_loiEvent(orgStartT,offset, timeLen, staSpc, 
+                                    self.correctionCkb.isChecked(), 
+                                    self.vel, self.PH5View, statusBar, statusMsg)   
+        except TypeError:
+            msg = "There is no data in the time window selected." + \
+                  "\nPlease check Start time, Length and Offset entered."
+            QtGui.QMessageBox.warning(self, 'Error', msg)
+            return False
     
         #except Exception, e:
             #print e
@@ -4018,7 +4098,7 @@ class MainControl(QtGui.QMainWindow):
 
         showStatus("1/5:Getting PH5Data - ", "save PH5 data to file to use in replotting")
         #print "files:", PH5VALFILES
-        LEN = 0
+        #LEN = 0
         self.PH5Info['LEN']
         for chId in range(len(self.channels)):
             #print "ch:", ch
@@ -4039,7 +4119,7 @@ class MainControl(QtGui.QMainWindow):
         #print "len(zerolist)=",self.PH5Info['zerosList']
         if self.PH5Info['noDataList'] != []:
             msg = "The following items have no data return:\n" + "\n".join(self.PH5Info['noDataList'])
-            if len(self.PH5Info['noDataList'])<=1000:
+            if len(self.PH5Info['noDataList'])<=50:
                 QtGui.QMessageBox.question(self, 'Information', msg, QtGui.QMessageBox.Ok) 
             else:
                 ScrollDialog(title='Information',
@@ -4053,7 +4133,7 @@ class MainControl(QtGui.QMainWindow):
         # delete PH5Object to save memory
         del PH5Object
         gc.collect()
-        return y        
+        return y       
 
     ###################################
     # Author: Lan
@@ -4074,9 +4154,9 @@ class MainControl(QtGui.QMainWindow):
 
         overlap = self.overlapSB.value() / 100.0
         if createFromBeg:
-            if self.PH5View.submitGui == 'STATION':
+            if self.PH5View.submitGui in ['STATION', 'EVENT_LOI']: # shot gather + non-event
                 orgStartT = float(timedoy.passcal2epoch(self.startrangetimeCtrl.text())) 
-            elif self.PH5View.submitGui == 'EVENT': 
+            elif self.PH5View.submitGui == 'EVENT': # receiver gather
                 orgStartT = None
             else:
                 print "Error in MainControl.createVal self.PH5View.submitGui ='%s'" % self.PH5View.submitGui
@@ -4089,7 +4169,7 @@ class MainControl(QtGui.QMainWindow):
             else:
                 staSpc = None
             
-            val = self.getPH5Data(orgStartT, self.offset, self.dfltTimeLen, staSpc )            
+            val = self.getPH5Data(orgStartT, self.offset, self.dfltTimeLen, staSpc )             
 
             if val == False: return False
             if val=={}: 
@@ -4151,7 +4231,7 @@ class MainControl(QtGui.QMainWindow):
         if self.PH5Info['numOfDataStations'] > 1 :
             self.totalSize = self.PH5Info['sumD']+ sizeV4aplot
 
-        print "total size:", self.totalSize
+        #print "total size:", self.totalSize
         #print "sizeV4aplot=%s ; totalSize=%s" % (sizeV4aplot,self.totalSize)
         self.scaledMinD = self.minD/self.totalSize
         #print "int(self.totalSize/(1000*50))=",int(self.totalSize/(1000*50))
@@ -4794,14 +4874,25 @@ class ArrayGui(QtGui.QWidget):
         
     def setArrays(self):
         #self.sampleRates = []
+        if self.ESType != 'EVENT_LOI':
+            submitType = False
+        else:
+            submitType = True
+        #self.clearArrayTabs()
+        
         for a in self.PH5View.arrays: 
-            a[self.ESType] = ES_Gui(self, ESType=self.ESType, array=a, submitType=False)
+            a[self.ESType] = ES_Gui(self, ESType=self.ESType, array=a, submitType=submitType)
             self.arrayTabs.addTab(a[self.ESType], "Array_t_%s" % a['arrayId'])
             
         self.selectedArray = self.PH5View.arrays[0]    
         
-    def clearArrays(self):
-        self.arrayTabs.clear()
+    def clearArrayTabs(self):
+        # remove old tabs and delete them as well
+        # self.arrayTabs.clear() can remove old tabs but doesn't delete them
+        for i in range(len(self.arrayTabs)-1,-1, -1):
+            tab = self.arrayTabs.widget(i)
+            self.arrayTabs.removeTab(i)
+            tab.deleteLater()
 
     def setNotice(self, graphName):
         self.statusCtrl.setText("Graph Name is '%s'. Click on Properties in Control tab to change name of the graph" % graphName)
@@ -4840,9 +4931,9 @@ class ES_Gui(QtGui.QWidget):
         #    If not submit form (receiver gather), channelCtrls need radio button to allow selecting only one channel at a time
         # event form need shotCtrls (shotline) which should be radio button to allow selecting only one shotline at a time
         self.headBox = QtGui.QHBoxLayout(); mainVbox.addLayout(self.headBox)
-        if self.ESType == 'STATION':
+        if self.ESType in ['STATION', 'EVENT_LOI'] :
             #if self.parent.__class__.__name__ == 'ES_Gui':  # => this is submit form
-            if self.submitType:
+            if self.submitType and self.ESType=='STATION':
                 self.shotCtrls = self.parent.shotCtrls              
             self.headBox.addWidget(QtGui.QLabel('Channels:'))
             self.headBox.insertSpacing(-1,15)
@@ -4859,25 +4950,26 @@ class ES_Gui(QtGui.QWidget):
                 self.EXPL[channelCtrls[i]] = "Click this channel to select/deselect."
             if not self.submitType: channelCtrls[0].setChecked(True)
                 
-        else:
-            if self.parent.__class__.__name__ == 'ES_Gui':
-                self.channelCtrls = self.parent.channelCtrls            
-            self.headBox.addWidget(QtGui.QLabel('Shot Lines:'))
-            self.headBox.insertSpacing(-1,15)            
-            self.shotCtrls = shotCtrls = []
-            shotGroup = QtGui.QButtonGroup(self)
-            for shot in self.PH5View.events['shotLines']:
-                shotCtrls.append(QtGui.QRadioButton(shot, self))
-                i = len(shotCtrls) - 1
-                self.headBox.addWidget( shotCtrls[i])
-                shotGroup.addButton(shotCtrls[i])
-                shotCtrls[i].clicked.connect(self.onSelectShot)
-            shotCtrls[0].setChecked(True)
+        elif self.ESType == 'EVENT':
+            if self.PH5View.events['shotLines'] != []:
+                if self.parent.__class__.__name__ == 'ES_Gui':
+                    self.channelCtrls = self.parent.channelCtrls            
+                self.headBox.addWidget(QtGui.QLabel('Shot Lines:'))
+                self.headBox.insertSpacing(-1,15)            
+                self.shotCtrls = shotCtrls = []
+                shotGroup = QtGui.QButtonGroup(self)
+                for shot in self.PH5View.events['shotLines']:
+                    shotCtrls.append(QtGui.QRadioButton(shot, self))
+                    i = len(shotCtrls) - 1
+                    self.headBox.addWidget( shotCtrls[i])
+                    shotGroup.addButton(shotCtrls[i])
+                    shotCtrls[i].clicked.connect(self.onSelectShot)
+                shotCtrls[0].setChecked(True)
             
                 
         self.headBox.addStretch(1)   
 
-        if not self.submitType:
+        if not self.submitType or self.ESType=='EVENT_LOI':
             v = ( self.array['sampleRate'], timedoy.epoch2passcal(self.array['deployT']), 
                   timedoy.epoch2passcal(self.array['pickupT']) )
             mainVbox.addWidget(QtGui.QLabel("Array Info: %s sps || %s - %s" % v))
@@ -4895,7 +4987,8 @@ class ES_Gui(QtGui.QWidget):
         self.ESGrid = QtGui.QGridLayout(); self.ESPane.setLayout(self.ESGrid)   
         
         if self.ESType == 'EVENT': self.setEvents()
-        elif self.ESType == 'STATION': self.setStations()
+        elif self.ESType in  ['STATION', 'EVENT_LOI']: self.ESType; self.setStations()
+        
             
         ESVbox.addStretch(1)
         ESHbox.addStretch(1)        
@@ -4903,10 +4996,10 @@ class ES_Gui(QtGui.QWidget):
         if self.submitType:
             botLayout = QtGui.QHBoxLayout(); mainVbox.addLayout(botLayout)
             self.submitBtn = QtGui.QPushButton('Submit'); self.submitBtn.installEventFilter(self)
-            if self.ESType == 'STATION':
+            if self.ESType in  ['STATION', 'EVENT_LOI']:
                 item = "stations"
                 self.EXPL[self.submitBtn] = "Submit the list of stations to be plotted"
-            if self.ESType == 'EVENT':
+            elif self.ESType == 'EVENT':
                 item = "events"
                 self.EXPL[self.submitBtn] = "Submit the list of events to be plotted"
             self.submitBtn.clicked.connect(self.onSubmit)
@@ -4946,12 +5039,13 @@ class ES_Gui(QtGui.QWidget):
 
     ###################################
     # Author: Lan
-    # def: onSubmit():201701      
+    # def: onSubmit()
+    # updated: 201803      
     # get neccessary info for plotting
     def onSubmit(self, evt):
         PH5View = self.PH5View
         control = self.parent.control
-        arrayGui = self.parent.parent
+        #arrayGui = self.parent.parent
         
         
         PH5View.submitGui = self.ESType
@@ -4996,8 +5090,8 @@ class ES_Gui(QtGui.QWidget):
             control.correctionCkb.setEnabled(False) 
             control.offsetCtrl.setText("0")
             control.offsetCtrl.setEnabled(False)            
-            e = PH5View.selectedEvents[0]
-            
+            e = PH5View.selectedEvents[0] 
+
         elif self.ESType == 'STATION':
             """
             shot gather:
@@ -5035,6 +5129,40 @@ class ES_Gui(QtGui.QWidget):
             else:
                 control.overlapSB.setValue(25)  
                 control.stationSpacingUnknownCkb.setEnabled(True)  
+        elif self.ESType == 'EVENT_LOI': 
+            """
+            event_t LOI:
+                selectedStations from check state
+                selectedEvents is None
+                default start time is the start time of the selected event
+                if more than one channel selected, fixed space between traces is required for better view
+                offset: keep the previous offset used
+            """
+            control.gather = "event_loi"
+            self.array['seclectedStations'] = []
+            for sId in self.array['orderedStationIds']: # use orderedStationIds to have the station sorted from the reader
+                s = self.array['stations'][sId]
+                if s['stationChk'].checkState() == QtCore.Qt.Checked:
+                    self.array['seclectedStations'].append( sId ) 
+
+            if self.array['seclectedStations']  == []:
+                msg = "You must select at least one stations before continue."
+                QtGui.QMessageBox.question(self, 'Warning', msg, QtGui.QMessageBox.Ok)
+                return
+            
+            e = None        
+            control.startrangetimeCtrl.setText(timedoy.epoch2passcal(self.array['deployT']))
+            control.startrangetimeCtrl.setEnabled(True)
+                
+            control.correctionCkb.setCheckState(QtCore.Qt.Checked)
+            control.correctionCkb.setEnabled(True) 
+            control.offsetCtrl.setText(str(control.dfltOffset))
+            control.offsetCtrl.setEnabled(True)
+            
+
+            control.overlapSB.setValue(0)
+            control.stationSpacingUnknownCkb.setEnabled(False)  
+            
         else: 
             print "Error in ES_GUI.onSubmit(): self.ESType='%s'" % self.ESType
      
@@ -5049,9 +5177,16 @@ class ES_Gui(QtGui.QWidget):
         
             
         control.onChangePropertyType()
+        if self.ESType != 'EVENT_LOI': 
+            control.eventId = e['eventId']
+            PH5View.selectedEventIds = [ev['eventId'] for ev in PH5View.selectedEvents]
+            control.upperTimeLen = e['eStop'] - e['eStart']
+        else:
+            control.eventId = None
+            PH5View.selectedEventIds = None
+            control.upperTimeLen = self.array['pickupT'] - self.array['deployT']
             
-        control.eventId = e['eventId']
-        control.upperTimeLen = e['eStop'] - e['eStart']
+        
         newTimeLen = control.dfltTimeLen - control.dfltOffset
         minInterval = int(newTimeLen/25)
         maxInterval = int(newTimeLen)
@@ -5060,24 +5195,15 @@ class ES_Gui(QtGui.QWidget):
         
         control.timelenCtrl.setText(str(control.dfltTimeLen))
         control.setAllReplotBtnsEnabled(False)
-        PH5View.selectedEventIds = [e['eventId'] for e in PH5View.selectedEvents]
+        
         
         PH5View.tabWidget.setCurrentIndex(0)
-        #print "selected Channels=", PH5View.selectedChannels
-        #print "selected Array=", PH5View.selectedArray['arrayId']
-        #print "*"*30
-        #for e in PH5View.selectedEvents:
-        #    print "selected Event=", e['eventId']
+
+        if self.ESType != 'EVENT_LOI': 
+            self.close()
+            del self
         
-        #print "*"*30
-        #for s in PH5View.selectedStations:
-            #print "selectedStations:", s['stationId']
-        #print "No of selected Station=", len(PH5View.selectedStations)
-        
-        self.close()
-        
-        del self
-        
+            
             
         
     ###################################
@@ -5257,14 +5383,16 @@ class ES_Gui(QtGui.QWidget):
     # def: onSelectEvent():201612    
     # select one station => list of events of which times belong to the time of this GUI's array
     def onSelectStation(self, state):    
-        self.array['seclectedStation'] = []
+        self.array['seclectedStations'] = []
+
         for sId in self.array['stations'].keys():
-            s = self.array['stations'][sId]
+            s = self.array['stations'][sId]            
             if s['stationRbtn'] == self.sender():
                 self.array['seclectedStations'] = [sId]
                 break # only one station is selected
         self.eventsWidget = eventsWidget = ES_Gui(self, ESType='EVENT', array=self.array, submitType=True)
         eventsWidget.setGeometry(130, 100, 650,700)
+
         v = (self.array['arrayId'], self.array['seclectedStations'][0]) # 0: only one channel-station is selected, 1: index of station
         eventsWidget.setWindowTitle("Array %s - Station %s" % v)
         eventsWidget.show()
@@ -5318,7 +5446,7 @@ class ES_Gui(QtGui.QWidget):
         modifiers = QtGui.QApplication.keyboardModifiers()
         if len(self.selectedStationChks)==0 or modifiers != QtCore.Qt.ShiftModifier:
             # if first check with shift or check with no shift at all, add that sigle station to selectedStationChks
-            print "add:%s in %s" % (index, self.selectedStationChks)
+            #print "add:%s in %s" % (index, self.selectedStationChks)
             self.selectedStationChks.append(index)
             return
     
@@ -5332,7 +5460,7 @@ class ES_Gui(QtGui.QWidget):
         else:
             minId = maxId
             maxId = index
-        print "minId=%s, maxId=%s" % (minId, maxId)
+        #print "minId=%s, maxId=%s" % (minId, maxId)
         for i in range(minId, maxId+1):
             if i in self.selectedStationChks: continue
             self.selectedStationChks.append(i)
