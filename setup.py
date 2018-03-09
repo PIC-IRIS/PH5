@@ -23,7 +23,7 @@ except ImportError:
 
 setup(
     name="ph5",
-    version="4.1.0",
+    version="4.1.1",
     # metadata for upload to PyPI
     author="IRIS PASSCAL Instrument Center",
     author_email="dhess@passcal.nmt.edu",
@@ -103,6 +103,7 @@ setup(
             'sort_array_t = ph5.utilities.sort_array_t:main',
             'ph5tokef = ph5.utilities.tabletokef:main',
             'time_kef_gen = ph5.utilities.time_kef_gen:main',
+            'tabletokef = ph5.utilities.tabletokef:main',
             'unsimpleton = ph5.utilities.unsimpleton:main',
         ],
     },

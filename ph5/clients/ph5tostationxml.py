@@ -45,7 +45,7 @@ def get_args():
                         type=str, metavar="reportnum_list")
 
     parser.add_argument("-o", "--outfile", action="store",
-                        default="something.xml", type=str, metavar="outfile")
+                        default=sys.stdout, type=str, metavar="outfile")
 
     parser.add_argument("-f", "--format", action="store",
                         default="STATIONXML", dest="out_format",
@@ -925,7 +925,7 @@ def main():
         elif out_format == "SACPZ":
             inv.write(args.outfile, format="SACPZ")
         elif out_format == "TEXT":
-            inv.write(args.outfile, format="STATIONTXT")
+            inv.write(args.outfile, format="STATIONTXT", level=level)
         else:
             sys.stderr.write("Incorrect output format. "
                              "Formats are STATIONXML or KML")

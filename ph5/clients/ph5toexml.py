@@ -21,7 +21,7 @@ import types
 from ph5.core import ph5api, ph5utils
 
 
-PROG_VERSION = "2018.012"
+PROG_VERSION = "2018.066"
 
 
 def exit_with_error(err_msg, error_code):
@@ -56,7 +56,8 @@ def get_args():
 
     parser.add_argument("-f", "--format", action="store", dest="format",
                         default="XML",
-                        help="Out format: QUAKEML, KML, EXML, or SHOTTEXT",
+                        help=("Out format: QUAKEML, KML, EXML, GEOCSV "
+                              "or SHOTTEXT"),
                         type=str, metavar="format")
 
     parser.add_argument("-s", "--starttime", action="store",
@@ -585,7 +586,7 @@ class PH5toexml(object):
                     "#dataset: GeoCSV 2.0\n"
                     "#delimiter: |\n"
                     "#field_unit: unitless | unitless | unitless | unitless | "
-                    "ISO_8601 | degrees_north | degrees_east | meters | \n"
+                    "ISO_8601 | degrees_north | degrees_east | meters | "
                     "float | unitless\n"
                     "#field_type: string | string | string | string | "
                     "datetime | float | float | float | float | string\n"
