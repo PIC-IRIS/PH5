@@ -6,7 +6,7 @@
 #   
 #   Updated March 2018
 
-VER = 2018067
+VER = 2018078
 
 import sys, os, time, math, gc, warnings
 
@@ -2935,12 +2935,15 @@ class PH5Visualizer(QtGui.QMainWindow):
             PH5Object.createGraphArraysNStations()
         except ph5_viewer_reader.PH5ReaderError, e:
             msg = e.message + "\n\nYou should choose another dataset (ph5 file) to view."
-            QtGui.QMessageBox.warning(self, "No Das_t", msg)
-            self.tabWidget.setTabEnabled(1,False) #enable shot gather tab
-            self.tabWidget.setTabEnabled(2,False) #enable receiver gather tab
+            title = ""
+            if "Array_t" in e.message: title = "No Array_t"
+            elif "channels" in e.message: title = "Number of channels exceeds limit"
+            QtGui.QMessageBox.warning(self, title, msg)
+            self.tabWidget.setTabEnabled(1,False) #disable shot gather tab
+            self.tabWidget.setTabEnabled(2,False) #disable receiver gather tab
             self.tabWidget.setTabEnabled(3,False) #disable non-event_t tab
             self._closePH5(PH5Object)
-            self.tabWidget.setCurrentIndex(0)    # view tab Events
+            self.tabWidget.setCurrentIndex(0)    # view ctrl tab
             return
         
             
@@ -2949,7 +2952,7 @@ class PH5Visualizer(QtGui.QMainWindow):
             self.tabWidget.setTabEnabled(1,True) #enable shot gather tab
             self.tabWidget.setTabEnabled(2,True) #enable receiver gather tab
             self.tabWidget.setTabEnabled(3,False) #disable non-event_t tab
-            self.tabWidget.setCurrentIndex(1)    # view tab Events
+            self.tabWidget.setCurrentIndex(1)    # view shot gather tab
         except ph5_viewer_reader.PH5ReaderError, e:
             msg = e.message + "\n\nThe time in the 'Start time' box is the array's deploy time" + \
                   "\n\nYou need to enter the shot's time yourself to set up window time for the graph." + \
@@ -2958,7 +2961,7 @@ class PH5Visualizer(QtGui.QMainWindow):
             self.tabWidget.setTabEnabled(1,False) #disable shot gather tab
             self.tabWidget.setTabEnabled(2,False) #disable receiver gather tab
             self.tabWidget.setTabEnabled(3,True) #enable non-event_t tab
-            self.tabWidget.setCurrentIndex(3)    # view tab Events
+            self.tabWidget.setCurrentIndex(3)    # view non-event_t tab
             self.isLoiEvent = True
             
             

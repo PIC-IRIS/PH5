@@ -1,4 +1,6 @@
 Master:
+-ph5.clients.ph5view
+ * Handle node > 3 channel bug
 -ph5.core.segd2ph5
  * fix for reading SEG-D where the number of channel sets exceeds the number of channels (component)
 -ph5.clients.ph5view
