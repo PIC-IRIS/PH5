@@ -13,7 +13,7 @@ import os, time
 import numpy as np
 #sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
 from ph5.core import ph5api, timedoy
-VER = 2018067
+VER = 2018078
 
 
 class PH5ReaderError (Exception) :
@@ -201,6 +201,7 @@ class PH5Reader () :
                 a['sampleRate'] = dasrow['sample_rate_i'] / float (dasrow['sample_rate_multiplier_i'])                
 
             # self.fio.Array_t[n]['order']: list of station names in order of postion, time
+            chNo = 0
             for o in self.fio.Array_t[n]['order'] :
                 #print "o=",o
                 for ch in rows[o].keys():
@@ -224,9 +225,15 @@ class PH5Reader () :
                             a['pickupT'] = stat['pickup_time/epoch_l']
             keys = set(a['stations'].keys())
             a['orderedStationIds'] = sorted(keys, key=lambda item: (int(item), item))
+            if len(a['channels']) > chNo: chNo = len(a['channels'])
             self.graphArrays.append (a)
         if self.fio.Array_t_names == []:
             raise PH5ReaderError("The PH5 dataset does not have any Array_t table.")
+            
+        if chNo > 3:
+            errMsg = "Limitation for number of channels is 3" + \
+                     "\nwhile this experiment has up to %s channels for one array."
+            raise PH5ReaderError(errMsg % chNo)
             
 
     ##################################################################################
