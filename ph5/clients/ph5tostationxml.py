@@ -15,6 +15,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 
 from ph5.core import ph5utils, ph5api
+from ph5.core.ph5utils import PH5ResponseManager, PH5Response
 
 
 PROG_VERSION = "2017.314"
@@ -146,37 +147,6 @@ class PH5toStationXMLError(Exception):
     """
     def __init__(self, message=""):
         self.message = message
-
-
-class PH5ResponseManager(object):
-
-    def __init__(self):
-        self.responses = []
-
-    def add_response(self, sensor_keys, datalogger_keys, response):
-        self.responses.append(
-                        PH5Response(sensor_keys, datalogger_keys, response)
-                    )
-
-    def get_response(self, sensor_keys, datalogger_keys):
-        for ph5_resp in self.responses:
-            if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
-               set(datalogger_keys) == set(ph5_resp.datalogger_keys):
-                return ph5_resp.response
-
-    def is_already_requested(self, sensor_keys, datalogger_keys):
-        for response in self.responses:
-            if set(sensor_keys) == set(response.sensor_keys) and \
-               set(datalogger_keys) == set(response.datalogger_keys):
-                return True
-        return False
-
-
-class PH5Response(object):
-    def __init__(self, sensor_keys, datalogger_keys, response):
-        self.sensor_keys = sensor_keys
-        self.datalogger_keys = datalogger_keys
-        self.response = response
 
 
 class PH5toStationXMLRequest(object):

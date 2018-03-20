@@ -11,6 +11,36 @@ from ph5.core.timedoy import epoch2passcal, passcal2epoch
 import time
 
 
+class PH5Response(object):
+    def __init__(self, sensor_keys, datalogger_keys, response):
+        self.sensor_keys = sensor_keys
+        self.datalogger_keys = datalogger_keys
+        self.response = response
+
+
+class PH5ResponseManager(object):
+
+    def __init__(self):
+        self.responses = []
+
+    def add_response(self, sensor_keys, datalogger_keys, response):
+        self.responses.append(
+                        PH5Response(sensor_keys, datalogger_keys, response)
+                    )
+
+    def get_response(self, sensor_keys, datalogger_keys):
+        for ph5_resp in self.responses:
+            if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
+               set(datalogger_keys) == set(ph5_resp.datalogger_keys):
+                return ph5_resp.response
+
+    def is_already_requested(self, sensor_keys, datalogger_keys):
+        for response in self.responses:
+            if set(sensor_keys) == set(response.sensor_keys) and \
+               set(datalogger_keys) == set(response.datalogger_keys):
+                return True
+        return False
+
 def does_pattern_exists(patterns_list, value):
     """
     Checks a list of patterns against a value.
