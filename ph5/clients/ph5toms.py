@@ -28,20 +28,22 @@ LENGTH = int(86400)
 
 class StationCut(object):
 
-    def __init__(self, net_code, station, seed_station,
-                 das, das_manufacturer, das_model,
-                 sensor_type, channel, seed_channel,
+    def __init__(self, net_code, experiment_id, station, seed_station,
+                 array_code, das, das_manufacturer, das_model,
+                 sensor_type, component, seed_channel,
                  starttime, endtime, sample_rate,
                  sample_rate_multiplier, notimecorrect,
                  location, latitude, longitude, elev,
                  receiver_n_i, response_n_i):
 
         self.net_code = net_code
+        self.experiment_id = experiment_id
         self.station = station
         self.seed_station = seed_station
+        self.array_code = array_code
         self.seed_channel = seed_channel
         self.location = location
-        self.channel = channel
+        self.component = component
         self.das = das
         self.das_manufacturer = das_manufacturer
         self.das_model = das_model
@@ -370,7 +372,7 @@ class PH5toMSeed(object):
                 return
 
             Das_t = ph5api.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
-                                        stc.channel)
+                                        stc.component)
 
             Das_t = [x for x in Das_t]
             Das_tf = next(iter(Das_t or []), None)
@@ -392,7 +394,7 @@ class PH5toMSeed(object):
 
             traces = self.ph5.cut(stc.das, start_time,
                                   new_endtime,
-                                  chan=stc.channel,
+                                  chan=stc.component,
                                   sample_rate=actual_sample_rate,
                                   apply_time_correction=nt, das_t=Das_t)
 
@@ -436,6 +438,9 @@ class PH5toMSeed(object):
                     obspy_trace.stats.dip = float(dip)
                     obspy_trace.stats.depth = 0
                     obspy_trace.stats.back_azimuth = azimuth
+                    obspy_trace.stats.experiment_id = stc.experiment_id
+                    obspy_trace.stats.array = stc.array_code
+                    obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
                 obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
@@ -478,7 +483,8 @@ class PH5toMSeed(object):
         return seed_cha_code, component
 
     def create_cut(self, seed_network, ph5_station, seed_station,
-                   start_times, station_list, deployment, st_num):
+                   start_times, station_list, deployment, st_num,
+                   array_code, experiment_id):
         global LENGTH
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
         deploy_micro = station_list[deployment][
@@ -658,8 +664,10 @@ class PH5toMSeed(object):
                 self.ph5.Das_t = {}
                 station_x = StationCut(
                     seed_network,
+                    experiment_id,
                     ph5_station,
                     seed_station,
+                    array_code,
                     das,
                     das_manufacturer,
                     das_model,
@@ -698,6 +706,8 @@ class PH5toMSeed(object):
                 "not match this PH5 experiment network code. "
                 "{0} != {1}".format(self.netcode, seed_network))
 
+        experiment_id = experiment_t[0]['experiment_id_s']
+        
         array_names = sorted(self.ph5.Array_t_names)
         self.read_events(None)
 
@@ -728,11 +738,11 @@ class PH5toMSeed(object):
                     "Error - requested shotid(s) do not exist.")
 
         for array_name in array_names:
+            array_code = array_name[8:] # get 3 digit array code
             if self.array:
-                array = array_name[8:]
                 array_patterns = self.array
                 if not ph5utils.does_pattern_exists(
-                        array_patterns, str(array)):
+                        array_patterns, str(array_code)):
                     continue
 
             self.read_arrays(array_name)
@@ -792,7 +802,8 @@ class PH5toMSeed(object):
                             # fdsn request
                             cuts_generator.append(self.create_cut(
                                 seed_network, ph5_station, seed_station,
-                                start_times, station_list, deployment, st_num))
+                                start_times, station_list, deployment, st_num,
+                                array_code, experiment_id))
 
         return itertools.chain.from_iterable(cuts_generator)
 
