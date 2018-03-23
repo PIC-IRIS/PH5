@@ -144,32 +144,27 @@ class PH5toMSeed(object):
     def filenamemseed_gen(self, stream):
 
         s = stream.traces[0].stats
-        secs = int(s.starttime.timestamp)
-        pre = epoch2passcal(secs, sep='_')
-        ret = "{0}.{1}.{2}.{3}.{4}.ms".format(pre, s.network, s.station,
-                                              s.location, s.channel)
+        ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
+            s.network, s.station, s.location,
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamesac_gen(self, trace):
-
         s = trace.stats
-        secs = int(s.starttime.timestamp)
-        pre = epoch2passcal(secs, sep='.')
-        ret = "{0}.{1}.{2}.{3}.{4}.SAC".format(
-            s.network, s.station, s.location, s.channel, pre)
+        ret = "{0}.{1}.{2}.{3}.{4}.sac".format(
+            s.network, s.station, s.location,
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
     
     def filenamegeocsv_gen(self, trace):
-
         s = trace.stats
-        secs = int(s.starttime.timestamp)
-        pre = epoch2passcal(secs, sep='.')
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
-            s.network, s.station, s.location, s.channel, pre)
+            s.network, s.station, s.location,
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
