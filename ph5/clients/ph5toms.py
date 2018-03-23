@@ -323,7 +323,7 @@ class PH5toMSeed(object):
             # parse sensor response if present
             if response_file_sensor_a_name:
                 response_file_sensor_a = \
-                    self.manager.ph5.ph5_g_responses.get_response(
+                    self.ph5.ph5_g_responses.get_response(
                                                 response_file_sensor_a_name
                                             )
                 with io.BytesIO(response_file_sensor_a) as buf:
