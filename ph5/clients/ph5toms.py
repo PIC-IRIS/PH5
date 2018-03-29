@@ -148,7 +148,7 @@ class PH5toMSeed(object):
         s = stream.traces[0].stats
         ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f"))
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -157,7 +157,7 @@ class PH5toMSeed(object):
         s = trace.stats
         ret = "{0}.{1}.{2}.{3}.{4}.sac".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f"))
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -166,7 +166,7 @@ class PH5toMSeed(object):
         s = trace.stats
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f"))
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
