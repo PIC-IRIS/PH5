@@ -4,14 +4,13 @@
 #
 #   Credit: Lan Dam 
 #   
-#   Updated Feb 2018
+#   Updated Apr 2018
 
 # import from python packages
 import sys, os, time, numpy
 import os.path as path
 from tempfile import mkdtemp
 
-# added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
 from copy import deepcopy
 from operator import itemgetter
@@ -21,13 +20,13 @@ from PyQt4 import QtGui, QtCore
 
 from ph5.core import columns
 
-######## module(s) for KefEdit only
+# module(s) for KefEdit only
 #import kefutility
-######## git:
+################ git:
 from ph5.core import kefutility
 
 
-VER = 2018057
+VER = 2018095
 if kefutility.VER > VER: VER = kefutility.VER
 VER_str = str(VER)
 VER_str = VER_str[:4] + '.' + VER_str[4:]
@@ -123,7 +122,7 @@ class KefEdit(QtGui.QMainWindow):
         self.saveKefAction.triggered.connect(self.OnSaveKef)  
         self.saveKefAction.setEnabled(False)  
         
-        self.savePH5Action = QtGui.QAction('Save as PH5 File', self)
+        self.savePH5Action = QtGui.QAction('Save the opened table(s) into a PH5 File', self)
         self.savePH5Action.triggered.connect(self.OnSavePH5)  
         self.savePH5Action.setEnabled(False) 
         
@@ -380,7 +379,6 @@ class KefEdit(QtGui.QMainWindow):
             options['keffile'] = keftmpfile
             self._saveKeffile(keftmpfile)
         else:
-            # add on 20180226 to reduce step when the opened file is a kef file
             options['keffile'] = self.kefFilename
         
         if path.exists(savefilename):
@@ -390,14 +388,14 @@ class KefEdit(QtGui.QMainWindow):
                 if delResult == False: return
         
         # add tables from kef file to ph5 file
-        #cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s" % options               
+        #cmdStr = "keftoph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s" % options               
         #print cmdStr % options 
         #os.system(cmdStr % options)
         
         from subprocess import Popen, PIPE, STDOUT
         
         pathStr = ','.join(self.pathAll)
-        cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s" % options  
+        cmdStr = "keftoph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s" % options  
         self.statusBar.showMessage("Inserting new table(s) %s into PH5file" % pathStr)
         print "Inserting new table(s) %s into PH5file" % pathStr
         p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
@@ -1658,7 +1656,7 @@ class TablePanel(QtGui.QMainWindow):
     # def UpdatePH5
     # author: Lan Dam
     # updated: 201705
-    # update the table into the current PH5 file
+    # update the table in the current PH5 file
     # (use data from updatedTable, the type already convert to org type when updating)
     def UpdatePH5(self):
         pp = self.path.split('/')
@@ -1872,7 +1870,7 @@ class ManWindow(QtGui.QWidget):
             view.setText(kefutility.html_manual)
         
         elif mantype=="whatsnew":
-            view.setText(kefutility.html_whatsnew % PROG_VERSION)
+            view.setText(kefutility.html_whatsnew)
             
         self.layout = QtGui.QHBoxLayout()
         self.layout.addWidget(view)
