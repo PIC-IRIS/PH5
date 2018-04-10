@@ -797,7 +797,8 @@ class PH5toMSeed(object):
                                 cuts_generator.append(self.create_cut(
                                     seed_network, ph5_station,
                                     seed_station, start_times,
-                                    station_list, deployment, st_num))
+                                    station_list, deployment, st_num,
+                                    array_code, experiment_id))
                         elif self.reqtype == "FDSN":
                             # fdsn request
                             cuts_generator.append(self.create_cut(
