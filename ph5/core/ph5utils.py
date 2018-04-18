@@ -117,7 +117,7 @@ def datestring_to_datetime(date_str):
         return date_str  # already a date
     else:
         raise ValueError("Got {0} expected str or unicode.".format(
-                                                            type(date_str)))
+            type(date_str)))
 
 
 def fdsntime_to_epoch(fdsn_time):

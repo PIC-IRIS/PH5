@@ -5,10 +5,11 @@
 #   Interface PH5 to PH5Viewer
 #
 #   Lan Dam, Steve Azevedo August 2015
-#   
+#
 #   Updated March 2018
 
-import os, time
+import os
+import time
 #from numpy import array, vstack, amax, amin, float32
 import numpy as np
 #sys.path.append(os.path.join(os.environ['KX'], 'apps', 'pn4'))
@@ -16,33 +17,36 @@ from ph5.core import ph5api, timedoy
 VER = 2018078
 
 
-class PH5ReaderError (Exception) :
+class PH5ReaderError (Exception):
     '''   Exception gets raised in PH5Reader   '''
-    def __init__ (self, message) :
-        super (PH5ReaderError, self).__init__ (message)
+
+    def __init__(self, message):
+        super(PH5ReaderError, self).__init__(message)
         self.message = message
-    
-class PH5Reader () :
+
+
+class PH5Reader ():
     '''
        Read PH5 data and meta-data.
        For example: See __main__ below.
     '''
-    def __init__ (self) :
+
+    def __init__(self):
         #
         #   This is the ph5api object.
         self.fio = None
-        self.clear ()
-        self.set ()
-    
-    def clear (self) :
+        self.clear()
+        self.set()
+
+    def clear(self):
         #
         self.graphExperiment = None
         self.graphArrays = None
         self.graphEvents = None
-        self.data = np.array ([])
+        self.data = np.array([])
         self.metadata = None
-    
-    def set (self, channel=[1], array=['Array_t_001']) :   
+
+    def set(self, channel=[1], array=['Array_t_001']):
         '''
            Set channels and arrays
            Example: set (channel=[1,2,3], array = ['Array_t_001', 'Array_t_002'])
@@ -55,97 +59,101 @@ class PH5Reader () :
         self.ARRAY = array
         #print "set channel=%s; array=%s" % (self.CHANNEL, self.ARRAY)
 
-                    
-    def initialize_ph5 (self, path2file) :
+    def initialize_ph5(self, path2file):
         '''
            Initialize ph5api and read meta-data...
            path2file => Absolute path to the master ph5 file.
         '''
-        pathname = os.path.dirname (str (path2file))
-        master = os.path.basename (str (path2file))
-        #try :
-        self.fio = ph5api.PH5 (path=pathname, nickname=master)
-        
-        self.fio.read_event_t_names ()
-        for n in self.fio.Event_t_names :
-            self.fio.read_event_t (n)
-            
-        self.fio.read_array_t_names ()
-        for n in self.fio.Array_t_names :
-            self.fio.read_array_t (n)
-            
-        self.fio.read_sort_t () # this table is required to identify events' endtime. If missing, errors will be informed in createGraphEvents()
-        
-        self.fio.read_receiver_t () # this table define orientation of data, required when reading trace
+        pathname = os.path.dirname(str(path2file))
+        master = os.path.basename(str(path2file))
+        # try :
+        self.fio = ph5api.PH5(path=pathname, nickname=master)
+
+        self.fio.read_event_t_names()
+        for n in self.fio.Event_t_names:
+            self.fio.read_event_t(n)
+
+        self.fio.read_array_t_names()
+        for n in self.fio.Array_t_names:
+            self.fio.read_array_t(n)
+
+        # this table is required to identify events' endtime. If missing,
+        # errors will be informed in createGraphEvents()
+        self.fio.read_sort_t()
+
+        # this table define orientation of data, required when reading trace
+        self.fio.read_receiver_t()
 
         if len(self.fio.Receiver_t['rows']) == 0:
             msg = "There is no Reciver_t table in the dataset." + \
                   "which means it is not possible to read data correctly."
-            raise PH5ReaderError (msg)
-            
-        #self.fio.read_response_t () # this table gives some non-displayed data
-        
-        self.fio.read_das_g_names ()
-        if len(self.fio.Das_g_names) == 0 :
+            raise PH5ReaderError(msg)
+
+        # self.fio.read_response_t () # this table gives some non-displayed
+        # data
+
+        self.fio.read_das_g_names()
+        if len(self.fio.Das_g_names) == 0:
             msg = "There are no Das_t tables in the dataset," + \
                   "which means there are no data to be viewed."
-            raise PH5ReaderError (msg)
-            
+            raise PH5ReaderError(msg)
 
-            
-            
-    def ph5close (self) :
-        self.fio.close ()
-        
-    def _event_stop (self, event_epoch) :
+    def ph5close(self):
+        self.fio.close()
+
+    def _event_stop(self, event_epoch):
         '''   Find end of recording window that contains the event time.   '''
         try:
-            for n in self.fio.Array_t_names :
-                for s in self.fio.Sort_t[n]['rows'] :
-                    if event_epoch >= s['start_time/epoch_l'] and event_epoch <= s['end_time/epoch_l'] :
-                        tdoy = timedoy.TimeDOY (epoch=s['end_time/epoch_l'], microsecond=s['end_time/micro_seconds_i'])
-                        return tdoy.epoch (fepoch=True)
-        except KeyError: return None
-            
+            for n in self.fio.Array_t_names:
+                for s in self.fio.Sort_t[n]['rows']:
+                    if event_epoch >= s['start_time/epoch_l'] and event_epoch <= s['end_time/epoch_l']:
+                        tdoy = timedoy.TimeDOY(
+                            epoch=s['end_time/epoch_l'], microsecond=s['end_time/micro_seconds_i'])
+                        return tdoy.epoch(fepoch=True)
+        except KeyError:
+            return None
+
         return None
 
-
-    ##################################################################################
+    ##########################################################################
     # def createGraphEvents
     # Author: Lan Dam
     # Updated: 201802
-    # read Experiment_t table    
-    def createGraphExperiment (self) :
+    # read Experiment_t table
+    def createGraphExperiment(self):
         '''
               Information about experiment
               Sets: self.GraphExperiment
         '''
-        self.fio.read_experiment_t ()
+        self.fio.read_experiment_t()
         rows = self.fio.Experiment_t['rows']
-        if rows == []: 
-            raise PH5ReaderError("The PH5 dataset does not have Experiment_t table.\nCannot identify the experiment's name")
-            
-        self.graphExperiment = rows[-1]
-        pass
+        if rows == []:
+            raise PH5ReaderError(
+                "The PH5 dataset does not have Experiment_t table.\nCannot identify the experiment's name")
 
-    ##################################################################################
+        self.graphExperiment = rows[-1]
+
+    ##########################################################################
     # def createGraphEvents
     # Author: Lan Dam
     # Updated: 201802
-    def createGraphEvents (self) :
+    def createGraphEvents(self):
         '''   Information about events info for ES_Gui,
               Sets: self.graphEvents
         '''
         #print "createGraphEvents"
-        self.graphEvents = { 'shotLines':[]}
+        self.graphEvents = {'shotLines': []}
         events = []
-        for n in self.fio.Event_t_names :
-            # take off 'Event_t' and change to '0' for n='Event_t' for create to SEGY
-            if n == 'Event_t': shot = '0'
-            else: shot = n.replace('Event_t_', '')
+        for n in self.fio.Event_t_names:
+            # take off 'Event_t' and change to '0' for n='Event_t' for create
+            # to SEGY
+            if n == 'Event_t':
+                shot = '0'
+            else:
+                shot = n.replace('Event_t_', '')
             self.graphEvents['shotLines'].append(shot)
             rows = self.fio.Event_t[n]['byid']
-            for o in self.fio.Event_t[n]['order'] :
+            for o in self.fio.Event_t[n]['order']:
                 r = rows[o]
                 e = {}
                 e['shotlineId'] = shot
@@ -156,35 +164,38 @@ class PH5Reader () :
                 e['elev.'] = r['location/Z/value_d']
                 e['mag.'] = r['size/value_d']
                 e['depth'] = r['depth/value_d']
-                tdoy = timedoy.TimeDOY (epoch=r['time/epoch_l'], microsecond=r['time/micro_seconds_i'])
-                e['eStart'] = tdoy.epoch (fepoch=True)
-                e['eStop'] = self._event_stop (e['eStart'])
-                events.append (e)
-        self.graphEvents['events'] = sorted(events, key=lambda k: k['eventId']) 
-        self.graphEvents['shotLines'] = sorted(self.graphEvents['shotLines'], key=lambda k: k)
+                tdoy = timedoy.TimeDOY(
+                    epoch=r['time/epoch_l'], microsecond=r['time/micro_seconds_i'])
+                e['eStart'] = tdoy.epoch(fepoch=True)
+                e['eStop'] = self._event_stop(e['eStart'])
+                events.append(e)
+        self.graphEvents['events'] = sorted(events, key=lambda k: k['eventId'])
+        self.graphEvents['shotLines'] = sorted(
+            self.graphEvents['shotLines'], key=lambda k: k)
         if self.fio.Event_t_names == []:
-            raise PH5ReaderError("The PH5 dataset does not have any Event_t table.")
-        
+            raise PH5ReaderError(
+                "The PH5 dataset does not have any Event_t table.")
+
         if self.fio.Sort_t == {}:
             msg = "The PH5 dataset does not have any Sort_t table which means" + \
                   "\nthere aren't enough information to identtify the events' end time."
             raise PH5ReaderError(msg)
-        
-        
-    ##################################################################################
+
+    ##########################################################################
     # def createGraphArraysNStations
     # Author: Lan Dam
     # Updated: 201802
-    def createGraphArraysNStations (self) :
+    def createGraphArraysNStations(self):
         '''
            Information about arrays and station info for ES_Gui,
            Sets: self.graphArrays
         '''
         self.graphArrays = []
-        for n in self.fio.Array_t_names :
-            
-            # create array: {'arrayId': aId, {'stations':{stationId:[list of data for each channel of that station]}
-            a = {'arrayId':n.split ('_')[-1], 'stations':{}, 'channels':[]}
+        for n in self.fio.Array_t_names:
+
+            # create array: {'arrayId': aId, {'stations':{stationId:[list of
+            # data for each channel of that station]}
+            a = {'arrayId': n.split('_')[-1], 'stations': {}, 'channels': []}
             rows = self.fio.Array_t[n]['byid']
             # byid: {statId:{chanId:[ {info of that channel-station} ]}}
             sta0 = rows.keys()[0]
@@ -193,21 +204,25 @@ class PH5Reader () :
             a['deployT'] = r0['deploy_time/epoch_l']
             a['pickupT'] = r0['pickup_time/epoch_l']
             try:
-                a['sampleRate'] = r0['sample_rate_i'] / float (r0['sample_rate_multiplier_i'])
+                a['sampleRate'] = r0['sample_rate_i'] / \
+                    float(r0['sample_rate_multiplier_i'])
             except KeyError:
                 das = r0['das/serial_number_s']
-                self.fio.read_das_t (das, start_epoch = a['deployT'], stop_epoch=a['pickupT'])
+                self.fio.read_das_t(
+                    das, start_epoch=a['deployT'], stop_epoch=a['pickupT'])
                 dasrow = self.fio.Das_t[das]['rows'][0]
-                a['sampleRate'] = dasrow['sample_rate_i'] / float (dasrow['sample_rate_multiplier_i'])                
+                a['sampleRate'] = dasrow['sample_rate_i'] / \
+                    float(dasrow['sample_rate_multiplier_i'])
 
-            # self.fio.Array_t[n]['order']: list of station names in order of postion, time
+            # self.fio.Array_t[n]['order']: list of station names in order of
+            # postion, time
             chNo = 0
-            for o in self.fio.Array_t[n]['order'] :
+            for o in self.fio.Array_t[n]['order']:
                 #print "o=",o
                 for ch in rows[o].keys():
-                    if ch not in a['channels']: 
+                    if ch not in a['channels']:
                         a['channels'].append(ch)
-                        
+
                     for stat in rows[o][ch]:
                         if stat['id_s'] in a['stations'].keys():
                             continue
@@ -224,26 +239,29 @@ class PH5Reader () :
                         if stat['pickup_time/epoch_l'] > a['pickupT']:
                             a['pickupT'] = stat['pickup_time/epoch_l']
             keys = set(a['stations'].keys())
-            a['orderedStationIds'] = sorted(keys, key=lambda item: (int(item), item))
-            if len(a['channels']) > chNo: chNo = len(a['channels'])
-            self.graphArrays.append (a)
+            a['orderedStationIds'] = sorted(
+                keys, key=lambda item: (int(item), item))
+            if len(a['channels']) > chNo:
+                chNo = len(a['channels'])
+            self.graphArrays.append(a)
         if self.fio.Array_t_names == []:
-            raise PH5ReaderError("The PH5 dataset does not have any Array_t table.")
-            
+            raise PH5ReaderError(
+                "The PH5 dataset does not have any Array_t table.")
+
         if chNo > 3:
             errMsg = "Limitation for number of channels is 3" + \
                      "\nwhile this experiment has up to %s channels for one array."
             raise PH5ReaderError(errMsg % chNo)
-            
 
-    ##################################################################################
+    ##########################################################################
     # def readData_nonEvent
     # Author: Lan Dam
     # Updated: 201802
-    # to populate data in case of lacking of events' information (based on readData_shotGather)
-    def readData_loiEvent (self, orgStartT, offset, timeLen, staSpc, 
-                  appClockDriftCorr, redVel,        # corrections
-                  PH5View, statusBar=None, beginMsg=None) :
+    # to populate data in case of lacking of events' information (based on
+    # readData_shotGather)
+    def readData_loiEvent(self, orgStartT, offset, timeLen, staSpc,
+                          appClockDriftCorr, redVel,        # corrections
+                          PH5View, statusBar=None, beginMsg=None):
         '''
            Read trace data based on given start and stop epoch, arrays, and channels.
            Sets: self.metadata
@@ -251,18 +269,19 @@ class PH5Reader () :
         '''
         sampleRate = PH5View.selectedArray['sampleRate']
         statusMsg = beginMsg + ": preparing event table"
-        statusBar.showMessage(statusMsg)  
+        statusBar.showMessage(statusMsg)
 
-        #  For each event, loop through each station - each channel in the requested array and extract trace data.
+        # For each event, loop through each station - each channel in the
+        # requested array and extract trace data.
         self.data = {}
         info = {}
         #info['maxP2P'] =  -1 * (2**31 - 1)
         info['zeroDOffsetIndex'] = None
         info['LEN'] = {}
         info['quickRemoved'] = {}
-        info['deepRemoved'] = {}  
+        info['deepRemoved'] = {}
         info['numOfSamples'] = 0
-        
+
         #secs = timeLen
         #ss = ""
         Offset_t = {}
@@ -272,18 +291,18 @@ class PH5Reader () :
         a = self.ARRAY[0]  # currently allow to select one array at a time
         rows = self.fio.Array_t[a]['byid']
         order = self.fio.Array_t[a]['order']
-        
+
         listOfStations = sorted(PH5View.selectedArray['seclectedStations'])
-        self.metadata = [None] * len(listOfStations) 
+        self.metadata = [None] * len(listOfStations)
         info['distanceOffset'] = [None] * len(listOfStations)
-        
-        if orgStartT != None:
+
+        if orgStartT is not None:
             startTime = orgStartT + offset
             stopTime = startTime + timeLen
-        
-        info['noDataList'] = []    
+
+        info['noDataList'] = []
         listOfDataStations = []
-        lenlist = {'less': {},'maybeless': {} }
+        lenlist = {'less': {}, 'maybeless': {}}
         """
         #   If there is an associated event calculate offset distances
         for ev in PH5View.selectedEvents :
@@ -294,140 +313,150 @@ class PH5Reader () :
                 startTime = ev['eStart'] + offset
                 stopTime = startTime + timeLen
         """
-        
+
         ev = None
         sr = None
         #slen = None
-        
+
         count = 0
-        for o in order :
+        for o in order:
             for ch in self.CHANNEL:
                 #processing = []
                 if ch not in self.data.keys():
                     self.data[ch] = [[]] * len(listOfStations)
-                    info['LEN'][ch] =[0] * len(listOfStations)
+                    info['LEN'][ch] = [0] * len(listOfStations)
                     lenlist['less'][ch] = []
-                    lenlist['maybeless'][ch]= []
+                    lenlist['maybeless'][ch] = []
                     info['quickRemoved'][ch] = {}
-                    info['deepRemoved'][ch] = []  
-            
-                       
-                for r in rows[o][ch]: 
+                    info['deepRemoved'][ch] = []
+
+                for r in rows[o][ch]:
                     try:
-                        if r['id_s'] not in PH5View.selectedArray['seclectedStations'] : raise PH5ReaderError("Continue")
-                        ii = listOfStations.index(r['id_s'])
-                        
-                        if not ph5api.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
+                        if r['id_s'] not in PH5View.selectedArray['seclectedStations']:
                             raise PH5ReaderError("Continue")
-                        
-                        
-                        
+                        ii = listOfStations.index(r['id_s'])
+
+                        if not ph5api.is_in(
+                                r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime):
+                            raise PH5ReaderError("Continue")
+
                         das = r['das/serial_number_s']
-                        corr = self.calcCorrection(ii, das, ch, Offset_t,a, r,startTime, 
+                        corr = self.calcCorrection(ii, das, ch, Offset_t, a, r, startTime,
                                                    sampleRate, staSpc, appClockDriftCorr, redVel)
-        
+
                         # + 1.1/sampleRate: add a little bit than the time of one sample
-                        traces = self.fio.cut (das, startTime-corr[0]/1000., stopTime-corr[0]/1000. + 1.1/sampleRate, 
-                                               ch, sampleRate, apply_time_correction=False)
-                        
+                        traces = self.fio.cut(das, startTime - corr[0] / 1000., stopTime - corr[0] / 1000. + 1.1 / sampleRate,
+                                              ch, sampleRate, apply_time_correction=False)
+
                         trace = ph5api.pad_traces(traces)
 
-                        if trace.nsamples == 0 : 
-                            v = ( PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
+                        if trace.nsamples == 0:
+                            v = (
+                                PH5View.selectedArray['arrayId'], das, r['id_s'], ch)
                             noDataItem = "Array:%s  Das: %s  Station: %s  Chan: %s" % v
-                            
-                            if noDataItem not in info['noDataList']: 
+
+                            if noDataItem not in info['noDataList']:
                                 info['noDataList'].append(noDataItem)
                             raise PH5ReaderError("Continue")
-                        if sr == None :
+                        if sr is None:
                             sr = trace.sample_rate
                             #slen = int ((secs * sr) + 0.5)
-                            
-                        self.getMetadata( info, lenlist, ii, trace, a, ev, r, ch, das, Offset_t, corr, staSpc, orgStartT, startTime)
+
+                        self.getMetadata(info, lenlist, ii, trace, a, ev, r,
+                                         ch, das, Offset_t, corr, staSpc, orgStartT, startTime)
 
                         #self.metadata[ii]['removed'] = False
-                        trace.data = np.array (trace.data, dtype=np.float32)
+                        trace.data = np.array(trace.data, dtype=np.float32)
                         if len(self.data[ch][ii]) < trace.nsamples:
-                            #processing.append(r['id_s'])
+                            # processing.append(r['id_s'])
                             self.data[ch][ii] = (trace.data)
                             info['LEN'][ch][ii] = trace.nsamples
-                            if r['id_s'] not in listOfDataStations: listOfDataStations.append(r['id_s'])
+                            if r['id_s'] not in listOfDataStations:
+                                listOfDataStations.append(r['id_s'])
                             if 'minmax' not in self.metadata[ii].keys():
-                                self.metadata[ii]['minmax'] = (np.amin(trace.data), np.amax(trace.data)) 
+                                self.metadata[ii]['minmax'] = (
+                                    np.amin(trace.data), np.amax(trace.data))
                             else:
-                                minval = min( self.metadata[ii]['minmax'][0], np.amin(trace.data) )
-                                maxval = max( self.metadata[ii]['minmax'][1], np.amax(trace.data) )
-                                self.metadata[ii]['minmax'] = (minval, maxval)  
-                            
+                                minval = min(
+                                    self.metadata[ii]['minmax'][0], np.amin(trace.data))
+                                maxval = max(
+                                    self.metadata[ii]['minmax'][1], np.amax(trace.data))
+                                self.metadata[ii]['minmax'] = (minval, maxval)
+
                             #print "%s: %s: offset=%s" % (ii, r['id_s'], info['distanceOffset'][ii])
-                            count +=1
-                            if statusBar!=None and count % 10 == 0:
-                                statusMsg = beginMsg + ": reading data and metadata: %s station-channels" % count 
+                            count += 1
+                            if statusBar is not None and count % 10 == 0:
+                                statusMsg = beginMsg + ": reading data and metadata: %s station-channels" % count
                                 statusBar.showMessage(statusMsg)
-                        #else:
+                        # else:
                             #print "already has data, old len=%s new trace.nsamples=%s" % (len(self.data[ch][ii]),trace.nsamples)
                             #print "self.data[ch][ii]:",self.data[ch][ii][10:20]
                             #print "trace.data:", trace.data[10:20]
-                            #if np.array_equal(self.data[ch][ii], (trace.data)):
+                            # if np.array_equal(self.data[ch][ii], (trace.data)):
                                 #print "same"
-                            #else: 
+                            # else:
                                 #print "different"
-                    except PH5ReaderError, e:
-                        if e.message == "Continue": 
-                            if r['id_s'] in listOfStations: #info['zerosList'].append(( ii, ch))
-                                #info['LEN'][ch].append(0)
+                    except PH5ReaderError as e:
+                        if e.message == "Continue":
+                            # info['zerosList'].append(( ii, ch))
+                            if r['id_s'] in listOfStations:
+                                # info['LEN'][ch].append(0)
                                 lenlist['less'][ch].append(ii)
-                        else: raise e
-                        
-            #if processing !=[]: 
+                        else:
+                            raise e
+
+            # if processing !=[]:
                 #print "channel:", ch
                 #print "processing:",processing
-    
+
         for ch in self.CHANNEL:
             for i in lenlist['less'][ch]:
                 replace = np.zeros(info['numOfSamples'])
-                if info['LEN'][ch][i] != 0: 
+                if info['LEN'][ch][i] != 0:
                     replace[:info['LEN'][ch][i]] = self.data[ch][i]
                 self.data[ch][i] = replace
-        
+
         info['up'] = True       # distance offset tend to increase
-        info['abnormal'] = []   # list of stations that have distance offset different from the trend
-        if staSpc==None and orgStartT != None:
+        # list of stations that have distance offset different from the trend
+        info['abnormal'] = []
+        if staSpc is None and orgStartT is not None:
             up = []
             down = []
-            for i in range(1,len(listOfDataStations)):
+            for i in range(1, len(listOfDataStations)):
                 staId = listOfStations.index(listOfDataStations[i])
-                pStaId = listOfStations.index(listOfDataStations[i-1])
-                if info['distanceOffset'][staId]>info['distanceOffset'][pStaId]:
-                    up.append(( pStaId, staId ))
+                pStaId = listOfStations.index(listOfDataStations[i - 1])
+                if info['distanceOffset'][staId] > info['distanceOffset'][pStaId]:
+                    up.append((pStaId, staId))
                 else:
-                    down.append(( pStaId, staId ))
-            
+                    down.append((pStaId, staId))
+
             checkedList = down
-            if len(down) > len(up): 
+            if len(down) > len(up):
                 checkedList = up
                 info['up'] = False
-    
-            for a1,a2 in checkedList:
-                if a1 not in info['abnormal']: info['abnormal'].append(a1)
-                if a2 not in info['abnormal']: info['abnormal'].append(a2)
+
+            for a1, a2 in checkedList:
+                if a1 not in info['abnormal']:
+                    info['abnormal'].append(a1)
+                if a2 not in info['abnormal']:
+                    info['abnormal'].append(a2)
 
         info['numOfStations'] = len(listOfStations)
         info['minOffset'] = self.minOffset
 
         info['sumD'] = self.maxOffset - self.minOffset
         info['numOfDataStations'] = len(listOfDataStations)
-        
-        return info          
-            
-    ##################################################################################
+
+        return info
+
+    ##########################################################################
     # def readData_receiverGather
     # Author: Lan Dam
-    # Updated: 201701       
-    # to populate data for receiverGather    
-    def readData_receiverGather (self, orgStartT, offset, timeLen, staSpc, 
-                  appClockDriftCorr, redVel,        # corrections
-                  PH5View, statusBar=None, beginMsg=None) :
+    # Updated: 201701
+    # to populate data for receiverGather
+    def readData_receiverGather(self, orgStartT, offset, timeLen, staSpc,
+                                appClockDriftCorr, redVel,        # corrections
+                                PH5View, statusBar=None, beginMsg=None):
         '''
            Read trace data based on given start and stop epoch, arrays, and channels.
            receiverGather get the events from ONE selected station-channel
@@ -436,128 +465,135 @@ class PH5Reader () :
         '''
         sampleRate = PH5View.selectedArray['sampleRate']
         statusMsg = beginMsg + ": preparing event table"
-        statusBar.showMessage(statusMsg)  
+        statusBar.showMessage(statusMsg)
 
-        #  For each event, loop through each station - each channel in the requested array and extract trace data.
+        # For each event, loop through each station - each channel in the
+        # requested array and extract trace data.
         self.data = []
         info = {}
-        info['maxP2P'] =  -1 * (2**31 - 1)
+        info['maxP2P'] = -1 * (2**31 - 1)
         info['zeroDOffsetIndex'] = None
         info['distanceOffset'] = []
         #secs = timeLen
-        
+
         Offset_t = {}
         self.minOffset = None
-        self.maxOffset = None        
+        self.maxOffset = None
 
-        staId = PH5View.selectedArray['seclectedStations'][0]         # receiver gather has only one pair of station-channel
+        # receiver gather has only one pair of station-channel
+        staId = PH5View.selectedArray['seclectedStations'][0]
         ch = self.CHANNEL[0]
         self.metadata = []
-        self.data = {ch:[]}
+        self.data = {ch: []}
         a = self.ARRAY[0]  # currently allow to select one array at a time
-        
-        if orgStartT != None:
+
+        if orgStartT is not None:
             startTime = orgStartT + offset
             stopTime = startTime + timeLen
-        
-        lenlist = {'less': {ch:[]},'maybeless': {ch:[]} }
+
+        lenlist = {'less': {ch: []}, 'maybeless': {ch: []}}
         info['numOfSamples'] = 0
-        info['noDataList'] = [] 
-        info['LEN'] = {ch:[]}
+        info['noDataList'] = []
+        info['LEN'] = {ch: []}
 
         #   If there is an associated event calculate offset distances
-        for ev in PH5View.selectedEvents :
+        for ev in PH5View.selectedEvents:
             #print "ev['eventId']:",ev['eventId']
-            Offset_t[a] = self.fio.calc_offsets (a, ev['eventId'], ev['eventName'])
-            
-            if orgStartT == None:
+            Offset_t[a] = self.fio.calc_offsets(
+                a, ev['eventId'], ev['eventName'])
+
+            if orgStartT is None:
                 startTime = ev['eStart'] + offset
                 stopTime = startTime + timeLen
 
             sr = None
             #slen = None
             rows = self.fio.Array_t[a]['byid']
-           
+
             line_seq = 0
-            
+
             r = rows[staId][ch][0]
             ii = len(self.metadata)
-            #if len(rows[staId][ch])!=1 :
-                #print "check if len(rows[staId][ch])=1!!! staId=%s, ch=%s, len(rows[staId][ch])=%s" % (staId, ch, len(rows[staId][ch]))
-                
+            # if len(rows[staId][ch])!=1 :
+            #print "check if len(rows[staId][ch])=1!!! staId=%s, ch=%s, len(rows[staId][ch])=%s" % (staId, ch, len(rows[staId][ch]))
+
             try:
-                
-                if not ph5api.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
+
+                if not ph5api.is_in(
+                        r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime):
                     continue
 
                 das = r['das/serial_number_s']
-                
-                corr = self.calcCorrection(ii, das, ch, Offset_t,a, r,startTime, 
+
+                corr = self.calcCorrection(ii, das, ch, Offset_t, a, r, startTime,
                                            sampleRate, staSpc, appClockDriftCorr, redVel)
 
                 # + 1.1/sampleRate: add a little bit than the time of one sample
-                traces = self.fio.cut (das, startTime-corr[0]/1000., stopTime-corr[0]/1000. + 1.1/sampleRate, 
-                                       ch, sampleRate, apply_time_correction=False)
-                
+                traces = self.fio.cut(das, startTime - corr[0] / 1000., stopTime - corr[0] / 1000. + 1.1 / sampleRate,
+                                      ch, sampleRate, apply_time_correction=False)
+
                 trace = ph5api.pad_traces(traces)
-                    
-                if trace.nsamples == 0 : 
-                    v = (ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
+
+                if trace.nsamples == 0:
+                    v = (ev['eventId'], PH5View.selectedArray['arrayId'],
+                         das, r['id_s'], ch)
                     noDataItem = "Event:%s  Array:%s  Das: %s  Station: %s  Chan: %s" % v
-                    
-                    if noDataItem not in info['noDataList']: 
+
+                    if noDataItem not in info['noDataList']:
                         info['noDataList'].append(noDataItem)
                     continue
-                if sr == None :
+                if sr is None:
                     sr = trace.sample_rate
                     #slen = int ((secs * sr) + 0.5)
-                
+
                 self.metadata.append(None)
                 info['distanceOffset'].append(None)
-                               
-                self.getMetadata(info, lenlist, ii, trace, a, ev, r, ch, das, Offset_t, corr, staSpc, orgStartT, startTime) 
-                
-                trace.data = np.array (trace.data, dtype=np.float32)
 
-                self.data[ch].append (trace.data)
+                self.getMetadata(info, lenlist, ii, trace, a, ev, r,
+                                 ch, das, Offset_t, corr, staSpc, orgStartT, startTime)
+
+                trace.data = np.array(trace.data, dtype=np.float32)
+
+                self.data[ch].append(trace.data)
                 info['LEN'][ch].append(trace.nsamples)
-                
-                self.metadata[ii]['minmax'] = (np.amin (trace.data), np.amax (trace.data))
-                   
-                if statusBar!=None and line_seq % 10 == 0:
-                    statusMsg = beginMsg + ": reading data and metadata: %s events" % line_seq 
+
+                self.metadata[ii]['minmax'] = (
+                    np.amin(trace.data), np.amax(trace.data))
+
+                if statusBar is not None and line_seq % 10 == 0:
+                    statusMsg = beginMsg + ": reading data and metadata: %s events" % line_seq
                     statusBar.showMessage(statusMsg)
-            except PH5ReaderError, e:
+            except PH5ReaderError as e:
                 raise e
 
         for i in lenlist['less'][ch]:
             replace = np.zeros(info['numOfSamples'])
-            if info['LEN'][ch][i] != 0: 
+            if info['LEN'][ch][i] != 0:
                 replace[:info['LEN'][ch][i]] = self.data[ch][i]
             self.data[ch][i] = replace
-            
+
         # use fixed offset => offset always increase
         info['up'] = True
         info['abnormal'] = []
-        
-        info['quickRemoved'] = {ch:{}}
-        info['deepRemoved'] = {ch:[]}
+
+        info['quickRemoved'] = {ch: {}}
+        info['deepRemoved'] = {ch: []}
         info['numOfDataStations'] = info['numOfStations'] = len(self.data[ch])
         info['zerosList'] = []
-        
+
         info['minOffset'] = self.minOffset
         info['sumD'] = self.maxOffset - self.minOffset
-   
+
         return info
-    
-    ##################################################################################
+
+    ##########################################################################
     # def readData_shotGather
     # Author: Lan Dam
-    # Updated: 201701              
+    # Updated: 201701
     # to populate data for shotGather
-    def readData_shotGather (self, orgStartT, offset, timeLen, staSpc, 
-                  appClockDriftCorr, redVel,        # corrections
-                  PH5View, statusBar=None, beginMsg=None) :
+    def readData_shotGather(self, orgStartT, offset, timeLen, staSpc,
+                            appClockDriftCorr, redVel,        # corrections
+                            PH5View, statusBar=None, beginMsg=None):
         '''
            Read trace data based on given start and stop epoch, arrays, and channels.
            Sets: self.metadata
@@ -565,18 +601,19 @@ class PH5Reader () :
         '''
         sampleRate = PH5View.selectedArray['sampleRate']
         statusMsg = beginMsg + ": preparing event table"
-        statusBar.showMessage(statusMsg)  
+        statusBar.showMessage(statusMsg)
 
-        #  For each event, loop through each station - each channel in the requested array and extract trace data.
+        # For each event, loop through each station - each channel in the
+        # requested array and extract trace data.
         self.data = {}
         info = {}
         #info['maxP2P'] =  -1 * (2**31 - 1)
         info['zeroDOffsetIndex'] = None
         info['LEN'] = {}
         info['quickRemoved'] = {}
-        info['deepRemoved'] = {}  
+        info['deepRemoved'] = {}
         info['numOfSamples'] = 0
-        
+
         #secs = timeLen
         #ss = ""
         Offset_t = {}
@@ -586,211 +623,230 @@ class PH5Reader () :
         a = self.ARRAY[0]  # currently allow to select one array at a time
         rows = self.fio.Array_t[a]['byid']
         order = self.fio.Array_t[a]['order']
-        
+
         listOfStations = sorted(PH5View.selectedArray['seclectedStations'])
-        self.metadata = [None] * len(listOfStations) 
+        self.metadata = [None] * len(listOfStations)
         info['distanceOffset'] = [None] * len(listOfStations)
-        
-        if orgStartT != None:
+
+        if orgStartT is not None:
             startTime = orgStartT + offset
             stopTime = startTime + timeLen
-        
-        info['noDataList'] = []    
-        listOfDataStations = []
-        lenlist = {'less': {},'maybeless': {} }
-        #   If there is an associated event calculate offset distances
-        for ev in PH5View.selectedEvents :
-            #print "ev['eventId']:",ev['eventId']
-            Offset_t[a] = self.fio.calc_offsets (a, ev['eventId'], ev['eventName'])
 
-            if orgStartT == None:
+        info['noDataList'] = []
+        listOfDataStations = []
+        lenlist = {'less': {}, 'maybeless': {}}
+        #   If there is an associated event calculate offset distances
+        for ev in PH5View.selectedEvents:
+            #print "ev['eventId']:",ev['eventId']
+            Offset_t[a] = self.fio.calc_offsets(
+                a, ev['eventId'], ev['eventName'])
+
+            if orgStartT is None:
                 startTime = ev['eStart'] + offset
                 stopTime = startTime + timeLen
 
             sr = None
             #slen = None
-            
+
             count = 0
-            for o in order :
+            for o in order:
                 for ch in self.CHANNEL:
                     #processing = []
                     if ch not in self.data.keys():
                         self.data[ch] = [[]] * len(listOfStations)
-                        info['LEN'][ch] =[0] * len(listOfStations)
+                        info['LEN'][ch] = [0] * len(listOfStations)
                         lenlist['less'][ch] = []
-                        lenlist['maybeless'][ch]= []
+                        lenlist['maybeless'][ch] = []
                         info['quickRemoved'][ch] = {}
-                        info['deepRemoved'][ch] = []  
-                
-                           
-                    for r in rows[o][ch]: 
+                        info['deepRemoved'][ch] = []
+
+                    for r in rows[o][ch]:
                         try:
-                            if r['id_s'] not in PH5View.selectedArray['seclectedStations'] : raise PH5ReaderError("Continue")
-                            ii = listOfStations.index(r['id_s'])
-                            
-                            if not ph5api.is_in (r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime) :
+                            if r['id_s'] not in PH5View.selectedArray['seclectedStations']:
                                 raise PH5ReaderError("Continue")
-                            
-                            
-                            
+                            ii = listOfStations.index(r['id_s'])
+
+                            if not ph5api.is_in(
+                                    r['deploy_time/epoch_l'], r['pickup_time/epoch_l'], startTime, stopTime):
+                                raise PH5ReaderError("Continue")
+
                             das = r['das/serial_number_s']
-                            corr = self.calcCorrection(ii, das, ch, Offset_t,a, r,startTime, 
+                            corr = self.calcCorrection(ii, das, ch, Offset_t, a, r, startTime,
                                                        sampleRate, staSpc, appClockDriftCorr, redVel)
-            
+
                             # + 1.1/sampleRate: add a little bit than the time of one sample
-                            traces = self.fio.cut (das, startTime-corr[0]/1000., stopTime-corr[0]/1000. + 1.1/sampleRate, 
-                                                   ch, sampleRate, apply_time_correction=False)
-                            
+                            traces = self.fio.cut(das, startTime - corr[0] / 1000., stopTime - corr[0] / 1000. + 1.1 / sampleRate,
+                                                  ch, sampleRate, apply_time_correction=False)
+
                             trace = ph5api.pad_traces(traces)
 
-                            if trace.nsamples == 0 : 
-                                v = (ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch )
+                            if trace.nsamples == 0:
+                                v = (
+                                    ev['eventId'], PH5View.selectedArray['arrayId'], das, r['id_s'], ch)
                                 noDataItem = "Event:%s  Array:%s  Das: %s  Station: %s  Chan: %s" % v
-                                
-                                if noDataItem not in info['noDataList']: 
+
+                                if noDataItem not in info['noDataList']:
                                     info['noDataList'].append(noDataItem)
                                 raise PH5ReaderError("Continue")
-                            if sr == None :
+                            if sr is None:
                                 sr = trace.sample_rate
                                 #slen = int ((secs * sr) + 0.5)
-                                
-                            self.getMetadata( info, lenlist, ii, trace, a, ev, r, ch, das, Offset_t, corr, staSpc, orgStartT, startTime)
+
+                            self.getMetadata(info, lenlist, ii, trace, a, ev, r,
+                                             ch, das, Offset_t, corr, staSpc, orgStartT, startTime)
 
                             #self.metadata[ii]['removed'] = False
-                            trace.data = np.array (trace.data, dtype=np.float32)
+                            trace.data = np.array(trace.data, dtype=np.float32)
                             if len(self.data[ch][ii]) < trace.nsamples:
-                                #processing.append(r['id_s'])
+                                # processing.append(r['id_s'])
                                 self.data[ch][ii] = (trace.data)
                                 info['LEN'][ch][ii] = trace.nsamples
-                                if r['id_s'] not in listOfDataStations: listOfDataStations.append(r['id_s'])
+                                if r['id_s'] not in listOfDataStations:
+                                    listOfDataStations.append(r['id_s'])
                                 if 'minmax' not in self.metadata[ii].keys():
-                                    self.metadata[ii]['minmax'] = (np.amin(trace.data), np.amax(trace.data)) 
+                                    self.metadata[ii]['minmax'] = (
+                                        np.amin(trace.data), np.amax(trace.data))
                                 else:
-                                    minval = min( self.metadata[ii]['minmax'][0], np.amin(trace.data) )
-                                    maxval = max( self.metadata[ii]['minmax'][1], np.amax(trace.data) )
-                                    self.metadata[ii]['minmax'] = (minval, maxval)  
-                                
-                                count +=1
-                                if statusBar!=None and count % 10 == 0:
-                                    statusMsg = beginMsg + ": reading data and metadata: %s station-channels" % count 
+                                    minval = min(
+                                        self.metadata[ii]['minmax'][0], np.amin(trace.data))
+                                    maxval = max(
+                                        self.metadata[ii]['minmax'][1], np.amax(trace.data))
+                                    self.metadata[ii]['minmax'] = (
+                                        minval, maxval)
+
+                                count += 1
+                                if statusBar is not None and count % 10 == 0:
+                                    statusMsg = beginMsg + ": reading data and metadata: %s station-channels" % count
                                     statusBar.showMessage(statusMsg)
 
-                        except PH5ReaderError, e:
-                            if e.message == "Continue": 
-                                if r['id_s'] in listOfStations: #info['zerosList'].append(( ii, ch))
-                                    #info['LEN'][ch].append(0)
+                        except PH5ReaderError as e:
+                            if e.message == "Continue":
+                                # info['zerosList'].append(( ii, ch))
+                                if r['id_s'] in listOfStations:
+                                    # info['LEN'][ch].append(0)
                                     lenlist['less'][ch].append(ii)
-                            else: raise e
+                            else:
+                                raise e
 
         for ch in self.CHANNEL:
             for i in lenlist['less'][ch]:
                 replace = np.zeros(info['numOfSamples'])
-                if info['LEN'][ch][i] != 0: 
+                if info['LEN'][ch][i] != 0:
                     replace[:info['LEN'][ch][i]] = self.data[ch][i]
                 self.data[ch][i] = replace
-                
-        
+
         info['up'] = True       # distance offset tend to increase
-        info['abnormal'] = []   # list of stations that have distance offset different from the trend
-        if staSpc==None and orgStartT != None:
+        # list of stations that have distance offset different from the trend
+        info['abnormal'] = []
+        if staSpc is None and orgStartT is not None:
             up = []
             down = []
-            for i in range(1,len(listOfDataStations)):
+            for i in range(1, len(listOfDataStations)):
                 staId = listOfStations.index(listOfDataStations[i])
-                pStaId = listOfStations.index(listOfDataStations[i-1])
-                if info['distanceOffset'][staId]>info['distanceOffset'][pStaId]:
-                    up.append(( pStaId, staId ))
+                pStaId = listOfStations.index(listOfDataStations[i - 1])
+                if info['distanceOffset'][staId] > info['distanceOffset'][pStaId]:
+                    up.append((pStaId, staId))
                 else:
-                    down.append(( pStaId, staId ))
-            
+                    down.append((pStaId, staId))
+
             checkedList = down
-            if len(down) > len(up): 
+            if len(down) > len(up):
                 checkedList = up
                 info['up'] = False
-    
-            for a1,a2 in checkedList:
-                if a1 not in info['abnormal']: info['abnormal'].append(a1)
-                if a2 not in info['abnormal']: info['abnormal'].append(a2)
+
+            for a1, a2 in checkedList:
+                if a1 not in info['abnormal']:
+                    info['abnormal'].append(a1)
+                if a2 not in info['abnormal']:
+                    info['abnormal'].append(a2)
 
         info['numOfStations'] = len(listOfStations)
         info['minOffset'] = self.minOffset
 
         info['sumD'] = self.maxOffset - self.minOffset
         info['numOfDataStations'] = len(listOfDataStations)
-        
+
         return info
-    
-    ##################################################################################
+
+    ##########################################################################
     # def readData_shotGather
     # Author: Lan Dam
     # Updated: 201803
-    def getMetadata(self, info, lenlist, ii, trace, a, ev, r, ch, das, Offset_t, corr, staSpc, orgStartT, startTime):
+    def getMetadata(self, info, lenlist, ii, trace, a, ev, r,
+                    ch, das, Offset_t, corr, staSpc, orgStartT, startTime):
         '''
            Sets: self.metadata[ii]
-        '''        
-        if self.metadata[ii] != None:
+        '''
+        if self.metadata[ii] is not None:
             self.metadata[ii]['chans'].append(r['channel_number_i'])
         else:
-            self.metadata[ii] = {}      
+            self.metadata[ii] = {}
             self.metadata[ii]['totalCorr'] = corr[0]
             self.metadata[ii]['clockDriftCorr'] = corr[1]
             self.metadata[ii]['redVelCorr'] = corr[2]
-            self.metadata[ii]['absStartTime'] = timedoy.epoch2passcal (startTime)
+            self.metadata[ii]['absStartTime'] = timedoy.epoch2passcal(
+                startTime)
             self.metadata[ii]['arrayId'] = a[-3:]
             self.metadata[ii]['stationId'] = r['id_s']
-            self.metadata[ii]['eventId'] = ev['eventId'] if ev != None else None
+            self.metadata[ii]['eventId'] = ev['eventId'] if ev is not None else None
             self.metadata[ii]['dasSerial'] = das
-            self.metadata[ii]['chans'] = [ r['channel_number_i']]
+            self.metadata[ii]['chans'] = [r['channel_number_i']]
             self.metadata[ii]['desc'] = r['description_s']
             self.metadata[ii]['lat'] = r['location/Y/value_d']
             self.metadata[ii]['long'] = r['location/X/value_d']
             self.metadata[ii]['elev'] = r['location/Z/value_d']
-            self.metadata[ii]['elevUnit'] = r['location/Z/units_s'].strip ()
-            if staSpc==None and orgStartT != None:
-                #   If no offset distance just set them to an incremented sequence
-                try :
+            self.metadata[ii]['elevUnit'] = r['location/Z/units_s'].strip()
+            if staSpc is None and orgStartT is not None:
+                # If no offset distance just set them to an incremented
+                # sequence
+                try:
                     offset_t = Offset_t[a]['byid'][r['id_s']]
                     info['distanceOffset'][ii] = (offset_t['offset/value_d'])
-                    if offset_t['offset/value_d'] == 0 : info['zeroDOffsetIndex'] = ii
+                    if offset_t['offset/value_d'] == 0:
+                        info['zeroDOffsetIndex'] = ii
                     self.metadata[ii]['distanceOffsetUnit'] = offset_t['offset/units_s']
                     self.metadata[ii]['azimuth'] = offset_t['azimuth/value_f']
                     self.metadata[ii]['azimuthUnit'] = offset_t['azimuth/units_s']
-            
-                except Exception as e :
-                    
+
+                except Exception as e:
+
                     print e.message
-                    
+
                     info['distanceOffset'][ii] = ii
                     self.metadata[ii]['distanceOffsetUnit'] = 'm'
                     self.metadata[ii]['azimuth'] = 0
-                    self.metadata[ii]['azimuthUnit'] = 'degrees'  
-                    
+                    self.metadata[ii]['azimuthUnit'] = 'degrees'
+
                     raise PH5ReaderError("NoDOffset")
-                
+
             else:
                 info['distanceOffset'][ii] = (staSpc * ii)
-            
-            
-            if self.minOffset == None:
+
+            if self.minOffset is None:
                 self.minOffset = info['distanceOffset'][ii]
                 self.maxOffset = info['distanceOffset'][ii]
             else:
-                if info['distanceOffset'][ii] < self.minOffset: self.minOffset = info['distanceOffset'][ii]
-                if info['distanceOffset'][ii] > self.maxOffset: self.maxOffset = info['distanceOffset'][ii]
-            
+                if info['distanceOffset'][ii] < self.minOffset:
+                    self.minOffset = info['distanceOffset'][ii]
+                if info['distanceOffset'][ii] > self.maxOffset:
+                    self.maxOffset = info['distanceOffset'][ii]
+
             self.metadata[ii]['sample_rate'] = trace.sample_rate
             self.metadata[ii]['numOfSamples'] = trace.nsamples
 
-            if ii == 0: lenlist['maybeless'][ch].append(ii) #201803: in case the first trace has less data than numOfSamples
+            if ii == 0:
+                # 201803: in case the first trace has less data than
+                # numOfSamples
+                lenlist['maybeless'][ch].append(ii)
             if trace.nsamples < info['numOfSamples']:
-                lenlist['less'][ch].append(ii)  
-            elif trace.nsamples > info['numOfSamples']: 
+                lenlist['less'][ch].append(ii)
+            elif trace.nsamples > info['numOfSamples']:
                 info['numOfSamples'] = trace.nsamples
                 lenlist['less'][ch] += lenlist['maybeless'][ch]
                 lenlist['maybeless'][ch] = []
             else:
                 lenlist['maybeless'][ch].append(ii)
-                 
+
             info['interval'] = 1000. / trace.sample_rate
             """ # Non-displayed metadata. If need to be displayed, in case Response table is missing,
             # should give user a warning about these parameters having None Values.
@@ -798,49 +854,49 @@ class PH5Reader () :
                 response = self.fio.Response_t['rows'][trace.das_t[0]['response_table_n_i']]
             except IndexError:
                 response = {'gain/value_i':None, 'gain/units_s':None, 'bit_weight/value_d':None, 'bit_weight/units_s':None }
-                
+
             self.metadata[ii]['gain'] = response['gain/value_i']
             self.metadata[ii]['gainUnit'] = response['gain/units_s']
             self.metadata[ii]['bitWeight'] = response['bit_weight/value_d']
             self.metadata[ii]['bitWeightUnit'] = response['bit_weight/units_s']
-            
+
             self.metadata[ii]['component'] = self.fio.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]['orientation/description_s']
             self.metadata[ii]['azimuth'] = self.fio.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]['orientation/azimuth/value_f']
             self.metadata[ii]['azimuthUnit'] = self.fio.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]['orientation/azimuth/units_s']
             self.metadata[ii]['dip'] = self.fio.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]['orientation/dip/value_f']
-            self.metadata[ii]['dipUnit'] = self.fio.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]['orientation/dip/units_s']    
+            self.metadata[ii]['dipUnit'] = self.fio.Receiver_t['rows'][trace.das_t[0]['receiver_table_n_i']]['orientation/dip/units_s']
             """
 
-
-
-    def calcCorrection(self, ii, das, c, Offset_t,a, r, startTime, sampleRate, 
+    def calcCorrection(self, ii, das, c, Offset_t, a, r, startTime, sampleRate,
                        staSpc, appClockDriftCorr, redVel):
         #print "calcCorrection"
         totalCorr = 0
         redVelCorr = None
-        if redVel != None:
-            if staSpc==None:
-                try :
+        if redVel is not None:
+            if staSpc is None:
+                try:
                     dOffset = Offset_t[a]['byid'][r['id_s']]['offset/value_d']
                     #print "ii=%s, offset=%s" % (ii, dOffset)
-                except Exception :
+                except Exception:
                     raise PH5ReaderError("NoDOffset")
             else:
                 dOffset = staSpc * ii
-            redVelCorr = -1000*abs(dOffset/redVel)
+            redVelCorr = -1000 * abs(dOffset / redVel)
             totalCorr += redVelCorr
-            
+
         # check if apply_time_correction should be True or False
         #print "das:%s, startTime:%.5f, stoptime=%.5f, sc=%s, sampleRate=%s" % (das, startTime, startTime+1.1/sampleRate, c, sampleRate)
-        traces = self.fio.cut (das, startTime, startTime+1.1/sampleRate, c, sampleRate, apply_time_correction=True)
+        traces = self.fio.cut(das, startTime, startTime + 1.1 /
+                              sampleRate, c, sampleRate, apply_time_correction=True)
         trace = ph5api.pad_traces(traces)
         clockDriftCorr = trace.time_correction_ms
 
-        if appClockDriftCorr: 
+        if appClockDriftCorr:
             totalCorr += clockDriftCorr
 
         return totalCorr, clockDriftCorr, redVelCorr
-            
+
+
 html_manual = '''
 <html>
 <head>
@@ -857,7 +913,7 @@ table, th, td {
 
 <h2><a id="contents">Contents:</a></h2>
 <ul>
-	<li><a href="#generalInfo">General Information</a></li> 	
+	<li><a href="#generalInfo">General Information</a></li>
  	<li><a href="#openPH5">Open PH5 file</a></li>
  	<li><a href="#selectTraces">Select traces to plot</a></li>
 <ul>
@@ -1028,7 +1084,7 @@ Under 'Get and Data Plot' is the information of the current plot view of the sel
 <td>
 <h2><a id="plotView">Plot View</a></h2>
 <div>When Zoom or Pan is performed, the displayed information under 'Get Data and Plot' button will be updated.
-<div>ResetZoom/Pan button is to get the view back to the beginning one. 
+<div>ResetZoom/Pan button is to get the view back to the beginning one.
 <div>&nbsp;</div>
 <h3><a id="zoomPan">Zoom/Pan with navigation buttons</a></h3>
 <div>This option is enabled when radio button Zoom/pan is selected.</div>
@@ -1055,7 +1111,7 @@ Under 'Get and Data Plot' is the information of the current plot view of the sel
 <ul>
 	<li>To create the selected area, drag the mouse from the starting point to the ending point. One small square will show up at the starting point when dragging, and the rectangle defining the whole selected area will only show up when the mouse is released.</li>
 	<li>Click Zoom Selection: to zoom the selected area in the current window.</li>
-	<li>Click Pass Selection to Support Window (this option for Main Window only): to zoom the selected area in the Support Window. In the new window, all other part will be cut off for better performance when the data need to analyzed is too big. User should chooses when working on the Main Window become too slow. 
+	<li>Click Pass Selection to Support Window (this option for Main Window only): to zoom the selected area in the Support Window. In the new window, all other part will be cut off for better performance when the data need to analyzed is too big. User should chooses when working on the Main Window become too slow.
 </ul>
 <div align="right"><a href="#contents">Contents</a></div>
 <div>&nbsp;</div>
@@ -1149,46 +1205,42 @@ html_versionTraces = """
 """
 
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     #from time import time
-    pr = PH5Reader ()
-    #try :
-        #pr.initialize_ph5 ('/media/sf_azevedo/Desktop/SL-65-backups/Experiments/xxx/master.ph5')
-    #except PH5ReaderError as e :
-        #print e.message
+    pr = PH5Reader()
+    # try :
+    #pr.initialize_ph5 ('/media/sf_azevedo/Desktop/SL-65-backups/Experiments/xxx/master.ph5')
+    # except PH5ReaderError as e :
+    #print e.message
     #pr.clear ()
-    try :
-        pr.initialize_ph5 ('/home/azevedo/Data/10-016/master.ph5')
-    except PH5ReaderError as e :
+    try:
+        pr.initialize_ph5('/home/azevedo/Data/10-016/master.ph5')
+    except PH5ReaderError as e:
         print e.message
-        
-    pr.createGraphEvents ()
-    
-    pr.createGraphArraysNStations ()
-    
-    pr.createGraphExperiment ()
-    
-    then = time.time ()    
-    info0 = pr.readData (1200895260, 1200895270, .5)
+
+    pr.createGraphEvents()
+
+    pr.createGraphArraysNStations()
+
+    pr.createGraphExperiment()
+
+    then = time.time()
+    info0 = pr.readData(1200895260, 1200895270, .5)
     #print "10s traces X {0} =".format (info0['numOfStations']), time.time () - then
-    
-    #for s in pr.data :
-        #print s[0], s[-1]
+
+    # for s in pr.data :
+    #print s[0], s[-1]
     #print "API"
     #pr.set (channel=[1], array=['Array_t_002'])
-    ##   Loop through Sort_t
-    #for s in pr.fio.Sort_t['Array_t_002']['rows'] :
-        ##print s
-        #print '.',
-    #print
-    ##   Time of last event window in Sort_t for array 2
+    # Loop through Sort_t
+    # for s in pr.fio.Sort_t['Array_t_002']['rows'] :
+    ##print s
+    #print '.',
+    # print
+    # Time of last event window in Sort_t for array 2
     #start = s['start_time/epoch_l']
     #then = time.time ()
-    ##   No associated event and thus no offset
+    # No associated event and thus no offset
     #info1 = pr.readData (start, start + 130, .25)
     #print "130s traces", time.time () - then
-    pr.fio.close ()
-    pass
-
-
-
+    pr.fio.close()

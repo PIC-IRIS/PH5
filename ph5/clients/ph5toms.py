@@ -16,7 +16,6 @@ import itertools
 from ph5.core import ph5utils
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
-import multiprocessing as mp
 
 
 PROG_VERSION = "2018.038"
@@ -589,7 +588,7 @@ class PH5toMSeed(object):
 
         try:
             seed_network = experiment_t[0]['net_code_s']
-        except:
+        except BaseException:
             raise PH5toMSAPIError("Error-No net_code_s entry in Experiment_t. "
                                   "Verify that this experiment is "
                                   "PH5 version >= PN4.")
@@ -913,9 +912,9 @@ def main():
                 stream.write(ph5ms.filenamemseed_gen(stream),
                              format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
-                    for trace in stream:
-                        sac = SACTrace.from_obspy_trace(trace)
-                        sac.write(ph5ms.filenamesac_gen(trace))
+                for trace in stream:
+                    sac = SACTrace.from_obspy_trace(trace)
+                    sac.write(ph5ms.filenamesac_gen(trace))
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))

@@ -1,73 +1,77 @@
 # import from python packages
 VER = 2018095
-import tables
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 
 ###########################
 #import kefx, ph5api
 #import tabletokef
-############### git:
+# git:
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
-PH5TYPE = {'_s':str, '_a':str, '_d': float, '_f': float, '_l':int,'_i':int }  
-PH5PATH = { "Experiment_t":"/Experiment_g/Experiment_t",
-            "Sort_t":"/Experiment_g/Sorts_g/Sort_t",
-            "Offset_t":"/Experiment_g/Sorts_g/%s",
-            "All_Offset_t":"/Experiment_g/Sorts_g/%s",
-            "Event_t":"/Experiment_g/Sorts_g/%s",
-            "All_Event_t":"/Experiment_g/Sorts_g/%s",
-            "Index_t":"/Experiment_g/Receivers_g/Index_t",
-            "Map_Index_t":"/Experiment_g/Maps_g/Index_t", 
-            "Time_t":"/Experiment_g/Receivers_g/Time_t", 
-            "Array_t":"/Experiment_g/Sorts_g/%s",
-            "All_Array_t":"/Experiment_g/Sorts_g/%s",
-            "Response_t":"/Experiment_g/Responses_g/Response_t",
-            "Report_t":"/Experiment_g/Reports_g/Report_t",
-            "Receiver_t":"/Experiment_g/Receivers_g/Receiver_t",
-            "Das_t":"/Experiment_g/Receivers_g/Das_g_%s/Das_t"}
+PH5TYPE = {'_s': str, '_a': str, '_d': float,
+           '_f': float, '_l': int, '_i': int}
+PH5PATH = {"Experiment_t": "/Experiment_g/Experiment_t",
+           "Sort_t": "/Experiment_g/Sorts_g/Sort_t",
+           "Offset_t": "/Experiment_g/Sorts_g/%s",
+           "All_Offset_t": "/Experiment_g/Sorts_g/%s",
+           "Event_t": "/Experiment_g/Sorts_g/%s",
+           "All_Event_t": "/Experiment_g/Sorts_g/%s",
+           "Index_t": "/Experiment_g/Receivers_g/Index_t",
+           "Map_Index_t": "/Experiment_g/Maps_g/Index_t",
+           "Time_t": "/Experiment_g/Receivers_g/Time_t",
+           "Array_t": "/Experiment_g/Sorts_g/%s",
+           "All_Array_t": "/Experiment_g/Sorts_g/%s",
+           "Response_t": "/Experiment_g/Responses_g/Response_t",
+           "Report_t": "/Experiment_g/Reports_g/Report_t",
+           "Receiver_t": "/Experiment_g/Receivers_g/Receiver_t",
+           "Das_t": "/Experiment_g/Receivers_g/Das_g_%s/Das_t"}
 
 
-class KefUtilityError (Exception) :
+class KefUtilityError (Exception):
     '''   Exception gets raised in PH5Reader   '''
-    def __init__ (self, message) :
-        super (KefUtilityError, self).__init__ (message)
+
+    def __init__(self, message):
+        super(KefUtilityError, self).__init__(message)
         self.message = message
 
 ########################################
 # def Kef2TableData
 # updated: 201703
-# use kefx module to read the Kef file into [(path, dict of values), ...] to kef variable, 
-# then convert to 
+# use kefx module to read the Kef file into [(path, dict of values), ...] to kef variable,
+# then convert to
 # * table data {path1:[2_way_data], ...}: each row is a data set
 # * ketSets {path1:[labels], ...}: label for each column in table data
+
+
 def Kef2TableData(statusbar, filename):
     try:
-        kef = kefx.Kef (filename)
-        kef.open ()
-        kef.read ()
-        kef.rewind ()
-    except Exception: raise
-    
-    tables ={}
+        kef = kefx.Kef(filename)
+        kef.open()
+        kef.read()
+        kef.rewind()
+    except Exception:
+        raise
+
+    tables = {}
     types = {}
     count = 0
     totalLines = kef.pathCount
-    for path, kVal in kef :
-        if not tables.has_key(path):
-            tables[path]=[]
+    for path, kVal in kef:
+        if path not in tables:
+            tables[path] = []
             types[path] = []
         if types[path] == []:
             for label in kef.keySets[path]:
                 types[path].append(PH5TYPE[label[-2:]])
 
-        entry =[] 
-        for label in kef.keySets[path] :
-            entry.append( kVal[label] )
+        entry = []
+        for label in kef.keySets[path]:
+            entry.append(kVal[label])
         tables[path].append(entry)
         count += 1
-        
-        if count % 10000 == 0: 
+
+        if count % 10000 == 0:
             msg = "Converting Kef to Data: %s/%s."
             statusbar.showMessage(msg % (count, totalLines))
 
@@ -76,58 +80,73 @@ def Kef2TableData(statusbar, filename):
 
 ########################################
 # def NukeTable
-# updated: 201705   
-# create command line using nuke-table script 
+# updated: 201705
+# create command line using nuke-table script
 # to remove the tables shown in GUI from the PH5
+
+
 def NukeTable(parent, PH5file, path2file, tablepath):
-    if "Experiment_t" in tablepath : op = '-E'
-    if "Sort_t" in tablepath : op = '-S'
-    if "Offset_t" in tablepath : 
-        arg = tablepath.split("/")[-1].replace('Offset_t_','')
+    if "Experiment_t" in tablepath:
+        op = '-E'
+    if "Sort_t" in tablepath:
+        op = '-S'
+    if "Offset_t" in tablepath:
+        arg = tablepath.split("/")[-1].replace('Offset_t_', '')
         op = '-O %s' % arg
-    if "Event_t" in tablepath :
-        arg = tablepath.split("/")[-1].replace('Event_t_','')
+    if "Event_t" in tablepath:
+        arg = tablepath.split("/")[-1].replace('Event_t_', '')
         op = '-V %s' % arg
-    if "Array_t" in tablepath :
-        arg = tablepath.split("/")[-1].replace('Array_t_','')
+    if "Array_t" in tablepath:
+        arg = tablepath.split("/")[-1].replace('Array_t_', '')
         op = '-A %s' % arg
-    if "Time_t" in tablepath: op = '-T'
-    if "Receivers_g/Index_t" in tablepath : op = '-I'
-    if "Maps_g/Index_t" in tablepath : op = '-M'
-    if "Receiver_t" in tablepath : op = '-C'
-    if "Response_t" in tablepath : op = '-R'
-    if "Report_t" in tablepath : op = '-P'
-    if "Das_t" in tablepath :
+    if "Time_t" in tablepath:
+        op = '-T'
+    if "Receivers_g/Index_t" in tablepath:
+        op = '-I'
+    if "Maps_g/Index_t" in tablepath:
+        op = '-M'
+    if "Receiver_t" in tablepath:
+        op = '-C'
+    if "Response_t" in tablepath:
+        op = '-R'
+    if "Report_t" in tablepath:
+        op = '-P'
+    if "Das_t" in tablepath:
         arg = tablepath.split("/")[-2].split("_")[-1]
         op = '-D %s' % arg
-    
+
     from subprocess import Popen, PIPE, STDOUT
 
     cmdStr = "nuke-table -p %s -n %s %s" % (path2file, PH5file, op)
-    p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    p = Popen(cmdStr, shell=True, stdin=PIPE,
+              stdout=PIPE, stderr=STDOUT, close_fds=True)
     output = p.stdout.read()
-    print "The following command is running:\n", cmdStr   
+    print "The following command is running:\n", cmdStr
     print "Output: ", output
-    
+
     if 'not found' in output.lower():
-        msg = "PATH '%s' does not exist in PH5 FILE '%s'.\n\nDo you want to insert the table into this PH5 FILE." % (tablepath, PH5file)
-        result = QtGui.QMessageBox.question(parent, "Insert table?", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No )
+        msg = "PATH '%s' does not exist in PH5 FILE '%s'.\n\nDo you want to insert the table into this PH5 FILE." % (
+            tablepath, PH5file)
+        result = QtGui.QMessageBox.question(
+            parent, "Insert table?", msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
         if result == QtGui.QMessageBox.No:
-            QtGui.QMessageBox.warning(parent, "Warning", "Saving interupted." )
+            QtGui.QMessageBox.warning(parent, "Warning", "Saving interupted.")
             return False
     if 'error' in output.lower():
         title = "Error in removing table %s from PH5 file" % tablepath
-        result = QtGui.QMessageBox.warning(parent, title, output + "\n\nSaving interupted.")
-        return False       
-    return True    
-    
-    
+        result = QtGui.QMessageBox.warning(
+            parent, title, output + "\n\nSaving interupted.")
+        return False
+    return True
+
+
 ########################################
 # def PH5toTableData
 # updated: 201703
 # use tabletokef.readPH5 to read the PH5 file into ph5data {KEY:[keys,rows], ...} or just keys, rows
 # in which keys is list of labels, and rows is dict of values; KEYs are the array id/ eventid ...
-# then convert to table data {path1:[2_way_data],...} and ketSets {path1:[labels], ...}
+# then convert to table data {path1:[2_way_data],...} and ketSets
+# {path1:[labels], ...}
 def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
     ph5data = tabletokef.readPH5(ph5, filename, path2file, tableType, arg)
     tables = {}
@@ -138,18 +157,21 @@ def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
     if ph5data.__class__.__name__ == 'dict':
         for k in ph5data.keys():
             path = PH5PATH[tableType] % k
-            if not tables.has_key(path): 
-                tables[path] = []  
+            if path not in tables:
+                tables[path] = []
                 keySets[path] = ph5data[k].keys
-            count, totalLines, types[path] = _appendTable(tables[path], ph5data[k], path, statusbar, count)
+            count, totalLines, types[path] = _appendTable(
+                tables[path], ph5data[k], path, statusbar, count)
             TOTAL += totalLines
-                
+
     else:
         path = PH5PATH[tableType]
-        if tableType == 'Array_t': path = path % "Array_t_{0:03d}".format( int(arg) )
+        if tableType == 'Array_t':
+            path = path % "Array_t_{0:03d}".format(int(arg))
         tables[path] = []
         keySets[path] = ph5data.keys
-        count, totalLines, types[path] = _appendTable(tables[path], ph5data, path, statusbar, count)    
+        count, totalLines, types[path] = _appendTable(
+            tables[path], ph5data, path, statusbar, count)
         TOTAL += totalLines
     #print "types:", types
     return tables, keySets, TOTAL, types
@@ -157,96 +179,115 @@ def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
 ########################################
 # def _appendTable
 # updated: 201703
-# convert rows to 2 way data for tables of which columns in order of keys (rows and keys are attr. of ph5Vval)
-def _appendTable(table , ph5Val, path, statusbar, count):
+# convert rows to 2 way data for tables of which columns in order of keys
+# (rows and keys are attr. of ph5Vval)
+
+
+def _appendTable(table, ph5Val, path, statusbar, count):
     totalLines = len(ph5Val.rows)
     type_ = []
     for r in ph5Val.rows:
         entry = []
-        if type_ == [] : 
-            for label in ph5Val.keys: 
+        if type_ == []:
+            for label in ph5Val.keys:
                 type_.append(type(r[label]))
-        for label in ph5Val.keys: 
-            entry.append( str(r[label]) )
-        table.append(entry)    
+        for label in ph5Val.keys:
+            entry.append(str(r[label]))
+        table.append(entry)
         count += 1
-        if count % 10000 == 0: statusbar.showMessage("Converting PH5 to Data in %s: %s/%s" % (path, count, totalLines))
+        if count % 10000 == 0:
+            statusbar.showMessage(
+                "Converting PH5 to Data in %s: %s/%s" % (path, count, totalLines))
     return count, totalLines, type_
-        
+
 ########################################
 # def GetPrePH5Info
 # updated: 201703
 # read the given PH5 file and return ph5 available tables, arrays, events, shotlines, das
 # for user to choose which table he want to edit
 # (ph5 return to use to continue to read ph5data)
+
+
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5api.PH5 (path=path2file, nickname=filename, editmode=True)
-  
+    ph5 = ph5api.PH5(path=path2file, nickname=filename, editmode=True)
+
     # event
-    ph5.read_event_t_names ()
+    ph5.read_event_t_names()
 
     shotLines = []
-    if len(ph5.Event_t_names) != 0: 
-        shotNames = sorted( ph5.Event_t_names )    
+    if len(ph5.Event_t_names) != 0:
+        shotNames = sorted(ph5.Event_t_names)
         events = []
-        for n in shotNames :
-            if n == 'Event_t': shotLines.append('0')
-            else: shotLines.append( n.replace('Event_t_', '') )
-            ph5.read_event_t (n)    
-            events = events + ph5.Event_t[n]['order']      
+        for n in shotNames:
+            if n == 'Event_t':
+                shotLines.append('0')
+            else:
+                shotLines.append(n.replace('Event_t_', ''))
+            ph5.read_event_t(n)
+            events = events + ph5.Event_t[n]['order']
         if events != []:                                # check this condition in case the read file is not a master file
-            availTables.append('Event_t')          
+            availTables.append('Event_t')
             availTables.append('All_Event_t')
     # array
-    ph5.read_array_t_names ()
-    if len(ph5.Array_t_names) != 0: 
+    ph5.read_array_t_names()
+    if len(ph5.Array_t_names) != 0:
         availTables.append("Array_t")
         availTables.append("All_Array_t")
-    arrays = sorted( [str(int(a.replace("Array_t_", ""))) for a in ph5.Array_t_names] )
+    arrays = sorted([str(int(a.replace("Array_t_", "")))
+                     for a in ph5.Array_t_names])
 
     # offset
-    ph5.read_offset_t_names ()
+    ph5.read_offset_t_names()
 
     if len(ph5.Offset_t_names) != 0:
         availTables.append('Offset_t')
-        availTables.append('All_Offset_t')        
-    offsets = sorted( [o.replace("Offset_t_", "") for o in ph5.Offset_t_names] )
+        availTables.append('All_Offset_t')
+    offsets = sorted([o.replace("Offset_t_", "") for o in ph5.Offset_t_names])
 
     # das
-    ph5.read_das_g_names ()
-    if len(ph5.Das_g_names) != 0 : availTables.append("Das_t")
-    das = sorted( [d.replace("Das_g_", "") for d in ph5.Das_g_names.keys()] )
-    
+    ph5.read_das_g_names()
+    if len(ph5.Das_g_names) != 0:
+        availTables.append("Das_t")
+    das = sorted([d.replace("Das_g_", "") for d in ph5.Das_g_names.keys()])
+
     # experiment
-    ph5.read_experiment_t ()
-    if len(ph5.Experiment_t['rows']) != 0 : availTables.append("Experiment_t")
+    ph5.read_experiment_t()
+    if len(ph5.Experiment_t['rows']) != 0:
+        availTables.append("Experiment_t")
     # receiver
-    ph5.read_receiver_t ()
-    if len(ph5.Receiver_t['rows']) != 0: availTables.append('Receiver_t')
+    ph5.read_receiver_t()
+    if len(ph5.Receiver_t['rows']) != 0:
+        availTables.append('Receiver_t')
     # response
-    ph5.read_response_t ()
-    if len(ph5.Response_t['rows']) != 0: availTables.append('Response_t')
+    ph5.read_response_t()
+    if len(ph5.Response_t['rows']) != 0:
+        availTables.append('Response_t')
     # time
-    ph5.read_time_t ()
-    if len(ph5.Time_t['rows']) != 0: availTables.append('Time_t')
+    ph5.read_time_t()
+    if len(ph5.Time_t['rows']) != 0:
+        availTables.append('Time_t')
     # index
-    ph5.read_index_t ()
-    if len(ph5.Index_t['rows']) != 0 : availTables.append("Index_t")
-    
+    ph5.read_index_t()
+    if len(ph5.Index_t['rows']) != 0:
+        availTables.append("Index_t")
+
     # map index
     rows, keys = ph5.ph5_g_maps.read_index()
-    if len(rows) != 0: availTables.append("Map_Index_t")
+    if len(rows) != 0:
+        availTables.append("Map_Index_t")
     # report
     rows, keys = ph5.ph5_g_reports.read_reports()
-    if len(rows) != 0: availTables.append("Report_t")
-    
-    # sort    
+    if len(rows) != 0:
+        availTables.append("Report_t")
+
+    # sort
     ph5.read_sort_t()
-    if len(ph5.Sort_t) != 0: availTables.append('Sort_t')
-    
-    return ph5, sorted( availTables ), arrays, shotLines, offsets, das
+    if len(ph5.Sort_t) != 0:
+        availTables.append('Sort_t')
+
+    return ph5, sorted(availTables), arrays, shotLines, offsets, das
 
 
 html_manual = '''
@@ -265,7 +306,7 @@ table, th, td {
 
 <h2><a id="contents">Contents:</a></h2>
 <ul>
-    <li><a href="#OpenKef">Open Kef File</a></li> 	
+    <li><a href="#OpenKef">Open Kef File</a></li>
     <li><a href="#OpenPH5">Open PH5 File</a></li>
     <li><a href="#OpenTableInCurr">Open table(s) in the current PH5 File</a></li>
     <li><a href="#SaveKef">Save as Kef File</a></li>
@@ -274,10 +315,10 @@ table, th, td {
     <li><a href="#SaveCSV">Save as CSV file</a></li>
     <li><a href="#EditTable">Edit Table</a></li>
     <ul>
-        <li><a href="#Select">Select Cell(s)</a></li> 
-        <li><a href="#Change">Change value in (a) cell(s)</a></li> 
+        <li><a href="#Select">Select Cell(s)</a></li>
+        <li><a href="#Change">Change value in (a) cell(s)</a></li>
         <li><a href="#EditCol">Editting the whole column</a></li>
-        <li><a href="#Move">Move Selected Row(s) to a new position</a></li> 
+        <li><a href="#Move">Move Selected Row(s) to a new position</a></li>
         <li><a href="#Delete">Delete Row(s) on Selected Cell(s)</a></li>
         <li><a href="#Add">Add Row(s) with Data Copy from Selected Cell(s)</a></li>
     </ul>
@@ -346,7 +387,7 @@ table, th, td {
 <td>
 <h2><a id="EditTable">Edit Table</a></h2>
 
-<h3><a id="Select">Select Cell(s)</a></h3> 
+<h3><a id="Select">Select Cell(s)</a></h3>
 <div>Select Type: Define which cell(s) will be selected when click on a cell.</div>
 <ul>
     <li>Single Cell: Only that cell will be selected.</li>

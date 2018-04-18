@@ -131,12 +131,14 @@ class n_i_fix(object):
                                 ".\n")
                             break
                         for entry in Das_t:
-                            if (entry['sample_rate_i'] == sample_rate and entry['sample_rate_multiplier_i'] == sample_rate_multiplier and entry['channel_number_i'] == channel):
+                            if (entry['sample_rate_i'] == sample_rate and entry['sample_rate_multiplier_i']
+                                    == sample_rate_multiplier and entry['channel_number_i'] == channel):
                                 response_n_i = entry['response_table_n_i']
-                                receiver_n_i = entry['receiver_table_n_i'] 
+                                receiver_n_i = entry['receiver_table_n_i']
                                 break
 
-                        Response_t = self.ph5.get_response_t_by_n_i(response_n_i)
+                        Response_t = self.ph5.get_response_t_by_n_i(
+                            response_n_i)
                         if Response_t:
                             gain = Response_t['gain/value_i']
                             bit_weight = Response_t['bit_weight/value_d']
@@ -247,7 +249,8 @@ class n_i_fix(object):
                                     str(station.response_n_i) + '\n')
                                 break
                             else:
-                                new_kef.append("        response_table_n_i=0\n")
+                                new_kef.append(
+                                    "        response_table_n_i=0\n")
                                 break
                 elif "receiver_table_n_i=" in line:
 
@@ -263,7 +266,8 @@ class n_i_fix(object):
                                     str(station.receiver_n_i) + '\n')
                                 break
                             else:
-                                new_kef.append("        receiver_table_n_i=0\n")
+                                new_kef.append(
+                                    "        receiver_table_n_i=0\n")
                                 break
                 else:
                     new_kef.append(line)
@@ -272,12 +276,14 @@ class n_i_fix(object):
             for line in new_kef:
                 outfile.write("%s" % line)
             outfile.close()
-            command = "nuke_table -n master.ph5 -p {0} -A {1}".format (path, str(x))
-            ret = subprocess.call (command, shell=True)
+            command = "nuke_table -n master.ph5 -p {0} -A {1}".format(
+                path, str(x))
+            ret = subprocess.call(command, shell=True)
             import time
             time.sleep(1)
-            command = "keftoph5 -n master.ph5 -p {1} -k {0}".format (file_name, path)
-            ret = subprocess.call (command, shell=True)
+            command = "keftoph5 -n master.ph5 -p {1} -k {0}".format(
+                file_name, path)
+            ret = subprocess.call(command, shell=True)
             time.sleep(0.5)
             logging.info(
                 "array_t_" +
@@ -493,10 +499,11 @@ class n_i_fix(object):
         for line in new_kef:
             outfile.write("%s" % line)
 
-        command = "nuke_table -n master.ph5 -p {0} -R".format (path)
-        ret = subprocess.call (command, shell=True)
+        command = "nuke_table -n master.ph5 -p {0} -R".format(path)
+        ret = subprocess.call(command, shell=True)
 
-        command = "keftoph5 -n master.ph5 -p {0} -k response_t.kef".format (path)
+        command = "keftoph5 -n master.ph5 -p {0} -k response_t.kef".format(
+            path)
         ret = subprocess.Popen(command, shell=True)
 
         logging.info(

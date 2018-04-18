@@ -294,8 +294,7 @@ class PH5toexml(object):
                 return None
 
         self.read_arrays(None)
-        array_names = self.ph5.Array_t_names
-        array_names.sort()
+        array_names = sorted(self.ph5.Array_t_names)
 
         # get the earliest deploy and latest pickup dates from the arrays table
         earliest_deploy = None

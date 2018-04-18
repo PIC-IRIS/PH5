@@ -37,23 +37,23 @@ setup(
         #   4 - Beta
         #   5 - Production/Stable
         "Development Status :: 4 - Beta",
-        
+
         # Indicate who your project is intended for
         'Environment :: Console',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
         'Topic :: Scientific/Engineering :: Physics',
-        
+
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: MIT License',
-        
+
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',    
+        'Programming Language :: Python :: 2.7',
     ],
-      
-    entry_points = {
+
+    entry_points={
         'gui_scripts': [
             'ph5view = ph5.clients.ph5view.ph5_viewer:startapp',
             'noven = ph5.utilities.noven:startapp',
@@ -108,7 +108,8 @@ setup(
         ],
     },
 
-    packages=['ph5', 'ph5/clients', 'ph5/clients/ph5view', 'ph5/core', 'ph5/utilities'],
+    packages=['ph5', 'ph5/clients', 'ph5/clients/ph5view',
+              'ph5/core', 'ph5/utilities'],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
@@ -117,7 +118,7 @@ setup(
         'utilities': ['Event.cfg', 'Receiver.cfg'],
         'clients': ['PH5Viewer.cfg'],
     },
-    
+
 )
 
 # install C dependencies

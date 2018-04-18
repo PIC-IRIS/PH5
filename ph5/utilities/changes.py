@@ -7,6 +7,7 @@ from PyQt4 import QtGui, QtCore
 
 PROG_VERSION = "2016.245"
 
+
 class KefMaker(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self)
@@ -14,7 +15,7 @@ class KefMaker(QtGui.QWidget):
         self.title = QtGui.QLabel("<b>Experiment_t Generator</b>")
         self.title.setAlignment(QtCore.Qt.AlignHCenter)
 
-        #Kef Entry Labels/LineEdits
+        # Kef Entry Labels/LineEdits
         self.nicknameLabel = QtGui.QLabel("nickname_s:")
         self.nickname = QtGui.QLineEdit()
         self.longnameLabel = QtGui.QLabel("longname_s:")
@@ -48,7 +49,7 @@ class KefMaker(QtGui.QWidget):
         self.nwProj = QtGui.QLineEdit()
         self.nwEllipLabel = QtGui.QLabel(
             "north_west_corner/ellipsoid_s:")
-        self.nwEllip = QtGui.QLineEdit()    
+        self.nwEllip = QtGui.QLineEdit()
         self.nwDescLabel = QtGui.QLabel(
             "north_west_corner/description_s:")
         self.nwDesc = QtGui.QLineEdit()
@@ -63,7 +64,7 @@ class KefMaker(QtGui.QWidget):
         self.seZValLabel = QtGui.QLabel("south_east_corner/Z/value_d:")
         self.seZVal = QtGui.QLineEdit()
         self.seZUnitLabel = QtGui.QLabel("south_east_corner/Z/units_s:")
-        self.seZUnit = QtGui.QLineEdit()        
+        self.seZUnit = QtGui.QLineEdit()
         self.seCoordLabel = QtGui.QLabel(
             "south_east_corner/coordinate_system_s:")
         self.seCoord = QtGui.QLineEdit()
@@ -75,14 +76,14 @@ class KefMaker(QtGui.QWidget):
         self.seProj = QtGui.QLineEdit()
         self.seEllipLabel = QtGui.QLabel(
             "south_east_corner/ellipsoid_s:")
-        self.seEllip = QtGui.QLineEdit()    
+        self.seEllip = QtGui.QLineEdit()
         self.seDescLabel = QtGui.QLabel(
             "south_east_corner/description_s:")
         self.seDesc = QtGui.QLineEdit()
         self.summaryParagraphLabel = QtGui.QLabel(
             "summary_paragraph_s:")
         self.summaryParagraph = QtGui.QLineEdit()
-        self.experimentIdLabel = QtGui.QLabel ("experiment_id_s:")
+        self.experimentIdLabel = QtGui.QLabel("experiment_id_s:")
         self.experimentId = QtGui.QLineEdit()
         self.timeAsciiLabel = QtGui.QLabel(
             "time_stamp/ascii_s:")
@@ -97,7 +98,7 @@ class KefMaker(QtGui.QWidget):
             "time_stamp/type_s:")
         self.timeType = QtGui.QLineEdit('BOTH')
 
-        #Other Widgets / Layout Definition
+        # Other Widgets / Layout Definition
         layoutMain = QtGui.QVBoxLayout(self)
         self.splitter = QtGui.QSplitter()
         self.layout = QtGui.QWidget()
@@ -109,7 +110,7 @@ class KefMaker(QtGui.QWidget):
         self.generateButton = QtGui.QPushButton("Generate Kef")
         self.generateButton.clicked.connect(self.chooseFile)
 
-        #Layout Presentation
+        # Layout Presentation
         layoutMain.addWidget(self.title)
         layoutMain.addWidget(self.splitter)
         self.splitter.addWidget(self.layout)
@@ -120,8 +121,8 @@ class KefMaker(QtGui.QWidget):
         layout.addWidget(self.nickname)
         layout.addWidget(self.longnameLabel)
         layout.addWidget(self.longname)
-        layout.addWidget (self.netcodeLabel)
-        layout.addWidget (self.netcode)
+        layout.addWidget(self.netcodeLabel)
+        layout.addWidget(self.netcode)
         layout.addWidget(self.pisLabel)
         layout.addWidget(self.pis)
         layout.addWidget(self.institutionsLabel)
@@ -129,7 +130,7 @@ class KefMaker(QtGui.QWidget):
         layout.addWidget(self.nwXValLabel)
         layout.addWidget(self.nwXVal)
         layout.addWidget(self.nwXUnitLabel)
-        layout.addWidget(self.nwXUnit) 
+        layout.addWidget(self.nwXUnit)
         layout.addWidget(self.nwYValLabel)
         layout.addWidget(self.nwYVal)
         layout.addWidget(self.nwYUnitLabel)
@@ -150,7 +151,7 @@ class KefMaker(QtGui.QWidget):
         layout2.addWidget(self.seXValLabel)
         layout2.addWidget(self.seXVal)
         layout2.addWidget(self.seXUnitLabel)
-        layout2.addWidget(self.seXUnit) 
+        layout2.addWidget(self.seXUnit)
         layout2.addWidget(self.seYValLabel)
         layout2.addWidget(self.seYVal)
         layout2.addWidget(self.seYUnitLabel)
@@ -170,24 +171,24 @@ class KefMaker(QtGui.QWidget):
         layout3.addWidget(self.seDesc)
         layout3.addWidget(self.summaryParagraphLabel)
         layout3.addWidget(self.summaryParagraph)
-        layout3.addWidget (self.experimentIdLabel)
-        layout3.addWidget (self.experimentId)
+        layout3.addWidget(self.experimentIdLabel)
+        layout3.addWidget(self.experimentId)
         layout3.addWidget(self.timeAsciiLabel)
         layout3.addWidget(self.timeAscii)
         layout3.addWidget(self.timeEpochLabel)
         layout3.addWidget(self.timeEpoch)
         layout3.addWidget(self.timeMSLabel)
-        layout3.addWidget(self.timeMS)     
+        layout3.addWidget(self.timeMS)
         layout3.addWidget(self.timeTypeLabel)
-        layout3.addWidget(self.timeType)  
+        layout3.addWidget(self.timeType)
         layout3.addWidget(self.generateButton)
 
-        #For Saving
+        # For Saving
         self.kLabels = []
         self.kVals = {}
         self.kLabels.append(str(self.nicknameLabel.text()[:-1]))
         self.kLabels.append(str(self.longnameLabel.text()[:-1]))
-        self.kLabels.append (str (self.netcodeLabel.text ()[:-1]))
+        self.kLabels.append(str(self.netcodeLabel.text()[:-1]))
         self.kLabels.append(str(self.pisLabel.text()[:-1]))
         self.kLabels.append(str(self.institutionsLabel.text()[:-1]))
         self.kLabels.append(str(self.nwXValLabel.text()[:-1]))
@@ -211,7 +212,7 @@ class KefMaker(QtGui.QWidget):
         self.kLabels.append(str(self.seEllipLabel.text()[:-1]))
         self.kLabels.append(str(self.seDescLabel.text()[:-1]))
         self.kLabels.append(str(self.summaryParagraphLabel.text()[:-1]))
-        self.kLabels.append (str (self.experimentIdLabel.text ()[:-1]))
+        self.kLabels.append(str(self.experimentIdLabel.text()[:-1]))
         self.kLabels.append(str(self.timeAsciiLabel.text()[:-1]))
         self.kLabels.append(str(self.timeEpochLabel.text()[:-1]))
         self.kLabels.append(str(self.timeMSLabel.text()[:-1]))
@@ -219,13 +220,14 @@ class KefMaker(QtGui.QWidget):
 
     def chooseFile(self):
         outFilename = str(QtGui.QFileDialog.getSaveFileName())
-        if not outFilename: return
+        if not outFilename:
+            return
         self.generateKef(outFilename)
 
     def generateKef(self, out):
         self.kVals[0] = (str(self.nickname.text()))
         self.kVals[1] = (str(self.longname.text()))
-        self.kVals[2] = (str (self.netcode.text ()))
+        self.kVals[2] = (str(self.netcode.text()))
         self.kVals[3] = (str(self.pis.text()))
         self.kVals[4] = (str(self.institutions.text()))
         self.kVals[5] = (str(self.nwXVal.text()))
@@ -252,9 +254,9 @@ class KefMaker(QtGui.QWidget):
             if c == '\n':
                 c = ' '
         self.kVals[25] = (str(self.summaryParagraph.text()))
-        self.kVals[26] = (str (self.experimentId.text ()))
-        self.kVals[27] = (str(self.timeAscii.text ()))
-        self.kVals[28] = (str(self.timeEpoch.text ()))
+        self.kVals[26] = (str(self.experimentId.text()))
+        self.kVals[27] = (str(self.timeAscii.text()))
+        self.kVals[28] = (str(self.timeEpoch.text()))
         self.kVals[29] = '0'
         self.kVals[30] = 'BOTH'
 
@@ -264,7 +266,7 @@ class KefMaker(QtGui.QWidget):
         outFile.write("#\n")
         outFile.write("#   Table row 1\n")
         outFile.write("/Experiment_g/Experiment_t\n")
-    
+
         for i in range(len(self.kLabels)):
             outFile.write("\t%s = %s\n" % (self.kLabels[i], self.kVals[i]))
         outFile.close()
