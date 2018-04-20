@@ -358,7 +358,8 @@ class PH5toStationXMLParser(object):
                                    [0]['sample_rate_i'])
         obs_channel.sample_rate_ration = sample_rate_ration
         try:
-            obs_channel.sample_rate = sample_rate_ration / sample_rate_multiplier
+            obs_channel.sample_rate =\
+                sample_rate_ration / sample_rate_multiplier
         except ZeroDivisionError:
             raise PH5toStationXMLError(
                 "Error - Invalid sample_rate_multiplier_i == 0")
