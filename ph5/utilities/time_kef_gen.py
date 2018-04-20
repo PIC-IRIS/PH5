@@ -1,7 +1,8 @@
 #!/usr/bin/env pnpython4
 #
 #   Program to create time correction kef files for texan rt-125a's
-#   Read the SOH_a_[n] files under Receivers_g/Das_g_[n] and produce a kef file to populate Time_t
+#   Read the SOH_a_[n] files under Receivers_g/Das_g_[n] and produce a kef file
+#   to populate Time_t
 #   Writes kef file to stdout
 #
 #   Steve Azevedo, June 2017
@@ -17,9 +18,12 @@ PROG_VERSION = "2017.324 Developmental"
 
 #   Match lines related to timing in SOH
 timetoRE = re.compile(
-    ".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+(\d{4}/\d{4})\s+MS")
+    ".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
+    (\d{4}/\d{4})\s+MS")
 timefromRE = re.compile(
-    ".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+(\d{4}/\d{4})\s+MS")
+    ".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
+    (\d{4}/\d{4})\s+MS")
+
 
 #
 #   Read Command line arguments
@@ -32,22 +36,25 @@ def get_args():
     import argparse
     oparser = argparse.ArgumentParser()
 
-    oparser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix [-p path]".format(
+    oparser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix\
+     [-p path]".format(
         PROG_VERSION)
 
-    oparser.description = "Generates a kef file to populate Time_t from SOH_A_."
+    oparser.description = "Generates kef file to populate Time_t from SOH_A_."
     #   -n master.ph5
     oparser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
                          help="The ph5 file prefix (experiment nickname).",
                          metavar="ph5_file_prefix")
     #   -p /path/to/ph5/family/files
     oparser.add_argument("-p", "--path", dest="ph5_path",
-                         help="Path to ph5 files. Defaults to current directory.",
+                         help="Path to ph5 files Defaults current directory.",
                          metavar="ph5_path", default='.')
 
-    #oparser.add_argument ("-d", dest = "debug", action = "store_true", default = False)
+    # oparser.add_argument ("-d", dest = "debug", action = "store_true",
+    # default = False)
     #
-    oparser.add_argument("-r", "--clock_report", action="store_true", default=False,
+    oparser.add_argument("-r", "--clock_report", action="store_true",
+                         default=False,
                          help="Write clock performance log, time-kef-gen.log")
 
     ARGS = oparser.parse_args()
@@ -69,6 +76,7 @@ def read_soh(das_group):
 def parse_soh(soh_buf):
     '''   Parse out TIME CHANGED TO and TIME CHANGED FROM messages
     '''
+
     def ms():
         '''
            Calculate seconds
@@ -88,6 +96,7 @@ def parse_soh(soh_buf):
                                doy=(jd))
 
         return tdoy
+
     #   tos, fos hold time changed to/from [epoch, seconds]
     tos = []
     fos = []
@@ -119,7 +128,8 @@ def process_soh(soh):
 
 
 def parse_tos_froms(tos, fos):
-    '''   Calculate and return start time, end time, clock drift slope, clock offset
+    '''   Calculate and return start time, end time, clock drift slope,
+          clock offset
           On any error return None, None, None, None
     '''
     try:
@@ -130,8 +140,8 @@ def parse_tos_froms(tos, fos):
         #
         endgps_tdoy = tos[1][0] + tos[0][1]
         #
-        offset = end125_tdoy.epoch(fepoch=True) - \
-            endgps_tdoy.epoch(fepoch=True)
+        offset = end125_tdoy.epoch(fepoch=True) - endgps_tdoy.\
+            epoch(fepoch=True)
         #
         total_secs = endgps_tdoy.epoch(
             fepoch=True) - start_tdoy.epoch(fepoch=True)
@@ -182,12 +192,15 @@ def report(stats, no_cor):
             drift = stats[3][i]
             offset = stats[4][i]
             delta = ave - drift
-            fh.write("DAS: {0} {4} to {5} Drift: {1:g} seconds/second Offset: {2:g} seconds Delta: {3:G}\n".format(das,
-                                                                                                                   drift,
-                                                                                                                   offset,
-                                                                                                                   delta,
-                                                                                                                   start,
-                                                                                                                   stop))
+            fh.write(
+                "DAS: {0} {4} to {5} Drift: {1:g} seconds/second Offset: {2:g}\
+                 seconds Delta: {3:G}\n".format(
+                    das,
+                    drift,
+                    offset,
+                    delta,
+                    start,
+                    stop))
 
 
 def main():
@@ -195,7 +208,7 @@ def main():
     get_args()
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
-    except Exception as e:
+    except Exception:
         sys.stderr.write("Error: Can't open {0} at {1}.".format(
             ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit(-1)

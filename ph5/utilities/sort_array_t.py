@@ -19,7 +19,8 @@ def main():
         kx = kefx.Kef(kefin)
         kx.open()
     except BaseException:
-        print "Version: {0} Usage: sort_array_t Array_t_unsorted.kef > Array_t_sorted.kef".format(
+        print "Version: {0} Usage: sort_array_t Array_t_unsorted.kef >\
+         Array_t_sorted.kef".format(
             PROG_VERSION)
         sys.exit()
 

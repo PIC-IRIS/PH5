@@ -36,8 +36,9 @@ def get_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.description = "Version: {0}. Cross check Event, Array, and Data.".format(
-        PROG_VERSION)
+    parser.description = "Version: {0}. Cross check Event, Array, and Data."\
+        .format(
+            PROG_VERSION)
 
     parser.add_argument("--array_json", dest="array_json", required=True,
                         help="As returned by meta-data-gen -r.")
@@ -47,7 +48,8 @@ def get_args():
                         help="As returned by meta-data-gen -d.")
     parser.add_argument("--offset_secs", dest="offset_secs", type=float)
     parser.add_argument("--csv", action="store_true", dest="csv",
-                        help="Separate output columns with ',' instead of ' '.")
+                        help="Separate output columns with ','\
+                        instead of ' '.")
     parser.add_argument("--epoch", action="store_true", dest="epoch",
                         help="Times as epoch.")
 
@@ -122,7 +124,8 @@ def read_json():
 
 def _is_in(das, shot_time, length, si):
     '''
-       Test to see if data is available for a given das starting at shot_time for length.
+       Test to see if data is available for a given das
+       starting at shot_time for length.
        Check to see if there are any gaps greater than the sample interval.
        Inputs:
           das - The das serial number as a string
@@ -180,7 +183,8 @@ def _is_in(das, shot_time, length, si):
 
 def process_all():
     '''
-       Process through each shot line, shot, array, station, component (channel) and print matches to stdout
+       Process through each shot line, shot, array, station,
+       component (channel) and print matches to stdout
     '''
     Events = EVENT['Events']
     for Event in Events:

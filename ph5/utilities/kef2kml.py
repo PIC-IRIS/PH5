@@ -17,8 +17,12 @@ arrayRE = re.compile(".*Array_t_*(\d+)*")
 eventRE = re.compile(".*Event_t_*(\d+)*")
 
 #   Point colors
-COLORS = {0: simplekml.Color.whitesmoke, 1: simplekml.Color.blue, 2: simplekml.Color.green, 3: simplekml.Color.plum, 4: simplekml.Color.lightblue,
-          5: simplekml.Color.grey, 6: simplekml.Color.purple, 7: simplekml.Color.pink, 8: simplekml.Color.brown, 9: simplekml.Color.darkolivegreen, 10: simplekml.Color.wheat}
+COLORS = {0: simplekml.Color.whitesmoke, 1: simplekml.Color.blue,
+          2: simplekml.Color.green, 3: simplekml.Color.plum,
+          4: simplekml.Color.lightblue,
+          5: simplekml.Color.grey, 6: simplekml.Color.purple,
+          7: simplekml.Color.pink, 8: simplekml.Color.brown,
+          9: simplekml.Color.darkolivegreen, 10: simplekml.Color.wheat}
 
 
 def get_args():
@@ -31,7 +35,7 @@ def get_args():
     aparser = ArgumentParser()
 
     aparser.add_argument("-k", "--kef", dest="kefile",
-                         help="The input kef file, Array_t.kef or Event_t.kef.",
+                         help="The input kef file,Array_t.kef or Event_t.kef.",
                          required=True)
 
     aparser.add_argument("-t", "--title", dest="title",
@@ -75,12 +79,13 @@ def parseArray(kv, a):
             break
         else:
             x -= 10
-    #print "Array:", a, "Color:", x, "Length:", len (COLORS)
+    # print "Array:", a, "Color:", x, "Length:", len (COLORS)
     col = COLORS[x]
 
     pnt = KML.newpoint(name=nam)
     pnt.coords = [(lon, lat, ele)]
-    pnt.style.iconstyle.icon.href = 'http://maps.google.com/mapfiles/kml/shapes/placemark_square.png'
+    pnt.style.iconstyle.icon.href =\
+        'http://maps.google.com/mapfiles/kml/shapes/placemark_square.png'
     pnt.style.iconstyle.color = col
     pnt.style.labelstyle.scale = 0.5
     pnt.style.labelstyle.color = col
@@ -97,7 +102,8 @@ def parseEvent(kv, a=1):
 
     pnt = KML.newpoint(name=nam)
     pnt.coords = [(lon, lat, ele)]
-    pnt.style.iconstyle.icon.href = 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png'
+    pnt.style.iconstyle.icon.href =\
+        'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png'
     pnt.style.iconstyle.color = simplekml.Color.red
     pnt.style.labelstyle.color = simplekml.Color.red
     pnt.style.labelstyle.scale = 0.75

@@ -6,20 +6,24 @@
 import os
 import sys
 import exceptions
-###import sqlite3 as db
+# import sqlite3 as db
 import json
 import time
 import subprocess32 as subprocess
-#import subprocess
+
+from zlib import adler32
+import re
+
+# import subprocess
 
 PROG_VERSION = '2017.324 Developmental'
 
-#JSON_DB = 'pforma.json'
+# JSON_DB = 'pforma.json'
 HOME = os.environ['HOME']
 DOT = os.path.join(HOME, '.pforma')
-#JSON_DB = os.path.join (HOME, 'Svn/pn3-devel/Forma', 'pforma.json')
+# JSON_DB = os.path.join (HOME, 'Svn/pn3-devel/Forma', 'pforma.json')
 JSON_DB = 'pforma.json'
-#JSON_CFG = os.path.join (HOME, 'Svn/pn3-devel/Forma', 'pforma.cfg')
+# JSON_CFG = os.path.join (HOME, 'Svn/pn3-devel/Forma', 'pforma.cfg')
 JSON_CFG = 'pforma.cfg'
 
 PROG2INST = {'125atoph5': 'texan', '130toph5': 'rt-130', 'segdtoph5': 'nodal'}
@@ -28,13 +32,13 @@ INST2PROG = {'texan': '125atoph5', 'rt-130': '130toph5', 'nodal': 'segdtoph5'}
 ON_POSIX = 'posix' in sys.builtin_module_names
 
 
-class FormaIOError (exceptions.Exception):
+class FormaIOError(exceptions.Exception):
     def __init__(self, errno, msg):
         self.errno = errno
         self.message = msg
 
 
-class FormaIO ():
+class FormaIO():
     '''
         Create a project to read RAW data into a PH5 file in parallel.
     '''
@@ -47,8 +51,9 @@ class FormaIO ():
         self.infh = None  # File handle for infile
         self.raw_files = {}  # Raw files organized by type
         self.total_raw = 0.0  # Total size of raw
-        # self._json = os.path.join (outdir, 'pforma.json')   #   The JSON file that holds files that are already loaded
-        #self.instrument_type = None
+        # self._json = os.path.join (outdir, 'pforma.json')
+        #   The JSON file that holds files that are already loaded
+        # self.instrument_type = None
         self.home = outdir  # Where the processing of the ph5 files happens
         self.whereami = os.getcwd()  # Where the program was started
         self.M = None  # How many mini files in each ph5 family
@@ -64,7 +69,7 @@ class FormaIO ():
         else:
             self.nmini = FormaIO.MINIS[0:4]
 
-        #print 'cfg', self.cfg,; sys.exit ()
+        # print 'cfg', self.cfg,; sys.exit ()
 
     def set_cfg(self):
         '''
@@ -94,7 +99,7 @@ class FormaIO ():
             Read the configuration file.
         '''
         self.cfg = read_json(os.path.join(self.home, JSON_CFG))
-        #print 'CFG', self.cfg
+        # print 'CFG', self.cfg
         if self.cfg is None:
             self.cfg = {}
 
@@ -114,15 +119,17 @@ class FormaIO ():
             self.nmini = FormaIO.MINIS[0:n]
 
     def initialize_ph5(self):
-        '''   Set up processing directory structure and set M from existing mini files   '''
+        '''   Set up processing directory structure and set M from
+              existing mini files   '''
         if self.home is None:
             return
         if not os.path.exists(self.home):
             try:
                 os.makedirs(self.home)
-            except Exception as e:
+            except Exception:
                 raise FormaIOError(
-                    4, "Failed to create output directory: {0}".format(self.home))
+                    4,
+                    "Failed to create output directory: {0}".format(self.home))
 
         for m in self.nmini:
             os.chdir(self.home)
@@ -132,14 +139,15 @@ class FormaIO ():
             try:
                 os.chdir(m)
                 subprocess.call('initialize_ph5 -n master', shell=True,
-                                stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
-            except Exception as e:
+                                stdout=open(os.devnull, 'w'),
+                                stderr=open(os.devnull, 'w'))
+            except Exception:
                 raise FormaIOError(5, "Failed to initialize {0}".format(
                     os.path.join(self.home, m)))
 
             files = os.listdir('.')
-            minis = filter(lambda a: a[0:5] ==
-                           'miniP' and a[-3:] == 'ph5', files)
+            minis =\
+                filter(lambda a: a[0:5] == 'miniP' and a[-3:] == 'ph5', files)
             if len(minis):
                 if self.M is None or len(minis) > self.M:
                     self.M = len(minis)
@@ -152,7 +160,7 @@ class FormaIO ():
         '''
         try:
             self.M = int(m)
-            #self.cfg['M'] = int (m)
+            # self.cfg['M'] = int (m)
         except Exception as e:
             raise FormaIOError(
                 errno=10, msg="Failed to set M: {0}".format(e.message))
@@ -172,11 +180,11 @@ class FormaIO ():
         except IndexError:
             return pee, None
 
-        #fifo = os.path.join ("/tmp", "fifo{0}".format (family))
+        # fifo = os.path.join ("/tmp", "fifo{0}".format (family))
         # if not os.path.exists (fifo) :
-            #os.mkfifo (fifo)
+        # os.mkfifo (fifo)
 
-        #fifofh = open (fifo, mode='rw+')
+        # fifofh = open (fifo, mode='rw+')
 
         pee = subprocess.Popen(cmd,
                                shell=True,
@@ -193,8 +201,10 @@ class FormaIO ():
         '''
             Run conversion commands in a subprocess
             cmds -> A dictionary of families that point to a list of commands.
-                    cmds['B']['125a2ph5 -n master.ph5 ...', '1302ph5 -n master.ph5 ...']
-            x -> The sequence of the current command executing in the list in cmds.
+                    cmds['B']['125a2ph5 -n master.ph5 ...', '1302ph5 -n
+                     master.ph5 ...']
+            x -> The sequence of the current command executing in
+             the list in cmds.
             ems -> The list of families ['A', 'B', 'C' etc]
         '''
         pees = {}
@@ -219,6 +229,7 @@ class FormaIO ():
             return pees, x
         else:
             return pees[m], x
+
     #
     # Should this be implemented as a closure?
     #
@@ -228,6 +239,7 @@ class FormaIO ():
               runit -> If true, execute processes otherwise only return list of
               commands to execute.
         '''
+
         def split(ts):
             '''   Split up lists of raw files for processing.
                   Key by mini ph5 family name.
@@ -235,8 +247,8 @@ class FormaIO ():
             ret = {}  # Files to load
             tot = {}  # Total raw size per family
             #   Initialize
-            #print self.nmini
-            #sys.exit ()
+            # print self.nmini
+            # sys.exit ()
             for m in self.nmini:
                 ret[m] = {}
                 tot[m] = 0
@@ -269,9 +281,9 @@ class FormaIO ():
                         continue
 
                     # if (r['size'] + tot[FormaIO.MINIS[i]]) > ts :
-                        #i += 1
-                        # if i >= len (FormaIO.MINIS) :
-                        #i -= 1
+                    # i += 1
+                    # if i >= len (FormaIO.MINIS) :
+                    # i -= 1
 
                     if d not in ret[self.nmini[i]]:
                         ret[self.nmini[i]][d] = []
@@ -283,7 +295,8 @@ class FormaIO ():
             return ret
 
         def setup(tl):
-            '''   Write sub-lists of raw files to each mini family directory   '''
+            '''   Write sub-lists of raw files to each mini
+                  family directory   '''
             ret = {}
             for m in self.nmini:
                 ret[m] = {}
@@ -316,44 +329,57 @@ class FormaIO ():
             return ret
 
         def build_cmds(lsts):
-            '''   Make commands to do the conversion from raw to ph5 for each mini ph5 family   '''
+            '''   Make commands to do the conversion from raw to ph5
+                  for each mini ph5 family   '''
             ret = {}
             info = {}
 
-            #info = {'lists':[], 'instruments':[]}
+            # info = {'lists':[], 'instruments':[]}
             i = 0
             for m in self.nmini:
                 cmd = []
                 lists = []
                 instruments = []
                 lst = lsts[m]
-                #cdcmd = "cd {0};".format (os.path.join (self.home, m))
+                # cdcmd = "cd {0};".format (os.path.join (self.home, m))
                 ess = i * self.M + 1
                 if 'texan' in lst:
                     lists.append(lst['texan'])
                     instruments.append('texan')
                     clprog = INST2PROG['texan']
-                    cmd.append("{3} -n master.ph5 -f {0} -M {1} -S {2} --overide 2>&1".format(
-                        lst['texan'], self.M, ess, clprog))
+                    cmd.append(
+                        "{3} -n master.ph5 -f {0} -M {1} -S {2}\
+                         --overide 2>&1".format(lst['texan'],
+                                                self.M, ess, clprog))
                 if 'rt-130' in lst:
                     lists.append(lst['rt-130'])
                     instruments.append('rt-130')
                     clprog = INST2PROG['rt-130']
                     cmd.append(
-                        "{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format(lst['rt-130'], self.M, ess, clprog))
+                        "{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format(
+                            lst['rt-130'], self.M, ess, clprog))
                 if 'nodal' in lst:
                     lists.append(lst['nodal'])
                     instruments.append('nodal')
                     clprog = INST2PROG['nodal']
                     if self.UTM:
-                        cmd.append("{5} -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c {4} 2>&1".format(
-                            lst['nodal'], self.M, ess, self.UTM, self.COMBINE, clprog))
+                        cmd.append(
+                            "{5} -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c\
+                             {4} 2>&1".format(lst['nodal'], self.M,
+                                              ess, self.UTM, self.COMBINE,
+                                              clprog))
                     elif self.TSPF:
-                        cmd.append("{4} -n master.ph5 -f {0} -M {1} -T -S {2} -c {3} 2>&1".format(
-                            lst['nodal'], self.M, ess, self.COMBINE, clprog))
+                        cmd.append(
+                            "{4} -n master.ph5 -f {0} -M {1} -T -S {2} -c\
+                             {3} 2>&1".format(
+                                lst['nodal'], self.M, ess, self.COMBINE,
+                                clprog))
                     else:
-                        cmd.append("{4} -n master.ph5 -f {0} -M {1} -S {2} -c {3} 2>&1".format(
-                            lst['nodal'], self.M, ess, self.COMBINE, clprog))
+                        cmd.append(
+                            "{4} -n master.ph5 -f {0} -M {1} -S {2} -c\
+                             {3} 2>&1".format(
+                                lst['nodal'], self.M, ess, self.COMBINE,
+                                clprog))
                 # if len (cmd) != 0 :
                 ret[m] = cmd
                 if m not in info:
@@ -368,9 +394,10 @@ class FormaIO ():
 
         def save_cmds(cmds):
             '''   Save commands   '''
-            #fh = open (os.path.join (self.home, "commands{0}.json".format (str (int (time.time ())))), 'w+')
-            #json.dump (cmds, fh, indent=4, sort_keys=True)
-            #fh.close ()
+            # fh = open (os.path.join (self.home, "commands{0}.json".format
+            #  (str (int (time.time ())))), 'w+')
+            # json.dump (cmds, fh, indent=4, sort_keys=True)
+            # fh.close ()
             write_json(cmds, os.path.join(
                 self.home, "commands{0}.json".format(str(int(time.time())))))
 
@@ -382,7 +409,7 @@ class FormaIO ():
         lsts = setup(toload)
         cmds, info = build_cmds(lsts)
         save_cmds(cmds)
-        if runit == True:
+        if runit is True:
             pees, i = self.run_cmds(cmds)
             return cmds, pees, i
         else:
@@ -395,7 +422,7 @@ class FormaIO ():
 
         try:
             self.infh = open(self.infile, "Ur")
-        except Exception as e:
+        except Exception:
             self.infh = None
             raise FormaIOError(
                 errno=1, msg="Failed to open: {0}.".format(self.infile))
@@ -430,24 +457,28 @@ class FormaIO ():
             n += 1
             # Try to guess data logger type and serial number based on file
             # name
-            raw_file = os.path.basename(line)        #
+            raw_file = os.path.basename(line)  #
             # das = str (int (raw_file[1:5]) + 10000)   #   Wrong!!! texan only
             # try :
             tp, das = guess_instrument_type(raw_file)
             # except FormaIOError as e :
-            #sys.stderr.write (e.message)
-            #sys.exit (e.errno)
-            #print tp, das
+            # sys.stderr.write (e.message)
+            # sys.exit (e.errno)
+            # print tp, das
             if das == 'lllsss':
                 raise FormaIOError(
-                    errno=4, msg="May be nodal SEG-D file but using simpleton file naming scheme. Please rename.")
+                    errno=4,
+                    msg="May be nodal SEG-D file but using simpleton file\
+                     naming scheme. Please rename.")
             if tp == 'unknown':
-                raise FormaIOError(errno=3, msg="File in {1} does not have standard name: {0}".format(
-                    raw_file, self.infile))
+                raise FormaIOError(errno=3,
+                                   msg="File in {1} does not have standard\
+                                    name: {0}".format(
+                                       raw_file, self.infile))
 
             # Save info about each raw file keyed by serial number in
             # self.raw_files
-            if das not in self.raw_files:     #
+            if das not in self.raw_files:  #
                 self.raw_files[das] = []
 
             file_info = {}
@@ -459,7 +490,7 @@ class FormaIO ():
             file_info['size'] = os.stat(line).st_size
             #   Time file was modified
             file_info['mtime'] = os.stat(line).st_mtime
-            #file_info['adler'] = check_sum (line)
+            # file_info['adler'] = check_sum (line)
             #   Which family of ph5 files does this belong to. See self.nmini
             file_info['mini'] = None
             #   Total of raw files so far in bytes
@@ -472,17 +503,19 @@ class FormaIO ():
         #   Estimate M so each mini file is about 12GB
         if self.M is None:
             self.M = int(
-                (((self.total_raw / len(self.nmini)) / 1024 / 1024 / 1024) / 12) + 0.5)
+                (((self.total_raw / len(
+                    self.nmini)) / 1024 / 1024 / 1024) / 12) + 0.5)
             if self.M == 0:
                 self.M = 1
-        #print json.dumps (self.raw_files, indent=4, sort_keys=True)
+        # print json.dumps (self.raw_files, indent=4, sort_keys=True)
         # pass
 
     def readDB(self):
-        '''   Read JSON file containing files loaded so far. Same format as self.raw_files   '''
+        '''   Read JSON file containing files loaded so far. Same format as
+              self.raw_files   '''
         try:
-            #fh = open (self._json, 'Ur')
-            #self.db_files = json.load (fh)
+            # fh = open (self._json, 'Ur')
+            # self.db_files = json.load (fh)
             # fh.close
             self.db_files = read_json(os.path.join(self.home, JSON_DB))
         except Exception as e:
@@ -513,7 +546,7 @@ class FormaIO ():
                 for n in new_dass:
                     n_base = os.path.basename(n['path'])
                     for e in existing_dass:
-                        #e = existing_dass[i]
+                        # e = existing_dass[i]
                         e_base = os.path.basename(e['path'])
                         #   File names and sizes match, so calculate checksum
                         if e_base == n_base and e['size'] == n['size']:
@@ -528,8 +561,8 @@ class FormaIO ():
                             n['mini'] = e['mini']
                             n_save.append(n)
                     # else :
-                        # pass
-                        #n_save.append (n)
+                    # pass
+                    # n_save.append (n)
 
                 #   Save this file, we will need to load it
                 if len(n_save) != 0:
@@ -558,17 +591,17 @@ class FormaIO ():
                     elif p.returncode != 0:
                         sys.stderr.write("Process {0} failed.".format(p.args))
 
-                if somerunning == False:
+                if somerunning is False:
                     return
 
         def get_index():
             '''   Read /Experiment_g/Receivers_g/Index_t   '''
-            #s.chdir (self.home)
+            # s.chdir (self.home)
             msg = []
             P = []
             for m in self.nmini:
                 # if m == 'A' :
-                    # continue
+                # continue
                 os.chdir(os.path.join(self.home, m))
                 command = "ph5tokef -n master.ph5 -I > Index_t.kef"
                 ret = subprocess.Popen(
@@ -594,34 +627,40 @@ class FormaIO ():
                         copy2('../A/master.ph5', './master.ph5')
                     except BaseException:
                         raise FormaIOError(
-                            errno=7, msg="Failed to copy A/master.ph5 to {0}/master.ph5.".format(TO))
+                            errno=7,
+                            msg="Failed to copy A/master.ph5 to\
+                             {0}/master.ph5.".format(
+                                TO))
 
-                command = "keftoph5 -n master.ph5 -k ../{0}/Index_t.kef".format(
-                    m)
+                command = "keftoph5 -n master.ph5 -k ../{0}/Index_t.kef"\
+                    .format(m)
                 ret = subprocess.Popen(
                     command, shell=True, stderr=open(os.devnull, "w"))
                 P.append(ret)
                 #   Load one at a time
                 _wait_for_it(P)
                 msg.append(
-                    "Extracted Index_t from {0} and loading into {1}/master.ph5.".format(m, TO))
+                    "Extracted Index_t from {0} and loading into\
+                     {1}/master.ph5.".format(m, TO))
 
             os.chdir(self.whereami)
 
             return msg
 
         def get_array():
-            '''   Dump /Experiment_g/Sorts_g/Array_t_xxx to Array_t_cat.kef   '''
+            '''   Dump /Experiment_g/Sorts_g/Array_t_xxx to Array_t_cat.kef
+            '''
             msg = []
             P = []
             for m in self.nmini:
                 os.chdir(os.path.join(self.home, m))
-                command = "ph5tokef -n master.ph5 --all_arrays > Array_t_cat.kef"
+                command = "ph5tokef -n master.ph5 --all_arrays>Array_t_cat.kef"
                 ret = subprocess.Popen(
                     command, shell=True, stderr=open(os.devnull, "w"))
                 P.append(ret)
                 msg.append(
-                    "Extracting all Array_t for {0} to Array_t_cat.kef".format(m))
+                    "Extracting all Array_t for {0} to Array_t_cat.kef".format(
+                        m))
             os.chdir(self.whereami)
             _wait_for_it(P)
 
@@ -632,19 +671,20 @@ class FormaIO ():
             msg = []
             P = []
             # if not os.path.exists (os.path.join (self.home, TO)) :
-            #os.mkdir (os.path.join (self.home, TO))
+            # os.mkdir (os.path.join (self.home, TO))
 
             os.chdir(os.path.join(self.home, TO))
             for m in self.nmini:
-                command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef".format(
-                    m)
+                command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef"\
+                    .format(m)
                 ret = subprocess.Popen(
                     command, shell=True, stderr=open(os.devnull, "w"))
                 P.append(ret)
                 #   Load one at a time
                 _wait_for_it(P)
                 msg.append(
-                    "Extracted Array_t_cat from {0} and loading into {1}/master.ph5.".format(m, TO))
+                    "Extracted Array_t_cat from {0} and loading into\
+                     {1}/master.ph5.".format(m, TO))
 
             os.chdir(self.whereami)
 
@@ -664,21 +704,23 @@ class FormaIO ():
                     if mini[0:5] == 'miniP' and not os.path.islink(mini):
                         try:
                             os.link("../{0}/{1}".format(m, mini), mini)
-                            #os.link (mini, "../{0}/{1}".format (m, mini))
-                        except Exception as e:
+                            # os.link (mini, "../{0}/{1}".format (m, mini))
+                        except Exception:
                             raise FormaIOError(
-                                errno=8, msg="Failed to move {0} to A.".format(mini))
+                                errno=8,
+                                msg="Failed to move {0} to A.".format(mini))
 
-                        print "Hard link {0} to {2}, preserve {1}/master.ph5.".format(
-                            mini, m, TO)
-                        msg.append(
-                            "Hard link {0} to {2}, preserve {1}/master.ph5.".format(mini, m, TO))
+                        print "Hard link {0} to {2}, preserve {1}/master.ph5."\
+                            .format(mini, m, TO)
+                        msg.append("Hard link {0} to {2}, preserve\
+                         {1}/master.ph5.".format(mini, m, TO))
 
             os.chdir(self.whereami)
             return msg
 
         def recreate_references():
-            '''   Recreate extermal references in /Experiment_g/Receivers_g   '''
+            '''   Recreate extermal references in /Experiment_g/Receivers_g
+            '''
             msg = []
             P = []
             os.chdir(os.path.join(self.home, TO))
@@ -689,7 +731,8 @@ class FormaIO ():
                 os.devnull, "w"), stderr=open(os.devnull, "w"))
             P.append(ret)
             # if ret :
-            #raise FormaIOError (errno=9, msg="Failed to recreate external references.")
+            # raise FormaIOError (errno=9, msg="Failed to recreate external\
+            #  references.")
 
             msg.append(
                 "Recreated external references in {0}/master.ph5.".format(TO))
@@ -698,7 +741,7 @@ class FormaIO ():
             _wait_for_it(P)
             return msg
 
-    # def unite (self, TO='A') :
+        # def unite (self, TO='A') :
         msg = []
         msg.extend(get_index())
         msg.extend(load_index())
@@ -706,34 +749,33 @@ class FormaIO ():
         msg.extend(load_array())
         msg.extend(move_minis())
         msg.extend(recreate_references())
-        #print msg
+        # print msg
         return msg
 
     def merge(self, loaded_dass):
-        '''   Merge list of raw loaded with already loaded and re-write JSON_DB   '''
+        '''   Merge list of raw loaded with already loaded and re-write JSON_DB
+        '''
         #   What was already loaded
         db_dass = self.db_files.keys()
         #   What we just loaded
-        #loaded_dass = self.resolved.keys ()
+        # loaded_dass = self.resolved.keys ()
         for das in loaded_dass:
-            if not das in db_dass:
+            if das not in db_dass:
                 self.db_files[das] = []
 
             for r in self.resolved[das]:
                 self.db_files[das].append(r)
 
-        #fh = open ('/home/azevedo/Svn/pn3-devel/Forma/merged.json', 'w+')
-        #fh = open (JSON_DB, 'w')
-        #json.dump (self.db_files, fh, indent=4, sort_keys=True)
-        #fh.close ()
+        # fh = open ('/home/azevedo/Svn/pn3-devel/Forma/merged.json', 'w+')
+        # fh = open (JSON_DB, 'w')
+        # json.dump (self.db_files, fh, indent=4, sort_keys=True)
+        # fh.close ()
         write_json(self.db_files, os.path.join(self.home, JSON_DB))
 
 
 #
 # Mixins
 #
-from zlib import adler32
-
 
 def check_sum(filename):
     fd = os.open(filename, os.O_RDONLY)
@@ -748,7 +790,6 @@ def check_sum(filename):
     return cs & 0xffffffff
 
 
-import re
 #   For type 'texan'
 texanRE = re.compile("[Ii](\d\d\d\d).*[Tt][Rr][Dd]")
 #   For type 'rt-130'
@@ -783,7 +824,8 @@ def guess_instrument_type(filename):
         return 'nodal', das
     mo = simpletonodalRE.match(filename)
     if mo:
-        #raise FormaIOError (-100, "Error: Nodal simpleton file naming scheme: {0}. Please rename files.")
+        # raise FormaIOError (-100, "Error: Nodal simpleton file naming scheme:
+        #  {0}. Please rename files.")
         return 'nodal', 'lllsss'
 
     return 'unknown', None
@@ -801,10 +843,10 @@ def read_json(filename):
     try:
         fh = open(filename)
         x = json.load(fh)
-        #print 'X', x
+        # print 'X', x
         fh.close()
-    except Exception as e:
-        #sys.stderr.write (e.message)
+    except Exception:
+        # sys.stderr.write (e.message)
         x = {}
 
     return x
@@ -824,23 +866,23 @@ if __name__ == '__main__':
     sys.exit()
 
     import timedoy
-    import time
 
     # 2015-08-10 18:18:59,197 Processing:
     # /home/azevedo/Salt/Raw/D069-10Mar/Greg/I1700RAWDO69.TRD...
     processRE = re.compile(
-        "(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\,\d\d\d Processing: (.*[TtZz][RrIi][DdPp])\.\.\..*")
+        "(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\,\d\d\d Processing:\
+         (.*[TtZz][RrIi][DdPp])\.\.\..*")
     doneRE = re.compile(
         "(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d).*nodes recreated\..*")
 
-    #fio = FormaIO (infile = '/media/sf_ORANGE_MAC/short.lst')
-    #fio = FormaIO (infile = '/media/sf_ORANGE_MAC/trd.lst')
+    # fio = FormaIO (infile = '/media/sf_ORANGE_MAC/short.lst')
+    # fio = FormaIO (infile = '/media/sf_ORANGE_MAC/trd.lst')
     fio = FormaIO(infile='./trd2.lst', outdir='/storage/Salt')
-    #fio.set_M (10)
-    #num = int (raw_input ("Number of parts: "))
-    #if num > 16 : num = 16
-    #fio.set_nmini(int (num))
-    #fio.set_M (35)
+    # fio.set_M (10)
+    # num = int (raw_input ("Number of parts: "))
+    # if num > 16 : num = 16
+    # fio.set_nmini(int (num))
+    # fio.set_M (35)
     fio.initialize_ph5()
 
     try:
@@ -863,15 +905,15 @@ if __name__ == '__main__':
         print e.errno, e.message
         sys.exit(-1)
 
-    #print_it (fio.raw_files)
+    # print_it (fio.raw_files)
 
     fio.resolveDB()
 
     #   Load raw data
     cmds, pees, i = fio.run()
-    ###   Debug   ###
-    l = {'A': i, 'B': i, 'C': i, 'D': i, 'E': i, 'F': i, 'G': i, 'H': i,
-         'I': i, 'J': i, 'K': i, 'L': i, 'M': i, 'N': i, 'O': i, 'P': i}
+    #   Debug   ###
+    ll = {'A': i, 'B': i, 'C': i, 'D': i, 'E': i, 'F': i, 'G': i, 'H': i,
+          'I': i, 'J': i, 'K': i, 'L': i, 'M': i, 'N': i, 'O': i, 'P': i}
     cnt = 0
     out = {}
     err = {}
@@ -885,9 +927,9 @@ if __name__ == '__main__':
 
         xterms[m] = subprocess.Popen(
             ['xterm', '-T', m, '-e', 'tail', '-f', fifo[m]])
-        #out[m] = open (fifo[m], 'w', 0)
-        #out[m].write ('Testing\n')
-        #out[m].close ()
+        # out[m] = open (fifo[m], 'w', 0)
+        # out[m].write ('Testing\n')
+        # out[m].close ()
 
     while running:
         running = False
@@ -897,9 +939,9 @@ if __name__ == '__main__':
             print m, pees[m].pid, 'running' if pees[m].poll(
             ) is None else pees[m].poll()
             if pees[m].poll() == 0:
-                #pees[m].kill ()
-                l[m] += 1
-                t, l[m] = fio.run_cmds(cmds, x=l[m], ems=m)
+                # pees[m].kill ()
+                ll[m] += 1
+                t, ll[m] = fio.run_cmds(cmds, x=ll[m], ems=m)
                 if t is not None:
                     pees[m] = t
             if pees[m].poll() is None:
@@ -930,10 +972,10 @@ if __name__ == '__main__':
             print '.'
             pees[m].stderr.flush()
             print '.'
-            #out[m].close ()
+            # out[m].close ()
         print "Done"
 
-    ###   END DEBUG   ###
+    #   END DEBUG
 
     fio.merge(fio.resolved.keys())
 
@@ -952,8 +994,8 @@ if __name__ == '__main__':
     if yn == 'y':
         s = 0
         for m in fio.nmini:
-            #fh = open (os.path.join (fio.home, m, '125a2ph5.log'))
-            #s = 0
+            # fh = open (os.path.join (fio.home, m, '125a2ph5.log'))
+            # s = 0
             tot = 0
             mmin = sys.maxsize
             mmax = 0
@@ -982,7 +1024,7 @@ if __name__ == '__main__':
                                                    int(flds[3]),
                                                    int(flds[4]),
                                                    int(flds[5]))
-                            #sz = SZ[flds[6]]
+                            # sz = SZ[flds[6]]
                             sz = os.path.getsize(flds[6])
                             tot += sz
                             if tdoy.epoch() < mmin:
@@ -1011,5 +1053,5 @@ if __name__ == '__main__':
                             mmin = sys.maxsize
                             mmax = 0
 
-        print "n: ", len(fio.nmini), "Ave: ", s / \
-            float(len(fio.nmini)), "Total: ", s
+        print "n: ", len(fio.nmini), "Ave: ", s / float(len(fio.nmini)),\
+            "Total: ", s

@@ -29,7 +29,7 @@ PH5 = None
 #   Path to PH5
 PATH = '.'
 #   File handle to fixed kef file
-#FH = None
+# FH = None
 #
 #   To hold table rows and keys
 #
@@ -75,7 +75,8 @@ def initialize_ph5(editmode=False):
 
 
 def info_print():
-    '''   Print time of run, PH5 file organization version, this programs verion   '''
+    '''   Print time of run, PH5 file organization version,
+          this programs verion   '''
     global EX, FH
 
     if FH is not None:
@@ -106,11 +107,11 @@ def save_orig(das, Das_t):
 def table_print(t, d, a, key):
     #   Loop through table rows
     # for r in a.rows :
-    #i += 1
+    # i += 1
     # print "#   Table row %d" % i
-    #dirname = os.path.dirname (t)
-    #keffilename = os.path.basename (dirname)
-    #fh = open (keffilename + '.kef', mode='w')
+    # dirname = os.path.dirname (t)
+    # keffilename = os.path.basename (dirname)
+    # fh = open (keffilename + '.kef', mode='w')
 
     #   Print table name
     if key in a:
@@ -122,7 +123,7 @@ def table_print(t, d, a, key):
     for k in a:
         FH.write("\t{0} = {1}\n".format(k, d[k]))
 
-    #fh.close ()
+    # fh.close ()
 
 
 def read_sort_arrays():
@@ -145,7 +146,7 @@ def read_receivers(das=None):
     '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
     global EX
 
-    #print dasGroups.keys ()
+    # print dasGroups.keys ()
     if das is None:
         #   Get references for all das groups keyed on das
         dass = sorted(DASGROUPS.keys())
@@ -154,18 +155,18 @@ def read_receivers(das=None):
         dass = [das]
 
     for d in dass:
-        #d = str (d)
+        # d = str (d)
         d = "Das_g_{0}".format(str(d))
-        #sys.stderr.write ("DAS '{0}'\n".format (d))
+        # sys.stderr.write ("DAS '{0}'\n".format (d))
         #   Get node reference
         if d not in DASGROUPS:
             sys.stderr.write("#No key '{0}'\n".format(d))
             continue
 
         g = DASGROUPS[d]
-        #dg = Das_Groups (d, g)
+        # dg = Das_Groups (d, g)
         #   Save a master list for later
-        #DASS.append (dg)
+        # DASS.append (dg)
 
         #   Set the current das group
         EX.ph5_g_receivers.setcurrent(g)
@@ -173,7 +174,7 @@ def read_receivers(das=None):
         #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das()
         rowskeys = Rows_Keys(das, das_keys)
-        #DAS_T[d] = rowskeys
+        # DAS_T[d] = rowskeys
         return rowskeys
 
     return Rows_Keys()
@@ -190,25 +191,25 @@ def main():
 
     initialize_ph5()
 
-    #info_print ()
-    #read_receivers ()
+    # info_print ()
+    # read_receivers ()
     read_sort_arrays()
     DASGROUPS = EX.ph5_g_receivers.alldas_g()
 
     # for k in DASGROUPS.keys () :
-    #print "'{0}'".format (k)
+    # print "'{0}'".format (k)
 
-    #sys.exit ()
+    # sys.exit ()
     arrays = ARRAY_T.keys()
 
     for a in arrays:
-        #print a
+        # print a
         array_t = ARRAY_T[a]
         for r in array_t.rows:
             chan = r['channel_number_i']
-            if not chan in HORIZ:
+            if chan not in HORIZ:
                 continue
-                #sys.stderr.write ("'{0}'".format (chan))
+                # sys.stderr.write ("'{0}'".format (chan))
                 # pass
 
             das = r['das/serial_number_s'].strip()
@@ -232,9 +233,10 @@ def main():
             FH.write('#\n#\t{0} {1} {2} {3}\n'.format(
                 das, chan, start_epoch, stop_epoch))
             for d in Das_t.rows:
-                #secs = d['sample_count_i'] / (d['sample_rate_i'] / d['sample_rate_multiplier_i'])
+                # secs = d['sample_count_i'] / (d['sample_rate_i'] /\
+                # d['sample_rate_multiplier_i'])
                 start = d['time/epoch_l']
-                #stop = start + secs
+                # stop = start + secs
                 if start >= start_epoch and start < stop_epoch:
                     t = '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das)
                     d['channel_number_i'] = chan

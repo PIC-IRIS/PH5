@@ -11,6 +11,7 @@ from ph5.core.columns import PH5VERSION as ph5version
 
 PROG_VERSION = "2017.185.a Developmental"
 
+
 #
 #   Read Command line arguments
 #
@@ -22,17 +23,20 @@ def get_args():
     import argparse
     oparser = argparse.ArgumentParser()
 
-    oparser.usage = "Version: {0}, geod2kef --nickname ph5-file-prefix [-p path]".format(
+    oparser.usage = "Version: {0}, geod2kef --nickname ph5-file-prefix\
+     [-p path]".format(
         PROG_VERSION)
 
-    oparser.description = "Read locations and calculate offsets from events to receivers. Produce kef file to populate ph5 file."
+    oparser.description = "Read locations and calculate offsets from events to\
+     receivers. Produce kef file to populate ph5 file."
     #   -n master.ph5
     oparser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
                          help="The ph5 file prefix (experiment nickname).",
                          metavar="ph5_file_prefix")
     #   -p /path/to/ph5/family/files
     oparser.add_argument("-p", "--path", dest="ph5_path",
-                         help="Path to ph5 files. Defaults to current directory.",
+                         help="Path to ph5 files. Defaults to current\
+                          directory.",
                          metavar="ph5_path", default='.')
 
     ARGS = oparser.parse_args()
@@ -77,24 +81,28 @@ def write_log(array, shot_line, shot, offsets):
     min_offset = npy.min(offsets[2])
     #   Calculate offsets below and 1st percentile and above 99th percentile
     per = npy.percentile(offsets[2], [1, 99])
-    print >>LOG, "{0} {1} Event: {2} Mean offset: {3:12.1f} Std: {4:12.1f} Maximum: {5:12.1f} Minimum: {6:12.1f}".format(array,
-                                                                                                                         shot_line,
-                                                                                                                         shot,
-                                                                                                                         ave,
-                                                                                                                         sd,
-                                                                                                                         max_offset,
-                                                                                                                         min_offset)
-    print >>LOG, "\n-> Stations that are below the 1st percentile or above the 99th percentile:"
+    print >> LOG, "{0} {1} Event: {2} Mean offset: {3:12.1f} Std: {4:12.1f}\
+     Maximum: {5:12.1f} Minimum: {6:12.1f}".format(
+        array,
+        shot_line,
+        shot,
+        ave,
+        sd,
+        max_offset,
+        min_offset)
+    print >> LOG, "\n-> Stations that are below the 1st percentile or above\
+     the 99th percentile:"
     for i in xrange(len(offsets[2])):
         if offsets[2][i] >= per[1]:
-            print >>LOG, "\tStation: {0} Event: {1} Offset: {2:12.1f}".format(
+            print >> LOG, "\tStation: {0} Event: {1} Offset: {2:12.1f}".format(
                 offsets[0][i], shot, offsets[2][i])
         if offsets[2][i] == per[0]:
-            print >>LOG, "\tStation: {0} Event: {1} Offset: {2:12.1f}".format(
+            print >> LOG, "\tStation: {0} Event: {1} Offset: {2:12.1f}".format(
                 offsets[0][i], shot, offsets[2][i])
-            #print "\t{0} Station: {1} {2} Event: {3} Offset: {4}".format (array, offsets[0][i], shot_line, shot, offsets[2][i])
+            # print "\t{0} Station: {1} {2} Event: {3} Offset: {4}".format \
+            # (array, offsets[0][i], shot_line, shot, offsets[2][i])
 
-    print >>LOG, "-=" * 40
+    print >> LOG, "-=" * 40
 
 
 def main():
@@ -105,7 +113,7 @@ def main():
     get_args()
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
-    except Exception as e:
+    except Exception:
         sys.stderr.write("Error: Can't open {0} at {1}.".format(
             ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit(-1)
@@ -113,13 +121,14 @@ def main():
     P5.read_array_t_names()
     P5.read_event_t_names()
     if not P5.Array_t_names or not P5.Event_t_names:
-        print >>sys.stderr, "No arrays or no events defined in ph5 file. Can not continue!"
+        print >> sys.stderr, "No arrays or no events defined in ph5 file.\
+        Can not continue!"
         P5.close()
         sys.exit()
     print "#   geod2kef v{0}, PH5 v{1}".format(PROG_VERSION, ph5version)
     with open("geod2kef.log", 'w+') as LOG:
-        print >>LOG, sys.argv
-        print >>LOG, "***\nOffset statistics:"
+        print >> LOG, sys.argv
+        print >> LOG, "***\nOffset statistics:"
         for Array_t_name in P5.Array_t_names:
             array_num = int(Array_t_name[8:])
             P5.read_array_t(Array_t_name)

@@ -93,7 +93,7 @@ def trace_headers(sd):
     if 'fairprint' in os.environ:
         for s in trace:
             print s
-    #n += 1
+    # n += 1
     while True:
         if sd.isEOF():
             break
@@ -124,7 +124,8 @@ def main():
         sd = segdreader.Reader(infile=sys.argv[1])
     except BaseException:
         print "Usage: dumpfair fairfield_seg-d_file.rg16"
-        print "To also print traces: set environment variable fairprint. This will run slowly."
+        print "To also print traces: set environment variable fairprint.\
+        This will run slowly."
         sys.exit()
 
     general_headers(sd)

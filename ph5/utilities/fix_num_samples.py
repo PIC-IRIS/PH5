@@ -39,7 +39,8 @@ ARRAY_T = {}
 DAS_T = {}
 #   /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
 RECEIVER_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name)
+#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
+# (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
 #   A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = []
@@ -86,16 +87,18 @@ def get_args():
 
     oparser = OptionParser()
 
-    oparser.usage = "Version: %s fix_num_samples --nickname ph5-file-prefix [--path path-to-ph5-files]" % PROG_VERSION
+    oparser.usage = "Version: %s fix_num_samples --nickname ph5-file-prefix\
+    [--path path-to-ph5-files]" % PROG_VERSION
 
-    oparser.description = "Set sample_count_i in Das_t based on length of data array.\nWrites kef file, 1 per DAS."
+    oparser.description = "Set sample_count_i in Das_t based on length of data array.\
+    Writes kef file, 1 per DAS."
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
                        help="The ph5 file prefix (experiment nickname).",
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files. Default to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-c", "--check", dest="check",
@@ -261,7 +264,7 @@ def walk_das_tables():
         t = DAS_T[d]
         path = '/Experiment_g/Receivers_g/Das_g_' + d
         dtable = '/Experiment_g/Receivers_g/Das_g_' + d + '/Das_t'
-        #print path
+        # print path
         doprint = False
         for r in t.rows:
             #   Only update iff 0
@@ -270,7 +273,7 @@ def walk_das_tables():
                     continue
 
             doprint = True
-            #print '\t', r['array_name_data_a'], r['sample_count_i']
+            # print '\t', r['array_name_data_a'], r['sample_count_i']
             array_name = r['array_name_data_a'].strip()
             array_node = EX.ph5.get_node(
                 path, name=array_name, classname='Array')
@@ -320,7 +323,8 @@ def read_receivers():
 
 
 def read_data():
-    '''   Read all of the wiggles and calculate standard deviation of trace data   '''
+    '''   Read all of the wiggles and calculate standard
+          deviation of trace data   '''
     global EX, DAS_T, DASS
 
     # We use this to build up a list of trace standard deviations keyed by
@@ -356,11 +360,11 @@ def read_data():
             #   Update total points
             pts += len(data)
             #   Get spectra
-            #spec = numpy.fft.rfft (data, axis = -1)
+            # spec = numpy.fft.rfft (data, axis = -1)
             # for i in spec :
-            #print i
-            #sys.exit ()
-            #print spec
+            # print i
+            # sys.exit ()
+            # print spec
             # Get standard deviation for this data trace spectra and save it in
             # tmp
             std = data.std()

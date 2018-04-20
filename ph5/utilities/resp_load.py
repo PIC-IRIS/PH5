@@ -131,8 +131,10 @@ class n_i_fix(object):
                                 ".\n")
                             break
                         for entry in Das_t:
-                            if (entry['sample_rate_i'] == sample_rate and entry['sample_rate_multiplier_i']
-                                    == sample_rate_multiplier and entry['channel_number_i'] == channel):
+                            if (entry['sample_rate_i'] == sample_rate and
+                                    entry['sample_rate_multiplier_i']
+                                    == sample_rate_multiplier and entry[
+                                        'channel_number_i'] == channel):
                                 response_n_i = entry['response_table_n_i']
                                 receiver_n_i = entry['receiver_table_n_i']
                                 break
@@ -241,8 +243,8 @@ class n_i_fix(object):
 
                         if int(
                                 station.id_s) == id_s and int(
-                                station.channel) == channel and int(x) == int(
-                                station.array):
+                            station.channel) == channel and int(x) ==\
+                                int(station.array):
                             if station.response_n_i:
                                 new_kef.append(
                                     "        response_table_n_i=" +
@@ -258,8 +260,8 @@ class n_i_fix(object):
 
                         if int(
                                 station.id_s) == id_s and int(
-                                station.channel) == channel and int(x) == int(
-                                station.array):
+                            station.channel) == channel and int(x) ==\
+                                int(station.array):
                             if station.receiver_n_i:
                                 new_kef.append(
                                     "        receiver_table_n_i=" +
@@ -278,12 +280,12 @@ class n_i_fix(object):
             outfile.close()
             command = "nuke_table -n master.ph5 -p {0} -A {1}".format(
                 path, str(x))
-            ret = subprocess.call(command, shell=True)
+            subprocess.call(command, shell=True)
             import time
             time.sleep(1)
             command = "keftoph5 -n master.ph5 -p {1} -k {0}".format(
                 file_name, path)
-            ret = subprocess.call(command, shell=True)
+            subprocess.call(command, shell=True)
             time.sleep(0.5)
             logging.info(
                 "array_t_" +
@@ -475,7 +477,7 @@ class n_i_fix(object):
                 new_kef.append('        response_file_a=' + '\n')
                 if x[0]:
                     name = str(x[0]) + "_" + str(x[2]) + "_" + \
-                        str(x[3]) + "_" + str(x[4])
+                           str(x[3]) + "_" + str(x[4])
                     new_kef.append(
                         '        response_file_das_a=/Experiment_g/' +
                         'Responses_g/' +
@@ -500,11 +502,11 @@ class n_i_fix(object):
             outfile.write("%s" % line)
 
         command = "nuke_table -n master.ph5 -p {0} -R".format(path)
-        ret = subprocess.call(command, shell=True)
+        subprocess.call(command, shell=True)
 
         command = "keftoph5 -n master.ph5 -p {0} -k response_t.kef".format(
             path)
-        ret = subprocess.Popen(command, shell=True)
+        subprocess.Popen(command, shell=True)
 
         logging.info(
             "response_t.kef written into PH5")
@@ -514,15 +516,14 @@ class n_i_fix(object):
         for station in data:
             for x in data_update:
                 if station.das_model == x[0] and str(
-                    station.sensor_model) == x[1] and int(
+                        station.sensor_model) == x[1] and int(
                     station.sample_rate) == int(
                     x[2]) and int(
-                    station.sample_rate_multiplier) == int(
-                    x[3]) and int(
-                    station.gain) == int(
-                        x[4]):
+                    station.sample_rate_multiplier) ==\
+                        int(x[3]) and int(station.gain) == int(x[4]):
                     station.response_n_i = x[5]
-            true_sr = float(station.sample_rate) / \
+            true_sr =\
+                float(station.sample_rate) /\
                 float(station.sample_rate_multiplier)
             if true_sr < 1.0:
                 station.response_n_i = None
@@ -531,15 +532,14 @@ class n_i_fix(object):
 
 
 def get_args():
-
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='This fixes then n_i numbers in the arrays, creates ' +
-        'new array.kef files, loads RESP files into PH5 and creates ' +
-        'a new response.kef',
-        usage='Version: {0} resp_load  --nickname="Master_PH5_file" [options]'
-        .format(PROG_VERSION))
+        description='This fixes then n_i numbers in the arrays, creates\
+        new array.kef files, loads RESP files into PH5 and creates\
+        a new response.kef',
+        usage='Version: {0} resp_load  --nickname="Master_PH5_file"\
+         [options]'.format(PROG_VERSION))
 
     parser.add_argument(
         "-n", "--nickname", action="store", required=True,
@@ -559,7 +559,7 @@ def get_args():
         "--input_csv",
         action="store",
         help="input csv. If no input is given a template will be created " +
-        "for you based on the experiment.",
+             "for you based on the experiment.",
         type=str,
         dest="input_csv",
         metavar="input_csv",
@@ -570,7 +570,6 @@ def get_args():
 
 
 def main():
-
     args = get_args()
 
     if args.nickname[-3:] == 'ph5':

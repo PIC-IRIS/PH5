@@ -14,7 +14,6 @@ from ph5.utilities import novenqc, novenkef
 
 PROG_VERSION = '2017.342'
 
-
 RECEIVER_CFG_S = '''
 {
    "description_s": {
@@ -26,7 +25,10 @@ RECEIVER_CFG_S = '''
       "required": "True",
       "type": "string32",
       "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
-      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
+      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\
+      d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\
+      d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|
+      (\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
    },
    "id_s": {
       "required": "True",
@@ -37,7 +39,10 @@ RECEIVER_CFG_S = '''
       "required": "True",
       "type": "string32",
       "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
-      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
+      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\
+      d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\
+      d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|
+      (\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
    },
    "location/X/value_d": {
       "required": "False",
@@ -68,7 +73,7 @@ RECEIVER_CFG_S = '''
    "channel_number_i": {
       "required": "True",
       "type": "int15",
-      "help": "Component, Possibly as follows: 1 -> Z, 2 -> N/S, 3 -> E/W etc..",
+      "help": "Component, Possibly as follows: 1 -> Z, 2 -> N/S, 3 -> E/W etc",
       "range": "1-6"
    },
    "das/serial_number_s": {
@@ -109,12 +114,12 @@ RECEIVER_CFG_S = '''
    "seed_location_code_s": {
       "required": "False",
       "type": "string2",
-      "help": "SEED location code as described in chapter 8 of the SEED manual."
+      "help": "SEED location code as described in chapter 8 of the SEED manual"
    },
    "seed_station_name_s": {
       "required": "False",
       "type": "string5",
-      "help": "SEED channel name as described in chapter 8 of the SEED manual."
+      "help": "SEED channel name as described in chapter 8 of the SEED manual"
    },
    "sample_rate_i": {
       "required": "False",
@@ -181,18 +186,19 @@ EVENT_CFG_S = '''
       "required": "True",
       "type": "string32",
       "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
-      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,3})|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})"
+      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\
+      d{1,2}\\\\.\\\\d{1,3})|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\
+      d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})"
    }
 }
 '''
-
 
 #
 SEPMAP = {'tab': None, 'comma': ',',
           'semi-colon': ';', 'colon': ':', 'space': None}
 
 
-class MyWorker (QtCore.QThread):
+class MyWorker(QtCore.QThread):
     def __init__(self, command, table=None, names=None,
                  cols=None, sep=None, outfile=None):
         super(MyWorker, self).__init__()
@@ -205,18 +211,18 @@ class MyWorker (QtCore.QThread):
         self.working = True
 
     def run(self):
-        #print "Run"
-        #time.sleep (5)
+        # print "Run"
+        # time.sleep (5)
         if self.command == 'qc_receivers':
             while self.working:
-                #print '*'
+                # print '*'
                 self.working = novenqc.qc_receivers(self.table,
                                                     self.names,
                                                     self.cols,
                                                     self.sep)
         elif self.command == 'qc_shots':
             while self.working:
-                #print '!'
+                # print '!'
                 self.working = novenqc.qc_shots(self.table,
                                                 self.names,
                                                 self.cols,
@@ -229,14 +235,14 @@ class MyWorker (QtCore.QThread):
             print "Fail"
 
 
-class MyQComboBox (QtGui.QComboBox):
+class MyQComboBox(QtGui.QComboBox):
     def __init__(self, values=[]):
         super(MyQComboBox, self).__init__()
         if values:
             self.addItems(values)
 
 
-class MyQTableWidget (QtGui.QTableWidget):
+class MyQTableWidget(QtGui.QTableWidget):
     def __init__(self, parent=None):
         super(MyQTableWidget, self).__init__(parent)
 
@@ -272,7 +278,7 @@ class MyMessageBox(QtGui.QMessageBox):
         return result
 
 
-class ErrorsDialog (QtGui.QMainWindow):
+class ErrorsDialog(QtGui.QMainWindow):
     '''
        Dialog for displaying problems with input file
     '''
@@ -307,7 +313,7 @@ class ErrorsDialog (QtGui.QMainWindow):
     def setIt(self, text):
         self.text.clear()
         text = '\n'.join(text)
-        #print text
+        # print text
         self.text.setText(text)
 
     def saveFile(self):
@@ -316,14 +322,14 @@ class ErrorsDialog (QtGui.QMainWindow):
         filename = str(filename)
         if not filename:
             return
-        #f = open(filename[0], 'w')
+        # f = open(filename[0], 'w')
         f = open(filename, 'w')
         filedata = self.text.toPlainText()
         f.write(filedata)
         f.close()
 
 
-class SetupDialog (QtGui.QDialog):
+class SetupDialog(QtGui.QDialog):
     '''
        Main configuration dialog
     '''
@@ -395,26 +401,26 @@ class SetupDialog (QtGui.QDialog):
                      self, QtCore.SLOT("reject ()"))
 
         self.setWindowTitle("Configure")
-        #self.changed = QtCore.Signal ()
+        # self.changed = QtCore.Signal ()
 
     def apply(self):
         #
-        #print "Apply"
+        # print "Apply"
         self.settings['linesView'] = int(self.viewLines.value())
         self.settings['colSep'] = str(self.fieldSeparator.currentText())
         self.settings['outFormat'] = str(self.outfileFormat.currentText())
         self.settings['linesSkip'] = int(self.skipLines.value())
         self.settings['inFormat'] = str(self.inputFileType.currentText())
-        #print "Emit"
-        #self.emit (QtCore.Signal ("changed"))
+        # print "Emit"
+        # self.emit (QtCore.Signal ("changed"))
         self.changed.emit()
-        #print "Emitted"
+        # print "Emitted"
 
     def rejected(self):
         sys.stdout.write("Reject\n")
 
 
-class Novitiate (QtGui.QMainWindow):
+class Novitiate(QtGui.QMainWindow):
     '''
        Program parent
     '''
@@ -499,7 +505,8 @@ class Novitiate (QtGui.QMainWindow):
     def configure(self):
         #
         self.settingsDialog = SetupDialog(self.settings, self)
-        #self.connect (self.settingsDialog, QtCore.SIGNAL ("changed"), self.refreshTable)
+        # self.connect (self.settingsDialog, QtCore.SIGNAL ("changed"),
+        # self.refreshTable)
         self.settingsDialog.changed.connect(self.refreshTable)
         self.settingsDialog.show()
 
@@ -541,8 +548,8 @@ class Novitiate (QtGui.QMainWindow):
                     self.table.setItem(0, y, item)
                     y += 1
 
-        except AttributeError as e:
-            #print e.message
+        except AttributeError:
+            # print e.message
             if self.settings['inFormat'] == 'receiver':
                 cvalues = RECEIVER_CFG.keys()
             else:
@@ -553,8 +560,8 @@ class Novitiate (QtGui.QMainWindow):
             for y in range(maxY):
                 try:
                     ci = self.comboBoxes[y].currentIndex()
-                except Exception as e:
-                    #print e.message
+                except Exception:
+                    # print e.message
                     ci = None
 
                 cb = MyQComboBox(values=cvalues)
@@ -601,7 +608,7 @@ class Novitiate (QtGui.QMainWindow):
 
     #   Slot for QCombobox highlight signal
     def huh(self, x):
-        #print x
+        # print x
         if x == 0:
             return
         x -= 1
@@ -612,9 +619,10 @@ class Novitiate (QtGui.QMainWindow):
 
         keys = cols.keys()
         keys = sorted(map(str, keys))
-        #keys = ["Ignore"] + keys
-        #cols["Ignore"] = {}; cols["Ignore"]['help'] = "Ignore the entire column."
-        #print keys
+        # keys = ["Ignore"] + keys
+        # cols["Ignore"] = {}; cols["Ignore"]['help'] =
+        #  "Ignore the entire column."
+        # print keys
         help = cols[keys[x]]['help']
         self.status.showMessage(help)
 
@@ -659,7 +667,7 @@ class Novitiate (QtGui.QMainWindow):
         # if os.path.exists (inFileName[0]) :
         if os.path.exists(inFileName):
             #
-            #fh = open (inFileName[0], 'U')
+            # fh = open (inFileName[0], 'U')
             fh = open(inFileName, 'U')
             self.readFileLines = fh.readlines()
             fh.close()
@@ -676,73 +684,79 @@ class Novitiate (QtGui.QMainWindow):
 
         outFileName = QtGui.QFileDialog.getSaveFileName(
             self, 'Output KML file name.', os.getcwd(), filter='*.kml')
-        #print outFileName
+        # print outFileName
         if outFileName:
             if outFileName[-4:] != '.kml':
                 outFileName += '.kml'
 
             self.status.showMessage("Working on kml...")
             worker = MyWorker('qc_map', outfile=outFileName)
-            #worker.finished.connect (self.qcDone)
+            # worker.finished.connect (self.qcDone)
             worker.start()
             worker.wait()
-            #novenqc.qc_map (outFileName)
+            # novenqc.qc_map (outFileName)
 
     def checkInFile(self):
         if not self.readFileLines:
             QtGui.QMessageBox.information(
-                self, "Can't continue.", "Must open and configure csv file first.")
+                self, "Can't continue.",
+                "Must open and configure csv file first.")
             return
-        #print 'Checking infile...'
+        # print 'Checking infile...'
         names = map(lambda x: str(x.currentText()), self.comboBoxes)
         tmp = []
         for n in names:
             if n in tmp:
                 QtGui.QMessageBox.information(
-                    self, "Can't continue.", "Duplicated column: {0}".format(n))
+                    self, "Can't continue.",
+                    "Duplicated column: {0}".format(n))
                 return
             if n != 'Ignore':
                 tmp.append(n)
 
         if self.settings['inFormat'] == 'receiver':
-            #print 'Receiver check'
+            # print 'Receiver check'
             worker = MyWorker('qc_receivers',
                               self.readFileLines[self.settings['linesSkip']:],
                               names,
                               RECEIVER_CFG,
                               sep=SEPMAP[self.settings['colSep']])
-            # ret = novenqc.qc_receivers (self.readFileLines[self.settings['linesSkip']:],
-            #map (lambda x : str (x.currentText ()), self.comboBoxes),
+            # ret = novenqc.qc_receivers (self.readFileLines[self.
+            # settings['linesSkip']:],
+            # map (lambda x : str (x.currentText ()), self.comboBoxes),
             # RECEIVER_CFG,
             # sep=SEPMAP[self.settings['colSep']])
         elif self.settings['inFormat'] == 'event':
-            #print 'Event check'
+            # print 'Event check'
             worker = MyWorker('qc_shots',
                               self.readFileLines[self.settings['linesSkip']:],
                               names,
                               EVENT_CFG,
                               sep=SEPMAP[self.settings['colSep']])
-            # ret = novenqc.qc_shots (self.readFileLines[self.settings['linesSkip']:],
-            #map (lambda x : str (x.currentText ()), self.comboBoxes),
+            # ret = novenqc.qc_shots (self.readFileLines[self.
+            # settings['linesSkip']:],
+            # map (lambda x : str (x.currentText ()), self.comboBoxes),
             # EVENT_CFG,
             # sep=SEPMAP[self.settings['colSep']])
-        #print worker
+        # print worker
         self.status.showMessage("Working on QC...")
         worker.finished.connect(self.qcDone)
         worker.start()
         worker.wait()
-        #print '.'
+        # print '.'
 
     def saveAs(self):
         #
         if self.TOP == {}:
             QtGui.QMessageBox.information(
-                self, "Can't continue.", "Must open csv and check inputs first.")
+                self, "Can't continue.",
+                "Must open csv and check inputs first.")
             return
 
         saveFileName = QtGui.QFileDialog.getSaveFileName(
             self, 'Save output as', os.getcwd(), filter="*.kef")
         novenkef.write_kef(self.TOP, saveFileName)
+
 
 #
 # Mix-ins
@@ -764,10 +778,13 @@ def main():
 def startapp():
     global RECEIVER_CFG, EVENT_CFG
     home = expanduser("~")
-    if not os.path.isfile(os.path.join(home, '.PH5', 'Receiver.cfg')) or not os.path.isfile(
+    if not os.path.isfile(
+            os.path.join(home, '.PH5', 'Receiver.cfg')) or not os.path.isfile(
             os.path.join(home, '.PH5', 'Event.cfg')):
         create_config = raw_input(
-            "It appears your home directory doesn't contain config files for noven.\nIt is advised you have config files created. Do you want config files to be created for you(y/n)?:")
+            "It appears your home directory doesn't contain config files for"
+            " noven.\nIt is advised you have config files created. "
+            "Do you want config files to be created for you(y/n)?:")
         if create_config.upper() == "Y":
             print "Installing to: " + str(os.path.join(home, '.PH5'))
             if not os.path.exists(os.path.join(home, '.PH5')):
@@ -778,7 +795,7 @@ def startapp():
             f = open(os.path.join(home, '.PH5', 'Event.cfg'), 'w')
             f.write(str(EVENT_CFG_S))
             f.close()
-        # else:
+            # else:
             RECEIVER_CFG = json.loads(RECEIVER_CFG_S)
             EVENT_CFG = json.loads(EVENT_CFG_S)
     else:

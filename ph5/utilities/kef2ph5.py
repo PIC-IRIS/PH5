@@ -25,7 +25,8 @@ def get_args():
 
     oparser = OptionParser()
 
-    oparser.usage = "kef2ph5 --kef kef_file --nickname ph5_file_prefix [--path path]\nVersion: %s" % PROG_VERSION
+    oparser.usage = "kef2ph5 --kef kef_file --nickname ph5_file_prefix\
+     [--path path]\nVersion: %s" % PROG_VERSION
 
     oparser.description = "Update a ph5 file from a kef file."
 
@@ -36,7 +37,8 @@ def get_args():
     oparser.add_option("-p", "--path", dest="path",
                        help="Path to directory where ph5 files are stored.")
     oparser.add_option("-c", "--check", action="store_true", default=False,
-                       dest="check", help="Show what will be done but don't do it!")
+                       dest="check",
+                       help="Show what will be done but don't do it!")
 
     options, args = oparser.parse_args()
 
@@ -44,7 +46,7 @@ def get_args():
     KEFFILE = None
     TRACE = False
 
-    if options.check == True:
+    if options.check is True:
         TRACE = True
 
     if options.outfile is not None:
@@ -77,8 +79,7 @@ def add_references(rs):
     import string
     global EX
 
-    ###   ???   ###
-    #receiver = EX.ph5_g_receivers
+    # receiver = EX.ph5_g_receivers
 
     for r in rs:
         flds = string.split(r, '/')
@@ -108,7 +109,7 @@ def populateTables():
 
         #   Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
         arrays, events, offsets = k.strip_a_e_o()
-        #print arrays
+        # print arrays
         if arrays:
             for a in arrays:
                 a = a.split(':')[0]
@@ -124,13 +125,13 @@ def populateTables():
                 o = o.split(':')[0]
                 EX.ph5_g_sorts.newOffsetSort(o)
 
-        if TRACE == True:
+        if TRACE is True:
             err = k.batch_update(trace=True)
         else:
             err = k.batch_update()
 
     k.close()
-    if err == True:
+    if err is True:
         sys.stderr.write("\nError: There were errors! See output.\n")
 
 
@@ -143,7 +144,7 @@ def update_log():
     '''   Write a log of kef2ph5 activities.   '''
     global PH5, KEFFILE, PATH, TRACE
     #   Don't log when run with the -c option
-    if TRACE == True:
+    if TRACE is True:
         return
 
     keffile = KEFFILE
@@ -155,8 +156,10 @@ def update_log():
 
     line = "%s*:*%s*:*%s*:*%s\n" % (now, ph5file, keffile, kef_mtime)
     if not os.path.exists(klog):
-        line = "modification_time*:*experiment_nickname*:*kef_filename*:*kef_file_mod_time\n" +\
-               "--------------------------------------------------------------------------\n" + line
+        line = "modification_time*:*experiment_nickname*:*\
+        kef_filename*:*kef_file_mod_time\n" + \
+               "-------------------------------------------------------------\
+               -------------\n" + line
 
     try:
         fh = open(klog, 'a+')

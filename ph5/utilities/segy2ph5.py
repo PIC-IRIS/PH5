@@ -6,6 +6,13 @@
 #
 #   Last modified to work with geod SEG-Y, May 2014
 #
+import os
+import sys
+import logging
+import time
+import json
+from math import modf
+from ph5.core import experiment, columns, segyreader, timedoy
 
 PROG_VERSION = "2015.092 Developmental"
 
@@ -23,23 +30,16 @@ TTYPE = {'S': 'SEG-Y', 'U': 'Menlo',
 #
 DTYPE = {1: 'float32', 2: 'int32', 3: 'int16', 5: 'float32', 8: 'int8'}
 
-import os
-import sys
-import logging
-import time
-import json
-from math import modf
-from ph5.core import experiment, columns, segyreader, timedoy
-
 os.environ['TZ'] = 'GMT'
 time.tzset()
+
 
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -53,7 +53,7 @@ class Rows_Keys (object):
             self.keys = keys
 
 
-class Index_t_Info (object):
+class Index_t_Info(object):
     __slots__ = ('das', 'ph5file', 'ph5path', 'startepoch', 'stopepoch')
 
     def __init__(self, das, ph5file, ph5path, startepoch, stopepoch):
@@ -64,7 +64,7 @@ class Index_t_Info (object):
         self.stopepoch = stopepoch
 
 
-class Resp (object):
+class Resp(object):
     __slots__ = ('lines', 'keys', 't')
 
     def __init__(self, t):
@@ -75,7 +75,7 @@ class Resp (object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        #print self.lines
+        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -87,7 +87,8 @@ class Resp (object):
 
 
 def get_args():
-    global SR, TYPE, PRINT, L, T, F, ENDIAN, EBCDIC, PH5, RECV_ORDER, DAS, SIZE, CHAN3
+    global SR, TYPE, PRINT, L, T, F, ENDIAN, EBCDIC, PH5, RECV_ORDER, DAS,\
+        SIZE, CHAN3
 
     from optparse import OptionParser
     oparser = OptionParser()
@@ -109,36 +110,47 @@ def get_args():
     oparser.add_option("-t", action="store", dest="ttype",
                        choices=['U', 'P', 'S', 'N', 'I'],
                        default='S',
-                       help="Extended trace header style. U => USGS Menlo, P => PASSCAL, S => SEG, I => SIOSEIS, N => iNova FireFly")
+                       help="Extended trace header style. U => USGS Menlo,\
+                        P => PASSCAL, S => SEG, I => SIOSEIS,\
+                         N => iNova FireFly")
 
     oparser.add_option("-p", action="store_true",
                        dest="print_true", default=False)
 
-    oparser.add_option("-L", action="store", dest="bytes_per_trace", type="int",
+    oparser.add_option("-L", action="store", dest="bytes_per_trace",
+                       type="int",
                        help="Force bytes per trace. Overrides header values.")
 
-    oparser.add_option("-T", action="store", dest="traces_per_ensemble", type="int",
-                       help="Force traces per ensemble. Overrides header value.")
+    oparser.add_option("-T", action="store", dest="traces_per_ensemble",
+                       type="int",
+                       help="Force traces per ensemble.\
+                        Overrides header value.")
 
     oparser.add_option("-F", action="store", dest="trace_format", type="int",
-                       help="1 = IBM - 4 bytes, 2 = INT - 4 bytes, 3 = INT - 2 bytes, 5 = IEEE - 4 bytes, 8 = INT - 1 byte. Override header value.")
+                       help="1 = IBM - 4 bytes, 2 = INT - 4 bytes,\
+                        3 = INT - 2 bytes, 5 = IEEE - 4 bytes,\
+                         8 = INT - 1 byte. Override header value.")
 
-    oparser.add_option("-e", action="store", dest="endian", type="str", default='big',
-                       help="Endianess: 'big' or 'little'. Default = 'big'. Override header value.")
+    oparser.add_option("-e", action="store", dest="endian", type="str",
+                       default='big',
+                       help="Endianess: 'big' or 'little'. \
+                       Default = 'big'. Override header value.")
 
     oparser.add_option("-i", action="store_false", dest="ebcdic", default=True,
                        help="EBCDIC textural header. Override header value.")
 
     oparser.add_option("-d", action="store", dest="das", type="int",
-                       help="Set station ID for all traces, otherwise field trace number is used.")
+                       help="Set station ID for all traces,\
+                        otherwise field trace number is used.")
 
     oparser.add_option("-3", action="store_true", dest="chan3", default=False,
-                       help="The gather contains data recorded using 3 channels, 1, 2, 3.")
+                       help="The gather contains data recorded using 3\
+                        channels, 1, 2, 3.")
 
     options, args = oparser.parse_args()
 
     try:
-        #FH = open (options.infile, 'rb')
+        # FH = open (options.infile, 'rb')
         SIZE = os.path.getsize(options.infile)
         SR = segyreader.Reader(options.infile)
         SR.open_infile()
@@ -183,7 +195,7 @@ def get_args():
     SR.set_endianess(ENDIAN)
     #   Is text header EBCDIC or ASCII?
     EBCDIC = options.ebcdic
-    if EBCDIC == True:
+    if EBCDIC is True:
         SR.set_txt_hdr_type('E')
     else:
         SR.set_txt_hdr_type('A')
@@ -231,7 +243,7 @@ def openPH5(filename):
                 return EXREC
     except BaseException:
         pass
-    #sys.stderr.write ("***   Opening: {0} ".format (filename))
+    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -253,7 +265,7 @@ def getLOG():
     '''   Create a open a new and unique header file under Maps_g/Das_g_
                                                                  /Sta_g_
                                                                  /Evt_g_
-                                                                         /Hdr_a_
+                                                                        /Hdr_a_
     '''
     current_das = EXREC.ph5_g_receivers.get_das_name()
     g = EXREC.ph5_g_maps.newdas('Das_g_', current_das)
@@ -337,10 +349,10 @@ def writeINDEX():
 def update_index_t_info(starttime, samples, sps):
     '''   Update info that gets saved in Index_t   '''
     global DAS_INFO, MAP_INFO
-    #tdoy = timedoy.TimeDOY ()
+    # tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
-        EXREC.ph5_g_receivers.current_g_das._v_name
+              EXREC.ph5_g_receivers.current_g_das._v_name
     ph5map = '/Experiment_g/Maps_g/' + EXREC.ph5_g_maps.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float(samples) / float(sps))
@@ -352,8 +364,10 @@ def update_index_t_info(starttime, samples, sps):
 
     DAS_INFO[das].append(di)
     MAP_INFO[das].append(dm)
-    logging.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
-        das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
+    logging.info(
+        "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
+            das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
+
 
 # @profile
 
@@ -380,28 +394,30 @@ def get_current_data_only(size_of_data, das=None):
             newestfile = newestfile.replace('.ph5', '')
             newestfile = newestfile.replace('./', '')
 
-    #print newest, newestfile
+    # print newest, newestfile
     if not newestfile:
         #   This is the first file added
         return openPH5('miniPH5_00001')
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    #print size_of_data, size_of_exrec, size_of_data + size_of_exrec, MAX_PH5_BYTES
+    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
+    # MAX_PH5_BYTES
     if (size_of_data + size_of_exrec) > MAX_PH5_BYTES:
         newestfile = "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
 
     return openPH5(newestfile)
 
+
 # def newMiniPH5 (f) :
-    #global EX, EXREC
+# global EX, EXREC
 
-    #size_of_data = os.path.getsize (f)
-    # try :
-    #EXREC.ph5close ()
-    # except :
-    # pass
+# size_of_data = os.path.getsize (f)
+# try :
+# EXREC.ph5close ()
+# except :
+# pass
 
-    #EXREC = get_current_data_only (size_of_data)
+# EXREC = get_current_data_only (size_of_data)
 
 
 def read_extended_headers(th):
@@ -448,7 +464,8 @@ def set_from_binary_header(bh):
 
 
 def update_external_references():
-    '''   Update external references in master.ph5 to miniPH5 files in Receivers_t    '''
+    '''   Update external references in master.ph5 to miniPH5 files in
+          Receivers_t    '''
     global EX
 
     sys.stderr.write("Updating external references...")
@@ -461,7 +478,7 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        ###print external_file, external_path, das, target, external_group
+        # print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
@@ -480,24 +497,24 @@ def update_external_references():
             # pass
             sys.stderr.write("{0}\n".format(e))
 
-        #sys.exit ()
+        # sys.exit ()
     sys.stderr.write("done, {0} das nodes recreated.\n".format(n))
     logging.info("done, {0} das nodes recreated.\n".format(n))
 
     n = 0
     for i in INDEX_T_MAP.rows:
         #   XXX
-        #keys = i.keys ()
-        #keys.sort ()
+        # keys = i.keys ()
+        # keys.sort ()
         # for k in keys :
-            #print k, i[k]
+        # print k, i[k]
 
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        ###print external_file, external_path, das, target, external_group
+        # print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
@@ -505,7 +522,7 @@ def update_external_references():
             group_node.remove()
         except Exception as e:
             pass
-            #print "MAP nuke ", e
+            # print "MAP nuke ", e
 
         #   Re-create node
         try:
@@ -516,7 +533,7 @@ def update_external_references():
             # pass
             sys.stderr.write("{0}\n".format(e))
 
-        #sys.exit ()
+        # sys.exit ()
     sys.stderr.write("done, {0} map nodes recreated.\n".format(n))
     logging.info("done, {0} map nodes recreated.\n".format(n))
 
@@ -530,10 +547,11 @@ def read_trace():
     if not th:
         return None, None, None
     eh = SR.read_extended_header()
-    #th.update (eh)
+    # th.update (eh)
     tr = SR.read_trace(SR.samples_per_trace, SR.bytes_per_sample)
     #   Trace header, extended trace header, trace
     return th, eh, tr
+
 
 #
 #   Input: th => Textural header
@@ -569,7 +587,8 @@ def process_trace(th, bh, rh, eh, tr):
         global EXREC
 
         #   Check to see if any data has been written
-        if EXREC.ph5_g_receivers.current_g_das is None or EXREC.ph5_g_receivers.current_t_das is None:
+        if EXREC.ph5_g_receivers.current_g_das is None or\
+                EXREC.ph5_g_receivers.current_t_das is None:
             return
 
         name = EXREC.ph5_g_receivers.nextarray('Log_a_')
@@ -584,7 +603,8 @@ def process_trace(th, bh, rh, eh, tr):
             name, data, description="SEG-Y textural header")
 
     def process_binary_header():
-        '''   Save reel header information in Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+        '''   Save reel header information in
+              Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
         log_array, log_name = getLOG()
         #   Standard header
         keys = sorted(bh.keys())
@@ -592,14 +612,15 @@ def process_trace(th, bh, rh, eh, tr):
         l0 = {}
         for k in keys:
             l0[k] = bh[k]
-            #l.append ("{0}\t{1}".format (k, rh[k]))
+            # l.append ("{0}\t{1}".format (k, rh[k]))
 
-        l = [{'FileType': 'SEG-Y', 'HeaderType': 'reel'}, l0]
+        ll = [{'FileType': 'SEG-Y', 'HeaderType': 'reel'}, l0]
 
-        log_array.append(json.dumps(l, sort_keys=True, indent=4).split('\n'))
+        log_array.append(json.dumps(ll, sort_keys=True, indent=4).split('\n'))
 
     def process_trace_header():
-        '''   Save trace header information in Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+        '''   Save trace header information in
+              Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
         log_array, log_name = getLOG()
         #   Standard header
         keys = sorted(rh.keys())
@@ -607,9 +628,9 @@ def process_trace(th, bh, rh, eh, tr):
         l0 = {}
         for k in keys:
             l0[k] = rh[k]
-            #l.append ("{0}\t{1}".format (k, rh[k]))
+            # l.append ("{0}\t{1}".format (k, rh[k]))
 
-        #log_array.append (l)
+        # log_array.append (l)
         #   Portion of header after byte 180
         keys = eh.keys()
         keys.sort()
@@ -617,12 +638,14 @@ def process_trace(th, bh, rh, eh, tr):
         l1 = {}
         for k in keys:
             l1[k] = eh[k]
-            #l.append ("{0}\t{1}".format (k, eh[k]))
+            # l.append ("{0}\t{1}".format (k, eh[k]))
 
         ht = TTYPE[SR.ext_hdr_type]
-        l = [{'FileType': 'SEG-Y', 'HeaderType': 'trace', 'HeaderSubType': ht}, l0, l1]
+        ll = [{'FileType': 'SEG-Y', 'HeaderType': 'trace',
+               'HeaderSubType': ht},
+              l0, l1]
 
-        log_array.append(json.dumps(l, sort_keys=True, indent=4).split('\n'))
+        log_array.append(json.dumps(ll, sort_keys=True, indent=4).split('\n'))
 
     def process_event():
         #   Process channel 1 (Z)
@@ -636,7 +659,7 @@ def process_trace(th, bh, rh, eh, tr):
         p_event_t = {}
 
         p_event_t['id_s'] = rh['event_number']
-        #tdoy = timedoy.TimeDOY ()
+        # tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -664,7 +687,8 @@ def process_trace(th, bh, rh, eh, tr):
         else:
             p_event_t['time/micro_seconds_i'] = 0
 
-        #p_event_t['time/epoch_l'] = tdoy.epoch (year, doy, hour, minute, seconds)
+        # p_event_t['time/epoch_l'] = tdoy.epoch (year, doy, hour, minute,\
+        #  seconds)
         tdoy = timedoy.TimeDOY(year=year,
                                month=None,
                                day=None,
@@ -675,7 +699,8 @@ def process_trace(th, bh, rh, eh, tr):
                                doy=doy,
                                epoch=None,
                                dtobject=None)
-        #tmp_epoch = tdoy.epoch (year, doy, hour, minute, seconds) + delay_time_secs
+        # tmp_epoch = tdoy.epoch (year, doy, hour, minute, seconds) +\
+        #  delay_time_secs
         tmp_epoch = tdoy.epoch() + delay_time_secs
         f, i = modf(tmp_epoch)
         p_event_t['time/epoch_l'] = int(i)
@@ -715,8 +740,8 @@ def process_trace(th, bh, rh, eh, tr):
         p_event_t['location/Y/value_d'] = rh['sourceLatOrY'] * coordScale
         p_event_t['location/Y/units_s'] = units
 
-        p_event_t['location/Z/value_d'] = rh['sourceSurfaceElevation'] * \
-            elevationScale
+        p_event_t['location/Z/value_d'] =\
+            rh['sourceSurfaceElevation'] * elevationScale
         p_event_t['location/Z/units_s'] = MFEET[bh['mfeet']]
 
         p_event_t['depth/value_d'] = rh['sourceDepth'] * elevationScale
@@ -754,7 +779,7 @@ def process_trace(th, bh, rh, eh, tr):
         p_array_t['location/Z/value_d'] = rh['datumElevRec'] * elevationScale
         p_array_t['location/Z/units_s'] = MFEET[bh['mfeet']]
 
-        #tdoy = timedoy.TimeDOY ()
+        # tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -795,7 +820,7 @@ def process_trace(th, bh, rh, eh, tr):
         p_array_t['deploy_time/type_s'] = 'BOTH'
         if p_array_t['deploy_time/epoch_l'] < FIRST_TIME:
             FIRST_TIME = p_array_t['deploy_time/epoch_l'] + \
-                (p_array_t['deploy_time/micro_seconds_i'] / 1000000.)
+                         (p_array_t['deploy_time/micro_seconds_i'] / 1000000.)
 
         seconds = int(modf(samples / sample_rate)
                       [1]) + p_array_t['deploy_time/epoch_l']
@@ -812,7 +837,7 @@ def process_trace(th, bh, rh, eh, tr):
         p_array_t['pickup_time/type_s'] = 'BOTH'
         if p_array_t['pickup_time/epoch_l'] > LAST_TIME:
             LAST_TIME = p_array_t['pickup_time/epoch_l'] + \
-                (p_array_t['pickup_time/micro_seconds_i'] / 1000000.)
+                        (p_array_t['pickup_time/micro_seconds_i'] / 1000000.)
 
         ffid = rh['event_number']
         if ffid not in ARRAY_T:
@@ -823,7 +848,7 @@ def process_trace(th, bh, rh, eh, tr):
     # @profile
     def process_das():
         '''   Save trace data   '''
-        #p_das_t = {}
+        # p_das_t = {}
         p_response_t = {}
         # Make Data_a and fill in Das_t
         ###
@@ -841,7 +866,8 @@ def process_trace(th, bh, rh, eh, tr):
             p_response_t['bit_weight/value_d'] = rh['traceWeightingFactor']
             p_response_t['bit_weight/units_s'] = 'Unknown'
             n_i = RESP.match(
-                p_response_t['bit_weight/value_d'], p_response_t['gain/value_i'])
+                p_response_t['bit_weight/value_d'],
+                p_response_t['gain/value_i'])
             if n_i < 0:
                 n_i = RESP.next_i()
                 p_response_t['n_i'] = n_i
@@ -849,21 +875,23 @@ def process_trace(th, bh, rh, eh, tr):
                 RESP.update()
         except Exception as e:
             sys.stderr.write(
-                "Warning: bit weight or gain improperly defined in SEG-Y file.\n{0}\n".format(e))
+                "Warning: bit weight or gain improperly defined in SEG-Y file.\
+                \n{0}\n".format(e))
             logging.warn(
-                "Warning: bit weight or gain improperly defined in SEG-Y file.\n")
+                "Warning: bit weight or gain improperly defined in SEG-Y file.\
+                \n")
 
         #   Check to see if group exists for this das, if not build it
         das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas(Das)
         #   Build maps group (XXX)
         EXREC.ph5_g_maps.newdas('Das_g_', Das)
-        ###   XXX   ####
+        #   XXX
         p_das_t['array_name_log_a'] = EXREC.ph5_g_receivers.nextarray('Log_a_')
-        ###log_array, log_name = getLOG ()
-        ###p_das_t['array_name_log_a'] = log_name
+        # log_array, log_name = getLOG ()
+        # p_das_t['array_name_log_a'] = log_name
         p_das_t['response_table_n_i'] = n_i
-        #fsd = rh['traceWeightingFactor']
-        #tdoy = timedoy.TimeDOY ()
+        # fsd = rh['traceWeightingFactor']
+        # tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -898,7 +926,7 @@ def process_trace(th, bh, rh, eh, tr):
         p_das_t['time/ascii_s'] = time.ctime(p_das_t['time/epoch_l'])
         p_das_t['time/type_s'] = 'BOTH'
 
-        #p_das_t['channel_number_i'] = rh['lineSeq']
+        # p_das_t['channel_number_i'] = rh['lineSeq']
         if rh['lineSeq'] == 0:
             rh['lineSeq'] = 1
 
@@ -916,14 +944,21 @@ def process_trace(th, bh, rh, eh, tr):
             'Data_a_')
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
-            " Channel: " + str(p_das_t['channel_number_i'])
+              " Channel: " + str(p_das_t['channel_number_i'])
         #   Write trace data here
         EXREC.ph5_g_receivers.newarray(
-            p_das_t['array_name_data_a'], tr, dtype=DTYPE[SR.trace_fmt], description=des)
+            p_das_t['array_name_data_a'], tr, dtype=DTYPE[SR.trace_fmt],
+            description=des)
         # if p_das_t['channel_number_i'] == 1 :
-        #update_index_t_info (p_das_t['time/epoch_l'] + (float (p_das_t['time/micro_seconds_i']) / 1000000.), p_das_t['sample_count_i'], p_das_t['sample_rate_i'] / p_das_t['sample_rate_multiplier_i'])
-        update_index_t_info(p_das_t['time/epoch_l'] + (float(p_das_t['time/micro_seconds_i']) / 1000000.),
-                            p_das_t['sample_count_i'], p_das_t['sample_rate_i'] / p_das_t['sample_rate_multiplier_i'])
+        # update_index_t_info (p_das_t['time/epoch_l'] +\
+        #  (float (p_das_t['time/micro_seconds_i']) / 1000000.),\
+        #  p_das_t['sample_count_i'], p_das_t['sample_rate_i'] /\
+        #  p_das_t['sample_rate_multiplier_i'])
+        update_index_t_info(p_das_t['time/epoch_l'] + (
+                    float(p_das_t['time/micro_seconds_i']) / 1000000.),
+                            p_das_t['sample_count_i'],
+                            p_das_t['sample_rate_i'] / p_das_t[
+                                'sample_rate_multiplier_i'])
 
     p_das_t = {}
     process_das()
@@ -989,36 +1024,38 @@ def write_events(Event_t):
         for event_t in Event_t[k]:
             columns.populate(a, event_t)
 
+
 # def write_textural_binary_hdrs (th, bh) :
-    # for t in th :
-        #keys = t.keys ()
-        #keys.sort ()
-        #buf = ''
-        # for k in keys :
-            #buf += "{0:<25}{1:<72}\n".format (k, t[k])
-        #buf += "=-" * 40; buf += '\n'
+# for t in th :
+# keys = t.keys ()
+# keys.sort ()
+# buf = ''
+# for k in keys :
+# buf += "{0:<25}{1:<72}\n".format (k, t[k])
+# buf += "=-" * 40; buf += '\n'
 
-    #keys = bh.keys ()
-    #keys.sort ()
-    # for k in keys :
-        #buf += "{0:<25}{1:<72}\n".format (k, bh[k])
-    #buf += "=-" * 40 + '\n'
+# keys = bh.keys ()
+# keys.sort ()
+# for k in keys :
+# buf += "{0:<25}{1:<72}\n".format (k, bh[k])
+# buf += "=-" * 40 + '\n'
 
-    #aname = EX.ph5_g_reports.nextName ()
-    #EX.ph5_g_reports.newarray (aname, buf)
+# aname = EX.ph5_g_reports.nextName ()
+# EX.ph5_g_reports.newarray (aname, buf)
 
-    #p_report_t = {}
-    #p_report_t['array_name_a'] = aname
-    #p_report_t['title_s'] = "Textural and Binary Header Values"
-    #p_report_t['format_s'] = 'TXT'
-    #p_report_t['description_s'] = SR.infile
+# p_report_t = {}
+# p_report_t['array_name_a'] = aname
+# p_report_t['title_s'] = "Textural and Binary Header Values"
+# p_report_t['format_s'] = 'TXT'
+# p_report_t['description_s'] = SR.infile
 
-    #EX.ph5_g_reports.populate (p_report_t)
+# EX.ph5_g_reports.populate (p_report_t)
 
 
 def main():
     def prof():
-        global INDEX_T_DAS, INDEX_T_MAP, RESP, EXREC, MINIPH5, ARRAY_T, EVENT_T, FIRST_TIME, LAST_TIME, Das
+        global INDEX_T_DAS, INDEX_T_MAP, RESP, EXREC, MINIPH5, ARRAY_T,\
+            EVENT_T, FIRST_TIME, LAST_TIME, Das
         FIRST_TIME = sys.maxsize
         LAST_TIME = 0
 
@@ -1038,7 +1075,7 @@ def main():
         INDEX_T_MAP = Rows_Keys(rows, keys)
         #   Read text header
         th = SR.read_text_header()
-        if PRINT == True:
+        if PRINT is True:
             print_header(th)
         #   Read binary header
         bh = SR.read_binary_header()
@@ -1048,7 +1085,7 @@ def main():
             print_header(bh)
         #   Read extended headers (+ textural header) into list of dictionaries
         th = read_extended_headers(th)
-        if PRINT == True and len(th) > 1:
+        if PRINT is True and len(th) > 1:
             for h in th[1:]:
                 print_header(h)
 
@@ -1059,7 +1096,7 @@ def main():
             rh, eh, tr = read_trace()
             if not rh:
                 break
-            if PRINT == True:
+            if PRINT is True:
                 print_header(rh)
                 print_header(eh)
                 i = 0
@@ -1085,11 +1122,11 @@ def main():
             if DAS_INFO:
                 writeINDEX()
             #   Does this speed things up?
-            #reopenPH5s ()
+            # reopenPH5s ()
             # if ctr >= 600 :
-                # break
-                #reopenPH5s ()
-                #ctr = 0
+            # break
+            # reopenPH5s ()
+            # ctr = 0
 
         #   Do this if its in receiver order
         askip, tmp_array_t = clean_array(
@@ -1103,31 +1140,31 @@ def main():
             keys = tmp_array_t.keys()
             if len(keys) == 1:
                 tmp_array_t[keys[0]][0]['deploy_time/epoch_l'] = FIRST_TIME
-                tmp_array_t[keys[0]
-                            ][0]['deploy_time/ascii_s'] = time.ctime(FIRST_TIME)
+                tmp_array_t[keys[0]][0]['deploy_time/ascii_s'] =\
+                    time.ctime(FIRST_TIME)
                 tmp_array_t[keys[0]][0]['deploy_time/type_s'] = 'BOTH'
 
                 tmp_array_t[keys[0]][0]['pickup_time/epoch_l'] = LAST_TIME
-                tmp_array_t[keys[0]
-                            ][0]['pickup_time/ascii_s'] = time.ctime(LAST_TIME)
+                tmp_array_t[keys[0]][0]['pickup_time/ascii_s'] =\
+                    time.ctime(LAST_TIME)
                 tmp_array_t[keys[0]][0]['pickup_time/type_s'] = 'BOTH'
 
             write_arrays(tmp_array_t)
             write_events(EVENT_T)
         else:
-            #write_arrays (ARRAY_T)
+            # write_arrays (ARRAY_T)
             write_arrays(tmp_array_t)
-            #write_events (tmp_event_t)
+            # write_events (tmp_event_t)
             write_events(EVENT_T)
 
-        #write_textural_binary_hdrs (th, bh)
+        # write_textural_binary_hdrs (th, bh)
 
         update_external_references()
 
         try:
             EX.ph5close()
             EXREC.ph5close()
-        except Exception as e:
+        except Exception:
             pass
 
         print "Done..."

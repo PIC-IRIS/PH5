@@ -8,10 +8,6 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
-PROG_VERSION = "2018.039 Developmental"
-
-MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
-
 import os
 import sys
 import logging
@@ -21,6 +17,10 @@ import re
 from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
+
+PROG_VERSION = "2018.039 Developmental"
+
+MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
 os.environ['TZ'] = 'GMT'
 time.tzset()
@@ -35,10 +35,10 @@ F = None
 miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 # LSB = 6.402437066e-6   #   From Malcolm UCSD
-LSB00 = 2500. / (2**23)  # 0dB
-LSB12 = 625. / (2**23)  # 12dB
-LSB24 = 156. / (2**23)  # 24dB
-LSB36 = 39. / (2**23)  # 36dB = 39mV full scale
+LSB00 = 2500. / (2 ** 23)  # 0dB
+LSB12 = 625. / (2 ** 23)  # 12dB
+LSB24 = 156. / (2 ** 23)  # 24dB
+LSB36 = 39. / (2 ** 23)  # 36dB = 39mV full scale
 LSB = LSB36
 
 LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
@@ -46,12 +46,14 @@ LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
 #   Manufacturers codes
 FAIRFIELD = 20
 OTHER = 0
+
+
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -65,7 +67,7 @@ class Rows_Keys (object):
             self.keys = keys
 
 
-class Index_t_Info (object):
+class Index_t_Info(object):
     __slots__ = ('das', 'ph5file', 'ph5path', 'startepoch', 'stopepoch')
 
     def __init__(self, das, ph5file, ph5path, startepoch, stopepoch):
@@ -76,7 +78,7 @@ class Index_t_Info (object):
         self.stopepoch = stopepoch
 
 
-class Resp (object):
+class Resp(object):
     __slots__ = ('lines', 'keys', 't')
 
     def __init__(self, t):
@@ -87,7 +89,7 @@ class Resp (object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        #print self.lines
+        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -98,7 +100,7 @@ class Resp (object):
         return len(self.lines)
 
 
-class Trace (object):
+class Trace(object):
     __slots__ = ("trace", "headers")
 
     def __init__(self, trace, headers):
@@ -111,7 +113,7 @@ def read_infile(infile):
     global FILES
 
     def fn_sort(a, b):
-        #print os.path.basename (a), os.path.basename (b)
+        # print os.path.basename (a), os.path.basename (b)
         return cmp(os.path.basename(a), os.path.basename(b))
 
     try:
@@ -135,7 +137,8 @@ def read_infile(infile):
 
 
 def get_args():
-    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND, MANUFACTURERS_CODE
+    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND,\
+        MANUFACTURERS_CODE
 
     TSPF = False
 
@@ -149,7 +152,8 @@ def get_args():
                        help="Fairfield SEG-D v1.6 file.", metavar="raw_file")
 
     oparser.add_option("-f", action="store", dest="infile", type="string",
-                       help="File containing list of Fairfield SEG-D v1.6 file names.")
+                       help="File containing list of Fairfield SEG-D\
+                        v1.6 file names.")
 
     oparser.add_option("-n", "--nickname", dest="outfile",
                        help="The ph5 file prefix (experiment nick name).",
@@ -165,7 +169,7 @@ def get_args():
                        action='store_true', default=False)
 
     oparser.add_option("-M", "--num_mini", dest="num_mini",
-                       help="Create a given number of miniPH5_xxxxx.ph5 files.",
+                       help="Create a given number of miniPH5 files.",
                        metavar="num_mini", type='int', default=None)
 
     oparser.add_option("-S", "--first_mini", dest="first_mini",
@@ -173,14 +177,18 @@ def get_args():
                        metavar="first_mini", type='int', default=1)
 
     oparser.add_option("-c", "--combine", dest="combine",
-                       help="Combine this number if SEG-D traces to one PH5 trace.",
+                       help="Combine this number if SEG-D traces to one\
+                        PH5 trace.",
                        metavar="combine", type='int', default=APPEND)
 
-    oparser.add_option("-E", "--allevents", action="store_true", dest="all_events",
+    oparser.add_option("-E", "--allevents", action="store_true",
+                       dest="all_events",
                        default=False, metavar="all_events")
 
     oparser.add_option("--manufacturers_code", dest="manufacturers_code",
-                       help="Manufacturers code. Defaults to 20 for Fairfield. Most likely will not work for SEG-D written by other data loggers,",
+                       help="Manufacturers code. Defaults to 20 for Fairfield.\
+                        Most likely will not work for SEG-D written by other\
+                         data loggers,",
                        type='int', default=FAIRFIELD)
 
     options, args = oparser.parse_args()
@@ -218,9 +226,10 @@ def get_args():
         format="%(asctime)s %(message)s",
         level=logging.INFO
     )
-    #   Need to process in order: R309_674.1.0.rg16, 309 == line, 674 = receiver point, 1 = first file
+    #   Need to process in order: R309_674.1.0.rg16, 309 == line,
+    #   674 = receiver point, 1 = first file
     #   Sorted where the file list is read...
-    #FILES.sort ()
+    # FILES.sort ()
 
 
 def initializeExperiment():
@@ -242,7 +251,7 @@ def openPH5(filename):
                 return EXREC
     except BaseException:
         pass
-    #sys.stderr.write ("***   Opening: {0} ".format (filename))
+    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -255,7 +264,7 @@ def update_index_t_info(starttime, samples, sps):
 
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
-        EXREC.ph5_g_receivers.current_g_das._v_name
+              EXREC.ph5_g_receivers.current_g_das._v_name
     ph5map = '/Experiment_g/Maps_g/' + EXREC.ph5_g_maps.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float(samples) / float(sps))
@@ -267,14 +276,17 @@ def update_index_t_info(starttime, samples, sps):
 
     DAS_INFO[das].append(di)
     MAP_INFO[das].append(dm)
-    logging.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
-        das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
+    logging.info(
+        "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
+            das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
 
 def update_external_references():
-    '''   Update external references in master.ph5 to miniPH5 files in Receivers_t    '''
+    '''   Update external references in master.ph5 to
+          miniPH5 files in Receivers_t    '''
     global F
-    #sys.stderr.write ("Updating external references...\n"); sys.stderr.flush ()
+    # sys.stderr.write ("Updating external references...\n");
+    #  sys.stderr.flush ()
     logging.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
@@ -283,7 +295,7 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        ###print external_file, external_path, das, target, external_group
+        # print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
@@ -291,7 +303,7 @@ def update_external_references():
             group_node.remove()
         except Exception as e:
             pass
-            #print "DAS nuke ", e.message
+            # print "DAS nuke ", e.message
 
         #   Re-create node
         try:
@@ -302,25 +314,25 @@ def update_external_references():
             # pass
             sys.stderr.write("{0}\n".format(e.message))
 
-        #sys.exit ()
-    #sys.stderr.write ("done, {0} das nodes recreated.\n".format (n))
+        # sys.exit ()
+    # sys.stderr.write ("done, {0} das nodes recreated.\n".format (n))
 
     logging.info("done, {0} das nodes recreated.\n".format(n))
 
     n = 0
     for i in INDEX_T_MAP.rows:
         #   XXX
-        #keys = i.keys ()
-        #keys.sort ()
+        # keys = i.keys ()
+        # keys.sort ()
         # for k in keys :
-            #print k, i[k]
+        # print k, i[k]
 
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        ###print external_file, external_path, das, target, external_group
+        # print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
@@ -328,7 +340,7 @@ def update_external_references():
             group_node.remove()
         except Exception as e:
             pass
-            #print "MAP nuke ", e.message
+            # print "MAP nuke ", e.message
 
         #   Re-create node
         try:
@@ -339,52 +351,55 @@ def update_external_references():
             # pass
             sys.stderr.write("{0}\n".format(e.message))
 
-        #sys.exit ()
-    #sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
+        # sys.exit ()
+    # sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
     logging.info("done, {0} map nodes recreated.\n".format(n))
+
 
 # @profile
 # def get_current_data_only (size_of_data, das = None) :
-    # '''   Return opened file handle for data only PH5 file that will be
-    # less than MAX_PH5_BYTES after raw data is added to it.
-    # '''
+# '''   Return opened file handle for data only PH5 file that will be
+# less than MAX_PH5_BYTES after raw data is added to it.
+# '''
 
-    #newest = 0
-    #newestfile = ''
-    # Get the most recent data only PH5 file or match DAS serialnumber
-    # for index_t in INDEX_T_DAS.rows :
-    # This DAS already exists in a ph5 file
-    # if index_t['serial_number_s'] == str (das) :
-    #newestfile = index_t['external_file_name_s']
-    #newestfile = newestfile.replace ('.ph5', '')
-    #newestfile = newestfile.replace ('./', '')
-    # return openPH5 (newestfile)
-    # Find most recent ph5 file
-    # if index_t['time_stamp/epoch_l'] > newest :
-    #newest = index_t['time_stamp/epoch_l']
-    #newestfile = index_t['external_file_name_s']
-    #newestfile = newestfile.replace ('.ph5', '')
-    #newestfile = newestfile.replace ('./', '')
+# newest = 0
+# newestfile = ''
+# Get the most recent data only PH5 file or match DAS serialnumber
+# for index_t in INDEX_T_DAS.rows :
+# This DAS already exists in a ph5 file
+# if index_t['serial_number_s'] == str (das) :
+# newestfile = index_t['external_file_name_s']
+# newestfile = newestfile.replace ('.ph5', '')
+# newestfile = newestfile.replace ('./', '')
+# return openPH5 (newestfile)
+# Find most recent ph5 file
+# if index_t['time_stamp/epoch_l'] > newest :
+# newest = index_t['time_stamp/epoch_l']
+# newestfile = index_t['external_file_name_s']
+# newestfile = newestfile.replace ('.ph5', '')
+# newestfile = newestfile.replace ('./', '')
 
-    ##print newest, newestfile
-    # if not newestfile :
-    # This is the first file added
-    # return openPH5 ('miniPH5_00001')
+# print newest, newestfile
+# if not newestfile :
+# This is the first file added
+# return openPH5 ('miniPH5_00001')
 
-    #size_of_exrec = os.path.getsize (newestfile + '.ph5')
-    ##print size_of_data, size_of_exrec, size_of_data + size_of_exrec, MAX_PH5_BYTES
-    # if (size_of_data + size_of_exrec) > MAX_PH5_BYTES :
-    #newestfile = "miniPH5_{0:05d}".format (int (newestfile[8:13]) + 1)
+# size_of_exrec = os.path.getsize (newestfile + '.ph5')
+# print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
+# MAX_PH5_BYTES
+# if (size_of_data + size_of_exrec) > MAX_PH5_BYTES :
+# newestfile = "miniPH5_{0:05d}".format (int (newestfile[8:13]) + 1)
 
-    # return openPH5 (newestfile)
+# return openPH5 (newestfile)
 
 
 def get_current_data_only(size_of_data, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
-    #global NM
-    #global INDEX_T, CURRENT_DAS
+
+    # global NM
+    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -421,7 +436,8 @@ def get_current_data_only(size_of_data, das=None):
         return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    #print size_of_data, size_of_exrec, size_of_data + size_of_exrec, MAX_PH5_BYTES
+    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
+    # MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
@@ -440,7 +456,7 @@ def getLOG():
     '''   Create a open a new and unique header file under Maps_g/Das_g_
                                                                  /Sta_g_
                                                                  /Evt_g_
-                                                                         /Hdr_a_
+                                                                        /Hdr_a_
     '''
     current_das = EXREC.ph5_g_receivers.get_das_name()
     g = EXREC.ph5_g_maps.newdas('Das_g_', current_das)
@@ -463,15 +479,21 @@ def process_traces(rh, th, tr):
            th -> first trace header
            tr -> trace data
     '''
+
     def get_true_channel():
         #   Find channel by mapping to streamer_cable_number
         try:
-            true_channel = rh.channel_set_to_streamer_cable_map[th.trace_header.channel_set]
+            true_channel = rh.channel_set_to_streamer_cable_map[
+                th.trace_header.channel_set]
         except Exception as e:
             logging.warn(
-                "There may be a problem with reel header channel_set_to_streamer_cable_map.\nUsing channel set read from the trace header.\n{0}\n".format(e.message))
+                "There may be a problem with reel header\
+                 channel_set_to_streamer_cable_map.\nUsing channel set read\
+                  from the trace header.\n{0}\n".format(
+                    e.message))
             true_channel = th.trace_header.channel_set
-        #print rh.channel_set_to_streamer_cable_map, th.trace_header.channel_set, true_channel
+        # print rh.channel_set_to_streamer_cable_map,\
+        # th.trace_header.channel_set, true_channel
         return true_channel
 
     def process_das():
@@ -516,13 +538,15 @@ def process_traces(rh, th, tr):
             p_das_t['receiver_table_n_i'] = M[get_true_channel()]
         else:
             p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
-            logging.warn("Header channel set: {0}. Check Receiver_t entries!".format(
-                th.trace_header.channel_set))
+            logging.warn(
+                "Header channel set: {0}. Check Receiver_t entries!".format(
+                    th.trace_header.channel_set))
 
         p_das_t['response_table_n_i'] = None
         p_das_t['time_table_n_i'] = 0
         p_das_t['time/type_s'] = 'BOTH'
-        #trace_epoch = th.trace_header_N[2].gps_tim1 * 4294967296 + th.trace_header_N[2].gps_tim2
+        # trace_epoch = th.trace_header_N[2].gps_tim1 * 4294967296 +\
+        #  th.trace_header_N[2].gps_tim2
         try:
             trace_epoch = th.trace_header_N[2].shot_epoch
         except Exception as e:
@@ -542,9 +566,9 @@ def process_traces(rh, th, tr):
         p_das_t['raw_file_name_s'] = os.path.basename(SD.name())
         p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
             'Data_a_')
-        #p_das_t['array_name_SOH_a'] = None
-        #p_das_t['array_name_event_a'] = None
-        #p_das_t['array_name_log_a'] = None
+        # p_das_t['array_name_SOH_a'] = None
+        # p_das_t['array_name_event_a'] = None
+        # p_das_t['array_name_log_a'] = None
         p_response_t = {}
         '''
             n_i
@@ -580,29 +604,36 @@ def process_traces(rh, th, tr):
         p_das_t['response_table_n_i'] = n_i
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
-            " Channel: " + str(p_das_t['channel_number_i'])
+              " Channel: " + str(p_das_t['channel_number_i'])
         #   Write trace data here
         try:
             #   Convert to counts
-            #print tr.max (), tr.min ()
+            # print tr.max (), tr.min ()
             tr_counts = tr / LSB
             EXREC.ph5_g_receivers.newarray(
-                p_das_t['array_name_data_a'], tr_counts, dtype='int32', description=des)
+                p_das_t['array_name_data_a'], tr_counts, dtype='int32',
+                description=des)
         except Exception as e:
             #   Failed, leave as float
-            #for x in tr : print x/LSB
-            #print e.message
-            sys.stderr.write("Warning: Could not convert trace to counts. max: {1}, min {2}\n{0}".format(
-                e.message, tr.max(), tr.min()))
+            # for x in tr : print x/LSB
+            # print e.message
+            sys.stderr.write(
+                "Warning: Could not convert trace to counts. max: {1},\
+                 min {2}\n{0}".format(
+                    e.message, tr.max(), tr.min()))
             p_response_t['bit_weight/value_d'] = 1.
             EXREC.ph5_g_receivers.newarray(
-                p_das_t['array_name_data_a'], tr, dtype='float32', description=des)
+                p_das_t['array_name_data_a'], tr, dtype='float32',
+                description=des)
         #
-        update_index_t_info(p_das_t['time/epoch_l'] + (float(p_das_t['time/micro_seconds_i']) / 1000000.),
-                            p_das_t['sample_count_i'], p_das_t['sample_rate_i'] / p_das_t['sample_rate_multiplier_i'])
+        update_index_t_info(p_das_t['time/epoch_l'] + (
+                    float(p_das_t['time/micro_seconds_i']) / 1000000.),
+                            p_das_t['sample_count_i'],
+                            p_das_t['sample_rate_i'] / p_das_t[
+                                'sample_rate_multiplier_i'])
 
     def process_array():
-        #global DN
+        # global DN
         p_array_t = {}
 
         def seen_sta():
@@ -611,7 +642,7 @@ def process_traces(rh, th, tr):
             elif Das not in ARRAY_T[line]:
                 return False
             elif chan_set in ARRAY_T[line][Das]:
-                chans = ARRAY_T[line][Das].keys()  # All channels seen
+                # chans = ARRAY_T[line][Das].keys()  # All channels seen
                 if not ARRAY_T[line][Das][chan_set]:
                     return False
                 else:
@@ -689,7 +720,7 @@ def process_traces(rh, th, tr):
            chan 1 -> Z
         '''
         if SD.chan_sets_per_scan >= 3:
-            #true_chan = get_true_channel ()
+            # true_chan = get_true_channel ()
             OM = {1: '1', 2: '2', 3: 'Z'}
         elif SD.chan_sets_per_scan == 1:
             OM = {1: 'Z'}
@@ -711,7 +742,8 @@ def process_traces(rh, th, tr):
             f, i = modf(rh.extended_header_1.epoch_deploy / 1000000.)
         except Exception as e:
             logging.warn(
-                "Failed to read extended header 1 deploy epoch: {0}.".format(e.message))
+                "Failed to read extended header 1 deploy epoch: {0}.".format(
+                    e.message))
             f = i = 0.
         p_array_t['deploy_time/epoch_l'] = int(i)
         p_array_t['deploy_time/ascii_s'] = time.ctime(int(i))
@@ -721,7 +753,8 @@ def process_traces(rh, th, tr):
             f, i = modf(rh.extended_header_1.epoch_pickup / 1000000.)
         except Exception as e:
             logging.warn(
-                "Failed to read extended header 1 pickup epoch: {0}.".format(e.message))
+                "Failed to read extended header 1 pickup epoch: {0}.".format(
+                    e.message))
             f = i = 0.
         p_array_t['pickup_time/epoch_l'] = int(i)
         p_array_t['pickup_time/ascii_s'] = time.ctime(int(i))
@@ -739,14 +772,20 @@ def process_traces(rh, th, tr):
                 "Failed to read channel sets per scan: {0}.".format(e.message))
             p_array_t['das/model_s'] = 'zland-[13]C'
         p_array_t['das/serial_number_s'] = Das
-        p_array_t['das/notes_s'] = "manufacturer and model not read from data file."
+        p_array_t[
+            'das/notes_s'] = "manufacturer and model not read from data file."
         p_array_t['sensor/manufacturer_s'] = 'Geo Space'
         p_array_t['sensor/model_s'] = 'GS-30CT'
-        p_array_t['sensor/notes_s'] = "manufacturer and model not read from data file."
+        p_array_t[
+            'sensor/notes_s'] = "manufacturer and model not read from file."
         if TSPF:
-            p_array_t['location/description_s'] = "Converted from Texas State Plane FIPS zone 4202"
+            p_array_t[
+                'location/description_s'] = "Converted from Texas State Plane\
+                 FIPS zone 4202"
         elif UTM:
-            p_array_t['location/description_s'] = "Converted from UTM Zone {0}".format(
+            p_array_t[
+                'location/description_s'] = "Converted from UTM Zone {0}"\
+                .format(
                 UTM)
         else:
             p_array_t['location/description_s'] = "Read from SEG-D as is."
@@ -759,20 +798,22 @@ def process_traces(rh, th, tr):
         p_array_t['location/Y/value_d'] = LAT
         p_array_t['location/Z/units_s'] = 'unknown'
         try:
-            p_array_t['location/Z/value_d'] = th.trace_header_N[4].receiver_point_depth_final / 10.
+            p_array_t['location/Z/value_d'] =\
+                th.trace_header_N[4].receiver_point_depth_final / 10.
         except Exception as e:
             logging.warn(
                 "Failed to read receiver point depth: {0}.".format(e.message))
             p_array_t['location/Z/value_d'] = 0.
 
         p_array_t['channel_number_i'] = get_true_channel()
-        #p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
+        # p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
         try:
             p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
                 Das, rh.extended_header_1.id_number)
         except Exception as e:
             logging.warn(
-                "Failed to read extended header 1 ID number: {0}.".format(e.message))
+                "Failed to read extended header 1 ID number: {0}.".format(
+                    e.message))
 
         try:
             line = th.trace_header_N[4].line_number
@@ -790,16 +831,19 @@ def process_traces(rh, th, tr):
 
         if not seen_sta():
             ARRAY_T[line][Das][chan_set].append(p_array_t)
-            # if rh.general_header_block_1.chan_sets_per_scan == len (ARRAY_T[line].keys ()) :
-            #DN = True
+            # if rh.general_header_block_1.chan_sets_per_scan ==\
+            #  len (ARRAY_T[line].keys ()) :
+            # DN = True
 
     def process_reel_headers():
         global RH
-        '''   Save receiver record header information in Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+        '''   Save receiver record header information in\
+              Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+
         def process(hdr, header_type):
-            l = [{'FileType': 'SEG-D', 'HeaderType': header_type}, hdr]
+            ll = [{'FileType': 'SEG-D', 'HeaderType': header_type}, hdr]
             log_array.append(json.dumps(
-                l, sort_keys=True, indent=4).split('\n'))
+                ll, sort_keys=True, indent=4).split('\n'))
 
         log_array, log_name = getLOG()
         #   General header 1
@@ -833,15 +877,17 @@ def process_traces(rh, th, tr):
         RH = True
 
     def process_trace_header():
-        '''   Save trace header information in Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+        '''   Save trace header information in\
+              Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+
         def process(hdr, header_type):
             global TRACE_JSON
-            l = [{'FileType': 'SEG-D', 'HeaderType': 'trace',
+            ll = [{'FileType': 'SEG-D', 'HeaderType': 'trace',
                   'HeaderSubType': header_type}, hdr]
             TRACE_JSON.append(json.dumps(
-                l, sort_keys=True, indent=4).split('\n'))
+                ll, sort_keys=True, indent=4).split('\n'))
 
-        #log_array, log_name = getLOG ()
+        # log_array, log_name = getLOG ()
 
         process(th.trace_header, "Trace Header")
         for i in range(len(th.trace_header_N)):
@@ -851,28 +897,29 @@ def process_traces(rh, th, tr):
     #
     #
     #
-    #print "\tprocess das"
+    # print "\tprocess das"
     # for cs in range (rh.chan_sets_per_scan) :
     process_das()
     # if not DN :
-    #print "\tprocess array"
+    # print "\tprocess array"
     process_array()
-    #print "\tprocess headers"
+    # print "\tprocess headers"
     if not RH:
         process_reel_headers()
-    #print "\tprocess trace header"
+    # print "\tprocess trace header"
     process_trace_header()
 
 
 def write_arrays(Array_t):
     '''   Write /Experiment_g/Sorts_g/Array_t_xxx   '''
+
     def station_cmp(x, y):
         return cmp(x['id_s'], y['id_s'])
 
     lines = sorted(Array_t.keys())
     #   Loop through arrays/lines
     for line in lines:
-        #name = EX.ph5_g_sorts.nextName ()
+        # name = EX.ph5_g_sorts.nextName ()
         name = "Array_t_{0:03d}".format(int(line))
         a = EX.ph5_g_sorts.newArraySort(name)
         stations = sorted(Array_t[line].keys())
@@ -987,7 +1034,7 @@ def utmcsptolatlon(northing, easting):
 
 
 def correct_append_number():
-    #from math import modf
+    # from math import modf
     traces = SD.reel_headers.extended_header_2['number_records']
     x = traces % APPEND
     APPEND - x
@@ -999,7 +1046,8 @@ def main():
     from numpy import append as npappend
 
     def prof():
-        global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE, ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
+        global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
+            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
 
         MINIPH5 = None
         ARRAY_T = {}
@@ -1007,19 +1055,22 @@ def main():
         def get_das(sd):
             #   Return line_station or das#[-9:]
             try:
-                das = "{0}X{1}".format(sd.reel_headers.extended_header_3.line_number,
-                                       sd.reel_headers.extended_header_3.receiver_point)
-            except Exception as e:
+                das = "{0}X{1}".format(
+                    sd.reel_headers.extended_header_3.line_number,
+                    sd.reel_headers.extended_header_3.receiver_point)
+            except Exception:
                 try:
-                    das = "{0}X{1}".format(sd.reel_headers.external_header.receiver_line,
-                                           sd.reel_headers.external_header.receiver_point)
-                except Exception as e:
+                    das = "{0}X{1}".format(
+                        sd.reel_headers.external_header.receiver_line,
+                        sd.reel_headers.external_header.receiver_point)
+                except Exception:
                     das = "sn" + \
-                        str(sd.reel_headers.general_header_block_1.manufactures_sn)
+                          str(sd.reel_headers.general_header_block_1.
+                              manufactures_sn)
                     if das == 0:
                         das = "id" + \
-                            str(sd.reel_headers.extended_header_1.id_number)[
-                                -9:]
+                              str(sd.reel_headers
+                                  .extended_header_1.id_number)[-9:]
 
             return das
 
@@ -1029,10 +1080,11 @@ def main():
             id = None  # Node ID
             nc = None  # Number of channel sets
             try:
-                nc = sd.reel_headers.general_header_block_1['chan_sets_per_scan']
+                nc = sd.reel_headers.general_header_block_1[
+                    'chan_sets_per_scan']
                 pn = sd.reel_headers.extended_header_1['part_number']
                 id = sd.reel_headers.extended_header_1['id_number']
-            except Exception as e:
+            except Exception:
                 pass
 
             return pn, id, nc
@@ -1063,64 +1115,69 @@ def main():
             try:
                 SIZE = os.path.getsize(f)
             except Exception as e:
-                sys.stderr.write(
-                    "Error: failed to read {0}, {1}. Skipping...\n".format(f, str(e.message)))
-                logging.error(
-                    "Error: failed to read {0}, {1}. Skipping...\n".format(f, str(e.message)))
+                sys.stderr.write("Error: failed to read {0}, {1}.\
+                 Skipping...\n".format(f, str(e.message)))
+                logging.error("Error: failed to read {0}, {1}.\
+                 Skipping...\n".format(f, str(e.message)))
                 continue
 
             SD = segdreader.Reader(infile=f)
             LAT = None
             LON = None
-            #DN = False;
+            # DN = False;
             RH = False
-            #print "isSEGD"
+            # print "isSEGD"
             if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
                 sys.stdout.write(":<Error>: {0}\n".format(SD.name()))
                 sys.stdout.flush()
                 logging.info(
-                    "{0} is not a Fairfield SEG-D file. Skipping.".format(SD.name()))
+                    "{0} is not a Fairfield SEG-D file. Skipping.".format(
+                        SD.name()))
                 continue
 
             try:
-                #print "general headers"
+                # print "general headers"
                 SD.process_general_headers()
-                #print "channel sets"
+                # print "channel sets"
                 SD.process_channel_set_descriptors()
-                #print "extended headers"
+                # print "extended headers"
                 SD.process_extended_headers()
-                #print "external headers"
+                # print "external headers"
                 SD.process_external_headers()
             except segdreader.InputsError as e:
                 sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
                 sys.stdout.flush()
                 logging.info(
-                    "Error: Possible bad SEG-D file -- {0}".format("".join(e.message)))
+                    "Error: Possible bad SEG-D file -- {0}".format(
+                        "".join(e.message)))
                 continue
 
-            #Das = (SD.reel_headers.extended_header_3.line_number * 1000) + SD.reel_headers.extended_header_3.receiver_point
-            #APPEND = correct_append_number ()
+            # Das = (SD.reel_headers.extended_header_3.line_number * 1000) +\
+            #  SD.reel_headers.extended_header_3.receiver_point
+            # APPEND = correct_append_number ()
             nleft = APPEND
             Das = get_das(SD)
             part_number, node_id, number_of_channels = get_node(SD)
             #
             EXREC = get_current_data_only(SIZE, Das)
-            #sys.stderr.write ("Processing: {0}... Size: {1}\n".format (SD.name (), SIZE))
+            # sys.stderr.write ("Processing: {0}... Size: {1}\n".format\
+            #  (SD.name (), SIZE))
             sys.stdout.write(":<Processing>: {0}\n".format(SD.name()))
             sys.stdout.flush()
             logging.info(
                 "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
             if EXREC.filename != MINIPH5:
-                #sys.stderr.write ("Opened: {0}...\n".format (EXREC.filename))
+                # sys.stderr.write ("Opened: {0}...\n".format (EXREC.filename))
                 logging.info("Opened: {0}...\n".format(EXREC.filename))
-                logging.info("DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
-                    Das, node_id, part_number, number_of_channels))
+                logging.info(
+                    "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
+                        Das, node_id, part_number, number_of_channels))
                 MINIPH5 = EXREC.filename
 
             n = 0
             trace_headers_list = []
-            lat = None
-            lon = None
+            # lat = None
+            # lon = None
             while True:
                 #
                 if SD.isEOF():
@@ -1143,7 +1200,8 @@ def main():
 
                         traces = new_traces
                         process_traces(SD.reel_headers, thl[0], t)
-                        #process_traces (SD.reel_headers, trace_headers_list[0], trace)
+                        # process_traces (SD.reel_headers,\
+                        # trace_headers_list[0], trace)
                         if DAS_INFO:
                             writeINDEX()
                     break
@@ -1151,29 +1209,40 @@ def main():
                 try:
                     trace, cs = SD.process_trace()
                 except segdreader.InputsError as e:
-                    #sys.stderr.write ("Error 2: Possible bad SEG-D file -- {0}".format ("".join (e)))
+                    # sys.stderr.write ("Error 2: Possible bad SEG-D file \
+                    # -- {0}".format ("".join (e)))
                     sys.stdout.write(":<Error:> {0}\n".format(F))
                     sys.stdout.flush()
                     logging.info(
-                        "Error: Possible bad SEG-D file -- {0}".format("".join(e.message)))
+                        "Error: Possible bad SEG-D file -- {0}".format(
+                            "".join(e.message)))
                     break
 
                 if not LAT and not LON:
                     try:
                         if UTM:
                             #   UTM
-                            LAT, LON = utmcsptolatlon(SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.,
-                                                      SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.)
+                            LAT, LON = utmcsptolatlon(
+                                SD.trace_headers.trace_header_N[
+                                    4].receiver_point_Y_final / 10.,
+                                SD.trace_headers.trace_header_N[
+                                    4].receiver_point_X_final / 10.)
                         elif TSPF:
                             #   Texas State Plane coordinates
-                            LAT, LON = txncsptolatlon(SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.,
-                                                      SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.)
+                            LAT, LON = txncsptolatlon(
+                                SD.trace_headers.trace_header_N[
+                                    4].receiver_point_Y_final / 10.,
+                                SD.trace_headers.trace_header_N[
+                                    4].receiver_point_X_final / 10.)
                         else:
-                            LAT = SD.trace_headers.trace_header_N[4].receiver_point_Y_final / 10.
-                            LON = SD.trace_headers.trace_header_N[4].receiver_point_X_final / 10.
+                            LAT = SD.trace_headers.trace_header_N[
+                                      4].receiver_point_Y_final / 10.
+                            LON = SD.trace_headers.trace_header_N[
+                                      4].receiver_point_X_final / 10.
                     except Exception as e:
                         logging.warn(
-                            "Failed to convert location: {0}.\n".format(e.message))
+                            "Failed to convert location: {0}.\n".format(
+                                e.message))
 
                 trace_headers_list.append(SD.trace_headers)
                 # for cs in range (SD.chan_sets_per_scan) :
@@ -1181,13 +1250,15 @@ def main():
                     traces.append(Trace(trace, SD.trace_headers))
                     n = 1
                     #   Node kludge
-                    #Das = (SD.trace_headers.trace_header_N[0].receiver_line * 1000) + SD.trace_headers.trace_header_N[0].receiver_point
+                    # Das = (SD.trace_headers.trace_header_N[0]\
+                    # .receiver_line * 1000) + SD.trace_headers.\
+                    # trace_header_N[0].receiver_point
                     Das = get_das(SD)
                 else:
                     traces.append(Trace(trace, SD.trace_headers))
-                    #traces = npappend (traces, trace)
+                    # traces = npappend (traces, trace)
 
-                if n >= nleft or EVERY == True:
+                if n >= nleft or EVERY is True:
                     thl = []
                     chan_set = None
                     chan_set_next = None
@@ -1199,16 +1270,17 @@ def main():
                         if chan_set is None:
                             chan_set = T.headers.trace_header.channel_set
                         if chan_set == T.headers.trace_header.channel_set:
-                            #print type (t)
+                            # print type (t)
                             if isinstance(t, type(None)):
                                 t = T.trace
                             else:
                                 t = npappend(t, T.trace)
-                            #print len (t), t.min (), t.max ()
+                            # print len (t), t.min (), t.max ()
                         else:
                             new_traces.append(T)
                             if chan_set_next is None:
-                                chan_set_next = T.headers.trace_header.channel_set
+                                chan_set_next =\
+                                    T.headers.trace_header.channel_set
 
                     traces = new_traces
                     process_traces(SD.reel_headers, thl[0], t)
@@ -1249,11 +1321,11 @@ def main():
         logging.shutdown
 
     # Profile
-    #import cProfile, pstats
-    #sys.stderr.write ("Warning: Profiling enabled!\n")
-    #cProfile.run ('prof ()', "segd2ph5.profile")
+    # import cProfile, pstats
+    # sys.stderr.write ("Warning: Profiling enabled!\n")
+    # cProfile.run ('prof ()', "segd2ph5.profile")
 
-    #p = pstats.Stats ("segd2ph5.profile")
+    # p = pstats.Stats ("segd2ph5.profile")
     # p.sort_stats('time').print_stats(40)
     # Profile stop
 

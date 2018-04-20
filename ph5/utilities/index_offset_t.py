@@ -21,19 +21,20 @@ def get_args():
 
     oparser = OptionParser()
 
-    oparser.usage = "Version: {0}\nindex_offset_t --nickname ph5-file-prefix".format(
-        PROG_VERSION)
+    oparser.usage = "Version: {0}\nindex_offset_t --nickname ph5-file-prefix"\
+        .format(PROG_VERSION)
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
                        help="The ph5 file prefix (experiment nickname).",
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files. Default to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-t", "--offset_table", dest="offset_table_name",
-                       help="The name of the offset table. Example: Offset_t_001_003.",
+                       help="The name of the offset table. Example:\
+                       Offset_t_001_003.",
                        metavar="offset_table_name")
 
     options, args = oparser.parse_args()
@@ -52,6 +53,7 @@ def get_args():
     if NAME is None:
         sys.stderr.write("Required option missing: --offset_table.\n")
         sys.exit()
+
 
 #
 #   Initialize ph5 file
@@ -73,8 +75,7 @@ def initialize_ph5(editmode=False):
 def info_print():
     global EX
 
-    print "#\n#\t%s\tph5 version: %s\n#" % (
-        time.ctime(time.time()), EX.version())
+
 #
 #   Print Rows_Keys
 #
@@ -98,7 +99,6 @@ def table_print(t, a):
 
 
 def main():
-
     get_args()
 
     initialize_ph5(True)

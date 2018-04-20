@@ -8,9 +8,10 @@ import os
 import os.path
 import sys
 import time
-#from collections import OrderedDict
+# from collections import OrderedDict
 #   This provides the base functionality
 from ph5.core import experiment, timedoy
+
 #   The wiggles are stored as numpy arrays
 
 PROG_VERSION = '2017.257 Developmental'
@@ -34,7 +35,8 @@ ARRAY_T = {}
 DAS_T = {}
 #   /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
 RECEIVER_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name)
+#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
+#   (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
 #   A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = {}
@@ -43,12 +45,14 @@ INDEX_T = {}
 
 os.environ['TZ'] = 'UTM'
 time.tzset()
+
+
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -61,12 +65,13 @@ class Rows_Keys (object):
         if keys is not None:
             self.keys = keys
 
+
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
 
 
-class Das_Groups (object):
+class Das_Groups(object):
     __slots__ = ('das', 'node')
 
     def __init__(self, das=None, node=None):
@@ -74,12 +79,13 @@ class Das_Groups (object):
         self.node = node
 
 
-class Offset_Azimuth (object):
+class Offset_Azimuth(object):
     __slots__ = ('offset', 'azimuth')
 
     def __init__(self, offset=None, azimuth=None):
         self.offset = offset
         self.azimuth = azimuth
+
 
 #
 #   Read Command line arguments
@@ -87,19 +93,21 @@ class Offset_Azimuth (object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, RECEIVER_GEN, EVENT_GEN, DATA_GEN, DAS_SN, EXPERIMENT_GEN
+    global PH5, PATH, DEBUG, RECEIVER_GEN, EVENT_GEN, DATA_GEN, DAS_SN,\
+        EXPERIMENT_GEN
 
     from optparse import OptionParser
 
     oparser = OptionParser()
 
-    oparser.usage = "Version: {0}\nmeta-data-gen --nickname=ph5-file-prefix options".format(
-        PROG_VERSION)
+    oparser.usage = "Version: {0}\nmeta-data-gen --nickname=ph5-file-prefix" \
+                    "options".format(PROG_VERSION)
 
     oparser.description = "Write info about receivers, events, or data."
 
     oparser.add_option("-E", "--experiment", dest="experiment_gen",
-                       help="Write info about experiment to stdout, Experiment_t.json",
+                       help="Write info about experiment to stdout,"
+                            "Experiment_t.json",
                        action="store_true", default=False)
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
@@ -107,11 +115,12 @@ def get_args():
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files.Defaults to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-r", "--receivers", dest="receiver_gen",
-                       help="Write info about receivers to stdout, Array_t_all.json",
+                       help="Write info about receivers to stdout,"
+                            "Array_t_all.json",
                        action="store_true", default=False)
 
     oparser.add_option("-e", "--events", dest="event_gen",
@@ -123,7 +132,7 @@ def get_args():
                        action="store_true", default=False)
 
     # oparser.add_option ("--json", dest = "json",
-    #help = "Write using JSON format.",
+    # help = "Write using JSON format.",
     # action = "store_true", default = False)
 
     oparser.add_option("--bug", dest="debug",
@@ -154,6 +163,7 @@ def get_args():
             "Error: Missing required option --nickname. Try --help\n")
         sys.exit(-1)
 
+
 #
 #   Initialize ph5 file
 #
@@ -167,6 +177,7 @@ def initialize_ph5(editmode=False):
     EX.ph5open(editmode)
     EX.initgroup()
 
+
 #
 #   Print Rows_Keys
 #
@@ -177,7 +188,7 @@ def debug_print(a):
     #   Loop through table rows
     for r in a.rows:
         #   Print line number
-        #print "%d) " % i,
+        # print "%d) " % i,
         i += 1
         #   Loop through each row column and print
         for k in a.keys:
@@ -191,6 +202,8 @@ def info_print():
 
     print "#\n#\t%s\tph5 version: %s\n#" % (
         time.ctime(time.time()), EX.version())
+
+
 #
 #   Print Rows_Keys
 #
@@ -285,6 +298,7 @@ def read_response_table():
 
     RESPONSE_T = rowskeys
 
+
 #   NOT USED
 
 
@@ -350,7 +364,7 @@ def strip_offset_t():
     for o in OFFSET_T.rows:
         event_id = o['event_id_s']
         receiver_id = o['receiver_id_s']
-
+        station_id = o['station_is_s']
         if STATION_ID is not None and EVENT_ID is not None:
             if event_id == EVENT_ID and receiver_id == STATION_ID:
                 tmp.append(o)
@@ -442,7 +456,6 @@ def array_start_stop(ar):
 
 
 def get_sample_rate(a, start, stop):
-
     Array_t = ARRAY_T[a].rows
     for array_t in Array_t:
         if 'sample_rate_i' in array_t and array_t['sample_rate_i'] != 0:
@@ -456,7 +469,8 @@ def get_sample_rate(a, start, stop):
         for das_t in Das_t.rows:
             das_start = das_t['time/epoch_l']
             das_stop = das_start + das_t['sample_count_i'] / (
-                das_t['sample_rate_i'] / float(das_t['sample_rate_multiplier_i']))
+                    das_t['sample_rate_i'] /
+                    float(das_t['sample_rate_multiplier_i']))
 
             #   Start contained
             if das_start >= start and das_start <= stop:
@@ -471,14 +485,16 @@ def get_sample_rate(a, start, stop):
     return 0
 
 
-class _Data (object):
+class _Data(object):
     __slots__ = ('das', 'first_sample', 'last_sample',
                  'first_epoch', 'last_epoch')
 
     def cough(self):
         RET = {}
         RET['Data'] = {'das': self.das, 'first_sample': self.first_sample,
-                       'last_sample': self.last_sample, 'first_epoch': self.first_epoch, 'last_epoch': self.last_epoch}
+                       'last_sample': self.last_sample,
+                       'first_epoch': self.first_epoch,
+                       'last_epoch': self.last_epoch}
         return RET
 
 
@@ -492,19 +508,27 @@ def write_data():
     for das_group in dass:
         for i in INDEX_T.rows:
             d = das_group[6:]
-            #print i['serial_number_s'], d
+            # print i['serial_number_s'], d
             if i['serial_number_s'] == d:
-                #D = _Data ()
-                #D.das = d
-                #D.first_sample = time.ctime (i['start_time/epoch_l'])
-                #D.last_sample = time.ctime (i['end_time/epoch_l'])
-                #D.first_epoch = i['start_time/epoch_l']
-                #D.last_epoch = i['end_time/epoch_l']
-                #D = { 'das': d, 'first_sample': time.ctime (i['start_time/epoch_l']), 'last_sample': time.ctime (i['end_time/epoch_l']), 'first_epoch': i['start_time/epoch_l'], 'last_epoch': i['end_time/epoch_l'] }
+                # D = _Data ()
+                # D.das = d
+                # D.first_sample = time.ctime (i['start_time/epoch_l'])
+                # D.last_sample = time.ctime (i['end_time/epoch_l'])
+                # D.first_epoch = i['start_time/epoch_l']
+                # D.last_epoch = i['end_time/epoch_l']
+                # D = { 'das': d, 'first_sample': time.ctime
+                # (i['start_time/epoch_l']), 'last_sample': time.ctime
+                # (i['end_time/epoch_l']), 'first_epoch':
+                # i['start_time/epoch_l'], 'last_epoch':
+                # i['end_time/epoch_l'] }
                 try:
                     D = {'das': d,
-                         'first_sample': timedoy.epoch2passcal(i['start_time/epoch_l'] + (i['start_time/micro_seconds_i'] / 1000000.)),
-                         'last_sample': timedoy.epoch2passcal(i['end_time/epoch_l'] + (i['end_time/micro_seconds_i'] / 1000000.)),
+                         'first_sample': timedoy.epoch2passcal(
+                             i['start_time/epoch_l'] +
+                             (i['start_time/micro_seconds_i'] / 1000000.)),
+                         'last_sample': timedoy.epoch2passcal(
+                             i['end_time/epoch_l'] +
+                             (i['end_time/micro_seconds_i'] / 1000000.)),
                          'first_epoch': i['start_time/epoch_l'],
                          'last_epoch': i['end_time/epoch_l']}
                 except timedoy.TimeError as e:
@@ -515,13 +539,15 @@ def write_data():
 
     fh.write(json.dumps(L, sort_keys=True, indent=4))
 
-# class _Event (object) :
-    #__slots__ = ('id', 'time', 'lat', 'lon', 'elev', 'mag', 'depth')
 
-    # def cough (self) :
-    #RET = {}
-    #RET['Event'] = { 'id':self.id, 'time':self.time, 'lat':self.lat, 'lon':self.lon, 'elev':self.elev, 'mag':self.mag, 'depth':self.depth }
-    # return RET
+# class _Event (object) :
+# __slots__ = ('id', 'time', 'lat', 'lon', 'elev', 'mag', 'depth')
+
+# def cough (self) :
+# RET = {}
+# RET['Event'] = { 'id':self.id, 'time':self.time, 'lat':self.lat,
+# 'lon':self.lon, 'elev':self.elev, 'mag':self.mag, 'depth':self.depth }
+# return RET
 
 
 def write_events():
@@ -539,8 +565,11 @@ def write_events():
             pictime = timedoy.epoch2passcal(
                 e['time/epoch_l'] + (e['time/micro_seconds_i'] / 1000000.))
 
-            E = {'id': e['id_s'], 'time': pictime, 'lat': e['location/Y/value_d'], 'lon': e['location/X/value_d'],
-                 'elev': e['location/Z/value_d'], 'mag': e['size/value_d'], 'depth': e['depth/value_d']}
+            E = {'id': e['id_s'], 'time': pictime,
+                 'lat': e['location/Y/value_d'],
+                 'lon': e['location/X/value_d'],
+                 'elev': e['location/Z/value_d'], 'mag': e['size/value_d'],
+                 'depth': e['depth/value_d']}
             events.append(E)
 
         this_line['Events'] = events
@@ -552,7 +581,7 @@ def write_events():
 def write_arrays():
     global ARRAY_T
 
-    #tdoy = timedoy.TimeDOY ()
+    # tdoy = timedoy.TimeDOY ()
     fh = sys.stdout
     A = {}
     for k in ARRAY_T.keys():
@@ -568,8 +597,8 @@ def write_arrays():
     for a in arrays:
         stations = []
         start, stop = A[int(a[-3:])]
-        ##start_tdoy = timedoy.TimeDOY (epoch=start)
-        #stop_tdoy = timedoy.TimeDOY (epoch=stop)
+        # start_tdoy = timedoy.TimeDOY (epoch=start)
+        # stop_tdoy = timedoy.TimeDOY (epoch=stop)
         sample_rate = get_sample_rate(a, start, stop)
         try:
             deploy_time = timedoy.epoch2passcal(start)
@@ -584,10 +613,18 @@ def write_arrays():
             pickup_time = ""
 
         this_array = {'array': str(a[-3:]), 'sample_rate': sample_rate,
-                      'deploy_time': deploy_time, 'pickup_time': pickup_time, 'Stations': None}
+                      'deploy_time': deploy_time, 'pickup_time': pickup_time,
+                      'Stations': None}
         for e in ARRAY_T[a].rows:
-            S = {'id': e['id_s'], 'das': e['das/serial_number_s'], 'lat': e['location/Y/value_d'], 'lon': e['location/X/value_d'], 'elev': e['location/Z/value_d'], 'chan': e['channel_number_i'],
-                 'seed_band_code': e['seed_band_code_s'], 'seed_instrument_code': e['seed_instrument_code_s'], 'seed_orientation_code': e['seed_orientation_code_s'], 'seed_station_name': e['seed_station_name_s']}
+            S = {'id': e['id_s'], 'das': e['das/serial_number_s'],
+                 'lat': e['location/Y/value_d'],
+                 'lon': e['location/X/value_d'],
+                 'elev': e['location/Z/value_d'],
+                 'chan': e['channel_number_i'],
+                 'seed_band_code': e['seed_band_code_s'],
+                 'seed_instrument_code': e['seed_instrument_code_s'],
+                 'seed_orientation_code': e['seed_orientation_code_s'],
+                 'seed_station_name': e['seed_station_name_s']}
             stations.append(S)
 
         this_array['Stations'] = stations
@@ -596,14 +633,19 @@ def write_arrays():
     fh.write(json.dumps(AR, sort_keys=True, indent=4))
 
 
-class _Experiment (object):
+class _Experiment(object):
     __slots__ = ('id', 'netcode', 'nw', 'se', 'nickname',
                  'longname', 'PIs', 'institutions', 'summary')
 
     def cough(self):
         RET = {}
-        RET['Experiment'] = {'ID': self.id, 'netcode': self.netcode, 'nickname': self.nickname, 'longname': self.longname,
-                             'PIs': self.PIs, 'institutions': self.institutions, 'NWcorner': self.nw, 'SEcorner': self.se, 'summary': self.summary}
+        RET['Experiment'] = {'ID': self.id, 'netcode': self.netcode,
+                             'nickname': self.nickname,
+                             'longname': self.longname,
+                             'PIs': self.PIs,
+                             'institutions': self.institutions,
+                             'NWcorner': self.nw, 'SEcorner': self.se,
+                             'summary': self.summary}
         return RET
 
 
@@ -624,12 +666,18 @@ def write_experiment():
         E.PIs = e['PIs_s']
         E.institutions = e['institutions_s']
         E.summary = e['summary_paragraph_s']
-        #P['NW'] = { 'X': e['north_west_corner/X/value_d'], 'Y': e['north_west_corner/Y/value_d'], 'Z': e['north_west_corner/Z/value_d'] }
+        # P['NW'] = { 'X': e['north_west_corner/X/value_d'],
+        # 'Y': e['north_west_corner/Y/value_d'],
+        # 'Z': e['north_west_corner/Z/value_d'] }
         E.nw = {'longitude': e['north_west_corner/X/value_d'],
-                'latitude': e['north_west_corner/Y/value_d'], 'elevation': e['north_west_corner/Z/value_d']}
-        #P['SE'] = { 'X': e['south_east_corner/X/value_d'], 'Y': e['south_east_corner/Y/value_d'], 'Z': e['south_east_corner/Z/value_d'] }
+                'latitude': e['north_west_corner/Y/value_d'],
+                'elevation': e['north_west_corner/Z/value_d']}
+        # P['SE'] = { 'X': e['south_east_corner/X/value_d'],
+        # 'Y': e['south_east_corner/Y/value_d'],
+        # 'Z': e['south_east_corner/Z/value_d'] }
         E.se = {'longitude': e['south_east_corner/X/value_d'],
-                'latitude': e['south_east_corner/Y/value_d'], 'elevation': e['south_east_corner/Z/value_d']}
+                'latitude': e['south_east_corner/Y/value_d'],
+                'elevation': e['south_east_corner/Z/value_d']}
         L.append(E)
 
     if L:
@@ -649,14 +697,14 @@ def main():
     read_experiment_table()
     read_index_table()
 
-    if EXPERIMENT_GEN == True:
+    if EXPERIMENT_GEN is True:
         write_experiment()
-    if DATA_GEN == True:
+    if DATA_GEN is True:
         if DASS:
             write_data()
-    if EVENT_GEN == True:
+    if EVENT_GEN is True:
         write_events()
-    if RECEIVER_GEN == True:
+    if RECEIVER_GEN is True:
         write_arrays()
 
     EX.ph5close()

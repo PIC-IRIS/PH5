@@ -8,8 +8,11 @@ import os
 import os.path
 import sys
 import time
+
 #   This provides the base functionality
 from ph5.core import experiment
+from ph5.core import timedoy
+
 #   The wiggles are stored as numpy arrays
 
 PROG_VERSION = '2011.144'
@@ -33,19 +36,22 @@ ARRAY_T = {}
 DAS_T = {}
 #   /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
 RECEIVER_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name)
+#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
+#   (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
 #   A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = {}
 
 os.environ['TZ'] = 'UTM'
 time.tzset()
+
+
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -58,12 +64,13 @@ class Rows_Keys (object):
         if keys is not None:
             self.keys = keys
 
+
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
 
 
-class Das_Groups (object):
+class Das_Groups(object):
     __slots__ = ('das', 'node')
 
     def __init__(self, das=None, node=None):
@@ -71,12 +78,13 @@ class Das_Groups (object):
         self.node = node
 
 
-class Offset_Azimuth (object):
+class Offset_Azimuth(object):
     __slots__ = ('offset', 'azimuth')
 
     def __init__(self, offset=None, azimuth=None):
         self.offset = offset
         self.azimuth = azimuth
+
 
 #
 #   Read Command line arguments
@@ -92,14 +100,15 @@ def get_args():
 
     oparser.usage = "report-gin --nickname=ph5-file-prefix options"
 
-    oparser.description = "Generate data_description.txt and/or data_request_key.txt."
+    oparser.description = "Generate data_description.txt and/or\
+     data_request_key.txt."
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
                        help="The ph5 file prefix (experiment nickname).",
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files. Default to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-k", "--key", dest="key_gin",
@@ -111,7 +120,7 @@ def get_args():
                        action="store_true", default=False)
 
     # oparser.add_option ("-D", "--das_sn", dest = "das_sn",
-    #help = "Only consider a single DAS. Required with --key option.",
+    # help = "Only consider a single DAS. Required with --key option.",
     # metavar = "das_sn")
 
     oparser.add_option("--bug", dest="debug",
@@ -134,29 +143,30 @@ def get_args():
 
     KEY_GIN = options.key_gin
     DES_GIN = options.des_gin
-    #DAS_SN = options.das_sn
+    # DAS_SN = options.das_sn
     if KEY_GIN:
         sys.stderr.write(
-            "Warning: Generation of data_request_key.txt is no longer needed.\n")
+            "Warning: Generation of data_request_key.txt is no longer needed.")
 
-    if KEY_GIN == False and DES_GIN == False:
+    if KEY_GIN is False and DES_GIN is False:
         sys.stderr.write(
             "Error: Either --key or --description option is required.\n")
         sys.exit(-3)
 
     # if DAS_SN == None and KEY_GIN == True :
-        #sys.stderr.write ("Error: --das_sn option required with --key option.\n")
-        #sys.exit (-4)
+    # sys.stderr.write ("Error: --das_sn option required with --key option.\n")
+    # sys.exit (-4)
 
     if PH5 is None:
         sys.stderr.write(
             "Error: Missing required option --nickname. Try --help\n")
         sys.exit(-1)
 
-    #ph5_path = os.path.join (PATH, PH5) + '.ph5'
+    # ph5_path = os.path.join (PATH, PH5) + '.ph5'
     # if not os.path.exists (ph5_path) :
-        #sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
-        #sys.exit (-2)
+    # sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
+    # sys.exit (-2)
+
 
 #
 #   Initialize ph5 file
@@ -171,6 +181,7 @@ def initialize_ph5(editmode=False):
     EX.ph5open(editmode)
     EX.initgroup()
 
+
 #
 #   Print Rows_Keys
 #
@@ -181,7 +192,7 @@ def debug_print(a):
     #   Loop through table rows
     for r in a.rows:
         #   Print line number
-        #print "%d) " % i,
+        # print "%d) " % i,
         i += 1
         #   Loop through each row column and print
         for k in a.keys:
@@ -195,6 +206,8 @@ def info_print():
 
     print "#\n#\t%s\tph5 version: %s\n#" % (
         time.ctime(time.time()), EX.version())
+
+
 #
 #   Print Rows_Keys
 #
@@ -282,6 +295,7 @@ def read_response_table():
 
     RESPONSE_T = rowskeys
 
+
 #   NOT USED
 
 
@@ -346,6 +360,7 @@ def strip_offset_t():
     for o in OFFSET_T.rows:
         event_id = o['event_id_s']
         receiver_id = o['receiver_id_s']
+        station_id = o['station_ids_s']
 
         if STATION_ID is not None and EVENT_ID is not None:
             if event_id == EVENT_ID and receiver_id == STATION_ID:
@@ -438,7 +453,6 @@ def array_start_stop(ar):
 
 
 def get_sample_rate(a, start, stop):
-
     Array_t = ARRAY_T[a].rows
     for array_t in Array_t:
         das = array_t['das/serial_number_s']
@@ -449,7 +463,8 @@ def get_sample_rate(a, start, stop):
         for das_t in Das_t.rows:
             das_start = das_t['time/epoch_l']
             das_stop = das_start + das_t['sample_count_i'] / (
-                das_t['sample_rate_i'] / float(das_t['sample_rate_multiplier_i']))
+                    das_t['sample_rate_i'] /
+                    float(das_t['sample_rate_multiplier_i']))
 
             #   Start contained
             if das_start >= start and das_start <= stop:
@@ -480,7 +495,7 @@ def write_key_report():
         array_i = int(k[-3:])
         A[array_i] = (start, stop)
 
-    #tdoy = timedoy.TimeDOY ()
+    # tdoy = timedoy.TimeDOY ()
     fh.write("shot|time|arrays\n")
     array_i_keys = A.keys()
     for e in EVENT_T.rows:
@@ -489,7 +504,8 @@ def write_key_report():
             start, stop = A[i]
             if start == 0:
                 arrays = arrays + "%d," % i
-            elif int(e['time/epoch_l']) >= start and int(e['time/epoch_l']) <= stop:
+            elif int(e['time/epoch_l']) >= start and int(
+                    e['time/epoch_l']) <= stop:
                 arrays = arrays + "%d," % i
 
         ttuple = time.gmtime(int(e['time/epoch_l']))
@@ -502,14 +518,16 @@ def write_key_report():
                                  pictime,
                                  arrays[:-1]))
 
-    fh.write("request key|start time|length in seconds|array name|description\n")
+    fh.write(
+        "request key|start time|length in seconds|array name|description\n")
     i = 1
     for s in SORT_T.rows:
         secs = int(s['end_time/epoch_l']) - int(s['start_time/epoch_l'])
         ttuple = time.gmtime(int(s['start_time/epoch_l']))
-        #wday, amo, da, hrmnsc, yr = string.split (s['start_time/ascii_s'])
-        #hr, mn, sc = string.split (hrmnsc, ':')
-        #pictime = tdoy.getPasscalTime (amo, int (da), int (hr), int (mn), int (sc), int (yr))
+        # wday, amo, da, hrmnsc, yr = string.split (s['start_time/ascii_s'])
+        # hr, mn, sc = string.split (hrmnsc, ':')
+        # pictime = tdoy.getPasscalTime (amo, int (da), int (hr), int (mn),\
+        #  int (sc), int (yr))
         pictime = "%4d:%03d:%02d:%02d:%02d" % (ttuple[0],
                                                ttuple[7],
                                                ttuple[3],
@@ -543,36 +561,41 @@ def write_des_report():
     for e in EXPERIMENT_T.rows:
         pass
 
-    fh.write("\t\t\t%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n" % (e['nickname_s'],
-                                                       e['longname_s'],
-                                                       e['PIs_s'],
-                                                       e['institutions_s'],
-                                                       e['summary_paragraph_s']))
+    fh.write("\t\t\t%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n" %
+             (e['nickname_s'],
+              e['longname_s'],
+              e['PIs_s'],
+              e['institutions_s'],
+              e['summary_paragraph_s']))
 
-    fh.write("***   Please check the following lines and remove this line before submission to DMC.   ***\n")
+    fh.write(
+        "***   Please check the following lines and remove this line before\
+         submission to DMC.   ***\n")
     fh.write("\t\t\tShots\n\n")
     fh.write(
-        "shot id\ttime                     lat         lon         elev (m) size (kg) depth (m)\n")
+        "shot id\ttime    lat      lon         elev (m) size (kg) depth (m)\n")
     fh.write("-" * 85)
     fh.write('\n')
     for e in EVENT_T.rows:
         ttuple = time.gmtime(int(e['time/epoch_l']))
         secs = ttuple[5] + (e['time/micro_seconds_i'] / 1000000.)
-        #wday, amo, da, hrmnsc, yr = string.split (s['start_time/ascii_s'])
-        #hr, mn, sc = string.split (hrmnsc, ':')
-        #pictime = tdoy.getPasscalTime (amo, int (da), int (hr), int (mn), int (sc), int (yr))
+        # wday, amo, da, hrmnsc, yr = string.split (s['start_time/ascii_s'])
+        # hr, mn, sc = string.split (hrmnsc, ':')
+        # pictime = tdoy.getPasscalTime (amo, int (da), int (hr), int (mn),
+        # int (sc), int (yr))
         pictime = "%4d:%03d:%02d:%02d:%06.3f" % (ttuple[0],
                                                  ttuple[7],
                                                  ttuple[3],
                                                  ttuple[4],
                                                  secs)
-        fh.write("%-5s\t%s %12.6f %12.6f %9.3f %9.3f %9.3f\n" % (e['id_s'],
-                                                                 pictime,
-                                                                 e['location/Y/value_d'],
-                                                                 e['location/X/value_d'],
-                                                                 e['location/Z/value_d'],
-                                                                 e['size/value_d'],
-                                                                 e['depth/value_d']))
+        fh.write("%-5s\t%s %12.6f %12.6f %9.3f %9.3f %9.3f\n" %
+                 (e['id_s'],
+                  pictime,
+                  e['location/Y/value_d'],
+                  e['location/X/value_d'],
+                  e['location/Z/value_d'],
+                  e['size/value_d'],
+                  e['depth/value_d']))
 
     fh.write("\n\t\t\tArrays\n\n")
 
@@ -581,7 +604,8 @@ def write_des_report():
     for a in arrays:
         start, stop = A[int(a[-3:])]
         fh.write(
-            "***   Please check the following lines and remove this line before submission to DMC.   ***\n")
+            "***   Please check the following lines and remove this line\
+             before submission to DMC.   ***\n")
         sample_rate = get_sample_rate(a, start, stop)
 
         fh.write("\nArray: %s\n" % a[-3:])
@@ -596,19 +620,17 @@ def write_des_report():
                  tdoy.epoch2PasscalTime(stop)[:-10])
         fh.write("\t\tComponents: 1 => Z, 2 => N, 3 => E\n\n")
         fh.write(
-            "station\tdas      lat         lon            elev (m)    component\n")
+            "station\tdas      lat        lon        elev (m)    component\n")
         fh.write('-' * 65)
         fh.write('\n')
         for e in ARRAY_T[a].rows:
-            fh.write("%-5s\t%s %12.6f %12.6f %9.3f\t%d\n" % (e['id_s'],
-                                                             e['das/serial_number_s'],
-                                                             float(
-                                                                 e['location/Y/value_d']),
-                                                             float(
-                                                                 e['location/X/value_d']),
-                                                             float(
-                                                                 e['location/Z/value_d']),
-                                                             e['channel_number_i']))
+            fh.write("%-5s\t%s %12.6f %12.6f %9.3f\t%d\n" %
+                     (e['id_s'],
+                      e['das/serial_number_s'],
+                      float(e['location/Y/value_d']),
+                      float(e['location/X/value_d']),
+                      float(e['location/Z/value_d']),
+                      e['channel_number_i']))
 
     #   Need to write sorts here!
 
@@ -628,35 +650,35 @@ if __name__ == '__main__':
     read_event_table()
     DASS = read_das_groups()
 
-    if KEY_GIN == True:
+    if KEY_GIN is True:
         sys.stderr.write("Writing data key report...\n")
         read_sort_table()
         write_key_report()
 
-    if DES_GIN == True:
+    if DES_GIN is True:
         sys.stderr.write("Writing data description report...\n")
         read_experiment_table()
         write_des_report()
 
-    #read_sort_arrays ()
+    # read_sort_arrays ()
 
     # for k in ARRAY_T.keys () :
-        #debug_print (ARRAY_T[k])
+    # debug_print (ARRAY_T[k])
 
     # if OFFSET == True :
-        #read_offset_table ()
-        #read_sort_table ()
-        #read_sort_arrays ()
-        #strip_offset_t ()
-        ##debug_print (OFFSET_T)
-        #strip_array_t ()
-        # for k in ARRAY_T.keys () :
-        ##debug_print (ARRAY_T[k])
-        #order_station_by_offset ()
-        #info_print ()
-        # for k in ARRAY_T.keys () :
-        #rk = build_array_from_offset (ARRAY_T[k])
-        #table_print ('/Experiment_g/Sorts_g/' + k, rk)
+    # read_offset_table ()
+    # read_sort_table ()
+    # read_sort_arrays ()
+    # strip_offset_t ()
+    # debug_print (OFFSET_T)
+    # strip_array_t ()
+    # for k in ARRAY_T.keys () :
+    # debug_print (ARRAY_T[k])
+    # order_station_by_offset ()
+    # info_print ()
+    # for k in ARRAY_T.keys () :
+    # rk = build_array_from_offset (ARRAY_T[k])
+    # table_print ('/Experiment_g/Sorts_g/' + k, rk)
 
     EX.ph5close()
     sys.stderr.write("Done..\n")

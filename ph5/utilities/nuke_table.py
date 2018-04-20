@@ -9,48 +9,55 @@ import os
 import sys
 import time
 from ph5.core import experiment, timedoy
-#from ph5.utilities import tabletokef as T2K
+# from ph5.utilities import tabletokef as T2K
 import tabletokef as T2K
 
 PROG_VERSION = '2017.325 Developmental'
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
     sys.stderr.write(
-        "Found old version of tabletokef.py. Requires version 2017.317 or newer.")
+        "Found old version of tabletokef.py."
+        " Requires version 2017.317 or newer.")
     sys.exit(-2)
+
+
 #
 #   Read Command line arguments
 #
 
 
 def get_args():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
-        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE, \
+    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+        EVENT_TABLE, \
+        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE,\
         INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE, NO_BACKUP
 
     from optparse import OptionParser
 
     oparser = OptionParser()
 
-    oparser.usage = "Version: {0}\ndelete_table --nickname ph5-file-prefix options".format(
-        PROG_VERSION)
+    oparser.usage = "Version: {0}\ndelete_table --nickname ph5-file-prefix\
+    options".format(PROG_VERSION)
 
-    oparser.description = "Initialize a table in a ph5 file. Caution: Deletes contents of table!"
+    oparser.description = "Initialize a table in a ph5 file. Caution:" \
+                          "Deletes contents of table!"
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
                        help="The ph5 file prefix (experiment nickname).",
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files. Default to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-d", dest="debug", action="store_true", default=False)
 
-    oparser.add_option("-N", "--no_backup", dest="no_backup", action="store_true", default=False,
+    oparser.add_option("-N", "--no_backup", dest="no_backup",
+                       action="store_true", default=False,
                        help="Do NOT create a kef file backup of the table.")
 
-    oparser.add_option("-E", "--Experiment_t", dest="experiment_t", action="store_true",
+    oparser.add_option("-E", "--Experiment_t", dest="experiment_t",
+                       action="store_true",
                        default=False,
                        help="Nuke /Experiment_g/Experiment_t.")
 
@@ -59,25 +66,31 @@ def get_args():
                        help="Nuke /Experiment_g/Sorts_g/Sort_t.")
 
     oparser.add_option("-O", "--Offset_t", dest="offset_t_", metavar="a_e",
-                       help="Nuke /Experiment_g/Sort_g/Offset_t_[arrayID_eventID] to a kef file.")
+                       help="Nuke\
+                       /Experiment_g/Sort_g/Offset_t_[arrayID_eventID] "
+                            "to a kef file.")
 
     oparser.add_option("-V", "--Event_t", dest="event_t_", metavar="n",
                        type=int,
-                       help="Nuke /Experiment_g/Sorts_g/Event_t_[n]. Use 0 for Event_t")
+                       help="Nuke /Experiment_g/Sorts_g/Event_t_[n].\
+                       Use 0 for Event_t")
 
     oparser.add_option("-A", "--Array_t_", dest="array_t_", metavar="n",
                        help="Nuke /Experiment_g/Sorts_g/Array_t_[n].",
                        type=int)
 
-    oparser.add_option("-R", "--Response_t", dest="response_t", action="store_true",
+    oparser.add_option("-R", "--Response_t", dest="response_t",
+                       action="store_true",
                        default=False,
                        help="Nuke /Experiment_g/Responses_g/Response_t.")
 
-    oparser.add_option("-P", "--Report_t", dest="report_t", action="store_true",
+    oparser.add_option("-P", "--Report_t", dest="report_t",
+                       action="store_true",
                        default=False,
                        help="Nuke /Experiment_g/Reports_g/Report_t.")
 
-    oparser.add_option("-C", "--Receiver_t", dest="receiver_t", action="store_true",
+    oparser.add_option("-C", "--Receiver_t", dest="receiver_t",
+                       action="store_true",
                        default=False,
                        help="Nuke /Experiment_g/Receivers_g/Receiver_t.")
 
@@ -85,12 +98,13 @@ def get_args():
                        default=False,
                        help="Nuke /Experiment_g/Receivers_g/Index_t.")
 
-    oparser.add_option("-M", "--M_Index_t", dest="m_index_t", action="store_true",
+    oparser.add_option("-M", "--M_Index_t", dest="m_index_t",
+                       action="store_true",
                        default=False,
                        help="Nuke /Experiment_g/Maps_g/Index_t.")
 
     oparser.add_option("-D", "--Das_t", dest="das_t_", metavar="das",
-                       help="Nuke /Experiment_g/Receivers_g/Das_g_[das]/Das_t.")
+                       help="Nuke/Experiment_g/Receivers_g/Das_g_[das]/Das_t.")
 
     oparser.add_option("-T", "--Time_t", dest="time_t", action="store_true",
                        default=False,
@@ -118,7 +132,8 @@ def get_args():
             OFFSET_TABLE = map(int, options.offset_t_.split("_"))
         except Exception as e:
             sys.stderr.write(
-                "Offset table should be entered as arrayID underscore shotLineID, eg. 1_2 or 0_0.")
+                "Offset table should be entered as arrayID underscore"
+                "shotLineID, eg. 1_2 or 0_0.")
             sys.stderr.write(e.message)
             sys.exit()
     else:
@@ -148,6 +163,7 @@ def get_args():
         sys.exit(-1)
 
     NO_BACKUP = options.no_backup
+
 
 #
 #   Initialize ph5 file
@@ -189,9 +205,10 @@ def backup(table_type, table_path, table):
         fh = open(outfile, 'w')
         T2K.table_print(table_path, table, fh=fh)
         fh.close()
-    except Exception as e:
+    except Exception:
         sys.stderr.write(
-            "Failed to save {0}.\ne.message\nExiting!\n".format(os.getcwd(), outfile))
+            "Failed to save {0}.\ne.message\nExiting!\n".format(os.getcwd(),
+                                                                outfile))
         sys.exit(-4)
 
 
@@ -237,9 +254,11 @@ def main():
                 OFFSET_TABLE[0], OFFSET_TABLE[1])
             if table_type in T2K.OFFSET_T:
                 backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type), T2K.OFFSET_T[table_type])
+                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                    T2K.OFFSET_T[table_type])
             if EX.ph5_g_sorts.nuke_offset_t(
-                    "Offset_t_{0:03d}_{1:03d}".format(OFFSET_TABLE[0], OFFSET_TABLE[1])):
+                    "Offset_t_{0:03d}_{1:03d}".format(OFFSET_TABLE[0],
+                                                      OFFSET_TABLE[1])):
                 exclaim(OFFSET_TABLE)
             else:
                 print "{0} Not found.".format(OFFSET_TABLE)
@@ -257,7 +276,8 @@ def main():
             table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
             if table_type in T2K.EVENT_T:
                 backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type), T2K.EVENT_T[table_type])
+                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                    T2K.EVENT_T[table_type])
             if EX.ph5_g_sorts.nuke_event_t(
                     "Event_t_{0:03d}".format(EVENT_TABLE)):
                 exclaim(EVENT_TABLE)
@@ -270,7 +290,8 @@ def main():
         table_type = 'Array_t_{0:03d}'.format(ARRAY_TABLE)
         if table_type in T2K.ARRAY_T:
             backup(
-                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type), T2K.ARRAY_T[table_type])
+                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                T2K.ARRAY_T[table_type])
         if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
             exclaim(ARRAY_TABLE)
         else:
@@ -321,14 +342,16 @@ def main():
     #
     if DAS_TABLE:
         yon = raw_input(
-            "Are you sure you want to delete all data in Das_t for das {0}? y/n ".format(DAS_TABLE))
+            "Are you sure you want to delete all data in Das_t for das {0}?"
+            " y/n ".format(DAS_TABLE))
         if yon == 'y':
             table_type = 'Das_t_{0}'.format(DAS_TABLE)
             T2K.DAS_TABLE = DAS_TABLE
             T2K.read_receivers(DAS_TABLE)
             if DAS_TABLE in T2K.DAS_T:
-                backup(table_type, '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
-                    DAS_TABLE), T2K.DAS_T[DAS_TABLE])
+                backup(table_type,
+                       '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
+                           DAS_TABLE), T2K.DAS_T[DAS_TABLE])
             EX.ph5_g_receivers.nuke_das_t(DAS_TABLE)
 
     EX.ph5close()

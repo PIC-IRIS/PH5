@@ -16,7 +16,7 @@ deployRE = re.compile("deploy_time.*")
 pickupRE = re.compile("pickup_time.*")
 
 
-class PH5_Time (object):
+class PH5_Time(object):
     __slots__ = 'epoch_l', 'ascii_s', 'micro_seconds_i', 'type_s'
 
     def __init__(self, passcal_s=None, epoch_l=None,
@@ -34,7 +34,7 @@ class PH5_Time (object):
             self.micro_seconds_i = 0
 
     def _passcal(self, passcal_s):
-        #tdoy = timedoy.TimeDOY ()
+        # tdoy = timedoy.TimeDOY ()
         flds = passcal_s.split(':')
         for i in range(5):
             try:
@@ -48,7 +48,8 @@ class PH5_Time (object):
                                second=int(flds[4]),
                                microsecond=0,
                                doy=int(flds[1]))
-        #epoch_l = tdoy.epoch (int (flds[0]), int (flds[1]), int (flds[2]), int (flds[3]), int (flds[4]))
+        # epoch_l = tdoy.epoch (int (flds[0]), int (flds[1]), int (flds[2]),
+        # int (flds[3]), int (flds[4]))
         epoch_l = tdoy.epoch()
         self._epoch(epoch_l)
 
@@ -63,6 +64,7 @@ class PH5_Time (object):
         self.ascii_s = time.ctime(self.epoch_l)
         self.type_s = 'BOTH'
 
+
 #
 #   Read Command line arguments
 #
@@ -75,9 +77,11 @@ def get_args():
 
     oparser = OptionParser()
 
-    oparser.usage = " set_deploy_pickup_times -a Array_t_xxx.kef -d ASCII_deploy_time -p ASCII_pickup_time"
+    oparser.usage = " set_deploy_pickup_times -a Array_t_xxx.kef\
+     -d ASCII_deploy_time -p ASCII_pickup_time"
 
-    oparser.description = "Version: %s: Set deploy and pickup times in an Array_t_xxx.kef file." % PROG_VERSION
+    oparser.description = "Version: %s: Set deploy and pickup times in an\
+     Array_t_xxx.kef file." % PROG_VERSION
 
     oparser.add_option("-a", "--array-kef", dest="array_kef",
                        help="The Array_t_xxx.kef file to modify.",

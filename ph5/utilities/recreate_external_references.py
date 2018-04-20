@@ -17,12 +17,14 @@ PH5 = None
 
 os.environ['TZ'] = 'UTM'
 time.tzset()
+
+
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -35,6 +37,7 @@ class Rows_Keys (object):
         if keys is not None:
             self.keys = keys
 
+
 #
 
 
@@ -43,6 +46,8 @@ def read_index_table():
 
     rows, keys = EX.ph5_g_receivers.read_index()
     INDEX_T = Rows_Keys(rows, keys)
+
+
 #
 
 
@@ -51,6 +56,8 @@ def read_m_index_table():
 
     rows, keys = EX.ph5_g_maps.read_index()
     M_INDEX_T = Rows_Keys(rows, keys)
+
+
 #
 
 
@@ -59,7 +66,7 @@ def update_external_references():
 
     sys.stderr.write("Updating external references...")
     sys.stderr.flush()
-    #logging.info ("Updating external references...")
+    # logging.info ("Updating external references...")
     n = 0
     for i in INDEX_T.rows:
         external_file = i['external_file_name_s']
@@ -112,10 +119,12 @@ def update_external_references():
 
             print "E4 ", e.message
 
-        #sys.exit ()
+        # sys.exit ()
     sys.stderr.write(
-        "done, Index_t {0} nodes recreated. M_Index_t {1} nodes recreated.\n".format(n, m))
-    #logging.info ("done, {0} nodes recreated.\n".format (n))
+        "done, Index_t {0} nodes recreated. M_Index_t {1} nodes recreated.\n"
+        .format(n, m))
+    # logging.info ("done, {0} nodes recreated.\n".format (n))
+
 
 #
 #   Initialize ph5 file
@@ -129,6 +138,7 @@ def initialize_ph5(editmode=False):
     EX = experiment.ExperimentGroup(PATH, PH5)
     EX.ph5open(True)
     EX.initgroup()
+
 
 #
 #   Read Command line arguments
@@ -144,7 +154,8 @@ def get_args():
 
     oparser.usage = "recreate_external_references --nickname=ph5-file-prefix"
 
-    oparser.description = "Version: {0} Rebuild external references under Receivers_g from info in Index_t.".format(
+    oparser.description = "Version: {0} Rebuild external references under\
+     Receivers_g from info in Index_t.".format(
         PROG_VERSION)
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
@@ -152,7 +163,7 @@ def get_args():
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files. Default to current directory.",
                        metavar="ph5_path")
 
     options, args = oparser.parse_args()

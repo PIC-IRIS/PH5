@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
-#   A program to aid merging multiple families of ph5 files, ie if you have mulitple
+#   A program to aid merging multiple families of ph5 files, ie if you
+#   have mulitple
 #   deployment sites in a single experiment.
 #
 #   Steve Azevedo, February 2014
@@ -19,6 +20,8 @@ FIRST_MINI_INDEX = 0
 #   Dictionary, key = original miniPH5_xxxxx.ph5 file name,
 #               value = new miniPH5_xxxxx.ph5 file name.
 OLD_NEW = None
+
+
 #
 #   Read Command line arguments
 #
@@ -36,10 +39,12 @@ def get_args():
 
     oparser.usage = "ph5_merge_helper [-s miniPH5_start_index]"
 
-    oparser.description = "Modify Index_t.kef and miniPH5_xxxxx.ph5 file names so they can be merged."
+    oparser.description = "Modify Index_t.kef and miniPH5_xxxxx.ph5 file names\
+     so they can be merged."
 
     oparser.add_option("-s", dest="mini_ph5_index",
-                       help="For the first miniPH5_xxxxx.ph5, xxxxx should equal the given value.",
+                       help="For the first miniPH5_xxxxx.ph5, xxxxx should\
+                        equal the given value.",
                        metavar="mini_ph5_index", action='store', type='int')
 
     oparser.add_option("-d", dest="debug", action="store_true", default=False)
@@ -69,7 +74,8 @@ def dump_M_Index_t():
 
 
 def resequence_Index_t():
-    '''   Set the value of external_file_name_s based on FIRST_MINI_INDEX in Index_t.kef   '''
+    '''   Set the value of external_file_name_s based on FIRST_MINI_INDEX in
+          Index_t.kef   '''
     global OLD_NEW
 
     OLD_NEW = {}
@@ -100,7 +106,7 @@ def resequence_Index_t():
         m = miniPH5RE.match(value)
         if m:
             n = int(m.groups()[0])
-            #print n, FIRST_MINI_INDEX
+            # print n, FIRST_MINI_INDEX
             n = n + FIRST_MINI_INDEX - 1
             OLD_NEW[value] = "miniPH5_{0:05d}.ph5".format(n)
             of.write("\texternal_file_name_s=./{0}\n".format(OLD_NEW[value]))
@@ -108,14 +114,15 @@ def resequence_Index_t():
     fh.close()
     of.close()
     command = "mv _Index_t.kef Index_t" + \
-        str(FIRST_MINI_INDEX) + ".kef 2>&1 > /dev/null"
+              str(FIRST_MINI_INDEX) + ".kef 2>&1 > /dev/null"
     ret = call(command, shell=True)
     if ret < 0:
         sys.stderr.write("Error: Index_t.kef may not be correct.\n")
 
 
 def resequence_M_Index_t():
-    '''   Set the value of external_file_name_s based on FIRST_MINI_INDEX in M_Index_t.kef   '''
+    '''   Set the value of external_file_name_s based on FIRST_MINI_INDEX in
+          M_Index_t.kef   '''
     global OLD_NEW
 
     OLD_NEW = {}
@@ -146,7 +153,7 @@ def resequence_M_Index_t():
         m = miniPH5RE.match(value)
         if m:
             n = int(m.groups()[0])
-            #print n, FIRST_MINI_INDEX
+            # print n, FIRST_MINI_INDEX
             n = n + FIRST_MINI_INDEX - 1
             OLD_NEW[value] = "miniPH5_{0:05d}.ph5".format(n)
             of.write("\texternal_file_name_s=./{0}\n".format(OLD_NEW[value]))
@@ -154,7 +161,7 @@ def resequence_M_Index_t():
     fh.close()
     of.close()
     command = "mv _M_Index_t.kef M_Index_t" + \
-        str(FIRST_MINI_INDEX) + ".kef 2>&1 > /dev/null"
+              str(FIRST_MINI_INDEX) + ".kef 2>&1 > /dev/null"
     ret = call(command, shell=True)
     if ret < 0:
         sys.stderr.write("Error: Index_t.kef may not be correct.\n")

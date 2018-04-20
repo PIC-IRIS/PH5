@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython4
 #
-#   Merge Response_t from a family of ph5 files and create corrected Das_t files
+#   Merge Response_t from ph5 files and create corrected Das_t files
 #   Only creates corrected Response_t and Das_t files.
 #
 #   Steve Azevedo, Mar 2017
@@ -22,16 +22,20 @@ def get_args():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.usage = "v{0}: set_n_i_response (Run from top level families directory.)".format(
+    parser.usage = "v{0}: set_n_i_response\
+    (Run from top level families directory.)".format(
         PROG_VERSION)
     #   Usually master.ph5
     #
-    # parser.add_argument ("-R", dest="catted_response_kef", required=False, default="Response_t_by_family.kef",
+    # parser.add_argument ("-R", dest="catted_response_kef", required=False,
+    # default="Response_t_by_family.kef",
     # help="Catted Respons_t kef files from all families. First line at start
     # of new family example: '## A'")
     parser.add_argument("-F", dest="families_directory", required=False,
-                        help="Directory that holds the family directories. Absolute path.")
-    parser.add_argument("-N", dest="first_n_i", required=False, type=int, default=0,
+                        help="Directory that holds the family directories."
+                             "Absolute path.")
+    parser.add_argument("-N", dest="first_n_i", required=False, type=int,
+                        default=0,
                         help="The n_i of the first entry. Defaults to zero.")
 
     ARGS = parser.parse_args()
@@ -42,7 +46,7 @@ def get_args():
 
 def dump_kefs():
     '''   Dump each family Response_t into a single kef file.
-          Label start of each Response_t with the family name '## A' as an example
+          Label start of each Response_t with the family name '## A' as example
     '''
     global ORIG_RESPS
     miniRE = re.compile("miniPH5_\d{5}.ph5")
@@ -72,6 +76,8 @@ def dump_kefs():
                         if not line:
                             break
                         fh.write(line)
+
+
 #
 #   First line at start of family kef: "## A" (as an example)
 #
@@ -79,11 +85,13 @@ def dump_kefs():
 
 def parse_kef():
     '''   Parse catted response file created by dump_kefs to a map:
-          MAP[family][index]['n_i_all':n, 'n_i_family':n, [Response_t_dictionary]]
+          MAP[family][index]['n_i_all':n, 'n_i_family':n,
+          [Response_t_dictionary]]
           family => Family name, 'A' as an example
           n_i_all => The n_i after all the Response_t are catted together
           n_i_family => The original n_i
-          Response_t_dictionary => A dictionary for the line from the Response_t, keys are
+          Response_t_dictionary => A dictionary for the line from the
+          Response_t, keys are
           column names
     '''
     global ARGS
@@ -96,8 +104,11 @@ def parse_kef():
             if not line:
                 break
             if line[0] == '#':
-                #print line, len (line)
+                # print line, len (line)
                 #   Comment with family
+                family = line[3:].strip()
+                if family not in ret:
+                    ret[family] = []
                 if len(line) == 5 and line[1] == '#':
                     #   Save row, Just finished last family so save last row
                     if row is not None:
@@ -106,12 +117,10 @@ def parse_kef():
 
                     row = {}
                     #   Get family name and set to empty list
-                    family = line[3:].strip()
-                    if family not in ret:
-                        ret[family] = []
+
                 # Families directory
                 # elif len (line) > 4 and line[3] == '/' :
-                    #ARGS.families_directory = line[3:].strip ()
+                # ARGS.families_directory = line[3:].strip ()
             #   We start a new row in the table here
             elif line[0] == '/':
                 #   Save row if there is one
@@ -132,7 +141,7 @@ def parse_kef():
                     row['kv'] = {}
                 row['kv'][key] = value
 
-        #row['n_i_all'] = n_i_all + ARGS.first_n_i
+        # row['n_i_all'] = n_i_all + ARGS.first_n_i
         row['n_i_family'] = last_n_i + ARGS.first_n_i
         ret[family].append(row)
     return ret
@@ -177,7 +186,8 @@ def print_new_Das_t(P5, n_i_map, family):
             os.mkdir(os.path.join(ARGS.families_directory, "RESPONSE_T_N_I"))
 
         DAS_KEF = os.path.join(
-            ARGS.families_directory, "RESPONSE_T_N_I", "Das_t_response_n_i_{0}.kef".format(das))
+            ARGS.families_directory, "RESPONSE_T_N_I",
+            "Das_t_response_n_i_{0}.kef".format(das))
         sys.stderr.write("Creating: {0}\n".format(DAS_KEF))
         with open(DAS_KEF, 'w+') as fh:
             fh.write("#   PH5VERSION: {0}\n".format(ph5api.PH5VERSION))
@@ -195,12 +205,16 @@ def print_new_Das_t(P5, n_i_map, family):
                         fh.write("\t{0}={1}\n".format(k, das_t[k]))
                 except IndexError:
                     sr = ph5api.fepoch(
-                        das_t['sample_rate_i'], das_t['sample_rate_multiplier_i'])
+                        das_t['sample_rate_i'],
+                        das_t['sample_rate_multiplier_i'])
                     sys.stderr.write(
-                        "#   Index out of range for DAS: {0}, sample rate: {1}\n".format(das, sr))
+                        "#   Index out of range for DAS: {0},\
+                        sample rate: {1}\n".format(
+                            das, sr))
                     sys.stderr.write("#   Entry unchanged! Suspect data.\n")
                     fh.write(
-                        "#   {0} response_table_n_i entry suspect!\n".format(i))
+                        "#   {0} response_table_n_i entry suspect!\n".format(
+                            i))
                     i += 1
                     fh.write(
                         "/Experiment_g/Receivers_g/{0}/Das_t\n".format(das_g))
@@ -215,11 +229,12 @@ def main():
     try:
         n_i_map = parse_kef()
     except BaseException:
-        print "Cannot create n_i map. Make sure the directory is correct using -F flag"
+        print "Cannot create n_i map. Make sure the directory is correct\
+         using -F flag"
         sys.exit()
 
     for family in ALL_FAMILIES:
-        #print ARGS.families_directory, family
+        # print ARGS.families_directory, family
         ph5 = os.path.join(ARGS.families_directory, family)
         # print '#***' + ph5
         try:

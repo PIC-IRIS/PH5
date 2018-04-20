@@ -74,7 +74,7 @@ class Resp (object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        #print self.lines
+        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -114,7 +114,7 @@ def read_windows_file(f):
     except BaseException:
         return w
 
-    #tdoy = TimeDoy.TimeDoy ()
+    # tdoy = TimeDoy.TimeDoy ()
     while True:
         line = fh.readline()
         if not line:
@@ -142,8 +142,8 @@ def read_windows_file(f):
                                    microsecond=0,
                                    doy=ttuple[1],
                                    epoch=None)
-            #mo, da = tdoy.getMonthDay (int (ttuple[0]), int (ttuple[1]))
-            #print flds[0], mo, da
+            # mo, da = tdoy.getMonthDay (int (ttuple[0]), int (ttuple[1]))
+            # print flds[0], mo, da
             # start_secs = time.mktime ((int (ttuple[0]),   #   Year
             # mo,                #   Month
             # da,                #   Day
@@ -154,7 +154,7 @@ def read_windows_file(f):
             # int (ttuple[1]),   #   Day of year
             # 0))                #   DST
 
-            #start_secs = int (start_secs)
+            # start_secs = int (start_secs)
             start_secs = tDOY.epoch()
             stop_secs = int(flds[1]) + start_secs
         except Exception as e:
@@ -183,12 +183,15 @@ def get_args():
     from optparse import OptionParser
 
     oparser = OptionParser()
-    oparser.usage = "Version %s 125a2ph5 [--help][--raw raw_file | --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
-    oparser.description = "Read a raw texan files and optionally a kef file into ph5 format."
+    oparser.usage = "Version %s 125a2ph5 [--help][--raw raw_file |\
+    --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
+    oparser.description = "Read a raw texan files and optionally a kef\
+    file into ph5 format."
     oparser.add_option("-r", "--raw", dest="rawfile",
                        help="RT-125(a) texan raw file", metavar="raw_file")
     oparser.add_option("-f", "--file", dest="infile",
-                       help="File containing list of RT-125(a) raw file names.",
+                       help="File containing list of RT-125(a)\
+                       raw file names.",
                        metavar="file_list_file")
     oparser.add_option("-o", "--overide", dest="overide",
                        help="Overide file name checks.",
@@ -197,19 +200,19 @@ def get_args():
                        help="The ph5 file prefix (experiment nick name).",
                        metavar="output_file_prefix")
     oparser.add_option("-M", "--num_mini", dest="num_mini",
-                       help="Create a given number of miniPH5_xxxxx.ph5 files.",
+                       help="Create given number of miniPH5_xxxxx.ph5 files.",
                        metavar="num_mini", type='int', default=None)
     oparser.add_option("-S", "--first_mini", dest="first_mini",
                        help="The index of the first miniPH5_xxxxx.ph5 file.",
                        metavar="first_mini", type='int', default=1)
     # oparser.add_option ("-d", "--dep", dest = "depfile",
-    #help = "Rawmeet dep file.",
+    # help = "Rawmeet dep file.",
     # metavar = "dep_file")
     oparser.add_option("-s", "--samplerate", dest="samplerate",
                        help="Extract only data at given sample rate.",
                        metavar="samplerate")
     oparser.add_option("-w", "--windows_file", dest="windows_file",
-                       help="File containing list of time windows to process.\n\
+                       help="File containing list of time windows to process.\
                         Window start time   Window length, seconds\n\
                         -----------------   ----\n\
                         YYYY:JJJ:HH:MM:SS   SSSS",
@@ -217,7 +220,7 @@ def get_args():
     oparser.add_option("-p", dest="doprint",
                        action="store_true", default=False)
     options, args = oparser.parse_args()
-    #print options.outfile
+    # print options.outfile
 
     FILES = []
     PH5 = None
@@ -235,7 +238,7 @@ def get_args():
     if options.outfile is not None:
         PH5 = options.outfile
 
-    if options.doprint != False:
+    if options.doprint is not False:
         ex = experiment.ExperimentGroup()
         ex.ph5open(True)
         ex.initgroup()
@@ -244,10 +247,10 @@ def get_args():
         sys.exit()
 
     # if options.keffile != None :
-        #KEFFILE = options.keffile
+        # KEFFILE = options.keffile
 
     # if options.depfile != None :
-        #DEPFILE = options.depfile
+        # DEPFILE = options.depfile
 
     if options.windows_file is not None:
         WINDOWS = read_windows_file(options.windows_file)
@@ -255,7 +258,7 @@ def get_args():
         WINDOWS = None
 
     if PH5 is None:
-        #print H5, FILES
+        # print H5, FILES
         sys.stderr.write("Error: Missing required option. Try --help\n")
         sys.exit()
 
@@ -266,7 +269,7 @@ def get_args():
     else:
         #   Set up logging
         # if not os.path.exists (OUTPATH) :
-            #os.mkdir (OUTPATH)
+            # os.mkdir (OUTPATH)
 
         logging.basicConfig(
             filename=os.path.join('.', "125a2ph5.log"),
@@ -276,7 +279,7 @@ def get_args():
 
 
 def print_it(a):
-    #a.sort ()
+    # a.sort ()
     for k in a:
         print "\t" + k
 
@@ -371,32 +374,32 @@ def closePH5():
     EX.ph5close()
 
 # def writeReceiver_t (page) :
-    #global EX
-    #p_receiver_t = {}
+    # global EX
+    # p_receiver_t = {}
 
-    #das_number = str (page.unitID)
-    #das_g, das_t, receiver_t, time_t = EX.ph5_g_receivers.newdas (das_number)
+    # das_number = str (page.unitID)
+    # das_g, das_t, receiver_t, time_t = EX.ph5_g_receivers.newdas (das_number)
 
-    #p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
-    #p_receiver_t['orientation/azimuth/value_f'] = 0.0
-    #p_receiver_t['orientation/dip/units_s'] = 'degrees'
-    #p_receiver_t['orientation/dip/value_f'] = -90.0
-    #p_receiver_t['orientation/description_s'] = 'Z'
-    #EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
+    # p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
+    # p_receiver_t['orientation/azimuth/value_f'] = 0.0
+    # p_receiver_t['orientation/dip/units_s'] = 'degrees'
+    # p_receiver_t['orientation/dip/value_f'] = -90.0
+    # p_receiver_t['orientation/description_s'] = 'Z'
+    # EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
 
-    #p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
-    #p_receiver_t['orientation/azimuth/value_f'] = 0.0
-    #p_receiver_t['orientation/dip/units_s'] = 'degrees'
-    #p_receiver_t['orientation/dip/value_f'] = 0.0
-    #p_receiver_t['orientation/description_s'] = 'N'
-    #EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
+    # p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
+    # p_receiver_t['orientation/azimuth/value_f'] = 0.0
+    # p_receiver_t['orientation/dip/units_s'] = 'degrees'
+    # p_receiver_t['orientation/dip/value_f'] = 0.0
+    # p_receiver_t['orientation/description_s'] = 'N'
+    # EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
 
-    #p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
-    #p_receiver_t['orientation/azimuth/value_f'] = 90.0
-    #p_receiver_t['orientation/dip/units_s'] = 'degrees'
-    #p_receiver_t['orientation/dip/value_f'] = 0.0
-    #p_receiver_t['orientation/description_s'] = 'E'
-    #EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
+    # p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
+    # p_receiver_t['orientation/azimuth/value_f'] = 90.0
+    # p_receiver_t['orientation/dip/units_s'] = 'degrees'
+    # p_receiver_t['orientation/dip/value_f'] = 0.0
+    # p_receiver_t['orientation/description_s'] = 'E'
+    # EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
 
 
 def window_contained(e):
@@ -410,7 +413,7 @@ def window_contained(e):
     if not e:
         return False
 
-    #tdoy = TimeDoy.TimeDoy ()
+    # tdoy = TimeDoy.TimeDoy ()
     sample_rate = e.sampleRate
     sample_count = e.sampleCount
     tDOY = timedoy.TimeDOY(year=e.year,
@@ -422,13 +425,13 @@ def window_contained(e):
                            microsecond=0,
                            doy=e.doy,
                            epoch=None)
-    #mo, da = tdoy.getMonthDay (e.year, e.doy)
+    # mo, da = tdoy.getMonthDay (e.year, e.doy)
     # event_start_epoch = time.mktime ((e.year,
     # mo,
     # da,
     # e.hour,
     # e.minute,
-    #int (e.seconds),
+    # int (e.seconds),
     # -1,
     # e.doy,
     # 0))
@@ -442,13 +445,16 @@ def window_contained(e):
         window_stop_epoch = w[1]
 
         #   Window start in event KEEP
-        if event_start_epoch <= window_start_epoch and event_stop_epoch >= window_start_epoch:
+        if event_start_epoch <= window_start_epoch and event_stop_epoch >=\
+           window_start_epoch:
             return True
         #   Entire event in window KEEP
-        if event_start_epoch >= window_start_epoch and event_stop_epoch <= window_stop_epoch:
+        if event_start_epoch >= window_start_epoch and event_stop_epoch <=\
+           window_stop_epoch:
             return True
         #   Event stop in window KEEP
-        if event_start_epoch <= window_stop_epoch and event_stop_epoch >= window_stop_epoch:
+        if event_start_epoch <= window_stop_epoch and event_stop_epoch >=\
+           window_stop_epoch:
             return True
 
     return False
@@ -456,7 +462,7 @@ def window_contained(e):
 
 def update_index_t_info(starttime, samples, sps):
     global DAS_INFO
-    #tdoy = timedoy.TimeDOY ()
+    # tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
         EXREC.ph5_g_receivers.current_g_das._v_name
@@ -467,15 +473,17 @@ def update_index_t_info(starttime, samples, sps):
         DAS_INFO[das] = []
 
     DAS_INFO[das].append(di)
-    logging.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
-        das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
-    #startms, startsecs = math.modf (starttime)
-    #startms = int (startms * 1000.); startsecs = int (startsecs)
-    #stopms, stopsecs = math.modf (stoptime)
-    #stopms = int (stopms * 1000.); stopsecs = int (stopsecs)
-    #ptimestart = tdoy.epoch2PasscalTime (startsecs, startms)
-    #ptimestop  = tdoy.epoch2PasscalTime (stopsecs, stopms)
-    #print ph5file, ph5path, ptimestart, ptimestop
+    logging.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}"
+                 .format(
+                     das, ph5file, time.ctime(starttime),
+                     time.ctime(stoptime)))
+    # startms, startsecs = math.modf (starttime)
+    # startms = int (startms * 1000.); startsecs = int (startsecs)
+    # stopms, stopsecs = math.modf (stoptime)
+    # stopms = int (stopms * 1000.); stopsecs = int (stopsecs)
+    # ptimestart = tdoy.epoch2PasscalTime (startsecs, startms)
+    # ptimestop  = tdoy.epoch2PasscalTime (stopsecs, stopms)
+    # print ph5file, ph5path, ptimestart, ptimestop
 
 
 def writeEvent(trace, page):
@@ -514,9 +522,6 @@ def writeEvent(trace, page):
     p_das_t['sample_rate_i'] = trace.sampleRate
     p_das_t['sample_rate_multiplier_i'] = 1
     p_das_t['stream_number_i'] = trace.stream_number
-    #tdoy = timedoy.TimeDOY ()
-    #mo, da = tdoy.getMonthDay (trace.year, trace.doy)
-    #p_das_t['time/epoch_l'] = int (time.mktime ((trace.year, mo, da, trace.hour, trace.minute, int (trace.seconds), -1, trace.doy, 0)))
     tDOY = timedoy.TimeDOY(year=trace.year,
                            month=None,
                            day=None,
@@ -542,16 +547,20 @@ def writeEvent(trace, page):
     EXREC.ph5_g_receivers.populateDas_t(p_das_t)
     #   Write out array data (it would be nice if we had int24) we use int32!
     EXREC.ph5_g_receivers.newarray(
-        p_das_t['array_name_data_a'], trace.trace, dtype='int32', description=des)
-    update_index_t_info(p_das_t['time/epoch_l'] + (float(p_das_t['time/micro_seconds_i']) / 1000000.),
-                        p_das_t['sample_count_i'], p_das_t['sample_rate_i'] / p_das_t['sample_rate_multiplier_i'])
+        p_das_t['array_name_data_a'],
+        trace.trace, dtype='int32', description=des)
+    update_index_t_info(p_das_t['time/epoch_l'] +
+                        (float(p_das_t['time/micro_seconds_i']) / 1000000.),
+                        p_das_t['sample_count_i'], p_das_t['sample_rate_i'] /
+                        p_das_t['sample_rate_multiplier_i'])
 
 
 def writeSOH(soh):
     global EXREC
 
     #   Check to see if any data has been written
-    if EXREC.ph5_g_receivers.current_g_das is None or EXREC.ph5_g_receivers.current_t_das is None:
+    if EXREC.ph5_g_receivers.current_g_das is None or\
+       EXREC.ph5_g_receivers.current_t_das is None:
         return
 
     name = EXREC.ph5_g_receivers.nextarray('SOH_a_')
@@ -570,21 +579,23 @@ def writeET(et):
     global EXREC
 
     #   Check to see if any data has been written
-    if EXREC.ph5_g_receivers.current_g_das is None or EXREC.ph5_g_receivers.current_t_das is None:
+    if EXREC.ph5_g_receivers.current_g_das is None or\
+       EXREC.ph5_g_receivers.current_t_das is None:
         return
 
     name = EXREC.ph5_g_receivers.nextarray('Event_a_')
     data = []
     for el in et:
         line = "%04d:%03d:%02d:%02d:%02d %d %d" % (
-            el.year, el.doy, el.hour, el.minute, el.seconds, el.action, el.parameter)
+            el.year, el.doy, el.hour, el.minute,
+            el.seconds, el.action, el.parameter)
         data.append(line)
 
     EXREC.ph5_g_receivers.newarray(name, data, description="Texan Event Table")
 
 
 def openPH5(filename):
-    #sys.stderr.write ("***   Opening: {0} ".format (filename))
+    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -595,8 +606,8 @@ def get_current_data_only(size_of_data, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
-    #global NM
-    #global INDEX_T, CURRENT_DAS
+    # global NM
+    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -633,11 +644,13 @@ def get_current_data_only(size_of_data, das=None):
         return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    #print size_of_data, size_of_exrec, size_of_data + size_of_exrec, MAX_PH5_BYTES
+    # print size_of_data, size_of_exrec, size_of_data +\
+    # size_of_exrec, MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
-            newestfile = "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
+            newestfile = "miniPH5_{0:05d}"\
+                .format(int(newestfile[8:13]) + 1)
         else:
             small = sstripp(smallest())
             return openPH5(small)
@@ -693,7 +706,7 @@ def writeINDEX():
 
 def updatePH5(f):
     global EX, EXREC
-    #sys.stdout.write ("Processing: %s %s =" % (f, CURRENT_DAS))
+    # sys.stdout.write ("Processing: %s %s =" % (f, CURRENT_DAS))
     sys.stdout.write(":<Processing>: %s\n" % (f))
     sys.stdout.flush()
     logging.info("Processing: %s..." % f)
@@ -706,7 +719,7 @@ def updatePH5(f):
     EXREC = get_current_data_only(size_of_data)
     pn = pn125.pn125(f)
     while True:
-        #i = i + 1
+        # i = i + 1
         try:
             points = pn.getEvent()
         except pn125.TRDError as e:
@@ -717,16 +730,9 @@ def updatePH5(f):
 
         if points == 0:
             break
-        # if i % 2 == 0 :
-           #sys.stdout.write ("\b-"); sys.stdout.flush ()
-        # else :
-           #sys.stdout.write ("\b="); sys.stdout.flush ()
 
         if window_contained(pn.trace):
             writeEvent(pn.trace, pn.page)
-
-        # if i == 0 :
-            #writeReceiver_t (pn.page)
 
     if DAS_INFO:
         writeINDEX()
@@ -737,8 +743,8 @@ def updatePH5(f):
     if len(pn.eventTable) > 0:
         writeET(pn.eventTable)
 
-    #ph5flush ()
-    #sys.stdout.write (" done\n")
+    # ph5flush ()
+    # sys.stdout.write (" done\n")
     sys.stdout.write(":<Finished>: {0}\n".format(f))
     sys.stdout.flush()
 
@@ -748,71 +754,73 @@ def ph5flush():
     EX.ph5flush()
 
 # def dep_update () :
-    #global EX, DEPFILE
+    # global EX, DEPFILE
 
-    #dp = Dep.Dep (DEPFILE)
-    #dp.open ()
-    #dp.read ()
-    #dp.rewindReceiver ()
-    #dp.rewindShot ()
-    #dp.rewindTime ()
+    # dp = Dep.Dep (DEPFILE)
+    # dp.open ()
+    # dp.read ()
+    # dp.rewindReceiver ()
+    # dp.rewindShot ()
+    # dp.rewindTime ()
 
     # Populate shot table Event_t
-    ##print "Event_t"
+    #  print "Event_t"
     # while 1 :
-    #p = dp.nextShot ()
+    # p = dp.nextShot ()
     # if not p : break
-    #b = dp._build (p)
-    #b = b['Event_t']
-    #EX.ph5_g_sorts.populateEvent_t (b)
+    # b = dp._build (p)
+    # b = b['Event_t']
+    # EX.ph5_g_sorts.populateEvent_t (b)
 
-    ##self.rewindShot ()
-    #current_array = None
-    #ref = None
+    # self.rewindShot ()
+    # current_array = None
+    # ref = None
     # Populate Sort_t and Array_t tables
-    # XXX   Assumes that Line designation is grouped together in dep file   XXX
+    # XXX   Assumes that Line designation is
+    # grouped together in dep file   XXX
     # while 1 :
-    #p = dp.nextReceiver ()
+    # p = dp.nextReceiver ()
     # if not p : break
-    #b = dp._build (p)
+    # b = dp._build (p)
 
     # tmp = p['R_array']   #   p['R_line']
     ##
     # if tmp != current_array :
-    #current_array = tmp
-    #next = EX.ph5_g_sorts.nextName ()
-    #ref = EX.ph5_g_sorts.newSort (next)
-    ##s = b['Sort_t']
-    ##s['array_t_name_s'] = next
-    ##print "Sort_t"
-    ##EX.ph5_g_sorts.populateSort_t (s)
+    # current_array = tmp
+    # next = EX.ph5_g_sorts.nextName ()
+    # ref = EX.ph5_g_sorts.newSort (next)
+    # s = b['Sort_t']
+    # s['array_t_name_s'] = next
+    # print "Sort_t"
+    # EX.ph5_g_sorts.populateSort_t (s)
 
-    #a = b['Array_t']
-    ##print "Array_t"
-    #EX.ph5_g_sorts.populateArray_t (a)
+    # a = b['Array_t']
+    # print "Array_t"
+    # EX.ph5_g_sorts.populateArray_t (a)
 
     # Process TIME from dep
     # while 1 :
-    #p = dp.nextTime ()
+    # p = dp.nextTime ()
     # if not p : break
     # try :
-    #filename = p['T_file']
-    #das = str (int (filename[1:5]) + 10000)
+    # filename = p['T_file']
+    # das = str (int (filename[1:5]) + 10000)
     # except :
-    #sys.stderr.write ("Warning: Can't update Time_t. Unuseable filename from TIME section of dep file.\n")
+    # sys.stderr.write ("Warning: Can't update Time_t.
+    # Unuseable filename from TIME section of dep file.\n")
     # continue
 
     # if EX.ph5_g_receivers.getdas_g (das) :
-    #b = dp._build (p)
-    #EX.ph5_g_receivers.populateTime_t (b['Time_t'])
+    # b = dp._build (p)
+    # EX.ph5_g_receivers.populateTime_t (b['Time_t'])
     # else :
-    #sys.stderr.write ("Warning: No data for %s\n" % das)
+    # sys.stderr.write ("Warning: No data for %s\n" % das)
 
 
 def update_external_references():
     global EX, INDEX_T
 
-    #sys.stderr.write ("Updating external references..."); sys.stderr.flush ()
+    # sys.stderr.write ("Updating external references..."); sys.stderr.flush ()
     logging.info("Updating external references...")
     n = 0
     for i in INDEX_T.rows:
@@ -821,7 +829,7 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        ###print external_file, external_path, das, target, external_group
+        # print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
@@ -829,7 +837,7 @@ def update_external_references():
             group_node.remove()
         except Exception as e:
             pass
-            ###print "E1 ", e
+            # print "E1 ", e
 
         #   Re-create node
         try:
@@ -840,8 +848,8 @@ def update_external_references():
             # pass
             sys.stderr.write("{0}\n".format(e))
 
-        #sys.exit ()
-    #sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
+        # sys.exit ()
+    # sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
     logging.info("done, {0} nodes recreated.\n".format(n))
 
 
@@ -851,7 +859,7 @@ def main():
 
         get_args()
 
-        #print "Initializing ph5 file..."
+        # print "Initializing ph5 file..."
         initializeExperiment()
         logging.info("125a2ph5 {0}".format(PROG_VERSION))
         logging.info("{0}".format(sys.argv))
@@ -859,8 +867,8 @@ def main():
             RESP = Resp(EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index()
             INDEX_T = Rows_Keys(rows, keys)
-            #print INDEX_T
-            #print "Processing TRD files..."
+            # print INDEX_T
+            # print "Processing TRD files..."
 
         for f in FILES:
             F = f
@@ -883,18 +891,19 @@ def main():
                 sys.stdout.write(":<Error>: {0}\n".format(f))
                 sys.stdout.flush()
                 sys.stderr.write(
-                    "Warning: Unrecognized raw file name {0}. Skipping!\n".format(f))
+                    "Warning: Unrecognized raw file name {0}. Skipping!\n"
+                    .format(f))
 
         update_external_references()
         # if DEPFILE :
-        #print "Processing dep file..."
-        #dep_update ()
+        # print "Processing dep file..."
+        # dep_update ()
 
         # if KEFFILE :
-        #print "Processing kef file..."
-        #populateExperimentTable ()
+        # print "Processing kef file..."
+        # populateExperimentTable ()
 
-        #ph5flush ()
+        # ph5flush ()
         closePH5()
         print "Done"
         logging.shutdown()

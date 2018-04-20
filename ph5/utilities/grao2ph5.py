@@ -17,8 +17,10 @@ PROG_VERSION = "2016.200 Developmental"
 #   Max size of each ph5 mini file
 MAX_PH5_BYTES = 1073741824 * 6  # GB (1024 X 1024 X 1024 X 6)
 #  Band code to sample rate map
-CHAN_SR_MAP = {'F': 5000, 'G': 5000, 'D': 1000, 'C': 1000, 'E': 250, 'S': 80, 'H': 250, 'B': 80, 'M': 10, 'L': 1,
-               'V': 0.1, 'U': 0.01, 'R': 0.001, 'P': 0.0001, 'T': 0.00001, 'Q': 0.000001, 'A': None, 'O': None}
+CHAN_SR_MAP = {'F': 5000, 'G': 5000, 'D': 1000, 'C': 1000, 'E': 250, 'S': 80,
+               'H': 250, 'B': 80, 'M': 10, 'L': 1,
+               'V': 0.1, 'U': 0.01, 'R': 0.001, 'P': 0.0001, 'T': 0.00001,
+               'Q': 0.000001, 'A': None, 'O': None}
 LAST_SAMPLE_RATE = 250
 #   Factor between mseed and PH5 file size: mseed_size * SIZE_FACTOR = PH5_size
 SIZE_FACTOR = 1.0
@@ -29,7 +31,7 @@ miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 DAS_INFO = {}
 
 
-class Index_t_Info (object):
+class Index_t_Info(object):
     __slots__ = ('das', 'ph5file', 'ph5path', 'startepoch', 'stopepoch')
 
     def __init__(self, das, ph5file, ph5path, startepoch, stopepoch):
@@ -40,7 +42,7 @@ class Index_t_Info (object):
         self.stopepoch = stopepoch
 
 
-class Resp (object):
+class Resp(object):
     __slots__ = ('lines', 'keys', 't')
 
     def __init__(self, t):
@@ -51,7 +53,7 @@ class Resp (object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        #print self.lines
+        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -62,7 +64,7 @@ class Resp (object):
         return len(self.lines)
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=[], keys=None):
@@ -109,16 +111,19 @@ def get_args():
     from argparse import ArgumentParser
 
     aparser = ArgumentParser()
-    aparser.usage = "Version %s grao2ph5 [--help][--raw raw_file | --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
+    aparser.usage = "Version %s grao2ph5 [--help][--raw raw_file |\
+    --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
     aparser.description = "Read data via web services into ph5 format."
     aparser.add_argument("-f", "--file", dest="infile",
-                         help="File containing list of:\nWS:net_code:station:location:channel:deploy_time:pickup_time:length.",
+                         help="File containing list of:\nWS:net_code:station:\
+                         location:channel:deploy_time:pickup_time:length.",
                          metavar="file_list_file")
     aparser.add_argument("-n", "--nickname", dest="outfile",
                          help="The ph5 file prefix (experiment nick name).",
                          metavar="output_file_prefix")
     aparser.add_argument("-M", "--num_mini", dest="num_mini",
-                         help="Create a given number of miniPH5_xxxxx.ph5 files.",
+                         help="Create a given number of miniPH5_xxxxx.ph5\
+                         files.",
                          metavar="num_mini", type=int, default=None)
     aparser.add_argument("-S", "--first_mini", dest="first_mini",
                          help="The index of the first miniPH5_xxxxx.ph5 file.",
@@ -143,7 +148,7 @@ def get_args():
         PH5 = args.outfile
 
     if PH5 is None:
-        #print H5, FILES
+        # print H5, FILES
         sys.stderr.write("Error: Missing required option. Try --help\n")
         sys.exit()
 
@@ -170,7 +175,7 @@ def initializeExperiment():
 
 
 def openPH5(filename):
-    #sys.stderr.write ("***   Opening: {0} ".format (filename))
+    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -181,8 +186,9 @@ def get_current_data_only(size_of_data, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
-    #global NM
-    #global INDEX_T, CURRENT_DAS
+
+    # global NM
+    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -219,7 +225,8 @@ def get_current_data_only(size_of_data, das=None):
         return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    #print size_of_data, size_of_exrec, size_of_data + size_of_exrec, MAX_PH5_BYTES
+    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,\
+    # MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
@@ -237,7 +244,7 @@ def get_current_data_only(size_of_data, das=None):
 def update_external_references():
     global EX, INDEX_T
 
-    #sys.stderr.write ("Updating external references..."); sys.stderr.flush ()
+    # sys.stderr.write ("Updating external references..."); sys.stderr.flush ()
     logging.info("Updating external references...")
     n = 0
     for i in INDEX_T.rows:
@@ -246,7 +253,7 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        ###print external_file, external_path, das, target, external_group
+        # print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
@@ -254,7 +261,7 @@ def update_external_references():
             group_node.remove()
         except Exception as e:
             pass
-            ###print "E1 ", e
+            # print "E1 ", e
 
         #   Re-create node
         try:
@@ -265,17 +272,17 @@ def update_external_references():
             # pass
             sys.stderr.write("{0}\n".format(e))
 
-        #sys.exit ()
-    #sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
+        # sys.exit ()
+    # sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
     logging.info("done, {0} nodes recreated.\n".format(n))
 
 
 def update_index_t_info(starttime, samples, sps):
     global DAS_INFO
-    #tdoy = timedoy.TimeDOY ()
+    # tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
-        EXREC.ph5_g_receivers.current_g_das._v_name
+              EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float(samples) / float(sps))
     di = Index_t_Info(das, ph5file, ph5path, starttime, stoptime)
@@ -283,8 +290,9 @@ def update_index_t_info(starttime, samples, sps):
         DAS_INFO[das] = []
 
     DAS_INFO[das].append(di)
-    logging.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
-        das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
+    logging.info(
+        "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
+            das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
 
 def writeINDEX():
@@ -337,8 +345,8 @@ def updatePH5(stream):
                 "HH2": 2, "HHZ": 3, "HDH": 4, "BHE": 1, "BHN": 2, "BHZ": 3}
     size_guess = SIZE_GUESS
     for trace in stream:
-        #print trace.stats.starttime.timetuple ()
-        #print trace.stats.starttime._get_microsecond ()
+        # print trace.stats.starttime.timetuple ()
+        # print trace.stats.starttime._get_microsecond ()
         p_das_t = {}
         p_response_t = {}
         try:
@@ -389,14 +397,18 @@ def updatePH5(stream):
         p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
             'Data_a_')
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
-            " Channel: " + trace.stats.channel
+              " Channel: " + trace.stats.channel
         #   XXX   This should be changed to handle exceptions   XXX
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         # Write out array data (it would be nice if we had int24) we use int32!
         EXREC.ph5_g_receivers.newarray(
-            p_das_t['array_name_data_a'], trace.data, dtype='int32', description=des)
-        update_index_t_info(p_das_t['time/epoch_l'] + (float(p_das_t['time/micro_seconds_i']) / 1000000.),
-                            p_das_t['sample_count_i'], p_das_t['sample_rate_i'] / p_das_t['sample_rate_multiplier_i'])
+            p_das_t['array_name_data_a'], trace.data, dtype='int32',
+            description=des)
+        update_index_t_info(p_das_t['time/epoch_l'] + (
+                    float(p_das_t['time/micro_seconds_i']) / 1000000.),
+                            p_das_t['sample_count_i'],
+                            p_das_t['sample_rate_i'] / p_das_t[
+                                'sample_rate_multiplier_i'])
 
     if DAS_INFO:
         writeINDEX()
@@ -427,7 +439,7 @@ def get_ds(network, station, location, channel, starttime, length):
                    debug=DEBUG)
     except Exception as e:
         print e.message
-    #print c
+    # print c
     try:
         stream = None
         stream = c.get_waveforms(network,
@@ -488,14 +500,18 @@ def main():
                 stream = get_ds(flds[1], flds[2], flds[3],
                                 flds[4], start_time, int(flds[7]))
                 if stream is not None:
-                    logging.info("Adding stream for {0}:{3} starting at {1} and ending at {2} to PH5".format(stream[0].stats.station,
-                                                                                                             stream[0].stats.starttime,
-                                                                                                             stream[0].stats.endtime,
-                                                                                                             stream[0].stats.channel))
+                    logging.info(
+                        "Adding stream for {0}:{3} starting at {1} and ending\
+                        at {2} to PH5".format(
+                            stream[0].stats.station,
+                            stream[0].stats.starttime,
+                            stream[0].stats.endtime,
+                            stream[0].stats.channel))
                     updatePH5(stream)
                 else:
-                    logging.info("No data found for {0} at {1}.".format(flds[2],
-                                                                        start_time))
+                    logging.info(
+                        "No data found for {0} at {1}.".format(flds[2],
+                                                               start_time))
                     time.sleep(3)
                 e = tdoy0.epoch(fepoch=True) + int(flds[7])
                 tdoy0 = timedoy.TimeDOY(epoch=e)
@@ -505,10 +521,10 @@ def main():
         sys.stdout.write(":<Finished>: {0}\n".format(f))
         sys.stdout.flush()
         # else :
-        #CURRENT_DAS = get_das (f)
+        # CURRENT_DAS = get_das (f)
         # if CURRENT_DAS == None :
         # continue
-        #updatePH5 (f)
+        # updatePH5 (f)
 
 
 if __name__ == '__main__':

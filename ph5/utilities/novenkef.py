@@ -11,24 +11,40 @@ import time
 import re
 import math
 from ph5.core import timedoy
+import sys
 
 PROG_VERSION = '2017.086 Developmental'
 KEF_COLS = {}
 #   /Experiment_g/Sorts_g/Array_t_xxx columns as of Feb 2015
-KEF_COLS['receiver'] = ['id_s', 'location/X/value_d', 'location/X/units_s', 'location/Y/value_d', 'location/Y/units_s',
-                        'location/Z/value_d', 'location/Z/units_s', 'location/coordinate_system_s', 'location/projection_s',
-                        'location/ellipsoid_s', 'location/description_s', 'deploy_time/ascii_s', 'deploy_time/epoch_l',
-                        'deploy_time/micro_seconds_i', 'deploy_time/type_s', 'pickup_time/ascii_s', 'pickup_time/epoch_l',
-                        'pickup_time/micro_seconds_i', 'pickup_time/type_s', 'das/serial_number_s', 'das/model_s',
-                        'das/manufacturer_s', 'das/notes_s', 'sensor/serial_number_s', 'sensor/model_s', 'sensor/manufacturer_s',
-                        'sensor/notes_s', 'description_s', 'channel_number_i', "seed_band_code_s", "seed_instrument_code_s",
-                        "seed_orientation_code_s", "seed_location_code_s", "seed_station_name_s", 'SEED_Channel', 'sample_rate_i',
+KEF_COLS['receiver'] = ['id_s', 'location/X/value_d', 'location/X/units_s',
+                        'location/Y/value_d', 'location/Y/units_s',
+                        'location/Z/value_d', 'location/Z/units_s',
+                        'location/coordinate_system_s',
+                        'location/projection_s',
+                        'location/ellipsoid_s', 'location/description_s',
+                        'deploy_time/ascii_s', 'deploy_time/epoch_l',
+                        'deploy_time/micro_seconds_i', 'deploy_time/type_s',
+                        'pickup_time/ascii_s', 'pickup_time/epoch_l',
+                        'pickup_time/micro_seconds_i', 'pickup_time/type_s',
+                        'das/serial_number_s', 'das/model_s',
+                        'das/manufacturer_s', 'das/notes_s',
+                        'sensor/serial_number_s', 'sensor/model_s',
+                        'sensor/manufacturer_s',
+                        'sensor/notes_s', 'description_s', 'channel_number_i',
+                        "seed_band_code_s", "seed_instrument_code_s",
+                        "seed_orientation_code_s", "seed_location_code_s",
+                        "seed_station_name_s", 'SEED_Channel', 'sample_rate_i',
                         'sample_rate_multiplier_i']
 #   /Experiment_g/Sorts_g/Event_t[_xxx] columns as of Feb 2015
-KEF_COLS['event'] = ['id_s', 'location/X/value_d', 'location/X/units_s', 'location/Y/value_d', 'location/Y/units_s', 'location/Z/value_d',
-                     'location/Z/units_s', 'location/coordinate_system_s', 'location/projection_s', 'location/ellipsoid_s',
-                     'location/description_s', 'location/description_s', 'time/ascii_s', 'time/epoch_l', 'time/micro_seconds_i',
-                     'time/type_s', 'size/value_d', 'size/units_s', 'depth/value_d', 'depth/units_s', 'description_s']
+KEF_COLS['event'] = ['id_s', 'location/X/value_d', 'location/X/units_s',
+                     'location/Y/value_d', 'location/Y/units_s',
+                     'location/Z/value_d',
+                     'location/Z/units_s', 'location/coordinate_system_s',
+                     'location/projection_s', 'location/ellipsoid_s',
+                     'location/description_s', 'location/description_s',
+                     'time/ascii_s', 'time/epoch_l', 'time/micro_seconds_i',
+                     'time/type_s', 'size/value_d', 'size/units_s',
+                     'depth/value_d', 'depth/units_s', 'description_s']
 
 timeRE = re.compile(".*time/ascii_s")
 locationRE = re.compile("(location/[XY]/).*")
@@ -53,6 +69,7 @@ def get_times(key, value):
             fepoch = timedoy.passcal2epoch(value, fepoch=True)
         except timedoy.TimeError:
             #   This SHOULD never happen
+            pre = key.split('/')[0]
             sys.stderr.write(
                 "Error: Bad time value for {0} {1}.".format(key, value))
             line = "\t{0}/ascii_s = {1}\n".format(pre, time.ctime(int(0)))
@@ -63,7 +80,7 @@ def get_times(key, value):
             return line
 
     f, i = math.modf(fepoch)
-    pre = key.split('/')[0]
+
     line = "\t{0}/ascii_s = {1}\n".format(pre, time.ctime(int(i)))
     line += "\t{0}/epoch_l = {1}\n".format(pre, int(i))
     line += "\t{0}/micro_seconds_i = {1}\n".format(pre, int(f * 1000000.))
@@ -98,7 +115,7 @@ def write_receiver(top, filename):
                     for k in row.keys():
                         if k in KEF_COLS['receiver']:
                             try:
-                                #print k
+                                # print k
                                 if timeRE.match(k):
                                     fh.write(get_times(k, row[k]))
                                 elif locationRE.match(k):
@@ -125,13 +142,16 @@ def write_receiver(top, filename):
                                     fh.write("\t{0} = {1}\n".format(k, row[k]))
                             except Exception as e:
                                 sys.stderr.write(
-                                    "Error writing kef file: {0}.\n".format(e.message))
+                                    "Error writing kef file: {0}.\n".format(
+                                        e.message))
 
     fh.close()
 
 
 PATH['event'] = '/Experiment_g/Sorts_g/Event_t_{0:03d}'
-#PATH['event'] = '/Experiment_g/Sorts_g/Event_t'
+
+
+# PATH['event'] = '/Experiment_g/Sorts_g/Event_t'
 
 
 def write_event(top, filename):

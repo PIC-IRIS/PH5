@@ -6,7 +6,6 @@ import os
 
 PROG_VERSION = "2016.181 Developmental"
 
-
 RECEIVER_T = "kef.tmp"
 RECEIVER_T_STRING = str("""
 #   Table row 1
@@ -53,13 +52,17 @@ def get_args():
     from optparse import OptionParser
 
     oparser = OptionParser()
-    oparser.usage = "Version: %s initialize_ph5 [--help]--kef kef_file --output output_file" % experiment.PROG_VERSION
-    oparser.description = "Program to initialize PH5 file at start of experiment. The kef file should contain information for experiment table /Experiment_g/Experiment_t."
+    oparser.usage = "Version: %s initialize_ph5 [--help]--kef kef_file\
+     --output output_file" % experiment.PROG_VERSION
+    oparser.description = "Program to initialize PH5 file at start of\
+    experiment. The kef file should contain information for experiment table\
+     /Experiment_g/Experiment_t."
     oparser.add_option("-n", "--nickname", dest="outfile",
                        help="Experiment nickname.",
                        metavar="output_file")
     oparser.add_option("-r", "--receiver_t", dest="receiver_t",
-                       help="Load an alternate /Experiment_g/Receivers_g/Receiver_t kef file.",
+                       help="Load an alternate\
+                       /Experiment_g/Receivers_g/Receiver_t kef file.",
                        metavar="receiver_t")
     options, args = oparser.parse_args()
 
@@ -72,7 +75,7 @@ def get_args():
         RECEIVER_T = os.path.abspath(options.receiver_t)
 
     if PH5 is None:
-        #print H5, FILES
+        # print H5, FILES
         sys.stderr.write("Error: Missing required option. Try --help\n")
         os.remove("kef.tmp")
         sys.exit()

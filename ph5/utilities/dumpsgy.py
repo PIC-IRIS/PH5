@@ -15,29 +15,66 @@ PROG_VERSION = '2017.256'
 
 SAMPLE_LENGTH = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
 
-SIZEOF = {"lineSeq": 32, "reelSeq": 32, "event_number": 32, "channel_number": 32, "energySourcePt": 32, "cdpEns": 32, "traceInEnsemble": 32,
-          "traceID": 16, "vertSum": 16, "horSum": 16, "dataUse": 16, "sourceToRecDist": 32, "recElevation": 32, "sourceSurfaceElevation": 32,
-          "sourceDepth": 32, "datumElevRec": 32, "datumElevSource": 32, "sourceWaterDepth": 32, "recWaterDepth": 32, "elevationScale": 16,
-          "coordScale": 16, "sourceLongOrX": 32, "sourceLatOrY": 32, "recLongOrX": 32, "recLatOrY": 32, "coordUnits": 16, "weatheringVelocity": 16,
-          "subWeatheringVelocity": 16, "sourceUpholeTime": 16, "recUpholeTime": 16, "sourceStaticCor": 16, "recStaticCor": 16, "totalStatic": 16,
-          "lagTimeA": 16, "lagTimeB": 16, "delay": 16, "muteStart": 16, "muteEnd": 16, "sampleLength": 16, "deltaSample": 16, "gainType": 16,
-          "gainConst": 16, "initialGain": 16, "correlated": 16, "sweepStart": 16, "sweepEnd": 16, "sweepLength": 16, "sweepType": 16,
-          "sweepTaperAtStart": 16, "sweepTaperAtEnd": 16, "taperType": 16, "aliasFreq": 16, "aliasSlope": 16, "notchFreq": 16, "notchSlope": 16,
-          "lowCutFreq": 16, "hiCutFreq": 16, "lowCutSlope": 16, "hiCutSlope": 16, "year": 16, "day": 16, "hour": 16, "minute": 16, "second": 16,
-          "timeBasisCode": 16, "traceWeightingFactor": 16, "phoneRollPos1": 16, "phoneFirstTrace": 16, "phoneLastTrace": 16, "gapSize": 16,
-          "taperOvertravel": 16, "station_name": 48, "sensor_serial": 64, "channel_name": 16, "totalStaticHi": 16, "samp_rate": 32, "data_form": 16,
-          "m_secs": 16, "trigyear": 16, "trigday": 16, "trighour": 16, "trigminute": 16, "trigsecond": 16, "trigmills": 16, "scale_fac": 32,
-          "inst_no": 16, "unassigned": 16, "num_samps": 32, "max": 32, "min": 32, "start_usec": 32, "shot_size": 16, "shot_year": 16, "shot_doy": 16,
-          "shot_hour": 16, "shot_minute": 16, "shot_second": 16, "shot_us": 32, "si_override": 32, "sensor_azimuth": 16, "sensor_inclination": 16,
-          "lmo_ms": 32, "lmo_flag": 16, "inst_type": 16, "correction": 16, "azimuth": 16, "sensor_type": 16, "sensor_sn": 16, "das_sn": 16, "empty1": 16,
-          "samples": 32, "empty2": 32, "clock_drift": 16, "empty3": 16, "waterDelay": 32, "startMute": 32, "endMute": 32, "sampleInt": 32,
-          "waterBottomTime": 32, "endOfRp": 32, "dummy1": 32, "dummy2": 32, "dummy3": 32, "dummy4": 32, "dummy5": 32, "dummy6": 32, "dummy7": 32,
-          "dummy8": 32, "dummy9": 32, "Xcoor": 32, "Ycoor": 32, "Inn": 32, "Cnn": 32, "Spn": 32, "Scal": 16, "Tvmu": 16, "Tucmant": 32, "Tucexp": 16,
-          "Tdu": 16, "Dti": 16, "Tscaler": 16, "Sto": 16, "Sed": 48, "Smsmant": 32, "Smsexp": 16, "Smu": 16, "num_samps": 32, "samp_rate": 32, "Revision": 16,
-          "ShotID": 32, "AuxChanSig": 8, "AuxChanID": 8, "SPL": 32, "SPS": 32, "unass01": 16, "unass02": 16, "SenInt": 8, "VectSens": 8, "HorAz": 16, "VertAngle": 16,
-          "SourceType": 8, "SensorType": 8, "AuxChanSetType": 8, "NoiseEditType": 8, "NoiseEditGate": 16, "SystemDevice": 8, "FSU": 3, "DevChan": 8, "SourceCoCo": 8,
-          "DevStatusBits": 8, "BITTest": 8, "SweepPhaseRot": 16, "unass03": 8, "BoxFun": 8, "SourceEffortM": 32, "SourceEffortE": 16, "SourceUnits": 16,
-          "EventType": 8, "SensorTypeID": 8, "SensorSerial": 3, "SensorVersion": 8, "SensorRev": 8, "VOR": 8, }
+SIZEOF = {"lineSeq": 32, "reelSeq": 32, "event_number": 32,
+          "channel_number": 32, "energySourcePt": 32, "cdpEns": 32,
+          "traceInEnsemble": 32,
+          "traceID": 16, "vertSum": 16, "horSum": 16, "dataUse": 16,
+          "sourceToRecDist": 32, "recElevation": 32,
+          "sourceSurfaceElevation": 32,
+          "sourceDepth": 32, "datumElevRec": 32, "datumElevSource": 32,
+          "sourceWaterDepth": 32, "recWaterDepth": 32, "elevationScale": 16,
+          "coordScale": 16, "sourceLongOrX": 32, "sourceLatOrY": 32,
+          "recLongOrX": 32, "recLatOrY": 32, "coordUnits": 16,
+          "weatheringVelocity": 16,
+          "subWeatheringVelocity": 16, "sourceUpholeTime": 16,
+          "recUpholeTime": 16, "sourceStaticCor": 16, "recStaticCor": 16,
+          "totalStatic": 16,
+          "lagTimeA": 16, "lagTimeB": 16, "delay": 16, "muteStart": 16,
+          "muteEnd": 16, "sampleLength": 16, "deltaSample": 16, "gainType": 16,
+          "gainConst": 16, "initialGain": 16, "correlated": 16,
+          "sweepStart": 16, "sweepEnd": 16, "sweepLength": 16, "sweepType": 16,
+          "sweepTaperAtStart": 16, "sweepTaperAtEnd": 16, "taperType": 16,
+          "aliasFreq": 16, "aliasSlope": 16, "notchFreq": 16, "notchSlope": 16,
+          "lowCutFreq": 16, "hiCutFreq": 16, "lowCutSlope": 16,
+          "hiCutSlope": 16, "year": 16, "day": 16, "hour": 16, "minute": 16,
+          "second": 16,
+          "timeBasisCode": 16, "traceWeightingFactor": 16, "phoneRollPos1": 16,
+          "phoneFirstTrace": 16, "phoneLastTrace": 16, "gapSize": 16,
+          "taperOvertravel": 16, "station_name": 48, "sensor_serial": 64,
+          "channel_name": 16, "totalStaticHi": 16, "samp_rate": 32,
+          "data_form": 16,
+          "m_secs": 16, "trigyear": 16, "trigday": 16, "trighour": 16,
+          "trigminute": 16, "trigsecond": 16, "trigmills": 16, "scale_fac": 32,
+          "inst_no": 16, "unassigned": 16, "num_samps": 32, "max": 32,
+          "min": 32, "start_usec": 32, "shot_size": 16, "shot_year": 16,
+          "shot_doy": 16,
+          "shot_hour": 16, "shot_minute": 16, "shot_second": 16, "shot_us": 32,
+          "si_override": 32, "sensor_azimuth": 16, "sensor_inclination": 16,
+          "lmo_ms": 32, "lmo_flag": 16, "inst_type": 16, "correction": 16,
+          "azimuth": 16, "sensor_type": 16, "sensor_sn": 16, "das_sn": 16,
+          "empty1": 16,
+          "samples": 32, "empty2": 32, "clock_drift": 16, "empty3": 16,
+          "waterDelay": 32, "startMute": 32, "endMute": 32, "sampleInt": 32,
+          "waterBottomTime": 32, "endOfRp": 32, "dummy1": 32, "dummy2": 32,
+          "dummy3": 32, "dummy4": 32, "dummy5": 32, "dummy6": 32, "dummy7": 32,
+          "dummy8": 32, "dummy9": 32, "Xcoor": 32, "Ycoor": 32, "Inn": 32,
+          "Cnn": 32, "Spn": 32, "Scal": 16, "Tvmu": 16, "Tucmant": 32,
+          "Tucexp": 16,
+          "Tdu": 16, "Dti": 16, "Tscaler": 16, "Sto": 16, "Sed": 48,
+          "Smsmant": 32, "Smsexp": 16, "Smu": 16, "num_samps": 32,
+          "samp_rate": 32, "Revision": 16,
+          "ShotID": 32, "AuxChanSig": 8, "AuxChanID": 8, "SPL": 32, "SPS": 32,
+          "unass01": 16, "unass02": 16, "SenInt": 8, "VectSens": 8,
+          "HorAz": 16,
+          "VertAngle": 16,
+          "SourceType": 8, "SensorType": 8, "AuxChanSetType": 8,
+          "NoiseEditType": 8, "NoiseEditGate": 16, "SystemDevice": 8, "FSU": 3,
+          "DevChan": 8, "SourceCoCo": 8,
+          "DevStatusBits": 8, "BITTest": 8, "SweepPhaseRot": 16, "unass03": 8,
+          "BoxFun": 8, "SourceEffortM": 32, "SourceEffortE": 16,
+          "SourceUnits": 16,
+          "EventType": 8, "SensorTypeID": 8, "SensorSerial": 3,
+          "SensorVersion": 8, "SensorRev": 8, "VOR": 8, }
 
 
 def get_args():
@@ -60,7 +97,9 @@ def get_args():
 
     oparser.add_option("-t", action="store", dest="ttype",
                        choices=['U', 'P', 'S', 'N', 'I'],
-                       help="Extended trace header style. U => USGS Menlo, P => PASSCAL, S => SEG, I => SIOSEIS, N => iNova FireFly")
+                       help="Extended trace header style. U => USGS Menlo,\
+                       P => PASSCAL, S => SEG, I => SIOSEIS,\
+                       N => iNova FireFly")
 
     oparser.add_option("-p", action="store_true",
                        dest="print_true", default=False)
@@ -72,9 +111,12 @@ def get_args():
                        dest="traces_per_ensemble", type="int")
 
     oparser.add_option("-F", action="store", dest="trace_format", type="int",
-                       help="1 = IBM - 4 bytes, 2 = INT - 4 bytes, 3 = INT - 2 bytes, 5 = IEEE - 4 bytes, 8 = INT - 1 byte")
+                       help="1 = IBM - 4 bytes, 2 = INT - 4 bytes,\
+                       3 = INT - 2 bytes, 5 = IEEE - 4 bytes,\
+                       8 = INT - 1 byte")
 
-    oparser.add_option("-e", action="store", dest="endian", type="str", default='big',
+    oparser.add_option("-e", action="store", dest="endian",
+                       type="str", default='big',
                        help="Endianess: 'big' or 'little'. Default = 'big'")
 
     oparser.add_option("-i", action="store_false", dest="ebcdic", default=True,
@@ -208,7 +250,7 @@ def print_trace_header(container):
     print "---------- Trace Header ----------"
     for k in keys:
         what = "container.{0}".format(k)
-        #print repr (what)
+        # print repr (what)
         try:
             if tt == 9999:
                 raise
@@ -277,7 +319,7 @@ def print_extended_header(container):
 
 def read_trace(n, l, f=5):
     ret = []
-    if PRINT == True:
+    if PRINT is True:
         for i in range(n):
             buf = FH.read(l)
             #   IBM floats - 4 byte - Must be big endian
@@ -352,22 +394,22 @@ def main():
             F = binary_container.format
         #   Bytes per sample
         try:
-            l = SAMPLE_LENGTH[binary_container.format]
+            ll = SAMPLE_LENGTH[binary_container.format]
         except KeyError:
-            l = 4
+            ll = 4
 
         #   Bytes per trace
         if L is None:
-            L = l * n
+            L = ll * n
         else:
-            n = int(L) / l
+            n = int(L) / ll
 
         #   Traces per record
         if T is None:
             T = binary_container.ntrpr
     else:
         T = 1
-        n = l = F = 0
+        n = ll = F = 0
 
     #   Print Extended Textural Headers
     if nt > 0:
@@ -385,10 +427,10 @@ def main():
         for t in range(T):
             trace_container = read_trace_header()
             extended_header = read_extended_header()
-            #print t,
+            # print t,
             print_trace_header(trace_container)
             print_extended_header(extended_header)
-            trace = read_trace(n, l, F)
+            trace = read_trace(n, ll, F)
             if trace:
                 print '------------------------'
             for t in trace:

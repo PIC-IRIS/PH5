@@ -11,16 +11,20 @@ import sys
 import time
 #   This provides the base functionality
 from ph5.core import experiment
+
 #   The wiggles are stored as numpy arrays
 
 PROG_VERSION = "2018.067 Developmental"
+
+
 #
 #   These are to hold different parts of the meta-data
 #
 
 
 def init_local():
-    global EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T, ARRAY_T, DAS_T
+    global EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T
+    global ARRAY_T, DAS_T
     global RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, TABLE_KEY
     #   /Experiment_g/Experiment_t
     EXPERIMENT_T = None
@@ -40,7 +44,8 @@ def init_local():
     DAS_T = {}
     #   /Experiment_g/Receivers_g/Receiver_t
     RECEIVER_T = None
-    #   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by SOH_a_[n] name)
+    #   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by
+    #   SOH_a_[n] name)
     SOH_A = {}
     #   /Experiment_g/Receivers_g/Index_t
     INDEX_T = None
@@ -53,12 +58,13 @@ def init_local():
     #
     TABLE_KEY = None
 
+
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -71,17 +77,19 @@ class Rows_Keys (object):
         if keys is not None:
             self.keys = keys
 
+
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
 
 
-class Das_Groups (object):
+class Das_Groups(object):
     __slots__ = ('das', 'node')
 
     def __init__(self, das=None, node=None):
         self.das = das
         self.node = node
+
 
 #
 #   Read Command line arguments
@@ -89,15 +97,18 @@ class Das_Groups (object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
-        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, \
+    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+        EVENT_TABLE, \
+        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE,\
+        TIME_TABLE, \
         TABLE_KEY, INDEX_TABLE, M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS
 
     from optparse import OptionParser
 
     oparser = OptionParser()
 
-    oparser.usage = "Version: {0}\ntabletokef --nickname ph5-file-prefix options".format(
+    oparser.usage = "Version: {0}\ntabletokef\
+     --nickname ph5-file-prefix options".format(
         PROG_VERSION)
 
     oparser.description = "Dump a table to a kef file."
@@ -107,7 +118,7 @@ def get_args():
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files. Default to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-u", "--update_key", dest="update_key",
@@ -116,7 +127,8 @@ def get_args():
 
     oparser.add_option("-d", dest="debug", action="store_true", default=False)
 
-    oparser.add_option("-E", "--Experiment_t", dest="experiment_t", action="store_true",
+    oparser.add_option("-E", "--Experiment_t", dest="experiment_t",
+                       action="store_true",
                        default=False,
                        help="Dump /Experiment_g/Experiment_t to a kef file.")
 
@@ -125,50 +137,66 @@ def get_args():
                        help="Dump /Experiment_g/Sorts_g/Sort_t to a kef file.")
 
     oparser.add_option("-O", "--Offset_t", dest="offset_t_", metavar="a_e",
-                       help="Dump /Experiment_g/Sort_g/Offset_t_[arrayID_eventID] to a kef file.")
+                       help="Dump\
+                       /Experiment_g/Sort_g/Offset_t_[arrayID_eventID]\
+                       to a kef file.")
 
     oparser.add_option("-V", "--Event_t_", dest="event_t_", metavar="n",
                        type=int,
-                       help="Dump /Experiment_g/Sorts_g/Event_t_[n] to a kef file.")
+                       help="Dump /Experiment_g/Sorts_g/Event_t_[n]\
+                        to a f file.")
 
     oparser.add_option("--all_events", dest='all_events', action='store_true',
                        default=False,
-                       help='Dump all /Experiment_g/Sorts_g/Event_t_xxx to a kef file.')
+                       help='Dump all /Experiment_g/Sorts_g/Event_t_xxx\
+                        to a kef file.')
 
     oparser.add_option("-A", "--Array_t_", dest="array_t_", metavar="n",
                        type=int,
-                       help="Dump /Experiment_g/Sorts_g/Array_t_[n] to a kef file.")
+                       help="Dump /Experiment_g/Sorts_g/Array_t_[n]\
+                        to a kef file.")
 
     oparser.add_option("--all_arrays", dest='all_arrays', action='store_true',
                        default=False,
-                       help="Dump all /Experiment_g/Sorts_g/Array_t_xxx to a kef file.")
+                       help="Dump all /Experiment_g/Sorts_g/Array_t_xxx\
+                        to a kef file.")
 
-    oparser.add_option("-R", "--Response_t", dest="response_t", action="store_true",
+    oparser.add_option("-R", "--Response_t", dest="response_t",
+                       action="store_true",
                        default=False,
-                       help="Dump /Experiment_g/Responses_g/Response_t to a kef file.")
+                       help="Dump /Experiment_g/Responses_g/Response_t\
+                        to a kef file.")
 
-    oparser.add_option("-P", "--Report_t", dest="report_t", action="store_true",
+    oparser.add_option("-P", "--Report_t", dest="report_t",
+                       action="store_true",
                        default=False,
-                       help="Dump /Experiment_g/Reports_g/Report_t to a kef file.")
+                       help="Dump /Experiment_g/Reports_g/Report_t\
+                        to a kef file.")
 
-    oparser.add_option("-C", "--Receiver_t", dest="receiver_t", action="store_true",
+    oparser.add_option("-C", "--Receiver_t", dest="receiver_t",
+                       action="store_true",
                        default=False,
-                       help="Dump /Experiment_g/Receivers_g/Receiver_t to a kef file.")
+                       help="Dump /Experiment_g/Receivers_g/Receiver_t\
+                        to a kef file.")
 
     oparser.add_option("-I", "--Index_t", dest="index_t", action="store_true",
                        default=False,
-                       help="Dump /Experiment_g/Receivers_g/Index_t to a kef file.")
+                       help="Dump /Experiment_g/Receivers_g/Index_t\
+                        to a kef file.")
 
-    oparser.add_option("-M", "--M_Index_t", dest="m_index_t", action="store_true",
+    oparser.add_option("-M", "--M_Index_t", dest="m_index_t",
+                       action="store_true",
                        default=False,
                        help="Dump /Experiment_g/Maps_g/Index_t to a kef file.")
 
     oparser.add_option("-D", "--Das_t", dest="das_t_", metavar="das",
-                       help="Dump /Experiment_g/Receivers_g/Das_g_[das]/Das_t to a kef file.")
+                       help="Dump /Experiment_g/Receivers_g/Das_g_[das]/Das_t\
+                        to a kef file.")
 
     oparser.add_option("-T", "--Time_t", dest="time_t", action="store_true",
                        default=False,
-                       help="Dump /Experiment_g/Receivers_g/Time_t to a kef file.")
+                       help="Dump /Experiment_g/Receivers_g/Time_t\
+                        to a kef file.")
 
     options, args = oparser.parse_args()
 
@@ -192,7 +220,8 @@ def get_args():
             OFFSET_TABLE = map(int, options.offset_t_.split("_"))
         except Exception as e:
             sys.stderr.write(
-                "Offset table should be entered as arrayID underscore shotLineID, eg. 1_2 or 0_0.")
+                "Offset table should be entered as arrayID underscore\
+                 shotLineID, eg. 1_2 or 0_0.")
             sys.stderr.write(e.message)
             sys.exit()
     else:
@@ -226,10 +255,11 @@ def get_args():
         sys.stderr.write("Error: Missing required option. Try --help\n")
         sys.exit(-1)
 
-    #ph5_path = os.path.join (PATH, PH5) + '.ph5'
+    # ph5_path = os.path.join (PATH, PH5) + '.ph5'
     # if not os.path.exists (ph5_path) :
-        #sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
-        #sys.exit (-2)
+    # sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
+    # sys.exit (-2)
+
 
 #
 #   Initialize ph5 file
@@ -276,7 +306,7 @@ def table_print(t, a, fh=None):
         else:
             fh.write(s)
             s = ''
-    #f=open(PATH+"/temp.kef", "w")
+    # f=open(PATH+"/temp.kef", "w")
     # f.write(s)
 
 
@@ -323,7 +353,7 @@ def read_event_table():
 
     try:
         events, event_keys = EX.ph5_g_sorts.read_events(T)
-    except Exception as e:
+    except Exception:
         sys.stderr.write("Error: Can't read {0}.\nDoes it exist?\n".format(T))
         sys.exit()
 
@@ -341,7 +371,7 @@ def read_all_event_table():
     for name in names:
         try:
             events, event_keys = EX.ph5_g_sorts.read_events(name)
-        except Exception as e:
+        except Exception:
             sys.stderr.write(
                 "Error: Can't read {0}.\nDoes it exist?\n".format(name))
             continue
@@ -354,41 +384,43 @@ def read_offset_table():
     '''   Read /Experinent_t/Sorts_g/Offset_t   '''
     global EX, OFFSET_T
 
-    #offset_t = []
-    #array = int (OFFSET_TABLE[0])
-    #if array < 1 : array = 1
-    #array = "Array_t_{0:03d}".format (array)
+    # offset_t = []
+    # array = int (OFFSET_TABLE[0])
+    # if array < 1 : array = 1
+    # array = "Array_t_{0:03d}".format (array)
     # try :
-    #arrays, array_keys = EX.ph5_g_sorts.read_arrays (array)
+    # arrays, array_keys = EX.ph5_g_sorts.read_arrays (array)
     # except Exception as e :
-    #sys.stderr.write ("Error: Can't read {0}.\n".format (array))
-    #sys.exit ()
+    # sys.stderr.write ("Error: Can't read {0}.\n".format (array))
+    # sys.exit ()
 
-    #event = int (OFFSET_TABLE[1])
+    # event = int (OFFSET_TABLE[1])
     # if event == 0 :
-    #event = "Event_t"
-    #name = "Offset_t"
+    # event = "Event_t"
+    # name = "Offset_t"
     # else :
-    #event = "Event_t_{0:03d}".format (event)
-    #name = "Offset_t_{0:03d}_{1:03d}".format (int (OFFSET_TABLE[0]), int (OFFSET_TABLE[1]))
+    # event = "Event_t_{0:03d}".format (event)
+    # name = "Offset_t_{0:03d}_{1:03d}".format (int (OFFSET_TABLE[0]),
+    # int (OFFSET_TABLE[1]))
 
     # try :
-    #events, event_keys = EX.ph5_g_sorts.read_events (event)
+    # events, event_keys = EX.ph5_g_sorts.read_events (event)
     # except Exception as e :
-    #sys.stderr.write ("Error: Can't read {0}.\n".format (event))
-    #sys.exit ()
+    # sys.stderr.write ("Error: Can't read {0}.\n".format (event))
+    # sys.exit ()
 
     # for array_t in arrays :
-    #sta = array_t['id_s']
+    # sta = array_t['id_s']
     # for event_t in events :
-    #evt = event_t['id_s']
+    # evt = event_t['id_s']
     # try :
-    #offset = EX.ph5_g_sorts.read_offset_fast (evt, sta, name=name)
+    # offset = EX.ph5_g_sorts.read_offset_fast (evt, sta, name=name)
     # except Exception as e :
-    #sys.stderr.write ("Error: Problem reading offset for sta {0}, shot {1}. PH5 table {3}.".format (sta, evt, name))
+    # sys.stderr.write ("Error: Problem reading offset for sta {0}, shot {1}.
+    #  PH5 table {3}.".format (sta, evt, name))
     # break
 
-    #offset_t.append (offset)
+    # offset_t.append (offset)
 
     if OFFSET_TABLE[0] == 0 or OFFSET_TABLE[1] == 0:
         name = "Offset_t"
@@ -398,10 +430,10 @@ def read_offset_table():
 
     try:
         rows, keys = EX.ph5_g_sorts.read_offset(name)
-    except Exception as e:
+    except Exception:
         return
 
-    #print offset_t
+    # print offset_t
     OFFSET_T[name] = Rows_Keys(rows, keys)
 
 
@@ -498,6 +530,7 @@ def read_receivers(das=None):
         #   Read SOH file(s) for this das
         SOH_A[d] = EX.ph5_g_receivers.read_soh()
 
+
 #####################################################
 # def readPH5
 # author: Lan Dam
@@ -506,10 +539,11 @@ def read_receivers(das=None):
 
 
 def readPH5(exp, filename, path, tableType, arg=None):
-    #print "readPH5"
-    global EX, OFFSET_TABLE, EVENT_TABLE, ARRAY_TABLE, OFFSET_T, EVENT_T, ARRAY_T
+    # print "readPH5"
+    global EX, OFFSET_TABLE, EVENT_TABLE, ARRAY_TABLE, OFFSET_T, EVENT_T,\
+        ARRAY_T
     global DAS_T, DASS, SOH_A
-    init_local()           # innitiate values and clear cache
+    init_local()  # innitiate values and clear cache
 
     EX = exp
 
@@ -529,7 +563,7 @@ def readPH5(exp, filename, path, tableType, arg=None):
         # read_offset_table() will read from global var. OFFSET_TABLE to add
         # new item into dict. OFFSET_T
         read_offset_table()
-        #keys = OFFSET_T.keys ()
+        # keys = OFFSET_T.keys ()
         return OFFSET_T
 
     if tableType == "All_Offset_t":
@@ -607,8 +641,10 @@ def readPH5(exp, filename, path, tableType, arg=None):
 
 
 def main():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE, \
-        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, INDEX_TABLE
+    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+        EVENT_TABLE, \
+        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE,\
+        TIME_TABLE, INDEX_TABLE
 
     init_local()
 
@@ -635,7 +671,7 @@ def main():
         keys = EVENT_T.keys()
         for k in keys:
             table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
-    elif ALL_EVENTS != False:
+    elif ALL_EVENTS is not False:
         read_all_event_table()
         keys = EVENT_T.keys()
         for k in keys:

@@ -18,12 +18,13 @@ PROG_VERSION = "2016.334"
 os.environ['TZ'] = 'UTM'
 time.tzset()
 
+
 #
 #   To hold table rows and keys
 #
 
 
-class Rows_Keys (object):
+class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
     def __init__(self, rows=None, keys=None):
@@ -36,17 +37,19 @@ class Rows_Keys (object):
         if keys is not None:
             self.keys = keys
 
+
 #
 #   To hold DAS sn and references to Das_g_[sn]
 #
 
 
-class Das_Groups (object):
+class Das_Groups(object):
     __slots__ = ('das', 'node')
 
     def __init__(self, das=None, node=None):
         self.das = das
         self.node = node
+
 
 #
 #   Read Command line arguments
@@ -60,9 +63,11 @@ def get_args():
 
     oparser = OptionParser()
 
-    oparser.usage = "sort-kef-gen --nickname ph5-file-prefix --serial-number DAS-SN | --auto [--path path-to-ph5-files]"
+    oparser.usage = "sort-kef-gen --nickname ph5-file-prefix --serial-number\
+     DAS-SN | --auto [--path path-to-ph5-files]"
 
-    oparser.description = "Version: {0} Generate a kef file to populate Sort_t.".format(
+    oparser.description = "Version: {0} Generate a kef file to\
+     populate Sort_t.".format(
         PROG_VERSION)
 
     oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
@@ -70,7 +75,7 @@ def get_args():
                        metavar="ph5_file_prefix")
 
     oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Defaults to current directory.",
+                       help="Path to ph5 files Defaults to current directory.",
                        metavar="ph5_path")
 
     oparser.add_option("-s", "--serial-number", dest="sn",
@@ -78,7 +83,8 @@ def get_args():
                        metavar="sn")
 
     oparser.add_option("-a", "--auto", dest="auto",
-                       help="Attempt to auto detect windows. Windows should start at the same time on all DASs.",
+                       help="Attempt to auto detect windows. Windows should\
+                        start at the same time on all DASs.",
                        action="store_true", default=False,
                        metavar="auto")
 
@@ -103,14 +109,15 @@ def get_args():
     if options.debug is not None:
         DEBUG = options.debug
 
-    if PH5 is None or (SN is None and AUTO == False):
+    if PH5 is None or (SN is None and AUTO is False):
         sys.stderr.write("Error: Missing required option. Try --help\n")
         sys.exit(-1)
 
-    #ph5_path = os.path.join (PATH, PH5) + '.ph5'
+    # ph5_path = os.path.join (PATH, PH5) + '.ph5'
     # if not os.path.exists (ph5_path) :
-        #sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
-        #sys.exit (-2)
+    # sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
+    # sys.exit (-2)
+
 
 #
 #   Initialize ph5 file
@@ -124,6 +131,7 @@ def initialize_ph5(editmode=False):
     EX = experiment.ExperimentGroup(PATH, PH5)
     EX.ph5open(editmode)
     EX.initgroup()
+
 
 #   XXX   Not used
 
@@ -178,7 +186,7 @@ def read_das_table(das):
     #   Get sample count for this array
     for r0 in r:
         r0['array_name_data_a']
-        #samples = get_sample_count (das_group, data_array_name)
+        # samples = get_sample_count (das_group, data_array_name)
         r0['samples'] = r0['sample_count_i']
         R.append(r0)
 
@@ -217,12 +225,14 @@ def read_all_das():
         for r0 in r:
             if r0['channel_number_i'] != 1:
                 continue  # Exclude all but channel 1
-            #data_array_name = r0['array_name_data_a']
-            #samples = get_sample_count (das_group, data_array_name)
-            #   If for some reason counting the number of samples in an array fails use value from Das_t
+            # data_array_name = r0['array_name_data_a']
+            # samples = get_sample_count (das_group, data_array_name)
+            #   If for some reason counting the number of samples in an array
+            #   fails use value from Das_t
             # if samples == None :
             samples = r0['sample_count_i']
-            r0['time/epoch_f'] = float(r0['time/epoch_l']) + \
+            r0['time/epoch_f'] =\
+                float(r0['time/epoch_l']) +\
                 (float(r0['time/micro_seconds_i']) / 1000000.)
             r0['samples'] = samples
             r0['das'] = das
@@ -246,6 +256,7 @@ def read_all_das():
     DAS_T = Rows_Keys(row, k)
 
     return True
+
 
 #   XXX   Not used
 
@@ -286,7 +297,8 @@ def report_gin():
 
     if ar == []:
         sys.stderr.write(
-            "Warning: No sort arrays (Array_t_xxx) defined! Can not produce sort table.\n")
+            "Warning: No sort arrays (Array_t_xxx) defined!\
+             Can not produce sort table.\n")
         return
 
     now = time.time()
@@ -306,23 +318,25 @@ def report_gin():
             if d['channel_number_i'] != 1:
                 continue
             t0 = d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000)
-            l = d['samples'] / d['sample_rate_i']
-            t1 = t0 + l
+            ll = d['samples'] / d['sample_rate_i']
+            t1 = t0 + ll
             (float_part, int_part) = math.modf(t1)
             if array_deploy <= d['time/epoch_l'] and array_pickup >= int_part:
                 #
-                print "#   row {0} das {1}\n/Experiment_g/Sorts_g/Sort_t".format(
-                    r, d['das'])
+                print "#   row {0} das {1}\n/Experiment_g/Sorts_g/Sort_t"\
+                    .format(r, d['das'])
                 print "\tarray_name_s = %s" % a[-3:]
                 print "\tarray_t_name_s = %s" % a
-                print "\tdescription_s = Recording window %04d" % d['event_number_i']
+                print "\tdescription_s = Recording window %04d" % d[
+                    'event_number_i']
                 print "\tstart_time/epoch_l = %d" % d['time/epoch_l']
-                print "\tstart_time/micro_seconds_i = %d" % d['time/micro_seconds_i']
+                print "\tstart_time/micro_seconds_i = %d" % d[
+                    'time/micro_seconds_i']
                 print "\tstart_time/type_s = %s" % d['time/type_s']
                 print "\tstart_time/ascii_s = %s" % d['time/ascii_s']
                 print "\tend_time/epoch_l = %d" % int_part
                 print "\tend_time/micro_seconds_i = %d" % (
-                    float_part * 1000000.0)
+                        float_part * 1000000.0)
                 print "\tend_time/ascii_s = %s" % time.ctime(t1)
                 print "\tend_time/type_s = BOTH"
                 print "\ttime_stamp/epoch_l = %d" % now
@@ -331,11 +345,13 @@ def report_gin():
                 print "\ttime_stamp/type_s = BOTH"
                 r += 1
             # else :
-                # sys.stderr.write ("#Warning: DAS {0} time outside of deploy pickup times!\n")
-                # sys.stderr.write ("#\tArray: {0} Deploy: {1} Pickup: {2}\n".format (a, array_deploy, array_pickup))
-                # sys.stderr.write ("#DAS: {0} Deploy: {1} Pickup:
-                # {2}\n".format (array_t['das/serial_number_s'],
-                # d['time/epoch_l'], int_part))
+            # sys.stderr.write ("#Warning: DAS {0} time outside of deploy
+            # pickup times!\n")
+            # sys.stderr.write ("#\tArray: {0} Deploy: {1} Pickup: {2}\n"\
+            # .format (a, array_deploy, array_pickup))
+            # sys.stderr.write ("#DAS: {0} Deploy: {1} Pickup:
+            # {2}\n".format (array_t['das/serial_number_s'],
+            # d['time/epoch_l'], int_part))
 
 
 def main():
@@ -353,7 +369,7 @@ def main():
             sys.stderr.write("Failed to read Das_t for %s.\n" % SN)
             sys.exit()
 
-    elif AUTO == True:
+    elif AUTO is True:
         if not read_all_das():
             sys.stderr.write("Failed to read DAS tables.")
             sys.exit()

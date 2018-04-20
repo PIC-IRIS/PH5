@@ -29,12 +29,15 @@ def get_args():
     from optparse import OptionParser
     oparser = OptionParser()
 
-    oparser.usage = "report2ph5 --file report-file --nickname experiment-nickname [--path path-to-kef-file][--kef kef-file]"
+    oparser.usage = "report2ph5 --file report-file --nickname\
+     experiment-nickname [--path path-to-kef-file][--kef kef-file]"
     oparser.description = "Load a report (pdf) into a ph5 file."
     oparser.add_option("-f", "--file", dest="report_file",
-                       help="The file containing the report, (pdf, doc, ps, etc.).")
+                       help="The file containing the report,\
+                        (pdf, doc, ps, etc.).")
     oparser.add_option("-k", "--kef", dest="kef_file",
-                       help="Kef file describing row in Report_t for the report. Not required.")
+                       help="Kef file describing row in Report_t\
+                        for the report. Not required.")
     oparser.add_option("-n", "--nickname", dest="nickname",
                        help="Experiment nickname.")
     oparser.add_option("-p", "--path", dest="path",
@@ -63,13 +66,14 @@ def get_args():
     if options.path is not None:
         PATH = options.path
 
-    if err == True:
+    if err is True:
         sys.stderr.write("Error: Missing required option. Try --help\n")
         sys.exit(-3)
 
     # if not os.path.exists (os.path.join (PATH, PH5) + '.ph5') :
-        #sys.stderr.write ("Error: %s does not exist.\n" % (os.path.join (PATH, PH5) + 'ph5'))
-        #sys.exit (-4)
+    # sys.stderr.write ("Error: %s does not exist.\n" %\
+    #  (os.path.join (PATH, PH5) + 'ph5'))
+    # sys.exit (-4)
 
 
 def initializeExperiment():
@@ -87,8 +91,8 @@ def update():
     k = kef.Kef(KEF)
     k.open()
     k.read()
-    #k.batch_update ()
-    #k.close () ; sys.exit ()
+    # k.batch_update ()
+    # k.close () ; sys.exit ()
     k.rewind()
     ARRAY_NAME = None
     while True:
@@ -99,11 +103,12 @@ def update():
             ARRAY_NAME = kv['array_name_a']
         else:
             sys.stderr.write(
-                "Error: Kef file does not contain entry for array_name_a.\nCan not continue!\n")
+                "Error: Kef file does not contain entry for array_name_a.\
+                \nCan not continue!\n")
             return False
 
         #   XXX   We always append   XXX
-        #mo = updateRE.match (p)
+        # mo = updateRE.match (p)
         ref = EX.ph5_g_reports.ph5_t_report
         if p not in columns.TABLES:
             sys.stderr.write("Warning: No table reference for key: %s\n" % p)
@@ -131,13 +136,12 @@ def load_report():
     fh = open(FILE)
     buf = fh.read()
     fh.close()
-    #print len (buf)
+    # print len (buf)
 
     EX.ph5_g_reports.newarray(ARRAY_NAME, buf)
 
 
 def get_input(prompt, default=None):
-
     if default is None:
         default = ''
 
@@ -198,9 +202,9 @@ def main():
 
     load_report()
 
-    #buf = EX.ph5_g_reports.get_report ('Report_a_005')
-    #hf = open ('junk.png', 'w+')
-    #hf.write (buf)
+    # buf = EX.ph5_g_reports.get_report ('Report_a_005')
+    # hf = open ('junk.png', 'w+')
+    # hf.write (buf)
     #   Read report into an array, populate ph5
     #   Read kef file and populate ph5
     #   Close ph5

@@ -7,10 +7,6 @@
 
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
-#from future_builtins import *
-
-PROG_VERSION = __version__ = "2014.322 Developmental"
 
 import sys
 import os
@@ -19,6 +15,11 @@ import time
 from math import radians, cos, tan, sqrt, pi
 from PyQt4 import QtGui, QtCore, Qt
 from ph5.core import timedoy
+
+# from __future__ import unicode_literals
+# from future_builtins import *
+
+PROG_VERSION = __version__ = "2014.322 Developmental"
 
 #   Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000
@@ -39,21 +40,30 @@ def get_args():
 
     oparser.usage = "Version: {0}: novitiate [options]".format(PROG_VERSION)
 
-    oparser.description = "Interactive GUI to create a dep file from a csv spread sheet."
+    oparser.description = "Interactive GUI to create a dep file from a csv" \
+                          " spread sheet."
 
-    oparser.add_option("-s", "--das_sn_range", dest="das_sn_range", action='store',
-                       help="The serial number range of DAS's on experiment. --das_sn_range=10000-20000",
+    oparser.add_option("-s", "--das_sn_range", dest="das_sn_range",
+                       action='store',
+                       help="The serial number range of DAS's on experiment. "
+                            "--das_sn_range=10000-20000",
                        metavar="das_sn_range")
 
-    oparser.add_option("-f", "--dont_use_face_plate_sn", dest="use_face_plate_sn", action="store_false",
-                       help="Do not assume face plate serial numbers, ie. do not add 10000 to sn from csv file. Default is to use face plate sn.",
+    oparser.add_option("-f", "--dont_use_face_plate_sn",
+                       dest="use_face_plate_sn", action="store_false",
+                       help="Do not assume face plate serial numbers, ie."
+                            " do not add 10000 to sn from csv file. "
+                            "Default is to use face plate sn.",
                        default=True, metavar="use_face_plate_sn")
 
-    oparser.add_option("-l", "--location_tolerance", dest="location_tolerance", action='store',
-                       help="Flag distances that exceed this value in location. --location_tolerance=100.",
+    oparser.add_option("-l", "--location_tolerance", dest="location_tolerance",
+                       action='store',
+                       help="Flag distances exceed this value in location."
+                            " --location_tolerance=100.",
                        metavar="location_tolerance", type='float')
 
-    oparser.add_option("--generate_kefs", dest="generate_kefs", action='store_false',
+    oparser.add_option("--generate_kefs", dest="generate_kefs",
+                       action='store_false',
                        help="Write kef files instead of dep files.",
                        default=True, metavar="generate_kefs")
 
@@ -65,7 +75,7 @@ def get_args():
         MIN_DAS_SN = int(MIN_DAS_SN)
 
     options.use_face_plate_sn
-    #DEP = options.generate_kefs
+    # DEP = options.generate_kefs
 
     if options.location_tolerance:
         options.location_tolerance
@@ -94,7 +104,7 @@ def _sign(val, latlon):
             else:
                 ret = 'E' + val
 
-    except IndexError as e:
+    except IndexError:
         pass
 
     return ret
@@ -123,9 +133,9 @@ def __sign(val, latlon):
             else:
                 ret = '+' + val
 
-    except IndexError as e:
+    except IndexError:
         pass
-    ##print (ret)
+    # print (ret)
     return ret
 
 
@@ -147,6 +157,7 @@ def is_deploy(order, line):
             return True
 
     return False
+
 
 #
 # Write Event_t.kef
@@ -170,10 +181,10 @@ def get_event_row(vals):
         coordinate_system = 'geodetic'
         ellipsoid = 'WGS84'
 
-    #tdoy = timedoy.TimeDOY ()
+    # tdoy = timedoy.TimeDOY ()
     yr, doy, hr, mn, sc = vals['Time'].split(':')
-    #f, i = modf (float (sc))
-    #us = f * 1000000.
+    # f, i = modf (float (sc))
+    # us = f * 1000000.
     yr, doy, hr, mn = map(int, [yr, doy, hr, mn])
     tdoy = timedoy.TimeDOY(year=yr,
                            month=None,
@@ -186,7 +197,8 @@ def get_event_row(vals):
                            epoch=None,
                            dtobject=None)
 
-    #epoch = tdoy.epoch (int (yr), int (doy), int (hr), int (mn), 0) + float (sc)
+    # epoch = tdoy.epoch (int (yr), int (doy), int (hr), int (mn), 0) +
+    # float (sc)
     epoch = tdoy.epoch()
     us = tdoy.dtobject.microsecond
     #
@@ -195,52 +207,67 @@ def get_event_row(vals):
     event_t += "\tid_s = {0}\n\tdescription_s = {1}\n".format(
         vals['ID'], vals['Comment'])
     #   time/ascii_s, time/epoch_l, time/micro_seconds_i, time/type_s
-    event_t += "\ttime/ascii_s = {0}\n\ttime/epoch_l = {1}\n\ttime/micro_seconds_i = {2}\n\ttime/type_s = {3}\n".format(time.ctime(epoch),
-                                                                                                                        int(
-                                                                                                                            epoch),
-                                                                                                                        us,
-                                                                                                                        'BOTH')
-    #   location/X/value_d, location/X/units_s, location/Y/value_d, location/Y/units_s, location/Z/value_d, location/Z/units_s
-    event_t += "\tlocation/X/value_d = {0}\n\tlocation/X/units_s = {1}\n\tlocation/Y/value_d = {2}\n\tlocation/Y/units_s = {3}\n\tlocation/Z/value_d = {4}\n\tlocation/Z/units_s = {5}\n".format(X,
-                                                                                                                                                                                                 units,
-                                                                                                                                                                                                 Y,
-                                                                                                                                                                                                 units,
-                                                                                                                                                                                                 vals[
-                                                                                                                                                                                                     'Elev'],
-                                                                                                                                                                                                 'meters')
-    #   location/coordinate_system_s, location/projection_s, location/ellipsoid_s, location/description_s
-    event_t += "\tlocation/coordinate_system_s = {0}\n\tlocation/projection_s = {1}\n\tlocation/ellipsoid_s = {2}\n\tlocation/description_s = {3}\n".format(coordinate_system,
-                                                                                                                                                            'none',
-                                                                                                                                                            ellipsoid,
-                                                                                                                                                            vals['ID'])
+    event_t += "\ttime/ascii_s = {0}\n\ttime/epoch_l = " \
+               "{1}\n\ttime/micro_seconds_i = {2}\n\ttime/type_s = {3}\n" \
+        .format(time.ctime(epoch),
+                int(epoch),
+                us,
+                'BOTH')
+    #   location/X/value_d, location/X/units_s, location/Y/value_d,
+    # location/Y/units_s, location/Z/value_d, location/Z/units_s
+    event_t += "\tlocation/X/value_d = {0}\n\tlocation/X/units_s =" \
+               " {1}\n\tlocation/Y/value_d = {2}\n\tlocation/Y/units_s = " \
+               "{3}\n\tlocation/Z/value_d = {4}\n\tlocation/Z/units_s = {5}\n"\
+        .format(X,
+                units,
+                Y,
+                units,
+                vals['Elev'],
+                'meters')
+    #   location/coordinate_system_s, location/projection_s,
+    # location/ellipsoid_s, location/description_s
+    event_t += "\tlocation/coordinate_system_s =" \
+               "{0}\n\tlocation/projection_s = {1}\n\tlocation/ellipsoid_s =" \
+               " {2}\n\tlocation/description_s = {3}\n"\
+        .format(coordinate_system,
+                'none',
+                ellipsoid,
+                vals['ID'])
     #   size/value_d, size/units_s, depth/value_d, depth/units_s
-    event_t += "\tsize/value_d = {0}\n\tsize/units_s = {1}\n\tdepth/value_d = {2}\n\tdepth/units_s = {3}".format(vals['Size'],
-                                                                                                                 'lbs',
-                                                                                                                 vals['Depth'],
-                                                                                                                 'meters')
+    event_t += "\tsize/value_d = {0}\n\tsize/units_s = {1}" \
+               "\n\tdepth/value_d = {2}\n\tdepth/units_s = {3}"\
+        .format(vals['Size'],
+                'lbs',
+                vals['Depth'],
+                'meters')
 
-    #print (event_t)
+    # print (event_t)
     return event_t
 
 
 FIELD_KEYS = ('SHOT', 'RECV')
 FIELDS = {}
 SHOTQC = {}
-FIELDS['SHOT'] = ['Shot-ID', 'Station', 'Line', 'Channel', 'Lat', 'Y', 'Lon', 'X', 'Elev',
-                  'STimeY:J:H:M:S.s', 'STimeYear', 'STimeJd', 'STimeMo', 'STimeDa',
-                  'STimeHr', 'STimeMn', 'STimeSc', 'STimeMs', 'PreSec', 'PostSec',
+FIELDS['SHOT'] = ['Shot-ID', 'Station', 'Line', 'Channel', 'Lat', 'Y', 'Lon',
+                  'X', 'Elev',
+                  'STimeY:J:H:M:S.s', 'STimeYear', 'STimeJd', 'STimeMo',
+                  'STimeDa',
+                  'STimeHr', 'STimeMn', 'STimeSc', 'STimeMs', 'PreSec',
+                  'PostSec',
                   'SR', 'Depth', 'Size', 'RVel', 'Radius', 'Comment']
 
 
 def build_shot(order, line, n):
-    vals = {'ID': '', 'Station': '', 'Line': '999', 'Channel': '1', 'Lat': '', 'Y': '',
-            'Lon': '', 'X': '', 'Elev': '', 'Time': '', 'Pre': '', 'Post': '', 'SR': '',
+    vals = {'ID': '', 'Station': '', 'Line': '999', 'Channel': '1', 'Lat': '',
+            'Y': '',
+            'Lon': '', 'X': '', 'Elev': '', 'Time': '', 'Pre': '', 'Post': '',
+            'SR': '',
             'Depth': '', 'Size': '', 'RVel': '', 'Radius': '', 'Comment': ''}
 
     if 'Receiver-ID' in order:
         return None
 
-    if not 'Shot-ID' in order:
+    if 'Shot-ID' not in order:
         #   XXX   Need a error dialog here   XXX
         sys.stderr.write("Error: Shot-ID needed to create dep file.\n")
         return None
@@ -248,7 +275,7 @@ def build_shot(order, line, n):
     try:
         if 'STimeY:J:H:M:S.s' not in order:
             yr = int(line[order['STimeYear']])
-            #tdoy = timedoy.TimeDOY ()
+            # tdoy = timedoy.TimeDOY ()
             if 'STimeMo' in order:
                 mo = int(line[order['STimeMo']])
                 da = int(line[order['STimeDa']])
@@ -342,32 +369,37 @@ def build_shot(order, line, n):
 
     vals['Time'] = STime
     tmpkey = vals['Station']
-    #SHOT[int (tmpkey)] = True
+    # SHOT[int (tmpkey)] = True
     i = 0
     while tmpkey in SHOTQC:
         tmpkey = tmpkey.split(':')[0] + ":{0}".format(i)
         i += 1
 
-    SHOTQC[tmpkey] = [vals['ID'], vals['Station'], vals['Line'], vals['Lat'], vals['Lon'],
-                      vals['Elev'], vals['Time'], vals['Pre'], vals['Post'], vals['SR'],
-                      vals['Depth'], vals['Size'], vals['RVel'], vals['Radius'], vals['Comment']]
+    SHOTQC[tmpkey] = [vals['ID'], vals['Station'], vals['Line'], vals['Lat'],
+                      vals['Lon'],
+                      vals['Elev'], vals['Time'], vals['Pre'], vals['Post'],
+                      vals['SR'],
+                      vals['Depth'], vals['Size'], vals['RVel'],
+                      vals['Radius'], vals['Comment']]
 
     if DEP:
-        return "SHOT;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format(vals['ID'],
-                                                                                              vals['Station'],
-                                                                                              vals['Line'],
-                                                                                              vals['Lat'],
-                                                                                              vals['Lon'],
-                                                                                              vals['Elev'],
-                                                                                              vals['Time'],
-                                                                                              vals['Pre'],
-                                                                                              vals['Post'],
-                                                                                              vals['SR'],
-                                                                                              vals['Depth'],
-                                                                                              vals['Size'],
-                                                                                              vals['RVel'],
-                                                                                              vals['Radius'],
-                                                                                              vals['Comment'])
+        return "SHOT;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};" \
+               "{13};{14}"\
+            .format(vals['ID'],
+                    vals['Station'],
+                    vals['Line'],
+                    vals['Lat'],
+                    vals['Lon'],
+                    vals['Elev'],
+                    vals['Time'],
+                    vals['Pre'],
+                    vals['Post'],
+                    vals['SR'],
+                    vals['Depth'],
+                    vals['Size'],
+                    vals['RVel'],
+                    vals['Radius'],
+                    vals['Comment'])
     else:
         return get_event_row(vals)
 
@@ -430,7 +462,7 @@ def churn_recv(recvqc, recvkey):
             ellipsoid = 'WGS84'
 
         #   Get deploy time epoch and us
-        #tdoy = timedoy.TimeDOY ()
+        # tdoy = timedoy.TimeDOY ()
         dyr, ddoy, dhr, dmn, dsc = vals_dep['DTime'].split(':')
         dyr, ddoy, dhr, dmn = map(int, [dyr, ddoy, dhr, dmn])
         dtdoy = timedoy.TimeDOY(year=dyr,
@@ -444,8 +476,8 @@ def churn_recv(recvqc, recvkey):
                                 epoch=None,
                                 dtobject=None)
         depoch = dtdoy.epoch()
-        #depoch += float (dsc)
-        #f, i = modf (float (dsc)); dus = f * 1000000.
+        # depoch += float (dsc)
+        # f, i = modf (float (dsc)); dus = f * 1000000.
         dus = dtdoy.millisecond()
         #   Get pickup time epoch and us
         pyr, pdoy, phr, pmn, psc = vals_pu['PUTime'].split(':')
@@ -461,8 +493,8 @@ def churn_recv(recvqc, recvkey):
                                 epoch=None,
                                 dtobject=None)
         pepoch = ptdoy.epoch()
-        #pepoch += float (psc)
-        #f, i = modf (float (psc)); pus = f * 1000000.
+        # pepoch += float (psc)
+        # f, i = modf (float (psc)); pus = f * 1000000.
         pus = ptdoy.millisecond()
         #
         arrayID = int(vals_dep['Line'])
@@ -471,50 +503,69 @@ def churn_recv(recvqc, recvkey):
         comment = vals_dep['Comment'] + " " + vals_pu['Comment']
 
         array_t = '/Experiment_g/Sorts_g/Array_t_{0:03d}\n'.format(arrayID)
-        array_t += '\tid_s = {0}\n\tdescription_s = {1}\n'.format(vals_dep['Station'],
-                                                                  comment)
+        array_t += '\tid_s = {0}\n\tdescription_s = {1}\n'.format(
+            vals_dep['Station'],
+            comment)
         #   DAS information
-        array_t += '\tdas/serial_number_s = {0}\n\tdas/model_s = {1}\n\tdas/manufacturer_s = {2}\n\tdas/notes_s = {3}\n'.format(vals_dep['ID'],
-                                                                                                                                vals_dep[
-            'Type'],
-            'RefTek',
-            vals_dep['LED'])
+        array_t += '\tdas/serial_number_s = {0}\n\tdas/model_s = {1}' \
+                   '\n\tdas/manufacturer_s = {2}\n\tdas/notes_s = {3}\n' \
+            .format(vals_dep['ID'],
+                    vals_dep['Type'],
+                    'RefTek',
+                    vals_dep['LED'])
 
         #   Deployment time
-        array_t += '\tdeploy_time/ascii_s = {0}\n\tdeploy_time/epoch_l = {1}\n\tdeploy_time/micro_seconds_i = {2}\n\tdeploy_time/type_s = {3}\n'.format(time.ctime(int(depoch)),
-                                                                                                                                                        int(
-                                                                                                                                                            depoch),
-                                                                                                                                                        int(
-                                                                                                                                                            dus),
-                                                                                                                                                        'BOTH')
+        array_t += '\tdeploy_time/ascii_s = {0}\n\tdeploy_time/epoch_l = {1}' \
+                   '\n\tdeploy_time/micro_seconds_i = {2}' \
+                   '\n\tdeploy_time/type_s = {3}\n'\
+            .format(time.ctime(int(depoch)),
+                    int(depoch),
+                    int(dus),
+                    'BOTH')
         #   Pickup time
-        array_t += '\tpickup_time/ascii_s = {0}\n\tpickup_time/epoch_l = {1}\n\tpickup_time/micro_seconds_i = {2}\n\tpickup_time/type_s = {3}\n'.format(time.ctime(int(pepoch)),
-                                                                                                                                                        int(
-                                                                                                                                                            pepoch),
-                                                                                                                                                        int(
-                                                                                                                                                            pus),
-                                                                                                                                                        'BOTH')
+        array_t += '\tpickup_time/ascii_s = {0}' \
+                   '\n\tpickup_time/epoch_l = {1}' \
+                   '\n\tpickup_time/micro_seconds_i = {2}' \
+                   '\n\tpickup_time/type_s = {3}\n'\
+            .format(time.ctime(int(pepoch)),
+                    int(pepoch),
+                    int(pus),
+                    'BOTH')
         #   Longitude and Latitude
-        array_t += '\tlocation/X/value_d = {0}\n\tlocation/X/units_s = {1}\n\tlocation/Y/value_d = {2}\n\tlocation/Y/units_s = {3}\n'.format(X,
-                                                                                                                                             units,
-                                                                                                                                             Y,
-                                                                                                                                             units)
+        array_t += '\tlocation/X/value_d = {0}' \
+                   '\n\tlocation/X/units_s = {1}' \
+                   '\n\tlocation/Y/value_d = {2}' \
+                   '\n\tlocation/Y/units_s = {3}\n'\
+            .format(X,
+                    units,
+                    Y,
+                    units)
         #   Elevation
-        array_t += '\tlocation/Z/value_d = {0}\n\tlocation/Z/units_s = {1}\n\tlocation/coordinate_system_s = {2}\n\tlocation/projection_s = {3}\n\tlocation/description_s = {4}\n'.format(vals_dep['Elev'],
-                                                                                                                                                                                          'meters',
-                                                                                                                                                                                          coordinate_system,
-                                                                                                                                                                                          'none',
-                                                                                                                                                                                          ellipsoid,
-                                                                                                                                                                                          '')
+        array_t += '\tlocation/Z/value_d = {0}' \
+                   '\n\tlocation/Z/units_s = {1}' \
+                   '\n\tlocation/coordinate_system_s = {2}' \
+                   '\n\tlocation/projection_s = {3}' \
+                   '\n\tlocation/description_s = {4}\n'\
+            .format(vals_dep['Elev'],
+                    'meters',
+                    coordinate_system,
+                    'none',
+                    ellipsoid,
+                    '')
         #   Sensor information
-        array_t += '\tsensor/serial_number_s = {0}\n\tsensor/model_s = {1}\n\tsensor/manufacturer_s = {2}\n\tsensor/notes_s = {3}\n\tchannel_number_i = {4}'.format(vals_dep['Sensor'],
-                                                                                                                                                                    '',
-                                                                                                                                                                    '',
-                                                                                                                                                                    '',
-                                                                                                                                                                    vals_dep['Channel'])
+        array_t += '\tsensor/serial_number_s = {0}' \
+                   '\n\tsensor/model_s = {1}' \
+                   '\n\tsensor/manufacturer_s = {2}' \
+                   '\n\tsensor/notes_s = {3}' \
+                   '\n\tchannel_number_i = {4}'\
+            .format(vals_dep['Sensor'],
+                    '',
+                    '',
+                    '',
+                    vals_dep['Channel'])
 
         ret.append(array_t)
-        #print ('*', arrayID, stationID)
+        # print ('*', arrayID, stationID)
         RECVSTN[arrayID][stationID][chan] = array_t
 
     def append_ret(vals):
@@ -523,22 +574,25 @@ def churn_recv(recvqc, recvkey):
               val_pu is a hash of pickups
         '''
         vals_dep, vals_pu, msg = stripdeppu(vals)
-        #global ret
-        ret.append("RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format(vals_dep['ID'],
-                                                                                                  vals_dep['Station'],
-                                                                                                  vals_dep['Line'],
-                                                                                                  vals_dep['Type'],
-                                                                                                  vals_dep['Channel'],
-                                                                                                  vals_dep['Sensor'],
-                                                                                                  vals_dep['Uphole'],
-                                                                                                  vals_dep['Lat'],
-                                                                                                  vals_dep['Lon'],
-                                                                                                  vals_dep['Elev'],
-                                                                                                  vals_dep['DT'],
-                                                                                                  vals_dep['DTime'],
-                                                                                                  vals_pu['PUTime'],
-                                                                                                  vals_dep['Shots'],
-                                                                                                  vals_pu['Comment']))
+        # global ret
+        ret.append(
+            "RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};"
+            "{13};{14}".format(vals_dep['ID'],
+                               vals_dep['Station'],
+                               vals_dep['Line'],
+                               vals_dep['Type'],
+                               vals_dep['Channel'],
+                               vals_dep['Sensor'],
+                               vals_dep['Uphole'],
+                               vals_dep['Lat'],
+                               vals_dep['Lon'],
+                               vals_dep['Elev'],
+                               vals_dep['DT'],
+                               vals_dep['DTime'],
+                               vals_pu['PUTime'],
+                               vals_dep['Shots'],
+                               vals_pu['Comment']))
+
     #   End append_ret
 
     err = []
@@ -548,86 +602,102 @@ def churn_recv(recvqc, recvkey):
         Tests:
            *1) Does a texan have a missing pickup (or deploy) record?
            2) Are the station ID's unique?
-           *3) Is the pickup position more than 100 meters from the deploy position?
+           *3) Is the pickup position more than 100 meters from the
+               deploy position?
            *4) Does the deploy texan ID match the pickup texan ID?
            *5) Is the elevation within 200 meters of the deployment record?
            *6) Is the pickup LED not 'G'?
            *7) Is texan ID in the correct range?
         '''
-        #global err
+        # global err
         vals_dep, vals_pu, msg = stripdeppu(vals)
         lineNos = "[ {0}, {1} ]".format(vals_dep['n'], vals_pu['n'])
 
         #   1) Missing deploy or pickup record
         if msg:
             msg = "#{0} Warning: Station: {1} {2}!\n".format(lineNos,
-                                                             vals_dep['Station'],
+                                                             vals_dep[
+                                                                 'Station'],
                                                              msg)
         else:
             msg = ''
 
         #   4) Deploy texan SN and pickup texan SN differ
         if vals_dep['ID'] != vals_pu['ID']:
-            msg += "#{3} Warning: Station: {2}, deployed texan SN {0} and picked up texan SN {1} differ!\n".format(vals_dep['ID'],
-                                                                                                                   vals_pu['ID'],
-                                                                                                                   vals_dep['Station'],
-                                                                                                                   lineNos)
+            msg += "#{3} Warning: Station: {2}, deployed texan SN {0} and" \
+                   " picked up texan SN {1} differ!\n"\
+                .format(vals_dep['ID'],
+                        vals_pu['ID'],
+                        vals_dep['Station'],
+                        lineNos)
         try:
             #   7)
             if int(vals_dep['ID']) > MAX_DAS_SN or int(
                     vals_dep['ID']) < MIN_DAS_SN:
-                msg += "#{0} Warning: suspicious data logger serial number {1} at station {2}!\n".format(lineNos,
-                                                                                                         vals_dep['ID'],
-                                                                                                         vals_dep['Station'])
+                msg += "#{0} Warning: suspicious data logger serial number" \
+                       " {1} at station {2}!\n"\
+                    .format(lineNos,
+                            vals_dep['ID'],
+                            vals_dep['Station'])
             #   7)
             if int(vals_pu['ID']) > MAX_DAS_SN or int(
                     vals_pu['ID']) < MIN_DAS_SN:
-                msg += "#{0} Warning: suspicious data logger serial number {1} at station {2}!\n".format(lineNos,
-                                                                                                         vals_pu['ID'],
-                                                                                                         vals_pu['Station'])
+                msg += "#{0} Warning: suspicious data logger serial number" \
+                       " {1} at station {2}!\n"\
+                    .format(lineNos,
+                            vals_pu['ID'],
+                            vals_pu['Station'])
         except ValueError:
             #   7)
             if int(vals_dep['ID'], 16) > MAX_DAS_SN or int(
                     vals_dep['ID'], 16) < MIN_DAS_SN:
-                msg += "#{0} Warning: suspicious data logger serial number {1} at station {2}!\n".format(lineNos,
-                                                                                                         vals_dep['ID'],
-                                                                                                         vals_dep['Station'])
+                msg += "#{0} Warning: suspicious data logger serial number" \
+                       " {1} at station {2}!\n"\
+                    .format(lineNos,
+                            vals_dep['ID'],
+                            vals_dep['Station'])
             #   7)
             if int(vals_pu['ID'], 16) > MAX_DAS_SN or int(
                     vals_pu['ID'], 16) < MIN_DAS_SN:
-                msg += "#{0} Warning: suspicious data logger serial number {1} at station {2}!\n".format(lineNos,
-                                                                                                         vals_pu['ID'],
-                                                                                                         vals_pu['Station'])
+                msg += "#{0} Warning: suspicious data logger serial number" \
+                       " {1} at station {2}!\n"\
+                    .format(lineNos,
+                            vals_pu['ID'],
+                            vals_pu['Station'])
 
         # 1) Missing deploy or pickup record
         # if vals_dep == vals_pu :
-            # if vals_dep['PUTime'] != None :
-            # if vals_dep['DorP'] == 'D' :
-                # msg += "#{1} Warning: Station: {0}, no pickup record!\n".format (vals_dep['Station'], lineNos)
-            # else :
-                # msg += "#{1} Warning: Station: {0}, no deploy
-                # record!\n".format (vals_dep['Station'], lineNos)
+        # if vals_dep['PUTime'] != None :
+        # if vals_dep['DorP'] == 'D' :
+        # msg += "#{1} Warning: Station: {0}, no pickup record!\n".format\
+        #  (vals_dep['Station'], lineNos)
+        # else :
+        # msg += "#{1} Warning: Station: {0}, no deploy
+        # record!\n".format (vals_dep['Station'], lineNos)
 
         #   6) LED not green on pickup
         if 'LED' in vals_pu and vals_pu['LED'] != '':
             if vals_pu['LED'] != 'G' and vals_pu['LED'] != 'g':
-                msg += "#{0} Warning: Station: {1}, LED was '{2}' at pickup!\n".format(
-                    lineNos, vals_dep['Station'], vals_pu['LED'])
+                msg += "#{0} Warning: Station: {1}, LED was '{2}' at" \
+                       " pickup!\n"\
+                    .format(lineNos, vals_dep['Station'], vals_pu['LED'])
 
         try:
             # 5) Elevation on pickup record is not within 200 meters of
             # deployment
             if abs(float(vals_dep['Elev']) -
                    float(vals_pu['Elev'])) >= LOC_TOL_METERS:
-                msg += "#{0} Warning: Station: {1}, elevation differs by more that 200 meters!\n".format(
-                    lineNos, vals_dep['Station'])
+                msg += "#{0} Warning: Station: {1}, elevation differs by" \
+                       " more that 200 meters!\n"\
+                    .format(lineNos, vals_dep['Station'])
 
             # 3) Is pickup location more that about 100 meters from deploy
             # location
 
             #   Deploy lat and lon
             dist = 0
-            if vals_dep['Lat'] and vals_dep['Lon'] and vals_pu['Lat'] and vals_pu['Lon']:
+            if vals_dep['Lat'] and vals_dep['Lon'] and vals_pu['Lat'] and \
+                    vals_pu['Lon']:
                 d_lat = vals_dep['Lat'].replace('N', '+')
                 d_lat = d_lat.replace('S', '-')
                 d_lat = float(d_lat)
@@ -650,26 +720,32 @@ def churn_recv(recvqc, recvkey):
                 '''
                 #   Average lat
                 a_lat = (d_lat + p_lat) / 2.
-                fac_lat = 111132.954 - \
-                    (559.822 * (cos(2. * radians(a_lat)))) + \
+                fac_lat =\
+                    111132.954 - (559.822 * (cos(2. * radians(a_lat)))) +\
                     (1.175 * (cos(4. * radians(a_lat))))
-                fac_lon = ((pi / 180.) * 6378137.) * \
+                fac_lon =\
+                    ((pi / 180.) * 6378137.) * \
                     cos(0.99664719 * tan(radians(a_lat)))
                 delta_lat = (d_lat - p_lat) * fac_lat
                 delta_lon = (d_lon - p_lon) * fac_lon
                 #   This is a gross estimate
                 dist = sqrt((delta_lat * delta_lat) + (delta_lon * delta_lon))
-            elif vals_dep['Y'] and vals_dep['X'] and vals_pu['Y'] and vals_pu['X']:
-                dist = sqrt(((float(vals_dep['Y']) - float(vals_pu['Y'])) ** 2) + (
-                    (float(vals_dep['X']) - float(vals_pu['X'])) ** 2))
+            elif vals_dep['Y'] and vals_dep['X'] and vals_pu['Y'] and\
+                    vals_pu['X']:
+                dist = sqrt(
+                    ((float(vals_dep['Y']) - float(vals_pu['Y'])) ** 2) + (
+                            (float(vals_dep['X']) - float(vals_pu['X'])) ** 2))
 
             if dist > LOC_TOL_METERS:
-                msg += "#{0} Warning: Station: {1}, distance of pickup and deployment location differs by more that 100 meters!\n".format(lineNos,
-                                                                                                                                          vals_dep['Station'])
+                msg += "#{0} Warning: Station: {1}, distance of pickup and" \
+                       " deployment location differs by more that" \
+                       " 100 meters!\n"\
+                    .format(lineNos, vals_dep['Station'])
         except Exception as e:
             msg += "Unexpected exception: {0}\n".format(e)
 
         err.append(msg)
+
     #   End append_err
 
     stations = sorted(recvkey.keys())
@@ -685,64 +761,67 @@ def churn_recv(recvqc, recvkey):
             get_recv_row(vals)
         #   Oops, only pickup or deploy
         # if len (keys) == 1 :
-            # Print RECV line and missing P or D message
-            #vals = recvqc[keys[0]]
-            #append_ret (vals, vals)
-            #append_err (vals, vals)
+        # Print RECV line and missing P or D message
+        # vals = recvqc[keys[0]]
+        # append_ret (vals, vals)
+        # append_err (vals, vals)
         # elif len (keys) == 2 :
-            # Print RECV line, all checks
-            #vals_dep = recvqc[keys[0]]
-            #vals_pu  = recvqc[keys[1]]
-            #append_ret (vals_dep, vals_pu)
-            #append_err (vals_dep, vals_pu)
+        # Print RECV line, all checks
+        # vals_dep = recvqc[keys[0]]
+        # vals_pu  = recvqc[keys[1]]
+        # append_ret (vals_dep, vals_pu)
+        # append_err (vals_dep, vals_pu)
         # else :
-            # Something is wrong, what?
-            #vals_dep = None
-            #vals_pu  = None
-            # Must be 3 or more entries, ie multiple pickups or deployments
-            # for k in keys :
-            #tmp = recvqc[k]
-            # if tmp['PUTime'] != '' :
-            # if vals_pu != None :
-            # Append to ret
-            # if vals_dep == None :
-            #append_ret (vals_pu, vals_pu)
-            #append_err (vals_pu, vals_pu)
-            # else :
-            #append_ret (vals_dep, vals_pu)
-            #append_err (vals_dep, vals_pu)
-            #vals_dep = None
+        # Something is wrong, what?
+        # vals_dep = None
+        # vals_pu  = None
+        # Must be 3 or more entries, ie multiple pickups or deployments
+        # for k in keys :
+        # tmp = recvqc[k]
+        # if tmp['PUTime'] != '' :
+        # if vals_pu != None :
+        # Append to ret
+        # if vals_dep == None :
+        # append_ret (vals_pu, vals_pu)
+        # append_err (vals_pu, vals_pu)
+        # else :
+        # append_ret (vals_dep, vals_pu)
+        # append_err (vals_dep, vals_pu)
+        # vals_dep = None
 
-            #vals_pu  = tmp
-            # else :
-            # if vals_dep != None :
-            # Append to ret
-            # if vals_pu == None :
-            #append_ret (vals_dep, vals_dep)
-            #append_err (vals_dep, vals_dep)
-            # else :
-            #append_ret (vals_dep, vals_pu)
-            #append_err (vals_dep, vals_pu)
-            #vals_pu = None
+        # vals_pu  = tmp
+        # else :
+        # if vals_dep != None :
+        # Append to ret
+        # if vals_pu == None :
+        # append_ret (vals_dep, vals_dep)
+        # append_err (vals_dep, vals_dep)
+        # else :
+        # append_ret (vals_dep, vals_pu)
+        # append_err (vals_dep, vals_pu)
+        # vals_pu = None
 
-            #vals_dep = tmp
+        # vals_dep = tmp
 
-            # if vals_pu == None and vals_dep != None :
-            #append_ret (vals_dep, vals_dep)
-            # XXX   Append to err   XXX
-            # elif vals_dep == None and vals_pu != None :
-            #append_ret (vals_pu, vals_pu)
-            # XXX   Append to err   XXX
-            # elif vals_dep != None and vals_pu != None :
-            #append_ret (vals_dep, vals_pu)
-            #append_err (vals_dep, vals_pu)
+        # if vals_pu == None and vals_dep != None :
+        # append_ret (vals_dep, vals_dep)
+        # XXX   Append to err   XXX
+        # elif vals_dep == None and vals_pu != None :
+        # append_ret (vals_pu, vals_pu)
+        # XXX   Append to err   XXX
+        # elif vals_dep != None and vals_pu != None :
+        # append_ret (vals_dep, vals_pu)
+        # append_err (vals_dep, vals_pu)
 
     return err, ret
 
 
-FIELDS['RECV'] = ['Receiver-ID', 'Station', 'Line', 'Type', 'Channel', 'Sensor',
-                  'Uphole', 'Lat', 'Y', 'Lon', 'X', 'Elev', 'Team', 'DTimeY:J:H:M:S', 'TimeYear',
-                  'TimeH:M', 'TimeMo/Da', 'PTimeY:J:H:M:S', 'Shots', 'Comment', 'LED', 'DorP']
+FIELDS['RECV'] = ['Receiver-ID', 'Station', 'Line', 'Type', 'Channel',
+                  'Sensor',
+                  'Uphole', 'Lat', 'Y', 'Lon', 'X', 'Elev', 'Team',
+                  'DTimeY:J:H:M:S', 'TimeYear',
+                  'TimeH:M', 'TimeMo/Da', 'PTimeY:J:H:M:S', 'Shots', 'Comment',
+                  'LED', 'DorP']
 
 RECVQC = {}
 RECVKEY = {}
@@ -756,8 +835,10 @@ def build_recv(order, line, n):
     '''
     global RECVSTN
     vals = {'ID': '', 'Station': '', 'Line': '999', 'Type': '', 'Channel': '1',
-            'Sensor': '', 'Uphole': '', 'Lat': '', 'Y': '', 'Lon': '', 'X': '', 'Elev': '', 'DT': '',
-            'DTime': '', 'PUTime': '', 'Shots': '', 'Comment': '', 'LED': '', 'DorP': '',
+            'Sensor': '', 'Uphole': '', 'Lat': '', 'Y': '', 'Lon': '', 'X': '',
+            'Elev': '', 'DT': '',
+            'DTime': '', 'PUTime': '', 'Shots': '', 'Comment': '', 'LED': '',
+            'DorP': '',
             'n': ''}
 
     #   Shot info in this file
@@ -775,7 +856,7 @@ def build_recv(order, line, n):
         try:
             if 'DTimeY:J:H:M:S' not in order and is_deploy(order, line):
                 yr = int(line[order['TimeYear']])
-                #tdoy = timedoy.TimeDOY ()
+                # tdoy = timedoy.TimeDOY ()
                 if 'TimeH:M' in order:
                     hr, mn = map(int, line[order['TimeH:M']].split(':'))
 
@@ -808,7 +889,7 @@ def build_recv(order, line, n):
 
             if 'PTimeY:J:H:M:S' not in order and not is_deploy(order, line):
                 yr = int(line[order['TimeYear']])
-                #tdoy = timedoy.TimeDOY ()
+                # tdoy = timedoy.TimeDOY ()
                 if 'TimeH:M' in order:
                     hr, mn = map(int, line[order['TimeH:M']].split(':'))
 
@@ -873,7 +954,7 @@ def build_recv(order, line, n):
                     int(vals['Channel'])
                 except ValueError:
                     vals['Channel'] = '1'
-                #print ('Channel ', vals['Channel'])
+                # print ('Channel ', vals['Channel'])
             elif k == 'Sensor':
                 vals['Sensor'] = line[order[k]]
             elif k == ['Uphole']:
@@ -922,12 +1003,12 @@ def build_recv(order, line, n):
         RECVSTN[int(vals['Line'])] = {}
 
     tmpkey = vals['Station']
-    #print (vals['Line'], vals['Station'], vals['Channel'])
+    # print (vals['Line'], vals['Station'], vals['Channel'])
     if int(vals['Station']) not in RECVSTN[int(vals['Line'])]:
         RECVSTN[int(vals['Line'])][int(vals['Station'])] = {}
 
-    RECVSTN[int(vals['Line'])][int(vals['Station'])
-                               ][int(vals['Channel'])] = False
+    RECVSTN[int(vals['Line'])][int(vals['Station'])][
+        int(vals['Channel'])] = False
 
     i = 0
     while tmpkey in RECVQC:
@@ -940,7 +1021,8 @@ def build_recv(order, line, n):
     RECVKEY[rkey].append(tmpkey)
     RECVQC[tmpkey] = vals
 
-    # return "RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14}".format (vals['ID'],
+    # return "RECV;{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13}
+    # ;{14}".format (vals['ID'],
     # vals['Station'],
     # vals['Line'],
     # vals['Type'],
@@ -956,21 +1038,28 @@ def build_recv(order, line, n):
     # vals['Shots'],
     # vals['Comment'])
 
-#FIELDS['TIME'] = [ 'Year', 'DOY', 'Month', 'Day', 'Hour', 'Minute', 'Seconds', 'Mili-Seconds' ]
+
+# FIELDS['TIME'] = [ 'Year', 'DOY', 'Month', 'Day', 'Hour', 'Minute',
+# 'Seconds', 'Mili-Seconds' ]
 
 
 def write_shot_header(fh):
     import time as t
     fh.write("#Shot dep written by noven {1} : {0}\n".format(
         t.ctime(t.time()), PROG_VERSION))
-    fh.write("#S_id;S_station;S_line;S_lat;S_lon;S_elev;S_time;S_pre-trig;S_post-trig;S_sr;S_depth;S_size;S_rvel;S_radius;S_comment\n")
+    fh.write(
+        "#S_id;S_station;S_line;S_lat;S_lon;S_elev;S_time;S_pre-trig;"
+        "S_post-trig;S_sr;S_depth;S_size;S_rvel;S_radius;S_comment\n")
 
 
 def write_recv_header(fh):
     import time as t
     fh.write("#Receiver dep written by noven {1} : {0}\n".format(
         t.ctime(t.time()), PROG_VERSION))
-    fh.write("#R_id;R_station;R_line;R_receiver-type;R_chan;R_sensor;R_uphole;R_lat;R_lon;R_elev;R_team;R_deploy_time;R_pickup_time;R_shots;R_comment\n")
+    fh.write(
+        "#R_id;R_station;R_line;R_receiver-type;R_chan;R_sensor;R_uphole;"
+        "R_lat;R_lon;R_elev;R_team;R_deploy_time;R_pickup_time;"
+        "R_shots;R_comment\n")
     # fh.write ("#   ***   Warning: May be unsorted, run sort-recv-dep.
     # ***\n")
 
@@ -979,7 +1068,7 @@ SEPMAP = {'tab': '\t', 'comma': ',',
           'semi-colon': ';', 'colon': ':', 'space': '\s'}
 
 
-class MyQTableWidget (QtGui.QTableWidget):
+class MyQTableWidget(QtGui.QTableWidget):
 
     def __init__(self, parent=None):
         super(MyQTableWidget, self).__init__(parent)
@@ -989,36 +1078,36 @@ class MyQTableWidget (QtGui.QTableWidget):
         self.cols = []
 
     def dragEnterEvent(self, event):
-        #print ("drag enter..."),
+        # print ("drag enter..."),
         event.accept()
 
     def dragMoveEvent(self, event):
-        #print ("drag move...")
+        # print ("drag move...")
         event.accept()
 
     def dropEvent(self, event):
-        #print ("drop...")
+        # print ("drop...")
         fmts = event.mimeData().formats()
         fmts.count()
         # for i in range (n) :
-        #print (n, fmts.takeAt (0))
+        # print (n, fmts.takeAt (0))
         # if event.mimeData ().hasFormat ("text/plain") :
-        #data = event.mimeData ().data ()
+        # data = event.mimeData ().data ()
 
         item = self.itemAt(event.pos())
         if item is not None:
             col = item.column()
             if item.row() == 0:
-                #data = event.mimeData ().data ("text/plain")
-                #stream = QtCore.QDataStream (data, QtCore.QIODevice.ReadOnly)
+                # data = event.mimeData ().data ("text/plain")
+                # stream = QtCore.QDataStream (data, QtCore.QIODevice.ReadOnly)
                 text = event.mimeData().text()
-                #stream >> text
-                #print (text, item.row (), item.column ())
+                # stream >> text
+                # print (text, item.row (), item.column ())
                 cell = QtGui.QTableWidgetItem(text)
                 self.setItem(item.row(), item.column(), cell)
-                #self.dropMimeData (0, item.column (), event.mimeData (), 1)
-                #event.setDropAction (Qt.CopyAction)
-                #event.accept ()
+                # self.dropMimeData (0, item.column (), event.mimeData (), 1)
+                # event.setDropAction (Qt.CopyAction)
+                # event.accept ()
                 self.colheaders()
                 self.resizeColumnToContents(col)
 
@@ -1028,10 +1117,10 @@ class MyQTableWidget (QtGui.QTableWidget):
         ncols = self.columnCount()
         for y in range(ncols):
             item = self.item(0, y)
-            #data = item.data (1)
+            # data = item.data (1)
             mytext = Qt.QString()
             mytext = item.text()
-            #print (mytext.toAscii ())
+            # print (mytext.toAscii ())
             # if mytext != 'Ignore' :
             self.colKey[str(mytext)] = y
             self.cols.append(str(mytext))
@@ -1044,10 +1133,10 @@ class DragLabel(QtGui.QLabel):
         self.setAutoFillBackground(True)
         self.setFrameShape(QtGui.QFrame.StyledPanel)
         self.setFrameShadow(QtGui.QFrame.Raised)
-        #self.setMidLineWidth (7); self.setLineWidth (2)
+        # self.setMidLineWidth (7); self.setLineWidth (2)
 
     def mousePressEvent(self, event):
-        #print ('Mouse press...')
+        # print ('Mouse press...')
         hotSpot = event.pos()
 
         mimeData = QtCore.QMimeData()
@@ -1075,7 +1164,7 @@ class DragWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(DragWidget, self).__init__(parent)
 
-        #dictionaryFile = QtCore.QFile(':/dictionary/words.txt')
+        # dictionaryFile = QtCore.QFile(':/dictionary/words.txt')
         # dictionaryFile.open(QtCore.QIODevice.ReadOnly)
 
         x = 5
@@ -1102,97 +1191,97 @@ class DragWidget(QtGui.QWidget):
             xmax = (2 * xmax) + 100
             y = 5
 
-        #gnewPalette = self.palette()
-        #gnewPalette.setColor(QtGui.QPalette.Window, QtCore.Qt.green)
+        # gnewPalette = self.palette()
+        # gnewPalette.setColor(QtGui.QPalette.Window, QtCore.Qt.green)
         # self.setPalette(gnewPalette)
 
-        #x = 250
-        #y = 5
+        # x = 250
+        # y = 5
 
         # for word in FIELDS['RECV'] :
-            #wordLabel = DragLabel(word, self)
-            #wordLabel.move(x, y)
-            # wordLabel.show()
-            #x += wordLabel.width() + 2
-            # if x >= 445 :
-            #x = 250
-            #y += wordLabel.height() + 2
+        # wordLabel = DragLabel(word, self)
+        # wordLabel.move(x, y)
+        # wordLabel.show()
+        # x += wordLabel.width() + 2
+        # if x >= 445 :
+        # x = 250
+        # y += wordLabel.height() + 2
 
-        #x = 495
-        #y = 5
+        # x = 495
+        # y = 5
 
         # for word in FIELDS['TIME'] :
-            #wordLabel = DragLabel(word, self)
-            #wordLabel.move(x, y)
-            # wordLabel.show()
-            #x += wordLabel.width() + 2
-            # if x >= 650 :
-            #x = 495
-            #y += wordLabel.height() + 2
+        # wordLabel = DragLabel(word, self)
+        # wordLabel.move(x, y)
+        # wordLabel.show()
+        # x += wordLabel.width() + 2
+        # if x >= 650 :
+        # x = 495
+        # y += wordLabel.height() + 2
 
         wordLabel = DragLabel('Ignore', self)
         wordLabel.move(685, 5)
         wordLabel.show()
 
-        #rnewPalette = self.palette()
-        #rnewPalette.setColor(QtGui.QPalette.Window, QtCore.Qt.red)
+        # rnewPalette = self.palette()
+        # rnewPalette.setColor(QtGui.QPalette.Window, QtCore.Qt.red)
         # self.setPalette(rnewPalette)
 
         # self.setAcceptDrops(True)
-        #self.setMinimumSize(400, max(200, y))
-        #self.setWindowTitle("Draggable Text")
+        # self.setMinimumSize(400, max(200, y))
+        # self.setWindowTitle("Draggable Text")
 
     # def dragEnterEvent(self, event):
-        #print ('Drag enter...')
-        # if event.mimeData().hasText():
-        # if event.source() in self.children():
-        #print ('Event accept 1')
-        # event.setDropAction(QtCore.Qt.MoveAction)
-        # event.accept()
-        # else:
-        #print ('Event accept 2')
-        # event.acceptProposedAction()
-        # else:
-        #print ('Event ignore...')
-        # event.ignore()
+    # print ('Drag enter...')
+    # if event.mimeData().hasText():
+    # if event.source() in self.children():
+    # print ('Event accept 1')
+    # event.setDropAction(QtCore.Qt.MoveAction)
+    # event.accept()
+    # else:
+    # print ('Event accept 2')
+    # event.acceptProposedAction()
+    # else:
+    # print ('Event ignore...')
+    # event.ignore()
 
     # def dropEvent(self, event):
-        #print ('Drop event...')
-        # if event.mimeData().hasText():
-        #mime = event.mimeData()
-        #pieces = mime.text().split()
-        #position = event.pos()
-        #hotSpot = QtCore.QPoint()
+    # print ('Drop event...')
+    # if event.mimeData().hasText():
+    # mime = event.mimeData()
+    # pieces = mime.text().split()
+    # position = event.pos()
+    # hotSpot = QtCore.QPoint()
 
-        #hotSpotPos = mime.data('application/x-hotspot').split(' ')
-        # if len(hotSpotPos) == 2:
-        # hotSpot.setX(hotSpotPos[0].toInt()[0])
-        # hotSpot.setY(hotSpotPos[1].toInt()[0])
+    # hotSpotPos = mime.data('application/x-hotspot').split(' ')
+    # if len(hotSpotPos) == 2:
+    # hotSpot.setX(hotSpotPos[0].toInt()[0])
+    # hotSpot.setY(hotSpotPos[1].toInt()[0])
 
-        # for piece in pieces:
-        #newLabel = DragLabel(piece, self)
-        #newLabel.move(position - hotSpot)
-        # newLabel.show()
+    # for piece in pieces:
+    # newLabel = DragLabel(piece, self)
+    # newLabel.move(position - hotSpot)
+    # newLabel.show()
 
-        #position += QtCore.QPoint(newLabel.width(), 0)
+    # position += QtCore.QPoint(newLabel.width(), 0)
 
-        # if event.source() in self.children():
-        # event.setDropAction(QtCore.Qt.MoveAction)
-        # event.accept()
-        # else:
-        # event.acceptProposedAction()
-        # else:
-        # event.ignore()
+    # if event.source() in self.children():
+    # event.setDropAction(QtCore.Qt.MoveAction)
+    # event.accept()
+    # else:
+    # event.acceptProposedAction()
+    # else:
+    # event.ignore()
 
 
-class SetupDialog (QtGui.QDialog):
+class SetupDialog(QtGui.QDialog):
     def __init__(self, settings, parent=None):
         super(SetupDialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        #outfileNameLabel = QtGui.QLabel ("Output File")
-        #self.outfileName = QtGui.QLineEdit ()
-        #outfileNameLabel.setBuddy (self.outfileName)
+        # outfileNameLabel = QtGui.QLabel ("Output File")
+        # self.outfileName = QtGui.QLineEdit ()
+        # outfileNameLabel.setBuddy (self.outfileName)
 
         outfileFormatLabel = QtGui.QLabel("Output Format")
         self.outfileFormat = QtGui.QComboBox()
@@ -1227,7 +1316,8 @@ class SetupDialog (QtGui.QDialog):
                                            QtGui.QDialogButtonBox.Close)
 
         grid = QtGui.QGridLayout()
-        #grid.addWidget (outfileNameLabel, 0, 0); grid.addWidget (self.outfileName, 0, 1)
+        # grid.addWidget (outfileNameLabel, 0, 0); grid.addWidget
+        # (self.outfileName, 0, 1)
         grid.addWidget(outfileFormatLabel, 0, 0)
         grid.addWidget(self.outfileFormat, 0, 1)
         grid.addWidget(fieldSeparatorLabel, 1, 0)
@@ -1247,7 +1337,7 @@ class SetupDialog (QtGui.QDialog):
                      self, QtCore.SLOT("reject ()"))
 
     def apply(self):
-        #sys.stdout.write ("Apply\n")
+        # sys.stdout.write ("Apply\n")
         self.settings['linesView'] = self.viewLines.value()
         self.settings['colSep'] = self.fieldSeparator.currentText()
         self.settings['outFormat'] = self.outfileFormat.currentText()
@@ -1258,7 +1348,7 @@ class SetupDialog (QtGui.QDialog):
         sys.stdout.write("Reject\n")
 
 
-class Novitiate (QtGui.QMainWindow):
+class Novitiate(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(Novitiate, self).__init__(parent)
 
@@ -1286,7 +1376,7 @@ class Novitiate (QtGui.QMainWindow):
         config.setStatusTip('Set input file field separator etc.')
         self.connect(config, QtCore.SIGNAL('triggered ()'), self.configure)
 
-        #exit = QtGui.QAction(QtGui.QIcon(':icons/exit.png'), 'Exit', self)
+        # exit = QtGui.QAction(QtGui.QIcon(':icons/exit.png'), 'Exit', self)
         exit = QtGui.QAction('Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip('Exit application')
@@ -1311,9 +1401,9 @@ class Novitiate (QtGui.QMainWindow):
         dockW.setWidget(DragWidget(self))
         self.addDockWidget(QtCore.Qt.TopDockWidgetArea, dockW)
 
-        #self.button = QtGui.QPushButton ("Test")
-        #self.setCentralWidget (self.button)
-        #self.connect(self.button, QtCore.SIGNAL('clicked()'), self.mtest)
+        # self.button = QtGui.QPushButton ("Test")
+        # self.setCentralWidget (self.button)
+        # self.connect(self.button, QtCore.SIGNAL('clicked()'), self.mtest)
         #
         #   Table
         #
@@ -1325,7 +1415,7 @@ class Novitiate (QtGui.QMainWindow):
         status.showMessage("Ready", 5000)
 
     def configure(self):
-        #sys.stdout.write ('At configure\n')
+        # sys.stdout.write ('At configure\n')
         self.settingsDialog = SetupDialog(self.settings, self)
         self.connect(self.settingsDialog, QtCore.SIGNAL(
             "changed"), self.refreshTable)
@@ -1333,10 +1423,10 @@ class Novitiate (QtGui.QMainWindow):
 
     def refreshTable(self):
         key = self.settings['colSep']
-        #print (SEPMAP, key)
+        # print (SEPMAP, key)
         sep = SEPMAP[str(key)]
-        #sep = self.settings['colSep']
-        #sys.stdout.write ("Refresh, '{0}' \n".format (sep))
+        # sep = self.settings['colSep']
+        # sys.stdout.write ("Refresh, '{0}' \n".format (sep))
 
         maxY = 0
         LINES = []
@@ -1347,15 +1437,15 @@ class Novitiate (QtGui.QMainWindow):
                 maxY = len(flds)
             LINES.append(flds)
 
-        #maxX = len (LINES)
+        # maxX = len (LINES)
         maxX = self.settings['linesView'] + 1
         self.table.clear()
 
         self.table.setColumnCount(maxY)
         self.table.setRowCount(maxX)
-        #self.table.setHorizontalHeaderLabels(['Ignore'] * maxY)
-        #hitem = QtGui.QTableWidgetItem ('Test')
-        #self.table.setHorizontalHeaderItem (0, hitem)
+        # self.table.setHorizontalHeaderLabels(['Ignore'] * maxY)
+        # hitem = QtGui.QTableWidgetItem ('Test')
+        # self.table.setHorizontalHeaderItem (0, hitem)
         hh = self.table.horizontalHeader()
         hh.hide()
         vh = self.table.verticalHeader()
@@ -1391,21 +1481,21 @@ class Novitiate (QtGui.QMainWindow):
                 item.setTextAlignment(QtCore.Qt.AlignRight |
                                       QtCore.Qt.AlignVCenter)
 
-                #print (x, y, item)
+                # print (x, y, item)
                 self.table.setItem(x + 1, y, item)
 
         self.table.resizeColumnsToContents()
         self.table.setAcceptDrops(True)
-        #self.table.setDragEnabled (True)
+        # self.table.setDragEnabled (True)
 
     def openInfile(self):
-        #sys.stdout.write ("Open\n")
+        # sys.stdout.write ("Open\n")
         inFileName = QtGui.QFileDialog.getOpenFileName(
             self, 'Open input file', os.getcwd())
-        #sys.stdout.write ('{0}\n'.format (inFileName))
+        # sys.stdout.write ('{0}\n'.format (inFileName))
         if os.path.exists(inFileName):
-            #self.table.clear ()
-            #self.table = MyQTableWidget()
+            # self.table.clear ()
+            # self.table = MyQTableWidget()
             # self.setCentralWidget(self.table)
             fh = open(inFileName, 'U')
             self.readFileLines = fh.readlines()
@@ -1416,7 +1506,7 @@ class Novitiate (QtGui.QMainWindow):
             self.readFileLines = None
 
     def saveAs(self):
-        #sys.stdout.write ("Save\n")
+        # sys.stdout.write ("Save\n")
         saveFileName = QtGui.QFileDialog.getSaveFileName(
             self, 'Save output as', os.getcwd())
         if not saveFileName:
@@ -1430,7 +1520,7 @@ class Novitiate (QtGui.QMainWindow):
             line = line.strip()
             if not line:
                 continue
-            #print (line)
+            # print (line)
             flds = line.split(sep)
             build_recv(self.table.colKey, flds, n + skip)
             sline = build_shot(self.table.colKey, flds, n + skip)
@@ -1441,7 +1531,7 @@ class Novitiate (QtGui.QMainWindow):
                     fh = open(saveFileName, 'w+')
                     write_shot_header(fh)
 
-                #if rline : fh.write (rline + '\n')
+                # if rline : fh.write (rline + '\n')
                 if sline:
                     fh.write(sline + '\n')
         #   XXX   XXX
@@ -1457,13 +1547,13 @@ class Novitiate (QtGui.QMainWindow):
             for a in arrays:
                 stations = sorted(RECVSTN[a].keys())
                 for s in stations:
-                    #print ("*{0}**{1}*".format (a, s))
+                    # print ("*{0}**{1}*".format (a, s))
                     for c in range(1, 7):
                         if c in RECVSTN[a][s]:
-                            #print (RECVSTN[a][s][c])
+                            # print (RECVSTN[a][s][c])
                             fh.write(RECVSTN[a][s][c] + '\n')
 
-            #for r in ret : fh.write (r + '\n')
+            # for r in ret : fh.write (r + '\n')
 
         if fh:
             fh.close()
@@ -1471,7 +1561,7 @@ class Novitiate (QtGui.QMainWindow):
 
 if __name__ == '__main__':
     get_args()
-    #print (DEP)
+    # print (DEP)
     app = QtGui.QApplication(sys.argv)
     form = Novitiate()
     form.show()
