@@ -18,3 +18,4 @@ dependencies:
    - construct==2.5.1
    - simplekml
    - tables
+   - flake8
