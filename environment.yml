@@ -18,5 +18,5 @@ dependencies:
  - pip:
    - construct==2.5.1
    - simplekml
-   - tables
+   - tables==3.4.2
    - flake8
