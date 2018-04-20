@@ -1,6 +1,7 @@
 #!/usr/bin/env pnpython3
 #
-#   A class to read Fairfield SEG-D Version 1.5-1 & 1.6 files from the Sweetwater experiment.
+#   A class to read Fairfield SEG-D Version
+#   1.5-1 & 1.6 files from the Sweetwater experiment.
 #
 #   Steve Azevedo, May 2014
 #
@@ -21,9 +22,12 @@ class InputsError (exceptions.Exception):
 
 class ReelHeaders (object):
     '''   Container to hold receiver record related headers   '''
-    __slots__ = ['storage_unit_label', 'general_header_block_1', 'general_header_block_2', 'channel_set_descriptor',
-                 'extended_header_1', 'extended_header_2', 'extended_header_3', 'extended_header_4', 'external_header',
-                 'external_header_shot', 'general_header_block_N', 'channel_set_to_streamer_cable_map']
+    __slots__ = ['storage_unit_label', 'general_header_block_1',
+                 'general_header_block_2', 'channel_set_descriptor',
+                 'extended_header_1', 'extended_header_2', 'extended_header_3',
+                 'extended_header_4', 'external_header',
+                 'external_header_shot', 'general_header_block_N',
+                 'channel_set_to_streamer_cable_map']
 
     def __init__(self):
         self.storage_unit_label = None
@@ -85,9 +89,9 @@ class Reader ():
 
         try:
             'XXX'
-            #print "Reading:", size,
+            # print "Reading:", size,
             buf = self.FH.read(size)
-            #print "read:", len (buf)
+            # print "read:", len (buf)
         except Exception as e:
             sys.stderr.write("Error: {0}\n".format(e))
 
@@ -203,36 +207,52 @@ class Reader ():
     def process_general_headers(self):
         self.reel_headers = ReelHeaders()
 
-        self.reel_headers.general_header_block_1 = self.read_general_header_block_1()
-        self.reel_headers.general_header_block_2 = self.read_general_header_block_2()
+        self.reel_headers.general_header_block_1 =\
+            self.read_general_header_block_1()
+        self.reel_headers.general_header_block_2 =\
+            self.read_general_header_block_2()
         #   Set file number
         if self.reel_headers.general_header_block_1.file_number == 0xFFFF:
-            self.file_number = self.reel_headers.read_general_header_block_2.extended_file_number
+            self.file_number = self.reel_headers.\
+                read_general_header_block_2.extended_file_number
         else:
-            self.file_number = self.reel_headers.general_header_block_1.file_number
+            self.file_number = self.reel_headers.\
+                general_header_block_1.file_number
         #   Set record length
         if self.reel_headers.general_header_block_1.record_length == 0xFFF:
-            self.record_length_sec = self.reel_headers.general_header_block_2.extended_record_length
+            self.record_length_sec = self.reel_headers.\
+                general_header_block_2.extended_record_length
         else:
-            self.record_length_sec = self.reel_headers.general_header_block_1.record_length * 0.512
+            self.record_length_sec = self.reel_headers.\
+                general_header_block_1.record_length * 0.512
         #   Set number of channel sets
         if self.reel_headers.general_header_block_1.chan_sets_per_scan == 0xFF:
-            self.chan_sets_per_scan = self.reel_headers.general_header_block_2.extended_chan_sets_per_scan_type
+            self.chan_sets_per_scan = self.reel_headers.\
+                general_header_block_2.extended_chan_sets_per_scan_type
         else:
-            self.chan_sets_per_scan = self.reel_headers.general_header_block_1.chan_sets_per_scan
+            self.chan_sets_per_scan = self.reel_headers.\
+                general_header_block_1.chan_sets_per_scan
         #   Number of extended headers
-        if self.reel_headers.general_header_block_1.number_extended_header_blocks == 0xFF:
-            self.extended_header_blocks = self.reel_headers.general_header_block_2.extended_header_blocks
+        if self.reel_headers.general_header_block_1.\
+           number_extended_header_blocks == 0xFF:
+            self.extended_header_blocks = self.reel_headers.\
+                general_header_block_2.extended_header_blocks
         else:
-            self.extended_header_blocks = self.reel_headers.general_header_block_1.number_extended_header_blocks
+            self.extended_header_blocks = self.reel_headers.\
+                general_header_block_1.number_extended_header_blocks
         #   Number of external headers
-        if self.reel_headers.general_header_block_1.number_external_header_blocks == 0xFF:
-            self.external_header_blocks = self.reel_headers.general_header_block_2.external_header_blocks
+        if self.reel_headers.general_header_block_1.\
+           number_external_header_blocks == 0xFF:
+            self.external_header_blocks = self.\
+                reel_headers.general_header_block_2.external_header_blocks
         else:
-            self.external_header_blocks = self.reel_headers.general_header_block_1.number_external_header_blocks
+            self.external_header_blocks = self.\
+                reel_headers.general_header_block_1.\
+                number_external_header_blocks
         #   Get sample rate from base scan interval (LSB is 1/16 milli-second)
         self.sample_rate = int(
-            (1. / (self.reel_headers.general_header_block_1.base_scan_interval / 16.)) * 1000.)
+            (1. / (self.reel_headers.
+                   general_header_block_1.base_scan_interval / 16.)) * 1000.)
 
     def process_channel_set_descriptors(self):
         def create_key():
@@ -250,12 +270,15 @@ class Reader ():
             self.reel_headers.channel_set_descriptor.append(cs)
             #   ***   Should we get current channel set number   ***
             #   Channel set start time in seconds
-            self.channel_set_start_time_sec = self.reel_headers.channel_set_descriptor[
-                i].chan_set_start_time * 0.002
+            self.channel_set_start_time_sec =\
+                self.reel_headers.channel_set_descriptor[i].\
+                chan_set_start_time * 0.002
             #   Channel set end time in seconds
-            self.channel_set_end_time_sec = self.reel_headers.channel_set_descriptor[
-                i].chan_set_end_time * 0.002
-            #   ***   Calculate scale factor for mili-volts. Fairfield data recorded as mili-volts   ***
+            self.channel_set_end_time_sec =\
+                self.reel_headers.channel_set_descriptor[
+                    i].chan_set_end_time * 0.002
+            #   ***   Calculate scale factor for mili-volts.
+            # Fairfield data recorded as mili-volts   ***
         self.reel_headers.channel_set_to_streamer_cable_map = create_key()
 
     def process_extended_headers(self):
@@ -376,7 +399,8 @@ class Reader ():
         n = self.trace_headers.trace_header.trace_extension_blocks
         if n == 0:
             chan_set = self.trace_headers.trace_header.channel_set - 1
-            n = self.reel_headers.channel_set_descriptor[chan_set].number_trace_header_extensions
+            n = self.reel_headers.channel_set_descriptor[chan_set].\
+                number_trace_header_extensions
         if n > 0:
             self.trace_headers.trace_header_N.append(
                 self.read_trace_header_1())
@@ -416,9 +440,10 @@ class Reader ():
         if n > 0:
             self.trace_headers.trace_header_N.append(
                 self.read_trace_header_10())
-        #   Note: SEG-D 2.1 allows a total of 15 trace header extensions. We only read
-        #         10 as per Fairfield rg1.6
-        self.samples = self.trace_headers.trace_header_N[0]['samples_per_trace']
+        #   Note: SEG-D 2.1 allows a total of 15 trace header extensions.
+        # We only read 10 as per Fairfield rg1.6
+        self.samples = self.trace_headers.trace_header_N[0][
+            'samples_per_trace']
 
         return self.samples
 
@@ -437,7 +462,8 @@ class Reader ():
         # XXX
         # self.reel_headers.general_header_block_1.data_sample_format_code
         # XXX
-        f = self.trace_fmt = self.reel_headers.general_header_block_1.data_sample_format_code
+        f = self.trace_fmt = self.reel_headers.\
+            general_header_block_1.data_sample_format_code
         #
         #
         bytes_per_sample = 4  # Assumes 32 bit IEEE floats
@@ -504,31 +530,31 @@ class Reader ():
 
 
 def swap_bits(buf):
-    b, l = segd_h.swap_block_bits()
+    b, ll = segd_h.swap_block_bits()
     c = b.parse(buf)
 
-    return l.build(c)
+    return ll.build(c)
 
 
 def swap_64(buf):
-    b, l = segd_h.swap_block_64()
+    b, ll = segd_h.swap_block_64()
     c = b.parse(buf)
 
-    return l.build(c)
+    return ll.build(c)
 
 
 def swap_32(buf):
-    b, l = segd_h.swap_block_32()
+    b, ll = segd_h.swap_block_32()
     c = b.parse(buf)
 
-    return l.build(c)
+    return ll.build(c)
 
 
 def swap_16(buf):
-    b, l = segd_h.swap_block_16()
+    b, ll = segd_h.swap_block_16()
     c = b.parse(buf)
 
-    return l.build(c)
+    return ll.build(c)
 
 
 if __name__ == '__main__':
@@ -544,7 +570,6 @@ if __name__ == '__main__':
 
     RH = ReelHeaders()
     sd = Reader(infile=sys.argv[1])
-    #sd = Reader (infile="/home/azevedo/Svn/pn3-devel/SEGD/Fairfield_SEG-D/R100_101.2.0.rg16")
     sd.process_general_headers()
     print '*' * 80
     print sd.infile
@@ -594,7 +619,7 @@ if __name__ == '__main__':
 
         trace = traces[cs]
         # for s in trace :
-        #print s
+        # print s
         n += 1
         while True:
             if sd.isEOF():
@@ -610,6 +635,6 @@ if __name__ == '__main__':
             n += 1
             #
             # for s in trace :
-            #print s
+            # print s
 
     print "There were {0} traces.".format(n)

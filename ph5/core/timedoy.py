@@ -114,7 +114,8 @@ class TimeDOY (object):
                     "Value for second, {0}, out of range!".format(second))
             if not inrange(microsecond, 0, 1000000):
                 raise TimeError(
-                    "Value for microsecond, {0}, out of range!".format(microsecond))
+                    "Value for microsecond, {0}, out of range!"
+                    .format(microsecond))
 
             self.dtobject = datetime(
                 year, month, day, hour, minute, second, microsecond, UTC())
@@ -122,7 +123,7 @@ class TimeDOY (object):
     def __repr__(self):
         return str(self.dtobject)
 
-    def __rsub__(self, other):
+    def __sub__(self, other):
         '''   Subtract seconds from self.  '''
         dt = self.dtobject - timedelta(0, other)
         return TimeDOY(dtobject=dt)
@@ -166,7 +167,7 @@ class TimeDOY (object):
                 if day == 0:
                     day = days_in_month[i - 1]
                     month = month - 1
-                #print totalDays, doy, days_in_month[i]
+                # print totalDays, doy, days_in_month[i]
                 break
 
         if not inrange(month, 1, 12):
@@ -191,7 +192,7 @@ class TimeDOY (object):
     def epoch(self, fepoch=False):
         '''   Represented as UNIX epoch time   '''
         e = time.mktime(self.dtobject.timetuple())
-        if fepoch == False:
+        if fepoch is False:
             return int(e)
         else:
             return e + self.second()
@@ -253,7 +254,7 @@ class TimeDOY (object):
 
 
 def UTCDateTime2tdoy(udt):
-    #from obspy.core import UTCDateTime
+    # from obspy.core import UTCDateTime
 
     ttuple = udt.timetuple()
     ms = udt._get_microsecond()
@@ -328,7 +329,7 @@ def fdsn2epoch(fdsn, fepoch=False):
         flds = ttime.split(':')
         hr, mn = map(int, flds[:-1])
         sc = float(flds[2])
-    except Exception as e:
+    except Exception:
         raise TimeError
 
     tdoy = TimeDOY(year=yr,
@@ -349,7 +350,7 @@ def passcal2epoch(lopt, sep=':', fepoch=False):
         flds = lopt.split(sep)
         yr, jd, hr, mn = map(int, flds[:-1])
         sc = float(flds[4])
-    except Exception as e:
+    except Exception:
         raise TimeError
 
     tdoy = TimeDOY(year=yr,

@@ -9,9 +9,9 @@ from ph5.core import columns
 PROG_VERSION = '2016.106 Developmental'
 
 #   This line contains a key/value entered as is
-#keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
+# keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
 #   This line contains a key/file read in as an array
-#keyFileRE = re.compile ("(\w*)\s*:\s*(\w*)")
+# keyFileRE = re.compile ("(\w*)\s*:\s*(\w*)")
 keyValFileRE = re.compile("(.*)\s*[;=]\s*(.*)")
 #
 updateRE = re.compile("(/.*):Update:(.*)\s*")
@@ -188,7 +188,7 @@ class Kef:
         self.rewind()
         p, kv = self.next()
         while p:
-            if trace == True:
+            if trace is True:
                 kys = kv.keys()
                 sys.stderr.write('=-' * 30)
                 sys.stderr.write("\n%s\n" % p)
@@ -210,7 +210,8 @@ class Kef:
 
             # if receiverRE.match (p) :
                 # We are trying to update something in a Receivers_g
-                #sys.stderr.write ("Warning: Attempting to modify something under /Experiment_g/Receivers_g.\n")
+                # sys.stderr.write ("Warning: Attempting to modify
+                # something under /Experiment_g/Receivers_g.\n")
 
             # columns.TABLES keeps a dictionary of key = table name, value =
             # reference to table
@@ -225,7 +226,7 @@ class Kef:
             #   Get handle
             ref = columns.TABLES[p]
             #   key needs to be list for columns.validate
-            if trace == True:
+            if trace is True:
                 sys.stderr.write("Validating...\n")
 
             errs_keys, errs_required = columns.validate(ref, kv, key)
@@ -233,7 +234,7 @@ class Kef:
                 err = True
                 sys.stderr.write(e + '\n')
 
-            if trace == True:
+            if trace is True:
                 sys.stderr.write("Done\n")
 
             if len(key) == 0:
@@ -242,17 +243,17 @@ class Kef:
                 key = key.pop(0)
 
             if DELETE:
-                if trace == True:
+                if trace is True:
                     sys.stderr.write("Deleting...")
                 else:
                     columns.delete(ref, kv[key], key)
             else:
-                if trace == True:
+                if trace is True:
                     sys.stderr.write("Updating...")
                 else:
                     columns.populate(ref, kv, key)
 
-            if trace == True:
+            if trace is True:
                 sys.stderr.write("Skipped\n")
 
             p, kv = self.next()
@@ -264,7 +265,7 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            #print p
+            # print p
             if receiverRE.match(p):
                 base = string.split(p, ':')[0]
                 ret.append(base)
@@ -278,7 +279,7 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            #print p
+            # print p
             if arrayRE.match(p):
                 base = string.split(p, '/')[-1:]
                 reta[base[0]] = True
@@ -312,7 +313,7 @@ if __name__ == '__main__':
     k = Kef('Experiment_t.kef')
     k.open()
     k.read()
-    #k.batch_update ()
+    # k.batch_update ()
     k.rewind()
 
     p, kv = k.next()

@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   A simple class to read SEG-Y rev 1 files
+# A simple class to read SEG-Y rev 1 files
 #
-#   Steve Azevedo, April 2013
+# Steve Azevedo, April 2013
 #
 
 import sys
@@ -16,29 +16,66 @@ PROG_VERSION = '2014.138.a'
 
 SAMPLE_LENGTH = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
 
-SIZEOF = {"lineSeq": 32, "reelSeq": 32, "event_number": 32, "channel_number": 32, "energySourcePt": 32, "cdpEns": 32, "traceInEnsemble": 32,
-          "traceID": 16, "vertSum": 16, "horSum": 16, "dataUse": 16, "sourceToRecDist": 32, "recElevation": 32, "sourceSurfaceElevation": 32,
-          "sourceDepth": 32, "datumElevRec": 32, "datumElevSource": 32, "sourceWaterDepth": 32, "recWaterDepth": 32, "elevationScale": 16,
-          "coordScale": 16, "sourceLongOrX": 32, "sourceLatOrY": 32, "recLongOrX": 32, "recLatOrY": 32, "coordUnits": 16, "weatheringVelocity": 16,
-          "subWeatheringVelocity": 16, "sourceUpholeTime": 16, "recUpholeTime": 16, "sourceStaticCor": 16, "recStaticCor": 16, "totalStatic": 16,
-          "lagTimeA": 16, "lagTimeB": 16, "delay": 16, "muteStart": 16, "muteEnd": 16, "sampleLength": 16, "deltaSample": 16, "gainType": 16,
-          "gainConst": 16, "initialGain": 16, "correlated": 16, "sweepStart": 16, "sweepEnd": 16, "sweepLength": 16, "sweepType": 16,
-          "sweepTaperAtStart": 16, "sweepTaperAtEnd": 16, "taperType": 16, "aliasFreq": 16, "aliasSlope": 16, "notchFreq": 16, "notchSlope": 16,
-          "lowCutFreq": 16, "hiCutFreq": 16, "lowCutSlope": 16, "hiCutSlope": 16, "year": 16, "day": 16, "hour": 16, "minute": 16, "second": 16,
-          "timeBasisCode": 16, "traceWeightingFactor": 16, "phoneRollPos1": 16, "phoneFirstTrace": 16, "phoneLastTrace": 16, "gapSize": 16,
-          "taperOvertravel": 16, "station_name": 48, "sensor_serial": 64, "channel_name": 16, "totalStaticHi": 16, "samp_rate": 32, "data_form": 16,
-          "m_secs": 16, "trigyear": 16, "trigday": 16, "trighour": 16, "trigminute": 16, "trigsecond": 16, "trigmills": 16, "scale_fac": 32,
-          "inst_no": 16, "unassigned": 16, "num_samps": 32, "max": 32, "min": 32, "start_usec": 32, "shot_size": 16, "shot_year": 16, "shot_doy": 16,
-          "shot_hour": 16, "shot_minute": 16, "shot_second": 16, "shot_us": 32, "si_override": 32, "sensor_azimuth": 16, "sensor_inclination": 16,
-          "lmo_ms": 32, "lmo_flag": 16, "inst_type": 16, "correction": 16, "azimuth": 16, "sensor_type": 16, "sensor_sn": 16, "das_sn": 16, "empty1": 16,
-          "samples": 32, "empty2": 32, "clock_drift": 16, "empty3": 16, "waterDelay": 32, "startMute": 32, "endMute": 32, "sampleInt": 32,
-          "waterBottomTime": 32, "endOfRp": 32, "dummy1": 32, "dummy2": 32, "dummy3": 32, "dummy4": 32, "dummy5": 32, "dummy6": 32, "dummy7": 32,
-          "dummy8": 32, "dummy9": 32, "Xcoor": 32, "Ycoor": 32, "Inn": 32, "Cnn": 32, "Spn": 32, "Scal": 16, "Tvmu": 16, "Tucmant": 32, "Tucexp": 16,
-          "Tdu": 16, "Dti": 16, "Tscaler": 16, "Sto": 16, "Sed": 48, "Smsmant": 32, "Smsexp": 16, "Smu": 16, "num_samps": 32, "samp_rate": 32, "Revision": 16,
-          "ShotID": 32, "AuxChanSig": 8, "AuxChanID": 8, "SPL": 32, "SPS": 32, "unass01": 16, "unass02": 16, "SenInt": 8, "VectSens": 8, "HorAz": 16, "VertAngle": 16,
-          "SourceType": 8, "SensorType": 8, "AuxChanSetType": 8, "NoiseEditType": 8, "NoiseEditGate": 16, "SystemDevice": 8, "FSU": 3, "DevChan": 8, "SourceCoCo": 8,
-          "DevStatusBits": 8, "BITTest": 8, "SweepPhaseRot": 16, "unass03": 8, "BoxFun": 8, "SourceEffortM": 32, "SourceEffortE": 16, "SourceUnits": 16,
-          "EventType": 8, "SensorTypeID": 8, "SensorSerial": 3, "SensorVersion": 8, "SensorRev": 8, "VOR": 8, }
+SIZEOF = {"lineSeq": 32, "reelSeq": 32, "event_number": 32,
+          "channel_number": 32, "energySourcePt": 32, "cdpEns": 32,
+          "traceInEnsemble": 32,
+          "traceID": 16, "vertSum": 16, "horSum": 16, "dataUse": 16,
+          "sourceToRecDist": 32, "recElevation": 32,
+          "sourceSurfaceElevation": 32,
+          "sourceDepth": 32, "datumElevRec": 32, "datumElevSource": 32,
+          "sourceWaterDepth": 32, "recWaterDepth": 32, "elevationScale": 16,
+          "coordScale": 16, "sourceLongOrX": 32, "sourceLatOrY": 32,
+          "recLongOrX": 32, "recLatOrY": 32, "coordUnits": 16,
+          "weatheringVelocity": 16,
+          "subWeatheringVelocity": 16, "sourceUpholeTime": 16,
+          "recUpholeTime": 16,
+          "sourceStaticCor": 16, "recStaticCor": 16, "totalStatic": 16,
+          "lagTimeA": 16, "lagTimeB": 16, "delay": 16, "muteStart": 16,
+          "muteEnd": 16, "sampleLength": 16, "deltaSample": 16, "gainType": 16,
+          "gainConst": 16, "initialGain": 16, "correlated": 16,
+          "sweepStart": 16, "sweepEnd": 16, "sweepLength": 16, "sweepType": 16,
+          "sweepTaperAtStart": 16, "sweepTaperAtEnd": 16, "taperType": 16,
+          "aliasFreq": 16, "aliasSlope": 16, "notchFreq": 16, "notchSlope": 16,
+          "lowCutFreq": 16, "hiCutFreq": 16, "lowCutSlope": 16,
+          "hiCutSlope": 16,
+          "year": 16, "day": 16, "hour": 16, "minute": 16, "second": 16,
+          "timeBasisCode": 16, "traceWeightingFactor": 16, "phoneRollPos1": 16,
+          "phoneFirstTrace": 16, "phoneLastTrace": 16, "gapSize": 16,
+          "taperOvertravel": 16, "station_name": 48, "sensor_serial": 64,
+          "channel_name": 16, "totalStaticHi": 16, "samp_rate": 32,
+          "data_form": 16,
+          "m_secs": 16, "trigyear": 16, "trigday": 16, "trighour": 16,
+          "trigminute": 16, "trigsecond": 16, "trigmills": 16, "scale_fac": 32,
+          "inst_no": 16, "unassigned": 16, "num_samps": 32, "max": 32,
+          "min": 32, "start_usec": 32, "shot_size": 16, "shot_year": 16,
+          "shot_doy": 16,
+          "shot_hour": 16, "shot_minute": 16, "shot_second": 16, "shot_us": 32,
+          "si_override": 32, "sensor_azimuth": 16, "sensor_inclination": 16,
+          "lmo_ms": 32, "lmo_flag": 16, "inst_type": 16, "correction": 16,
+          "azimuth": 16, "sensor_type": 16, "sensor_sn": 16, "das_sn": 16,
+          "empty1": 16,
+          "samples": 32, "empty2": 32, "clock_drift": 16, "empty3": 16,
+          "waterDelay": 32, "startMute": 32, "endMute": 32, "sampleInt": 32,
+          "waterBottomTime": 32, "endOfRp": 32, "dummy1": 32, "dummy2": 32,
+          "dummy3": 32, "dummy4": 32, "dummy5": 32, "dummy6": 32, "dummy7": 32,
+          "dummy8": 32, "dummy9": 32, "Xcoor": 32, "Ycoor": 32, "Inn": 32,
+          "Cnn": 32, "Spn": 32, "Scal": 16, "Tvmu": 16, "Tucmant": 32,
+          "Tucexp": 16,
+          "Tdu": 16, "Dti": 16, "Tscaler": 16, "Sto": 16, "Sed": 48,
+          "Smsmant": 32, "Smsexp": 16, "Smu": 16, "num_samps": 32,
+          "samp_rate": 32, "Revision": 16,
+          "ShotID": 32, "AuxChanSig": 8, "AuxChanID": 8, "SPL": 32, "SPS": 32,
+          "unass01": 16, "unass02": 16, "SenInt": 8, "VectSens": 8,
+          "HorAz": 16,
+          "VertAngle": 16,
+          "SourceType": 8, "SensorType": 8, "AuxChanSetType": 8,
+          "NoiseEditType": 8, "NoiseEditGate": 16, "SystemDevice": 8, "FSU": 3,
+          "DevChan": 8, "SourceCoCo": 8,
+          "DevStatusBits": 8, "BITTest": 8, "SweepPhaseRot": 16, "unass03": 8,
+          "BoxFun": 8, "SourceEffortM": 32, "SourceEffortE": 16,
+          "SourceUnits": 16,
+          "EventType": 8, "SensorTypeID": 8, "SensorSerial": 3,
+          "SensorVersion": 8, "SensorRev": 8, "VOR": 8, }
 
 
 class InputsError (exceptions.Exception):
@@ -49,7 +86,8 @@ class InputsError (exceptions.Exception):
 class Reader ():
     def __init__(self, infile=None):
         self.infile = infile
-        self.ext_hdr_type = 'S'  # S => SEG, U => MENLO, P => PASSCAL, I => SIOSEIS, N => INOVA
+        self.ext_hdr_type = 'S'  # S => SEG, U => MENLO,
+        # P => PASSCAL, I => SIOSEIS, N => INOVA
         self.txt_hdr_type = 'A'  # A => ASCII, E => EBCDIC
         # 1 = IBM - 4 bytes, 2 = INT - 4 bytes, 3 = INT - 2 bytes, 5 = IEEE - 4
         # bytes, 8 = INT - 1 byte
@@ -74,7 +112,8 @@ class Reader ():
             self.ext_hdr_type = hdrtype
         else:
             raise InputsError(
-                "S => SEG, U => MENLO, P => PASSCAL, I => SIOSEIS, N => iNova FireFly")
+                "S => SEG, U => MENLO, P => PASSCAL,"
+                "I => SIOSEIS, N => iNova FireFly")
 
     def set_txt_hdr_type(self, hdrtype):
         choices = ['A', 'E']
@@ -89,7 +128,8 @@ class Reader ():
             self.trace_fmt = fmt
         else:
             raise InputsError(
-                "1 = IBM - 4 bytes, 2 = INT - 4 bytes, 3 = INT - 2 bytes, 5 = IEEE - 4 bytes, 8 = INT - 1 byte")
+                "1 = IBM - 4 bytes, 2 = INT - 4 bytes, 3 = INT - 2 bytes,"
+                "5 = IEEE - 4 bytes, 8 = INT - 1 byte")
 
         self.bytes_per_sample = SAMPLE_LENGTH[fmt]
 
@@ -184,7 +224,8 @@ class Reader ():
                     elif flds[1] == 'INOVA':
                         self.set_ext_hdr_type('N')
                     else:
-                        # raise InputsError ("S => SEG, U => MENLO, P => PASSCAL, I => SIOSEIS, N => INOVA")
+                        # raise InputsError ("S => SEG, U => MENLO,
+                        # P => PASSCAL, I => SIOSEIS, N => INOVA")
                         pass
                 except IndexError:
                     pass
@@ -277,26 +318,26 @@ class Reader ():
         #   IBM floats - 4 byte - Should be big endian
         if f == 1:
             # if self.endianess != sys.byteorder :
-                #ret = np.fromstring (buf, dtype=np.uint32)
-                #ret = ret.byteswap ()
+                # ret = np.fromstring (buf, dtype=np.uint32)
+                # ret = ret.byteswap ()
             # else :
-                #ret = np.fromstring (buf, dtype=np.uint32)
+                # ret = np.fromstring (buf, dtype=np.uint32)
 
-            #ret = ibm2ieee_py.ibm2ieee (ret, number_of_samples)
+            # ret = ibm2ieee_py.ibm2ieee (ret, number_of_samples)
             import ibmfloat
             ret = []
-            l = len(buf)
+            ll = len(buf)
             i = 0
             while True:
-                if l <= 0:
+                if ll <= 0:
                     break
                 b = buf[i:4 + i]
                 ret.append(construct.BFloat32(
                     "x").parse(ibmfloat.ibm2ieee32(b)))
                 i += 4
-                l -= 4
-            #ret.append (buf)
-            #print i
+                ll -= 4
+            # ret.append (buf)
+            # print i
         #   INT - 4 byte or 2 byte
         elif f == 2:
             if self.endianess != sys.byteorder:
@@ -306,7 +347,7 @@ class Reader ():
             else:
                 ret = np.fromstring(buf, dtype=np.int32)
 
-            #ret.append (b)
+            # ret.append (b)
         elif f == 3:
             if self.endianess != sys.byteorder:
                 #   Swap 2 byte
@@ -315,7 +356,7 @@ class Reader ():
             else:
                 ret = np.fromstring(buf, dtype=np.int16)
 
-            #ret.append (b)
+            # ret.append (b)
         #   IEEE floats - 4 byte
         elif f == 5:
             if self.endianess != sys.byteorder:
@@ -325,7 +366,7 @@ class Reader ():
             else:
                 ret = np.fromstring(buf, dtype=np.float32)
 
-            #ret.append (b)
+            # ret.append (b)
         #   INT - 1 byte
         elif f == 8:
             ret = np.fromstring(buf, dtype=np.int8)
@@ -334,7 +375,7 @@ class Reader ():
         # If these are ibmfloats we need to convert them to ieee
         #
         # if f == 1 :
-            #ret = ibm2ieee_py.ibm2ieee (ret, number_of_samples)
+            # ret = ibm2ieee_py.ibm2ieee (ret, number_of_samples)
 
         return ret
 
@@ -353,16 +394,15 @@ class Reader ():
 
 
 if __name__ == "__main__":
-    #infile = sys.argv[1]
-    sr = Reader("/home/azevedo/Data/IDOR_MOUNT/iNova/NM_IRIS_3360264/incoming/11123_0099999999_0099999999_0_1359442934_00_0000_03360264_0060000.sgy")
-    #sr = Reader ("/home/azevedo/Desktop/407455.sgy")
-    #sr = Reader ("/home/azevedo/Desktop/Clutter/INova_SGY/Nov16.sgy")
+    # infile = sys.argv[1]
+    sr = Reader("/home/azevedo/Desktop/407455.sgy")
+    # sr = Reader ("/home/azevedo/Desktop/Clutter/INova_SGY/Nov16.sgy")
     #   Set header type to ASCII
     sr.set_txt_hdr_type("A")
-    #sr.set_txt_hdr_type ("E")
+    # sr.set_txt_hdr_type ("E")
     #   Set endianess of file
     sr.set_endianess('little')
-    #sr.set_endianess ('big')
+    # sr.set_endianess ('big')
     #   Read the first text header and print contents
     th = sr.read_text_header()
     keys = sorted(th.keys())

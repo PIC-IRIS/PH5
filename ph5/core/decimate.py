@@ -7,9 +7,9 @@ PROG_VERSION = "2013.261"
 
 def decimate(decfacts, data_in):
     n = len(data_in)
-    #print "In: ", n,
+    # print "In: ", n,
     data_out = firfilt_py.decimate(data_in, n, decfacts)
-    #print "Out: ", len (data_out)
+    # print "Out: ", len (data_out)
     samp_shift = data_out[-1]
 
     return samp_shift, data_out[:-1]

@@ -13,9 +13,9 @@ from ph5.core import columns
 PROG_VERSION = '2017.117 Developmental'
 
 #   This line contains a key/value entered as is
-#keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
+# keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
 #   This line contains a key/file read in as an array
-#keyFileRE = re.compile ("(\w*)\s*:\s*(\w*)")
+# keyFileRE = re.compile ("(\w*)\s*:\s*(\w*)")
 keyValFileRE = re.compile("(.*)\s*[;=]\s*(.*)")
 #
 updateRE = re.compile("(/.*):Update:(.*)\s*")
@@ -54,7 +54,7 @@ class Kef:
         self.paths = []             #
 
     def __iter__(self):
-        #print 'iter'
+        # print 'iter'
         while True:
             yield self.next()
 
@@ -188,7 +188,7 @@ class Kef:
 
     #   Return next path and key value dictionary
     def next(self):
-        #print "next"
+        # print "next"
         path = self.current_path
         keyval = self._next_keyval()
         if not keyval:
@@ -210,9 +210,9 @@ class Kef:
         '''   Batch update ph5 file from kef file   '''
         err = False
         self.rewind()
-        #p, kv = self.next ()
+        # p, kv = self.next ()
         for p, kv in self:
-            if trace == True:
+            if trace is True:
                 kys = kv.keys()
                 sys.stderr.write('=-' * 30)
                 sys.stderr.write("\n%s\n" % p)
@@ -234,7 +234,8 @@ class Kef:
 
             # if receiverRE.match (p) :
                 # We are trying to update something in a Receivers_g
-                #sys.stderr.write ("Warning: Attempting to modify something under /Experiment_g/Receivers_g.\n")
+                # sys.stderr.write ("Warning: Attempting to modify
+                # something under /Experiment_g/Receivers_g.\n")
 
             # columns.TABLES keeps a dictionary of key = table name, value =
             # reference to table
@@ -243,13 +244,13 @@ class Kef:
                     "Warning: No table reference for key: %s\n" % p)
                 sys.stderr.write(
                     "Possibly ph5 file is not open or initialized?\n")
-                #p, kv = self.next ()
+                # p, kv = self.next ()
                 continue
 
             #   Get handle
             ref = columns.TABLES[p]
             #   key needs to be list for columns.validate
-            if trace == True:
+            if trace is True:
                 sys.stderr.write("Validating...\n")
 
             errs_keys, errs_required = columns.validate(ref, kv, key)
@@ -257,7 +258,7 @@ class Kef:
                 err = True
                 sys.stderr.write(e + '\n')
 
-            if trace == True:
+            if trace is True:
                 sys.stderr.write("Done\n")
 
             if len(key) == 0:
@@ -266,20 +267,20 @@ class Kef:
                 key = key.pop(0)
 
             if DELETE:
-                if trace == True:
+                if trace is True:
                     sys.stderr.write("Deleting...")
                 else:
                     columns.delete(ref, kv[key], key)
             else:
-                if trace == True:
+                if trace is True:
                     sys.stderr.write("Updating...")
                 else:
                     columns.populate(ref, kv, key)
 
-            if trace == True:
+            if trace is True:
                 sys.stderr.write("Skipped\n")
 
-            #p, kv = self.next ()
+            # p, kv = self.next ()
 
         return err
 
@@ -288,7 +289,7 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            #print p
+            # print p
             if receiverRE.match(p):
                 base = string.split(p, ':')[0]
                 ret.append(base)
@@ -302,7 +303,7 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            #print p
+            # print p
             if arrayRE.match(p):
                 base = string.split(p, '/')[-1:]
                 reta[base[0]] = True
@@ -340,8 +341,8 @@ class Kef:
         for k in keys:
             elements = self.parsed[k]
             tmp = sorted(elements, cmp_on_key)
-            #tmp = sorted (elements, key=lambda k: k[key])
-            #elements.sort (cmp_on_key)
+            # tmp = sorted (elements, key=lambda k: k[key])
+            # elements.sort (cmp_on_key)
             self.parsed[k] = tmp
 #
 # Mixins
@@ -356,14 +357,16 @@ def print_kef(p, kv, action='', key=None):
        action -> 'Delete or Update', requires key also
        key -> Valid key from kv
     '''
-    if not action in ("Update", "Delete", ""):
+    if action not in ("Update", "Delete", ""):
         raise KefError(
-            "Error: {0} not in recognized action list, Update|Delete.".format(action))
+            "Error: {0} not in recognized action list, Update|Delete."
+            .format(action))
     keys = sorted(kv.keys())
     if len(action) != 0:
-        if not key in keys:
+        if key not in keys:
             raise KefError(
-                "Error: {0} not valid key. Example: Update:id_s.".format(key))
+                "Error: {0} not valid key. Example: Update:id_s."
+                .format(key))
         action = ':' + action + ':' + key
     sys.stdout.write("{0}{1}\n".format(p, action))
     for k in keys:
@@ -377,15 +380,15 @@ if __name__ == '__main__':
     k = Kef('Experiment_t.kef')
     k.open()
     k.read()
-    #k.batch_update ()
+    # k.batch_update ()
     k.rewind()
 
-    #p, kv = k.next ()
+    # p, kv = k.next ()
     for p, kv in k:
         kall = sorted(kv.keys())
         for k1 in kall:
             print p, k1, kv[k1]
 
-        #p, kv = k.next ()
+        # p, kv = k.next ()
 
     k.close()

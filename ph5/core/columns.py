@@ -1,13 +1,16 @@
 #
 #   This file defines the table organization of the PIC Kitchen HDF5 file,
 #   File suffix is ph5, and named: experimentnickname[nnn].ph5.
-#   Overall organization is defined in the Experiment module. Several mixins defined at end
+#   Overall organization is defined in the Experiment module.
+#   Several mixins defined at end
 #   of this file.
 #
-#                           Overall Organization (as of October 2006, revised July 2007, revised April 2016)
+#   Overall Organization
+#   (as of October 2006, revised July 2007, revised April 2016)
 #   Groups and Tables
 #   _g is a grouping structure defined in Experiment module
-#   _t is a table as defined in this file, instance defined in Experiment module
+#   _t is a table as defined in this file,
+#     instance defined in Experiment module
 #   _a is an array as defined in Experiment module
 #   Columns
 #   _a string name of array
@@ -34,7 +37,8 @@
 #                /Sorts_g
 #                        /Sort_t
 #                        /Array_t_[nnn]
-#                        */Offset_t(_[aaa]_[sss]) aaa -> array number, sss -> shot line number
+#                        */Offset_t(_[aaa]_[sss]) aaa -> array number,
+#                                             sss -> shot line number
 #                        */Event_t(_[nnn])
 #                /Receivers_g
 #                        /Das_g_[das_sn]
@@ -72,72 +76,72 @@ import sys
 PH5VERSION = '2017.171'
 PROG_VERSION = '2016.309 Developmental'
 
-#TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
+#  TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
 
 # Nested column descriptors
 # class Units32 (tables.IsDescription) :
-#'''   32 bit float with units   '''
-#units             = tables.StringCol (16)
-#value             = tables.Float32Col ()
+# '''   32 bit float with units   '''
+# units             = tables.StringCol (16)
+# value             = tables.Float32Col ()
 
 # class Units64 (tables.IsDescription) :
-#'''   64 bit float with units   '''
-#units             = tables.StringCol (16)
-#value             = tables.Float64Col ()
+# '''   64 bit float with units   '''
+# units             = tables.StringCol (16)
+# value             = tables.Float64Col ()
 
 # class Location (tables.IsDescription) :
-#'''   Geographic position   '''
-# coordinate_system = tables.StringCol (32)              # UTM etc.
-# projection        = tables.StringCol (32)              # Albers etc.
-# ellipsoid         = tables.StringCol (32)              # WGS-84 etc.
-# X                 = Units64 ()                        # Latitude, Northing, etc.
+# '''   Geographic position   '''
+# coordinate_system = tables.StringCol (32) # UTM etc.
+# projection        = tables.StringCol (32)  # Albers etc.
+# ellipsoid         = tables.StringCol (32)  # WGS-84 etc.
+# X                 = Units64 ()  # Latitude, Northing, etc.
 # class X (tables.IsDescription) :
-#units             = tables.StringCol (16)
-#value             = tables.Float64Col ()
-# Y                 = Units64 ()                         # Longitude, Easting, etc.
+# units             = tables.StringCol (16)
+# value             = tables.Float64Col ()
+# Y                 = Units64 ()   # Longitude, Easting, etc.
 # class Y (tables.IsDescription) :
-#units             = tables.StringCol (16)
-#value             = tables.Float64Col ()
-# Z                 = Units64 ()                         # Elevation
+# units             = tables.StringCol (16)
+# value             = tables.Float64Col ()
+# Z                 = Units64 ()   # Elevation
 # class Z (tables.IsDescription) :
-#units             = tables.StringCol (16)
-#value             = tables.Float64Col ()
+# units             = tables.StringCol (16)
+# value             = tables.Float64Col ()
 ##
-# description       = tables.StringCol (1024)            # Any additional
+# description       = tables.StringCol (1024) # Any additional
 # comments
 
 # Need to define accepted refrences for Z
 
 # class Time (tables.IsDescription) :
-#'''   Time, either epoch or human readable   '''
-# type              = tables.EnumCol (TIME_TYPE, 'EPOCH')# 'EPOCH', 'ASCII', or 'BOTH'
-# epoch             = tables.Int64Col ()                 # Seconds since January 1, 1970
-# ascii             = tables.StringCol (24)              # WWW MMM DD HH:MM:SS YYYY
-#micro_seconds     = tables.Int32Col ()
+# '''   Time, either epoch or human readable   '''
+# type        = tables.EnumCol (TIME_TYPE, 'EPOCH')#'EPOCH', 'ASCII', or 'BOTH'
+# epoch       = tables.Int64Col ()             # Seconds since January 1, 1970
+# ascii       = tables.StringCol (24)           # WWW MMM DD HH:MM:SS YYYY
+# micro_seconds = tables.Int32Col ()
 
 # class Instrument (tables.IsDescription) :
-#'''   Generalized instrument of some sort   '''
-#manufacturer      = tables.StringCol (64)
-#model             = tables.StringCol (64)
-#serial_number     = tables.StringCol (64)
-#notes             = tables.StringCol (1024)
+# '''   Generalized instrument of some sort   '''
+# manufacturer      = tables.StringCol (64)
+# model             = tables.StringCol (64)
+# serial_number     = tables.StringCol (64)
+# notes             = tables.StringCol (1024)
 
 # versioning/firmware etc.should be included
 # Define new table to reference Instrument type to response (require
 # sensitivity).
 
 # class Orientation (tables.IsDescription) :
-#'''   Orientation of sensor   '''
+# '''   Orientation of sensor   '''
 # dip               = Units32 ()                         #   Zero is up
 # class dip (tables.IsDescription) :
-#'''   32 bit float with units   '''
-#units             = tables.StringCol (16)
-#value             = tables.Float32Col ()
+# '''   32 bit float with units   '''
+# units             = tables.StringCol (16)
+# value             = tables.Float32Col ()
 # azimuth           = Units32 ()                         #   Zero is north
 # class azimuth (tables.IsDescription) :
-#'''   32 bit float with units   '''
-#units             = tables.StringCol (16)
-#value             = tables.Float32Col ()
+# '''   32 bit float with units   '''
+# units             = tables.StringCol (16)
+# value             = tables.Float32Col ()
 
 # Enumeration for convention of Orientation Use SEED way by default
 
@@ -151,8 +155,8 @@ class Experiment (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
         type_s = tables.StringCol(
             8)               # 'EPOCH', 'ASCII', or 'BOTH'
-        epoch_l = tables.Int64Col()                 # Seconds since January 1, 1970
-        ascii_s = tables.StringCol(32)              # WWW MMM DD HH:MM:SS YYYY
+        epoch_l = tables.Int64Col()            # Seconds since January 1, 1970
+        ascii_s = tables.StringCol(32)         # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col()
     #
     # Experiment ID, YY-nnn (Added Feb 25, 2013)
@@ -236,7 +240,8 @@ class Experiment (tables.IsDescription):
 #    Short name, ie nick name
 #    Principal Investigator
 #    Change location to be bounding box
-#    Net code, Report number, Experiment number (What are all of these, who assigns them, which do i use?)
+#    Net code, Report number,
+#    Experiment number
 #    Summary paragraph
 
 
@@ -305,57 +310,57 @@ class Time (tables.IsDescription):
 class Receiver (tables.IsDescription):
     '''   Additional information about sensor   '''
     # class deploy_time (tables.IsDescription) :
-    #'''   Time, either epoch or human readable   '''
-    # type_e              = tables.EnumCol (TIME_TYPE, 'EPOCH')# 'EPOCH', 'ASCII', or 'BOTH'
-    # epoch_l             = tables.Int64Col ()        # Seconds since January 1, 1970
-    # ascii_s             = tables.StringCol (32)              # WWW MMM DD HH:MM:SS YYYY
-    #micro_seconds_i     = tables.Int32Col ()
+    # '''   Time, either epoch or human readable   '''
+    # type_e = tables.EnumCol (TIME_TYPE, 'EPOCH')# 'EPOCH', 'ASCII', or 'BOTH'
+    # epoch_l = tables.Int64Col ()        # Seconds since January 1, 1970
+    # ascii_s  = tables.StringCol (32)              # WWW MMM DD HH:MM:SS YYYY
+    # micro_seconds_i     = tables.Int32Col ()
     # class pickup_time (tables.IsDescription) :
-    #'''   Time, either epoch or human readable   '''
-    # type_e              = tables.EnumCol (TIME_TYPE, 'EPOCH')# 'EPOCH', 'ASCII', or 'BOTH'
-    # epoch_l             = tables.Int64Col ()        # Seconds since January 1, 1970
-    # ascii_s             = tables.StringCol (32)              # WWW MMM DD HH:MM:SS YYYY
-    #micro_seconds_i     = tables.Int32Col ()
-    # das              = Instrument ()                       #   The digitizer
+    # '''   Time, either epoch or human readable   '''
+    # type_e = tables.EnumCol (TIME_TYPE, 'EPOCH')# 'EPOCH', 'ASCII', or 'BOTH'
+    # epoch_l = tables.Int64Col ()        # Seconds since January 1, 1970
+    # ascii_s  = tables.StringCol (32)              # WWW MMM DD HH:MM:SS YYYY
+    # micro_seconds_i     = tables.Int32Col ()
+    # das              = Instrument ()                #   The digitizer
     # class das (tables.IsDescription) :
-    #'''   Generalized instrument of some sort   '''
-    #manufacturer_s      = tables.StringCol (64)
-    #model_s             = tables.StringCol (64)
-    #serial_number_s     = tables.StringCol (64)
-    #notes_s             = tables.StringCol (1024)
+    # '''   Generalized instrument of some sort   '''
+    # manufacturer_s      = tables.StringCol (64)
+    # model_s             = tables.StringCol (64)
+    # serial_number_s     = tables.StringCol (64)
+    # notes_s             = tables.StringCol (1024)
     #   Should sensor info be moved to its own table?
-    # sensor           = Instrument ()                       #   The geophone/seismometer
+    # sensor           = Instrument ()           #   The geophone/seismometer
     # class sensor (tables.IsDescription) :
-    #'''   Generalized instrument of some sort   '''
-    #manufacturer_s      = tables.StringCol (64)
-    #model_s             = tables.StringCol (64)
-    #serial_number_s     = tables.StringCol (64)
-    #notes_s             = tables.StringCol (1024)
-    # location         = Location ()                         #   The location
+    # '''   Generalized instrument of some sort   '''
+    # manufacturer_s      = tables.StringCol (64)
+    # model_s             = tables.StringCol (64)
+    # serial_number_s     = tables.StringCol (64)
+    # notes_s             = tables.StringCol (1024)
+    # location         = Location ()                    #   The location
     # class location (tables.IsDescription) :
-    #'''   Geographic position   '''
-    # coordinate_system_s = tables.StringCol (32)              # UTM etc.
-    # projection_s        = tables.StringCol (32)              # Albers etc.
-    # ellipsoid_s         = tables.StringCol (32)              # WGS-84 etc.
-    # X                 = Units64 ()                         # Latitude, Northing, etc.
+    # '''   Geographic position   '''
+    # coordinate_system_s = tables.StringCol (32)       # UTM etc.
+    # projection_s        = tables.StringCol (32)       # Albers etc.
+    # ellipsoid_s         = tables.StringCol (32)       # WGS-84 etc.
+    # X                 = Units64 ()                 # Latitude, Northing, etc.
     # class X (tables.IsDescription) :
-    #units_s             = tables.StringCol (16)
-    #value_d             = tables.Float64Col ()
-    # Y                 = Units64 ()                         # Longitude, Easting, etc.
+    # units_s             = tables.StringCol (16)
+    # value_d             = tables.Float64Col ()
+    # Y                 = Units64 ()                 # Longitude, Easting, etc.
     # class Y (tables.IsDescription) :
-    #units_s             = tables.StringCol (16)
-    #value_d             = tables.Float64Col ()
+    # units_s             = tables.StringCol (16)
+    # value_d             = tables.Float64Col ()
     # Z                 = Units64 ()                         # Elevation
     # class Z (tables.IsDescription) :
-    #units_s             = tables.StringCol (16)
-    #value_d             = tables.Float64Col ()
+    # units_s             = tables.StringCol (16)
+    # value_d             = tables.Float64Col ()
     ##
-    # description_s       = tables.StringCol (1024)            # Any additional comments
-    # orientation      = Orientation ()                      #   Orientation
+    # description_s       = tables.StringCol (1024) # Any additional comments
+    # orientation      = Orientation ()             #   Orientation
     # of geophone/seismometer
     class orientation (tables.IsDescription):
         '''   Orientation of sensor   '''
-        # dip               = Units32 ()                         #   Zero is up
+        # dip               = Units32 ()                        #   Zero is up
         class dip (tables.IsDescription):
             '''   32 bit float with units   '''
             _v_pos = 2
@@ -406,13 +411,13 @@ class Index (tables.IsDescription):
 
 # class Sort (tables.IsDescription) :
     # '''   Table to describe a data subset, such as a gather.
-        # Also associates an instrument with a location on the ground   '''
-    # id               = tables.StringCol (16)               #   Station ID/stake number
-    # receiver_sn      = tables.StringCol (64)               #   DAS serial number
-    # channel_number   = tables.Int8Col ()                   #   Channel number
-    # start_time       = Time ()                             #   Start time
-    # end_time         = Time ()                             #   End time
-    # array_name       = tables.StringCol (16)               #   Name of array
+    # Also associates an instrument with a location on the ground   '''
+    # id               = tables.StringCol (16)     #   Station ID/stake number
+    # receiver_sn      = tables.StringCol (64)     #   DAS serial number
+    # channel_number   = tables.Int8Col ()         #   Channel number
+    # start_time       = Time ()                   #   Start time
+    # end_time         = Time ()                   #   End time
+    # array_name       = tables.StringCol (16)     #   Name of array
     # that contains the trace
 
 # Time stamp on sort table
@@ -431,8 +436,8 @@ class Sort (tables.IsDescription):
         _v_pos = 6
         # 'EPOCH', 'ASCII', or 'BOTH'
         type_s = tables.StringCol(8)
-        epoch_l = tables.Int64Col()                 # Seconds since January 1, 1970
-        ascii_s = tables.StringCol(32)              # WWW MMM DD HH:MM:SS YYYY
+        epoch_l = tables.Int64Col()             # Seconds since January 1, 1970
+        ascii_s = tables.StringCol(32)          # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col()
     #
     array_t_name_s = tables.StringCol(16, pos=1)  # Name Array_t
@@ -485,10 +490,10 @@ class Array (tables.IsDescription):
         # WWW MMM DD HH:MM:SS YYYY
         ascii_s = tables.StringCol(32, pos=1)
         micro_seconds_i = tables.Int32Col(pos=3)
-    # order_i            = tables.Int32Col ()                  #   Order of trace in gather
-    # event_number_i     = tables.Int32Col ()                  #   Event number
+    # order_i            = tables.Int32Col ()       #  Order of trace in gather
+    # event_number_i     = tables.Int32Col ()       #  Event number
     id_s = tables.StringCol(16, pos=1)  # Stake ID
-    # das              = Instrument ()                        #   Instrument
+    # das              = Instrument ()              #  Instrument
     # at stake
 
     class das (tables.IsDescription):
@@ -540,10 +545,10 @@ class Array (tables.IsDescription):
         # Any additional comments
         description_s = tables.StringCol(1024, pos=7)
     # class start_time (tables.IsDescription) :
-        # type_e              = tables.EnumCol (TIME_TYPE, 'EPOCH')# 'EPOCH', 'ASCII', or 'BOTH'
-        # epoch_l             = tables.Int64Col ()                 # Seconds since January 1, 1970
-        # ascii_s             = tables.StringCol (32)              # WWW MMM DD HH:MM:SS YYYY
-        #micro_seconds_i     = tables.Int32Col ()
+        # type_e = tables.EnumCol (TIME_TYPE, 'EPOCH')#'EPOCH','ASCII',or'BOTH'
+        # epoch_l = tables.Int64Col ()          # Seconds since January 1, 1970
+        # ascii_s = tables.StringCol (32)       # WWW MMM DD HH:MM:SS YYYY
+        # micro_seconds_i = tables.Int32Col ()
     #
     # data_array_a       = tables.StringCol (16)                #   Name of
     # data array
@@ -757,7 +762,7 @@ def _flatten(sequence, result=None, pre=None):
     #   Loop through each item
     for item in sequence:
         #   This is a leaf, so add it to the result
-        #print item
+        # print item
         if isinstance(item, str):
             #   If this leaf has a node above it then include it
             if pre:
@@ -785,8 +790,8 @@ def keys(ltable):
     names = ltable.colnames
     all = []
     cols = ltable.cols._v_colpathnames
-    #print "Names: ", names
-    #print "cols: ", cols
+    # print "Names: ", names
+    # print "cols: ", cols
     try:
         all_keys = {}
         for k in ltable.colpathnames:
@@ -806,8 +811,9 @@ def keys(ltable):
 
 def validate(ltable, p, required_keys=[]):
     '''
-          Validate that key/value p has keys that match column names in ltable, and
-          optionally that the required keys in list required_keys exist in p.
+          Validate that key/value p has keys that match column names in ltable,
+          and optionally that the required keys in list
+          required_keys exist in p.
     '''
     fail_keys = []
     fail_required = []
@@ -821,16 +827,16 @@ def validate(ltable, p, required_keys=[]):
     except AttributeError:
         all_keys = _flatten(ltable.colnames)
 
-    #print all_keys
+    # print all_keys
     for k in p.keys():
-        #print k, all_keys.has_key (k)
+        # print k, all_keys.has_key (k)
         if k not in all_keys:
             #   Column does not exist so remove it from p
             del p[k]
             fail_keys.append("Error: No such column: " + k)
 
     for k in required_keys:
-        #print "K: ", k
+        # print "K: ", k
         if k not in p:
             fail_required.append("Error: Required key missing: " + k)
 
@@ -847,7 +853,7 @@ def node(ph5, path, classname):
 
 
 def _cast(vtype, val):
-    #print type, val
+    # print type, val
     if not vtype:
         return None
 
@@ -855,34 +861,39 @@ def _cast(vtype, val):
         val = val.strip()
         if val == "":
             val = None
-        elif vtype == 'Float64' or vtype == 'float64' or vtype == 'Float32' or vtype == 'float32':
+        elif (vtype == 'Float64' or vtype == 'float64' or
+              vtype == 'Float32' or vtype == 'float32'):
             try:
                 val = float(val)
-            except ValueError as e:
+            except ValueError:
                 val = None
-        elif vtype == 'Int64' or vtype == 'int64' or vtype == 'UInt32' or vtype == 'uint32':
+        elif (vtype == 'Int64' or vtype == 'int64' or vtype == 'UInt32' or
+              vtype == 'uint32'):
             try:
                 val = long(val)
-            except ValueError as e:
+            except ValueError:
                 val = None
-        elif vtype == 'Int32' or vtype == 'int32' or vtype == 'UInt32' or vtype == 'uint32':
+        elif (vtype == 'Int32' or vtype == 'int32' or vtype == 'UInt32' or
+              vtype == 'uint32'):
             try:
                 val = int(val)
-            except ValueError as e:
+            except ValueError:
                 val = None
-        elif vtype == 'Int16' or vtype == 'int16' or vtype == 'UInt16' or vtype == 'uint16':
+        elif (vtype == 'Int16' or vtype == 'int16' or vtype == 'UInt16' or
+              vtype == 'uint16'):
             try:
                 val = int(val)
-            except ValueError as e:
+            except ValueError:
                 val = None
-        elif vtype == 'Int8' or vtype == 'int8' or vtype == 'UInt8' or vtype == 'uint8':
+        elif (vtype == 'Int8' or vtype == 'int8' or vtype == 'UInt8' or
+              vtype == 'uint8'):
             try:
                 val = int(val)
-            except ValueError as e:
+            except ValueError:
                 val = None
         # elif vtype == 'Enum' or vtype == 'enum' :
             # XXX   This only works since we only have a single enum   XXX
-            #val = TIME_TYPE[val]
+            # val = TIME_TYPE[val]
 
     return val
 
@@ -948,7 +959,7 @@ def update(ltable, p, key):
             for k in p.keys():
                 try:
                     r.__setitem__(k, p[k])
-                except IndexError as e:
+                except IndexError:
                     #   Not all columns need exist
                     pass
 
@@ -966,7 +977,7 @@ def append(ltable, p):
 
     for k in p.keys():
         t = vtypes[k]
-        #print k, t
+        # print k, t
         val = p[k]
         val = _cast(t, val)
         if val is None:
@@ -1003,25 +1014,26 @@ def is_mini(ltable):
 
 
 def populate(ltable, p, key=None):
-    '''   Populate a row in the table ltable. p is a dictionary of key/values to update.
+    '''   Populate a row in the table ltable.
+          p is a dictionary of key/values to update.
           If key is set then update, otherwise append.
     '''
-    #ltable = is_mini (ltable)
+    # ltable = is_mini (ltable)
     #   key is set so update
     if key:
         if key in p:
-            #print "update"
+            # print "update"
             update(ltable, p, key)
-            #ltable.flush ()
+            # ltable.flush ()
         else:
             sys.stderr.write(
                 "Warning: No data for key. p.has_key (key) fails\n")
             return
     #   no key so get a new row to append
     else:
-        #print "append"
+        # print "append"
         append(ltable, p)
-        #ltable.flush ()
+        # ltable.flush ()
 
 
 if __name__ == '__main__':

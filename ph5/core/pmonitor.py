@@ -6,13 +6,10 @@
 #
 #   Monitor conversions from various 'RAW' formats to PH5
 #
-
-PROG_VERSION = '2016.230 Developmental'
-
 #   Set timeout of conversion process
 #   Texan and SEG-D about 120 sec/GB, RT-130 500 sec/GB
 #   Set for RT-130
-TIMEOUT = 500 * 4
+
 
 import sys
 import os
@@ -23,10 +20,13 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
+PROG_VERSION = '2016.230 Developmental'
+TIMEOUT = 500 * 4
+
 try:
     # raise
     from PySide import QtGui, QtCore
-    #import QtCore.Signal as Signal
+    # import QtCore.Signal as Signal
 except Exception as e:
     print "No PySide", e.message
     from PyQt4 import QtGui, QtCore
@@ -139,12 +139,12 @@ class ErrorsDialog (QtGui.QMainWindow):
     '''
 
     def __init__(self, errors, parent=None):
-        #super (ErrorsDialog, self).__init__ ()
+        # super (ErrorsDialog, self).__init__ ()
         super(ErrorsDialog, self).__init__(parent)
 
         errors.reverse()
         self.parent = parent
-        #print self.parent.current_file, self.parent.current_list
+        # print self.parent.current_file, self.parent.current_list
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         saveAction = QtGui.QAction('Save log...', self)
@@ -199,13 +199,13 @@ class ErrorsDialog (QtGui.QMainWindow):
                 self.notProcessed.append(line)
                 continue
 
-            if os.path.basename(line) == base and write_it == False:
+            if os.path.basename(line) == base and write_it is False:
                 write_it = True
                 # This is the file that caused the timeout so write it to error
                 # list.
                 self.notProcessed.append('#' + line)
                 continue
-            if write_it == True:
+            if write_it is True:
                 #   Write rest of list
                 self.notProcessed.append(line)
 
@@ -214,16 +214,16 @@ class ErrorsDialog (QtGui.QMainWindow):
     def setIt(self, text):
         self.text.clear()
         text = '\n'.join(text)
-        #print text
+        # print text
         self.text.setText(text)
 
     def saveFile(self):
         filename, _ = QtGui.QFileDialog.getSaveFileName(
             self, 'Save File', os.getenv('HOME'))
-        #filename = filename[0]
+        # filename = filename[0]
         if not filename:
             return
-        #f = open(filename[0], 'w')
+        # f = open(filename[0], 'w')
         f = open(filename, 'w')
         filedata = self.text.toPlainText()
         f.write(filedata)
@@ -260,7 +260,7 @@ class Monitor (QtGui.QWidget):
             mmax -> max value for progress bar
         '''
         QtGui.QWidget.__init__(self)
-        #self.sizeHint ()
+        # self.sizeHint ()
         self.fio = fio  # pforma_io instance
         self.cmds = cmds  # List of commands to monitor
         self.info = info  # Info about files to convert
@@ -281,7 +281,7 @@ class Monitor (QtGui.QWidget):
         self.seconds = TIMEOUT  # Time out for conversion of a raw file
         self.log = []  # Running log of conversion (mostly from fifo)
         #   trddone is signal to progress bar
-        #self.trddone.connect (self.fp.pbar.setValue)
+        # self.trddone.connect (self.fp.pbar.setValue)
         QtCore.QObject.connect(self,
                                QtCore.SIGNAL("trddone(int)"),
                                self.fp.pbar,
@@ -293,21 +293,21 @@ class Monitor (QtGui.QWidget):
         wd.start()
         self.setLayout(box)
         self.setWindowTitle(self.family)
-        self.processedFiles = {}  # Lists of files successfully converted keyed by DAS sn
+        self.processedFiles = {}
+        # Lists of files successfully converted keyed by DAS sn
         self.monPercent = 0.01
 
     def setTimeout(self, secs):
-        '''   Set timeout in seconds to process a single SEG-D, TRD or ZIP.   '''
+        '''Set timeout in seconds to process a single SEG-D, TRD or ZIP.'''
         self.seconds = secs
 
     def setundefinedError(self):
-        #print "undefined error..."
+        # print "undefined error..."
         self.fp.undefinedError()
-        ###self.trddone.emit (self.cnt)
 
     def timedOut(self):
         '''   Go here in case of timeout.   '''
-        #print "Timed out..."
+        # print "Timed out..."
         self.log.append("Conversion process timed out...")
         self.running = False
 
@@ -331,7 +331,7 @@ class Monitor (QtGui.QWidget):
 
     def startConversion(self):
         '''   Start the conversion process.   '''
-        if self.running == True:
+        if self.running is True:
             return
         else:
             self.running = True
@@ -392,7 +392,10 @@ class Monitor (QtGui.QWidget):
             for i in xrange(obj.metaObject().methodCount()):
                 m = obj.metaObject().method(i)
                 if m.methodType() == QtCore.QMetaMethod.MethodType.Signal:
-                    print "SIGNAL: sig=", m.signature(), "hooked to nslots=", obj.receivers(
+                    print "SIGNAL: sig=",
+                    m.signature(),
+                    "hooked to nslots=",
+                    obj.receivers(
                         QtCore.SIGNAL(m.signature()))
                 elif m.methodType() == QtCore.QMetaMethod.MethodType.Slot:
                     print "SLOT: sig=", m.signature()
@@ -413,7 +416,7 @@ class Monitor (QtGui.QWidget):
             self.log.append("Time minutes: {0}".format(
                 int((time.time() - Monitor.NOW) / 60)))
         #   We finished processing a raw file according to the fifo
-        #:<Finished>:
+        # :<Finished>:
         elif fileDoneRE.match(line):
             self.log.append("Time processing {0} seconds.".format(
                 int(time.time() - Monitor.NOW)))
@@ -431,7 +434,7 @@ class Monitor (QtGui.QWidget):
                 self.WD.start()
             #   Update the progressbar
             self.cnt += 1
-            #self.trddone.emit (self.cnt)
+            # self.trddone.emit (self.cnt)
             # Only update pbar 100 times (or so)
             if (self.mmax / self.cnt) >= self.monPercent:
                 if self.monPercent == 0.01:
@@ -439,7 +442,7 @@ class Monitor (QtGui.QWidget):
                 else:
                     self.monPercent += .01
                 self.trddone.emit(self.cnt)
-        #:<Processing>:
+        # :<Processing>:
         elif fileStartRE.match(line):
             #
             Monitor.NOW = time.time()
@@ -452,12 +455,13 @@ class Monitor (QtGui.QWidget):
         elif updatingRE.match(line):
             pass
         #   This file didn't read cleanly.
-        #:<Error>:
+        # :<Error>:
         elif fileErrorRE.match(line):
-            #print "File error:", line
+            # print "File error:", line
             self.log.append(
-                "Processing error at about line {0} in file list.".format(self.cnt + 1))
-            #self.cnt -= 1
+                "Processing error at about line {0} in file list."
+                .format(self.cnt + 1))
+            # self.cnt -= 1
 
         return line.strip()
 
@@ -467,7 +471,6 @@ class Monitor (QtGui.QWidget):
         '''
         try:
             ret = Q.get_nowait()
-            self.log.append(line.strip())
         except Empty:
             ret = None
 
@@ -480,8 +483,8 @@ class Monitor (QtGui.QWidget):
         if not self.pee:
             return
         # Only update progress bar about 100 times
-        #self.x = int ((self.numFiles/101.) + 0.5)
-        #if self.x < 1 : self.x = 1
+        # self.x = int ((self.numFiles/101.) + 0.5)
+        # if self.x < 1 : self.x = 1
         #   Set up read queue and watchdog timer
         Q, T, self.WD = set_up_queue(self.fifo, self.seconds, self.timedOut)
 
@@ -523,9 +526,9 @@ class Monitor (QtGui.QWidget):
 
         self.trddone.emit(self.cnt)
         if self.cnt < self.numFiles:
-            ##print "Process finished but not all files processed."
             self.log.append(
-                "Process finished but not all files processed: {0}/{1}.".format(self.cnt, self.numFiles))
+                "Process finished but not all files processed: {0}/{1}."
+                .format(self.cnt, self.numFiles))
             self.setundefinedError()
         self.fp.btn.setDisabled(False)
         self.fp.btn.clicked.disconnect(self.endConversion)
@@ -600,10 +603,9 @@ if __name__ == '__main__':
 
         try:
             fio.read()
-            #print "Total raw: {0}GB".format (int (fio.total_raw / 1024 / 1024 / 1024))
-            #print "M:", fio.M
-            #print "N:", fio.nmini
-            #time.sleep (10)
+            # print "M:", fio.M
+            # print "N:", fio.nmini
+            # time.sleep (10)
         except pforma_io.FormaIOError as e:
             print e.errno, e.message
 
@@ -618,14 +620,14 @@ if __name__ == '__main__':
         return fio, cmds, lsts
 
     f = os.path.join(os.getcwd(), sys.argv[1])
-    #l = get_len (f)
+    # l = get_len (f)
     d = os.path.join(os.getcwd(), sys.argv[2])
     fio, cmds, info = init_fio(f, d)
     fams = sorted(cmds.keys())
     application = QtGui.QApplication(sys.argv)
     MMM = {}
     for F in fams:
-        #print cmds[F]
+        # print cmds[F]
         bl = info[F]['lists']
         blah = 0
         for b in bl:

@@ -60,7 +60,8 @@ class LastPacket (object):
 
 
 class TimeCheck (object):
-    __slots__ = 'start_time_asc', 'start_time_secs', 'start_time_ms', 'end_time_secs', 'end_time_ms', 'sample_interval', 'samples'
+    __slots__ = 'start_time_asc', 'start_time_secs', 'start_time_ms',
+    'end_time_secs', 'end_time_ms', 'sample_interval', 'samples'
 
     def __init__(self):
         self.start_time_asc = None
@@ -138,7 +139,8 @@ class DataFile (object):
 
 class DataPacket (object):
     '''   Keep start time for each packet of data   '''
-    __slots__ = 'year', 'doy', 'hour', 'minute', 'seconds', 'milliseconds', 'trace'
+    __slots__ = 'year', 'doy', 'hour', 'minute', 'seconds', 'milliseconds',
+    'trace'
 
     def __init__(self, c, p):
         self.year = p.year
@@ -151,9 +153,10 @@ class DataPacket (object):
 
 
 class Event130 (object):
-    __slots__ = ('event', 'year', 'doy', 'hour', 'minute', 'seconds', 'sampleRate',
-                 'sampleCount', 'channel_number', 'stream_number', 'trace', 'gain',
-                 'bitWeight', 'unitID', 'last_sample_time', 'milliseconds')
+    __slots__ = ('event', 'year', 'doy', 'hour', 'minute', 'seconds',
+                 'sampleRate', 'sampleCount', 'channel_number',
+                 'stream_number', 'trace', 'gain', 'bitWeight', 'unitID',
+                 'last_sample_time', 'milliseconds')
 
     def __init__(self):
         self.event = None
@@ -237,7 +240,7 @@ class NeoRAW:
 
             os.close(self.df.fh)
 
-        #self.buf.clear ()
+        # self.buf.clear ()
         self.df.fh = None
     #
 
@@ -249,13 +252,13 @@ class NeoRAW:
     def getPacket(self):
         pbuf = None
         if self.buf.ptr >= self.buf.len:
-            #self.close ()
+            # self.close ()
             self._get_rawfile_buf()
 
         ptr = self.buf.ptr
-        l = self.buf.len
+        ll = self.buf.len
 
-        if ptr < l:
+        if ptr < ll:
             pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
             len_pbuf = len(pbuf)
             self.buf.inc(len_pbuf)
@@ -315,7 +318,7 @@ class NeoRAW:
         self.buf.clear()
         #   No open filehandle so try to open one
         if self.df.fh is None:
-            #print "New handle 1"
+            # print "New handle 1"
             self._get_raw_filehandle()
 
         #   If we have an open filehandle read a buffers worth from it
@@ -369,9 +372,9 @@ class NeoZIP:
             self._get_raw_file_buf()
 
         ptr = self.buf.ptr
-        l = self.buf.len
+        ll = self.buf.len
 
-        if ptr < l:
+        if ptr < ll:
             pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
             len_pbuf = len(pbuf)
             self.buf.inc(len_pbuf)
@@ -468,9 +471,9 @@ class NeoTAR:
             self._get_raw_file_buf()
 
         ptr = self.buf.ptr
-        l = self.buf.len
+        ll = self.buf.len
 
-        if ptr < l:
+        if ptr < ll:
             pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
             len_pbuf = len(pbuf)
             self.buf.inc(len_pbuf)
@@ -572,9 +575,9 @@ class NeoREF:
             self._get_raw_file_buf()
 
         ptr = self.buf.ptr
-        l = self.buf.len
+        ll = self.buf.len
 
-        if ptr < l:
+        if ptr < ll:
             #
             pbuf = self.buf.buf[ptr:PACKET_SIZE + ptr]
             len_pbuf = len(pbuf)
@@ -664,16 +667,16 @@ class PN130:
         self.par = par
         #   Keep track of packet times to check for gaps/verlaps
         self.last_packet_time = {}
-        #self.last_packet_type = None
+        # self.last_packet_type = None
         self.previous_event = [None] * NUM_STREAMS
         #   This way it can be addressed self.current_event[stream][channel]
         self.current_event = [None] * NUM_STREAMS
         #   End of event marker per stream
-        #self.num_end_of_event = [-1] * NUM_STREAMS
+        # self.num_end_of_event = [-1] * NUM_STREAMS
         self.entry_num = 0
         self.points = [0] * NUM_STREAMS
         # Which channels have been seen for this event
-        #self.das_channel_stream_seen = {}
+        # self.das_channel_stream_seen = {}
 
         self.lastDT = LastPacket()
         self.lastAD = LastPacket()
@@ -726,8 +729,8 @@ class PN130:
             return None
 
     def packet_time_epoch(self, p):
-        #tdoy = TimeDoy.TimeDoy ()
-        #epoch = tdoy.epoch (p.year, p.doy, p.hr, p.mn, p.sc)
+        # tdoy = TimeDoy.TimeDoy ()
+        # epoch = tdoy.epoch (p.year, p.doy, p.hr, p.mn, p.sc)
         # try :
         tdoy = timedoy.TimeDOY(year=p.year,
                                month=None,
@@ -740,7 +743,8 @@ class PN130:
                                epoch=None,
                                dtobject=None)
         # except Exception, e :
-        #self.ERRS.append ("Error: Whacky time for packet: {0}".format (e.message))
+        # self.ERRS.append ("Error: Whacky time for packet: {0}"
+        # .format (e.message))
         # return None, None
 
         return tdoy.epoch(), int(p.ms)
@@ -756,14 +760,14 @@ class PN130:
         return packet_time
 
     def packet_tagline_string(self, p):
-        packet_tagline = ("\n%07d %s exp %02d bytes %04d %s ID: %s seq %04d" % (self.entry_num,
-                                                                                p.type,
-                                                                                p.experiment,
-                                                                                p.bytes,
-                                                                                self.packet_time_string(
-                                                                                    p),
-                                                                                p.unit,
-                                                                                p.sequence))
+        packet_tagline = ("\n%07d %s exp %02d bytes %04d %s ID: %s seq %04d" %
+                          (self.entry_num,
+                           p.type,
+                           p.experiment,
+                           p.bytes,
+                           self.packet_time_string(p),
+                           p.unit,
+                           p.sequence))
 
         return packet_tagline
 
@@ -776,13 +780,13 @@ class PN130:
         #   Event
         event = int(c.EventNumber)
         #   Mark end of this event
-        #self.num_end_of_event[stream] = event
+        # self.num_end_of_event[stream] = event
         #   DAS
         p.unit
         #   How many channels
         try:
             num_channels = int(c.TotalChannels)
-        except ValueError as e:
+        except ValueError:
             num_channels = NUM_CHANNELS
 
         #   Only for ET packets
@@ -790,7 +794,7 @@ class PN130:
         #   First sample time
         fst = decode_sample_time(c.FirstSampleTime)
         #
-        #new_event = build_empty_current_stream ()
+        # new_event = build_empty_current_stream ()
         #   We have seen this event/stream before, good!
         if self.current_event[stream] is not None:
             #   Look at each channel
@@ -798,14 +802,17 @@ class PN130:
                 #   Okay, we are in the same event
                 if self.current_event[stream][num_chan].event == event:
                     #   Set the last sample time
-                    self.current_event[stream][num_chan].last_sample_time = last_sample_time
+                    self.current_event[stream][num_chan].\
+                        last_sample_time = last_sample_time
                 else:
                     #   We really should never get here
                     self.ERRS.append(
-                        "Error: Event trailer before any event data. Event %d Channel %d" % (event, num_chan))
+                        "Error: Event trailer before any event data.\
+                        Event %d Channel %d" % (event, num_chan))
                     if self.verbose:
                         sys.stderr.write(
-                            "Error: Event trailer before any event data. Event %d Channel %d\n" % (event, num_chan))
+                            "Error: Event trailer before any event data.\
+                            Event %d Channel %d\n" % (event, num_chan))
 
             self.previous_event[stream] = self.current_event[stream]
             self.current_event[stream] = None
@@ -814,7 +821,8 @@ class PN130:
                 "Error: Event trailer before event data. Event %d" % event)
             if self.verbose:
                 sys.stderr.write(
-                    "Error: Event trailer before event data. Event %d\n" % event)
+                    "Error: Event trailer before event data.\
+                    Event %d\n" % event)
 
         #   Logging
         self.LOGS.append(self.packet_tagline_string(p))
@@ -850,15 +858,14 @@ class PN130:
         self.LOGS.append(s)
         s = "  true weights = %s" % ' '.join(c.TrueBitWeight).strip()
         self.LOGS.append(s)
-        self.LOGS.append("DAS: %s EV: %04d DS: %d FST = %s TT = %s NS: %d SPS: %s ETO: 0" % (p.unit,
-                                                                                             event,
-                                                                                             stream + 1,
-                                                                                             colonize(
-                                                                                                 c.FirstSampleTime),
-                                                                                             colonize(
-                                                                                                 c.TriggerTime),
-                                                                                             self.points[stream],
-                                                                                             c.SampleRate))
+        self.LOGS.append("DAS: %s EV: %04d DS: %d FST = %s TT = %s NS: %d SPS:\
+        %s ETO: 0" % (p.unit,
+                      event,
+                      stream + 1,
+                      colonize(c.FirstSampleTime),
+                      colonize(c.TriggerTime),
+                      self.points[stream],
+                      c.SampleRate))
 
     def set_eh_info(self, c, p):
         '''   Set info from event header   '''
@@ -871,7 +878,7 @@ class PN130:
         #   How many channels
         try:
             num_channels = int(c.TotalChannels)
-        except ValueError as e:
+        except ValueError:
             num_channels = NUM_CHANNELS
 
         #   Only for ET packets
@@ -907,7 +914,8 @@ class PN130:
         else:
             #   Ah, we need to close event
             # if self.current_event[stream][0].event != event :
-                #self.num_end_of_event[stream] = self.current_event[stream][0].event
+                # self.num_end_of_event[stream] =\
+            #     self.current_event[stream][0].event
             #
             for i in range(num_channels):
                 new_event[i].unitID = p.unit
@@ -963,15 +971,14 @@ class PN130:
         self.LOGS.append(s)
         s = "  true weights = %s" % ' '.join(c.TrueBitWeight).strip()
         self.LOGS.append(s)
-        self.LOGS.append("DAS: %s EV: %04d DS: %d FST = %s TT = %s NS: %d SPS: %s ETO: 0" % (p.unit,
-                                                                                             event,
-                                                                                             stream + 1,
-                                                                                             colonize(
-                                                                                                 c.FirstSampleTime),
-                                                                                             colonize(
-                                                                                                 c.TriggerTime),
-                                                                                             self.points[stream],
-                                                                                             c.SampleRate))
+        self.LOGS.append("DAS: %s EV: %04d DS: %d FST = %s TT =\
+        %s NS: %d SPS: %s ETO: 0" % (p.unit,
+                                     event,
+                                     stream + 1,
+                                     colonize(c.FirstSampleTime),
+                                     colonize(c.TriggerTime),
+                                     self.points[stream],
+                                     c.SampleRate))
         '''
         #   This needs to move so we can check time on DT packets + events
         #   Calculate gaps/overlaps
@@ -990,17 +997,30 @@ class PN130:
                                                      int (t[3]),
                                                      int (t[4]))
                         end_epoch_ms = int (t[5])
-                        #   We need to subtract sample interval to get last sample time
-                        end_time = (lst.end_time_secs + (lst.end_time_ms / 1000.)) - lst.sample_interval
-                        delta_secs = (end_epoch_secs + (end_epoch_ms / 1000.)) - end_time
+                        #   We need to subtract sample interval to get last
+                            sample time
+                        end_time = (lst.end_time_secs +
+                        (lst.end_time_ms / 1000.)) - lst.sample_interval
+                        delta_secs = (end_epoch_secs + (end_epoch_ms / 1000.))
+                        - end_time
                         if delta_secs > 0 :
-                            self.ERRS.append ("%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" % (das, i + 1, stream, lst.start_time_asc, delta_secs))
-                            #print "%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" % (das, i + 1, stream, lst.start_time_asc, delta_secs)
+                            self.ERRS.append ("%s Chan: %d Strm: %d Time gap:
+                            %s of %7.3f secs" %
+                            (das, i + 1, stream,
+                            lst.start_time_asc, delta_secs))
+                            #print "%s Chan: %d Strm: %d Time gap: %s of
+                            %7.3f secs" % (das, i + 1, stream,
+                            lst.start_time_asc, delta_secs)
                         elif delta_secs < 0 :
-                            self.ERRS.append ("%s Chan: %d Strm: %d Time overlap: %s of %7.3f" % (das, i + 1, stream, lst.start_time_asc, delta_secs))
-                            #print "%s Chan: %d Strm: %d Time overlap: %s of %7.3f" % (das, i + 1, stream, lst.start_time_asc, delta_secs)
+                            self.ERRS.append ("%s Chan: %d Strm: %d Time
+                            overlap: %s of %7.3f" % (das, i + 1, stream,
+                            lst.start_time_asc, delta_secs))
+                            #print "%s Chan: %d Strm: %d Time overlap: %s of
+                            %7.3f" % (das, i + 1, stream, lst.start_time_asc,
+                            delta_secs)
             else :
-                self.ERRS.append ("Gaps and Overlaps not checked. Missing event trailer")
+                self.ERRS.append ("Gaps and Overlaps not checked.
+                Missing event trailer")
 
             #   Need to clear for next event
             self.last_packet_time = {}
@@ -1035,7 +1055,7 @@ class PN130:
         new_event[dc].channel_number = dc
         new_event[dc].stream_number = ds
         #   Read sample rate from par file if possible
-        #print self.par
+        # print self.par
         if self.par and k in self.par:
             try:
                 new_event[dc].sampleRate = int(self.par[k].samplerate)
@@ -1050,7 +1070,8 @@ class PN130:
                     "Warning: No sample rate available. Setting it to 999.")
                 if self.verbose:
                     sys.stderr.write(
-                        "Warning: No sample rate available. Setting it to 999.\n")
+                        "Warning: No sample rate available.\
+                        Setting it to 999.\n")
                 new_event[dc].sampleRate = 999
                 ret = False
 
@@ -1076,7 +1097,7 @@ class PN130:
         #   Get bit-weight (nominal based on gain)
         try:
             new_event[dc].bitWeight = BIT_WEIGHT[new_event[dc].gain]
-        except Exception as e:
+        except Exception:
             if ds == 9:
                 new_event[dc].bitWeight = '637.0uV'
             else:
@@ -1084,7 +1105,8 @@ class PN130:
                     "Warning: No bit weight available. Setting it to 1.0e-6.")
                 if self.verbose:
                     sys.stderr.write(
-                        "Warning: No bit weight available. Setting it to 1.0e-6.\n")
+                        "Warning: No bit weight available.\
+                        Setting it to 1.0e-6.\n")
                 new_event[dc].bitWeight = '1.0e-6 V'
                 ret = False
 
@@ -1118,16 +1140,18 @@ class PN130:
 
         #   This packet ends previous event?
         try:
-            #e = self.current_event[packet_data_stream][packet_channel_number].event
+            # e = self.current_event[packet_data_stream]
+            # [packet_channel_number].event
             e = self.current_event[stream][channel].event
             if e is not None and event > e:
                 eoe = END_OF_EVENT_DT
         except BaseException:
             pass
 
-        #   We have a new DT packet without a EH or ET so close the old event
+        #   We have a new DT packet without a EH or ET
+        #   so close the old event
         # if eoe :
-            #self.end_event (stream)
+            # self.end_event (stream)
         #
         #   Check to see if we have a sample rate from the event header
         #   If not we are missing the event header
@@ -1139,22 +1163,28 @@ class PN130:
 
         except Exception as e:
             sample_rate = None
-            self.ERRS.append("Error: Data packet with no event header. %s Das: %s Channel: %d Stream: %d" % (self.packet_time_string(p),
-                                                                                                             das,
-                                                                                                             channel + 1,
-                                                                                                             stream + 1))
+            self.ERRS.append("Error: Data packet with no event header.\
+            %s Das: %s Channel: %d Stream: %d" % (self.packet_time_string(p),
+                                                  das,
+                                                  channel + 1,
+                                                  stream + 1))
             if self.verbose:
-                sys.stderr.write("Error: Data packet with no event header. %s Das: %s Channel: %d Stream: %d\n" % (self.packet_time_string(p),
-                                                                                                                   das,
-                                                                                                                   channel + 1,
-                                                                                                                   stream + 1))
+                sys.stderr.write("Error: Data packet with no event header.%s\
+                Das: %s Channel: %d Stream: %d\n" % (
+                                                      self.
+                                                      packet_time_string(p),
+                                                      das,
+                                                      channel + 1,
+                                                      stream + 1))
             #   Try to get sample rate etc..
             if not self.get_eh_info(c, p):
                 self.ERRS.append(
-                    "Warning: Could not determine sample rate, gain, or bit weight")
+                    "Warning: Could not determine sample rate,\
+                    gain, or bit weight")
                 if self.verbose:
                     sys.stderr.write(
-                        "Warning: Could not determine sample rate, gain, or bit weight\n")
+                        "Warning: Could not determine sample rate,\
+                        gain, or bit weight\n")
 
             if sample_rate is None:
                 sample_rate = self.current_event[stream][channel].sampleRate
@@ -1187,8 +1217,10 @@ class PN130:
             try:
                 tpl = TimeCheck()
                 set_this_pig(tpl)
-                # if tpl.start_time_asc == "2017:001:09:43:05:165" or tpl.start_time_asc == "2017:001:09:43:06:885" or tpl.start_time_asc == "2017:001:09:43:07:765" :
-                #xxx = ''
+                # if tpl.start_time_asc == "2017:001:09:43:05:165" or
+                # tpl.start_time_asc =="2017:001:09:43:06:885" or
+                # tpl.start_time_asc == "2017:001:09:43:07:765" :
+                # xxx = ''
             except timedoy.TimeError as e:
                 self.ERRS.append(
                     "Failed to process packet: {0}".format(e.message))
@@ -1203,35 +1235,45 @@ class PN130:
                            self.last_packet_time[k].end_time_ms) / 1000.
 
             # if not self.das_channel_stream_seen.has_key (das) :
-            #self.das_channel_stream_seen[das] = {}
+            # self.das_channel_stream_seen[das] = {}
             # if not self.das_channel_stream_seen[das].has_key (stream) :
-            #self.das_channel_stream_seen[das] = {}
-            #self.das_channel_stream_seen[das][stream] = {}
+            # self.das_channel_stream_seen[das] = {}
+            # self.das_channel_stream_seen[das][stream] = {}
 
             if delta_secs > 0:
                 #   Gap
                 if self.verbose:
-                    sys.stderr.write("%s Chan: %d Strm: %d Time gap: %s of %7.3f secs\n" % (
-                        das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
-                self.ERRS.append("%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" % (
-                    das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
+                    sys.stderr.write("%s Chan: %d Strm: %d Time gap:\
+                    %s of %7.3f secs\n" % (
+                        das, channel + 1, stream + 1, tpl.start_time_asc,
+                        delta_secs))
+                self.ERRS.append("%s Chan: %d Strm: %d Time gap:\
+                %s of %7.3f secs" % (
+                    das, channel + 1, stream + 1, tpl.start_time_asc,
+                    delta_secs))
                 eoe = END_OF_EVENT_GAP
 
-                #self.das_channel_stream_seen[das][stream][channel] = True
-                #print "%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" % (das, channel + 1, stream, tpl.start_time_asc, delta_secs)
+                # self.das_channel_stream_seen[das][stream][channel] = True
+                # print "%s Chan: %d Strm: %d Time gap: %s of %7.3f secs" %
+                # (das, channel + 1, stream, tpl.start_time_asc, delta_secs)
             elif delta_secs < 0:
                 #   Overlap
                 if self.verbose:
-                    sys.stderr.write("%s Chan: %d Strm: %d Time overlap: %s of %7.3f secs\n" % (
-                        das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
-                self.ERRS.append("%s Chan: %d Strm: %d Time overlap: %s of %7.3f secs" % (
-                    das, channel + 1, stream + 1, tpl.start_time_asc, delta_secs))
+                    sys.stderr.write("%s Chan: %d Strm: %d Time overlap:\
+                    %s of %7.3f secs\n" % (
+                        das, channel + 1, stream + 1, tpl.start_time_asc,
+                        delta_secs))
+                self.ERRS.append("%s Chan: %d Strm: %d Time overlap:\
+                %s of %7.3f secs" % (
+                    das, channel + 1, stream + 1, tpl.start_time_asc,
+                    delta_secs))
                 eoe = END_OF_EVENT_OVERLAP
 
-                #self.das_channel_stream_seen[das][stream][channel] = True
-                #print "%s Chan: %d Strm: %d Time overlap: %s of %7.3f" % (das, channel + 1, stream, tpl.start_time_asc, delta_secs)
+                # self.das_channel_stream_seen[das][stream][channel] = True
+                # print "%s Chan: %d Strm: %d Time overlap: %s of %7.3f" %
+                # (das, channel + 1, stream, tpl.start_time_asc, delta_secs)
             # else :
-                #self.das_channel_stream_seen[das][stream][channel] = False
+                # self.das_channel_stream_seen[das][stream][channel] = False
 
             self.last_packet_time[k] = tpl
         else:
@@ -1302,8 +1344,8 @@ class PN130:
                                                      eval(pre + "YCoordinate"),
                                                      eval(pre + "ZCoordinate"))
                 self.LOGS.append(s)
-                s = "     XY Units - %s  Z Units - %s" % (eval(pre + "XYUnits"),
-                                                          eval(pre + "ZUnits"))
+                s = "    XY Units - %s  Z Units - %s" % (eval(pre + "XYUnits"),
+                                                         eval(pre + "ZUnits"))
                 self.LOGS.append(s)
                 s = "     Preamplifier Gain = %s" % eval(pre + "PreampGain")
                 self.LOGS.append(s)
@@ -1325,17 +1367,17 @@ class PN130:
             self.packet_time_string(p)[2:], p.unit)
         self.SOH.append(s)
         lines = string.split(c.Information, '\r\n')
-        #print c.Information
+        # print c.Information
         for l in lines:
-            #string.strip (l)
+            # string.strip (l)
             try:
                 if l[0] != ' ':
                     self.SOH.append(l)
             except IndexError:
-                #import sys
-                #print self.SOH[-1]
-                #print c.Information,
-                #sys.exit ()
+                # import sys
+                # print self.SOH[-1]
+                # print c.Information,
+                # sys.exit ()
                 pass
 
     def set_ds_info(self, cs, p):
@@ -1395,21 +1437,27 @@ class PN130:
         if c._72ACalibration.StartTime[0] != ' ':
             s = "  72A Calibration Start Time %s" % c._72ACalibration.StartTime
             self.LOGS.append(s)
-            s = "  72A Calibration Repeat Interval %s" % c._72ACalibration.RepeatInterval
+            s = "  72A Calibration Repeat Interval %s"\
+                % c._72ACalibration.RepeatInterval
             self.LOGS.append(s)
             s = "  72A Calibration Intervals %s" % c._72ACalibration.Intervals
             self.LOGS.append(s)
             s = "  72A Calibration Length %s" % c._72ACalibration.Length
             self.LOGS.append(s)
-            s = "  72A Calibration Step On/Off %s" % c._72ACalibration.StepOnOff
+            s = "  72A Calibration Step On/Off %s"\
+                % c._72ACalibration.StepOnOff
             self.LOGS.append(s)
-            s = "  72A Calibration Step Period %s" % c._72ACalibration.StepPeriod
+            s = "  72A Calibration Step Period %s"\
+                % c._72ACalibration.StepPeriod
             self.LOGS.append(s)
-            s = "  72A Calibration Step Size %s" % c._72ACalibration.StepSize
+            s = "  72A Calibration Step Size %s"\
+                % c._72ACalibration.StepSize
             self.LOGS.append(s)
-            s = "  72A Calibration Step Amplitude %s" % c._72Calibration.StepAmplitude
+            s = "  72A Calibration Step Amplitude %s"\
+                % c._72Calibration.StepAmplitude
             self.LOGS.append(s)
-            s = "  72A Calibration Step Output %s" % c._72ACalibration.StepOutput
+            s = "  72A Calibration Step Output %s"\
+                % c._72ACalibration.StepOutput
             self.LOGS.append(s)
 
         for i in range(4):
@@ -1494,11 +1542,14 @@ class PN130:
             self.LOGS.append(s)
             s = "     Filter Coefficient Count %d" % f.FilterCoefficientCount
             self.LOGS.append(s)
-            s = "     Filter Packet Coefficient Count %d" % f.PacketCoefficientCount
+            s = "     Filter Packet Coefficient Count %d"\
+                % f.PacketCoefficientCount
             self.LOGS.append(s)
-            s = "     Filter Coefficient Packet Count %d" % f.CoefficientPacketCount
+            s = "     Filter Coefficient Packet Count %d"\
+                % f.CoefficientPacketCount
             self.LOGS.append(s)
-            s = "     Filter Coefficient Format %d" % f.CoefficientFormat
+            s = "     Filter Coefficient Format %d"\
+                % f.CoefficientFormat
             self.LOGS.append(s)
             s = "     Filter Coefficients:"
             self.LOGS.append(s)
@@ -1527,13 +1578,16 @@ class PN130:
         self.LOGS.append(s)
         s = "  Operating Mode 72A Terminator Power %s" % c._72ATerminatorPower
         self.LOGS.append(s)
-        s = "  Operating Mode 72A Wake Up Start Time %s" % c._72AWakeUpStartTime
+        s = "  Operating Mode 72A Wake Up Start Time %s"\
+            % c._72AWakeUpStartTime
         self.LOGS.append(s)
         s = "  Operating Mode 72A Wake Up Duration %s" % c._72AWakeUpDuration
         self.LOGS.append(s)
-        s = "  Operating Mode 72A Wake Up Repeat Interval %s" % c._72AWakeUpRepeatInterval
+        s = "  Operating Mode 72A Wake Up Repeat Interval %s"\
+            % c._72AWakeUpRepeatInterval
         self.LOGS.append(s)
-        s = "  Operating Mode 72A Number of Wake Up Intervals %s" % c._72AWakeUpNumberOfIntervals
+        s = "  Operating Mode 72A Number of Wake Up Intervals %s"\
+            % c._72AWakeUpNumberOfIntervals
         self.LOGS.append(s)
 
     #   Process a single packet
@@ -1547,18 +1601,20 @@ class PN130:
             self.last_packet_header = ret
             self.entry_num += 1
             if self.verbose == 2:
-                sys.stderr.write("\t\tParsing: Type: %s Unit: %s Sequence: %d\n" % (
+                sys.stderr.write("\t\tParsing: Type: %s Unit:\
+                %s Sequence: %d\n" % (
                     ret.type, ret.unit, ret.sequence))
         except rt_130_h.HeaderError as e:
             #
             if self.verbose:
-                sys.stderr.write("Failed to parse packet header: Type: {0} Unit: {1} Sequence: {2}\n{3}\n".format(ret.type,
-                                                                                                                  ret.unit,
-                                                                                                                  ret.sequence,
-                                                                                                                  e.message))
+                sys.stderr.write("Failed to parse packet header: Type:\
+                {0} Unit: {1} Sequence: {2}\n{3}\n".format(ret.type,
+                                                           ret.unit,
+                                                           ret.sequence,
+                                                           e.message))
 
             return CORRUPT_PACKET
-        #print ret.type
+        # print ret.type
         #
         #   Data packet
         if ret.type == 'DT':
@@ -1577,45 +1633,53 @@ class PN130:
 
             #   Ignore channels
             if packet_channel_number > NUM_CHANNELS:
-                self.ERRS.append("Warning: Ignoring packet for stream %d channel %d." % (
+                self.ERRS.append("Warning: Ignoring packet for stream %d\
+                channel %d." % (
                     packet_data_stream, packet_channel_number))
                 if self.verbose:
-                    sys.stderr.write("Warning: Ignoring packet for stream %d channel %d.\n" % (
+                    sys.stderr.write("Warning: Ignoring packet for stream %d\
+                    channel %d.\n" % (
                         packet_data_stream, packet_channel_number))
                 return IGNORE_PACKET
 
-            #   If data is steim1 or steim2 then x0 is in 2nd to last data sample
+            #   If data is steim1 or steim2 then x0 is
+            #   in 2nd to last data sample
             #   and xn is in the last data sample
             if c.data_format == 0xc0 or c.data_format == 0xc2:
-                x0 = c.data[-2]
                 xn = c.data[-1]
                 del c.data[-2:]
 
                 if self.verbose and c.data:
                     if xn != c.data[-1]:
-                        self.ERRS.append("Garbled data packet at: %d:%03d:%02d:%02d:%02d %03dms contains %d samples" % (ret.year,
-                                                                                                                        ret.doy,
-                                                                                                                        ret.hr,
-                                                                                                                        ret.mn,
-                                                                                                                        ret.sc,
-                                                                                                                        ret.ms,
-                                                                                                                        c.samples))
+                        self.ERRS.append("Garbled data packet at:\
+                        %d:%03d:%02d:%02d:%02d %03dms\
+                        contains %d samples" % (ret.year,
+                                                ret.doy,
+                                                ret.hr,
+                                                ret.mn,
+                                                ret.sc,
+                                                ret.ms,
+                                                c.samples))
 
-                        sys.stderr.write("Garbled data packet at: %d:%03d:%02d:%02d:%02d %03dms contains %d samples\n" % (ret.year,
-                                                                                                                          ret.doy,
-                                                                                                                          ret.hr,
-                                                                                                                          ret.mn,
-                                                                                                                          ret.sc,
-                                                                                                                          ret.ms,
-                                                                                                                          c.samples))
+                        sys.stderr.write("Garbled data packet at:\
+                        %d:%03d:%02d:%02d:%02d %03dms contains %d samples\n"
+                                         % (ret.year,
+                                            ret.doy,
+                                            ret.hr,
+                                            ret.mn,
+                                            ret.sc,
+                                            ret.ms,
+                                            c.samples))
             try:
                 end_of_event_bool = self.set_dt_info(c, ret)
             except Exception as e:
                 self.ERRS.append(
-                    "Could not process packet, set_dt_info. {0}".format(e.message))
+                    "Could not process packet, set_dt_info. {0}"
+                    .format(e.message))
                 if self.verbose:
                     sys.stderr.write(
-                        "Could not process packet, set_dt_info. {0}".format(e.message))
+                        "Could not process packet, set_dt_info. {0}".
+                        format(e.message))
 
                 end_of_event_bool = None
 
@@ -1624,7 +1688,7 @@ class PN130:
 
             self.lastDT.header = ret
             self.lastDT.payload = c
-            #print c
+            # print c
         #   Event header
         elif ret.type == 'EH':
             #   Count this Event Header
@@ -1641,15 +1705,17 @@ class PN130:
                     sys.stderr.write("{0}\n".format(e.message))
 
                 return CORRUPT_PACKET
-            #print 'TotalChannels', c.TotalChannels
+            # print 'TotalChannels', c.TotalChannels
             try:
                 packet_total_channels = int(c.TotalChannels)
             except BaseException:
                 self.ERRS.append(
-                    "Warning: No total number of channels for EH packet given. Setting to %d." % NUM_CHANNELS)
+                    "Warning: No total number of channels for EH packet given.\
+                    Setting to %d." % NUM_CHANNELS)
                 if self.verbose:
                     sys.stderr.write(
-                        "Warning: No total number of channels for EH packet given. Setting to %d.\n" % NUM_CHANNELS)
+                        "Warning: No total number of channels for EH packet\
+                        given. Setting to %d.\n" % NUM_CHANNELS)
                 packet_total_channels = NUM_CHANNELS
 
             #   Keep last event header packet
@@ -1660,8 +1726,8 @@ class PN130:
                 e = None
                 try:
                     e = self.current_event[packet_data_stream][chan].event
-                except Exception as ex:
-                    #print ex
+                except Exception:
+                    # print ex
                     continue
 
                 if e is not None:
@@ -1704,7 +1770,7 @@ class PN130:
                     sys.stderr.write("{0}\n".format(e.message))
 
                 return CORRUPT_PACKET
-            #print SHcnt
+            # print SHcnt
         #   Station channel
         elif ret.type == 'SC':
             self.SCcnt += 1
@@ -1735,7 +1801,7 @@ class PN130:
                     sys.stderr.write("{0}\n".format(e.message))
 
                 return CORRUPT_PACKET
-            #print c
+            # print c
         #   Calibration parameter
         elif ret.type == 'CD':
             self.CDcnt += 1
@@ -1751,7 +1817,7 @@ class PN130:
                     sys.stderr.write("{0}\n".format(e.message))
 
                 return CORRUPT_PACKET
-            #print c
+            # print c
         #   Data stream
         elif ret.type == 'DS':
             self.DScnt += 1
@@ -1782,7 +1848,7 @@ class PN130:
                     sys.stderr.write("{0}\n".format(e.message))
 
                 return CORRUPT_PACKET
-            #print c
+            # print c
         #   Operating mode
         elif ret.type == 'OM':
             try:
@@ -1798,16 +1864,18 @@ class PN130:
                     sys.stderr.write("{0}\n".format(e.message))
 
                 return CORRUPT_PACKET
-            #print c
+            # print c
         else:
             #   XXX
             #   Should we refscrub here???
-            #raise CorruptPacketError
+            # raise CorruptPacketError
             self.ERRS.append(
-                "Error: Unknown packet type at packet number %d! Skipping." % self.entry_num)
+                "Error: Unknown packet type at packet number %d! Skipping."
+                % self.entry_num)
             if self.verbose:
                 sys.stderr.write(
-                    "Error: Unknown packet type at packet number %d! Skipping.\n" % self.entry_num)
+                    "Error: Unknown packet type at packet number %d! Skipping.\
+                    \n" % self.entry_num)
             end_of_event_bool = CORRUPT_PACKET
 
         return end_of_event_bool
@@ -1834,7 +1902,7 @@ class PN130:
         return ret
 
     def get_stream_event(self, s):
-        #s -= 1
+        # s -= 1
         events = {}
         '''   if s (stream number) is -1 we reached end of file
               possibly before writing all pending events   '''
@@ -1858,7 +1926,7 @@ class PN130:
         #   Not an event header or event trailer
         type = self.last_packet_header.type
         if type != 'EH' and type != 'ET':
-            #print type
+            # print type
             return False
 
         for i in range(NUM_STREAMS):
@@ -1884,36 +1952,38 @@ class PN130:
         return pbuf
 
     def getEvent(self):
-        ##self.openEvent ()
+        # self.openEvent ()
         # def all_channels_read () :
             # Check to see if all channels have been read for this event
             # try :
-                #lstream = self.lastDT.payload.data_stream
-                #lchannel = self.lastDT.payload.channel
-                #ldas = self.lastDT.header.unit
+                # lstream = self.lastDT.payload.data_stream
+                # lchannel = self.lastDT.payload.channel
+                # ldas = self.lastDT.header.unit
                 # Channels seen so far
                 # if lstream >= 4 :
                     # Stream 9?
-                    #strm = 0
+                    # strm = 0
                 # else :
-                    #strm = lstream
+                    # strm = lstream
 
-                ##lchannels = self.das_channel_stream_seen[ldas][lstream].keys ()
-                #tmp = self.lastDS.payload[strm].ChannelsIncluded.split (',')
-                #tmp = tmp[:-1]
-                #ichannels = map (int, tmp)
+                # lchannels =self.das_channel_stream_seen[ldas][lstream].keys()
+                # tmp = self.lastDS.payload[strm].ChannelsIncluded.split (',')
+                # tmp = tmp[:-1]
+                # ichannels = map (int, tmp)
                 # for ic in ichannels :
-                    #ic -= 1
-                    # if not self.das_channel_stream_seen[ldas][lstream].has_key (ic) :
+                    # ic -= 1
+                    # if not self.das_channel_stream_seen[ldas][lstream].
+        #             has_key(ic):
                         # return False
                     # else :
-                        # if not self.das_channel_stream_seen[ldas][lstream][ic] :
+                        # if not self.das_channel_stream_seen[ldas]
+        #                 [lstream][ic] :
                             # return False
 
-                #self.das_channel_stream_seen = {}
+                # self.das_channel_stream_seen = {}
                 # return True
             # except Exception as e :
-                #sys.stderr.write ("Error: {0}\n".format (e.message))
+                # sys.stderr.write ("Error: {0}\n".format (e.message))
                 # return False
 
         #
@@ -1945,7 +2015,7 @@ class PN130:
                 ###
                 dt = rt_130_h.DT()
                 ttmp = dt.decode(pbuf)
-                if self.SEEN[ttmp.data_stream] == True:
+                if self.SEEN[ttmp.data_stream] is True:
                     return pbuf
 
                 yr = tmp.year
@@ -1957,7 +2027,8 @@ class PN130:
                 tstr = "{0:04d}{1:03d}{2:02d}{3:02d}{4:02d}{5:03d}".format(
                     yr, doy, hr, mn, sc, ms)
                 self.ERRS.append(
-                    "Warning: DT packet forward of EH at {0}. Attempting to use ET.".format(tstr))
+                    "Warning: DT packet forward of EH at {0}. Attempting to use\
+                    ET.".format(tstr))
                 #   Loop until we find an event trailer
                 self.SEEN[ttmp.data_stream] = True
                 ptr = -1 * PACKET_SIZE
@@ -1986,12 +2057,13 @@ class PN130:
                 tmp.ms = ms
                 packet_data_stream = c.DataStream
                 packet_event_number = c.EventNumber
-                #print 'TotalChannels', c.TotalChannels
+                # print 'TotalChannels', c.TotalChannels
                 try:
                     packet_total_channels = int(c.TotalChannels)
                 except BaseException:
                     sys.stderr.write(
-                        "Warning: No total number of channels for EH packet given. Setting to %d.\n" % NUM_CHANNELS)
+                        "Warning: No total number of channels for EH packet given.\
+                        Setting to %d.\n" % NUM_CHANNELS)
                     packet_total_channels = NUM_CHANNELS
 
                 #   Keep last event header packet
@@ -2002,8 +2074,8 @@ class PN130:
                     e = None
                     try:
                         e = self.current_event[packet_data_stream][chan].event
-                    except Exception as ex:
-                        #print ex
+                    except Exception:
+                        # print ex
                         continue
 
                     if e is not None:
@@ -2022,7 +2094,7 @@ class PN130:
         for i in range(NUM_STREAMS):
             self.SEEN[i] = False
         while True:
-            #pbuf = self.getPage ()
+            # pbuf = self.getPage ()
             try:
                 pbuf = do_et()
             except Exception as e:
@@ -2045,26 +2117,26 @@ class PN130:
                 #   Not end of event
                 continue
             elif end_of_event == END_OF_EVENT_GAP:
-                #print "Gap"
+                # print "Gap"
                 continue
                 # if not all_channels_read () :
                 # continue
-                #stream = self.lastDT.payload.data_stream
-                #event = self.lastDT.payload.event
-                #channel = self.lastDT.payload.channel
-                #self.end_event (stream, event, channel)
+                # stream = self.lastDT.payload.data_stream
+                # event = self.lastDT.payload.event
+                # channel = self.lastDT.payload.channel
+                # self.end_event (stream, event, channel)
             elif end_of_event == END_OF_EVENT_OVERLAP:
-                #print "Overlap"
+                # print "Overlap"
                 continue
                 # if not all_channels_read () :
                 # continue
-                #dt_strm = self.lastDT.payload.data_stream
+                # dt_strm = self.lastDT.payload.data_stream
                 # if self.previous_event[dt_strm] == None :
                 # continue
-                #stream = self.lastDT.payload.data_stream
-                #event = self.lastDT.payload.event
-                #channel = self.lastDT.payload.channel
-                #self.end_event (stream, event, channel)
+                # stream = self.lastDT.payload.data_stream
+                # event = self.lastDT.payload.event
+                # channel = self.lastDT.payload.channel
+                # self.end_event (stream, event, channel)
             elif end_of_event == END_OF_EVENT_DT:
                 #   We found a DT packet for a new event
                 stream = self.lastDT.payload.data_stream
@@ -2104,7 +2176,7 @@ def build_empty_current_stream():
     for i in range(NUM_CHANNELS):
         ret[i] = Event130()
 
-    #ret = [Event130 ()] * NUM_CHANNELS
+    # ret = [Event130 ()] * NUM_CHANNELS
 
     return ret
 
@@ -2155,36 +2227,38 @@ if __name__ == "__main__":
     import time
 
     def print_packets(pn):
-        print "DT: %d EH: %d SH: %d SC: %d AD: %d CD: %d DS: %d FD: %d OM: %d\n" % (pn.DTcnt,
-                                                                                    pn.EHcnt,
-                                                                                    pn.SHcnt,
-                                                                                    pn.SCcnt,
-                                                                                    pn.ADcnt,
-                                                                                    pn.CDcnt,
-                                                                                    pn.DScnt,
-                                                                                    pn.FDcnt,
-                                                                                    pn.OMcnt)
+        print "DT:%d EH: %d SH: %d SC: %d AD:%d CD: %d DS: %d FD: %d OM: %d\n"\
+              % (pn.DTcnt,
+                  pn.EHcnt,
+                  pn.SHcnt,
+                  pn.SCcnt,
+                  pn.ADcnt,
+                  pn.CDcnt,
+                  pn.DScnt,
+                  pn.FDcnt,
+                  pn.OMcnt)
 
         print "Total Packets: ", pn.DTcnt + pn.EHcnt + pn.SHcnt + \
             pn.SCcnt + pn.ADcnt + pn.CDcnt + pn.DScnt + pn.FDcnt + pn.OMcnt
 
     def prof():
-        zipfilename = "/media/300GB_EXT/rt2ms_low_samplerate_bug/RAW/2009225.991C.ZIP"
-        #tarfilename = "./RAW/RT_130/2008244.943F.tar"
-        #reffilename = "./RAW/RT_130/2008_244_16_46_943F.ref"
-        #rawfilename = "./RAW/RT_130/RAW"
-        #junkname = "/media/RT130-930A"
-        #junkname = "/media/disk"
-        #junkname = "./RAW/RT_130/2008_232_11_00_9E47.ref"
-        #streamnine = "./RAW/RT_130/2008_154_20_57_9471.ref"
+        zipfilename =\
+            "/media/300GB_EXT/rt2ms_low_samplerate_bug/RAW/2009225.991C.ZIP"
+        # tarfilename = "./RAW/RT_130/2008244.943F.tar"
+        # reffilename = "./RAW/RT_130/2008_244_16_46_943F.ref"
+        # rawfilename = "./RAW/RT_130/RAW"
+        # junkname = "/media/RT130-930A"
+        # junkname = "/media/disk"
+        # junkname = "./RAW/RT_130/2008_232_11_00_9E47.ref"
+        # streamnine = "./RAW/RT_130/2008_154_20_57_9471.ref"
 
         now = time.time()
-        #pn = PN130 (rawfilename)
+        # pn = PN130 (rawfilename)
         pn = PN130(zipfilename)
-        #pn = PN130 (tarfilename)
-        #pn = PN130 (reffilename)
-        #pn = PN130 (junkname)
-        #pn = PN130 (streamnine)
+        # pn = PN130 (tarfilename)
+        # pn = PN130 (reffilename)
+        # pn = PN130 (junkname)
+        # pn = PN130 (streamnine)
         while True:
             #   Stream number, points
             s, p = pn.getEvent()
@@ -2199,7 +2273,7 @@ if __name__ == "__main__":
             #   No data points in this event
             if not p:
                 continue
-            #print "Stream: ", s, "Points: ", p
+            # print "Stream: ", s, "Points: ", p
             events = pn.get_stream_event(s)
             log = pn.get_logs()
             soh = pn.get_soh()
@@ -2219,7 +2293,8 @@ if __name__ == "__main__":
                         if e is None:
                             continue
                         else:
-                            print "*** Stream: ", s, " Channel: ", c, " Event: ", e,
+                            print "*** Stream: ", s, " Channel: ", c,\
+                                  " Event: ", e,
 
                         #   t is a list of tuples for each DT packet
                         points = 0
@@ -2227,19 +2302,21 @@ if __name__ == "__main__":
                         for n in t:
                             #   n is a DataPacket
                             if first_time:
-                                last_time = "%04d:%03d:%02d:%02d:%02d.%03d" % (n.year,
-                                                                               n.doy,
-                                                                               n.hour,
-                                                                               n.minute,
-                                                                               n.seconds,
-                                                                               n.milliseconds)
+                                last_time = "%04d:%03d:%02d:%02d:%02d.%03d"\
+                                    % (n.year,
+                                       n.doy,
+                                       n.hour,
+                                       n.minute,
+                                       n.seconds,
+                                       n.milliseconds)
                             else:
-                                first_time = "%04d:%03d:%02d:%02d:%02d.%03d" % (n.year,
-                                                                                n.doy,
-                                                                                n.hour,
-                                                                                n.minute,
-                                                                                n.seconds,
-                                                                                n.milliseconds)
+                                first_time = "%04d:%03d:%02d:%02d:%02d.%03d"\
+                                    % (n.year,
+                                       n.doy,
+                                       n.hour,
+                                       n.minute,
+                                       n.seconds,
+                                       n.milliseconds)
                                 last_time = first_time
                             points += len(n.trace)
 

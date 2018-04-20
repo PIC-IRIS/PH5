@@ -10,7 +10,7 @@
 #
 
 from ph5.core import segy_h, ebcdic
-#from cs2cs import *
+from cs2cs import geod2utm
 import math
 import numpy
 import os
@@ -32,7 +32,7 @@ def __version__():
 
 
 #   Map channel number to Trace ID (29-30 in trace header)
-#CHAN2TID = { 1:15, 2:16, 3:17, 4:15, 5:16, 6:17 }
+# CHAN2TID = { 1:15, 2:16, 3:17, 4:15, 5:16, 6:17 }
 CHAN2TID = {1: 1, 2: 16, 3: 17, 4: 15, 5: 16, 6: 17}
 COUNTMULT = {'nV/count': 1000000000., 'uV/count': 1000000.,
              'mV/count': 1000., 'volts/count': 1.}
@@ -74,7 +74,7 @@ class Ssegy:
         self.das_t = None
         self.sample_rate = None
         self.sort_t = sort_t
-        #self.array_t = array_t
+        # self.array_t = array_t
         self.time_t = None
         self.event_t = event_t
         self.response_t = None
@@ -90,24 +90,24 @@ class Ssegy:
         self.trace_byteorder = None  # Current data trace byteorder
 
     def write_text_header(self, fd):
-        #os.write (fd, self.text_header.get ())
+        # os.write (fd, self.text_header.get ())
         #   3200 bytes
         fd.write(self.text_header.get()[:3200])
 
     def write_reel_header(self, fd):
-        #os.write (fd, self.reel_header.get ())
+        # os.write (fd, self.reel_header.get ())
         #   400 bytes
         fd.write(self.reel_header.get()[:400])
 
     def write_trace_header(self, fd):
-        #os.write (fd, self.trace_header.get ())
+        # os.write (fd, self.trace_header.get ())
         #   180 bytes
         try:
             fd.write(self.trace_header.get()[:180])
         except Exception as e:
             sys.stderr.write("{0:s}\n{1:s}\n".format(
                 e, repr(self.trace_header.__dict__)))
-        #os.write (fd, self.extended_header.get ())
+        # os.write (fd, self.extended_header.get ())
         #   60 bytes
         try:
             fd.write(self.extended_header.get()[:60])
@@ -127,11 +127,11 @@ class Ssegy:
             short = self.length_points_all - len(self.data)
             pad = [m] * short
             # for i in range (short) :
-            #pad = numpy.append (pad, m)
-        #print "Pad: ", len (pad)
+            # pad = numpy.append (pad, m)
+        # print "Pad: ", len (pad)
         #
         data = numpy.append(self.data, pad)
-        #print "Len: ", len (data)
+        # print "Len: ", len (data)
         i = 0
         #   Use PASSCAL extended header
         if self.pas == 'P':
@@ -149,18 +149,19 @@ class Ssegy:
             x_d.tofile(file=fd)
             #   Get the number of points we wrote
             i += x_d.shape[0]
-            #x_d = [segy_h.build_int (x) for x in data]
+            # x_d = [segy_h.build_int (x) for x in data]
             # for x in x_d :
-            #os.write (fd, x)
+            # os.write (fd, x)
 
-            #i += len (x_d)
+            # i += len (x_d)
             # for x in map (segy_h.build_int, data) :
-            #i += 1
-            #os.write (fd, x)
+            # i += 1
+            # os.write (fd, x)
 
         else:
             #
-            # Need to look in self.response_t for bit_weight/value_d and scale trace values.
+            # Need to look in self.response_t for
+            # bit_weight/value_d and scale trace values.
             #
             x_f = numpy.array(data, numpy.float32)
             try:
@@ -170,10 +171,11 @@ class Ssegy:
                 x_f *= bw
             except Exception as e:
                 sys.stderr.write(
-                    "Warning: Problem applying trace bit weight.\n{0}\n".format(e))
+                    "Warning: Problem applying trace bit weight.\n{0}\n"
+                    .format(e))
 
             # if sys.byteorder == 'little' :
-                #x_f = x_f.byteswap ()
+                # x_f = x_f.byteswap ()
 
             #   Little endian machine
             # We always want big endian in the SEG-Y file
@@ -190,19 +192,19 @@ class Ssegy:
                 # Big endian trace
                 # elif self.trace_byteorder == 'big' :
                     # if self.trace_type == 'int' :
-                        #x_d = numpy.array (data, numpy.int32).byteswap ()
+                        # x_d = numpy.array (data, numpy.int32).byteswap ()
                     # elif self.trace_type == 'float' :
-                        #x_d = numpy.array (data, numpy.float32).byteswap ()
+                        # x_d = numpy.array (data, numpy.float32).byteswap ()
 
             elif sys.byteorder == 'big':
                 # Little endian trace
                 # if self.trace_byteorder == 'little' :
                     # Int trace elements
                     # if self.trace_type == 'int' :
-                        #x_d = numpy.array (data, numpy.int32).byteswap ()
+                        # x_d = numpy.array (data, numpy.int32).byteswap ()
                     # Float trace elements
                     # elif self.trace_type == 'float' :
-                        #x_d = numpy.array (data, numpy.float32).byteswap ()
+                        # x_d = numpy.array (data, numpy.float32).byteswap ()
 
                 #   Big endian trace
                 if self.trace_byteorder == 'big':
@@ -214,14 +216,14 @@ class Ssegy:
             x_f.tofile(file=fd)
             i += x_f.shape[0]
 
-            #x_f = [segy_h.build_ieee (x) for x in data]
+            # x_f = [segy_h.build_ieee (x) for x in data]
             # for x in x_f :
-            #os.write (fd, x_f)
+            # os.write (fd, x_f)
 
-            #i += len (x_f)
+            # i += len (x_f)
             # for x in map (segy_h.build_ieee, data) :
-            #i += 1
-            #os.write (fd, x)
+            # i += 1
+            # os.write (fd, x)
 
         return i
 
@@ -277,10 +279,10 @@ class Ssegy:
         self.offset_t = offset_t
 
     def set_length_points(self, length_points):
-        #print "Set length points to: {0}".format (length_points)
+        # print "Set length points to: {0}".format (length_points)
         self.length_points = length_points
         if self.length_points_all == 0:
-            #print "Set lenght points all {0}".format (length_points)
+            # print "Set lenght points all {0}".format (length_points)
             self.length_points_all = length_points
 
     def set_line_sequence(self, seq):
@@ -302,9 +304,9 @@ class Ssegy:
         elif self.pas == 'N':
             style = 'INOVA'
 
-        if self.break_standard == True:
+        if self.break_standard is True:
             txt['_06_'] = ebcdic.AsciiToEbcdic(
-                "C 6                         SAMPLES/TRACE {0:6d}                                ".format(int(self.length_points)))
+                "C 6  SAMPLES/TRACE {0:6d} ".format(int(self.length_points)))
 
         txt['_38_'] = ebcdic.AsciiToEbcdic(
             "C38 {0:<7} STYLE EXTENDED TRACE HEADER".format(style) + " " * 41)
@@ -332,7 +334,7 @@ class Ssegy:
             rel['hns'] = self.length_points
             rel['nso'] = self.length_points
         #   Non-standard sample length
-        elif self.break_standard == True:
+        elif self.break_standard is True:
             rel['hns'] = 0
             rel['nso'] = 0
         else:
@@ -359,7 +361,8 @@ class Ssegy:
         '''
         if self.sort_t:
             sort_start_time = fepoch(
-                self.sort_t['start_time/epoch_l'], self.sort_t['start_time/micro_seconds_i'])
+                self.sort_t['start_time/epoch_l'],
+                self.sort_t['start_time/micro_seconds_i'])
         else:
             sort_start_time = self.cut_start_epoch
 
@@ -368,7 +371,8 @@ class Ssegy:
 
         if self.sort_t:
             sort_end_time = fepoch(
-                self.sort_t['end_time/epoch_l'], self.sort_t['end_time/micro_seconds_i'])
+                self.sort_t['end_time/epoch_l'],
+                self.sort_t['end_time/micro_seconds_i'])
         else:
             sort_end_time = sort_start_time + \
                 (self.length_points / self.sample_rate)
@@ -376,7 +380,8 @@ class Ssegy:
         sort_mid_time = sort_start_time + \
             ((sort_end_time - sort_start_time) / 2.0)
         data_start_time = fepoch(
-            self.time_t['start_time/epoch_l'], self.time_t['start_time/micro_seconds_i'])
+            self.time_t['start_time/epoch_l'],
+            self.time_t['start_time/micro_seconds_i'])
         delta_time = sort_mid_time - data_start_time
 
         #   1% drift is excessive, don't time correct.
@@ -400,10 +405,10 @@ class Ssegy:
 
         new_start_time = (float(time_correction_ms * sgn) /
                           1000.0) + sort_start_time
-        #print self.time_t['das/serial_number_s'], time_correction_ms & 0xFFFF * sgn, sort_start_time, new_start_time
 
-        return (0xFFFF & time_correction_ms) * sgn, (0xFFFF &
-                                                     (time_correction_ms << 16)) * sgn, new_start_time
+        return (
+            0xFFFF & time_correction_ms) * sgn, (
+                0xFFFF & (time_correction_ms << 16)) * sgn, new_start_time
 
     def set_ext_header_seg(self):
         '''   SEG-Y rev 01 extended header   '''
@@ -440,7 +445,7 @@ class Ssegy:
 
         cor_low, cor_high, sort_start_time = self._cor()
         if cor_high < -MAX_16 or cor_high > MAX_16:
-            #print cor_high
+            # print cor_high
             cor_high = int(MAX_16)
 
         ext['totalStaticHi'] = cor_high
@@ -496,7 +501,8 @@ class Ssegy:
         ext['start_usec'] = u_secs
         #   Shot size in Kg
         try:
-            if self.event_t['size/units_s'][0] == 'k' or self.event_t['size/units_s'][0] == 'K':
+            if self.event_t['size/units_s'][0] == 'k' or\
+               self.event_t['size/units_s'][0] == 'K':
                 ext['shot_size'] = self.event_t['size/value_d']
         except TypeError:
             pass
@@ -608,7 +614,7 @@ class Ssegy:
         #   Get time correction
         cor_low, cor_high, sort_start_time = self._cor()
         if cor_low < -MAX_16 or cor_low > MAX_16:
-            #print cor_low
+            # print cor_low
             cor_low = int(MAX_16)
 
         tra['totalStatic'] = cor_low
@@ -617,7 +623,7 @@ class Ssegy:
         #   das_t['event_number'] is the FFID or recording window
         tra['event_number'] = self.das_t['event_number_i']
         tra['channel_number'] = self.seq
-        #tra['channel_number'] = self.array_t['channel_number_i']
+        # tra['channel_number'] = self.array_t['channel_number_i']
         #   Set the traceID to the channel, 15 => Z, 16 => N, 17 => E
         #   Fallback is to set it to 1 => seismic data
         try:
@@ -630,7 +636,7 @@ class Ssegy:
         if length_points < MAX_16:
             tra['sampleLength'] = length_points
         #   Non-standard sample length
-        elif self.break_standard == True:
+        elif self.break_standard is True:
             tra['sampleLength'] = 0
         else:
             tra['sampleLength'] = int(MAX_16)
@@ -645,7 +651,7 @@ class Ssegy:
         tra['gainConst'] = int(self.response_t['gain/value_i'])
 
         corrected_start_time = self.cut_start_epoch + (cor_low / 1000.0)
-        #m_secs = int (math.modf (corrected_start_time)[0] * 1000.0)
+        # m_secs = int (math.modf (corrected_start_time)[0] * 1000.0)
         ttuple = time.gmtime(corrected_start_time)
         tra['year'] = ttuple[0]
         tra['day'] = ttuple[7]
@@ -662,11 +668,13 @@ class Ssegy:
 
         try:
             tra['traceWeightingFactor'] = int(
-                math.log(self.response_t['bit_weight/value_d'] / mult, 2) + 0.5)
+                math.log(self.
+                         response_t['bit_weight/value_d'] / mult, 2) + 0.5)
         except ValueError:
             tra['traceWeightingFactor'] = 1.
 
-        #print twfUnits, self.response_t['bit_weight/value_d'], tra['traceWeightingFactor']
+        # print twfUnits, self.response_t['bit_weight/value_d'],
+        # tra['traceWeightingFactor']
         #   Limit size of phoneFirstTrace to 65535 maximum
         tra['phoneFirstTrace'] = 0xFFFF & int(self.array_t['id_s'])
 
@@ -681,14 +689,14 @@ class Ssegy:
             tra['recElevation'] = 0
             tra['elevationScale'] = 0
 
-        if self.utm == True:
+        if self.utm is True:
             try:
                 Y, X, Z = geod2utm(None,  # Zone goes here
                                    "WGS84",
                                    self.array_t['location/Y/value_d'],
                                    self.array_t['location/X/value_d'],
                                    self.array_t['location/Z/value_d'])
-                #print 'X: ', X, 'Y: ', Y, 'Z:', Z
+                # print 'X: ', X, 'Y: ', Y, 'Z:', Z
                 tra['coordScale'] = -10
                 tra['recLongOrX'] = int((X * 10.0) + 0.5)
                 tra['recLatOrY'] = int((Y * 10.0) + 0.5)
@@ -715,10 +723,12 @@ class Ssegy:
         if self.event_t:
             try:
                 tra['energySourcePt'] = int(self.event_t['id_s'])
-                #sys.stderr.write ("Shot: {0:d}\n".format (int (self.event_t['id_s'])))
-            except Exception as e:
+                # sys.stderr.write ("Shot: {0:d}\n"\
+                # .format (int (self.event_t['id_s'])))
+            except Exception:
                 tra['energySourcePt'] = 0
-                #sys.stderr.write ("Error: {0:s} Shot ID: {1:s}\n".format (e, self.event_t['id_s']))
+                # sys.stderr.write ("Error: {0:s} Shot ID: {1:s}\n"\
+                # .format (e, self.event_t['id_s']))
 
             #   Set source location here
             try:
@@ -762,28 +772,28 @@ class Ssegy:
         # try :
         self.trace_header.set(tra)
         # except reconstruct.core.FieldError, e :
-        #sys.stderr.write (e + "\n")
-        #sys.stderr.write (repr (tra))
+        # sys.stderr.write (e + "\n")
+        # sys.stderr.write (repr (tra))
 
         # try :
         if self.pas == 'P':
-            #print "Set PASSCAL header"
+            # print "Set PASSCAL header"
             ext = self.set_ext_header_pas()
         elif self.pas == 'U':
-            #print "Set Menlo header"
+            # print "Set Menlo header"
             ext = self.set_ext_header_menlo()
         elif self.pas == 'S':
-            #print "Set SEG header"
+            # print "Set SEG header"
             ext = self.set_ext_header_seg()
         elif self.pas == 'I':
             ext = self.set_ext_header_sioseis()
 
         #   XXX
-        #print len (ext), len (tra)
+        # print len (ext), len (tra)
         self.extended_header.set(ext)
         # except reconstruct.core.FieldError, e :
-        #sys.stderr.write (e + "\n")
-        #sys.stderr.write (repr (ext))
+        # sys.stderr.write (e + "\n")
+        # sys.stderr.write (repr (ext))
 
 #   MixIns
 

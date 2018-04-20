@@ -75,7 +75,7 @@ class Ssac (object):
         self.sample_rate = sample_rate
 
     def set_event_t(self, event_t):
-        #print "E ", event_t
+        # print "E ", event_t
         if event_t == []:
             self.event_t = None
         else:
@@ -104,10 +104,10 @@ class Ssac (object):
         self.data = data
 
     def set_length_points(self, length_points):
-        #print "Set length points to: {0}".format (length_points)
+        # print "Set length points to: {0}".format (length_points)
         self.length_points = length_points
         if self.length_points_all == 0:
-            #print "Set lenght points all {0}".format (length_points)
+            # print "Set lenght points all {0}".format (length_points)
             self.length_points_all = length_points
 
     def set_cut_start_epoch(self, start):
@@ -157,8 +157,8 @@ class Ssac (object):
                 #   Event depth
                 f['evdp'] = self.event_t['depth/value_d']
             except Exception as e:
-                #print >>sys.stderr, "Warn: {0}".format (e)
-                #print self.event_t.rows
+                # print >>sys.stderr, "Warn: {0}".format (e)
+                # print self.event_t.rows
                 pass
 
         if self.offset_t:
@@ -186,7 +186,7 @@ class Ssac (object):
         cor_low, cor_high, sort_start_time = self._cor()
         corrected_start_time = self.cut_start_epoch + (cor_low / 1000.0)
 
-        #ttuple = time.gmtime (self.das_t['time/epoch_l'])
+        # ttuple = time.gmtime (self.das_t['time/epoch_l'])
         ttuple = time.gmtime(corrected_start_time)
         #   Year
         i['nzyear'] = ttuple[0]
@@ -199,7 +199,7 @@ class Ssac (object):
         #   Second
         i['nzsec'] = ttuple[5]
         #   milli-second
-        #i['nzmsec'] = float (self.das_t['time/micro_seconds_i']) / 1000.
+        # i['nzmsec'] = float (self.das_t['time/micro_seconds_i']) / 1000.
         i['nzmsec'] = int(math.modf(corrected_start_time)[0] * 1000.0)
 
         if self.event_t:
@@ -207,8 +207,8 @@ class Ssac (object):
                 #   Event ID
                 i['nevid'] = int(self.event_t['id_s'])
             except Exception as e:
-                #print >>sys.stderr, "Warn: {0}".format (e)
-                #print self.event_t.rows
+                # print >>sys.stderr, "Warn: {0}".format (e)
+                # print self.event_t.rows
                 pass
 
         #   Number of points
@@ -244,8 +244,8 @@ class Ssac (object):
                 #   Event name
                 c['kevnm'] = "{0:<16}".format(self.event_t['id_s'])
             except Exception as e:
-                #print >>sys.stderr, "Warn: {0}".format (e)
-                #print self.event_t.rows
+                # print >>sys.stderr, "Warn: {0}".format (e)
+                # print self.event_t.rows
                 pass
 
         #   Network name
@@ -270,7 +270,7 @@ class Ssac (object):
 
             short = self.length_points_all - len(self.data)
             #   XXX
-            #print "Short:", short
+            # print "Short:", short
             pad = [m] * short
 
         #
@@ -284,7 +284,8 @@ class Ssac (object):
             x_d = numpy.array(data, numpy.float32)
 
         #
-        # Need to look in self.response_t for bit_weight/value_d and scale trace values.
+        # Need to look in self.response_t
+        # for bit_weight/value_d and scale trace values.
         #
         try:
             bw = float(self.response_t['bit_weight/value_d'])
@@ -303,9 +304,11 @@ class Ssac (object):
         '''
            Calculate start, end, drift and offset of clock
         '''
+        time_correction_ms = 0
         if self.sort_t:
             sort_start_time = fepoch(
-                self.sort_t['start_time/epoch_l'], self.sort_t['start_time/micro_seconds_i'])
+                self.sort_t['start_time/epoch_l'],
+                self.sort_t['start_time/micro_seconds_i'])
         else:
             sort_start_time = self.cut_start_epoch
 
@@ -314,7 +317,8 @@ class Ssac (object):
 
         if self.sort_t:
             sort_end_time = fepoch(
-                self.sort_t['end_time/epoch_l'], self.sort_t['end_time/micro_seconds_i'])
+                self.sort_t['end_time/epoch_l'],
+                self.sort_t['end_time/micro_seconds_i'])
         else:
             sort_end_time = sort_start_time + \
                 (self.length_points / self.sample_rate)
@@ -322,7 +326,8 @@ class Ssac (object):
         sort_mid_time = sort_start_time + \
             ((sort_end_time - sort_start_time) / 2.0)
         data_start_time = fepoch(
-            self.time_t['start_time/epoch_l'], self.time_t['start_time/micro_seconds_i'])
+            self.time_t['start_time/epoch_l'],
+            self.time_t['start_time/micro_seconds_i'])
         delta_time = sort_mid_time - data_start_time
 
         #   1% drift is excessive, don't time correct.
@@ -344,26 +349,29 @@ class Ssac (object):
         else:
             sgn = -1
 
-        new_start_time = (float(time_correction_ms * sgn) /
-                          1000.0) + sort_start_time
-        #print self.time_t['das/serial_number_s'], time_correction_ms & 0xFFFF * sgn, sort_start_time, new_start_time
+        # print self.time_t['das/serial_number_s'],
+        # time_correction_ms & 0xFFFF * sgn, sort_start_time, new_start_time
 
-        return (0xFFFF & time_correction_ms) * sgn, (0xFFFF &
-                                                     (time_correction_ms << 16)) * sgn, new_start_time
+        return (
+            0xFFFF & time_correction_ms) * sgn, (0xFFFF
+                                                 & (time_correction_ms << 16))\
+            * sgn
 
     def write_float_header(self, fd):
         try:
             fd.write(self.float_header.get()[:280])
         except Exception as e:
             raise SACError("Failed to write SAC float header: {0}".format(e))
-            #sys.stderr.write ("{0:s}\n{1:s}\n".format (e, repr (self.float_header.__dict__)))
+            # sys.stderr.write ("{0:s}\n{1:s}\n"
+            # .format (e, repr (self.float_header.__dict__)))
 
     def write_int_header(self, fd):
         try:
             fd.write(self.int_header.get()[:160])
         except Exception as e:
             raise SACError("Failed to write SAC integer header: {0}".format(e))
-            #sys.stderr.write ("{0:s}\n{1:s}\n".format (e, repr (self.int_header.__dict__)))
+            # sys.stderr.write ("{0:s}\n{1:s}\n"
+            # .format (e, repr (self.int_header.__dict__)))
 
     def write_char_header(self, fd):
         try:
@@ -371,15 +379,15 @@ class Ssac (object):
         except Exception as e:
             raise SACError(
                 "Failed to write SAC character header: {0}".format(e))
-            #sys.stderr.write ("{0:s}\n{1:s}\n".format (e, repr (self.int_header.__dict__)))
+            # sys.stderr.write ("{0:s}\n{1:s}\n"
+            # .format (e, repr (self.int_header.__dict__)))
 
     def write_data_array(self, fd, nparray):
         try:
             nparray.tofile(file=fd)
         except Exception as e:
             raise SACError("Failed to write SAC data array: {0}".format(e))
-
-     #   MixIns
+        #   MixIns
 
 
 def units_stub(have, want):

@@ -25,5 +25,9 @@ install:
   - conda config --add channels conda-forge
   - conda env update --name ph5 --file environment.yml
   - source activate ph5
+
+# before scripts
+before_script: "flake8 ph5"
+
 # command to run tests
 script: python runtests.py

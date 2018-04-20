@@ -189,72 +189,72 @@ class PH5Validate(object):
         return
 
     def checK_stations(self):
-            logging.info("Checking Stations...")
-            array_names = sorted(self.ph5.Array_t_names)
+        logging.info("Checking Stations...")
+        array_names = sorted(self.ph5.Array_t_names)
 
-            for array_name in array_names:
-                self.read_arrays(array_name)
-                arraybyid = self.ph5.Array_t[array_name]['byid']
-                arrayorder = self.ph5.Array_t[array_name]['order']
-                for ph5_station in arrayorder:
-                    station_list = arraybyid.get(ph5_station)
-                    for deployment in station_list:
-                        station_len = len(station_list[deployment])
-                        for st_num in range(0, station_len):
-                            station_id = station_list[deployment][
-                                st_num]['id_s']
-                            serial = station_list[deployment][
-                                st_num]['das/serial_number_s']
-                            channel = station_list[deployment][
-                                st_num]['channel_number_i']
-                            logging.info("\n##############")
-                            logging.info("Station " + str(station_id) +
-                                         " Channel " + str(channel) + "\n")
-                            if not station_list[deployment][
-                                   st_num]['seed_station_name_s']:
-                                logging.error("SEED station name required.")
+        for array_name in array_names:
+            self.read_arrays(array_name)
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order']
+            for ph5_station in arrayorder:
+                station_list = arraybyid.get(ph5_station)
+                for deployment in station_list:
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0, station_len):
+                        station_id = station_list[deployment][
+                            st_num]['id_s']
+                        serial = station_list[deployment][
+                            st_num]['das/serial_number_s']
+                        channel = station_list[deployment][
+                            st_num]['channel_number_i']
+                        logging.info("\n##############")
+                        logging.info("Station " + str(station_id) +
+                                     " Channel " + str(channel) + "\n")
+                        if not station_list[deployment][
+                                st_num]['seed_station_name_s']:
+                            logging.error("SEED station name required.")
 
-                            response_t = self.ph5.get_response_t_by_n_i(
-                                         station_list[deployment][
-                                             st_num]['response_table_n_i'])
-                            if response_t is None:
-                                logging.error("No Response table found." +
-                                              "Have you run load_resp yet?")
+                        response_t = self.ph5.get_response_t_by_n_i(
+                            station_list[deployment][
+                                st_num]['response_table_n_i'])
+                        if response_t is None:
+                            logging.error("No Response table found." +
+                                          "Have you run load_resp yet?")
 
-                            deploy_time = station_list[deployment][
-                                         st_num]['deploy_time/epoch_l']
-                            pickup_time = station_list[deployment][
-                                         st_num]['pickup_time/epoch_l']
+                        deploy_time = station_list[deployment][
+                            st_num]['deploy_time/epoch_l']
+                        pickup_time = station_list[deployment][
+                            st_num]['pickup_time/epoch_l']
 
-                            self.ph5.read_das_t(serial, deploy_time,
-                                                pickup_time, reread=False)
+                        self.ph5.read_das_t(serial, deploy_time,
+                                            pickup_time, reread=False)
 
-                            if serial not in self.ph5.Das_t:
-                                logging.error("No Data found for: " +
-                                              str(station_id) +
-                                              " You may need " +
-                                              "to reload the raw data for " +
-                                              "this station.")
-                            try:
-                                ph5api.filter_das_t(self.ph5.Das_t[
-                                                    serial]['rows'],
-                                                    channel)
-                            except:
-                                logging.error("NO Data found for channel " +
-                                              str(channel) +
-                                              " Other channels seem to exist")
+                        if serial not in self.ph5.Das_t:
+                            logging.error("No Data found for: " +
+                                          str(station_id) +
+                                          " You may need " +
+                                          "to reload the raw data for " +
+                                          "this station.")
+                        try:
+                            ph5api.filter_das_t(self.ph5.Das_t[
+                                                serial]['rows'],
+                                                channel)
+                        except BaseException:
+                            logging.error("NO Data found for channel " +
+                                          str(channel) +
+                                          " Other channels seem to exist")
 
-                            if station_list[deployment][
-                                         st_num]['sample_rate_i'] == 0:
-                                logging.warning("Sample rate seems to be 0." +
-                                                " Is this correct???")
-                            if station_list[deployment][
-                                         st_num][
-                                         'sample_rate_multiplier_i'] == 0:
-                                logging.warning("Sample rate multiplier 0." +
-                                                " Is this correct???")
+                        if station_list[deployment][
+                                st_num]['sample_rate_i'] == 0:
+                            logging.warning("Sample rate seems to be 0." +
+                                            " Is this correct???")
+                        if station_list[deployment][
+                                st_num][
+                                'sample_rate_multiplier_i'] == 0:
+                            logging.warning("Sample rate multiplier 0." +
+                                            " Is this correct???")
 
-            return
+        return
 
 
 def get_args():

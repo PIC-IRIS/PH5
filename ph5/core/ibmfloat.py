@@ -1,7 +1,8 @@
 #!/usr/bin/env pnpython3
 
 #
-#   Convert 32 bit IBM floats to 32 bit IEEE floats and visa versa in pure python
+#   Convert 32 bit IBM floats to 32 bit IEEE floats
+#   and visa versa in pure python
 #   Note:
 #
 #   Steve Azevedo, March 2007
@@ -14,15 +15,15 @@ import construct
 PROG_VERSION = '2015.092'
 
 #   Masks
-##IBMSIGN  = 0x80000000
-##IBMEXP   = 0x7F000000
-##IBMMANT  = 0x00FFFFFF
+# IBMSIGN  = 0x80000000
+# IBMEXP   = 0x7F000000
+# IBMMANT  = 0x00FFFFFF
 
-##IEEESIGN = 0x80000000
-##IEEEEXP  = 0x78F00000
-##IEEEMANT = 0x007FFFFF
+# IEEESIGN = 0x80000000
+# IEEEEXP  = 0x78F00000
+# IEEEMANT = 0x007FFFFF
 
-##sign = lambda n, s : [1, -1][bool (n & s)]
+# sign = lambda n, s : [1, -1][bool (n & s)]
 
 
 def ibm():
@@ -67,10 +68,10 @@ def ibm2ieee32(ibm_float):
     ibm_s = ibm()
     b = ibm_s.parse(ibm_float)
     ieee_s = ieee()
-    #s = sign (0x00000001, n.s)
+    # s = sign (0x00000001, n.s)
     #   This returns a python float which might not be what we want,
     #   but it shows how we use the bits.
-    #valuep = s * (16 ** (n.e - 64)) * (float (n.m) / float (2 ** 24))
+    # valuep = s * (16 ** (n.e - 64)) * (float (n.m) / float (2 ** 24))
     #
     mapi = 0x00800000
     i = b.e
@@ -98,9 +99,9 @@ def ieee2ibm32(ieee_float):
     ieee_s = ieee()
     e = ieee_s.parse(ieee_float)
     ibm_s = ibm()
-    #s = sign (0x00000001, n.s)
+    # s = sign (0x00000001, n.s)
     #   ...
-    #valuei = s * (2 ** (n.e - 127)) * (1.0 + (float (n.m) / float (2 ** 23)))
+    # valuei = s * (2 ** (n.e - 127)) * (1.0 + (float (n.m) / float (2 ** 23)))
     #
     mapi = 0x00800000
     m = e.m
@@ -124,8 +125,8 @@ def ieee2ibm32(ieee_float):
 
 
 if __name__ == '__main__':
-    #import binascii
-    pint_s = pint()
+    # import binascii
+    pint_s = psint()
     pfloat_s = pfloat()
     #   -177.623764038
     print "IBM:  ", hex(0xc2b19faf)

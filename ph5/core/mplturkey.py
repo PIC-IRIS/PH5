@@ -133,7 +133,7 @@ class Turkey (object):
         loc = mdates.RRuleLocator(rule)
         formatter = mdates.DateFormatter("%y-%m-%d %H:%M:%S")
 
-        #self._axes.xaxis (xmin=self._format_date (self._bd.min))
+        # self._axes.xaxis (xmin=self._format_date (self._bd.min))
         self._axes.xaxis.set_major_locator(loc)
         self._axes.xaxis.set_major_formatter(formatter)
         xlabels = self._axes.get_xticklabels()
@@ -176,7 +176,9 @@ class Turkey (object):
                 if not covered(deploy, pickup, bar_left, bar_right):
                     continue
                 self._axes.barh(bottom, width, left=bar_left, height=0.25,
-                                align='center', color='#2ca25f', edgecolor='#99d8c9')
+                                align='center',
+                                color='#2ca25f',
+                                edgecolor='#99d8c9')
             i += 1
 
     def _shots(self):
@@ -187,7 +189,6 @@ class Turkey (object):
             if time < minn or time > maxx:
                 continue
 
-            l = self._axes.axvline(x=time, color='r', alpha=0.9)
             self._axes.annotate(sh.id_s, xy=(time, 1.5),
                                 size='x-small', rotation=90)
 
@@ -198,7 +199,7 @@ class Turkey (object):
         plt.xlabel('Deployment')
         plt.title("Shot Coverage\nPH5 Array: {0}".format(self._bd.array))
         self._shots()
-        #plt.legend ()
+        # plt.legend ()
         plt.xlim((self._format_date(self._bd.min),
                   self._format_date(self._bd.max)))
         plt.show()

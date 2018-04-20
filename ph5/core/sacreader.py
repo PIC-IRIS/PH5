@@ -61,10 +61,7 @@ class Reader (object):
 
     def read_float_header(self):
         ret = {}
-        buf = self.read_buf(70 * 4)
-        f = sac_h.SAC_float()
 
-        container = f.parse(buf, byteorder=self.endianness)
         keys = sac_h.SAC_float().__keys__
 
         for k in keys:
@@ -77,10 +74,7 @@ class Reader (object):
 
     def read_int_header(self):
         ret = {}
-        buf = self.read_buf(40 * 4)
-        i = sac_h.SAC_int()
 
-        container = i.parse(buf, byteorder=self.endianness)
         keys = sac_h.SAC_int().__keys__
 
         for k in keys:
@@ -93,10 +87,7 @@ class Reader (object):
 
     def read_char_header(self):
         ret = {}
-        buf = self.read_buf(192)
-        c = sac_h.SAC_char()
 
-        container = c.parse(buf, byteorder=self.endianness)
         keys = sac_h.SAC_char().__keys__
 
         for k in keys:

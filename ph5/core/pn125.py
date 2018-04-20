@@ -45,9 +45,9 @@ class ReadBuffer (object):
 
     def get(self, n):
         p = self.ptr
-        l = self.len
-        if (p + n) > l:
-            n = l - p
+        ll = self.len
+        if (p + n) > ll:
+            n = ll - p
 
         b = self.buf[p:n + p]
         self.inc(n)
@@ -82,8 +82,10 @@ class Page125 (object):
 
 
 class Event125 (object):
-    __slots__ = ('event', 'year', 'doy', 'hour', 'minute', 'seconds', 'sampleRate',
-                 'sampleCount', 'channel_number', 'stream_number', 'trace', 'gain', 'fsd')
+    __slots__ = ('event', 'year', 'doy', 'hour', 'minute',
+                 'seconds', 'sampleRate',
+                 'sampleCount', 'channel_number',
+                 'stream_number', 'trace', 'gain', 'fsd')
     '''   Event stuff   '''
 
     def __init__(self):
@@ -187,7 +189,7 @@ class pn125:
 
     def nullTrace(self):
         '''   Null values for trace stuff   '''
-        #print "Null"
+        # print "Null"
         self.trace.event = None
         self.trace.year = None
         self.trace.doy = None
@@ -204,13 +206,12 @@ class pn125:
         '''   Process event table info   '''
         # FIXME
         # Need new 125a files to test this on
-        #sys.stderr.write ("Event table packet ignored...Untested code\n")
+        # sys.stderr.write ("Event table packet ignored...Untested code\n")
         # return
         # Number of entries in this page
         e = struct.unpack("!B", b[0])[0]
-        #print e
+        # print e
         # Number of entries per file
-        t = struct.unpack("!H", b[1:3])[0]
         b = b[7:]
         # Now process each line
         for i in range(e):
@@ -227,7 +228,6 @@ class pn125:
             # Limits on action code and parameter unclear so we just save as is
             nt.action = a
             nt.parameter = p
-            #print nt.year, nt.doy, nt.hour, nt.minute, nt.seconds, nt.action, nt.parameter
             self.eventTable.append(nt)
 
     def soh(self, b):
@@ -245,7 +245,7 @@ class pn125:
                 return False
             return True
 
-        #print len (b)
+        # print len (b)
         #   Get byte count
         c = b[0:3]
 
@@ -253,7 +253,7 @@ class pn125:
         m = b[3:518]
         #   Unpack counts
         p = struct.unpack("!HB", c)
-        #print "Bytes: ", p[0], "Message count: ", p[1]
+        # print "Bytes: ", p[0], "Message count: ", p[1]
         #   Number of messages
         n = p[1]
         #
@@ -306,14 +306,14 @@ class pn125:
         mn = p[4]
         sc = p[5]
         sr = p[6]
-        #print yr, jd, hr, mn, sc, sr
+        # print yr, jd, hr, mn, sc, sr
         #   sr is the sample rate
         return yr, jd, hr, mn, sc, sr
 
     def evtc(self, b):
         '''   Translate gain/event/sample count   '''
         p = struct.unpack("!BHB", b)
-        #print "Event samples: ", p
+        # print "Event samples: ", p
         return p
 
     def extg(self, g):
@@ -325,42 +325,42 @@ class pn125:
 
     # def processEvent (self, b, n) :
         # Process event to 32bit counts
-        ##print n
+        # #print n
         # for i in range (n) :
-        #offset = i * 3
+        # offset = i * 3
         # Get the 3 bytes (24 bits)
-        #pt = struct.unpack ("!BBB", b[offset:3 + offset])
+        # pt = struct.unpack ("!BBB", b[offset:3 + offset])
         # Right shift later results in a long so mask it here
-        ##pt0 = pt[0] & 0xFF
-        ##pt1 = pt[1] & 0xFF
-        ##pt2 = pt[2] & 0xFF
-        #pt0 = pt[0]
-        #pt1 = pt[1]
-        #pt2 = pt[2]
+        # #pt0 = pt[0] & 0xFF
+        # #pt1 = pt[1] & 0xFF
+        # #pt2 = pt[2] & 0xFF
+        # pt0 = pt[0]
+        # pt1 = pt[1]
+        # pt2 = pt[2]
 
         # Convert point to counts
-        #p = (pt0 << 16) + (pt1 << 8) + pt2
+        # p = (pt0 << 16) + (pt1 << 8) + pt2
         # Extend sign bit
         # if pt0 & 0x80 :
-        #p -= 0x1000000
+        # p -= 0x1000000
 
-        ##print hex (p)
-        ##p *= s
-        ##p = p & 0xFFFFFFFF
-        #self.trace.trace.append (p)
-        ##print "%d" % p
-        ##p = (pt2 << 24) + (pt1 << 16) + (pt0 << 8) + pt3
+        # #print hex (p)
+        # #p *= s
+        # #p = p & 0xFFFFFFFF
+        # self.trace.trace.append (p)
+        # #print "%d" % p
+        # #p = (pt2 << 24) + (pt1 << 16) + (pt0 << 8) + pt3
 
     def processEvent(self, b, n):
         d = rt_125a_py.data_decode(b, n)
-        #print d
+        # print d
         self.trace.trace.extend(d)
 
     def data(self, b):
         '''   Process data file   '''
         #   Get gain event number and page sample count
         g, self.trace.event, n = self.evtc(b[0:4])
-        #print "Event: ", self.trace.event, "Samples: ", n
+        # print "Event: ", self.trace.event, "Samples: ", n
         b = b[4:]
         #   First page or extended header flag
         if self.page.first or self.page.ext:
@@ -376,11 +376,11 @@ class pn125:
                 self.trace.seconds = p[4]
                 self.trace.sampleRate = p[5]
                 self.trace.fsd, self.trace.gain = self.extg(g)
-                #print p
+                # print p
 
             b = b[9:]
 
-        #print len (b)
+        # print len (b)
         self.processEvent(b, n)
 
     def getPage(self):
@@ -397,7 +397,7 @@ class pn125:
         #   Page data
         b = self.buf.get(TRDPAGE - 6)
         #   Remove this page from buffer
-        #self.buf = self.buf[TRDPAGE:]
+        # self.buf = self.buf[TRDPAGE:]
         #   Number of pages remaining
         self.bufPages -= 1
 
@@ -422,7 +422,8 @@ class pn125:
 
         #
         if 0:
-            print self.page.pageType, self.page.unitID, self.page.sequence, p[3]
+            print self.page.pageType, self.page.unitID,
+            self.page.sequence, p[3]
 
         if self.page.pageType == 1:
             self.soh(b[1:])
@@ -460,7 +461,7 @@ class pn125:
 
             # if self.page.first :
                 #   Beginning of event
-                #self.openEvent ()
+                # self.openEvent ()
 
 
 if __name__ == "__main__":
@@ -477,13 +478,15 @@ if __name__ == "__main__":
             tr = pn.trace
             pg = pn.page
             bitweight = 10.0 / tr.gain / tr.fsd  # volts/bit
-            print pg.unitID, tr.event, tr.year, tr.doy, tr.hour, tr.minute, tr.seconds,\
-                tr.sampleRate, tr.sampleCount, tr.channel_number, tr.stream_number, tr.gain, bitweight
+            print pg.unitID, tr.event, tr.year, tr.doy, tr.hour, tr.minute,
+            tr.seconds,\
+                tr.sampleRate, tr.sampleCount, tr.channel_number,
+            tr.stream_number, tr.gain, bitweight
             # if tr.event == 194 :
             # for pt in tr.trace :
-            #print pt
+            # print pt
 
-        #print ".",
+        # print ".",
         print "SOH: "
         for el in pn.sohbuf:
             print el.year, el.doy, el.hour, el.minute, el.seconds, el.message
@@ -491,7 +494,8 @@ if __name__ == "__main__":
             print "END SOH"
         print "EVENT TABLE: "
         for el in pn.eventTable:
-            print el.year, el.doy, el.hour, el.minute, el.seconds, el.action, el.parameter
+            print el.year, el.doy, el.hour, el.minute, el.seconds,
+            el.action, el.parameter
         else:
             print "END EVENT TABLE"
 

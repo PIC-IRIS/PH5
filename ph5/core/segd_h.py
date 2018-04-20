@@ -24,7 +24,7 @@ class HeaderError (exceptions.Exception):
         self.args = args
 
 #
-###   1.6 and 2.1
+#   1.6 and 2.1
 #
 
 
@@ -73,7 +73,8 @@ class Storage_unit_label (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self):
@@ -188,7 +189,7 @@ def swap_block_16():
 
     return B, L
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -219,11 +220,15 @@ def general_header_block_1():
                               construct.BitField(
                                   "first_shot_point_year", 8, swapped=swap),
                               construct.BitField(
-                                  "number_additional_general_header_blocks", 4, swapped=swap),
+                                  "number_additional_general_header_blocks",
+                                  4,
+                                  swapped=swap),
                               construct.BitField(
                                   "first_shot_point_doy", 12, swapped=swap),
                               construct.BitField(
-                                  "first_shot_point_time_utc", 24, swapped=swap),
+                                  "first_shot_point_time_utc",
+                                  24,
+                                  swapped=swap),
                               #   20 is Fairfield
                               construct.BitField(
                                   "manufactures_code", 8, swapped=swap),
@@ -254,9 +259,14 @@ def general_header_block_1():
                                   "number_skew_blocks", 8, swapped=swap),
                               #   0xFF look in general header block 2
                               construct.BitField(
-                                  "number_extended_header_blocks", 8, swapped=swap),
+                                  "number_extended_header_blocks",
+                                  8,
+                                  swapped=swap),
                               #   0xFF look in general header block 2
-                              construct.BitField("number_external_header_blocks", 8, swapped=swap))
+                              construct.BitField(
+                                  "number_external_header_blocks",
+                                  8,
+                                  swapped=swap))
 
     return BIN
 
@@ -350,14 +360,15 @@ class General_header_block_1 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = general_header_block_1()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_1_le ()
+            # t = general_header_block_1_le ()
 
         return t.build(self)
 
@@ -366,7 +377,7 @@ class General_header_block_1 (object):
             t = general_header_block_1()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_1_le ()
+            # t = general_header_block_1_le ()
 
         #   Convert BCD fields
         parsed = t.parse(buf)
@@ -377,7 +388,7 @@ class General_header_block_1 (object):
         return ret
 
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -390,25 +401,31 @@ def general_header_block_2():
                               construct.BitField(
                                   "extended_file_number", 24, swapped=swap),
                               construct.BitField(
-                                  "extended_chan_sets_per_scan_type", 16, swapped=swap),
+                                  "extended_chan_sets_per_scan_type",
+                                  16,
+                                  swapped=swap),
                               construct.BitField(
                                   "extended_header_blocks", 16, swapped=swap),
                               # External header blocks is 3 bytes in Fairfield
                               # 1.6. Append user01.
                               construct.BitField(
                                   "external_header_blocks", 24, swapped=swap),
-                              #construct.BitField ("user01", 8, swapped=swap),
+                              # construct.BitField ("user01", 8, swapped=swap),
                               #   0x0106, or 0x0201
                               construct.BitField(
                                   "file_version_number", 16, swapped=swap),
                               construct.BitField(
-                                  "number_general_trailer_blocks", 16, swapped=swap),
+                                  "number_general_trailer_blocks",
+                                  16,
+                                  swapped=swap),
                               #   Record length in milliseconds
                               construct.BitField(
                                   "extended_record_length", 24, swapped=swap),
                               construct.BitField("user02", 8, swapped=swap),
                               construct.BitField(
-                                  "general_header_block_number", 8, swapped=swap),
+                                  "general_header_block_number",
+                                  8,
+                                  swapped=swap),
                               construct.BitField("user03", 8, swapped=swap),
                               #   2.1
                               construct.BitField(
@@ -418,7 +435,9 @@ def general_header_block_2():
                                   "super_block_size", 32, swapped=swap),
                               construct.BitField("user04", 32, swapped=swap),
                               #   2.1
-                              construct.BitField("zsystem_revision_number", 16, swapped=swap))
+                              construct.BitField("zsystem_revision_number",
+                                                 16,
+                                                 swapped=swap))
 
     return BIN
 
@@ -468,14 +487,15 @@ class General_header_block_2 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = general_header_block_2()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -484,7 +504,7 @@ class General_header_block_2 (object):
             t = general_header_block_2()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 
@@ -508,7 +528,9 @@ def general_header_block_3():
                               construct.BitField(
                                   "source_point_number_int", 24, swapped=swap),
                               construct.BitField(
-                                  "source_point_number_frac", 16, swapped=swap),
+                                  "source_point_number_frac",
+                                  16,
+                                  swapped=swap),
                               construct.BitField(
                                   "source_point_index", 8, swapped=swap),
                               construct.BitField(
@@ -518,7 +540,9 @@ def general_header_block_3():
                               construct.BitField(
                                   "phase_angle", 16, swapped=swap),
                               construct.BitField(
-                                  "general_header_block_number", 8, swapped=swap),
+                                  "general_header_block_number",
+                                  8,
+                                  swapped=swap),
                               construct.BitField(
                                   "source_set_number", 8, swapped=swap),
                               construct.BitField("user01", 96, swapped=swap))
@@ -565,14 +589,15 @@ class General_header_block_3 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = general_header_block_3()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -581,11 +606,11 @@ class General_header_block_3 (object):
             t = general_header_block_3()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -606,11 +631,17 @@ def channel_set_descriptor():
                               construct.BitField(
                                   "chan_set_end_time", 16, swapped=swap),
                               construct.BitField(
-                                  "optional_mp_factor_extension_byte", 8, swapped=swap),
+                                  "optional_mp_factor_extension_byte",
+                                  8,
+                                  swapped=swap),
                               construct.BitField(
-                                  "mp_factor_scaler_multiplier", 8, swapped=swap),
+                                  "mp_factor_scaler_multiplier",
+                                  8,
+                                  swapped=swap),
                               construct.BitField(
-                                  "number_of_chans_in_chan_set", 16, swapped=swap),
+                                  "number_of_chans_in_chan_set",
+                                  16,
+                                  swapped=swap),
                               construct.BitField(
                                   "chan_type_code", 4, swapped=swap),
                               construct.BitField("user01", 4, swapped=swap),
@@ -630,21 +661,31 @@ def channel_set_descriptor():
                               construct.BitField(
                                   "notch_filter_freq", 16, swapped=swap),
                               construct.BitField(
-                                  "second_notch_filter_freq", 16, swapped=swap),
+                                  "second_notch_filter_freq",
+                                  16,
+                                  swapped=swap),
                               construct.BitField(
-                                  "third_notch_filter_freq", 16, swapped=swap),
+                                  "third_notch_filter_freq",
+                                  16,
+                                  swapped=swap),
                               construct.BitField(
-                                  "extended_chan_set_number", 16, swapped=swap),
+                                  "extended_chan_set_number",
+                                  16,
+                                  swapped=swap),
                               construct.BitField(
                                   "extended_header_flag", 4, swapped=swap),
                               #   Always 10 for Fairfield
                               construct.BitField(
-                                  "number_trace_header_extensions", 4, swapped=swap),
+                                  "number_trace_header_extensions",
+                                  4,
+                                  swapped=swap),
                               construct.BitField(
                                   "vertical_stack_size", 8, swapped=swap),
                               construct.BitField(
                                   "streamer_cable_number", 8, swapped=swap),
-                              construct.BitField("array_forming", 8, swapped=swap))
+                              construct.BitField("array_forming",
+                                                 8,
+                                                 swapped=swap))
     return BIN
 
 
@@ -724,14 +765,15 @@ class Channel_set_descriptor (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = channel_set_descriptor()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -740,7 +782,7 @@ class Channel_set_descriptor (object):
             t = channel_set_descriptor()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_1_le ()
+            # t = general_header_block_1_le ()
 
         #   Convert BCD fields
         ret = convert_bcd_fields(t.parse(buf),
@@ -756,7 +798,7 @@ class Channel_set_descriptor (object):
 def extended_header_1():
     BIN = construct.Struct("BIN",
                            #   Remote unit
-                           #construct.UBInt64 ("id_number"),
+                           # construct.UBInt64 ("id_number"),
                            construct.UBInt32("part_number"),
                            construct.UBInt32("id_number"),
                            #   All epochs in micro-seconds
@@ -784,14 +826,15 @@ class Extended_header_1 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_1()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -800,7 +843,7 @@ class Extended_header_1 (object):
             t = extended_header_1()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -852,14 +895,15 @@ class Extended_header_1_shot (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_1_shot()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -868,7 +912,7 @@ class Extended_header_1_shot (object):
             t = extended_header_1_shot()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -941,14 +985,15 @@ class Extended_header_2 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_2()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -957,7 +1002,7 @@ class Extended_header_2 (object):
             t = extended_header_2()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1004,14 +1049,15 @@ class Extended_header_2_test (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_2_test()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1020,7 +1066,7 @@ class Extended_header_2_test (object):
             t = extended_header_2_test()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1072,14 +1118,15 @@ class Extended_header_3 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_3()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1088,7 +1135,7 @@ class Extended_header_3 (object):
             t = extended_header_3()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1135,14 +1182,15 @@ class Extended_header_3_test (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_3_test()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1151,7 +1199,7 @@ class Extended_header_3_test (object):
             t = extended_header_3_test()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1196,14 +1244,15 @@ class Extended_header_4 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_4()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1212,7 +1261,7 @@ class Extended_header_4 (object):
             t = extended_header_4()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1256,14 +1305,15 @@ class Extended_header_4_test (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = extended_header_4_test()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1272,11 +1322,11 @@ class Extended_header_4_test (object):
             t = extended_header_4_test()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -1314,14 +1364,15 @@ class External_header (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = external_header()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1330,7 +1381,7 @@ class External_header (object):
             t = external_header()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1383,14 +1434,15 @@ class External_header_shot (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = external_header_shot()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1399,7 +1451,7 @@ class External_header_shot (object):
             t = external_header_shot()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1440,14 +1492,15 @@ class External_header_shot_blocks (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = external_header_shot_blocks()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1456,7 +1509,7 @@ class External_header_shot_blocks (object):
             t = external_header_shot_blocks()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 
@@ -1491,7 +1544,7 @@ def trace_header():
                               )
     return BIN
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -1538,14 +1591,15 @@ class Trace_header (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1554,7 +1608,7 @@ class Trace_header (object):
             t = trace_header()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_1_le ()
+            # t = general_header_block_1_le ()
 
         #   Convert BCD fields
         ret = convert_bcd_fields(t.parse(buf),
@@ -1583,9 +1637,13 @@ def trace_header_1():
                               construct.BitField(
                                   "samples_per_trace", 24, swapped=swap),
                               construct.BitField(
-                                  "extended_receiver_line_number", 40, swapped=swap),
+                                  "extended_receiver_line_number",
+                                  40,
+                                  swapped=swap),
                               construct.BitField(
-                                  "extended_receiver_point_number", 40, swapped=swap),
+                                  "extended_receiver_point_number",
+                                  40,
+                                  swapped=swap),
                               # 00 - Not defined
                               construct.BitField(
                                   "sensor_type", 8, swapped=swap),
@@ -1626,14 +1684,15 @@ class Trace_header_1 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_1()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1642,7 +1701,7 @@ class Trace_header_1 (object):
             t = Trace_header_1()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1699,14 +1758,15 @@ class Trace_header_2 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_2()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1715,7 +1775,7 @@ class Trace_header_2 (object):
             t = Trace_header_2()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1725,9 +1785,9 @@ class Trace_header_2 (object):
 
 def trace_header_3():
     BIN = construct.Struct("BIN",
-                           construct.UBInt64("shot_epoch"),   #
-                           #construct.UBInt32 ("gps_tim1"),
-                           #construct.UBInt32 ("gps_tim2"),
+                           construct.UBInt64("shot_epoch"),
+                           # construct.UBInt32 ("gps_tim1"),
+                           # construct.UBInt32 ("gps_tim2"),
                            construct.UBInt64("shot_skew_time"),
                            construct.UBInt64("clock_correction"),
                            construct.UBInt64("clock_correction_not_applied")
@@ -1753,14 +1813,15 @@ class Trace_header_3 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_3()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1769,7 +1830,7 @@ class Trace_header_3 (object):
             t = Trace_header_3()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1779,9 +1840,9 @@ class Trace_header_3 (object):
 
 def trace_header_3_remote_unit():
     BIN = construct.Struct("BIN",
-                           construct.UBInt64("remote_unit_id"),   #
-                           #construct.UBInt32 ("gps_tim1"),
-                           #construct.UBInt32 ("gps_tim2"),
+                           construct.UBInt64("remote_unit_id"),
+                           # construct.UBInt32 ("gps_tim1"),
+                           # construct.UBInt32 ("gps_tim2"),
                            construct.UBInt64("deployment_epoch"),
                            construct.UBInt64("pickup_epoch"),
                            construct.UBInt64("remote_start_epoch")
@@ -1807,14 +1868,15 @@ class Trace_header_3_remote_unit (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_3_remote_unit()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1823,7 +1885,7 @@ class Trace_header_3_remote_unit (object):
             t = Trace_header_3_remote_unit()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1859,14 +1921,15 @@ class Trace_header_3_timing_block (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_3_timing_block()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1875,7 +1938,7 @@ class Trace_header_3_timing_block (object):
             t = Trace_header_3_timing_block()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -1929,14 +1992,15 @@ class Trace_header_4 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_4()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -1945,7 +2009,7 @@ class Trace_header_4 (object):
             t = Trace_header_4()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -2003,14 +2067,15 @@ class Trace_header_5 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_5()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2019,7 +2084,7 @@ class Trace_header_5 (object):
             t = Trace_header_5()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -2072,14 +2137,15 @@ class Trace_header_5_acquisition_data_block (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_5_acquisition_data_block()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2088,11 +2154,11 @@ class Trace_header_5_acquisition_data_block (object):
             t = Trace_header_5_acquisition_data_block()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -2132,14 +2198,15 @@ class Trace_header_6 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_6()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2148,11 +2215,11 @@ class Trace_header_6 (object):
             t = Trace_header_6()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
-###   1.6, 2.1
+#   1.6, 2.1
 #
 
 
@@ -2190,14 +2257,15 @@ class Trace_header_7 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_7()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2206,7 +2274,7 @@ class Trace_header_7 (object):
             t = Trace_header_7()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -2233,12 +2301,18 @@ def trace_header_8():
                            #   4 - test oscillator without sensors
                            #   5 - common mode test oscillator with sensors
                            #   6 - common mode test oscillator without sensors
-                           #   7 - test oscillator on positive sensors with neg sensor grounded
-                           #   8 - test oscillator on negative sensors with pos sensor grounded
-                           #   9 - test oscillator on positive PA input, with neg PA input grounded
-                           #   10 - test oscillator on negative PA input, with pos PA input grounded
-                           #   11 - test oscillator on positive PA input, with neg PA input ground, no sensors
-                           #   12 - test oscillator on negative PA input, with pos PA input ground, no sensors
+                           #   7 - test oscillator on positive sensors with
+                           # neg sensor grounded
+                           #   8 - test oscillator on negative sensors with pos
+                           # sensor grounded
+                           #   9 - test oscillator on positive PA input, with
+                           # neg PA input grounded
+                           #   10 - test oscillator on negative PA input, with
+                           # pos PA input grounded
+                           #   11 - test oscillator on positive PA input, with
+                           # neg PA input ground, no sensors
+                           #   12 - test oscillator on negative PA input, with
+                           # pos PA input ground, no sensors
                            # 0 - test oscillator path open
                            construct.UBInt32("oscillator_siganl_type")
                            #   1 - test signal selected
@@ -2271,14 +2345,15 @@ class Trace_header_8 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_8()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2287,7 +2362,7 @@ class Trace_header_8 (object):
             t = Trace_header_8()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -2305,7 +2380,8 @@ def trace_header_9():
                            #   4 - pattern is a walking 1s
                            #   5 - pattern is a walking 0s
                            #   6 - test signal is a specified DC value
-                           #   7 - test signal is a pulse train with specified duty cycle
+                           #   7 - test signal is a pulse train with
+                           # specified duty cycle
                            #   8 - test signal is a sine wave
                            #   9 - test signal is a dual tone sine
                            #   10 - test signal is an impulse
@@ -2343,14 +2419,15 @@ class Trace_header_9 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_9()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2359,7 +2436,7 @@ class Trace_header_9 (object):
             t = Trace_header_9()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 #
@@ -2401,14 +2478,15 @@ class Trace_header_10 (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" % k)
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" % k)
 
     def get(self):
         if self.endian == 'big':
             t = Trace_header_10()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.build(self)
 
@@ -2417,7 +2495,7 @@ class Trace_header_10 (object):
             t = Trace_header_10()
         else:
             raise HeaderError("Little endian byte order not supported.")
-            #t = general_header_block_2_le ()
+            # t = general_header_block_2_le ()
 
         return t.parse(buf)
 

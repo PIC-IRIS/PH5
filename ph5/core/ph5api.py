@@ -24,9 +24,14 @@ MAX_DRIFT_RATE = 0.001
 __version__ = PROG_VERSION
 
 #   Conversion factors to meters
-FACTS_M = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100., 'mm': 1. / 1000., 'kmi': 1852.0, 'in': 0.0254, 'ft': 0.3048, 'yd': 0.9144,
-           'mi': 1609.344, 'fath': 1.8288, 'ch': 20.1168, 'link': 0.201168, 'us-in': 1. / 39.37, 'us-ft': 0.304800609601219, 'us-yd': 0.914401828803658,
-           'us-ch': 20.11684023368047, 'us-mi': 1609.347218694437, 'ind-yd': 0.91439523, 'ind-ft': 0.30479841, 'ind-ch': 20.11669506}
+FACTS_M = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
+           'mm': 1. / 1000., 'kmi': 1852.0, 'in': 0.0254,
+           'ft': 0.3048, 'yd': 0.9144, 'mi': 1609.344,
+           'fath': 1.8288, 'ch': 20.1168, 'link': 0.201168,
+           'us-in': 1. / 39.37, 'us-ft': 0.304800609601219,
+           'us-yd': 0.914401828803658, 'us-ch': 20.11684023368047,
+           'us-mi': 1609.347218694437, 'ind-yd': 0.91439523,
+           'ind-ft': 0.30479841, 'ind-ch': 20.11669506}
 
 
 class APIError (Exception):
@@ -62,10 +67,11 @@ class CutHeader (object):
         else:
             gather_type = "Unknown"
 
-        return "Gather type: {0}, Trace length: {1} Sample interval: {2} us, Number of traces {3}".format(gather_type,
-                                                                                                          self.length,
-                                                                                                          self.si_us,
-                                                                                                          len(self.order))
+        return "Gather type: {0}, Trace length: {1} Sample interval: {2} us,\
+        Number of traces {3}".format(gather_type,
+                                     self.length,
+                                     self.si_us,
+                                     len(self.order))
 
 
 class Cut (object):
@@ -75,12 +81,15 @@ class Cut (object):
            stop_fepoch -> The ending time of the cut as a float
            sample_rate -> The sample rate in samples per second as a float
            channels -> A list of chanels to cut
-           das_t_times -> A list of Das_t times found for the start_fepoch, stop_fepoch,
+           das_t_times -> A list of Das_t times found for
+                           the start_fepoch, stop_fepoch,
                           ((start, stop), (start, stop), (start, stop), ...)
            msg -> List of error or warning messages
-           id_s -> The shot id for receiver gathers or station id for shot gathers
+           id_s -> The shot id for receiver gathers or station id
+           for shot gathers
     '''
-    __slots__ = 'id_s', 'das_sn', 'das_t_times', 'start_fepoch', 'stop_fepoch', 'sample_rate', 'channels', 'msg'
+    __slots__ = 'id_s', 'das_sn', 'das_t_times', 'start_fepoch',
+    'stop_fepoch', 'sample_rate', 'channels', 'msg'
 
     def __init__(self, das_sn, start_fepoch, stop_fepoch, sample_rate,
                  channels={}, das_t_times=[], msg=None, id_s=None):
@@ -97,12 +106,14 @@ class Cut (object):
 
     def __repr__(self):
         ret = ''
-        ret = "ID: {1} DAS: {0} SR: {2} samp/sec SI: {3:G} us\n".format(self.das_sn,
-                                                                        self.id_s,
-                                                                        self.sample_rate,
-                                                                        (1. / self.sample_rate) * 1000000)
-        ret += "Start: {0} Stop: {1}\n".format(timedoy.epoch2passcal(self.start_fepoch),
-                                               timedoy.epoch2passcal(self.stop_fepoch))
+        ret = "ID: {1} DAS: {0} SR: {2} samp/sec SI: {3:G} us\n"\
+            .format(self.das_sn,
+                    self.id_s,
+                    self.sample_rate,
+                    (1. / self.sample_rate) * 1000000)
+        ret += "Start: {0} Stop: {1}\n"\
+            .format(timedoy.epoch2passcal(self.start_fepoch),
+                    timedoy.epoch2passcal(self.stop_fepoch))
         for m in self.msg:
             ret += m + '\n'
         ret += "DAS windows:\n"
@@ -117,7 +128,8 @@ class Clock (object):
     '''   Clock performance
           slope -> Drift rate in seconds/second
           offset_secs -> The offset of the clock at offload
-          max_drift_rate_allowed -> The maximum allowed drift rate for time corrections
+          max_drift_rate_allowed -> The maximum allowed drift rate
+          for time corrections
           comment -> Comment on clock performance
     '''
     __slots__ = ('slope', 'offset_secs', 'max_drift_rate_allowed', 'comment')
@@ -129,10 +141,11 @@ class Clock (object):
         self.comment = []
 
     def __repr__(self):
-        return "Slope: {0}\nMaximum slope: {1}\nOffload offset: {2}\nComment: {3}\n".format(self.slope,
-                                                                                            self.max_drift_rate_allowed,
-                                                                                            self.offset_secs,
-                                                                                            self.comment)
+        return "Slope: {0}\nMaximum slope: {1}\nOffload offset:\
+        {2}\nComment: {3}\n".format(self.slope,
+                                    self.max_drift_rate_allowed,
+                                    self.offset_secs,
+                                    self.comment)
 
 
 class Trace (object):
@@ -150,13 +163,15 @@ class Trace (object):
           receiver_t -> Orientation
           response_t -> Gain and bit weight fo now.
           Methods:
-          time_correct -> Apply any time corrections and return a timedoy object
+          time_correct -> Apply any time correction and return a timedoy object
     '''
-    __slots__ = ('data', 'start_time', 'time_correction_ms', 'clock', 'nsamples', 'padding',
-                 'sample_rate', 'ttype', 'byteorder', 'das_t', 'receiver_t', 'response_t', 'time_correct')
+    __slots__ = ('data', 'start_time', 'time_correction_ms', 'clock',
+                 'nsamples', 'padding', 'sample_rate', 'ttype', 'byteorder',
+                 'das_t', 'receiver_t', 'response_t', 'time_correct')
 
     def __init__(self, data, fepoch, time_correction_ms, nsamples, sample_rate,
-                 ttype, byteorder, das_t, receiver_t, response_t, clock=Clock()):
+                 ttype, byteorder, das_t, receiver_t,
+                 response_t, clock=Clock()):
         self.data = data
         self.start_time = timedoy.TimeDOY(epoch=fepoch)
         self.time_correction_ms = time_correction_ms
@@ -172,16 +187,16 @@ class Trace (object):
     def __repr__(self):
         end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
             fepoch=True) + (float(self.nsamples) / self.sample_rate)))
-        return "start_time: {0}\nend_time: {7}\nnsamples: {1}/{6}\nsample_rate: {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}".format(self.start_time,
-                                                                                                                                                      self.nsamples,
-                                                                                                                                                      self.sample_rate,
-                                                                                                                                                      self.time_correction_ms,
-                                                                                                                                                      self.ttype,
-                                                                                                                                                      self.das_t[0][
-                                                                                                                                                          'channel_number_i'],
-                                                                                                                                                      len(
-                                                                                                                                                          self.data),
-                                                                                                                                                      end_time)
+        return "start_time: {0}\nend_time: {7}\nnsamples: {1}/{6}\nsample_rate:\
+        {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}"\
+               .format(self.start_time,
+                       self.nsamples,
+                       self.sample_rate,
+                       self.time_correction_ms,
+                       self.ttype,
+                       self.das_t[0]['channel_number_i'],
+                       len(self.data),
+                       end_time)
 
     def time_correct(self):
         return timedoy.timecorrect(self.start_time, self.time_correction_ms)
@@ -244,7 +259,7 @@ class PH5 (experiment.ExperimentGroup):
         try:
             chans = sorted(self.Array_t[array]['byid'][station].keys())
             return chans
-        except Exception as e:
+        except Exception:
             return []
 
     def channels_Array_t(self, array):
@@ -260,7 +275,7 @@ class PH5 (experiment.ExperimentGroup):
             else:
                 self.read_array_t(array)
                 order = self.Array_t[array]['order']
-        except Exception as e:
+        except Exception:
             return []
 
         ret = {}
@@ -284,7 +299,7 @@ class PH5 (experiment.ExperimentGroup):
                  A dictionary with the following keys:
                  {   'event_id_s': The event or shot id,
                      'receiver_id_s': The station or receiver id,
-                     'azimuth/value_f: The azimuth from the station to the shot,
+                     'azimuth/value_f:The azimuth from the station to the shot,
                      'azimuth/units_s': The units of the azimuth,
                      'offset/value_d': The offset distance,
                      'offset/units_s': The units of the offset
@@ -308,17 +323,18 @@ class PH5 (experiment.ExperimentGroup):
             sys.stderr.write(
                 "Warning: Couldn't get offset. {0}\n".format(repr(e)))
 
-        return {'event_id_s': evt_id, 'receiver_id_s': sta_id, 'azimuth/value_f': az,
-                'azimuth/units_s': 'degrees', 'offset/value_d': dist, 'offset/units_s': 'm'}
+        return {'event_id_s': evt_id, 'receiver_id_s': sta_id,
+                'azimuth/value_f': az, 'azimuth/units_s': 'degrees',
+                'offset/value_d': dist, 'offset/units_s': 'm'}
 
     def calc_offsets(self, array, shot_id, shot_line="Event_t"):
         '''
            Calculate offset with sign from a shot point to each station in an
            array.
            Inputs:
-              array -> the array or line as named in the ph5 file, 'Array_t_001'.
+              array -> the array or line as named in the ph5 file,'Array_t_001'
               shot_id -> the event or shot id, '101'.
-              shot_line -> the shot line, 'Event_t' (old style), 'Event_t_001' (new style).
+              shot_line -> the shot line, 'Event_t' (old style), 'Event_t_001'
            Returns:
               A list of dictionaries in the same format as ph5 Offset_t.
         '''
@@ -346,7 +362,7 @@ class PH5 (experiment.ExperimentGroup):
 
         for o in order:
             array_t = Array_t['byid'][o]
-            #print array_t['id_s']
+            # print array_t['id_s']
             chans = self.channels(array, o)
             c = chans[0]
             # for c in array_t.keys () :
@@ -368,14 +384,16 @@ class PH5 (experiment.ExperimentGroup):
                  shot_id -> The shot id, id_s from the event table
                  shot_line -> The event table name such as Event_t_002
               Returns:
-                 A dictionary keyed on array table id_s that points to a row from the offset table.
+                 A dictionary keyed on array table id_s that points to a
+                 row from the offset table.
         '''
         if shot_line == "Event_t":
             #   Legacy Offset table name
             offset_table_name = "Offset_t"
         else:
-            offset_table_name = "Offset_t_{0}_{1}".format(array_table_name[-3:],
-                                                          shot_line[-3:])
+            offset_table_name = "Offset_t_{0}_{1}"\
+                .format(array_table_name[-3:],
+                        shot_line[-3:])
 
         Offset_t = {}
         if not self.Array_t_names:
@@ -390,7 +408,7 @@ class PH5 (experiment.ExperimentGroup):
             self.read_event_t(shot_line)
         if not self.Offset_t_names:
             self.read_offset_t_names()
-        if not offset_table_name in self.Offset_t_names:
+        if offset_table_name not in self.Offset_t_names:
             return Offset_t
 
         Array_t = self.Array_t[array_table_name]
@@ -398,9 +416,10 @@ class PH5 (experiment.ExperimentGroup):
         for o in order:
             c = self.channels(array_table_name, o)[0]
             array_t = Array_t['byid'][o]
-            offset_t = self.ph5_g_sorts.read_offset_fast(shot_id,
-                                                         array_t[c][0]['id_s'],
-                                                         name=offset_table_name)
+            offset_t = self.ph5_g_sorts.\
+                read_offset_fast(shot_id,
+                                 array_t[c][0]['id_s'],
+                                 name=offset_table_name)
 
             Offset_t[array_t[c][0]['id_s']] = offset_t
 
@@ -414,13 +433,15 @@ class PH5 (experiment.ExperimentGroup):
                  station_id -> The station id, id_s from the array table
                  shot_line -> The event table name such as Event_t_002
               Returns:
-                 A dictionary keyed on event table id_s that points to a row from the offset table.
+                 A dictionary keyed on event table id_s that points to a row
+                 from the offset table.
         '''
         if shot_line == "Event_t":
             offset_table_name = "Offset_t"
         else:
-            offset_table_name = "Offset_t_{0}_{1}".format(array_table_name[-3:],
-                                                          shot_line[-3:])
+            offset_table_name = "Offset_t_{0}_{1}"\
+                .format(array_table_name[-3:],
+                        shot_line[-3:])
 
         Offset_t = {}
         if not self.Array_t_names:
@@ -434,16 +455,17 @@ class PH5 (experiment.ExperimentGroup):
             self.read_event_t(shot_line)
         if not self.Offset_t_names:
             self.read_offset_t_names()
-        if not offset_table_name in self.Offset_t_names:
+        if offset_table_name not in self.Offset_t_names:
             return Offset_t
 
         Event_t = self.Event_t[shot_line]
         order = Event_t['order']
         for o in order:
             event_t = Event_t['byid'][o]
-            offset_t = self.ph5_g_sorts.read_offset_fast(event_t['id_s'],
-                                                         station_id,
-                                                         name=offset_table_name)
+            offset_t = self.ph5_g_sorts.\
+                read_offset_fast(event_t['id_s'],
+                                 station_id,
+                                 name=offset_table_name)
             Offset_t[event_t['id_s']] = offset_t
 
         return Offset_t
@@ -494,8 +516,9 @@ class PH5 (experiment.ExperimentGroup):
               Inputs:
                  name -> the Event_t_xxx name
               Sets:
-                 Event_t[name]['byid'] Keyed by shot id (a list of dictionaries)
-                 Event_t[name]['order'] Keyed by order in the PH5 file (a list of dictionaries)
+                 Event_t[name]['byid'] Keyed by shot id(a list of dictionaries)
+                 Event_t[name]['order'] Keyed by order in the PH5 file
+                 (a list of dictionaries)
                  Event_t[name]['keys'] (a list of dictionary keys)
         '''
         if not self.Event_t_names:
@@ -517,8 +540,10 @@ class PH5 (experiment.ExperimentGroup):
               Inputs:
                  name -> the name of the array as a string 'Array_t_xxx'
               Sets:
-                 Array_t[name]['byid'] Keyed by station id as a list of dict of array_t lines by channel
-                 Array_t[name]['order'] Keyed in order as in PH5 file (a list of dictionaries)
+                 Array_t[name]['byid'] Keyed by station id as a list of dict of
+                 array_t lines by channel
+                 Array_t[name]['order'] Keyed in order as in PH5 file
+                 (a list of dictionaries)
                  Array_t[name]['keys'] (a list of dictionary keys)
         '''
         if not self.Array_t_names:
@@ -751,7 +776,6 @@ class PH5 (experiment.ExperimentGroup):
         if self.Das_g_names == []:
             self.read_das_g_names()
         node = None
-        found = False
 
         if das_g in self.Das_g_names:
             node = self.ph5_g_receivers.getdas_g(das)
@@ -772,7 +796,8 @@ class PH5 (experiment.ExperimentGroup):
                 start = float(r['time/epoch_l']) + \
                     float(r['time/micro_seconds_i']) / 1000000.
                 stop = start + (float(r['sample_count_i']) / (
-                    float(r['sample_rate_i']) / float(r['sample_rate_multiplier_i'])))
+                    float(r['sample_rate_i']) /
+                    float(r['sample_rate_multiplier_i'])))
                 sr = float(r['sample_rate_i']) / \
                     float(r['sample_rate_multiplier_i'])
                 #   We need to keep this
@@ -804,7 +829,9 @@ class PH5 (experiment.ExperimentGroup):
     def read_t(self, table, n=None):
         '''   Read table and return kef
               Inputs:
-                 table -> Experiment_t, Sort_t, Offset_t, Event_t, Array_t requires n, Response_t, Receiver_t, Index_t, Das_t requires n, Time_t
+                 table -> Experiment_t, Sort_t, Offset_t, Event_t,
+                 Array_t requires n, Response_t, Receiver_t, Index_t,
+                 Das_t requires n, Time_t
                  n -> the number of the table
                    -> or a tuple n containing n of Array_t and n of Event_t
                    -> or a DAS serial number
@@ -839,7 +866,7 @@ class PH5 (experiment.ExperimentGroup):
                     rows.append(bi[r])
                 kef += build_kef("Experiment_g/Sorts_g/{0}".format(o), rows)
             return kef
-            #raise APIError (-1, "Return of Offset_t not inplemented.")
+            # raise APIError (-1, "Return of Offset_t not inplemented.")
         #   This will change once shot lines are implemented
         elif table == "Event_t":
             rows = []
@@ -873,13 +900,15 @@ class PH5 (experiment.ExperimentGroup):
         elif table == "Response_t":
             self.read_response_t()
             return build_kef(
-                "/Experiment_g/Responses_g/Response_t", self.Response_t['rows'])
+                "/Experiment_g/Responses_g/Response_t",
+                self.Response_t['rows'])
         elif table == "Report_t":
             raise APIError(-1, "Return of Report_t not implemented.")
         elif table == "Receiver_t":
             self.read_receiver_t()
             return build_kef(
-                "/Experiment_g/Receivers_g/Receiver_t", self.Receiver_t['rows'])
+                "/Experiment_g/Receivers_g/Receiver_t",
+                self.Receiver_t['rows'])
         elif table == "Index_t":
             self.read_index_t()
             return build_kef(
@@ -888,7 +917,8 @@ class PH5 (experiment.ExperimentGroup):
             self.read_das_g_names()
             self.read_das_t(n)
             return build_kef(
-                "/Experiment_g/Receivers_g/Das_t_{0}/Das_t".format(n), self.Das_t[n]['rows'])
+                "/Experiment_g/Receivers_g/Das_t_{0}/Das_t".format(n),
+                self.Das_t[n]['rows'])
         elif table == "Time_t":
             self.read_time_t()
             return build_kef(
@@ -901,11 +931,14 @@ class PH5 (experiment.ExperimentGroup):
         '''   Cut trace data and return a Trace object
               Inputs:
                  das -> data logger serial number
-                 start_fepoch -> time to cut start of trace as a floating point epoch
-                 stop_fepoch -> time to cut end of trace as a floating point epoch
+                 start_fepoch -> time to cut start of trace as a
+                 floating point epoch
+                 stop_fepoch -> time to cut end of trace as a
+                 floating point epoch
                  chan -> channel to cut
                  sample_rate -> sample rate in samples per second
-                 apply_time_correction -> iff True, slide traces to correct for clock drift
+                 apply_time_correction -> iff True, slide traces to
+                 correct for clock drift
               Returns:
                  A list of PH5 trace objects split on gaps
         '''
@@ -919,7 +952,8 @@ class PH5 (experiment.ExperimentGroup):
         else:
             Das_t = das_t
         #
-        #   We shift the samples to match the requested start time to apply the time correction
+        #   We shift the samples to match the requested start
+        #   time to apply the time correction
         #
         clock = Clock()
         if apply_time_correction:
@@ -984,29 +1018,29 @@ class PH5 (experiment.ExperimentGroup):
                 #   Requested stop is somewhere in window
                 cut_stop_fepoch = stop_fepoch
                 cut_stop_sample = int(
-                    (cut_stop_fepoch - cut_start_fepoch) * sr) + cut_start_sample
+                    (cut_stop_fepoch - cut_start_fepoch) * sr)\
+                    + cut_start_sample
             #   Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
-            data_tmp = self.ph5_g_receivers.read_trace(trace_reference,
-                                                       start=int(
-                                                           cut_start_sample - time_cor_guess_samples),
-                                                       stop=int(cut_stop_sample - time_cor_guess_samples))
-            current_trace_type, current_trace_byteorder = self.ph5_g_receivers.trace_info(
-                trace_reference)
+            data_tmp = self.ph5_g_receivers.\
+                read_trace(trace_reference,
+                           start=int(
+                               cut_start_sample - time_cor_guess_samples),
+                           stop=int(cut_stop_sample - time_cor_guess_samples))
+            current_trace_type, current_trace_byteorder =\
+                self.ph5_g_receivers.trace_info(trace_reference)
             #
             ###
             #
             if first:
                 #   Correct start time to 'actual' time of first sample
-                #start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
-                #start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
                 if not d['raw_file_name_s'].endswith('rg16'):
                     start_fepoch = window_start_fepoch + \
                         float(cut_start_sample / sr)
                 if trace_start_fepoch is None:
                     trace_start_fepoch = start_fepoch
-                #print timedoy.TimeDOY (epoch=start_fepoch)
+                # print timedoy.TimeDOY (epoch=start_fepoch)
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float':
@@ -1016,7 +1050,7 @@ class PH5 (experiment.ExperimentGroup):
             else:
                 # Time difference between the end of last window and the start
                 # of this one
-                time_diff = abs(new_window_start_fepoch - window_start_fepoch)
+                time_diff = abs(window_start_fepoch)
                 #   Overlaps are positive
                 d['gap_overlap'] = time_diff - (1. / sr)
                 #   Data gap
@@ -1094,15 +1128,19 @@ class PH5 (experiment.ExperimentGroup):
                 window_start_fepoch0 = t.start_time
                 window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
                 # try :
-                time_correction, clock = _cor(window_start_fepoch0.epoch(
-                    fepoch=True), window_stop_fepoch.epoch(fepoch=True), Time_t)
+                time_correction, clock =\
+                    _cor(window_start_fepoch0.epoch(fepoch=True),
+                         window_stop_fepoch.epoch(fepoch=True),
+                         Time_t)
                 if time_correction != time_cor_guess_ms:
                     t.clock.comment.append(
-                        "Time correction mismatch. {0}ms/{1}ms".format(time_correction, time_cor_guess_ms))
+                        "Time correction mismatch. {0}ms/{1}ms"
+                        .format(time_correction, time_cor_guess_ms))
 
                 # except APIError as e :
-                    #sys.stderr.write ("Warning: {0}: {1}".format (e.errno, e.msg))
-                    #time_correction = 0.
+                    # sys.stderr.write ("Warning: {0}: {1}"\
+                    # .format (e.errno, e.msg))
+                    # time_correction = 0.
             else:
                 time_correction = 0.
             #   Set time correction
@@ -1124,13 +1162,16 @@ class PH5 (experiment.ExperimentGroup):
     #
 
     def _Cut(self, das, start_time, stop_time, chan, sr=None, msg=None):
-        '''   Find out if data exists for a given DAS, start, stop, channel, sample rate
+        '''   Find out if data exists for a given DAS, start,
+            stop, channel, sample rate
               Inputs:
-              das -> The data logger serial number as in the Das_t in the ph5 file
+              das -> The data logger serial number as in the Das_t
+              in the ph5 file
               start_time -> The cut start time as a float epoch seconds
               stop_time -> The stop time as a float epoch seconds
               chan -> The channel number as given in the Das_t
-              sr -> The sample rate as a float. If not given will use the first sample rate
+              sr -> The sample rate as a float. If not given will use the
+              first sample rate
               found from the Das_t
               msg -> Error or warning message
               Returns:
@@ -1174,8 +1215,11 @@ class PH5 (experiment.ExperimentGroup):
                     if delta < ((1. / das_sr) * 1.5):
                         C.das_t_times[i - 1][1] = window_stop_fepoch
                     else:
-                        C.msg.append("Time gap or overlap of {1} seconds at {0}".format(
-                            timedoy.epoch2passcal(window_start_fepoch), delta))
+                        C.msg.append("Timegap or overlap {1} seconds at {0}"
+                                     .format(
+                                         timedoy.
+                                         epoch2passcal(window_start_fepoch),
+                                         delta))
                         C.das_t_times.append(
                             (window_start_fepoch, window_stop_fepoch))
                 C.channels[chan] = True
@@ -1220,15 +1264,20 @@ class PH5 (experiment.ExperimentGroup):
                     das = array_t['das/serial_number_s']
                     chan = array_t['channel_number_i']
                     deploy_fepoch = fepoch(
-                        array_t['deploy_time/epoch_l'], array_t['deploy_time/micro_seconds_i'])
+                        array_t['deploy_time/epoch_l'],
+                        array_t['deploy_time/micro_seconds_i'])
                     pickup_fepoch = fepoch(
-                        array_t['pickup_time/epoch_l'], array_t['pickup_time/micro_seconds_i'])
+                        array_t['pickup_time/epoch_l'],
+                        array_t['pickup_time/micro_seconds_i'])
                     stop_time = start_time + length
                     #   Filter on deploy and pickup times
                     if not is_in(deploy_fepoch, pickup_fepoch,
                                  start_time, stop_time):
-                        msg = "Start: {0} and Stop: {1} outside of deploy and pickup time.".format(
-                            timedoy.epoch2passcal(start_time), timedoy.epoch2passcal(stop_time))
+                        msg = "Start: {0} and Stop: {1} outside of deploy\
+                        and pickup time.".format(timedoy.
+                                                 epoch2passcal(start_time),
+                                                 timedoy.
+                                                 epoch2passcal(stop_time))
                     else:
                         msg = None
                     # Get Cut object for time span, channel, and sample rate if
@@ -1250,7 +1299,7 @@ class PH5 (experiment.ExperimentGroup):
         if H.order != []:
             # yield H
             ret.insert(0, H)
-        #print H.order
+        # print H.order
         return ret
 
     #
@@ -1287,13 +1336,17 @@ class PH5 (experiment.ExperimentGroup):
             stop_time = start_time + length
             das = array_t['das/serial_number_s']
             deploy_fepoch = fepoch(
-                array_t['deploy_time/epoch_l'], array_t['deploy_time/micro_seconds_i'])
+                array_t['deploy_time/epoch_l'],
+                array_t['deploy_time/micro_seconds_i'])
             pickup_fepoch = fepoch(
-                array_t['pickup_time/epoch_l'], array_t['pickup_time/micro_seconds_i'])
+                array_t['pickup_time/epoch_l'],
+                array_t['pickup_time/micro_seconds_i'])
             #   Filter on deploy and pickup time
             if not is_in(deploy_fepoch, pickup_fepoch, start_time, stop_time):
-                msg = "Start: {0} and Stop: {1} outside of deploy and pickup time.".format(
-                    timedoy.epoch2passcal(start_time), timedoy.epoch2passcal(stop_time))
+                msg = "Start: {0} and Stop: {1} outside of deploy\
+                and pickup time.".format(
+                                     timedoy.epoch2passcal(start_time),
+                                     timedoy.epoch2passcal(stop_time))
             else:
                 msg = None
             # Get a Cut object for this time span, channel and sample rate if
@@ -1314,7 +1367,7 @@ class PH5 (experiment.ExperimentGroup):
             ret.append(C)
 
         if H.order != []:
-            #print H.order
+            # print H.order
             # yield H
             ret.insert(0, H)
 
@@ -1380,7 +1433,8 @@ def pad_traces(traces):
 def seed_channel_code(array_t):
     try:
         if len(array_t['seed_band_code_s']) == 1 and len(
-                array_t['seed_instrument_code_s']) == 1 and len(array_t['seed_orientation_code_s']) == 1:
+                array_t['seed_instrument_code_s']) == 1 and\
+           len(array_t['seed_orientation_code_s']) == 1:
             return array_t['seed_band_code_s'] + \
                 array_t['seed_instrument_code_s'] + \
                 array_t['seed_orientation_code_s']
@@ -1409,7 +1463,6 @@ def by_id(rows, key='id_s', secondary_key=None, unique_key=True):
                     byid[Id][r[secondary_key]] = [r]
                 else:
                     byid[Id][r[secondary_key]].append(r)
-                    #raise APIError (-2, "{0} has too many {1}, {2}.".format (Id, secondary_key, r[secondary_key]))
             else:
                 if Id not in byid:
                     byid[Id] = []
@@ -1447,10 +1500,10 @@ def deg2dms(dgs):
     f = abs(f)
     m = 60.0 * f
     f, m = math.modf(m)
-    #print math.frexp (f), math.frexp (m)
+    # print math.frexp (f), math.frexp (m)
     s = 60.0 * f
     dms = "%dd%02d'%09.6f\"" % (d, m, s)
-    #print dms
+    # print dms
     return dms
 #
 ###
@@ -1497,7 +1550,7 @@ def linreg(X, Y):
     else:
         ss = 1.
 
-    #Var_a, Var_b = ss * N / det, ss * Sxx / det
+    # Var_a, Var_b = ss * N / det, ss * Sxx / det
     return a, b, (RR, ss)
 
 
@@ -1508,7 +1561,7 @@ def calc_offset_sign(offsets):
     from math import atan, degrees
     X = []
     Y = []
-    O = []
+    OO = []
     offsetmin = 21 ** 63 - 1
     for offset_t in offsets:
         try:
@@ -1525,8 +1578,6 @@ def calc_offset_sign(offsets):
 
     #   The seismic line is abx + c (ab => w)
     ab, c, err = linreg(X, Y)
-
-    #sys.stderr.write ("Linear regression: {0}x + {1}, R^2 = {2}, s^2 = {3}\n".format (ab, c, err[0], err[1]))
 
     if abs(ab) > 1:
         regangle = degrees(atan(1. / ab))
@@ -1556,13 +1607,13 @@ def calc_offset_sign(offsets):
                 flop = True
                 sig *= -1
 
-            O.append(offset_t)
+            OO.append(offset_t)
         except Exception as e:
             sys.stderr.write("%s\n" % e)
 
     sys.stdout.flush()
     #   Returning Oh not zero
-    return O
+    return OO
 #
 ##
 #
@@ -1653,7 +1704,6 @@ def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
 
     if abs(time_t['slope_d']) > MAX_DRIFT_RATE:
         clock.comment.append("Clock drift rate exceeds maximum drift rate.")
-        #raise APIError (-2, "Drift rate exceeds {0} percent.".format (MAX_DRIFT_RATE * 100))
 
     mid_fepoch = start_fepoch + ((stop_fepoch - start_fepoch) / 2.)
     delta_fepoch = mid_fepoch - data_start
@@ -1688,8 +1738,10 @@ def filter_das_t(Das_t, chan):
             ret.append(das_t)
             continue
         if (ret[-1]['sample_rate_i'] == das_t['sample_rate_i'] and
-            ret[-1]['sample_rate_multiplier_i'] == das_t['sample_rate_multiplier_i'] and
-            ret[-1]['time/micro_seconds_i'] == das_t['time/micro_seconds_i'] and
+            ret[-1]['sample_rate_multiplier_i'] ==
+            das_t['sample_rate_multiplier_i'] and
+            ret[-1]['time/micro_seconds_i'] ==
+            das_t['time/micro_seconds_i'] and
                 ret[-1]['time/epoch_l'] == das_t['time/epoch_l']):
             continue
         else:
@@ -1698,252 +1750,3 @@ def filter_das_t(Das_t, chan):
     ret.sort(cmp=sort_on_epoch)
 
     return ret
-
-
-if __name__ == '__main__':
-    from obspy.core import Trace as OPTrace, UTCDateTime
-    #p = ph5 (path='/home/azevedo/Data/10-016', nickname='master.ph5')
-    #O = p.calc_offsets ('Array_t_001', '101'); p.close ()
-    #sys.exit ()
-    # Initialize PH5
-    #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
-    #p = ph5 (path='/run/media/azevedo/2TB_EXT4/Sigma', nickname='master.ph5')
-    p = ph5(path='/home/azevedo/Data/MATADORII/Nodes/PH5_2/Sigma/',
-            nickname='master.ph5')
-    das = p.read_das_t('947F')
-    stop = 0
-    start = sys.maxsize
-    #print p.Das_t
-    #sr = p.Das_t[das]['rows'][0]['sample_rate_i']
-    sr = 100
-    for das_t in p.Das_t[das]['rows']:
-        tmpsr = int(float(das_t['sample_rate_i']) /
-                    float(das_t['sample_rate_multiplier_i']))
-        if tmpsr != sr:
-            continue
-        e = float(das_t['time/epoch_l']) + \
-            (float(das_t['time/micro_seconds_i']) / 1000000.)
-        if e > stop:
-            stop = e
-        if e < start:
-            start = e
-    t1 = start
-    #traces = []
-    t2 = t1 + 3600.
-    tdoy = timedoy.TimeDOY(year=2017,
-                           hour=0,
-                           minute=0,
-                           second=0,
-                           microsecond=0,
-                           doy=1)
-    t1 = tdoy.epoch(fepoch=True)
-    t2 = t1 + 86400.
-    while t1 < stop:
-        cut_obj = p.cut(das, t1, t2, sample_rate=sr)
-        print t1, t2
-        print cut_obj
-
-        for co in cut_obj:
-            t = OPTrace(co.data)
-            t.stats.sampling_rate = co.sample_rate
-            e1 = co.start_time.epoch(fepoch=True)
-            t.stats.starttime = UTCDateTime(e1)
-            t.stats.station = das
-            t.stats.channel = co.das_t[0]['channel_number_i']
-            stringtime = co.start_time.getFdsnTime()
-            filename = 'DATA/{0}_{1}_{2}.sac'.format(
-                das, stringtime, co.das_t[0]['channel_number_i'])
-            #traces.append (t)
-            print co.start_time.epoch(
-                fepoch=True), stringtime, t.stats.starttime, t.stats.endtime
-            t.write(filename, 'SAC')
-        print
-        t1 = t2 + (1. / float(sr))
-        t2 = t1 + 3600.
-
-    print
-    #p.read_array_t_names ()
-    # for name in p.Array_t_names :
-    #p.read_array_t (name)
-    #p.read_event_t_names ()
-    # for name in p.Event_t_names :
-    #p.read_event_t (name)
-    ##
-    # Receiver gather
-    ##
-    # for name in p.Array_t_names :
-    #Array_t = p.Array_t[name]['byid']
-    #order = p.Array_t[name]['order']
-    #length = 905
-    # Order of stations
-    # for o in order :
-    #chans = Array_t[o].keys ()
-    # foreach channel
-    # for c in chans :
-    # foreach entry per station
-    # o -> station, c -> channel
-    # for array_t in Array_t[o][c] :
-    #print "Station:", array_t['id_s']
-    # for ename in p.Event_t_names :
-    #print "Shot line:", ename
-    #Css = p.receiver_cut (ename, array_t, length)
-    # for Cs in Css :
-    #print Cs
-    ##print "Shot:", Cs.id_s, Cs.start_fepoch, Cs.stop_fepoch
-    # for win in Cs.das_t_times :
-    ##print win[0], win[1]
-    # for msg in Cs.msg :
-    ##print msg
-
-    #raw_input ("P")
-    ##
-    # Shot gather
-    ##
-    # for name in p.Event_t_names :
-    #Event_t = p.Event_t[name]['byid']
-    #order = p.Event_t[name]['order']
-    #length = 905
-    # for o in order :
-    #event_t = Event_t[o]
-    #start_time = fepoch (event_t['time/epoch_l'], event_t['time/micro_seconds_i'])
-    # for aname in p.Array_t_names :
-    #Css = p.shot_cut (aname, start_time, length)
-    # for Cs in Css :
-    #print Cs
-    ##print "Station:", Cs.id_s, Cs.start_fepoch, Cs.stop_fepoch
-    # for win in Cs.das_t_times :
-    ##print win[0], win[1]
-    # for msg in Cs.msg :
-    ##print msg
-    #raw_input ("P")
-    #p.close ()
-    # Create dictionary to hold trace objects
-    ##d = {}
-    # Cut Z
-    ##d['Z'] = p.cut ('A123', timedoy.passcal2epoch ("2016:201:00:00:00.000", fepoch=True), timedoy.passcal2epoch ("2016:201:23:59:59.999", fepoch=True), chan=1, sample_rate=100)
-    # print
-    # Cut N
-    ##d['N'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=2, sample_rate=250)
-    # Cut E
-    ##d['E'] = p.cut ('964C', 1290391403.0, 1290391404.0, chan=3, sample_rate=250)
-    # Display trace data
-    # for c in ('Z', 'N', 'E') :
-    ##print d[c].start_time.getISOTime ()
-    ##i = 0
-    # for point in d[c].data :
-    ##print i, point
-    ##i += 1
-    # Close PH5
-    ##p.close ()
-    # Initialize new PH5
-    ##p = ph5 (path='/run/media/azevedo/2TB_EXT4/Wavefields/PROCESS/Sigma', nickname='master.ph5')
-    ##p.read_array_t_names ()
-    ##p.read_array_t ('Array_t_007')
-    ###print p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['deploy_time/ascii_s'], '->', p.Array_t['Array_t_005']['byid']['5X5004'][1][0]['pickup_time/ascii_s']
-    ##array_t_0 = p.Array_t['Array_t_005']['byid']['5002'][1][0]
-    ##array_t_1 = p.Array_t['Array_t_005']['byid']['5002'][1][-1]
-    ##das = array_t_0['das/serial_number_s']
-    ##sr = array_t_0['sample_rate_i'] / float (array_t_0['sample_rate_multiplier_i'])
-    ##samples_per_day = int (86400 * sr)
-    ##start_tdoy = timedoy.TimeDOY (epoch=array_t_0['deploy_time/epoch_l'])
-    # start_tdoy = timedoy.TimeDOY (year=start_tdoy.dtobject.year,
-    # hour=0,
-    # minute=0,
-    # second=0,
-    # microsecond=0,
-    # doy=start_tdoy.doy ())
-    ##start_fepoch = start_tdoy.epoch (fepoch=True)
-    ##stop_fepoch = start_fepoch + 86400.
-    ##end_tdoy = timedoy.TimeDOY (epoch=array_t_1['pickup_time/epoch_l'])
-    # end_tdoy = timedoy.TimeDOY (year=end_tdoy.dtobject.year,
-    # hour=23,
-    # minute=59,
-    # second=59,
-    # microsecond=999999,
-    # doy=end_tdoy.doy ())
-    ##end_fepoch = end_tdoy.epoch (fepoch=True)
-    # while stop_fepoch < end_fepoch :
-    ##traces = p.cut (das, start_fepoch, stop_fepoch, sample_rate=sr)
-    # for t in traces :
-    ##print timedoy.epoch2passcal (start_fepoch), timedoy.epoch2passcal (stop_fepoch)
-    ##print  '===>',t.start_time.getPasscalTime (ms=True),t.start_time.epoch (fepoch=True),t.sample_rate,t.nsamples,t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate),timedoy.epoch2passcal (t.start_time.epoch (fepoch=True) + ((t.nsamples-1)/t.sample_rate))
-    ##samps = 0
-    # for d in t.das_t :
-    ##samps += d['sample_count_i']
-    ##tttttt = timedoy.TimeDOY (epoch=d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000.))
-    ##print "\t", tttttt.getPasscalTime (ms=True), d['sample_rate_i'], d['sample_count_i']
-    ##print "\t", samps
-    # if len (t.data) != samples_per_day :
-    ##print "*\t===> {0} {1}".format (samples_per_day, len (t.data))
-    ##start_fepoch += 86400.
-    ##stop_fepoch += 86400.
-    ###Offset_t = p.calc_offsets (p.Array_t_names[0], '1002', shot_line="Event_t_001")
-    # start = timedoy.TimeDOY (year=2016,
-    # month=07,
-    # day=28,
-    # hour=0,
-    # minute=0,
-    # second=0,
-    # microsecond=0)
-    ###traces = p.cut ('9389', start.epoch (fepoch=True), start.epoch (fepoch=True) + 3600., chan=1, sample_rate=100.)
-    ##p.close (); sys.exit (-1)
-    ##p = ph5 (path='/run/media/azevedo/1TB_EXT4/Data/SEGMeNT_onshore/Sigma-bak', nickname='master.ph5')
-    ##p.read_event_t_names ()
-    ##print p.Event_t_names
-    ##p.close ()
-    ##sys.exit ()
-    ###t0 = p.read_t ("Offset_t")
-    ####print t0; sys.exit ()
-    # Read Experiment_t, return kef
-    ###t1 = p.read_t ("Experiment_t")
-    ####print t1
-    # Read Sort_t, return kef
-    ###t2 = p.read_t ("Sort_t")
-    # Read Event_t, return kef
-    ###t3 = p.read_t ("Event_t")
-    ####print t3
-    # Read Array_t_001, return kef
-    ###t4 = p.read_t ("Array_t", n=1)
-    # Read Response_t, return kef
-    ###t5 = p.read_t ("Response_t")
-    # Read Receiver_t, return kef
-    ###t6 = p.read_t ("Receiver_t")
-    # Read Index_t, return kef
-    ###t7 = p.read_t ("Index_t")
-    # Read Das_t for sn 10550, return kef
-    ###t8 = p.read_t ("Das_t", "10875")
-    ###print t8
-    # Read Time_t, return kef
-    ###t9 = p.read_t ("Time_t")
-    ###print t9
-    # Read data in shot order, return Trace object
-    ##p.read_array_t_names ()
-    # for n in p.Array_t_names :
-    # for n in ['Array_t_006'] :
-    # if not p.Array_t.has_key (n) :
-    ##p.read_array_t (n)
-
-    ##array_t = p.Array_t[n]['byid']
-    # for k in array_t.keys () :
-    ##das = array_t[k]['das/serial_number_s']
-    # Cut, DAS sn, start epoch, stop epoch
-    ##d = p.cut (das, 1200913195.333, 1200913200.5, sample_rate=100)
-    ##print d.nsamples
-    # Read data in receiver order, return Trace object
-    ###p.read_event_t_names ()
-    # for n in p.Event_t_names :
-    # if not p.Event_t.has_key (n) :
-    ###p.read_event_t (n)
-
-    ###event_t = p.Event_t[n]['byid']
-    # for k in event_t.keys () :
-    ###t0 = fepoch (event_t[k]['time/epoch_l'], event_t[k]['time/micro_seconds_i'])
-    # Cut, DAS sn, event time (as epoch), event time + length
-    ###d = p.cut ('11809', t0, t0 + 10., sample_rate=100)
-    ###i = 0
-    ###print d.start_time.getFdsnTime ()
-    # for point in d.data :
-    ###print i, point
-    ###i += 1
-    # pass
-    ##p.close ()

@@ -10,7 +10,7 @@
 from pyproj import Proj
 
 #   The proj4 program cs2cs must be in your path
-#CS2CS = 'cs2cs'
+# CS2CS = 'cs2cs'
 
 
 def _sign(val, latlon):
@@ -35,7 +35,7 @@ def _sign(val, latlon):
             else:
                 ret = 'E' + val
 
-    except IndexError as e:
+    except IndexError:
         pass
 
     return ret

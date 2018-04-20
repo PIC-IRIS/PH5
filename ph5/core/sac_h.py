@@ -14,7 +14,7 @@ import construct
 # "pn3",
 # "reconstruct-2.03dev-py2.6.egg"))
 
-#import reconstruct as construct
+# import reconstruct as construct
 
 PROG_VERSION = '2014.002 Alpha'
 
@@ -104,19 +104,22 @@ ICONSTANTS = {"IREAL": 0,		# undocumented
               "ISRO": 36,		# undocumented
 
               # Source types
-              "INUCL": 37,		# event type: nuclear shot
-              "IPREN": 38,		# event type: nuke pre-shot
-              "IPOSTN": 39,		# event type: nuke post-shot
-              "IQUAKE": 40,		# event type: earthquake
-              "IPREQ": 41,		# event type: foreshock
-              "IPOSTQ": 42,		# event type: aftershock
-              "ICHEM": 43,		# event type: chemical expl
-              "IOTHER": 44,		# event type: other source
-              "IQB": 72,		# Quarry Blast or mine expl. confirmed by quarry
-              "IQB1": 73,  # Quarry or mine blast with designed shot information-ripple fired
-              "IQB2": 74,  # Quarry or mine blast with observed shot information-ripple fired
+              "INUCL": 37,  # event type: nuclear shot
+              "IPREN": 38,  # event type: nuke pre-shot
+              "IPOSTN": 39,  # event type: nuke post-shot
+              "IQUAKE": 40,  # event type: earthquake
+              "IPREQ": 41,  # event type: foreshock
+              "IPOSTQ": 42,  # event type: aftershock
+              "ICHEM": 43,  # event type: chemical expl
+              "IOTHER": 44,  # event type: other source
+              "IQB": 72,  # Quarry Blast or mine expl. confirmed by quarry
+              "IQB1": 73,  # Quarry or mine blast with designed
+                           # shot information-ripple fired
+              "IQB2": 74,  # Quarry or mine blast with observed
+                           # shot information-ripple fired
               "IQBX": 75,  # Quarry or mine blast - single shot
-              "IQMT": 76,  # Quarry or mining-induced events: tremors and rockbursts
+              "IQMT": 76,  # Quarry or mining-induced events:
+                           # tremors and rockbursts
               "IEQ": 77,   # Earthquake
               "IEQ1": 78,  # Earthquakes in a swarm or aftershock sequence
               "IEQ2": 79,  # Felt earthquake
@@ -338,7 +341,7 @@ def bin_header_le_int():
                            #      * IDAY (10): Midnight of refernece GMT day
                            #      * IO (11): Event origin time
                            #      * IA (12): First arrival time
-                           #      * ITn (13-22): User defined time pick n, n=0,9
+                           #      * ITn (13-22): User defined time pick n,n=0,9
                            construct.SLInt32("unused16"),   #
                            # Type of recording instrument. [currently not used]
                            construct.SLInt32("iinst"),
@@ -347,33 +350,33 @@ def bin_header_le_int():
                            # Event geographic region. [not currently used]
                            construct.SLInt32("ievreg"),
                            construct.SLInt32("ievtyp"),  # Type of event:
-                           #      * IUNKN (Unknown)
-                           #      * INUCL (Nuclear event)
-                           #      * IPREN (Nuclear pre-shot event)
-                           #      * IPOSTN (Nuclear post-shot event)
-                           #      * IQUAKE (Earthquake)
-                           #      * IPREQ (Foreshock)
-                           #      * IPOSTQ (Aftershock)
-                           #      * ICHEM (Chemical explosion)
-                           #      * IQB (Quarry or mine blast confirmed by quarry)
-                           #      * IQB1 (Quarry/mine blast with designed shot
-                           #        info-ripple fired)
-                           #      * IQB2 (Quarry/mine blast with observed shot
-                           #        info-ripple fired)
-                           #      * IQMT (Quarry/mining-induced events:
-                           #        tremors and rockbursts)
-                           #      * IEQ (Earthquake)
-                           #      * IEQ1 (Earthquakes in a swarm or aftershock
-                           #        sequence)
-                           #      * IEQ2 (Felt earthquake)
-                           #      * IME (Marine explosion)
-                           #      * IEX (Other explosion)
-                           #      * INU (Nuclear explosion)
-                           #      * INC (Nuclear cavity collapse)
-                           #      * IO\_ (Other source of known origin)
-                           #      * IR (Regional event of unknown origin)
-                           #      * IT (Teleseismic event of unknown origin)
-                           #      * IU (Undetermined or conflicting information)
+                           #   * IUNKN (Unknown)
+                           #   * INUCL (Nuclear event)
+                           #   * IPREN (Nuclear pre-shot event)
+                           #   * IPOSTN (Nuclear post-shot event)
+                           #   * IQUAKE (Earthquake)
+                           #   * IPREQ (Foreshock)
+                           #   * IPOSTQ (Aftershock)
+                           #   * ICHEM (Chemical explosion)
+                           #   * IQB (Quarry or mine blast confirmed by quarry)
+                           #   * IQB1 (Quarry/mine blast with designed shot
+                           #     info-ripple fired)
+                           #   * IQB2 (Quarry/mine blast with observed shot
+                           #     info-ripple fired)
+                           #   * IQMT (Quarry/mining-induced events:
+                           #     tremors and rockbursts)
+                           #   * IEQ (Earthquake)
+                           #   * IEQ1 (Earthquakes in a swarm or aftershock
+                           #     sequence)
+                           #   * IEQ2 (Felt earthquake)
+                           #   * IME (Marine explosion)
+                           #   * IEX (Other explosion)
+                           #   * INU (Nuclear explosion)
+                           #   * INC (Nuclear cavity collapse)
+                           #   * IO\_ (Other source of known origin)
+                           #   * IR (Regional event of unknown origin)
+                           #   * IT (Teleseismic event of unknown origin)
+                           #   * IU (Undetermined or conflicting information)
                            # Quality of data [not currently used]:
                            construct.SLInt32("iqual"),
                            #      * IGOOD (Good data)
@@ -384,7 +387,8 @@ def bin_header_le_int():
                            # Synthetic data flag [not currently used]:
                            construct.SLInt32("isynth"),
                            #      * IRLDTA (Real data)
-                           #      * ????? (Flags for various synthetic seismogram
+                           #      * ?????
+                           #      (Flags for various synthetic seismogram
                            #        codes)
                            construct.SLInt32("imagtyp"),    #
                            construct.SLInt32("imagsrc"),    #
@@ -443,7 +447,8 @@ def bin_header_le_char():
                            # Name of seismic network.
                            construct.String("knetwk", 8),
                            construct.String("kdatrd", 8),   #
-                           construct.String("kinst", 8))  # Generic name of recording instrument
+                           construct.String("kinst", 8))  # Generic name of
+    # recording instrument
     return BIN
 
 #   SAC Big Endian binary header, float part
@@ -600,13 +605,21 @@ def bin_header_be_char():
 
 
 class SAC_float (object):
-    __keys__ = ("delta", "depmin", "depmax", "scale", "odelta", "b", "e", "o", "a", "fmt",
-                "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "f", "resp0",
-                "resp1", "resp2", "resp3", "resp4", "resp5", "resp6", "resp7", "resp8", "resp9",
-                "stla", "stlo", "stel", "stdp", "evla", "evlo", "evel", "evdp", "mag", "user0",
-                "user1", "user2", "user3", "user4", "user5", "user6", "user7", "user8", "user9",
-                "dist", "az", "baz", "gcarc", "sb", "sdelta", "depmen", "cmpaz", "cmpinc", "xminimum",
-                "xmaximum", "yminimum", "ymaximum", "unused6", "unused7", "unused8", "unused9",
+    __keys__ = ("delta", "depmin", "depmax", "scale", "odelta", "b", "e", "o",
+                "a", "fmt",
+                "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9",
+                "f", "resp0",
+                "resp1", "resp2", "resp3", "resp4", "resp5", "resp6", "resp7",
+                "resp8", "resp9",
+                "stla", "stlo", "stel", "stdp", "evla", "evlo", "evel", "evdp",
+                "mag", "user0",
+                "user1", "user2", "user3", "user4", "user5", "user6", "user7",
+                "user8", "user9",
+                "dist", "az", "baz", "gcarc", "sb", "sdelta", "depmen",
+                "cmpaz",
+                "cmpinc", "xminimum",
+                "xmaximum", "yminimum", "ymaximum", "unused6", "unused7",
+                "unused8", "unused9",
                 "unused10", "unused11", "unused12")
 
     def __init__(self):
@@ -620,7 +633,8 @@ class SAC_float (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self, byteorder=sys.byteorder):
@@ -641,11 +655,16 @@ class SAC_float (object):
 
 
 class SAC_int (object):
-    __keys__ = ("nzyear", "nzjday", "nzhour", "nzmin", "nzsec", "nzmsec", "nvhdr", "norid",
-                "nevid", "npts", "nsnpts", "nwfid", "nxsize", "nysize", "unused15", "iftype",
-                "idep", "iztype", "unused16", "iinst", "istreg", "ievreg", "ievtyp", "iqual",
-                "isynth", "imagtyp", "imagsrc", "unused19", "unused20", "unused21", "unused22",
-                "unused23", "unused24", "unused25", "unused26", "leven", "lpspol", "lovrok",
+    __keys__ = ("nzyear", "nzjday", "nzhour", "nzmin", "nzsec", "nzmsec",
+                "nvhdr", "norid",
+                "nevid", "npts", "nsnpts", "nwfid", "nxsize", "nysize",
+                "unused15", "iftype",
+                "idep", "iztype", "unused16", "iinst", "istreg", "ievreg",
+                "ievtyp", "iqual",
+                "isynth", "imagtyp", "imagsrc", "unused19", "unused20",
+                "unused21", "unused22",
+                "unused23", "unused24", "unused25", "unused26", "leven",
+                "lpspol", "lovrok",
                 "lcalda", "unused27")
 
     def __init__(self):
@@ -659,7 +678,8 @@ class SAC_int (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self, byteorder=sys.byteorder):
@@ -680,8 +700,10 @@ class SAC_int (object):
 
 
 class SAC_char (object):
-    __keys__ = ("kstnm", "kevnm", "khole", "ko", "ka", "kt0", "kt1", "kt2", "kt3", "kt4", "kt5",
-                "kt6", "kt7", "kt8", "kt9", "kf", "kuser0", "kuser1", "kuser2", "kcmpnm", "knetwk",
+    __keys__ = ("kstnm", "kevnm", "khole", "ko", "ka", "kt0", "kt1", "kt2",
+                "kt3", "kt4", "kt5",
+                "kt6", "kt7", "kt8", "kt9", "kf", "kuser0", "kuser1", "kuser2",
+                "kcmpnm", "knetwk",
                 "kdatrd", "kinst")
 
     def __init__(self):
@@ -697,7 +719,8 @@ class SAC_char (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self, byteorder=sys.byteorder):

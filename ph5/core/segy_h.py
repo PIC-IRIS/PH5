@@ -84,14 +84,15 @@ def text_header():
 
 
 class Text (object):
-    __keys__ = ('_01_', '_02_', '_03_', '_04_', '_05_', '_06_', '_07_', '_08_', '_09_', '_10_',
-                '_11_', '_12_', '_13_', '_14_', '_15_', '_16_', '_17_', '_18_', '_19_', '_20_',
-                '_21_', '_22_', '_23_', '_24_', '_25_', '_26_', '_27_', '_28_', '_29_', '_30_',
-                '_31_', '_32_', '_33_', '_34_', '_35_', '_36_', '_37_', '_38_', '_39_', '_40_')
+    __keys__ = ('_01_', '_02_', '_03_', '_04_', '_05_', '_06_', '_07_', '_08_',
+                '_09_', '_10_', '_11_', '_12_', '_13_', '_14_', '_15_', '_16_',
+                '_17_', '_18_', '_19_', '_20_', '_21_', '_22_', '_23_', '_24_',
+                '_25_', '_26_', '_27_', '_28_', '_29_', '_30_', '_31_', '_32_',
+                '_33_', '_34_', '_35_', '_36_', '_37_', '_38_', '_39_', '_40_')
 
     def __init__(self):
         for c in Text.__keys__:
-            #c = "_%02d_" % i
+            # c = "_%02d_" % i
             self.__dict__[c] = ebcdic.AsciiToEbcdic("C" + " " * 79)
 
     def set(self, keyval):
@@ -101,7 +102,8 @@ class Text (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in textural header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in textural header.\n" %
                     k)
 
     def get(self):
@@ -229,10 +231,11 @@ def reel_header_le():
 
 
 class Reel (object):
-    __keys__ = ("jobid", "lino", "reno", "ntrpr", "nart", "hdt", "dto", "hns", "nso", "format",
-                "fold", "tsort", "vscode", "hsfs", "hsfe", "hslen", "hstyp", "schn", "hstas", "hstae",
-                "htatyp", "hcorr", "bgrcv", "rcvm", "mfeet", "polyt", "vpol", "unass1", "rev", "trlen",
-                "extxt", "unass2")
+    __keys__ = ("jobid", "lino", "reno", "ntrpr", "nart", "hdt", "dto", "hns",
+                "nso", "format", "fold", "tsort", "vscode", "hsfs", "hsfe",
+                "hslen", "hstyp", "schn", "hstas", "hstae", "htatyp", "hcorr",
+                "bgrcv", "rcvm", "mfeet", "polyt", "vpol", "unass1", "rev",
+                "trlen", "extxt", "unass2")
 
     def __init__(self, endian='big'):
         self.endian = endian
@@ -246,7 +249,8 @@ class Reel (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in reel header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in reel header.\n" %
                     k)
 
     def get(self):
@@ -392,7 +396,8 @@ def trace_header():
                              # Geophone group number, last trace (field)
                              construct.UBInt16("phoneLastTrace"),
                              construct.SBInt16("gapSize"),  # Gap size
-                             construct.SBInt16("taperOvertravel"))  # Over travel.......................................
+                             construct.SBInt16("taperOvertravel"))
+    # Over travel
     return TRACE
 
 #
@@ -523,20 +528,31 @@ def trace_header_le():
                              # Geophone group number, last trace (field)
                              construct.ULInt16("phoneLastTrace"),
                              construct.SLInt16("gapSize"),  # Gap size
-                             construct.SLInt16("taperOvertravel"))  # Over travel.......................................
+                             construct.SLInt16("taperOvertravel"))
+    # Over travel
     return TRACE
 
 
 class Trace (object):
-    __keys__ = ("lineSeq", "reelSeq", "event_number", "channel_number", "energySourcePt", "cdpEns", "traceInEnsemble", "traceID",
-                "vertSum", "horSum", "dataUse", "sourceToRecDist", "recElevation", "sourceSurfaceElevation", "sourceDepth",
-                "datumElevRec", "datumElevSource", "sourceWaterDepth", "recWaterDepth", "elevationScale", "coordScale", "sourceLongOrX",
-                "sourceLatOrY", "recLongOrX", "recLatOrY", "coordUnits", "weatheringVelocity", "subWeatheringVelocity", "sourceUpholeTime",
-                "recUpholeTime", "sourceStaticCor", "recStaticCor", "totalStatic", "lagTimeA", "lagTimeB", "delay", "muteStart", "muteEnd",
-                "sampleLength", "deltaSample", "gainType", "gainConst", "initialGain", "correlated", "sweepStart", "sweepEnd", "sweepLength",
-                "sweepType", "sweepTaperAtStart", "sweepTaperAtEnd", "taperType", "aliasFreq", "aliasSlope", "notchFreq", "notchSlope",
-                "lowCutFreq", "hiCutFreq", "lowCutSlope", "hiCutSlope", "year", "day", "hour", "minute", "second", "timeBasisCode",
-                "traceWeightingFactor", "phoneRollPos1", "phoneFirstTrace", "phoneLastTrace", "gapSize", "taperOvertravel")
+    __keys__ = ("lineSeq", "reelSeq", "event_number", "channel_number",
+                "energySourcePt", "cdpEns", "traceInEnsemble", "traceID",
+                "vertSum", "horSum", "dataUse", "sourceToRecDist",
+                "recElevation", "sourceSurfaceElevation", "sourceDepth",
+                "datumElevRec", "datumElevSource", "sourceWaterDepth",
+                "recWaterDepth", "elevationScale", "coordScale",
+                "sourceLongOrX", "sourceLatOrY", "recLongOrX", "recLatOrY",
+                "coordUnits", "weatheringVelocity", "subWeatheringVelocity",
+                "sourceUpholeTime", "recUpholeTime", "sourceStaticCor",
+                "recStaticCor", "totalStatic", "lagTimeA", "lagTimeB", "delay",
+                "muteStart", "muteEnd", "sampleLength", "deltaSample",
+                "gainType", "gainConst", "initialGain", "correlated",
+                "sweepStart", "sweepEnd", "sweepLength", "sweepType",
+                "sweepTaperAtStart", "sweepTaperAtEnd", "taperType",
+                "aliasFreq", "aliasSlope", "notchFreq", "notchSlope",
+                "lowCutFreq", "hiCutFreq", "lowCutSlope", "hiCutSlope", "year",
+                "day", "hour", "minute", "second", "timeBasisCode",
+                "traceWeightingFactor", "phoneRollPos1", "phoneFirstTrace",
+                "phoneLastTrace", "gapSize", "taperOvertravel")
 
     def __init__(self, endian='big'):
         self.endian = endian
@@ -550,7 +566,8 @@ class Trace (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self):
@@ -629,8 +646,11 @@ def passcal_header_le():
 
 
 class Passcal (object):
-    __keys__ = ("station_name", "sensor_serial", "channel_name", "totalStaticHi", "samp_rate", "data_form", "m_secs", "trigyear",
-                "trigday", "trighour", "trigminute", "trigsecond", "trigmills", "scale_fac", "inst_no", "unassigned", "num_samps", "max", "min")
+    __keys__ = ("station_name", "sensor_serial", "channel_name",
+                "totalStaticHi", "samp_rate", "data_form", "m_secs",
+                "trigyear", "trigday", "trighour", "trigminute", "trigsecond",
+                "trigmills", "scale_fac", "inst_no", "unassigned", "num_samps",
+                "max", "min")
 
     def __init__(self, endian='big'):
         self.endian = endian
@@ -648,7 +668,8 @@ class Passcal (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self):
@@ -793,10 +814,14 @@ def menlo_header_le():
 
 
 class Menlo (object):
-    __keys__ = ("start_usec", "shot_size", "shot_year", "shot_doy", "shot_hour", "shot_minute",
-                "shot_second", "shot_us", "si_override", "sensor_azimuth", "sensor_inclination",
-                "lmo_ms", "lmo_flag", "inst_type", "correction", "azimuth", "sensor_type", "sensor_sn",
-                "das_sn", "empty1", "samples", "empty2", "clock_drift", "empty3")
+    __keys__ = ("start_usec", "shot_size", "shot_year", "shot_doy",
+                "shot_hour", "shot_minute",
+                "shot_second", "shot_us", "si_override", "sensor_azimuth",
+                "sensor_inclination",
+                "lmo_ms", "lmo_flag", "inst_type", "correction", "azimuth",
+                "sensor_type", "sensor_sn",
+                "das_sn", "empty1", "samples", "empty2", "clock_drift",
+                "empty3")
 
     def __init__(self, endian='big'):
         self.endian = endian
@@ -810,7 +835,8 @@ class Menlo (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self):
@@ -917,8 +943,10 @@ def seg_header_le():
 
 
 class Seg (object):
-    __keys__ = ("Xcoor", "Ycoor", "Inn", "Cnn", "Spn", "Scal", "Tvmu", "Tucmant", "Tucexp", "Tdu",
-                "Dti", "Tscaler", "Sto", "Sed", "Smsmant", "Smsexp", "Smu", "start_usec", "shot_us")
+    __keys__ = ("Xcoor", "Ycoor", "Inn", "Cnn", "Spn", "Scal", "Tvmu",
+                "Tucmant", "Tucexp", "Tdu",
+                "Dti", "Tscaler", "Sto", "Sed", "Smsmant", "Smsexp", "Smu",
+                "start_usec", "shot_us")
 
     def __init__(self, endian='big'):
         self.endian = endian
@@ -934,7 +962,8 @@ class Seg (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self):
@@ -1014,7 +1043,9 @@ def inova_header():
                              # Absolute vertical orientation angle, in 0.0001
                              # radians.
                              construct.UBInt16("VertAngle"),
-                             #   A vertically planted sensor will have a value of 31416 (Pi * 10,000),
+                             #   A vertically planted sensor will
+                             # have a value of
+                             # 1416 (Pi * 10,000),
                              # while a horizontally planted sensor will have a
                              # value of 15708 (Pi/2 * 10,000)
                              construct.UBInt8("SourceType"),  # Source type:
@@ -1027,12 +1058,15 @@ def inova_header():
                              #      6 -- Other
                              #      7 -- MixedSources
                              #      8 -- NoSource or Unknown
-                             #      9 -- TestOsc (For GDC this is an external test oscillator)
+                             #      9 -- TestOsc (For GDC this is an
+                             # external test
+                             # oscillator)
                              #      10 -- Impulsive
                              construct.UBInt8("SensorType"),  # Sensor type:
                              #      0 -- Unknown
                              #      1 -- Hydrophone
-                             #      2 -- Geo-Vertical Geophone, Marshphone, or Z
+                             #      2 -- Geo-Vertical Geophone, Marshphone,
+                             # or Z
                              #      3 -- Geo-Horiz Inline Geophone -- X
                              #      4 -- Geo-Horiz Cross-Line Geophone -- Y
                              #      5 -- Geo-Horiz Other
@@ -1064,7 +1098,8 @@ def inova_header():
                              # Noise Edit Gate Size:
                              construct.UBInt16("NoiseEditGate"),
                              #      0 -- Raw Data, Vertical Stack
-                             #      n -- Number of Samples in Gate, Diversity Stack
+                             #      n -- Number of Samples in Gate,
+                             # Diversity Stack
                              # System Device type:
                              construct.UBInt8("SystemDevice"),
                              #      7 -- MRX
@@ -1088,12 +1123,14 @@ def inova_header():
                              construct.UBInt8("DevStatusBits"),
                              #      Bit 0 -- A/D Modulator Over-range
                              #      Bit 1 -- A/D Decimator Numerical Overflow
-                             #      Bit 2 -- Analog Preamp Overscale or VSMT Data Invalid
+                             #      Bit 2 -- Analog Preamp Overscale or
+                             # VSMT Data Invalid
                              #      Bit 3 -- SVSM VLFF error
                              #      Bit 4 -- Invalid Receiver Line/Station
                              #      Bit 5 -- Trace was Zero filled (T2 only)
                              #      Bit 6 -- Battery improperly removed
-                             #      Bit 7 -- SVSM Dynamic Offset Filter mode, 0 = static
+                             #      Bit 7 -- SVSM Dynamic Offset Filter mode,
+                             # 0 = static
                              # BIT test type and codes (0 - 28) See FireFly SEG
                              # Y Ver 3.0 Tech Bulletin
                              construct.UBInt8("BITTest"),
@@ -1133,12 +1170,16 @@ def inova_header():
                              #      0x02 -- Marshphone
                              #      0x03 -- Hydrophone
                              #      0x04 -- Aux
-                             #      0x05 -- Geophone-3c Horizontal, X -- In-line
-                             #      0x06 -- Geophone-3c Horizontal, Y -- Cross-line
+                             #      0x05 -- Geophone-3c Horizontal,
+                             # X -- In-line
+                             #      0x06 -- Geophone-3c Horizontal,
+                             # Y -- Cross-line
                              #      0x07 -- Geophone-3c Vertical, Z
                              #      0x08 -- Reserved
-                             #      0x0C -- Accelerometer-3c Horizontal, X -- In-line
-                             #      0x0C -- Accelerometer-3c Horizontal, Y -- Cross-line
+                             #      0x0C -- Accelerometer-3c Horizontal,
+                             # X -- In-line
+                             #      0x0C -- Accelerometer-3c Horizontal,
+                             # Y -- Cross-line
                              #      0x0C -- Accelerometer-3c Vertical, Z
                              # Sensor serial number
                              construct.BitField("SensorSerial", 3),
@@ -1210,7 +1251,9 @@ def inova_header_le():
                              # Absolute vertical orientation angle, in 0.0001
                              # radians.
                              construct.ULInt16("VertAngle"),
-                             #   A vertically planted sensor will have a value of 31416 (Pi * 10,000),
+                             #   A vertically planted sensor will
+                             # have a value of
+                             # 31416 (Pi * 10,000),
                              # while a horizontally planted sensor will have a
                              # value of 15708 (Pi/2 * 10,000)
                              construct.ULInt8("SourceType"),  # Source type:
@@ -1223,12 +1266,14 @@ def inova_header_le():
                              #      6 -- Other
                              #      7 -- MixedSources
                              #      8 -- NoSource or Unknown
-                             #      9 -- TestOsc (For GDC this is an external test oscillator)
+                             #      9 -- TestOsc (For GDC this is an external
+                             # test oscillator)
                              #      10 -- Impulsive
                              construct.ULInt8("SensorType"),  # Sensor type:
                              #      0 -- Unknown
                              #      1 -- Hydrophone
-                             #      2 -- Geo-Vertical Geophone, Marshphone, or Z
+                             #      2 -- Geo-Vertical Geophone, Marshphone,
+                             # or Z
                              #      3 -- Geo-Horiz Inline Geophone -- X
                              #      4 -- Geo-Horiz Cross-Line Geophone -- Y
                              #      5 -- Geo-Horiz Other
@@ -1260,7 +1305,8 @@ def inova_header_le():
                              # Noise Edit Gate Size:
                              construct.ULInt16("NoiseEditGate"),
                              #      0 -- Raw Data, Vertical Stack
-                             #      n -- Number of Samples in Gate, Diversity Stack
+                             #      n -- Number of Samples in Gate,
+                             # Diversity Stack
                              # System Device type:
                              construct.ULInt8("SystemDevice"),
                              #      7 -- MRX
@@ -1284,12 +1330,14 @@ def inova_header_le():
                              construct.ULInt8("DevStatusBits"),
                              #      Bit 0 -- A/D Modulator Over-range
                              #      Bit 1 -- A/D Decimator Numerical Overflow
-                             #      Bit 2 -- Analog Preamp Overscale or VSMT Data Invalid
+                             #      Bit 2 -- Analog Preamp Overscale or
+                             # VSMT Data Invalid
                              #      Bit 3 -- SVSM VLFF error
                              #      Bit 4 -- Invalid Receiver Line/Station
                              #      Bit 5 -- Trace was Zero filled (T2 only)
                              #      Bit 6 -- Battery improperly removed
-                             #      Bit 7 -- SVSM Dynamic Offset Filter mode, 0 = static
+                             #      Bit 7 -- SVSM Dynamic Offset Filter mode,
+                             # 0 = static
                              # BIT test type and codes (0 - 28) See FireFly SEG
                              # Y Ver 3.0 Tech Bulletin
                              construct.ULInt8("BITTest"),
@@ -1329,12 +1377,16 @@ def inova_header_le():
                              #      0x02 -- Marshphone
                              #      0x03 -- Hydrophone
                              #      0x04 -- Aux
-                             #      0x05 -- Geophone-3c Horizontal, X -- In-line
-                             #      0x06 -- Geophone-3c Horizontal, Y -- Cross-line
+                             #      0x05 -- Geophone-3c Horizontal,
+                             # X -- In-line
+                             #      0x06 -- Geophone-3c Horizontal,
+                             # Y -- Cross-line
                              #      0x07 -- Geophone-3c Vertical, Z
                              #      0x08 -- Reserved
-                             #      0x0C -- Accelerometer-3c Horizontal, X -- In-line
-                             #      0x0C -- Accelerometer-3c Horizontal, Y -- Cross-line
+                             #      0x0C -- Accelerometer-3c Horizontal,
+                             # X -- In-line
+                             #      0x0C -- Accelerometer-3c Horizontal,
+                             # Y -- Cross-line
                              #      0x0C -- Accelerometer-3c Vertical, Z
                              # Sensor serial number
                              construct.BitField("SensorSerial", 3),
@@ -1348,11 +1400,17 @@ def inova_header_le():
 
 
 class iNova (object):
-    __keys__ = ("Revision", "ShotID", "AuxChanSig", "AuxChanID", "SPL", "SPS", "unass01", "unass02", "SenInt",
-                "VectSens", "HorAz", "VertAngle", "SourceType", "SensorType", "AuxChanSetType", "NoiseEditType",
-                "NoiseEditGate", "SystemDevice", "FSU", "DevChan", "SourceCoCo", "DevStatusBits", "BITTest",
-                "SweepPhaseRot", "unass03", "BoxFun", "SourceEffortM", "SourceEffortE", "SourceUnits", "EventType",
-                "SensorTypeID", "SensorSerial", "SensorVersion", "SensorRev", "VOR")
+    __keys__ = ("Revision", "ShotID", "AuxChanSig", "AuxChanID", "SPL", "SPS",
+                "unass01", "unass02", "SenInt",
+                "VectSens", "HorAz", "VertAngle", "SourceType", "SensorType",
+                "AuxChanSetType", "NoiseEditType",
+                "NoiseEditGate", "SystemDevice", "FSU", "DevChan",
+                "SourceCoCo",
+                "DevStatusBits", "BITTest",
+                "SweepPhaseRot", "unass03", "BoxFun", "SourceEffortM",
+                "SourceEffortE", "SourceUnits", "EventType",
+                "SensorTypeID", "SensorSerial", "SensorVersion",
+                "SensorRev", "VOR")
 
     def __init__(self, endian='big'):
         self.endian = endian
@@ -1366,7 +1424,8 @@ class iNova (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s in trace header.\n" %
+                    "Warning: Attempt to set unknown variable\
+                    %s in trace header.\n" %
                     k)
 
     def get(self):
@@ -1424,7 +1483,7 @@ def build_int(x):
 
 
 #
-##   MAIN   ##
+#   MAIN
 #
 if __name__ == '__main__':
     import math
@@ -1465,7 +1524,7 @@ if __name__ == '__main__':
     to = t.get()
     p = Passcal()
     po = p.get()
-    #print len (to)
+    # print len (to)
     fh.write(to)
     fh.write(po)
     #   Now write some ibm floats
@@ -1478,9 +1537,9 @@ if __name__ == '__main__':
         fh.write(ival)
 
     fh.close()
-    ###   Write to here   ###
+    #   Write to here
     #
-    ###   Now read the file back  ###
+    # Now read the file back
     t = None
     t = Text()
     fh = open("test.sgy")

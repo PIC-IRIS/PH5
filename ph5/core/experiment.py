@@ -102,7 +102,7 @@ class MapsGroup:
                                                 columns.Index)
             columns.add_reference(
                 '/Experiment_g/Maps_g/Index_t', self.ph5_t_index)
-        except tables.FileModeError as e:
+        except tables.FileModeError:
             pass
 
     def nuke_index_t(self):
@@ -157,7 +157,8 @@ class MapsGroup:
     def nextarray(self, prefix):
         ns = 0
         name = self.current_g_das._v_name
-        if name in columns.LAST_ARRAY_NODE_MAPS and prefix in columns.LAST_ARRAY_NODE_MAPS[
+        if name in columns.LAST_ARRAY_NODE_MAPS and\
+           prefix in columns.LAST_ARRAY_NODE_MAPS[
                 name]:
             mo = self.arrayRE.match(columns.LAST_ARRAY_NODE_MAPS[name][prefix])
             cprefix, an = mo.groups()
@@ -221,15 +222,18 @@ class MapsGroup:
 #
 # Mixins refactor here Dec 11
 #
-#import sqlite3 as sql
+# import sqlite3 as sql
 
 
 class SortsGroup:
     '''   /Experiment_g/Sorts_g
-                               /Sort_t                           #   columns.Sort, groups data by time and location
-                               /Array_t_[array]                  #   columns.Array, groups data by location
-                               /Offset_t(_[array]_[shotline])?   #   columns.Offset, source to receiver offsets
-                               /Event_t(_[shotline])?            #   columns.Event, list of events
+                               /Sort_t #groups data by time and location
+                               /Array_t_[array]
+                               #   columns.Array, groups data by location
+                               /Offset_t(_[array]_[shotline])
+                               #   columns.Offset, source to receiver offsets
+                               /Event_t(_[shotline])
+                               #   columns.Event, list of events
     '''
 
     def __init__(self, ph5):
@@ -245,7 +249,8 @@ class SortsGroup:
 
     def update_local_table_nodes(self):
         '''
-        Cache node references to Array_t_xxx, Event_t_xxx, Offset_t_aaa_sss, tables in this group
+        Cache node references to Array_t_xxx, Event_t_xxx,
+        Offset_t_aaa_sss, tables in this group
         '''
         names = columns.TABLES.keys()
         for n in names:
@@ -272,7 +277,9 @@ class SortsGroup:
                 node = self.ph5_t_offset[offset_name]
             except KeyError:
                 node = self.ph5.get_node(
-                    '/Experiment_g/Sorts_g', name=offset_name, classname='Table')
+                    '/Experiment_g/Sorts_g',
+                    name=offset_name,
+                    classname='Table')
                 self.ph5_t_offset[offset_name] = node
 
             ret, keys = read_table(node)
@@ -288,7 +295,9 @@ class SortsGroup:
                 node = self.ph5_t_event[event_name]
             except KeyError:
                 node = self.ph5.get_node(
-                    '/Experiment_g/Sorts_g', name=event_name, classname='Table')
+                    '/Experiment_g/Sorts_g',
+                    name=event_name,
+                    classname='Table')
                 self.ph5_t_event[event_name] = node
 
             ret, keys = read_table(node)
@@ -305,80 +314,42 @@ class SortsGroup:
             node = self.ph5_t_array[array_name]
         except KeyError:
             node = self.ph5.get_node(
-                '/Experiment_g/Sorts_g', name=array_name, classname='Table')
+                '/Experiment_g/Sorts_g',
+                name=array_name,
+                classname='Table')
             self.ph5_t_array[array_name] = node
 
         ret, keys = read_table(node)
 
         return ret, keys
 
-    ####   DBDBDB   ###
-    # def db_create_offset (self, dbname) :
-        ##import sqlite3 as sql
-        #conn = sql.connect (dbname)
-        #curs = conn.cursor ()
-        # try :
-        #curs.execute ("create table offsets (receiver_id_s integer, event_id_s integer, azimuth_value_f real, azimuth_units_s text, offset_value_d real, offset_units_s text)")
-        #conn.commit ()
-        # except sql.OperationalError :
-        # pass
-
-    ####   DBDBDB   ###
-    # def db_populate_offsets (self, dbname) :
-        ##import sqlite3 as sql
-        #conn = sql.connect (dbname)
-        #curs = conn.cursor ()
-        ##keys, names = columns.keys (self.ph5_t_offset)
-        # for row in self.ph5_t_offset.iterrows () :
-        # curs.execute ("insert into offsets values (?,?,?,?,?,?)", (int (row['receiver_id_s']),
-        #int (row['event_id_s']),
-        # row['azimuth/value_f'],
-        # row['azimuth/units_s'],
-        # row['offset/value_d'],
-        # row['offset/units_s']))
-        #conn.commit ()
-    ####   DBDBDB   ###
-    # def db_get_connection (self, dbname) :
-        #conn = sql.connect  (dbname)
-        # return conn
-    ####   DBDBDB   ###
-    # def db_read_offset (self, conn, shot, station) :
-        ##import sqlite3 as sql
-        #curs = conn.cursor ()
-        #command = "select azimuth_value_f,azimuth_units_s,offset_value_d,offset_units_s from offsets where receiver_id_s={0} and event_id_s={1}".format (station, shot)
-        #curs.execute (command)
-        #flds = curs.fetchone ()
-        #curs.close ()
-
-        #row = None
-        # if flds != None :
-        #row = { 'azimuth_value_f':flds[0], 'azimuth_units_s':flds[1], 'offset_value_d':flds[2], 'offset_units_s':flds[3] }
-
-        # return row
-
-    ###   ###
     def index_offset_table(self, name='Offset_t', level=9, weight='full'):
         '''   Index offset table on event and station id_s
               Inputs:
                  name -> offset table name, Offset_t_002_003
                  level -> level of optimization, 0-9
-                 weight -> kind of index, 'ultralight', 'light', 'medium', 'full'.
+                 weight -> kind of index,
+                 'ultralight', 'light', 'medium', 'full'.
         '''
         #
         try:
             #
             self.ph5_t_offset[name].cols.event_id_s.create_index(
                 optlevel=level, kind=weight)
-        except (ValueError, tables.exceptions.NodeError, tables.exceptions.FileModeError) as e:
-            #print e.message
+        except (ValueError,
+                tables.exceptions.NodeError,
+                tables.exceptions.FileModeError):
+            # print e.message
             pass
 
         try:
             #
             self.ph5_t_offset[name].cols.receiver_id_s.create_index(
                 optlevel=level, kind=weight)
-        except (ValueError, tables.exceptions.NodeError, tables.exceptions.FileModeError) as e:
-            #print e.message
+        except (ValueError,
+                tables.exceptions.NodeError,
+                tables.exceptions.FileModeError):
+            # print e.message
             pass
 
     def read_offset_fast(self, shot, station, name=None):
@@ -390,11 +361,17 @@ class SortsGroup:
         ret = {}
         query = "(event_id_s == b'{0}') & (receiver_id_s == b'{1}')".format(
             shot, station)
-        result = [[row['offset/value_d'], row['offset/units_s'], row['azimuth/value_f'],
-                   row['azimuth/units_s']] for row in self.ph5_t_offset[name].where(query)]
+        result = [[row['offset/value_d'],
+                   row['offset/units_s'],
+                   row['azimuth/value_f'],
+                   row['azimuth/units_s']]
+                  for row in self.ph5_t_offset[name].where(query)]
 
         if result:
-            ret['offset/value_d'], ret['offset/units_s'], ret['azimuth/value_f'], ret['azimuth/units_s'] = result[0]
+            ret['offset/value_d'],
+            ret['offset/units_s'],
+            ret['azimuth/value_f'],
+            ret['azimuth/units_s'] = result[0]
             ret['event_id_s'] = str(shot)
             ret['receiver_id_s'] = str(station)
 
@@ -403,7 +380,7 @@ class SortsGroup:
     def read_offsets(self, shotrange=None, stations=None, name='Offset_t'):
         offsets = []
 
-        #shots = map (int, shots); shots = map (str, shots)
+        # shots = map (int, shots); shots = map (str, shots)
         if stations is not None:
             stations = map(int, stations)
             stations = map(str, stations)
@@ -418,7 +395,8 @@ class SortsGroup:
                 try:
                     shot = int(row['event_id_s'])
                 except BaseException:
-                    sys.stderr.write("Warning: Non-numeric event in Offset_t. Event: {0} Station: {1}.\n".format(
+                    sys.stderr.write("Warning: Non-numeric event in Offset_t.\
+                    Event: {0} Station: {1}.\n".format(
                         row['event_id_s'], row['receiver_id_s']))
                     continue
 
@@ -426,7 +404,7 @@ class SortsGroup:
                     continue
 
                 if not (shot >= shotrange[0] and shot <= shotrange[1]):
-                    #print "Reject Shot", shot, shotrange
+                    # print "Reject Shot", shot, shotrange
                     continue
                 # else : print "Accept Shot", shot, shotrange
 
@@ -434,24 +412,25 @@ class SortsGroup:
                 try:
                     station = str(int(row['receiver_id_s']))
                 except BaseException:
-                    sys.stderr.write("Warning: Non-numeric station in Offset_t. Event_t : {0} Station: {1}.\n".format(
+                    sys.stderr.write("Warning: Non-numeric station in Offset_t\
+                    Event_t : {0} Station: {1}.\n".format(
                         row['event_id_s'], row['receiver_id_s']))
                     continue
 
-                if not station in stations:
-                    #print "Reject Station", station, stations
+                if station not in stations:
+                    # print "Reject Station", station, stations
                     continue
 
-            #print "Match", shot, shotrange
+            # print "Match", shot, shotrange
             r = {}
             for k in keys:
                 r[k] = row[k]
 
             offsets.append(r)
 
-        #ret = columns.rowstolist (offsets, keys)
-        #for o in offsets : print o
-        #sys.exit ()
+        # ret = columns.rowstolist (offsets, keys)
+        # for o in offsets : print o
+        # sys.exit ()
         return offsets, keys
 
     def newOffsetSort(self, name):
@@ -461,7 +440,7 @@ class SortsGroup:
                              columns.Offset)
 
         self.ph5_t_offset[name] = o
-        #self.index_offset_table (name=name)
+        # self.index_offset_table (name=name)
 
         columns.add_reference('/Experiment_g/Sorts_g/' +
                               name, self.ph5_t_offset[name])
@@ -485,7 +464,7 @@ class SortsGroup:
         '''   Names should be 000 - 999
               Array_t_xxx
         '''
-        #name = 'Array_t_' + name
+        # name = 'Array_t_' + name
         #   Create Array table
         a = initialize_table(self.ph5,
                              '/Experiment_g/Sorts_g',
@@ -598,7 +577,7 @@ class SortsGroup:
             nombre = offsets[k]._v_name
             columns.add_reference(
                 '/Experiment_g/Sorts_g/' + nombre, offsets[k])
-            #self.index_offset_table (name=nombre)
+            # self.index_offset_table (name=nombre)
 
         #   Reference Event table   ***   See Event_tRE   ***
         events = get_nodes_by_name(self.ph5,
@@ -631,7 +610,7 @@ class SortsGroup:
                                   name=nombre,
                                   classname='Table')
             n.remove()
-            #self.newSort (nombre)
+            # self.newSort (nombre)
             return True
         else:
             return False
@@ -641,7 +620,7 @@ class SortsGroup:
             self.ph5_t_event[name].remove()
             self.initgroup()
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def nuke_sort_t(self):
@@ -649,19 +628,19 @@ class SortsGroup:
             self.ph5_t_sort.remove()
             self.initgroup()
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def nuke_offset_t(self, name='Offset_t'):
         #   Remove the indexes before removing the table
         try:
             self.ph5_t_offset[name].cols.event_id_s.remove_index()
-        except Exception as e:
+        except Exception:
             pass
 
         try:
             self.ph5_t_offset[name].cols.receiver_id_s.remove_index()
-        except Exception as e:
+        except Exception:
             pass
         #   Remove cruft left from failed indexing
         cruftRE = re.compile(".*value_d")
@@ -670,14 +649,14 @@ class SortsGroup:
         for k in nodes.keys():
             try:
                 nodes[k].remove()
-            except Exception as e:
+            except Exception:
                 pass
         #   Remove the offset table
         try:
             self.ph5_t_offset[name].remove()
             self.initgroup()
             return True
-        except Exception as e:
+        except Exception:
             return False
 
 
@@ -685,23 +664,21 @@ class Data_Trace (object):
     __slots__ = ("das", "epoch", "length", "channel",
                  "data_trace", "receiver", "keys")
 
-    def __init__(self):
-        das = None  # ASCII DAS serial number
-        epoch = None  # Floating point epoch
-        length = None  # Length of data in seconds
-        channel = None  # Channel number
-        data_trace = None  # Data trace reference
-        receiver = None  # Receiver_t row for this das
-        keys = None  # Receiver_t row keys
-
 
 class ReceiversGroup:
-    '''   /Experiment_g/Receivers_g/Das_g_[sn]                       #   Data for this DAS in this group
-                                              /Das_t                 #   columns.Data
-                                              /Data_a_[n]            #   A 1 x n array containing the data for an event
-                                              /SOH_a_[n]             #   State of health data, usually a list of strings
-                                              /Event_a_[n]           #   Event table, usually a list of strings
-                                              /Log_a_[n]             #   Log channel
+    '''   /Experiment_g/Receivers_g/Das_g_[sn]#Data for this DAS in this group
+                                              /Das_t #   columns.Data
+                                              /Data_a_[n]
+                                              #A 1 x n array containing
+                                              the data for an event
+                                              /SOH_a_[n]
+                                              #   State of health data,
+                                              usually a list of strings
+                                              /Event_a_[n]
+                                              #   Event table, usually a
+                                              list of strings
+                                              /Log_a_[n]
+                                              #   Log channel
           /Experiment_g/Receivers_g
                                     /Receiver_t            #   columns.Receiver
                                     /Time_t                #   columns.Time
@@ -724,7 +701,7 @@ class ReceiversGroup:
         self.arrayRE = re.compile("([DSEL]\w+_a_)(\d+)")
         self.dasRE = re.compile("Das_g_(.+)")  # Match Das_g groups
         self.byteorder = None  # Trace atom byte order
-        self.elementtype = None  # Trace atom type "int", "float", or "undetermined"
+        self.elementtype = None  # atom type"int","float",or"undetermined"
 
     def get_das_name(self):
         '''   Return the current das name   '''
@@ -743,7 +720,7 @@ class ReceiversGroup:
         ret = []
         keys = None
         ret_read, keys = read_table(self.current_t_das)
-        #print ret_read
+        # print ret_read
         if ret_read is not None:
             ret_read.sort(cmp=cmp_epoch)
         else:
@@ -783,12 +760,12 @@ class ReceiversGroup:
         if not self.ph5.__contains__('/Experiment_g/Receivers_g/Index_t'):
             return ret, keys
 
-        #rows = []
-        #keys, name = columns.keys (self.ph5_t_index)
+        # rows = []
+        # keys, name = columns.keys (self.ph5_t_index)
         # for row in self.ph5_t_index.iterrows () :
-            #rows.append (row)
+            # rows.append (row)
 
-        #ret = columns.rowstolist (rows, keys)
+        # ret = columns.rowstolist (rows, keys)
         ret, keys = read_table(self.ph5_t_index)
 
         return ret, keys
@@ -807,10 +784,10 @@ class ReceiversGroup:
         ret = {}
         try:
             self.current_g_das._v_name
-        except AttributeError as e:
+        except AttributeError:
             return ret
 
-        #print "Das ", das_g
+        # print "Das ", das_g
         arrays = get_nodes_by_name(self.ph5,
                                    self.current_g_das,
                                    re.compile('SOH_a_' + "(\d+)"),
@@ -819,7 +796,7 @@ class ReceiversGroup:
         for k in keys:
             name = arrays[k]._v_name
             ret[name] = arrays[k].read()
-            #print name, ret[name]
+            # print name, ret[name]
 
         return ret
 
@@ -846,12 +823,12 @@ class ReceiversGroup:
         return ret
 
     def trace_info(self, trace_ref):
-        #print trace_ref.atom
+        # print trace_ref.atom
         try:
             s = repr(trace_ref.atom)
-            #print s
+            # print s
             s = s.split("(")[0]
-            #print s
+            # print s
             if s == "Int32Atom":
                 t = "int"
             elif s == "Float32Atom":
@@ -880,9 +857,10 @@ class ReceiversGroup:
             node = self.ph5.get_node(
                 self.current_g_das, name=name, classname='Array')
         except Exception as e:
-            sys.stderr.write("Warning: DAS group: {0} Name: {1} Error: {2}\n".format(self.current_g_das,
-                                                                                     name,
-                                                                                     e.message))
+            sys.stderr.write("Warning: DAS group: {0} Name: {1} Error: {2}\n"
+                             .format(self.current_g_das,
+                                     name,
+                                     e.message))
             node = None
 
         return node
@@ -903,7 +881,6 @@ class ReceiversGroup:
             #   Get Das_t
             t = g.Das_t
 
-            #tr = self.ph5.get_node ('/Experiment_g/Receivers_g/' + g._v_name, name = 'Receiver_t', classname = 'Table')
             #   Get Receiver_t
             tr = g.Receiver_t
             tkeys, names = columns.keys(tr)
@@ -911,7 +888,6 @@ class ReceiversGroup:
             for receiver in tr:
                 receiver_t.append(receiver)
 
-            #t = self.ph5.get_node ('/Experiment_g/Receivers_g/' + g._v_name, name = 'Das_t', classname = 'Table')
             for r in t.iterrows():
                 i = r['receiver_table_n_i']
                 e = float(r['time/epoch_l']) + \
@@ -922,22 +898,22 @@ class ReceiversGroup:
                     '/Experiment_g/Receivers_g/' + g._v_name + '/' + a)
                 n = an.nrows
                 #   Length of trace in seconds
-                l = float(n) / float(sps)
+                ll = float(n) / float(sps)
                 #   Epoch of last sample
-                s = e + l
+                s = e + ll
                 #   Does epoch fall in trace? epoch == None flag to get all
                 if (epoch >= e and epoch <= s) or epoch is None:
                     #   Get an instance of our Data_Trace (structure?)
                     dt = Data_Trace()
                     dt.das = g._v_name[6:]
                     dt.epoch = e
-                    dt.length = l
+                    dt.length = ll
                     dt.channel = r['channel_number_i']
                     dt.data_trace = an
                     #   Just return receiver table row for this das
                     dt.receiver = receiver_t[i]
                     dt.keys = tkeys
-                    #print dt.receiver['sensor/serial_number_s']
+                    # print dt.receiver['sensor/serial_number_s']
                     traces.append(dt)
 
             x = x + 1
@@ -954,9 +930,9 @@ class ReceiversGroup:
         '''
         '''
         #   If this is an external link it needs to be redirected.
-        #print g, g.__str__(), g.__repr__()
+        # print g, g.__str__(), g.__repr__()
         if externalLinkRE.match(g.__str__()):
-            #print g
+            # print g
             try:
                 if self.ph5.mode == 'r':
                     g = g()
@@ -970,8 +946,8 @@ class ReceiversGroup:
         self.current_g_das = g
         self.current_t_das = g.Das_t
 
-        #self.current_t_receiver = g.Receiver_t
-        #self.current_t_time = g.Time_t
+        # self.current_t_receiver = g.Receiver_t
+        # self.current_t_time = g.Time_t
 
     def getdas_g(self, sn):
         '''   Return group for a given serial number   '''
@@ -1026,7 +1002,8 @@ class ReceiversGroup:
     def nextarray(self, prefix):
         ns = 0
         name = self.current_g_das._v_name
-        if name in columns.LAST_ARRAY_NODE_DAS and prefix in columns.LAST_ARRAY_NODE_DAS[
+        if name in columns.LAST_ARRAY_NODE_DAS and\
+           prefix in columns.LAST_ARRAY_NODE_DAS[
                 name]:
             mo = self.arrayRE.match(columns.LAST_ARRAY_NODE_DAS[name][prefix])
             cprefix, an = mo.groups()
@@ -1051,8 +1028,8 @@ class ReceiversGroup:
         return nombre
 
     def newearray(self, name, description=None, expectedrows=None):
-        #prefix, body, suffix = string.split (name, '_')
-        #pbody = "_".join ([prefix, body]) + '_'
+        # prefix, body, suffix = string.split (name, '_')
+        # pbody = "_".join ([prefix, body]) + '_'
 
         batom = tables.StringAtom(itemsize=80)
         a = create_empty_earray(self.ph5,
@@ -1067,10 +1044,6 @@ class ReceiversGroup:
         return a
 
     def newdataearray(self, name, data, batom=None, rows=None):
-        #   Use zlib, standard for HDF5
-        bfilter = tables.Filters(
-            complevel=ZLIBCOMP, complib='zlib', shuffle=True)
-        #
         a = create_data_earray(self.ph5,
                                self.current_g_das,
                                name,
@@ -1108,7 +1081,7 @@ class ReceiversGroup:
                 self.ph5.remove_node(self.current_g_das, name=name)
                 sys.stderr.write(
                     "Warning: Node %s exists. Overwritten. " % name)
-            except Exception as e:
+            except Exception:
                 pass
 
             if dtype == 'int32':
@@ -1158,16 +1131,20 @@ class ReceiversGroup:
         '''   Set up indexing on DAS SN and external mini filename   '''
         try:
             self.ph5_t_index.cols.serial_number_s.create_csindex()
-            #self.ph5_t_index.cols.external_file_name_s.create_csindex ()
-        except (ValueError, tables.exceptions.NodeError, tables.exceptions.FileModeError) as e:
-            #print e.message
+            # self.ph5_t_index.cols.external_file_name_s.create_csindex ()
+        except (ValueError,
+                tables.exceptions.NodeError,
+                tables.exceptions.FileModeError):
+            # print e.message
             pass
-        #print self.ph5_t_index.autoindex
+        # print self.ph5_t_index.autoindex
         try:
-            #self.ph5_t_index.cols.serial_number_s.create_csindex ()
+            # self.ph5_t_index.cols.serial_number_s.create_csindex ()
             self.ph5_t_index.cols.external_file_name_s.create_csindex()
-        except (ValueError, tables.exceptions.NodeError, tables.exceptions.FileModeError) as e:
-            #print e.message
+        except (ValueError,
+                tables.exceptions.NodeError,
+                tables.exceptions.FileModeError):
+            # print e.message
             pass
 
     def initgroup(self):
@@ -1192,7 +1169,7 @@ class ReceiversGroup:
                                             'Index_t',
                                             columns.Index)
         self.ph5_t_index.expectedrows = 1000000
-        #self.indexIndex_t ()
+        # self.indexIndex_t ()
 
         columns.add_reference(
             '/Experiment_g/Receivers_g/Receiver_t', self.ph5_t_receiver)
@@ -1219,14 +1196,14 @@ class ReceiversGroup:
             return False
         self.setcurrent(g)
         self.current_t_das.truncate(0)
-        #self.newdas (das)
+        # self.newdas (das)
         return True
 
 
 class ReportsGroup:
-    '''   /Experiment_g/Reports_g                      #   Group to hold experiment reports
-                                 /Report_t             #   Report table, columns.Report
-                                 /Report_a_[title]     #   The report in pdf format
+    '''   /Experiment_g/Reports_g #   Group to hold experiment reports
+                                 /Report_t #   Report table, columns.Report
+                                 /Report_a_[title]#   The report in pdf format
     '''
 
     def __init__(self, ph5):
@@ -1260,10 +1237,9 @@ class ReportsGroup:
         try:
             node = self.ph5.get_node(
                 self.ph5_g_reports, name=name, classname='Array')
-            #print node.flavor, node.nrows, node.nrow, node.type, node.stype, node.itemsize
             buf = node.read()
-            #print len (buf), node.itemsize
-        except Exception as e:
+            # print len (buf), node.itemsize
+        except Exception:
             sys.stderr.write("Error: Failed to read report %s\n" % name)
 
         return buf
@@ -1273,10 +1249,10 @@ class ReportsGroup:
         try:
             self.ph5.remove_node(self.current_g_reports, name=name)
             sys.stderr.write("Warning: Node %s exists. Overwritten. " % name)
-        except Exception as e:
+        except Exception:
             pass
 
-        #print "Len: ", len (data)
+        # print "Len: ", len (data)
         a = self.ph5.create_array(self.ph5_g_reports, name, data)
         if description is not None:
             a.attrs.description = description
@@ -1328,7 +1304,7 @@ class ResponsesGroup:
             out = ""
             for i in node:
                 out = out + i
-        except Exception as e:
+        except Exception:
             sys.stderr.write("Error: Failed to read response %s\n" % name)
 
         return out
@@ -1418,19 +1394,20 @@ class ExperimentGroup:
         self.ph5.flush()
 
     def ph5open(self, editmode=False,
-                ph5title='PIC KITCHEN HDF5 file, Version = ' + columns.PH5VERSION):
+                ph5title='PIC KITCHEN HDF5 file, Version = '
+                + columns.PH5VERSION):
         '''   Open ph5 file, create it if it doesn't exist   '''
         if self.ph5exists():
             #   XXX Needs try:except XXX
-            if editmode == True:
+            if editmode is True:
                 self.ph5 = tables.open_file(self.filename, mode='a')
             else:
                 self.ph5 = tables.open_file(self.filename, mode='r')
-        elif editmode == True:
+        elif editmode is True:
             self.ph5 = tables.open_file(
                 self.filename, mode='w', title=ph5title)
         else:
-            #print "XXX   Edit mode???   XXX"
+            # print "XXX   Edit mode???   XXX"
             self.ph5 = None
 
     def ph5close(self):
@@ -1441,10 +1418,13 @@ class ExperimentGroup:
             reload(columns)
 
     def populateExperiment_t(self, p):
-        ''' Keys: 'time_stamp/type, time_stamp/epoch, time_stamp/ascii, time_stamp/micro_seconds
+        ''' Keys: 'time_stamp/type, time_stamp/epoch,
+                   time_stamp/ascii,time_stamp/micro_seconds
                    nickname, longname, PIs, institutions,
-                   north_west_corner/coordinate_system, north_west_corner/projection
-                   north_west_corner/ellipsoid, north_west_corner/[XYZ]/[units,value]
+                   north_west_corner/coordinate_system,
+                   north_west_corner/projection
+                   north_west_corner/ellipsoid,
+                   north_west_corner/[XYZ]/[units,value]
                    north_west_corner/description, (same for south_east_corner)
                    summary_paragraph'   '''
 
@@ -1453,9 +1433,12 @@ class ExperimentGroup:
         self.ph5.flush()
 
     def initgroup(
-            self, ph5_g_title='PIC KITCHEN HDF5 file, Version = ' + columns.PH5VERSION):
-        '''   If group Experiment_g does not exist create it, otherwise get a reference to it
-              If table Experiment_t does not exist create it, otherwise get a reference to it   '''
+            self, ph5_g_title='PIC KITCHEN HDF5 file, Version = '
+            + columns.PH5VERSION):
+        '''   If group Experiment_g does not exist create it,
+              otherwise get a reference to it
+              If table Experiment_t does not exist create it,
+              otherwise get a reference to it   '''
         #   Create experiment group
         self.ph5_g_experiment = initialize_group(self.ph5,
                                                  '/',
@@ -1616,7 +1599,7 @@ def get_nodes_by_name(filenode, where, RE, classname):
     for n in filenode.iter_nodes(where, classname=classname):
         mo = RE.match(n._v_name)
         if mo:
-            #key = mo.groups ()[-1]
+            # key = mo.groups ()[-1]
             key = n._v_name
             nodes[key] = n
 
@@ -1625,9 +1608,9 @@ def get_nodes_by_name(filenode, where, RE, classname):
 
 if __name__ == '__main__':
     import os
-    #os.system ('rm -rf ./untitled-experiment.ph5')
+    # os.system ('rm -rf ./untitled-experiment.ph5')
     ex = ExperimentGroup('.', 'GEO_DESIRE')
-    #print ex.filename
+    # print ex.filename
     EDITMODE = False
     ex.ph5open(EDITMODE)
     ex.initgroup()
@@ -1670,18 +1653,4 @@ if __name__ == '__main__':
 
     print "Matched %d traces." % i
 
-    #p = {}
-    #epoch = time.time ()
-    #p['time_stamp/epochs'] = epoch
-    #p['time_stamp/ascii'] = time.ctime (epoch)
-    #p['time_stamp/type'] = columns.TIME_TYPE['BOTH']
-    #p['time_stamp/micro_seconds'] = 0
-    #ex.populateExperiment_t (p)
-    ##print `ex.ph5_t_experiment[:]`
-    #ex.ph5_g_receivers.newdas ('9905')
-    #p = {}
-    #p['time/epoch'] = epoch
-    #p['channel_number'] = 1
-    #p['array_name_date'] = [1,2,3,4,5,6,7,8,9,0]
-    #ex.ph5_g_receivers.populateDas_t (p)
     ex.ph5close()
