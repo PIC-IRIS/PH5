@@ -1,4 +1,5 @@
 dependencies:
+ - hdf5=1.8.18
  - six
  - Cython
  - nose
