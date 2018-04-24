@@ -1,6 +1,7 @@
 import csv
 import argparse
 
+
 def get_args():
     parser = argparse.ArgumentParser(
             description='Converts a kef file to csv.',
@@ -9,7 +10,7 @@ def get_args():
     parser.add_argument("-f", "--file", action="store",
                         required=True, type=str, metavar="file")
     parser.add_argument("-o", "--outfile", action="store",
-                    required=True, type=str, metavar="outfile")
+                        required=True, type=str, metavar="outfile")
     args = parser.parse_args()
     return args
 
@@ -46,5 +47,6 @@ def main():
             w.writerow(dh)
             w.writerows(kef_dict_list)
 
-if __name__ == "__main__" :
+
+if __name__ == "__main__":
     main()
