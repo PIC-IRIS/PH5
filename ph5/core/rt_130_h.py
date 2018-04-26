@@ -7,11 +7,11 @@
 #   Steve Azevedo, July 2008
 #
 
+import sys
 import exceptions
 import os
 import os.path
 import string
-import sys
 import rt_130_py
 import construct
 
@@ -70,28 +70,32 @@ def build_short(x):
     return pshort_s.build(construct.Container(x=x))
 
 
-class HeaderError (exceptions.Exception):
+class HeaderError(exceptions.Exception):
+
     def __init__(self, args=None):
         self.args = args
 
 
-class CorruptPacketError (exceptions.Exception):
+class CorruptPacketError(exceptions.Exception):
+
     def __init__(self, args=None):
         self.args = args
 
 
-class EmptyDTPacketError (exceptions.Exception):
+class EmptyDTPacketError(exceptions.Exception):
+
     def __init__(self, args=None):
         self.args = args
+
 
 #
 #   Packet header
 #
 
 
-class PH_object (object):
+class PH_object(object):
     __slots__ = 'type', 'experiment', 'unit', 'year', 'doy', 'hr', 'mn', 'sc',\
-        'ms', 'bytes', 'sequence'
+                'ms', 'bytes', 'sequence'
 
 
 def packet_header():
@@ -112,9 +116,15 @@ def packet_header():
     return PH
 
 
-class PacketHeader (object):
-    __keys__ = ("PacketType", "ExperimentNumber", "Year",
-                "UnitIDNumber", "Time", "ByteCount", "PacketSequence")
+class PacketHeader(object):
+    __keys__ = (
+        "PacketType",
+        "ExperimentNumber",
+        "Year",
+        "UnitIDNumber",
+        "Time",
+        "ByteCount",
+        "PacketSequence")
 
     def __init__(self):
         for b in PacketHeader.__keys__:
@@ -127,8 +137,9 @@ class PacketHeader (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in packet header.\n" % k)
+                    "Warning: Attempt to set unknown variable %s in packet"
+                    " header.\n" %
+                    k)
 
     def get(self):
         try:
@@ -157,16 +168,16 @@ class PacketHeader (object):
             ph.type = ("%c" % (container.PacketType >> 8))
             ph.type += ("%c" % (container.PacketType & 0x00FF))
             ph.experiment = ((container.ExperimentNumber >> 4) * 10) +
-            (container.ExperimentNumber & 0x0F)
+             (container.ExperimentNumber & 0x0F)
             ph.year = ((container.Year >> 4) * 10) + (container.Year & 0x0F)
             ph.unit = hex (container.UnitIDNumber)
             ph.doy = ((container.DOY >> 8) * 100) + (((container.DOY & 0x0F0)
-            >> 4) * 10) + (container.DOY & 0x00F)
+             >> 4) * 10) + (container.DOY & 0x00F)
             ph.hr = ((container.HH >> 4) * 10) + (container.HH & 0x0F)
             ph.mn = ((container.MM >> 4) * 10) + (container.MM & 0x0F)
             ph.sc = ((container.SS >> 4) * 10) + (container.SS & 0x0F)
-            ph.ms = ((container.TTT >> 8) * 100) +
-            (((container.TTT & 0x0F0) >> 4) * 10) + (container.TTT & 0x00F)
+            ph.ms = ((container.TTT >> 8) * 100) + (((container.TTT & 0x0F0)
+             >> 4) * 10) + (container.TTT & 0x00F)
             ph.bytes = ((container.ByteCount >> 12) * 1000) +
             (((container.ByteCount & 0x0F00) >> 8) * 100) +
             (((container.ByteCount & 0x00F0) >> 4) * 10) +
@@ -199,16 +210,20 @@ class PacketHeader (object):
         except Exception as e:
             raise HeaderError("Packet Header: " + e.message)
 
+        # print ph.type, ph.experiment, ph.unit, ph.year, ph.doy, ph.hr, ph.mn,
+        # ph.sc, ph.ms, ph.bytes, ph.sequence
+
         return ph
+
 
 #
 #   Data packet
 #
 
 
-class DT_object (object):
-    __slots__ = 'event', 'data_stream', 'channel', 'samples', 'flags',
-    'data_format', 'data'
+class DT_object(object):
+    __slots__ = 'event', 'data_stream', 'channel', 'samples', 'flags', \
+                'data_format', 'data'
 
 
 def data_packet():
@@ -231,9 +246,16 @@ def data_packet():
     return DT
 
 
-class DT (object):
-    __keys__ = ("PacketHeader", "EventNumber", "DataStream",
-                "Channel", "Samples", "Flags", "DataFormat", "Data")
+class DT(object):
+    __keys__ = (
+        "PacketHeader",
+        "EventNumber",
+        "DataStream",
+        "Channel",
+        "Samples",
+        "Flags",
+        "DataFormat",
+        "Data")
 
     def __init__(self):
         for b in DT.__keys__:
@@ -246,8 +268,9 @@ class DT (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in data packet.\n" % k)
+                    "Warning: Attempt to set unknown variable %s in"
+                    " data packet.\n" %
+                    k)
 
     def get(self):
         try:
@@ -279,7 +302,7 @@ class DT (object):
             dt.data_stream = ((container.DataStream >> 4) * 10) +
             (container.DataStream & 0x0F)
             dt.channel = ((container.Channel >> 4) * 10) +
-            (container.Channel & 0x0F)
+             (container.Channel & 0x0F)
             dt.samples = (((container.Samples & 0xF000) >> 12) * 1000) +
             (((container.Samples & 0x0F00) >> 8) * 100) +
             (((container.Samples & 0x00F0) >> 4) * 10) +
@@ -308,8 +331,8 @@ class DT (object):
             dt.data_format = ret[5]
             #   This packet contains no data
             # if dt.samples == 0 :
-            # raise EmptyDTPacketError ("Packet with no data found
-            # in DT.decode")
+            # raise EmptyDTPacketError
+            # ("Packet with no data found in DT.decode")
 
             if dt.data_format == 0x16:
                 dt.data = rt_130_py.read_int16(buf, dt.samples)
@@ -334,11 +357,11 @@ class DT (object):
             else:
                 dt = None
                 raise Exception(
-                    "Warning: Unrecognized data format: %s\n"
-                    % hex(dt.data_format))
+                    "Warning: Unrecognized data format: %s\n" % hex(
+                        dt.data_format))
 
-            #   We may need to force to 32 bits before the write since
-            #   this is a python tuple,
+            #   We may need to force to 32 bits before the write since this is
+            # a python tuple,
             #   Here's how...
             '''
             for x in map (build_int, dt.data) :
@@ -351,16 +374,20 @@ class DT (object):
         return dt
 
 
-class EH_object (object):
-    __slots__ = ('EventNumber', 'DataStream', 'Flags', 'DataFormat',
-                 'TriggerTimeMessage', 'TimeSource', 'TimeQuality',
-                 'ExtStationName', 'StationName', 'StreamName', 'SampleRate',
-                 'TriggerType', 'TriggerTime', 'FirstSampleTime',
-                 'DetriggerTime', 'LastSampleTime', 'NominalBitWeight',
-                 'TrueBitWeight', 'Gain', 'A_DResolution', 'FullScaleAnalog',
-                 'ChannelCode', 'SensorFSA', 'SensorVPU', 'SensorUnits',
-                 'StationNumber', 'TotalChannels', 'Comment',
-                 'FilterList', 'Position', 'RefTek120')
+class EH_object(object):
+    __slots__ = (
+        'EventNumber', 'DataStream', 'Flags', 'DataFormat',
+        'TriggerTimeMessage',
+        'TimeSource', 'TimeQuality', 'ExtStationName', 'StationName',
+        'StreamName', 'SampleRate', 'TriggerType', 'TriggerTime',
+        'FirstSampleTime',
+        'DetriggerTime', 'LastSampleTime', 'NominalBitWeight', 'TrueBitWeight',
+        'Gain', 'A_DResolution', 'FullScaleAnalog', 'ChannelCode', 'SensorFSA',
+        'SensorVPU', 'SensorUnits', 'StationNumber', 'TotalChannels',
+        'Comment',
+        'FilterList', 'Position', 'RefTek120')
+
+
 #
 #   Event header/Event trailer
 #
@@ -378,8 +405,8 @@ def event_header():
                                               construct.BitField(
                                                   "Reserved", 24),
                                               construct.BitField("Flags", 8),
-                                              construct.BitField(
-                                                  "DataFormat", 8)),
+                                              construct.BitField("DataFormat",
+                                                                 8)),
                           construct.String("TriggerTimeMessage", 33),
                           construct.String("TimeSource", 1),
                           construct.String("TimeQuality", 1),
@@ -412,28 +439,55 @@ def event_header():
     return EH
 
 
-GAIN_CODE = {' ': 'Unknown', '1': 'x1', '2': 'x8', '3': 'x32', '4': 'x128',
-             '5': 'x512', '6': 'x2048', '7': 'x8192', '8': 'x100',
-             'A': '12dB', 'B': '24dB', 'C': '36dB', 'D': '48dB',
-             'E': '60dB', 'F': 'x2', 'G': 'x4', 'H': 'x16', 'I': 'x64',
-             'J': 'x256'}
+GAIN_CODE = {
+    ' ': 'Unknown',
+    '1': 'x1',
+    '2': 'x8',
+    '3': 'x32',
+    '4': 'x128',
+    '5': 'x512',
+    '6': 'x2048',
+    '7': 'x8192',
+    '8': 'x100',
+    'A': '12dB',
+    'B': '24dB',
+    'C': '36dB',
+    'D': '48dB',
+    'E': '60dB',
+    'F': 'x2',
+    'G': 'x4',
+    'H': 'x16',
+    'I': 'x64',
+    'J': 'x256'}
 AD_CODE = {' ': 'Unknown', '1': '8', '2': '16', '3': '24'}
-FSA_CODE = {' ': 'Unknown', '1': '+/-3.75',
-            '2': '+/-5.0', '3': '+/-10.0', '4': '+/-20.0'}
+FSA_CODE = {
+    ' ': 'Unknown',
+    '1': '+/-3.75',
+    '2': '+/-5.0',
+    '3': '+/-10.0',
+    '4': '+/-20.0'}
 TIME_SOURCE = {' ': 'Unknown', '1': 'Internal', '2': 'GPS'}
-TIME_QUALITY = {' ': 'Unknown', '?': 'No PLL', '0': '0 days since PLL',
-                '1': '1 days since PLL', '2': '2 days since PLL',
-                '3': '3 days since PLL',
-                '4': '4 days since PLL', '5': '5 days since PLL',
-                '6': '6 days since PLL', '7': '7 days since PLL',
-                '8': '8 days since PLL', '9': '9 days since PLL'}
+TIME_QUALITY = {
+    ' ': 'Unknown',
+    '?': 'No PLL',
+    '0': '0 days since PLL',
+    '1': '1 days since PLL',
+    '2': '2 days since PLL',
+    '3': '3 days since PLL',
+    '4': '4 days since PLL',
+    '5': '5 days since PLL',
+    '6': '6 days since PLL',
+    '7': '7 days since PLL',
+    '8': '8 days since PLL',
+    '9': '9 days since PLL'}
 
 
-class EH (object):
+class EH(object):
     __keys__ = ("BIN.PacketHeader", "BIN.EventNumber", "BIN.DataStream",
                 "BIN.Reserved", "BIN.Flags", "BIN.DataFormat",
-                "TriggerTimeMessage", "TimeSource", "TimeQuality",
-                "ExtStationName", "StationName", "StreamName", "Reserved1",
+                "TriggerTimeMessage",
+                "TimeSource", "TimeQuality", "ExtStationName", "StationName",
+                "StreamName", "Reserved1",
                 "SampleRate", "TriggerType", "TriggerTime", "FirstSampleTime",
                 "DetriggerTime", "LastSampleTime", "NominalBitWeight",
                 "TrueBitWeight", "Gain", "A-DResolution", "FullScaleAnalog",
@@ -452,8 +506,9 @@ class EH (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable %s\
-                    in event header packet.\n" % k)
+                    "Warning: Attempt to set unknown variable %s in"
+                    " event header packet.\n" %
+                    k)
 
     def get(self):
         try:
@@ -562,14 +617,14 @@ class EH (object):
 def SOH_packet():
     SH = construct.Struct("SH",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField("PacketHeader", 128)),
+                                              construct.BitField(
+                                                  "PacketHeader", 128)),
                           construct.String("Reserved", 8),
                           construct.String("Information", 1000))
     return SH
 
 
-class SH (object):
+class SH(object):
     __keys__ = ("BIN.PacketHeader", "Reserved", "Information")
 
     def __init__(self):
@@ -583,8 +638,8 @@ class SH (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in SOH packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in "
+                    "SOH packet.\n" %
                     k)
 
     def get(self):
@@ -605,6 +660,7 @@ class SH (object):
 
         return ret
 
+
 #
 #   Station Channel packets
 #
@@ -613,8 +669,8 @@ class SH (object):
 def station_channel():
     SC = construct.Struct("SC",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField("PacketHeader", 128)),
+                                              construct.BitField(
+                                                  "PacketHeader", 128)),
                           construct.String("ExperimentNumber", 2),
                           construct.String("ExperimentName", 24),
                           construct.String("ExperimentComment", 40),
@@ -716,7 +772,7 @@ def station_channel():
     return SC
 
 
-class SC (object):
+class SC(object):
     __keys__ = ("BIN.PacketHeader", "ExperimentNumber", "ExperimentName",
                 "ExperimentComment",
                 "StationNumber", "StationName", "StationComment", "DASModel",
@@ -780,8 +836,8 @@ class SC (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in station channel packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in station"
+                    " channel packet.\n" %
                     k)
 
     def get(self):
@@ -802,6 +858,7 @@ class SC (object):
 
         return ret
 
+
 #
 #   Aux Data Parameter packets
 #
@@ -810,8 +867,8 @@ class SC (object):
 def aux_data_parameter():
     AD = construct.Struct("AD",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField("PacketHeader", 128)),
+                                              construct.BitField(
+                                                  "PacketHeader", 128)),
                           construct.String("Marker", 2),
                           construct.String("Channels", 16),
                           construct.String("SamplePeriod", 8),
@@ -823,11 +880,17 @@ def aux_data_parameter():
     return AD
 
 
-class AD (object):
-    __keys__ = ("BIN.PacketHeader", "Marker", "Channels", "SamplePeriod",
-                "DataFormat",
-                "RecordLength", "RecordingDestination", "Reserved",
-                "ImplementTime")
+class AD(object):
+    __keys__ = (
+        "BIN.PacketHeader",
+        "Marker",
+        "Channels",
+        "SamplePeriod",
+        "DataFormat",
+        "RecordLength",
+        "RecordingDestination",
+        "Reserved",
+        "ImplementTime")
 
     def __init__(self):
         for b in AD.__keys__:
@@ -840,8 +903,8 @@ class AD (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in auxiliary data packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in auxiliary"
+                    " data packet.\n" %
                     k)
 
     def get(self):
@@ -862,6 +925,7 @@ class AD (object):
 
         return ret
 
+
 #
 #   Calibration Parameter packets
 #
@@ -870,8 +934,8 @@ class AD (object):
 def cal_parameter():
     CD = construct.Struct("CD",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField("PacketHeader", 128)),
+                                              construct.BitField(
+                                                  "PacketHeader", 128)),
                           construct.Struct("_72ACalibration",
                                            construct.String("StartTime", 14),
                                            construct.String(
@@ -894,8 +958,8 @@ def cal_parameter():
                                                "CycleInterval", 2),
                                            construct.String("Level", 4),
                                            construct.String("Attempts", 2),
-                                           construct.String(
-                                               "AttemptInterval", 2)),
+                                           construct.String("AttemptInterval",
+                                                            2)),
                           construct.Struct("_130AutoCenter2",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -905,8 +969,8 @@ def cal_parameter():
                                                "CycleInterval", 2),
                                            construct.String("Level", 4),
                                            construct.String("Attempts", 2),
-                                           construct.String(
-                                               "AttemptInterval", 2)),
+                                           construct.String("AttemptInterval",
+                                                            2)),
                           construct.Struct("_130AutoCenter3",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -916,8 +980,8 @@ def cal_parameter():
                                                "CycleInterval", 2),
                                            construct.String("Level", 4),
                                            construct.String("Attempts", 2),
-                                           construct.String(
-                                               "AttemptInterval", 2)),
+                                           construct.String("AttemptInterval",
+                                                            2)),
                           construct.Struct("_130AutoCenter4",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -927,8 +991,8 @@ def cal_parameter():
                                                "CycleInterval", 2),
                                            construct.String("Level", 4),
                                            construct.String("Attempts", 2),
-                                           construct.String(
-                                               "AttemptInterval", 2)),
+                                           construct.String("AttemptInterval",
+                                                            2)),
                           construct.Struct("_130Calibration1",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -938,8 +1002,8 @@ def cal_parameter():
                                            construct.String("Signal", 4),
                                            construct.String("StepInterval", 4),
                                            construct.String("StepWidth", 4),
-                                           construct.String(
-                                               "SineFrequency", 4)),
+                                           construct.String("SineFrequency",
+                                                            4)),
                           construct.Struct("_130Calibration2",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -949,8 +1013,8 @@ def cal_parameter():
                                            construct.String("Signal", 4),
                                            construct.String("StepInterval", 4),
                                            construct.String("StepWidth", 4),
-                                           construct.String(
-                                               "SineFrequency", 4)),
+                                           construct.String("SineFrequency",
+                                                            4)),
                           construct.Struct("_130Calibration3",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -960,8 +1024,8 @@ def cal_parameter():
                                            construct.String("Signal", 4),
                                            construct.String("StepInterval", 4),
                                            construct.String("StepWidth", 4),
-                                           construct.String(
-                                               "SineFrequency", 4)),
+                                           construct.String("SineFrequency",
+                                                            4)),
                           construct.Struct("_130Calibration4",
                                            construct.String("Sensor", 1),
                                            construct.String("Enable", 1),
@@ -971,8 +1035,8 @@ def cal_parameter():
                                            construct.String("Signal", 4),
                                            construct.String("StepInterval", 4),
                                            construct.String("StepWidth", 4),
-                                           construct.String(
-                                               "SineFrequency", 4)),
+                                           construct.String("SineFrequency",
+                                                            4)),
                           construct.Struct("_130CalibrationSequence1",
                                            construct.String("Sequence", 1),
                                            construct.String("Enable", 1),
@@ -1014,9 +1078,13 @@ def cal_parameter():
     return CD
 
 
-class CD (object):
-    __keys__ = ("BIN.PacketHeader", "72ACalibration",
-                "130AutoCenter", "130Calibration", "ImplementTime")
+class CD(object):
+    __keys__ = (
+        "BIN.PacketHeader",
+        "72ACalibration",
+        "130AutoCenter",
+        "130Calibration",
+        "ImplementTime")
 
     def __init__(self):
         for b in CD.__keys__:
@@ -1029,8 +1097,8 @@ class CD (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in auxiliary data packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in auxiliary"
+                    " data packet.\n" %
                     k)
 
     def get(self):
@@ -1051,22 +1119,23 @@ class CD (object):
 
         return ret
 
+
 #
 #   Data Stream packets
 #
 
 
-class DS_object (object):
-    __slots__ = "ImplementTime", "DataStream", "DataStreamName",
-    "RecordingDestination", "ChannelsIncluded", "SampleRate", "DataFormat",
-    "TriggerType", "Trigger"
+class DS_object(object):
+    __slots__ = "ImplementTime", "DataStream", "DataStreamName", \
+                "RecordingDestination", "ChannelsIncluded", "SampleRate", \
+                "DataFormat", "TriggerType", "Trigger"
 
 
 def data_stream():
     DS = construct.Struct("DS",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField("PacketHeader", 128)),
+                                              construct.BitField(
+                                                  "PacketHeader", 128)),
                           construct.String("DataStreamInfo", 920),
                           construct.String("Reserved", 72),
                           construct.String("ImplementTime", 16))
@@ -1223,9 +1292,12 @@ def time_list_trigger():
     return TML
 
 
-class DS (object):
-    __keys__ = ("BIN.PacketHeader", "DataStreamInfo",
-                "Reserved", "ImplementTime")
+class DS(object):
+    __keys__ = (
+        "BIN.PacketHeader",
+        "DataStreamInfo",
+        "Reserved",
+        "ImplementTime")
 
     def __init__(self):
         for b in DS.__keys__:
@@ -1238,8 +1310,8 @@ class DS (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in auxiliary data packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in "
+                    "auxiliary data packet.\n" %
                     k)
 
     def get(self):
@@ -1299,7 +1371,7 @@ class DS (object):
         try:
             dataStreams = []
             ds = self.parse(buf)
-            self.parse_dsi(ds.DataStreamInfo)
+            # dsi = self.parse_dsi(ds.DataStreamInfo)
             for i in range(1, 5):
                 pre = "dsi.Info%s." % i
                 stream = eval(pre + "DataStream")
@@ -1330,6 +1402,8 @@ class DS (object):
             raise CorruptPacketError("DS Packet: " + e.message)
 
         return dataStreams
+
+
 #
 #   Filter Description packets
 #
@@ -1338,11 +1412,10 @@ class DS (object):
 def filter_description():
     FD = construct.Struct("FD",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField(
+                                              construct.BitField(
                                                   "PacketHeader", 128),
-                                              construct.String(
-                                                  "FilterInfo", 992)),
+                                              construct.String("FilterInfo",
+                                                               992)),
                           construct.String("ImplementTime", 16))
     return FD
 
@@ -1360,14 +1433,14 @@ def filter_info():
     return FI
 
 
-class FD_object (object):
-    __slots__ = "ImplementTime", "FilterBlockCount", "FilterID",
-    "FilterDecimation", "FilterScaler", "FilterCoefficientCount",
-    "PacketCoefficientCount", "CoefficientPacketCount",
-    "CoefficientFormat", "Coefficients"
+class FD_object(object):
+    __slots__ = "ImplementTime", "FilterBlockCount", "FilterID", \
+                "FilterDecimation", "FilterScaler", "FilterCoefficientCount", \
+                "PacketCoefficientCount", "CoefficientPacketCount", \
+                "CoefficientFormat", "Coefficients"
 
 
-class FD (object):
+class FD(object):
     __keys__ = ("BIN.PacketHeader", "BIN.FilterInfo", "ImplementTime")
 
     def __init__(self):
@@ -1381,8 +1454,8 @@ class FD (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in filter description packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in "
+                    "filter description packet.\n" %
                     k)
 
     def get(self):
@@ -1458,13 +1531,14 @@ class FD (object):
             except Exception as e:
                 F = []
                 raise Exception(
-                    "Error parsing FD packet.This appears to be a bug!\n{0}\n"
-                    .format(e.message))
+                    "Error parsing FD packet. This appears to be a bug!"
+                    "\n{0}\n".format(e.message))
 
         except Exception as e:
             raise CorruptPacketError("FD Packet: {0:s}".format(e.message))
 
         return F
+
 
 #
 #   Operating Mode Parameter packets
@@ -1474,8 +1548,8 @@ class FD (object):
 def operating_mode():
     OM = construct.Struct("OM",
                           construct.BitStruct("BIN",
-                                              construct.
-                                              BitField("PacketHeader", 128)),
+                                              construct.BitField(
+                                                  "PacketHeader", 128)),
                           construct.String("_72APowerState", 2),
                           construct.String("RecordingMode", 2),
                           construct.String("Reserved1", 4),
@@ -1500,16 +1574,18 @@ def operating_mode():
     return OM
 
 
-class OM (object):
-    __keys__ = ("BIN.PacketHeader", "_72APowerState", "RecordingMode",
-                "Reserved1", "AutoDumpOnET",
-                "Reserved2", "AutoDumpThreshold", "_72APowerDownDelay",
-                "DiskWrap", "Reserved3",
-                "_72ADiskPower", "_72ATerminatorPower", "DiskRetry",
-                "Reserved4", "Reserved5",
-                "_72AWakeUpStartTime", "_72AWakeUpDuration",
-                "_72AWakeUpRepeatInterval", "_72AWakeUpNumberOfIntervals",
-                "Reserved6", "Reserved7", "ImplementTime")
+class OM(object):
+    __keys__ = (
+        "BIN.PacketHeader", "_72APowerState", "RecordingMode", "Reserved1",
+        "AutoDumpOnET",
+        "Reserved2", "AutoDumpThreshold", "_72APowerDownDelay", "DiskWrap",
+        "Reserved3",
+        "_72ADiskPower", "_72ATerminatorPower", "DiskRetry", "Reserved4",
+        "Reserved5",
+        "_72AWakeUpStartTime", "_72AWakeUpDuration",
+        "_72AWakeUpRepeatInterval",
+        "_72AWakeUpNumberOfIntervals",
+        "Reserved6", "Reserved7", "ImplementTime")
 
     def __init__(self):
         for b in OM.__keys__:
@@ -1522,8 +1598,8 @@ class OM (object):
             else:
                 #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in filter description packet.\n" %
+                    "Warning: Attempt to set unknown variable %s in "
+                    "filter description packet.\n" %
                     k)
 
     def get(self):
@@ -1569,68 +1645,70 @@ def main():
         if ret.type == 'DT':
             DTcnt += 1
             dt = DT()
-            dt.decode(buf)
+            c = dt.decode(buf)
             # if c.data_stream == 0 and c.channel == 0 and c.event == 2 :
             #    for p in c.data :
             #        print p
-            # print c.event, c.data_stream,
-            # c.channel, c.samples, hex (c.data_format)
+            # print c.event, c.data_stream, c.channel, c.samples,
+            # hex (c.data_format)
             # print repr (c)
             # print c.data
         elif ret.type == 'EH' or ret.type == 'ET':
             EHcnt += 1
             eh = EH()
-            eh.parse(buf)
-            # print c
+            c = eh.parse(buf)
+            print c
         elif ret.type == 'SH':
             SHcnt += 1
             sh = SH()
-            sh.parse(buf)
-            # print SHcnt
+            c = sh.parse(buf)
+            print SHcnt
         elif ret.type == 'SC':
             SCcnt += 1
             sc = SC()
-            sc.parse(buf)
-            # print c
+            c = sc.parse(buf)
+            print c
         elif ret.type == 'AD':
             ADcnt += 1
             ad = AD()
-            ad.parse(buf)
-            # print c
+            c = ad.parse(buf)
+            print c
         elif ret.type == 'CD':
             CDcnt += 1
             cd = CD()
-            cd.parse(buf)
-            # print c
+            c = cd.parse(buf)
+            print c
         elif ret.type == 'DS':
             DScnt += 1
             ds = DS()
-            ds.parse(buf)
-            # print c
+            c = ds.parse(buf)
+            print c
         elif ret.type == 'FD':
             FDcnt += 1
             fd = FD()
-            fd.parse(buf)
-            # print c
+            c = fd.parse(buf)
+            print c
         elif ret.type == 'OM':
             OMcnt += 1
             om = OM()
-            om.parse(buf)
-            # print c
+            c = om.parse(buf)
+            print c
 
     print "DT: %d EH: %d SH: %d SC: %d AD: %d CD: %d DS: %d FD: %d OM: %d\n"\
-          % (DTcnt,
-             EHcnt,
-             SHcnt,
-             SCcnt,
-             ADcnt,
-             CDcnt,
-             DScnt,
-             FDcnt,
-             OMcnt)
+          % (
+              DTcnt,
+              EHcnt,
+              SHcnt,
+              SCcnt,
+              ADcnt,
+              CDcnt,
+              DScnt,
+              FDcnt,
+              OMcnt)
 
 
 if __name__ == '__main__':
     import os  # , profile
+
     # profile.run ("main()")
     main()
