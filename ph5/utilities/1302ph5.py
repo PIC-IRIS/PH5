@@ -95,7 +95,7 @@ def read_infile(infile):
     global FILES
     try:
         fh = file(infile)
-    except as BaseException:
+    except BaseException:
         sys.stderr.write("Warning: Failed to open %s\n" % infile)
         return
     #   Is this file ascii?
@@ -128,7 +128,7 @@ def read_windows_file(f):
     w = []
     try:
         fh = open(f)
-    except as BaseException:
+    except BaseException:
         return w
 
     while True:
@@ -231,7 +231,7 @@ def read_par_file(file):
     PARAMETERS = {}
     try:
         fh = open(file)
-    except as BaseException:
+    except BaseException:
         return False
 
     while True:
@@ -480,7 +480,7 @@ def closePH5():
     try:
         EX.ph5close()
         EXREC.ph5close()
-    except as BaseException:
+    except BaseException:
         pass
 
 
@@ -1043,7 +1043,7 @@ def updatePH5(f):
     size_of_data = os.path.getsize(f) * 1.40
     try:
         EXREC.ph5close()
-    except as BaseException:
+    except BaseException:
         pass
 
     EXREC = get_current_data_only(size_of_data)
@@ -1287,7 +1287,7 @@ def main():
             if m:
                 try:
                     CURRENT_DAS = m.groups()[0]
-                except as BaseException:
+                except BaseException:
                     CURRENT_DAS = None
 
                 updatePH5(f)

@@ -1073,7 +1073,7 @@ class PN130:
             new_event = self.current_event[ds]
             if new_event is None:
                 raise
-        except as BaseException:
+        except BaseException:
             new_event = build_empty_current_stream()
 
         new_event[dc].unitID = p.unit
@@ -1179,7 +1179,7 @@ class PN130:
             e = self.current_event[stream][channel].event
             if e is not None and event > e:
                 eoe = END_OF_EVENT_DT
-        except as BaseException:
+        except BaseException:
             pass
 
         #   We have a new DT packet without a EH or ET so close the old event
@@ -1754,7 +1754,7 @@ class PN130:
             # print 'TotalChannels', c.TotalChannels
             try:
                 packet_total_channels = int(c.TotalChannels)
-            except as BaseException:
+            except BaseException:
                 self.ERRS.append(
                     "Warning: No total number of channels for EH packet given."
                     "Setting to %d." %
@@ -2108,7 +2108,7 @@ class PN130:
                 # print 'TotalChannels', c.TotalChannels
                 try:
                     packet_total_channels = int(c.TotalChannels)
-                except as BaseException:
+                except BaseException:
                     sys.stderr.write(
                         "Warning: No total number of channels for"
                         "EH packet given. Setting to %d.\n" %
@@ -2253,7 +2253,7 @@ def decode_sample_time(stime):
         mn = int(flds[3])
         sc = int(flds[4])
         ms = int(flds[5])
-    except as BaseException:
+    except BaseException:
         yr = 0
         doy = 0
         hr = 0
