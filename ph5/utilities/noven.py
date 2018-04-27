@@ -14,184 +14,186 @@ from ph5.utilities import novenqc, novenkef
 
 PROG_VERSION = '2017.342'
 
-RECEIVER_CFG_S = '''
-{
-   "description_s": {
-      "required": "False",
-      "type": "string1024",
-      "help": "Station comments."
-   },
-   "pickup_time/ascii_s": {
-      "required": "True",
-      "type": "string32",
-      "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
-      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\
-      d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\
-      d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|
-      (\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
-   },
-   "id_s": {
-      "required": "True",
-      "type": "int15",
-      "help": "Valid SEG-Y station number."
-   },
-   "deploy_time/ascii_s": {
-      "required": "True",
-      "type": "string32",
-      "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
-      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\
-      d{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\
-      d{1,2}T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|
-      (\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"
-   },
-   "location/X/value_d": {
-      "required": "False",
-      "type": "float64",
-      "help": "Longitude in degrees."
-   },
-   "location/Y/value_d": {
-      "required": "False",
-      "type": "float64",
-      "help": "Latitude in degrees."
-   },
-   "location/Z/value_d": {
-      "required": "False",
-      "type": "float64",
-      "help": "Elevation in meters."
-   },
-   "Array": {
-      "required": "True",
-      "type": "int32",
-      "help": "Array or line number."
-   },
-   "Deploy/Pickup" : {
-      "required": "False",
-      "type": "string1",
-      "help": "Deploy 'D' or Pickup 'P' notes.",
-      "re": "D|P"
-   },
-   "channel_number_i": {
-      "required": "True",
-      "type": "int15",
-      "help": "Component, Possibly as follows: 1 -> Z, 2 -> N/S, 3 -> E/W etc",
-      "range": "1-6"
-   },
-   "das/serial_number_s": {
-      "required": "True",
-      "type": "string32",
-      "help": "Full serial number of the data logger, ie. texans are 5 digits."
-   },
-   "das/model_s": {
-      "required": "False",
-      "type": "string32",
-      "help": "The DAS model, rt-130, texan etc."
-   },
-   "das/manufacturer_s": {
-      "required": "False",
-      "type": "string32",
-      "help": "The Das manufacturer, RefTek, kelco etc."
-   },
-   "sensor/serial_number_s": {
-      "required": "False",
-      "type": "string64",
-      "help": "Full serial number of the sensor."
-   },
-   "sensor/model_s": {
-      "required": "False",
-      "type": "string64",
-      "help": "Sensor model."
-   },
-   "sensor/manufacturer_s": {
-      "required": "False",
-      "type": "string64",
-      "help": "Sensor manufacturer."
-   },
-   "SEED_Channel": {
-      "required": "False",
-      "type": "string3",
-      "help": "SEED channel as described in Appendix A of SEED manual."
-   },
-   "seed_location_code_s": {
-      "required": "False",
-      "type": "string2",
-      "help": "SEED location code as described in chapter 8 of the SEED manual"
-   },
-   "seed_station_name_s": {
-      "required": "False",
-      "type": "string5",
-      "help": "SEED channel name as described in chapter 8 of the SEED manual"
-   },
-   "sample_rate_i": {
-      "required": "False",
-      "type": "int16",
-      "help": "The sample rate in samples per second as an integer."
-   },
-   "sample_rate_multiplier_i": {
-      "required": "False",
-      "type": "int16",
-      "help": "Usually 1 unless the sample rate is less than 1."
-   }
-}
+RECEIVER_CFG_S = '{\n'\
+    '   "description_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string1024",\n'\
+    '      "help": "Station comments."\n'\
+    '   },\n'\
+    '   "pickup_time/ascii_s": {\n'\
+    '      "required": "True",\n'\
+    '      "type": "string32",\n'\
+    '      "help": "Time:YYYY:JJJ:HH:MM:SS.sss'\
+    'or YYYY-MM-DDTHH:MM:SS.ssssss.",\n'\
+    '      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\'\
+    'd{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}'\
+    'T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|(\\\\d\\\\d\\\\d\\\\'\
+    'd:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"\n'\
+    '   },\n'\
+    '   "id_s": {\n'\
+    '      "required": "True",\n'\
+    '      "type": "int15",\n'\
+    '      "help": "Valid SEG-Y station number."\n'\
+    '   },\n'\
+    '   "deploy_time/ascii_s": {\n'\
+    '      "required": "True",\n'\
+    '      "type": "string32",\n'\
+    '      "help": "Time: YYYY:JJJ:HH:MM:SS.sss'\
+    'or YYYY-MM-DDTHH:MM:SS.ssssss.",\n'\
+    '      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\'\
+    'd{1,2}(\\\\.\\\\d{1,3})?)|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}'\
+    'T\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})|(\\\\d\\\\d\\\\d\\\\d:'\
+    '\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\d{1,2})"\n'\
+    '   },\n'\
+    '   "location/X/value_d": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "float64",\n'\
+    '      "help": "Longitude in degrees."\n'\
+    '   },\n'\
+    '   "location/Y/value_d": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "float64",\n'\
+    '      "help": "Latitude in degrees."\n'\
+    '   },\n'\
+    '   "location/Z/value_d": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "float64",\n'\
+    '      "help": "Elevation in meters."\n'\
+    '   },'\
+    '   "Array": {\n'\
+    '      "required": "True",\n'\
+    '      "type": "int32",\n'\
+    '      "help": "Array or line number."\n'\
+    '   },\n'\
+    '   "Deploy/Pickup" : {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string1",\n'\
+    '      "help": "Deploy \'D\' or Pickup \'P\' notes.",\n'\
+    '      "re": "D|P"\n'\
+    '   },\n'\
+    '   "channel_number_i": {\n'\
+    '      "required": "True",\n'\
+    '      "type": "int15",\n'\
+    '      "help": "Component, Possibly follows:'\
+    '1 -> Z, 2 -> N/S, 3 -> E/W etc",\n'\
+    '      "range": "1-6"\n'\
+    '   },\n'\
+    '   "das/serial_number_s": {\n'\
+    '      "required": "True",\n'\
+    '      "type": "string32",\n'\
+    '      "help": "Full serial number of the data logger,'\
+    'texans are 5 digits."\n'\
+    '   },\n'\
+    '   "das/model_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string32",\n'\
+    '      "help": "The DAS model, rt-130, texan etc."\n'\
+    '   },\n'\
+    '   "das/manufacturer_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string32",\n'\
+    '      "help": "The Das manufacturer, RefTek, kelco etc."\n'\
+    '   },\n'\
+    '   "sensor/serial_number_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string64",\n'\
+    '      "help": "Full serial number of the sensor."\n'\
+    '   },\n'\
+    '   "sensor/model_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string64",\n'\
+    '      "help": "Sensor model."\n'\
+    '   },\n'\
+    '   "sensor/manufacturer_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string64",\n'\
+    '      "help": "Sensor manufacturer."\n'\
+    '   },\n'\
+    '   "SEED_Channel": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string3",\n'\
+    '      "help": "SEED ch as described in Appendix A of SEED manual."\n'\
+    '   },\n'\
+    '   "seed_location_code_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string2",\n'\
+    '      "help": "SEED loccode described chapter 8 of the SEED manual."\n'\
+    '   },\n'\
+    '   "seed_station_name_s": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "string5",\n'\
+    '      "help": "SEED ch name described in ch 8 of the SEED manual."\n'\
+    '   },\n'\
+    '   "sample_rate_i": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "int16",\n'\
+    '      "help": "The sample rate in samples per second as an integer."\n'\
+    '   },\n'\
+    '   "sample_rate_multiplier_i": {\n'\
+    '      "required": "False",\n'\
+    '      "type": "int16",\n'\
+    '      "help": "Usually 1 unless the sample rate is less than 1."\n'\
+    '   }\n'\
+    '}'
 
-'''
 
-EVENT_CFG_S = '''
-{
-   "location/X/value_d": {
-      "required": "True",
-      "type": "float64",
-      "help": "Longitude in degrees."
-   },
-   "description_s": {
-      "required": "False",
-      "type": "string1024",
-      "help": "Comment."
-   },
-   "size/units_s": {
-      "required": "False",
-      "type": "string32",
-      "help": "kg, lbs, or magnitude."
-   },
-   "size/value_d": {
-      "required": "False",
-      "type": "float64",
-      "help": "Size of shot, kg, lbs, magnitude."
-   },
-   "location/Y/value_d": {
-      "required": "True",
-      "type": "float64",
-      "help": "Latitude in degrees."
-   },
-   "id_s": {
-      "required": "True",
-      "type": "int31",
-      "help": "Valid SEG-Y shot number."
-   },
-   "location/Z/value_d": {
-      "required": "False",
-      "type": "float64",
-      "help": "Elevation in meters."
-   },
-   "depth/value_d": {
-      "required": "False",
-      "type": "float64",
-      "help": "Depth of shot or event below surface in meters."
-   },
-   "Array": {
-      "required": "False",
-      "type": "int32",
-      "help": "The shot line or array number."
-   },
-   "time/ascii_s": {
-      "required": "True",
-      "type": "string32",
-      "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",
-      "re": "(\\\\d\\\\d\\\\d\\\\d:\\\\d{1,3}:\\\\d{1,2}:\\\\d{1,2}:\\\\
-      d{1,2}\\\\.\\\\d{1,3})|(\\\\d\\\\d\\\\d\\\\d-\\\\d{1,2}-\\\\d{1,2}T\\\\
-      d{1,2}:\\\\d{1,2}:\\\\d{1,2}\\\\.\\\\d{1,6})"
-   }
-}
-'''
+EVENT_CFG_S = '{\n'\
+   '"location/X/value_d": {\n'\
+   '  "required": "True",\n'\
+   '  "type": "float64",\n'\
+   '  "help": "Longitude in degrees."\n'\
+   '},\n'\
+   '"description_s": {\n'\
+   '  "required": "False",\n'\
+   '   "type": "string1024",\n'\
+   '  "help": "Comment."\n'\
+   '},\n'\
+   '"size/units_s": {\n'\
+   '  "required": "False",\n'\
+   '  "type": "string32",\n'\
+   '   "help": "kg, lbs, or magnitude."\n'\
+   '},\n'\
+   '"size/value_d": {\n'\
+   '  "required": "False",\n'\
+   '  "type": "float64",\n'\
+   '  "help": "Size of shot, kg, lbs, magnitude."\n'\
+   '},\n'\
+   '"location/Y/value_d": {\n'\
+   '  "required": "True",\n'\
+   '   "type": "float64",\n'\
+   '  "help": "Latitude in degrees."\n'\
+   '},\n'\
+   '"id_s": {\n'\
+   '   "required": "True",\n'\
+   '  "type": "int31",\n'\
+   '  "help": "Valid SEG-Y shot number."\n'\
+   '},\n'\
+   '"location/Z/value_d": {\n'\
+   '  "required": "False",\n'\
+   '  "type": "float64",\n'\
+   '  "help": "Elevation in meters."\n'\
+   '},\n'\
+   '"depth/value_d": {\n'\
+   '  "required": "False",\n'\
+   '  "type": "float64",\n'\
+   '   "help": "Depth of shot or event below surface in meters."\n'\
+   '},\n'\
+   '"Array": {\n'\
+   '   "required": "False",\n'\
+   '  "type": "int32",\n'\
+   '   "help": "The shot line or array number."\n'\
+   '},\n'\
+   '"time/ascii_s": {\n'\
+   '  "required": "True",\n'\
+   '  "type": "string32",\n'\
+   '  "help": "Time: YYYY:JJJ:HH:MM:SS.sss or YYYY-MM-DDTHH:MM:SS.ssssss.",\n'\
+   '  "re": "(\\\\\\\\d\\\\\\\\d\\\\\\\\d\\\\\\\\d:\\\\\\\\d{1,3}:'\
+   '\\\\\\\\d{1,2}:\\\\\\\\d{1,2}:\\\\\\\\d{1,2}\\\\\\\\.\\\\\\\\d{1,3})'\
+   '|(\\\\\\\\d\\\\\\\\d\\\\\\\\d\\\\\\\\d-\\\\\\\\d{1,2}-\\\\\\\\d{1,2}'\
+   'T\\\\\\\\d{1,2}:\\\\\\\\d{1,2}:\\\\\\\\d{1,2}\\\\\\\\.\\\\\\\\d{1,6})"\n'\
+   '}\n'\
+   '}'
+
 
 #
 SEPMAP = {'tab': None, 'comma': ',',

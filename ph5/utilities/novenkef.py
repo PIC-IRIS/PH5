@@ -10,8 +10,8 @@
 import time
 import re
 import math
-from ph5.core import timedoy
 import sys
+from ph5.core import timedoy
 
 PROG_VERSION = '2017.086 Developmental'
 KEF_COLS = {}
@@ -53,8 +53,10 @@ seed_channelRE = re.compile("SEED_Channel")
 
 
 def get_header():
-    header = "#   Written by novenkef v{0} at {1}\n".format(
-        PROG_VERSION, timedoy.epoch2passcal(time.time()))
+    header = "#   Written by novenkef v{0} at {1}\n"\
+        .format(PROG_VERSION,
+                timedoy.epoch2passcal(
+                    time.time()))
     return header
 
 
@@ -74,13 +76,13 @@ def get_times(key, value):
                 "Error: Bad time value for {0} {1}.".format(key, value))
             line = "\t{0}/ascii_s = {1}\n".format(pre, time.ctime(int(0)))
             line += "\t{0}/epoch_l = {1}\n".format(pre, int(0))
-            line += "\t{0}/micro_seconds_i = {1}\n".format(
-                pre, int(0. * 1000000.))
+            line += "\t{0}/micro_seconds_i = {1}\n".format(pre,
+                                                           int(0. * 1000000.))
             line += "\t{0}/type_s = {1}\n".format(pre, 'BOTH')
             return line
 
     f, i = math.modf(fepoch)
-
+    pre = key.split('/')[0]
     line = "\t{0}/ascii_s = {1}\n".format(pre, time.ctime(int(i)))
     line += "\t{0}/epoch_l = {1}\n".format(pre, int(i))
     line += "\t{0}/micro_seconds_i = {1}\n".format(pre, int(f * 1000000.))
@@ -97,15 +99,18 @@ def write_receiver(top, filename):
     '''
        Write /Experiment_g/Sorts_g/Array_t_xxx entries
     '''
-    varrays = sorted(top.keys())
+    varrays = top.keys()
+    varrays.sort()
     fh = open(filename, 'w+')
     fh.write(get_header())
     n = 0
     for varray in varrays:
-        vids = sorted(top[varray].keys())
+        vids = top[varray].keys()
+        vids.sort()
         for vid in vids:
             n += 1
-            chans = sorted(top[varray][vid].keys())
+            chans = top[varray][vid].keys()
+            chans.sort()
             for chan in chans:
                 rows = top[varray][vid][chan]
                 for row in rows:
@@ -129,7 +134,7 @@ def write_receiver(top, filename):
                                     pre = mo.groups()[0]
                                     fh.write("\t{0} = {1}\n".format(k, row[k]))
                                     fh.write("\t{0}units_s = m\n".format(pre))
-                                # Check if seed channel and split into band,
+                                #   Check if seed channel and split into band,
                                 # instrument, and orientation
                                 elif seed_channelRE.match(k):
                                     fh.write("\t{0} = {1}\n".format(
@@ -152,18 +157,18 @@ PATH['event'] = '/Experiment_g/Sorts_g/Event_t_{0:03d}'
 
 
 # PATH['event'] = '/Experiment_g/Sorts_g/Event_t'
-
-
 def write_event(top, filename):
     '''
        Write /Experiment_g/Sorts_g/Event_t[_xxx] entries
     '''
-    varrays = sorted(top.keys())
+    varrays = top.keys()
+    varrays.sort()
     fh = open(filename, 'w+')
     fh.write(get_header())
     n = 0
     for varray in varrays:
-        vids = sorted(top[varray].keys())
+        vids = top[varray].keys()
+        vids.sort()
         for vid in vids:
             rows = top[varray][vid]
             for row in rows:
