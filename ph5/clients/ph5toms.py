@@ -15,10 +15,9 @@ import obspy
 import copy
 import itertools
 from ph5.core import ph5utils
-from ph5.core.ph5utils import PH5ResponseManager, PH5Response
+from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
-import multiprocessing as mp
 import io
 
 
@@ -108,7 +107,7 @@ class PH5toMSeed(object):
         self.ph5 = ph5API_object
         self.restricted = restricted
         self.format = format
-        
+
         self.resp_manager = PH5ResponseManager()
 
         if not self.ph5.Array_t_names:
@@ -161,7 +160,7 @@ class PH5toMSeed(object):
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
-    
+
     def filenamegeocsv_gen(self, trace):
         s = trace.stats
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
@@ -297,7 +296,7 @@ class PH5toMSeed(object):
             return station_to_cut_segments
         else:
             return station_to_cut_list
-        
+
     def get_response_obj(self, stc):
         sensor_keys = [stc.sensor_type]
         datalogger_keys = [stc.das_manufacturer,
@@ -495,14 +494,16 @@ class PH5toMSeed(object):
         location = station_list[deployment][
             st_num]['seed_location_code_s']
         das = station_list[deployment][st_num]['das/serial_number_s']
-        das_manufacturer = station_list[deployment][st_num]\
-                                            ['das/manufacturer_s']
-        das_model = station_list[deployment][st_num]\
-                                            ['das/model_s']
+        das_manufacturer = station_list[deployment][st_num][
+                                        'das/manufacturer_s']
+        das_model = station_list[deployment][st_num][
+                                        'das/model_s']
         sensor_type = " ".join([x for x in
-                    [station_list[deployment][st_num]['sensor/manufacturer_s'],
-                     station_list[deployment][st_num]['sensor/model_s']] if x])
-                            
+                                [station_list[deployment][st_num][
+                                                    'sensor/manufacturer_s'],
+                                 station_list[deployment][st_num][
+                                                    'sensor/model_s']] if x])
+
         receiver_n_i = station_list[deployment][st_num]['receiver_table_n_i']
         response_n_i = station_list[deployment][st_num]['response_table_n_i']
 
@@ -707,7 +708,7 @@ class PH5toMSeed(object):
                 "{0} != {1}".format(self.netcode, seed_network))
 
         experiment_id = experiment_t[0]['experiment_id_s']
-        
+
         array_names = sorted(self.ph5.Array_t_names)
         self.read_events(None)
 
@@ -738,7 +739,7 @@ class PH5toMSeed(object):
                     "Error - requested shotid(s) do not exist.")
 
         for array_name in array_names:
-            array_code = array_name[8:] # get 3 digit array code
+            array_code = array_name[8:]  # get 3 digit array code
             if self.array:
                 array_patterns = self.array
                 if not ph5utils.does_pattern_exists(
