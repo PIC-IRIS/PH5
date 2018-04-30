@@ -538,7 +538,7 @@ class Ssegy:
             ext['Spn'] = int(self.event_t['id_s'])
             #   Size of shot
             ext['Smsmant'] = int(self.event_t['size/value_d'])
-        except:
+        except BaseException:
             pass
 
         #   Spn scaler
@@ -594,7 +594,7 @@ class Ssegy:
             ext['trigsecond'] = ttuple[5]
             ext['trigmills'] = int(
                 self.event_t['time/micro_seconds_i'] / 1000.0)
-        except:
+        except BaseException:
             pass
 
         try:
@@ -603,13 +603,13 @@ class Ssegy:
                     self.array_t['das/serial_number_s']) & 0xFFFF
             except ValueError:
                 ext['inst_no'] = int(self.array_t['das/serial_number_s'], 16)
-        except:
+        except BaseException:
             ext['inst_no'] = 0
 
         try:
             ext['station_name'] = string.ljust(
                 string.strip(self.array_t['id_s']), 6)
-        except:
+        except BaseException:
             ext['station_name'] = string.ljust(
                 string.strip(self.array_t['das/serial_number_s']), 6)
 
@@ -630,7 +630,7 @@ class Ssegy:
             if self.event_t['size/units_s'][0] == 'k' or \
                     self.event_t['size/units_s'][0] == 'K':
                 ext['shot_size'] = self.event_t['size/value_d']
-        except:
+        except BaseException:
             pass
 
         #   Shot time
@@ -642,7 +642,7 @@ class Ssegy:
             ext['shot_minute'] = ttuple[4]
             ext['shot_second'] = ttuple[5]
             ext['shot_us'] = self.event_t['time/micro_seconds_i']
-        except:
+        except BaseException:
             pass
 
         #   Always set to 0
@@ -677,7 +677,7 @@ class Ssegy:
         #   Sensor sn
         try:
             ext['sensor_sn'] = int(self.array_t['sensor/serial_number_s'])
-        except:
+        except BaseException:
             pass
 
         #   DAS sn
@@ -693,7 +693,7 @@ class Ssegy:
         #   16 free bits
         try:
             ext['empty1'] = self.array_t['channel_number_i']
-        except:
+        except BaseException:
             pass
 
         #   Number of samples
@@ -701,7 +701,7 @@ class Ssegy:
         #   32 free bits
         try:
             ext['empty2'] = int(self.array_t['description_s'])
-        except:
+        except BaseException:
             pass
 
         #   clock correction
@@ -709,13 +709,13 @@ class Ssegy:
             ext['clock_drift'] = self._cor()[0]
             if ext['clock_drift'] > MAX_16 or ext['clock_drift'] < -MAX_16:
                 ext['clock_drift'] = int(MAX_16)
-        except:
+        except BaseException:
             pass
 
         #   16 free bits
         try:
             ext['empty3'] = int(self.event_t['description_s'])
-        except:
+        except BaseException:
             pass
 
         return ext
@@ -771,9 +771,9 @@ class Ssegy:
                 #   This should be the orientation
                 comp = self.receiver_t['orientation/description_s'][0]
                 tra['traceID'] = COMP2TID[comp]
-            except:
+            except BaseException:
                 tra['traceID'] = CHAN2TID[self.array_t['channel_number_i']]
-        except:
+        except BaseException:
             #   Changed for Mark Goldman, Aug 2011
             tra['traceID'] = 1
 
@@ -800,7 +800,7 @@ class Ssegy:
         twfUnits = self.response_t['bit_weight/units_s'].strip()
         try:
             mult = COUNTMULT[twfUnits]
-        except:
+        except BaseException:
             mult = 1.
 
         try:
@@ -828,7 +828,7 @@ class Ssegy:
                 tra['phoneFirstTrace'] = pft
             else:
                 tra['phoneFirstTrace'] = int(self.array_t['id_s'])
-        except:
+        except BaseException:
             tra['phoneFirstTrace'] = 0
 
         #
@@ -843,7 +843,7 @@ class Ssegy:
             # tra['recElevation'] = int (float
             # (self.array_t['location/Z/value_d']) * multiplier)
             # tra['elevationScale'] = -10
-        except:
+        except BaseException:
             tra['recElevation'] = 0
             tra['elevationScale'] = 0
 
@@ -861,7 +861,7 @@ class Ssegy:
                 tra['recLongOrX'] = vx
                 tra['recLatOrY'] = vy
                 tra['coordUnits'] = 1  # meters
-            except:
+            except BaseException:
                 tra['coordScale'] = 0
                 tra['recLongOrX'] = 0
                 tra['recLatOrY'] = 0
@@ -878,7 +878,7 @@ class Ssegy:
                     tra['coordUnits'] = LOCUNITS[u]
                 else:
                     tra['coordUnits'] = 0
-            except:
+            except BaseException:
                 tra['coordScale'] = 0
                 tra['recLongOrX'] = 0
                 tra['recLatOrY'] = 0
@@ -912,7 +912,7 @@ class Ssegy:
                 # int (float (self.event_t['location/Z/value_d']) * multiplier)
                 # tra['sourceDepth'] =
                 # int (float (self.event_t['depth/value_d']) * multiplier)
-            except:
+            except BaseException:
                 tra['sourceSurfaceElevation'] = 0
                 tra['sourceDepth'] = 0
 
@@ -928,7 +928,7 @@ class Ssegy:
                     tra['sourceLongOrX'] = vx
                     tra['sourceLatOrY'] = vy
 
-                except:
+                except BaseException:
                     tra['sourceLongOrX'] = 0
                     tra['sourceLatOrY'] = 0
 
@@ -939,7 +939,7 @@ class Ssegy:
                         self.event_t['location/Y/value_d'])
                     tra['sourceLongOrX'] = vx
                     tra['sourceLatOrY'] = vy
-                except:
+                except BaseException:
                     tra['sourceLongOrX'] = 0
                     tra['sourceLatOrY'] = 0
 

@@ -1,14 +1,18 @@
 # import from python packages
+# import tables
 from PyQt4 import QtGui
+from ph5.core import kefx, ph5api
+from ph5.utilities import tabletokef
+VER = 2018057
+
+# import from pn4
 # import kefx, ph5api
 # import tabletokef
 # git:
-from ph5.core import kefx, ph5api
-from ph5.utilities import tabletokef
-VER = 2018095
 
-PH5TYPE = {'_s': str, '_a': str, '_d': float,
-           '_f': float, '_l': int, '_i': int}
+
+PH5TYPE = {'_s': str, '_a': str, '_d': float, '_f': float, '_l': int,
+           '_i': int}
 PH5PATH = {"Experiment_t": "/Experiment_g/Experiment_t",
            "Sort_t": "/Experiment_g/Sorts_g/Sort_t",
            "Offset_t": "/Experiment_g/Sorts_g/%s",
@@ -26,23 +30,22 @@ PH5PATH = {"Experiment_t": "/Experiment_g/Experiment_t",
            "Das_t": "/Experiment_g/Receivers_g/Das_g_%s/Das_t"}
 
 
-class KefUtilityError (Exception):
+class KefUtilityError(Exception):
     '''   Exception gets raised in PH5Reader   '''
 
     def __init__(self, message):
         super(KefUtilityError, self).__init__(message)
         self.message = message
 
+
 ########################################
 # def Kef2TableData
 # updated: 201703
-# use kefx module to read the Kef file
-# into [(path, dict of values), ...] to kef variable,
+# use kefx module to read the Kef file into [(path, dict of values), ...]
+# to kef variable,
 # then convert to
 # * table data {path1:[2_way_data], ...}: each row is a data set
 # * ketSets {path1:[labels], ...}: label for each column in table data
-
-
 def Kef2TableData(statusbar, filename):
     try:
         kef = kefx.Kef(filename)
@@ -77,13 +80,12 @@ def Kef2TableData(statusbar, filename):
     kef.close()
     return tables, kef.keySets, totalLines, types
 
+
 ########################################
 # def NukeTable
 # updated: 201705
 # create command line using nuke-table script
 # to remove the tables shown in GUI from the PH5
-
-
 def NukeTable(parent, PH5file, path2file, tablepath):
     if "Experiment_t" in tablepath:
         op = '-E'
@@ -117,29 +119,25 @@ def NukeTable(parent, PH5file, path2file, tablepath):
     from subprocess import Popen, PIPE, STDOUT
 
     cmdStr = "nuke-table -p %s -n %s %s" % (path2file, PH5file, op)
-    p = Popen(cmdStr, shell=True, stdin=PIPE,
-              stdout=PIPE, stderr=STDOUT, close_fds=True)
+    p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
+              close_fds=True)
     output = p.stdout.read()
     print "The following command is running:\n", cmdStr
     print "Output: ", output
 
     if 'not found' in output.lower():
-        msg = "PATH '%s' does not exist in PH5 FILE '%s'.\n\n\
-        Do you want to insert the table into this PH5 FILE." % (
-            tablepath, PH5file)
-        result = QtGui.QMessageBox.question(
-            parent,
-            "Insert table?",
-            msg,
-            QtGui.QMessageBox.Yes,
-            QtGui.QMessageBox.No)
+        msg = "PATH '%s' does not exist in PH5 FILE '%s'.\n\nDo you want to" \
+              "insert the table into this PH5 FILE." % (tablepath, PH5file)
+        result = QtGui.QMessageBox.question(parent, "Insert table?", msg,
+                                            QtGui.QMessageBox.Yes,
+                                            QtGui.QMessageBox.No)
         if result == QtGui.QMessageBox.No:
             QtGui.QMessageBox.warning(parent, "Warning", "Saving interupted.")
             return False
     if 'error' in output.lower():
         title = "Error in removing table %s from PH5 file" % tablepath
-        result = QtGui.QMessageBox.warning(
-            parent, title, output + "\n\nSaving interupted.")
+        result = QtGui.QMessageBox.warning(parent, title,
+                                           output + "\n\nSaving interupted.")
         return False
     return True
 
@@ -147,10 +145,10 @@ def NukeTable(parent, PH5file, path2file, tablepath):
 ########################################
 # def PH5toTableData
 # updated: 201703
-# use tabletokef.readPH5 to read the PH5 file
-# into ph5data {KEY:[keys,rows], ...} or just keys, rows
-# in which keys is list of labels, and rows is dict of values;
-# KEYs are the array id/ eventid ...
+# use tabletokef.readPH5 to read the PH5 file into ph5data {KEY:[keys,rows],
+#  ...} or just keys, rows
+# in which keys is list of labels, and rows is dict of values; KEYs are the
+# array id/ eventid ...
 # then convert to table data {path1:[2_way_data],...} and ketSets
 # {path1:[labels], ...}
 def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
@@ -166,8 +164,9 @@ def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
             if path not in tables:
                 tables[path] = []
                 keySets[path] = ph5data[k].keys
-            count, totalLines, types[path] = _appendTable(
-                tables[path], ph5data[k], path, statusbar, count)
+            count, totalLines, types[path] = _appendTable(tables[path],
+                                                          ph5data[k], path,
+                                                          statusbar, count)
             TOTAL += totalLines
 
     else:
@@ -176,19 +175,18 @@ def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
             path = path % "Array_t_{0:03d}".format(int(arg))
         tables[path] = []
         keySets[path] = ph5data.keys
-        count, totalLines, types[path] = _appendTable(
-            tables[path], ph5data, path, statusbar, count)
+        count, totalLines, types[path] = _appendTable(tables[path], ph5data,
+                                                      path, statusbar, count)
         TOTAL += totalLines
     # print "types:", types
     return tables, keySets, TOTAL, types
+
 
 ########################################
 # def _appendTable
 # updated: 201703
 # convert rows to 2 way data for tables of which columns in order of keys
 # (rows and keys are attr. of ph5Vval)
-
-
 def _appendTable(table, ph5Val, path, statusbar, count):
     totalLines = len(ph5Val.rows)
     type_ = []
@@ -203,23 +201,22 @@ def _appendTable(table, ph5Val, path, statusbar, count):
         count += 1
         if count % 10000 == 0:
             statusbar.showMessage(
-                "Converting PH5 to Data in %s: %s/%s"
-                % (path, count, totalLines))
+                "Converting PH5 to Data in %s: %s/%s" %
+                (path, count, totalLines))
     return count, totalLines, type_
+
 
 ########################################
 # def GetPrePH5Info
 # updated: 201703
-# read the given PH5 file and return ph5 available tables,
-# arrays, events, shotlines, das
+# read the given PH5 file and return ph5 available tables, arrays, events,
+# shotlines, das
 # for user to choose which table he want to edit
 # (ph5 return to use to continue to read ph5data)
-
-
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5api.PH5(path=path2file, nickname=filename, editmode=True)
+    ph5 = ph5api.PH5(path=path2file, nickname=filename, editmode=False)
 
     # event
     ph5.read_event_t_names()
@@ -235,7 +232,8 @@ def GetPrePH5Info(filename, path2file=""):
                 shotLines.append(n.replace('Event_t_', ''))
             ph5.read_event_t(n)
             events = events + ph5.Event_t[n]['order']
-        if events != []:  # check this condition in case not a master file
+        if events != []:  # check this condition in case the read file is
+            # not a master file
             availTables.append('Event_t')
             availTables.append('All_Event_t')
     # array
@@ -243,8 +241,8 @@ def GetPrePH5Info(filename, path2file=""):
     if len(ph5.Array_t_names) != 0:
         availTables.append("Array_t")
         availTables.append("All_Array_t")
-    arrays = sorted([str(int(a.replace("Array_t_", "")))
-                     for a in ph5.Array_t_names])
+    arrays = sorted(
+        [str(int(a.replace("Array_t_", ""))) for a in ph5.Array_t_names])
 
     # offset
     ph5.read_offset_t_names()
@@ -316,11 +314,10 @@ table, th, td {
 <ul>
     <li><a href="#OpenKef">Open Kef File</a></li>
     <li><a href="#OpenPH5">Open PH5 File</a></li>
-    <li><a href="#OpenTableInCurr">Open table(s)
-    in the current PH5 File</a></li>
+    <li><a href="#OpenTableInCurr">Open table(s) in the current PH5 Fil
+    </a></li>
     <li><a href="#SaveKef">Save as Kef File</a></li>
-    <li><a href="#SavePH5">Save the opened table(s)
-    into a PH5 File</a></li>
+    <li><a href="#SavePH5">Save as PH5 File</a></li>
     <li><a href="#UpdatePH5">Update the current PH5 File</a></li>
     <li><a href="#SaveCSV">Save as CSV file</a></li>
     <li><a href="#EditTable">Edit Table</a></li>
@@ -330,7 +327,7 @@ table, th, td {
         <li><a href="#EditCol">Editting the whole column</a></li>
         <li><a href="#Move">Move Selected Row(s) to a new position</a></li>
         <li><a href="#Delete">Delete Row(s) on Selected Cell(s)</a></li>
-        <li><a href="#Add">Add Row(s) with Data Copy from Selected Cell(s)
+        <li><a href="#Add">Add Row(s) with Data Copy from Selected Cell(s
         </a></li>
     </ul>
 </ul>
@@ -341,8 +338,8 @@ table, th, td {
 <tr>
 <td>
 <h2><a id="OpenKef">Open Kef File</a></h2>
-<div>Select Menu File - Open Kef File: to open all tables in a Kef file
-for editing. Each table is placed in a tab.</div>
+<div>Select Menu File - Open Kef File: to open all tables in a Kef file for
+editing. Each table is placed in a tab.</div>
 <div align="right"><a href="#contents">Contents</a></div>
 <div>&nbsp;</div>
 </td>
@@ -350,8 +347,8 @@ for editing. Each table is placed in a tab.</div>
 <tr>
 <td>
 <h2><a id="OpenPH5">Open PH5 File</a></h2>
-<div>Select Menu File - Open PH5 File: to open (a) table(s) in a PH5 File
-for editing. Each table is placed in a tab.</div>
+<div>Select Menu File - Open PH5 File: to open (a) table(s) in a PH5 File for
+editing. Each table is placed in a tab.</div>
 <div align="right"><a href="#contents">Contents</a></div>
 <div>&nbsp;</div>
 </td>
@@ -376,9 +373,9 @@ the app. doesn't need to reopen the file.</div>
 </tr>
 <tr>
 <td>
-<h2><a id="SavePH5">Save the opened table(s) into a PH5 File</a></h2>
-<div>Update the a PH5 file with the opened tables OR create a new PH5
-file from the tables. </div>
+<h2><a id="SavePH5">Save as PH5 File</a></h2>
+<div>Update the a PH5 file with the opened tables OR create a new PH5 file
+from the tables. </div>
 <div align="right"><a href="#contents">Contents</a></div>
 <div>&nbsp;</div>
 </td>
@@ -388,8 +385,8 @@ file from the tables. </div>
 <h2><a id="UpdatePH5">Update the current PH5 File</a></h2>
 <div>This option is similar to Save as PH5 File when choosing the current
 opened file's name. This will run faster than saving as a different PH5 file
-for it skip the step of removing table(s) and create kef file
-for new table(s). </div>
+for it skip the step of removing table(s) and create kef file for new
+table(s). </div>
 <div align="right"><a href="#contents">Contents</a></div>
 <div>&nbsp;</div>
 </td>
@@ -407,38 +404,37 @@ for new table(s). </div>
 <h2><a id="EditTable">Edit Table</a></h2>
 
 <h3><a id="Select">Select Cell(s)</a></h3>
-<div>Select Type: Define which cell(s) will be selected when
-click on a cell.</div>
+<div>Select Type: Define which cell(s) will be selected when click on a cell.
+</div>
 <ul>
     <li>Single Cell: Only that cell will be selected.</li>
     <li>All Similar Cells in Station: All cells that have the same station id
     and value with the clicked cell will be selected. Avalaible only for
     Array Table.</li>
     <li>All Similar Cells in Column: All cells that have the same value and
-    column with the clicked cell will be selected.
-    (E.g. when user want to change value for time, this option allow user to
-    make sure all the necessary times are changed consistently.)
-    When this option is selected, move, delete and add options are disabled
-    to prevent going out of control.
+    column with the clicked cell will be selected. (E.g. when user want to
+    hange value for time, this option allow user to make sure all the necessary
+     times are changed consistently.) When this option is selected, move,
+     delete and add options are disabled to prevent going out of control.
 </ul>
 
 <h3><a id="Change">Change value in (a) cell(s)</a></h3>
 <div>When a cell is clicked, its value will appear in the text box next to the
 three Select Types so that its value can be editted.</div>
-<div>User can click on button 'Change' to update the new value to the
-selected cell(s). If the new value is different with the original values,
-the row(s) on the selected cell(s) will change color to pink.</div>
+<div>User can click on button 'Change' to update the new value to the selected
+cell(s). If the new value is different with the original values, the row(s) on
+the selected cell(s) will change color to pink.</div>
 
 <h3><a id="EditCol">Editting the whole column</a></h3>
 <ul>
     <li>Selected Column: Show the label of the selected column.</li>
     <li>Position of Char. to change: Select the first position of character(s)
     to change.</li>
-    <li>Number of Char. to change: Select the number of character(s) to
-    change.</li>
+    <li>Number of Char. to change: Select the number of character(s) to change.
+    </li>
     <li>X: The value to be applied in column changing.</li>
-    <li>Change Char. to X: Change the selected character(s) in each item of
-    the selected column to X.</li>
+    <li>Change Char. to X: Change the selected character(s) in each item of the
+     selected column to X.</li>
     <li>Plus X to Char.: Plus X to the selected character(s) in each item of
     the selected column.</li>
     <li>Change Column to X: Change each item of the selected column to X.</li>
@@ -450,15 +446,15 @@ the row(s) on the selected cell(s) will change color to pink.</div>
 <h3><a id="Move">Move Selected Row(s) to a new position</a></h3>
 <div>When cell(s) are selected, the corresponding row(s) will be shown in
 Selected Rows (for the ease of following up).</div>
-<div>User will choose the Line No(next to 'Move Selected Row(s) under Line No')
-under which the row(s) will be moved to, then click 'Move'.</div>
+<div>User will choose the Line No (next to 'Move Selected Row(s) under Line
+No') under which the row(s) will be moved to, then click 'Move'.</div>
 
 <h3><a id="delete">Delete Row(s) on Selected Cell(s)</a></h3>
-<div>To delete Selected Row(s), just click on 'Delete Row(s) on
-Selected Cell(s)',the row(s) will change color to purple to mark that
-the row(s) are deleted.</div>
-<div>User can change their mind by selecting the deleted row(s) again
-and click on 'UnDelete'.</div>
+<div>To delete Selected Row(s), just click on 'Delete Row(s) on Selected
+Cell(s)', the row(s) will change color to purple to mark that the row(s) are
+deleted.</div>
+<div>User can change their mind by selecting the deleted row(s) again and
+click on 'UnDelete'.</div>
 
 <h3><a id="Add">Add Row(s) with Data Copy from Selected Cell(s)</a></h3>
 <ul>
@@ -468,8 +464,8 @@ and click on 'UnDelete'.</div>
     change its/their value(s) in the text box similar to 'Change value in (a)
     cell(s)' described <a href="#Change">above</a></li>
     <li>Insert Selected Rows in Add Row View to the Main View by select the the
-    Line No (next to 'Insert Selected Row(s) under Line No') under which the
-    row(s) will be inserted to, then click 'Insert'.</div>
+     Line No (next to 'Insert Selected Row(s) under Line No') under which the
+     row(s) will be inserted to, then click 'Insert'.</div>
 </ul>
 
 <div align="right"><a href="#contents">Contents</a></div>
@@ -488,25 +484,12 @@ html_whatsnew = """
 <title>What's new? Page</title>
 </head>
 <body>
-<h2>What's new in version 2018.095?</h2>
-<hr />
-<ul>
-    <li>Change PH5's editmode to True to fix error unable to save as PH5. </li>
-    <li>Change menu option from 'Save as PH5' to 'Save the opened table(s) into
-    a PH5 File' so that user can understand that they can use that function to
-    add table from kef file to ph5 file
-    (a task needed to load metadata into ph5). </li>
-    <li>Change command 'kef2ph5' to 'keftoph5' according to new standard.</li>
-</ul>
-<hr />
-<hr />
-<h2>What's new in version 2017.209?</h2>
+<h2>What's new in version %s?</h2>
 <hr />
 <li>Menu File - Update the Current PH5 File:</li>
 <ul>This option is similar to Save as PH5 File when choosing the current opened
-file's name. This will run faster than saving as a different PH5 file
-for it skip the step of removing table(s) and create kef file for
-new table(s).</ul>
+ file's name. This will run faster than saving as a different PH5 file for it
+ skip the step of removing table(s) and create kef file for new table(s).</ul>
 <li>Save as CSV file:</li>
 <ul>Save each current tables in a CSV file with ";" deliminators.</ul>
 <li>Add table options</li>
@@ -515,20 +498,19 @@ All_Offset_t and All_Event_t
 <li>Editting the whole column:</li>
 <ul>
     <li>Selected Column: Show the label of selected column.</li>
-    <li>Position of Char. to change: Select the first position of
-    character(s) to change.</li>
-    <li>Number of Char. to change: Select the number of character(s)
+    <li>Position of Char. to change: Select the first position of character(s)
     to change.</li>
+    <li>Number of Char. to change: Select the number of character(s) to change.
+    </li>
     <li>X: X: The value to be applied in column changing.</li>
-    <li>Change Char. to X: Change the selected character(s) in each item of the
-    selected column to X.</li>
+    <li>Change Char. to X: Change the selected character(s) in each item of
+    the selected column to X.</li>
     <li>Plus X to Char.: Plus X to the selected character(s) in each item of
     the selected column.</li>
     <li>Change Column to X: Change each item of the selected column to X.</li>
     <li>Plus X to Column: Plus X to each item of the selected column.</li>
     <li>Reset Column: Reset each item of the selected column back to its
-    original
-    value.</li>
+    original value.</li>
 </ul>
 <li>Back to Org: Reset selected items back to their original values.</li>
 </body>
