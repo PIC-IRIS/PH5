@@ -16,7 +16,9 @@ Master:
 -ph5.clients.ph5tostationxml
  * Address issue #181
  * print to stdout by default
- 
+ -ph5.clients.ph5toms
+ * Add ph5toms support for the web service GeoCSV timeseries data format.
+
 v4.1.1:
 -ph5.clients.ph5toexml
  * Fix case where station does not have a key of 1
