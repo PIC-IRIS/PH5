@@ -216,7 +216,7 @@ def _appendTable(table, ph5Val, path, statusbar, count):
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5api.PH5(path=path2file, nickname=filename, editmode=False)
+    ph5 = ph5api.PH5(path=path2file, nickname=filename, editmode=True)
 
     # event
     ph5.read_event_t_names()
