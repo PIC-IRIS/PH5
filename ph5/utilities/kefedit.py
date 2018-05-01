@@ -504,7 +504,7 @@ class KefEdit(QtGui.QMainWindow):
             sys.exit(application.exec_())
             try:
                 os.unlink(keftmpfile)  # remove keftmpfile
-            except:
+            except BaseException:
                 pass
 
     ###############################
@@ -1252,7 +1252,7 @@ class TablePanel(QtGui.QMainWindow):
         self.plusX2ColBtn.setEnabled(False)
         try:
             int(self.XCtrl.text())
-        except:
+        except BaseException:
             return
 
         if self.nondigitList == []:
@@ -1307,7 +1307,7 @@ class TablePanel(QtGui.QMainWindow):
             try:
                 int(self.XCtrl.text())
                 self.plusX2CharBtn.setEnabled(True)
-            except:
+            except BaseException:
                 pass
 
     ###############################
