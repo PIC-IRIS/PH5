@@ -1,12 +1,12 @@
 # import from python packages
-VER = 2018057
+VER = 2018095
 import tables
 from PyQt4 import QtGui, QtCore
 
-###### import from pn4
+###########################
 #import kefx, ph5api
 #import tabletokef
-###### git:
+############### git:
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
@@ -182,7 +182,7 @@ def _appendTable(table , ph5Val, path, statusbar, count):
 def GetPrePH5Info(filename, path2file=""):
     availTables = []
     # initialize
-    ph5 = ph5api.PH5 (path=path2file, nickname=filename, editmode=False)
+    ph5 = ph5api.PH5 (path=path2file, nickname=filename, editmode=True)
   
     # event
     ph5.read_event_t_names ()
@@ -269,7 +269,7 @@ table, th, td {
     <li><a href="#OpenPH5">Open PH5 File</a></li>
     <li><a href="#OpenTableInCurr">Open table(s) in the current PH5 File</a></li>
     <li><a href="#SaveKef">Save as Kef File</a></li>
-    <li><a href="#SavePH5">Save as PH5 File</a></li>
+    <li><a href="#SavePH5">Save the opened table(s) into a PH5 File</a></li>
     <li><a href="#UpdatePH5">Update the current PH5 File</a></li>
     <li><a href="#SaveCSV">Save as CSV file</a></li>
     <li><a href="#EditTable">Edit Table</a></li>
@@ -320,7 +320,7 @@ table, th, td {
 </tr>
 <tr>
 <td>
-<h2><a id="SavePH5">Save as PH5 File</a></h2>
+<h2><a id="SavePH5">Save the opened table(s) into a PH5 File</a></h2>
 <div>Update the a PH5 file with the opened tables OR create a new PH5 file from the tables. </div>
 <div align="right"><a href="#contents">Contents</a></div>
 <div>&nbsp;</div>
@@ -402,7 +402,16 @@ html_whatsnew = """
 <title>What's new? Page</title>
 </head>
 <body>
-<h2>What's new in version %s?</h2>
+<h2>What's new in version 2018.095?</h2>
+<hr />
+<ul>
+    <li>Change PH5's editmode to True to fix error unable to save as PH5. </li>
+    <li>Change menu option from 'Save as PH5' to 'Save the opened table(s) into a PH5 File' so that user can understand that they can use that function to add table from kef file to ph5 file (a task needed to load metadata into ph5). </li>
+    <li>Change command 'kef2ph5' to 'keftoph5' according to new standard.</li>
+</ul>
+<hr />
+<hr />
+<h2>What's new in version 2017.209?</h2>
 <hr />
 <li>Menu File - Update the Current PH5 File:</li>
 <ul>This option is similar to Save as PH5 File when choosing the current opened file's name. This will run faster than saving as a different PH5 file for it skip the step of removing table(s) and create kef file for new table(s).</ul>

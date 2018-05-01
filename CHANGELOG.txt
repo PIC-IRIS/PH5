@@ -1,4 +1,8 @@
 Master:
+-ph5.utilities.ph5tostationxml
+ * Fixed bug causing arrays with same station id_s to be filtered out
+-ph5.utilities.kefedit
+ Fixed not being able to save directly to PH5 (issue #193)
 -ph5.clients.ph5view
  * Handle node > 3 channel bug
 -ph5.core.segd2ph5

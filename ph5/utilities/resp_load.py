@@ -129,6 +129,7 @@ class n_i_fix(object):
                                 " channel " +
                                 str(channel) +
                                 ".\n")
+                            break
                         for entry in Das_t:
                             if (entry['sample_rate_i'] == sample_rate and entry['sample_rate_multiplier_i'] == sample_rate_multiplier and entry['channel_number_i'] == channel):
                                 response_n_i = entry['response_table_n_i']
@@ -270,11 +271,14 @@ class n_i_fix(object):
             file_name = "array_t_" + str(x) + ".kef"
             for line in new_kef:
                 outfile.write("%s" % line)
-
+            outfile.close()
             command = "nuke_table -n master.ph5 -p {0} -A {1}".format (path, str(x))
             ret = subprocess.call (command, shell=True)
+            import time
+            time.sleep(1)
             command = "keftoph5 -n master.ph5 -p {1} -k {0}".format (file_name, path)
             ret = subprocess.call (command, shell=True)
+            time.sleep(0.5)
             logging.info(
                 "array_t_" +
                 str(x) +
@@ -589,7 +593,8 @@ def main():
     else:
         new_data = fix_n_i.load_response(
             args.ph5path, args.nickname, data, args.input_csv)
-
+        import time
+        time.sleep(5)
         fix_n_i.update_kefs(args.ph5path, args.array, new_data)
 
 

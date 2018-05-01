@@ -18,7 +18,7 @@ from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager, PH5Response
 
 
-PROG_VERSION = "2017.314"
+PROG_VERSION = "2018.106"
 
 
 def get_args():
@@ -613,13 +613,14 @@ class PH5toStationXMLParser(object):
                             obs_station.total_number_of_channels = len(
                                 station_list)
                             obs_station.selected_number_of_channels = 0
-                        hash = "{}.{}.{}.{}.{}.{}".format(
+                        hash = "{}.{}.{}.{}.{}.{}.{}".format(
                             obs_station.code,
                             obs_station.latitude,
                             obs_station.longitude,
                             obs_station.start_date,
                             obs_station.end_date,
-                            obs_station.elevation)
+                            obs_station.elevation,
+                            obs_station.extra)
                         if hash not in all_stations_keys:
                             all_stations_keys.append(hash)
                             all_stations.append(obs_station)
