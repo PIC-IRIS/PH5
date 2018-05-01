@@ -15,6 +15,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 
 from ph5.core import ph5utils, ph5api
+from ph5.core.ph5utils import PH5ResponseManager, PH5Response
 
 
 PROG_VERSION = "2018.106"
@@ -178,8 +179,8 @@ class PH5Response(object):
         self.sensor_keys = sensor_keys
         self.datalogger_keys = datalogger_keys
         self.response = response
-
-
+        
+        
 class PH5toStationXMLRequest(object):
 
     def __init__(self, network_list=None, reportnum_list=None,

@@ -11,11 +11,15 @@ from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import SACTrace
+import obspy
 import copy
 import itertools
 from ph5.core import ph5utils
+from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
+import io
+
 
 
 PROG_VERSION = "2018.038"
@@ -24,24 +28,31 @@ LENGTH = int(86400)
 
 class StationCut(object):
 
-    def __init__(self, net_code, station, seed_station, das, channel,
-                 seed_channel, starttime, endtime,
-                 sample_rate, sample_rate_multiplier,
-                 notimecorrect, location, latitude, longitude, elev,
+    def __init__(self, net_code, experiment_id, station, seed_station,
+                 array_code, das, das_manufacturer, das_model,
+                 sensor_type, component, seed_channel,
+                 starttime, endtime, sample_rate,
+                 sample_rate_multiplier, notimecorrect,
+                 location, latitude, longitude, elev,
                  receiver_n_i, response_n_i):
 
         self.net_code = net_code
+        self.experiment_id = experiment_id
         self.station = station
         self.seed_station = seed_station
+        self.array_code = array_code
         self.seed_channel = seed_channel
+        self.location = location
+        self.component = component
         self.das = das
+        self.das_manufacturer = das_manufacturer
+        self.das_model = das_model
+        self.sensor_type = sensor_type
         self.starttime = starttime
         self.endtime = endtime
-        self.channel = channel
         self.sample_rate = sample_rate
         self.sample_rate_multiplier = sample_rate_multiplier
         self.notimecorrect = notimecorrect
-        self.location = location
         self.latitude = latitude
         self.longitude = longitude
         self.elev = elev
@@ -98,6 +109,8 @@ class PH5toMSeed(object):
         self.restricted = restricted
         self.format = format
 
+        self.resp_manager = PH5ResponseManager()
+
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
 
@@ -133,21 +146,27 @@ class PH5toMSeed(object):
     def filenamemseed_gen(self, stream):
 
         s = stream.traces[0].stats
-        secs = int(s.starttime.timestamp)
-        pre = epoch2passcal(secs, sep='_')
-        ret = "{0}.{1}.{2}.{3}.{4}.ms".format(pre, s.network, s.station,
-                                              s.location, s.channel)
+        ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
+            s.network, s.station, s.location,
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamesac_gen(self, trace):
-
         s = trace.stats
-        secs = int(s.starttime.timestamp)
-        pre = epoch2passcal(secs, sep='.')
-        ret = "{0}.{1}.{2}.{3}.{4}.SAC".format(
-            s.network, s.station, s.location, s.channel, pre)
+        ret = "{0}.{1}.{2}.{3}.{4}.sac".format(
+            s.network, s.station, s.location,
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+        if not self.stream:
+            ret = os.path.join(self.out_dir, ret)
+        return ret
+
+    def filenamegeocsv_gen(self, trace):
+        s = trace.stats
+        ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
+            s.network, s.station, s.location,
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -279,6 +298,66 @@ class PH5toMSeed(object):
         else:
             return station_to_cut_list
 
+    def get_response_obj(self, stc):
+        sensor_keys = [stc.sensor_type]
+        datalogger_keys = [stc.das_manufacturer,
+                           stc.das_model,
+                           stc.sample_rate]
+        if not self.resp_manager.is_already_requested(sensor_keys,
+                                                      datalogger_keys):
+            self.ph5.read_response_t()
+            Response_t = self.ph5.get_response_t_by_n_i(stc.response_n_i)
+            response_file_das_a_name = Response_t.get('response_file_das_a',
+                                                      None)
+            response_file_sensor_a_name = Response_t.get(
+                                                    'response_file_sensor_a',
+                                                    None)
+            # parse datalogger response
+            if response_file_das_a_name:
+                response_file_das_a = \
+                    self.ph5.ph5_g_responses.get_response(
+                                                    response_file_das_a_name
+                                            )
+                with io.BytesIO(response_file_das_a) as buf:
+                    buf.seek(0, 0)
+                    dl_resp = obspy.read_inventory(buf, format="RESP")
+                dl_resp = dl_resp[0][0][0].response
+            # parse sensor response if present
+            if response_file_sensor_a_name:
+                response_file_sensor_a = \
+                    self.ph5.ph5_g_responses.get_response(
+                                                response_file_sensor_a_name
+                                            )
+                with io.BytesIO(response_file_sensor_a) as buf:
+                    buf.seek(0, 0)
+                    sensor_resp = obspy.read_inventory(buf, format="RESP")
+                sensor_resp = sensor_resp[0][0][0].response
+
+            inv_resp = None
+            if response_file_das_a_name and response_file_sensor_a_name:
+                # both datalogger and sensor response
+                dl_resp.response_stages.pop(0)
+                dl_resp.response_stages.insert(0,
+                                               sensor_resp.response_stages[0])
+                dl_resp.recalculate_overall_sensitivity()
+                inv_resp = dl_resp
+            elif response_file_das_a_name:
+                # only datalogger response
+                inv_resp = dl_resp
+            elif response_file_sensor_a_name:
+                # only sensor response
+                inv_resp = sensor_resp
+
+            if inv_resp:
+                # update response manager and return response
+                self.resp_manager.add_response(sensor_keys,
+                                               datalogger_keys,
+                                               inv_resp)
+                return inv_resp
+        else:
+            return self.resp_manager.get_response(sensor_keys,
+                                                  datalogger_keys)
+
     def create_trace(self, station_to_cut, mp=False):
 
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments(
@@ -293,7 +372,7 @@ class PH5toMSeed(object):
                 return
 
             Das_t = ph5api.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
-                                        stc.channel)
+                                        stc.component)
 
             Das_t = [x for x in Das_t]
             Das_tf = next(iter(Das_t or []), None)
@@ -315,7 +394,7 @@ class PH5toMSeed(object):
 
             traces = self.ph5.cut(stc.das, start_time,
                                   new_endtime,
-                                  chan=stc.channel,
+                                  chan=stc.component,
                                   sample_rate=actual_sample_rate,
                                   apply_time_correction=nt, das_t=Das_t)
 
@@ -349,6 +428,20 @@ class PH5toMSeed(object):
                                              'stel': float(stc.elev),
                                              'cmpaz': float(azimuth),
                                              'cmpinc': float(dip)}
+                elif self.format == "GEOCSV":
+                    Receiver_t = \
+                        self.ph5.get_receiver_t_by_n_i(stc.receiver_n_i)
+                    azimuth = Receiver_t['orientation/azimuth/value_f']
+                    dip = Receiver_t['orientation/dip/value_f']
+                    obspy_trace.stats.sensor_type = stc.sensor_type
+                    obspy_trace.stats.elevation = float(stc.elev)
+                    obspy_trace.stats.dip = float(dip)
+                    obspy_trace.stats.depth = 0
+                    obspy_trace.stats.back_azimuth = azimuth
+                    obspy_trace.stats.experiment_id = stc.experiment_id
+                    obspy_trace.stats.array = stc.array_code
+                    obspy_trace.stats.component = stc.component
+                    obspy_trace.stats.response = self.get_response_obj(stc)
                 obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
@@ -390,7 +483,8 @@ class PH5toMSeed(object):
         return seed_cha_code, component
 
     def create_cut(self, seed_network, ph5_station, seed_station,
-                   start_times, station_list, deployment, st_num):
+                   start_times, station_list, deployment, st_num,
+                   array_code, experiment_id):
         global LENGTH
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
         deploy_micro = station_list[deployment][
@@ -401,6 +495,16 @@ class PH5toMSeed(object):
         location = station_list[deployment][
             st_num]['seed_location_code_s']
         das = station_list[deployment][st_num]['das/serial_number_s']
+        das_manufacturer = station_list[deployment][st_num][
+                                        'das/manufacturer_s']
+        das_model = station_list[deployment][st_num][
+                                        'das/model_s']
+        sensor_type = " ".join([x for x in
+                                [station_list[deployment][st_num][
+                                                    'sensor/manufacturer_s'],
+                                 station_list[deployment][st_num][
+                                                    'sensor/model_s']] if x])
+
         receiver_n_i = station_list[deployment][st_num]['receiver_table_n_i']
         response_n_i = station_list[deployment][st_num]['response_table_n_i']
 
@@ -562,9 +666,14 @@ class PH5toMSeed(object):
                 self.ph5.Das_t = {}
                 station_x = StationCut(
                     seed_network,
+                    experiment_id,
                     ph5_station,
                     seed_station,
+                    array_code,
                     das,
+                    das_manufacturer,
+                    das_model,
+                    sensor_type,
                     component,
                     seed_channel,
                     starttime,
@@ -599,6 +708,8 @@ class PH5toMSeed(object):
                 "not match this PH5 experiment network code. "
                 "{0} != {1}".format(self.netcode, seed_network))
 
+        experiment_id = experiment_t[0]['experiment_id_s']
+
         array_names = sorted(self.ph5.Array_t_names)
         self.read_events(None)
 
@@ -629,11 +740,11 @@ class PH5toMSeed(object):
                     "Error - requested shotid(s) do not exist.")
 
         for array_name in array_names:
+            array_code = array_name[8:]  # get 3 digit array code
             if self.array:
-                array = array_name[8:]
                 array_patterns = self.array
                 if not ph5utils.does_pattern_exists(
-                        array_patterns, str(array)):
+                        array_patterns, str(array_code)):
                     continue
 
             self.read_arrays(array_name)
@@ -668,6 +779,7 @@ class PH5toMSeed(object):
                             if not ph5utils.does_pattern_exists(sta_patterns,
                                                                 seed_station):
                                 continue
+
                         if self.reqtype == "SHOT":
                             # request by shot
                             for shotline in matched_shot_lines:
@@ -687,12 +799,14 @@ class PH5toMSeed(object):
                                 cuts_generator.append(self.create_cut(
                                     seed_network, ph5_station,
                                     seed_station, start_times,
-                                    station_list, deployment, st_num))
+                                    station_list, deployment, st_num,
+                                    array_code, experiment_id))
                         elif self.reqtype == "FDSN":
                             # fdsn request
                             cuts_generator.append(self.create_cut(
                                 seed_network, ph5_station, seed_station,
-                                start_times, station_list, deployment, st_num))
+                                start_times, station_list, deployment, st_num,
+                                array_code, experiment_id))
 
         return itertools.chain.from_iterable(cuts_generator)
 
