@@ -15,7 +15,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 
 from ph5.core import ph5utils, ph5api
-from ph5.core.ph5utils import PH5ResponseManager, PH5Response
+from ph5.core.ph5utils import PH5ResponseManager
 
 
 PROG_VERSION = "2018.106"
@@ -23,10 +23,10 @@ PROG_VERSION = "2018.106"
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description='Takes PH5 files and returns stationxml.',
-        usage=('Version: {0} ph5tostationxml --nickname="Master_PH5_file" '
-               '[options]'.format(PROG_VERSION))
-    )
+            description='Takes PH5 files and returns stationxml.',
+            usage=('Version: {0} ph5tostationxml --nickname="Master_PH5_file" '
+                   '[options]'.format(PROG_VERSION))
+            )
     parser.add_argument("-n", "--nickname", action="store", required=True,
                         type=str, default="master.ph5", metavar="nickname")
 
@@ -145,11 +145,10 @@ class PH5toStationXMLError(Exception):
     """Exception raised when there is a problem with the request.
     :param: message -- explanation of the error
     """
-
     def __init__(self, message=""):
         self.message = message
-        
-        
+
+
 class PH5toStationXMLRequest(object):
 
     def __init__(self, network_list=None, reportnum_list=None,
@@ -309,13 +308,13 @@ class PH5toStationXMLParser(object):
                            receiver_id):
 
         obs_channel = obspy.core.inventory.Channel(
-            code=cha_code,
-            location_code=loc_code,
-            latitude=cha_latitude,
-            longitude=cha_longitude,
-            elevation=cha_elevation,
-            depth=0
-        )
+                                                   code=cha_code,
+                                                   location_code=loc_code,
+                                                   latitude=cha_latitude,
+                                                   longitude=cha_longitude,
+                                                   elevation=cha_elevation,
+                                                   depth=0
+                                            )
         obs_channel.start_date = UTCDateTime(station_list[deployment][0]
                                              ['deploy_time/epoch_l'])
         obs_channel.end_date = UTCDateTime(station_list[deployment][0]
@@ -328,11 +327,10 @@ class PH5toStationXMLParser(object):
                                    [0]['sample_rate_i'])
         obs_channel.sample_rate_ration = sample_rate_ration
         try:
-            obs_channel.sample_rate =\
-                sample_rate_ration / sample_rate_multiplier
+            obs_channel.sample_rate = sample_rate_ration/sample_rate_multiplier
         except ZeroDivisionError:
             raise PH5toStationXMLError(
-                "Error - Invalid sample_rate_multiplier_i == 0")
+                            "Error - Invalid sample_rate_multiplier_i == 0")
 
         obs_channel.storage_format = "PH5"
         receiver_table_n_i = station_list[deployment][0]['receiver_table_n_i']
@@ -341,9 +339,9 @@ class PH5toStationXMLParser(object):
         obs_channel.dip = Receiver_t['orientation/dip/value_f']
 
         sensor_type = " ".join(
-            [x for x in
-             [station_list[deployment][0]['sensor/manufacturer_s'],
-              station_list[deployment][0]['sensor/model_s']] if x])
+                        [x for x in
+                         [station_list[deployment][0]['sensor/manufacturer_s'],
+                          station_list[deployment][0]['sensor/model_s']] if x])
 
         obs_channel.sensor = obspy.core.inventory.Equipment(
             type=sensor_type,
@@ -375,25 +373,25 @@ class PH5toStationXMLParser(object):
                 serial_number=station_list[deployment][0]
                                           ['das/serial_number_s'],
                 installation_date=UTCDateTime(
-                    station_list[deployment][0]['deploy_time/epoch_l']
-                ),
+                        station_list[deployment][0]['deploy_time/epoch_l']
+                        ),
                 removal_date=UTCDateTime(
-                    station_list[deployment][0]['pickup_time/epoch_l']
-                )
+                        station_list[deployment][0]['pickup_time/epoch_l']
+                        )
             )
         extra = AttribDict({
-            'PH5Component': {
-                'value': str(station_list[deployment][0]
-                             ['channel_number_i']),
-                'namespace': self.manager.iris_custom_ns,
-                'type': 'attribute'
-            },
-            'PH5ReceiverId': {
-                'value': str(receiver_id),
-                'namespace': self.manager.iris_custom_ns,
-                'type': 'attribute'
-            }
-        })
+                'PH5Component': {
+                    'value': str(station_list[deployment][0]
+                                 ['channel_number_i']),
+                    'namespace': self.manager.iris_custom_ns,
+                    'type': 'attribute'
+                },
+                'PH5ReceiverId': {
+                    'value': str(receiver_id),
+                    'namespace': self.manager.iris_custom_ns,
+                    'type': 'attribute'
+                }
+            })
         obs_channel.extra = extra
 
         if self.manager.level == "RESPONSE" or \
@@ -421,14 +419,14 @@ class PH5toStationXMLParser(object):
             response_file_das_a_name = Response_t.get('response_file_das_a',
                                                       None)
             response_file_sensor_a_name = Response_t.get(
-                'response_file_sensor_a',
-                None)
+                                                    'response_file_sensor_a',
+                                                    None)
             # parse datalogger response
             if response_file_das_a_name:
                 response_file_das_a = \
                     self.manager.ph5.ph5_g_responses.get_response(
-                        response_file_das_a_name
-                    )
+                                                    response_file_das_a_name
+                                            )
                 with io.BytesIO(response_file_das_a) as buf:
                     buf.seek(0, 0)
                     dl_resp = obspy.read_inventory(buf, format="RESP")
@@ -437,8 +435,8 @@ class PH5toStationXMLParser(object):
             if response_file_sensor_a_name:
                 response_file_sensor_a = \
                     self.manager.ph5.ph5_g_responses.get_response(
-                        response_file_sensor_a_name
-                    )
+                                                response_file_sensor_a_name
+                                            )
                 with io.BytesIO(response_file_sensor_a) as buf:
                     buf.seek(0, 0)
                     sensor_resp = obspy.read_inventory(buf, format="RESP")
@@ -565,15 +563,15 @@ class PH5toStationXMLParser(object):
 
                         if station_list[deployment][0]['seed_station_name_s']:
                             station_name = station_list[deployment][0][
-                                'seed_station_name_s']
+                                                        'seed_station_name_s']
                         else:
                             station_name = x
 
                         start_date = station_list[deployment][0][
-                            'deploy_time/epoch_l']
+                                                        'deploy_time/epoch_l']
                         start_date = UTCDateTime(start_date)
                         end_date = station_list[deployment][0][
-                            'pickup_time/epoch_l']
+                                                        'pickup_time/epoch_l']
                         end_date = UTCDateTime(end_date)
                         if sta_xml_obj.start_time and \
                                 sta_xml_obj.start_time > end_date:
@@ -653,20 +651,20 @@ class PH5toStationXMLParser(object):
                     for deployment in station_list:
                         for sta_pattern in sta_xml_obj.station_list:
                             if not station_list[deployment][0][
-                                'seed_station_name_s'] and \
+                                                'seed_station_name_s'] and \
                                     fnmatch.fnmatch(str(station),
                                                     str(sta_pattern)):
                                 # no seed station code defined so compare
                                 # against ph5 station-id
                                 sta_xml_obj.ph5_station_id_list.extend(
-                                    [station]
-                                )
+                                                                [station]
+                                                            )
                             elif fnmatch.fnmatch((station_list[deployment][0]
                                                   ['seed_station_name_s']),
                                                  sta_pattern):
                                 sta_xml_obj.ph5_station_id_list.extend(
-                                    [station]
-                                )
+                                                                    [station]
+                                                                )
 
             sta_xml_obj.ph5_station_id_list = \
                 sorted(set(sta_xml_obj.ph5_station_id_list))
@@ -684,8 +682,8 @@ class PH5toStationXMLParser(object):
             netcode_list = obj.network_list
             network_patterns.extend(netcode_list)
         if not ph5utils.does_pattern_exists(
-                network_patterns,
-                self.experiment_t[0]['net_code_s']):
+                                    network_patterns,
+                                    self.experiment_t[0]['net_code_s']):
             self.manager.ph5.close()
             return
 
@@ -695,8 +693,8 @@ class PH5toStationXMLParser(object):
             reportnum_list = obj.reportnum_list
             reportnum_patterns.extend(reportnum_list)
         if not ph5utils.does_pattern_exists(
-                reportnum_list,
-                self.experiment_t[0]['experiment_id_s']):
+                                    reportnum_list,
+                                    self.experiment_t[0]['experiment_id_s']):
             self.manager.ph5.close()
             return
 
@@ -711,7 +709,8 @@ class PH5toStationXMLParser(object):
 
     def get_network_date(self):
         self.read_arrays(None)
-        array_names = sorted(self.manager.ph5.Array_t_names)
+        array_names = self.manager.ph5.Array_t_names
+        array_names.sort()
         min_start_time = 7289567999
         max_end_time = 0
         for array_name in array_names:
@@ -759,34 +758,34 @@ class PH5toStationXMLParser(object):
 
 def execute(path, args_dict_list, nickname, level, out_format, out_q):
     ph5sxml = [PH5toStationXMLRequest(
-        network_list=args_dict.get('network_list'),
-        reportnum_list=args_dict.get('reportnum_list'),
-        station_list=args_dict.get('station_list'),
-        location_list=args_dict.get('location_list'),
-        channel_list=args_dict.get('channel_list'),
-        component_list=args_dict.get('component_list'),
-        receiver_list=args_dict.get('receiver_list'),
-        array_list=args_dict.get('array_list'),
-        minlatitude=args_dict.get('minlat'),
-        maxlatitude=args_dict.get('maxlat'),
-        minlongitude=args_dict.get('minlon'),
-        maxlongitude=args_dict.get('maxlon'),
-        latitude=args_dict.get('latitude'),
-        longitude=args_dict.get('longitude'),
-        maxradius=args_dict.get('maxradius'),
-        minradius=args_dict.get('minradius'),
-        start_time=args_dict.get('start_time'),
-        end_time=args_dict.get('end_time')
-    )
-        for args_dict in args_dict_list]
+                            network_list=args_dict.get('network_list'),
+                            reportnum_list=args_dict.get('reportnum_list'),
+                            station_list=args_dict.get('station_list'),
+                            location_list=args_dict.get('location_list'),
+                            channel_list=args_dict.get('channel_list'),
+                            component_list=args_dict.get('component_list'),
+                            receiver_list=args_dict.get('receiver_list'),
+                            array_list=args_dict.get('array_list'),
+                            minlatitude=args_dict.get('minlat'),
+                            maxlatitude=args_dict.get('maxlat'),
+                            minlongitude=args_dict.get('minlon'),
+                            maxlongitude=args_dict.get('maxlon'),
+                            latitude=args_dict.get('latitude'),
+                            longitude=args_dict.get('longitude'),
+                            maxradius=args_dict.get('maxradius'),
+                            minradius=args_dict.get('minradius'),
+                            start_time=args_dict.get('start_time'),
+                            end_time=args_dict.get('end_time')
+                            )
+               for args_dict in args_dict_list]
 
     ph5sxmlmanager = PH5toStationXMLRequestManager(
-        sta_xml_obj_list=ph5sxml,
-        ph5path=path,
-        nickname=nickname,
-        level=level,
-        format=out_format
-    )
+                                                    sta_xml_obj_list=ph5sxml,
+                                                    ph5path=path,
+                                                    nickname=nickname,
+                                                    level=level,
+                                                    format=out_format
+                                                  )
     ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
     out_q.put(ph5sxmlparser.get_network(path))
 
@@ -817,13 +816,13 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
 
         if networks:
             inv = obspy.core.inventory.Inventory(
-                networks=networks,
-                source="PIC-PH5",
-                sender="IRIS-PASSCAL-DMC-PH5",
-                created=datetime.now(),
-                module=("PH5 WEB SERVICE: metadata "
-                        "| version: 1"),
-                module_uri=uri)
+                                        networks=networks,
+                                        source="PIC-PH5",
+                                        sender="IRIS-PASSCAL-DMC-PH5",
+                                        created=datetime.now(),
+                                        module=("PH5 WEB SERVICE: metadata "
+                                                "| version: 1"),
+                                        module_uri=uri)
             return inv
         else:
             return

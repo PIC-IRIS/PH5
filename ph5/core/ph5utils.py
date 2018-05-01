@@ -41,6 +41,7 @@ class PH5ResponseManager(object):
                 return True
         return False
 
+
 def does_pattern_exists(patterns_list, value):
     """
     Checks a list of patterns against a value.

@@ -21,7 +21,6 @@ from ph5.core.timedoy import epoch2passcal, passcal2epoch
 import io
 
 
-
 PROG_VERSION = "2018.038"
 LENGTH = int(86400)
 
