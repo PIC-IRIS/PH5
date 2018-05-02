@@ -1,4 +1,8 @@
 Master:
+-ph5.utilities.keftocsv
+ * new utility
+-ph5.utilities.csvtokef
+ * new utility
 -ph5.utilities.ph5tostationxml
  * Fixed bug causing arrays with same station id_s to be filtered out
 -ph5.utilities.kefedit
