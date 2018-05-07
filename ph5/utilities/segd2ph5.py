@@ -77,7 +77,7 @@ class Index_t_Info(object):
         self.startepoch = startepoch
         self.stopepoch = stopepoch
 
-        
+
 class Resp(object):
     __slots__ = ('lines', 'keys', 't')
 
@@ -231,7 +231,7 @@ def get_args():
     #   Sorted where the file list is read...
     # FILES.sort ()
 
-    
+
 def initializeExperiment():
     global EX
 
