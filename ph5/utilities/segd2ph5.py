@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2018.039 Developmental"
+PROG_VERSION = "2018.127 Developmental"
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -77,7 +77,7 @@ class Index_t_Info(object):
         self.startepoch = startepoch
         self.stopepoch = stopepoch
 
-
+        
 class Resp(object):
     __slots__ = ('lines', 'keys', 't')
 
@@ -231,7 +231,7 @@ def get_args():
     #   Sorted where the file list is read...
     # FILES.sort ()
 
-
+    
 def initializeExperiment():
     global EX
 
