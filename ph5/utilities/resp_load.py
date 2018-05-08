@@ -14,7 +14,7 @@ import logging
 
 logging.basicConfig(filename='resp_load.log', level=logging.DEBUG)
 logging.info("###################################################\n\n")
-PROG_VERSION = "2017.325"
+PROG_VERSION = "2018.128"
 
 
 class Station(object):
@@ -159,23 +159,26 @@ class n_i_fix(object):
                                 " channel " +
                                 str(channel) +
                                 ".\n")
-
-                        stations.append(
-                            Station(
-                                id_s,
-                                array,
-                                channel,
-                                sample_rate,
-                                sample_rate_multiplier,
-                                das_model.strip(),
-                                sensor_model.strip(),
-                                gain,
-                                response_n_i,
-                                receiver_n_i,
-                                bit_weight,
-                                bit_weight_units,
-                                gain_units,
-                                serial))
+                        try:
+                            stations.append(
+                                Station(
+                                    id_s,
+                                    array,
+                                    channel,
+                                    sample_rate,
+                                    sample_rate_multiplier,
+                                    das_model.strip(),
+                                    sensor_model.strip(),
+                                    gain,
+                                    response_n_i,
+                                    receiver_n_i,
+                                    bit_weight,
+                                    bit_weight_units,
+                                    gain_units,
+                                    serial))
+                        except BaseException:
+                            sys.stderr.write("Couldn't add station")
+                            continue
         return stations
 
     def update_kefs(self, path, arrays, data):
