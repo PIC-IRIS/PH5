@@ -285,7 +285,7 @@ def gather () :
                     ###   Need to apply reduction velocity here
                     if ARGS.red_vel > 0. :
                         try :
-                            secs, errs = segyfactory.calc_red_vel_secs (Offset[o], ARGS.red_vel)
+                            secs, errs = segyfactory.calc_red_vel_secs (Offset_t[o], ARGS.red_vel)
                         except Exception as e :
                             secs = 0.
                             errs = "Can not calculate reduction velocity: {0}.".format (e.message)
