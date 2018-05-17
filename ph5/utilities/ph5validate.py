@@ -1,5 +1,5 @@
 # Derick Hess, Oct 2017
-
+#
 """
 Runs a set of checks on PH5 archive to test for
 errors and make sur eit is ready for archival at IRIS DMC
@@ -9,7 +9,7 @@ import subprocess
 import sys
 from ph5.core import ph5api
 
-PROG_VERSION = "2017.344"
+PROG_VERSION = "2018.136"
 
 
 class PH5Validate(object):
