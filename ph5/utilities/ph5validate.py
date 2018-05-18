@@ -62,6 +62,13 @@ class PH5Validate(object):
             logging.error('Network code was not found: ' +
                           'A 2 character network code is required.')
 
+        if not experiment_t[0]['net_code_s'][0].isdigit() and \
+             experiment_t[0]['net_code_s'][0] != "X" and \
+             experiment_t[0]['net_code_s'][0] != "Y" and \
+             experiment_t[0]['net_code_s'][0] != "z":
+            logging.warning("Network code is a permanent FDSN:" +
+                            " Network code should be a temporary code.")
+
         if not experiment_t[0]['experiment_id_s']:
             logging.error('Experiment ID was not found: ' +
                           'An experiment id (YY-XXX) is required.')
@@ -210,7 +217,6 @@ class PH5Validate(object):
                             logging.info("\n##############")
                             logging.info("Station " + str(station_id) +
                                          " Channel " + str(channel) + "\n")
-
                             try:
                                 if not (0 <= int(station_list[deployment]
                                                  [st_num]['id_s']) <= 65535):
