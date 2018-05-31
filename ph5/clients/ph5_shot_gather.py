@@ -52,9 +52,9 @@ def process_arguments():
 
     # define command line arguments
     parser = CustomArgParser(description=
-                 'Command line parser for '
-                 'ph5 shot gather.')
-    required = parser.add_argument_group('Required Arguments')
+                 'Command line ph5 web service client for '
+                 'shot gathers.')
+    required = parser.add_argument_group('required arguments')
     # required options
     required.add_argument('--network', '--net',
                           help="Select one or more network codes. Can be SEED "
@@ -82,30 +82,29 @@ def process_arguments():
                           required=True)
 
     # optional options
-    optional = parser.add_argument_group('Optional Arguments')
-    optional.add_argument('--station', '--sta',
+    parser.add_argument('--station', '--sta',
                           help="Select one or more SEED station codes. "
                                "Accepts wildcards and lists.",
                           default="*")
-    optional.add_argument('--location', '--loc',
+    parser.add_argument('--location', '--loc',
                           help="Select one or more SEED location identifier. "
                           "Use -- for 'Blank' location IDs (ID's containing 2 "
                           "spaces). Accepts wildcards and lists.",
                           type=_postprocess_sysargv, default="*")
-    optional.add_argument('--channel', '--cha',
+    parser.add_argument('--channel', '--cha',
                           help="Select one or more SEED channel codes. "
                                "Accepts wildcards and lists.",
                           default="*")
-    optional.add_argument('--arrayid', '--array',
+    parser.add_argument('--arrayid', '--array',
                           help="Select one or more SEED channel codes. "
                                "Accepts wildcards and lists.",
                           default="*")
-    optional.add_argument('--offset',
+    parser.add_argument('--offset',
                           help="Time in seconds from shot time to start "
                                "the trace. If no offset is ",
                           default=60)
 
-    optional.add_argument('--format',
+    parser.add_argument('--format',
                           default='plot',
                           help="Specify output format. Valid formats "
                                "include 'plot', 'mseed', 'sac'.")
@@ -177,8 +176,7 @@ def shot_gather(arguments):
                    debug=True
                   )
     # Request the first 60 seconds of data immediately following
-    # the shot. The "by shot" ph5ws-dataselect request type
-    # option can be used as an alternative to manual windowing.
+    # the shot.
     stream = c.get_waveforms(network=network,
                              station=station,
                              location=location,
