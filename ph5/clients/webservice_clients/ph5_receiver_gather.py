@@ -12,20 +12,12 @@ from obspy.core.util import AttribDict
 from obspy.geodetics.base import gps2dist_azimuth
 from obspy.clients.fdsn.header import FDSNNoDataException
 from ph5.core import parse_arguments
+from ph5.clients.webservice_clients import common
 
 
 """
 PH5 receiver gather web service client.
 """
-
-
-class CustomArgParser(argparse.ArgumentParser):
-
-    def error(self, message):
-        sys.stderr.write('Error: %s\n' % message)
-        self.print_help()
-        sys.exit(2)
-
 
 def process_arguments():
 
@@ -52,9 +44,9 @@ def process_arguments():
             return v
 
     # define command line arguments
-    parser = CustomArgParser(description=
-                 'Command line ph5 web service client for '
-                 'receiver gathers.')
+    parser = common.CustomArgParser(description=
+                                    'Command line ph5 web service client for '
+                                    'receiver gathers.')
     required = parser.add_argument_group('required arguments')
     # required options
     required.add_argument('--network', '--net',
@@ -112,13 +104,6 @@ def process_arguments():
 
     args = parser.parse_args(_preprocess_sysargv(sys.argv))
     return args
-
-
-def get_stream_size(stream):
-    size = 0
-    for trace in stream:
-        size = size + len(trace.data)
-    return size
 
 
 def receiver_gather(arguments):
@@ -205,57 +190,6 @@ def receiver_gather(arguments):
     return stream
 
 
-def plot(stream):
-    stream.plot(type='section',
-                dist_degree=False,
-                size=(800, 1024))
-
-
-def write_mseed(stream):
-        mseed_fn = "ph5_receivergather_{}.mseed".format(UTCDateTime()
-                                                    .strftime(
-                                                        "%Y-%m-%dT%H_%M_%SZ"
-                                                    ).upper())
-        stream.write(mseed_fn,
-                     format="MSEED")
-        sys.stdout.write("Wrote {} bytes of timeseries"
-                         " data to {}.".format(get_stream_size(stream),
-                                               mseed_fn)
-                         )
-
-
-def write_sac(stream):
-    zip_fn = "ph5_recievergather_{}.zip".format(UTCDateTime()
-                                            .strftime(
-                                                "%Y-%m-%dT%H_%M_%SZ"
-                                            ).upper())
-    zf = zipfile.ZipFile(zip_fn,
-                         mode='w',
-                         )
-    try:
-        for trace in stream:
-            sac_fn = "{0}.{1}.{2}.{3}.{4}.sac".format(
-                trace.stats.network,
-                trace.stats.station,
-                trace.stats.location,
-                trace.stats.channel,
-                trace.stats.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
-            info = zipfile.ZipInfo(sac_fn,
-                                   date_time=time.localtime(time.time()),
-                                   )
-            info.compress_type = zipfile.ZIP_DEFLATED
-            stio = cStringIO.StringIO()
-            sac = SACTrace.from_obspy_trace(trace)
-            sac.write(stio)
-            zf.writestr(info, stio.getvalue())
-    finally:
-        zf.close()
-    sys.stdout.write("Wrote {} bytes of timeseries"
-                     " data to {}.".format(get_stream_size(stream),
-                                           zip_fn)
-                     )
-
-
 def main():
     try:
         arguments = process_arguments()
@@ -269,18 +203,18 @@ def main():
 
         # Plot the traces
         if out_format.upper() == "PLOT":
-            plot(gather)
+            common.plot(gather)
         elif out_format.upper() == "MSEED":
-            write_mseed(gather)
+            common.write_mseed(gather, "receivergather")
         elif out_format.upper() == "SAC":
-            write_sac(gather)
+            common.write_sac(gather, "receivergather")
     except FDSNNoDataException as err:
         sys.stderr.write("{}\n".format(err.message))
     except ValueError as err:
         sys.stderr.write("{}\n".format(err.message))
-    #except Exception as err:
-    #    sys.stderr.write("An unexpected error "
-    #                     "occured:\n{}".format(err.message))
+    except Exception as err:
+        sys.stderr.write("An unexpected error "
+                         "occured:\n{}".format(err.message))
 
 
 if __name__ == '__main__':
