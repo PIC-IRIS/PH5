@@ -23,6 +23,12 @@ def get_stream_size(stream):
     return size
 
 
+def list_to_csv(value):
+    if isinstance(value, list):
+        return ",".join(value)
+    else:
+        return None
+
 def plot(stream):
     stream.plot(type='section',
                 dist_degree=False,

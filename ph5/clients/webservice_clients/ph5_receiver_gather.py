@@ -87,7 +87,7 @@ def process_arguments():
     parser.add_argument('--arrayid', '--array',
                           help="Select one or more SEED channel codes. "
                                "Accepts wildcards and lists.",
-                          default="*")
+                          default=None)
     parser.add_argument('--offset',
                           help="Time in seconds from shot time to start "
                                "the trace. If no offset is ",
@@ -96,7 +96,7 @@ def process_arguments():
                           help="Specifies the shot (event) id for a request "
                                "by shot. Accepts a comma separated list if "
                                "requesting multiple events.",
-                          default="*")
+                          default=None)
     parser.add_argument('--format',
                           default='plot',
                           help="Specify output format. Valid formats "
@@ -107,22 +107,43 @@ def process_arguments():
 
 
 def receiver_gather(arguments):
-    network = ",".join(parse_arguments.parse_seed_network(arguments.network))
-    station = ",".join(parse_arguments.parse_seed_station(arguments.station))
-    location = ",".join(
-                        parse_arguments.parse_seed_location(arguments.location)
-                       )
-    channel = ",".join(parse_arguments.parse_seed_channel(arguments.channel))
-    arrayid = ",".join(parse_arguments.parse_ph5_arrayid(arguments.arrayid))
+    network = common.list_to_csv(
+                parse_arguments.parse_seed_network(arguments.network)
+              )
+    station = common.list_to_csv(
+                parse_arguments.parse_seed_station(arguments.station)
+              )
+    location = common.list_to_csv(
+                parse_arguments.parse_seed_location(arguments.location)
+               )
+    channel = common.list_to_csv(
+                parse_arguments.parse_seed_channel(arguments.channel)
+              )
+    arrayid = common.list_to_csv(
+                parse_arguments.parse_ph5_arrayid(arguments.arrayid)
+              )
     # event constraints
     shotline = parse_arguments.parse_ph5_shotline(arguments.shotline)
-    shotid = ",".join(parse_arguments.parse_ph5_shotid(arguments.shotid))
+    shotid = common.list_to_csv(
+                parse_arguments.parse_ph5_shotid(arguments.shotid)
+             )
     # time constraints
     starttime = parse_arguments.parse_date(arguments.starttime)
     endtime = parse_arguments.parse_date(arguments.endtime)
     offset = parse_arguments.parse_ph5_offset(arguments.offset)
 
-    # Use ph5ws-station to retrieve ZI (15-016) station metadata
+    # Use ph5ws-station to retrieve station metadata
+    sta_request = {
+                   "network": network,
+                   "station": station,
+                   "location": location,
+                   "channel": channel,
+                   "arrayid": arrayid,
+                   "starttime": starttime,
+                   "endtime": endtime,
+                   "level": "response"
+                 }
+    sta_request = {k: v for k, v in sta_request.items() if v is not None}
     STATIONWS = 'http://service.iris.edu/ph5ws/station/1'
     c = fdsn.client.Client(
                            service_mappings={
@@ -130,16 +151,17 @@ def receiver_gather(arguments):
                            },
                            debug=True
                           )
-    inventory = c.get_stations(network=network,
-                               station=station,
-                               location=location,
-                               channel=channel,
-                               arrayid=arrayid,
-                               level='response',
-                               starttime=UTCDateTime(starttime),
-                               endtime=UTCDateTime(endtime))
+    inventory = c.get_stations(**sta_request)
 
-    # Use ph5ws-event to retrieve ZI (15-016) event 5013 metadata
+    # Use ph5ws-event to retrieve event metadata
+    event_request = {
+                       "catalog": network,
+                       "shotline": shotline,
+                       "shotid": shotid,
+                       "starttime": starttime,
+                       "endtime": endtime,
+                    }
+    event_request = {k: v for k, v in event_request.items() if v is not None}
     EVENTWS = 'http://service.iris.edu/ph5ws/event/1'
     c = fdsn.client.Client(
                            service_mappings={
@@ -147,13 +169,9 @@ def receiver_gather(arguments):
                            },
                            debug=True
                           )
-    events = c.get_events(catalog=network,
-                          starttime=UTCDateTime(starttime),
-                          endtime=UTCDateTime(endtime),
-                          shotline=shotline,
-                          shotid=shotid)
+    events = c.get_events(**event_request)
 
-    # Use ph5ws-dataselect to retrieve ZI (15-016) waveform data
+    # Use ph5ws-dataselect to retrieve waveform data
     DATASELECTWS = 'http://service.iris.edu/ph5ws/dataselect/1'
     c = fdsn.client.Client(
                    service_mappings={
@@ -168,12 +186,16 @@ def receiver_gather(arguments):
     for event in events:
         # Request the first 60 (default) seconds of data immediately following 
         # each shot.
-        traces = c.get_waveforms(network=network,
-                                 station=station, 
-                                 location=location,
-                                 channel=channel,
-                                 starttime=event.origins[0].time,
-                                 endtime=event.origins[0].time+60).traces
+        ds_request = {
+                       "network": network if network else "*",
+                       "station": station if station else "*",
+                       "location": location if location else "*",
+                       "channel": channel if channel else "*",
+                       "starttime": events[0].origins[0].time,
+                       "endtime": events[0].origins[0].time+float(offset),
+                       "arrayid": arrayid
+                     }
+        traces = c.get_waveforms(**ds_request).traces
         for trace in traces:
             trace.stats.coordinates = AttribDict(
                                         {'latitude': event.origins[0].latitude, 
