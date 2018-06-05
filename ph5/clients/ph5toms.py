@@ -364,6 +364,7 @@ class PH5toMSeed(object):
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
             new_endtime = stc.endtime + (1 / float(stc.sample_rate))
+
             self.ph5.read_das_t(stc.das, stc.starttime,
                                 stc.endtime, reread=False)
 
@@ -405,10 +406,10 @@ class PH5toMSeed(object):
                     continue
                 # if start time is before requested start time move up 1 sample
                 # and delete first sample of data
-                if trace.start_time.epoch() < stc.starttime:
-                    trace.start_time = trace.start_time + \
-                        (1 / float(stc.sample_rate))
-                    trace.data = trace.data[1:]
+                #if trace.start_time.epoch() < stc.starttime:
+                #    trace.start_time = trace.start_time + \
+                #        (1 / float(stc.sample_rate))
+                #   trace.data = trace.data[1:]
 
                 try:
                     obspy_trace = Trace(data=trace.data)
@@ -456,6 +457,7 @@ class PH5toMSeed(object):
         self.ph5.Das_t = {}
         if len(obspy_stream.traces) < 1:
             return
+
         return obspy_stream
 
     def get_channel_and_component(self, station_list, deployment, st_num):

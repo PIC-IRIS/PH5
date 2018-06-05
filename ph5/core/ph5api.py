@@ -910,6 +910,7 @@ class PH5 (experiment.ExperimentGroup) :
             window_samples = d['sample_count_i']
             #   Window stop epoch
             window_stop_fepoch = window_start_fepoch + (window_samples / sr)
+
             #   Requested start before start of window, we must need to start cutting at start of window
             if start_fepoch < window_start_fepoch :
                 cut_start_fepoch = window_start_fepoch
@@ -917,7 +918,8 @@ class PH5 (experiment.ExperimentGroup) :
             else :
             #   Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int ((start_fepoch - window_start_fepoch) * sr)
+                cut_start_sample = round((((start_fepoch*1000000 - window_start_fepoch*1000000))/1000000 * sr))
+
             #   Requested stop is after end of window so we need rest of window    
             if stop_fepoch > window_stop_fepoch :
                 cut_stop_fepoch = window_stop_fepoch
@@ -925,12 +927,13 @@ class PH5 (experiment.ExperimentGroup) :
             else :
             #   Requested stop is somewhere in window
                 cut_stop_fepoch = stop_fepoch
-                cut_stop_sample = int ((cut_stop_fepoch - cut_start_fepoch) * sr) + cut_start_sample
+                cut_stop_sample = int (round((cut_stop_fepoch - cut_start_fepoch) * sr)) + cut_start_sample
             #   Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref (d['array_name_data_a'].strip ())
+            
             data_tmp = self.ph5_g_receivers.read_trace (trace_reference, 
-                                                        start = int (cut_start_sample - time_cor_guess_samples),
-                                                        stop = int (cut_stop_sample - time_cor_guess_samples))
+                                                        start = int (round(cut_start_sample - time_cor_guess_samples)),
+                                                        stop = int (round(cut_stop_sample - time_cor_guess_samples)))
             current_trace_type, current_trace_byteorder = self.ph5_g_receivers.trace_info (trace_reference)
             #
             ###
@@ -938,9 +941,7 @@ class PH5 (experiment.ExperimentGroup) :
             if first :
                 #   Correct start time to 'actual' time of first sample
                 #start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
-                #start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
-                if not d['raw_file_name_s'].endswith('rg16'):
-                    start_fepoch = window_start_fepoch + float (cut_start_sample / sr)
+                start_fepoch = window_start_fepoch + cut_start_sample / sr
                 if trace_start_fepoch == None :
                     trace_start_fepoch = start_fepoch            
                 #print timedoy.TimeDOY (epoch=start_fepoch)
