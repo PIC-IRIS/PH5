@@ -1,4 +1,8 @@
-Master:
+v4.1.2:
+ph5.utilities.ph5validate
+ * new functionality
+ph5.core.ph5api
+ * fix cut method
 ph5.clients.ph5torec
  * Fixed bug not properly applying reduction velocity
 -ph5.utilities.resp_load
