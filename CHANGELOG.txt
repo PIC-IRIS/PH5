@@ -1,3 +1,9 @@
+Master:
+ph5
+ * made pep8 compliant
+ph5.clients.ph5toms
+ * added option to change file naming scheme
+
 v4.1.2:
 ph5.utilities.ph5validate
  * new functionality
