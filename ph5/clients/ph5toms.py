@@ -1,4 +1,3 @@
-
 # Derick Hess, Oct 2016
 
 """
@@ -144,6 +143,7 @@ class PH5toMSeed(object):
             self.ph5.read_event_t(name)
 
     def filenamemseed_gen(self, stream):
+
         s = stream.traces[0].stats
         ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
             s.network, s.station, s.location,
@@ -169,7 +169,7 @@ class PH5toMSeed(object):
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
-
+    
     def filenamemseed_nongen(self, stream):
         s = stream.traces[0].stats
         ret = "{0}.{1}.{2}.{3}.ms".format(
@@ -186,6 +186,37 @@ class PH5toMSeed(object):
             s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
+        return ret 
+
+    def filenamemsimg_gen(self, stream):
+
+        s = stream.traces[0].stats
+        secs = int(s.starttime.timestamp)
+        pre = epoch2passcal(secs, sep='_')
+        ret = "{0}.{1}.{2}.{3}.{4}.png".format(pre, s.network, s.station,
+                                               s.location, s.channel)
+        if not self.stream:
+            if not os.path.exists(
+                    os.path.join(self.out_dir, "preview_images")):
+                os.makedirs(os.path.join(self.out_dir, "preview_images"))
+
+            ret = os.path.join(self.out_dir, "preview_images", ret)
+        return ret
+
+    def filenamesacimg_gen(self, trace):
+
+        s = trace.stats
+        secs = int(s.starttime.timestamp)
+        pre = epoch2passcal(secs, sep='.')
+        ret = "{0}.{1}.{2}.{3}.{4}.png".format(
+            s.network, s.station, s.location, s.channel, pre)
+        if not self.stream:
+            if not self.stream:
+                if not os.path.exists(
+                        os.path.join(self.out_dir, "preview_images")):
+                    os.makedirs(os.path.join(self.out_dir, "preview_images"))
+
+            ret = os.path.join(self.out_dir, "preview_images", ret)
         return ret
 
     @classmethod
@@ -351,6 +382,7 @@ class PH5toMSeed(object):
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
             new_endtime = stc.endtime + (1 / float(stc.sample_rate))
+
             self.ph5.read_das_t(stc.das, stc.starttime,
                                 stc.endtime, reread=False)
 
@@ -390,6 +422,13 @@ class PH5toMSeed(object):
             for trace in traces:
                 if trace.nsamples == 0:
                     continue
+                # if start time is before requested start time move up 1 sample
+                # and delete first sample of data
+                # if trace.start_time.epoch() < stc.starttime:
+                #    trace.start_time = trace.start_time + \
+                #        (1 / float(stc.sample_rate))
+                #   trace.data = trace.data[1:]
+
                 try:
                     obspy_trace = Trace(data=trace.data)
                     obspy_trace.stats.array = stc.array_code
@@ -436,6 +475,7 @@ class PH5toMSeed(object):
         self.ph5.Das_t = {}
         if len(obspy_stream.traces) < 1:
             return
+
         return obspy_stream
 
     def get_channel_and_component(self, station_list, deployment, st_num):
@@ -676,7 +716,7 @@ class PH5toMSeed(object):
 
         try:
             seed_network = experiment_t[0]['net_code_s']
-        except:
+        except BaseException:
             raise PH5toMSAPIError("Error-No net_code_s entry in Experiment_t. "
                                   "Verify that this experiment is "
                                   "PH5 version >= PN4.")
@@ -931,12 +971,12 @@ def get_args():
         "-F", "-f", "--format", action="store", dest="format",
         help="SAC or MSEED",
         metavar="format", type=str, default="MSEED")
-
+    
     parser.add_argument(
         "--non_standard", action="store_true", default=False,
         help="Change filename from standard output to "
-             "[array].[seed_station].[seed_channel].[start_time]",
-    )
+        "[array].[seed_station].[seed_channel].[start_time]",
+    )    
 
     the_args = parser.parse_args()
 
@@ -1010,20 +1050,24 @@ def main():
             if args.format.upper() == "MSEED":
                 if not args.non_standard:
                     stream.write(ph5ms.filenamemseed_gen(stream),
-                             format='MSEED', reclen=4096)
+                                 format='MSEED', reclen=4096)
                 else:
                     stream.write(ph5ms.filenamemseed_nongen(stream),
-                                format='MSEED', reclen=4096)
+                                 format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
-                    for trace in stream:
-                        sac = SACTrace.from_obspy_trace(trace)
-                        if not args.non_standard:
-                            sac.write(ph5ms.filenamesac_gen(trace))
-                        else:
-                            sac.write(ph5ms.filenamesac_nongen(trace))
+                for trace in stream:
+                    sac = SACTrace.from_obspy_trace(trace)
+                    if not args.non_standard:
+                        sac.write(ph5ms.filenamesac_gen(trace))
+                    else:
+                        sac.write(ph5ms.filenamesac_nongen(trace))
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
         exit(-1)
 
     ph5API_object.close()
+
+
+if __name__ == '__main__':
+    main()
