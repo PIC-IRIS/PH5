@@ -406,7 +406,7 @@ class PH5toMSeed(object):
                     continue
                 # if start time is before requested start time move up 1 sample
                 # and delete first sample of data
-                #if trace.start_time.epoch() < stc.starttime:
+                # if trace.start_time.epoch() < stc.starttime:
                 #    trace.start_time = trace.start_time + \
                 #        (1 / float(stc.sample_rate))
                 #   trace.data = trace.data[1:]

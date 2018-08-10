@@ -34,14 +34,14 @@ FACTS_M = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
            'ind-ft': 0.30479841, 'ind-ch': 20.11669506}
 
 
-class APIError (Exception):
+class APIError(Exception):
     def __init__(self, errno, msg):
         self.args = (errno, msg)
         self.errno = errno
         self.msg = msg
 
 
-class CutHeader (object):
+class CutHeader(object):
     '''    PH5 cut header object
            array -> The receiver array number or None if receiver gather
            shot_line -> The shot line number or None if shot gather
@@ -74,7 +74,7 @@ class CutHeader (object):
                                      len(self.order))
 
 
-class Cut (object):
+class Cut(object):
     '''    PH5 cut object
            das_sn -> The DAS to cut data from
            start_fepoch -> The starting time of the cut as a float
@@ -106,12 +106,12 @@ class Cut (object):
 
     def __repr__(self):
         ret = ''
-        ret = "ID: {1} DAS: {0} SR: {2} samp/sec SI: {3:G} us\n"\
+        ret = "ID: {1} DAS: {0} SR: {2} samp/sec SI: {3:G} us\n" \
             .format(self.das_sn,
                     self.id_s,
                     self.sample_rate,
                     (1. / self.sample_rate) * 1000000)
-        ret += "Start: {0} Stop: {1}\n"\
+        ret += "Start: {0} Stop: {1}\n" \
             .format(timedoy.epoch2passcal(self.start_fepoch),
                     timedoy.epoch2passcal(self.stop_fepoch))
         for m in self.msg:
@@ -124,7 +124,7 @@ class Cut (object):
         return ret
 
 
-class Clock (object):
+class Clock(object):
     '''   Clock performance
           slope -> Drift rate in seconds/second
           offset_secs -> The offset of the clock at offload
@@ -148,7 +148,7 @@ class Clock (object):
                                     self.comment)
 
 
-class Trace (object):
+class Trace(object):
     '''   PH5 trace object:
           data -> Numpy array of trace data points
           start_time -> timedoy time object
@@ -188,21 +188,21 @@ class Trace (object):
         end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
             fepoch=True) + (float(self.nsamples) / self.sample_rate)))
         return "start_time: {0}\nend_time: {7}\nnsamples: {1}/{6}\nsample_rate:\
-        {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}"\
-               .format(self.start_time,
-                       self.nsamples,
-                       self.sample_rate,
-                       self.time_correction_ms,
-                       self.ttype,
-                       self.das_t[0]['channel_number_i'],
-                       len(self.data),
-                       end_time)
+        {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}" \
+            .format(self.start_time,
+                    self.nsamples,
+                    self.sample_rate,
+                    self.time_correction_ms,
+                    self.ttype,
+                    self.das_t[0]['channel_number_i'],
+                    len(self.data),
+                    end_time)
 
     def time_correct(self):
         return timedoy.timecorrect(self.start_time, self.time_correction_ms)
 
 
-class PH5 (experiment.ExperimentGroup):
+class PH5(experiment.ExperimentGroup):
     das_gRE = re.compile("Das_g_(.*)")
 
     def __init__(self, path=None, nickname=None, editmode=False):
@@ -391,7 +391,7 @@ class PH5 (experiment.ExperimentGroup):
             #   Legacy Offset table name
             offset_table_name = "Offset_t"
         else:
-            offset_table_name = "Offset_t_{0}_{1}"\
+            offset_table_name = "Offset_t_{0}_{1}" \
                 .format(array_table_name[-3:],
                         shot_line[-3:])
 
@@ -416,7 +416,7 @@ class PH5 (experiment.ExperimentGroup):
         for o in order:
             c = self.channels(array_table_name, o)[0]
             array_t = Array_t['byid'][o]
-            offset_t = self.ph5_g_sorts.\
+            offset_t = self.ph5_g_sorts. \
                 read_offset_fast(shot_id,
                                  array_t[c][0]['id_s'],
                                  name=offset_table_name)
@@ -439,7 +439,7 @@ class PH5 (experiment.ExperimentGroup):
         if shot_line == "Event_t":
             offset_table_name = "Offset_t"
         else:
-            offset_table_name = "Offset_t_{0}_{1}"\
+            offset_table_name = "Offset_t_{0}_{1}" \
                 .format(array_table_name[-3:],
                         shot_line[-3:])
 
@@ -462,7 +462,7 @@ class PH5 (experiment.ExperimentGroup):
         order = Event_t['order']
         for o in order:
             event_t = Event_t['byid'][o]
-            offset_t = self.ph5_g_sorts.\
+            offset_t = self.ph5_g_sorts. \
                 read_offset_fast(event_t['id_s'],
                                  station_id,
                                  name=offset_table_name)
@@ -569,7 +569,7 @@ class PH5 (experiment.ExperimentGroup):
 
         for sort_t in self.Sort_t[array_name]['rows']:
             start = sort_t['start_time/epoch_l'] + \
-                (sort_t['start_time/micro_seconds_i'] / 1000000.)
+                    (sort_t['start_time/micro_seconds_i'] / 1000000.)
             if not start_epoch >= start:
                 continue
             stop = sort_t['end_time/epoch_l'] + \
@@ -794,10 +794,10 @@ class PH5 (experiment.ExperimentGroup):
             for r in self.Das_t_full[das]['rows']:
                 #   Start and stop for this das event window
                 start = float(r['time/epoch_l']) + \
-                    float(r['time/micro_seconds_i']) / 1000000.
+                        float(r['time/micro_seconds_i']) / 1000000.
                 stop = start + (float(r['sample_count_i']) / (
-                    float(r['sample_rate_i']) /
-                    float(r['sample_rate_multiplier_i'])))
+                        float(r['sample_rate_i']) /
+                        float(r['sample_rate_multiplier_i'])))
                 sr = float(r['sample_rate_i']) / \
                     float(r['sample_rate_multiplier_i'])
                 #   We need to keep this
@@ -987,7 +987,7 @@ class PH5 (experiment.ExperimentGroup):
         data = None
         for d in Das_t:
             sr = float(d['sample_rate_i']) / \
-                float(d['sample_rate_multiplier_i'])
+                 float(d['sample_rate_multiplier_i'])
             window_start_fepoch = fepoch(
                 d['time/epoch_l'], d['time/micro_seconds_i'])
             if (d['channel_number_i'] != chan) or (
@@ -1001,40 +1001,45 @@ class PH5 (experiment.ExperimentGroup):
             #   Window stop epoch
             window_stop_fepoch = window_start_fepoch + (window_samples / sr)
 
-            #   Requested start before start of window, we must need to start cutting at start of window
-            if start_fepoch < window_start_fepoch :
+            #   Requested start before start of window, we must need to
+            #   start cutting at start of window
+            if start_fepoch < window_start_fepoch:
                 cut_start_fepoch = window_start_fepoch
                 cut_start_sample = 0
             else:
                 #   Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int(round((((start_fepoch - window_start_fepoch)) * sr)))
+                cut_start_sample = int(round((((start_fepoch -
+                                                window_start_fepoch)) * sr)))
 
-            #   Requested stop is after end of window so we need rest of window    
-            if stop_fepoch > window_stop_fepoch :
+            # Requested stop is after end of window so we need rest of window
+            if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
                 cut_stop_sample = window_samples
             else:
-                #   Requested stop is somewhere in window
+                # Requested stop is somewhere in window
                 cut_stop_fepoch = stop_fepoch
-                cut_stop_sample = int (round((cut_stop_fepoch - cut_start_fepoch) * sr)) + cut_start_sample
-            #   Get trace reference and cut data available in this window
-            trace_reference = self.ph5_g_receivers.find_trace_ref (d['array_name_data_a'].strip ())
-            
-            data_tmp = self.ph5_g_receivers.read_trace (trace_reference, 
-                                                        start = int (round(cut_start_sample - time_cor_guess_samples)),
-                                                        stop = int (round(cut_stop_sample - time_cor_guess_samples)))
-            current_trace_type, current_trace_byteorder = self.ph5_g_receivers.trace_info (trace_reference)
-            #
-            ###
-            #
+                cut_stop_sample = int(round((cut_stop_fepoch -
+                                             cut_start_fepoch) *
+                                            sr)) + cut_start_sample
+            # Get trace reference and cut data available in this window
+            trace_reference = self.ph5_g_receivers.find_trace_ref(
+                d['array_name_data_a'].strip())
+
+            data_tmp = self.ph5_g_receivers.read_trace(
+                trace_reference,
+                start=int(round(cut_start_sample - time_cor_guess_samples)),
+                stop=int(round(cut_stop_sample - time_cor_guess_samples)))
+            current_trace_type, current_trace_byteorder = (
+                self.ph5_g_receivers.trace_info(trace_reference))
             if first:
                 #   Correct start time to 'actual' time of first sample
-                #start_fepoch = window_start_fepoch + (float (cut_start_sample - time_cor_guess_samples)/sr)
+                # start_fepoch = window_start_fepoch +
+                # (float (cut_start_sample - time_cor_guess_samples)/sr)
                 start_fepoch = window_start_fepoch + cut_start_sample / sr
-                if trace_start_fepoch == None :
-                    trace_start_fepoch = start_fepoch            
-                #print timedoy.TimeDOY (epoch=start_fepoch)
+                if trace_start_fepoch is None:
+                    trace_start_fepoch = start_fepoch
+                    # print timedoy.TimeDOY (epoch=start_fepoch)
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float':
@@ -1122,7 +1127,7 @@ class PH5 (experiment.ExperimentGroup):
                 window_start_fepoch0 = t.start_time
                 window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
                 # try :
-                time_correction, clock =\
+                time_correction, clock = \
                     _cor(window_start_fepoch0.epoch(fepoch=True),
                          window_stop_fepoch.epoch(fepoch=True),
                          Time_t)
@@ -1132,9 +1137,9 @@ class PH5 (experiment.ExperimentGroup):
                         .format(time_correction, time_cor_guess_ms))
 
                 # except APIError as e :
-                    # sys.stderr.write ("Warning: {0}: {1}"\
-                    # .format (e.errno, e.msg))
-                    # time_correction = 0.
+                # sys.stderr.write ("Warning: {0}: {1}"\
+                # .format (e.errno, e.msg))
+                # time_correction = 0.
             else:
                 time_correction = 0.
             #   Set time correction
@@ -1151,6 +1156,7 @@ class PH5 (experiment.ExperimentGroup):
                 print t
 
         return ret
+
     #
     ###
     #
@@ -1219,6 +1225,7 @@ class PH5 (experiment.ExperimentGroup):
                 C.channels[chan] = True
 
         return C
+
     #
     ###
     #
@@ -1312,7 +1319,7 @@ class PH5 (experiment.ExperimentGroup):
         sr = None
         if 'sample_rate_i' in array_t:
             sr = float(array_t['sample_rate_i']) / \
-                float(array_t['sample_rate_multiplier_i'])
+                 float(array_t['sample_rate_multiplier_i'])
         chan = array_t['channel_number_i']
         Event_t = self.Event_t[event_t_name]['byid']
         order = self.Event_t[event_t_name]['order']
@@ -1339,8 +1346,8 @@ class PH5 (experiment.ExperimentGroup):
             if not is_in(deploy_fepoch, pickup_fepoch, start_time, stop_time):
                 msg = "Start: {0} and Stop: {1} outside of deploy\
                 and pickup time.".format(
-                                     timedoy.epoch2passcal(start_time),
-                                     timedoy.epoch2passcal(stop_time))
+                    timedoy.epoch2passcal(start_time),
+                    timedoy.epoch2passcal(stop_time))
             else:
                 msg = None
             # Get a Cut object for this time span, channel and sample rate if
@@ -1367,6 +1374,7 @@ class PH5 (experiment.ExperimentGroup):
 
         return ret
 
+
 #
 # Mix-ins
 #
@@ -1379,6 +1387,7 @@ def pad_traces(traces):
        Return:
           A trace object with gaps padded with the mean
     '''
+
     def pad(data, n, dtype):
         m = np.mean(data, dtype=dtype)
 
@@ -1427,11 +1436,11 @@ def pad_traces(traces):
 def seed_channel_code(array_t):
     try:
         if len(array_t['seed_band_code_s']) == 1 and len(
-                array_t['seed_instrument_code_s']) == 1 and\
-           len(array_t['seed_orientation_code_s']) == 1:
+                array_t['seed_instrument_code_s']) == 1 and \
+                len(array_t['seed_orientation_code_s']) == 1:
             return array_t['seed_band_code_s'] + \
-                array_t['seed_instrument_code_s'] + \
-                array_t['seed_orientation_code_s']
+                   array_t['seed_instrument_code_s'] + \
+                   array_t['seed_orientation_code_s']
         else:
             return "---"
     except KeyError:
@@ -1464,6 +1473,8 @@ def by_id(rows, key='id_s', secondary_key=None, unique_key=True):
                 byid[Id].append(r)
 
     return byid, order
+
+
 #
 ###
 #
@@ -1484,6 +1495,8 @@ def run_geod(lat0, lon0, lat1, lon1):
 
     #   Return list containing azimuth, back azimuth, distance
     return az, baz, dist
+
+
 #
 ###
 #
@@ -1499,6 +1512,8 @@ def deg2dms(dgs):
     dms = "%dd%02d'%09.6f\"" % (d, m, s)
     # print dms
     return dms
+
+
 #
 ###
 #
@@ -1535,8 +1550,8 @@ def linreg(X, Y):
 
     meanerror = residual = 0.0
     for x, y in map(None, X, Y):
-        meanerror = meanerror + (y - Sy / N)**2
-        residual = residual + (y - a * x - b)**2
+        meanerror = meanerror + (y - Sy / N) ** 2
+        residual = residual + (y - a * x - b) ** 2
 
     RR = 1 - residual / meanerror
     if N > 2:
@@ -1608,6 +1623,8 @@ def calc_offset_sign(offsets):
     sys.stdout.flush()
     #   Returning Oh not zero
     return OO
+
+
 #
 ##
 #
@@ -1631,6 +1648,8 @@ def is_in(start, stop, start_epoch, stop_epoch):
         return True
     else:
         return False
+
+
 #
 ###
 #
@@ -1655,6 +1674,8 @@ def build_kef(ts, rs):
             ret += line
 
     return ret
+
+
 #
 ###
 #
@@ -1704,6 +1725,8 @@ def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
 
     time_correction_ms = int(time_t['slope_d'] * (delta_fepoch * 1000.)) * -1
     return time_correction_ms, clock
+
+
 #
 ###
 #
@@ -1713,9 +1736,9 @@ def filter_das_t(Das_t, chan):
     #
     def sort_on_epoch(a, b):
         a_epoch = a['time/epoch_l'] + \
-            (float(a['time/micro_seconds_i']) / 1000000.)
+                  (float(a['time/micro_seconds_i']) / 1000000.)
         b_epoch = b['time/epoch_l'] + \
-            (float(b['time/micro_seconds_i']) / 1000000.)
+                  (float(b['time/micro_seconds_i']) / 1000000.)
 
         if a_epoch > b_epoch:
             return 1
@@ -1732,10 +1755,10 @@ def filter_das_t(Das_t, chan):
             ret.append(das_t)
             continue
         if (ret[-1]['sample_rate_i'] == das_t['sample_rate_i'] and
-            ret[-1]['sample_rate_multiplier_i'] ==
-            das_t['sample_rate_multiplier_i'] and
-            ret[-1]['time/micro_seconds_i'] ==
-            das_t['time/micro_seconds_i'] and
+                ret[-1]['sample_rate_multiplier_i'] ==
+                das_t['sample_rate_multiplier_i'] and
+                ret[-1]['time/micro_seconds_i'] ==
+                das_t['time/micro_seconds_i'] and
                 ret[-1]['time/epoch_l'] == das_t['time/epoch_l']):
             continue
         else:
