@@ -21,7 +21,7 @@ from ph5.core.timedoy import epoch2passcal, passcal2epoch
 import io
 
 
-PROG_VERSION = "2018.038"
+PROG_VERSION = "2018.222"
 LENGTH = int(86400)
 
 
@@ -166,6 +166,24 @@ class PH5toMSeed(object):
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
             s.network, s.station, s.location,
             s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+        if not self.stream:
+            ret = os.path.join(self.out_dir, ret)
+        return ret
+
+    def filenamemseed_nongen(self, stream):
+        s = stream.traces[0].stats
+        ret = "{0}.{1}.{2}.{3}.ms".format(
+            s.array, s.station, s.channel,
+            s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+        if not self.stream:
+            ret = os.path.join(self.out_dir, ret)
+        return ret
+
+    def filenamesac_nongen(self, trace):
+        s = trace.stats
+        ret = "{0}.{1}.{2}.{3}.sac".format(
+            s.array, s.station, s.channel,
+            s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -413,6 +431,7 @@ class PH5toMSeed(object):
 
                 try:
                     obspy_trace = Trace(data=trace.data)
+                    obspy_trace.stats.array = stc.array_code
                 except ValueError:
                     continue
                 if self.format == "SAC":
@@ -439,7 +458,6 @@ class PH5toMSeed(object):
                     obspy_trace.stats.depth = 0
                     obspy_trace.stats.back_azimuth = azimuth
                     obspy_trace.stats.experiment_id = stc.experiment_id
-                    obspy_trace.stats.array = stc.array_code
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
                 obspy_trace.stats.sampling_rate = actual_sample_rate
@@ -954,6 +972,12 @@ def get_args():
         help="SAC or MSEED",
         metavar="format", type=str, default="MSEED")
 
+    parser.add_argument(
+        "--non_standard", action="store_true", default=False,
+        help="Change filename from standard output to "
+        "[array].[seed_station].[seed_channel].[start_time]",
+    )
+
     the_args = parser.parse_args()
 
     return the_args
@@ -1024,12 +1048,19 @@ def main():
 
         for stream in ph5ms.process_all():
             if args.format.upper() == "MSEED":
-                stream.write(ph5ms.filenamemseed_gen(stream),
-                             format='MSEED', reclen=4096)
+                if not args.non_standard:
+                    stream.write(ph5ms.filenamemseed_gen(stream),
+                                 format='MSEED', reclen=4096)
+                else:
+                    stream.write(ph5ms.filenamemseed_nongen(stream),
+                                 format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
                 for trace in stream:
                     sac = SACTrace.from_obspy_trace(trace)
-                    sac.write(ph5ms.filenamesac_gen(trace))
+                    if not args.non_standard:
+                        sac.write(ph5ms.filenamesac_gen(trace))
+                    else:
+                        sac.write(ph5ms.filenamesac_nongen(trace))
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
