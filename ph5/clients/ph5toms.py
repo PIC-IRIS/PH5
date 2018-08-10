@@ -169,24 +169,6 @@ class PH5toMSeed(object):
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
-    
-    def filenamemseed_nongen(self, stream):
-        s = stream.traces[0].stats
-        ret = "{0}.{1}.{2}.{3}.ms".format(
-            s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
-        if not self.stream:
-            ret = os.path.join(self.out_dir, ret)
-        return ret
-
-    def filenamesac_nongen(self, trace):
-        s = trace.stats
-        ret = "{0}.{1}.{2}.{3}.sac".format(
-            s.array,s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
-        if not self.stream:
-            ret = os.path.join(self.out_dir, ret)
-        return ret 
 
     def filenamemsimg_gen(self, stream):
 
@@ -431,7 +413,6 @@ class PH5toMSeed(object):
 
                 try:
                     obspy_trace = Trace(data=trace.data)
-                    obspy_trace.stats.array = stc.array_code
                 except ValueError:
                     continue
                 if self.format == "SAC":
@@ -458,6 +439,7 @@ class PH5toMSeed(object):
                     obspy_trace.stats.depth = 0
                     obspy_trace.stats.back_azimuth = azimuth
                     obspy_trace.stats.experiment_id = stc.experiment_id
+                    obspy_trace.stats.array = stc.array_code
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
                 obspy_trace.stats.sampling_rate = actual_sample_rate
@@ -971,12 +953,6 @@ def get_args():
         "-F", "-f", "--format", action="store", dest="format",
         help="SAC or MSEED",
         metavar="format", type=str, default="MSEED")
-    
-    parser.add_argument(
-        "--non_standard", action="store_true", default=False,
-        help="Change filename from standard output to "
-        "[array].[seed_station].[seed_channel].[start_time]",
-    )    
 
     the_args = parser.parse_args()
 
@@ -1048,19 +1024,12 @@ def main():
 
         for stream in ph5ms.process_all():
             if args.format.upper() == "MSEED":
-                if not args.non_standard:
-                    stream.write(ph5ms.filenamemseed_gen(stream),
-                                 format='MSEED', reclen=4096)
-                else:
-                    stream.write(ph5ms.filenamemseed_nongen(stream),
-                                 format='MSEED', reclen=4096)
+                stream.write(ph5ms.filenamemseed_gen(stream),
+                             format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
                 for trace in stream:
                     sac = SACTrace.from_obspy_trace(trace)
-                    if not args.non_standard:
-                        sac.write(ph5ms.filenamesac_gen(trace))
-                    else:
-                        sac.write(ph5ms.filenamesac_nongen(trace))
+                    sac.write(ph5ms.filenamesac_gen(trace))
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))
