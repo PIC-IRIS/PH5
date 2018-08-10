@@ -15,7 +15,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 
 from ph5.core import ph5utils, ph5api
-from ph5.core.ph5utils import PH5ResponseManager, PH5Response
+from ph5.core.ph5utils import PH5ResponseManager
 
 
 PROG_VERSION = "2018.106"

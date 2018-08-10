@@ -406,7 +406,7 @@ class PH5toMSeed(object):
                     continue
                 # if start time is before requested start time move up 1 sample
                 # and delete first sample of data
-                #if trace.start_time.epoch() < stc.starttime:
+                # if trace.start_time.epoch() < stc.starttime:
                 #    trace.start_time = trace.start_time + \
                 #        (1 / float(stc.sample_rate))
                 #   trace.data = trace.data[1:]
@@ -698,7 +698,7 @@ class PH5toMSeed(object):
 
         try:
             seed_network = experiment_t[0]['net_code_s']
-        except:
+        except BaseException:
             raise PH5toMSAPIError("Error-No net_code_s entry in Experiment_t. "
                                   "Verify that this experiment is "
                                   "PH5 version >= PN4.")
@@ -1027,9 +1027,9 @@ def main():
                 stream.write(ph5ms.filenamemseed_gen(stream),
                              format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
-                    for trace in stream:
-                        sac = SACTrace.from_obspy_trace(trace)
-                        sac.write(ph5ms.filenamesac_gen(trace))
+                for trace in stream:
+                    sac = SACTrace.from_obspy_trace(trace)
+                    sac.write(ph5ms.filenamesac_gen(trace))
 
     except PH5toMSAPIError as err:
         sys.stderr.write("{0}\n".format(err.message))

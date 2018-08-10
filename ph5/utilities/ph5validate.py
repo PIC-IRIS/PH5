@@ -63,9 +63,9 @@ class PH5Validate(object):
                           'A 2 character network code is required.')
 
         if not experiment_t[0]['net_code_s'][0].isdigit() and \
-             experiment_t[0]['net_code_s'][0] != "X" and \
-             experiment_t[0]['net_code_s'][0] != "Y" and \
-             experiment_t[0]['net_code_s'][0] != "z":
+                experiment_t[0]['net_code_s'][0] != "X" and \
+                experiment_t[0]['net_code_s'][0] != "Y" and \
+                experiment_t[0]['net_code_s'][0] != "z":
             logging.warning("Network code is a permanent FDSN:" +
                             " Network code should be a temporary code.")
 
@@ -196,133 +196,132 @@ class PH5Validate(object):
         return
 
     def checK_stations(self):
-            logging.info("Checking Stations...")
-            array_names = sorted(self.ph5.Array_t_names)
+        logging.info("Checking Stations...")
+        array_names = sorted(self.ph5.Array_t_names)
+        for array_name in array_names:
+            self.read_arrays(array_name)
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order']
+            for ph5_station in arrayorder:
+                station_list = arraybyid.get(ph5_station)
+                for deployment in station_list:
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0, station_len):
+                        station_id = station_list[deployment][
+                            st_num]['id_s']
+                        serial = station_list[deployment][
+                            st_num]['das/serial_number_s']
+                        channel = station_list[deployment][
+                            st_num]['channel_number_i']
+                        logging.info("\n##############")
+                        logging.info("Station " + str(station_id) +
+                                     " Channel " + str(channel) + "\n")
+                        try:
+                            if not (0 <= int(station_list[deployment]
+                                             [st_num]['id_s']) <= 65535):
+                                logging.error("Station ID not" +
+                                              " between 0 and 65535")
+                        except ValueError:
+                            logging.error("Station ID not a whole" +
+                                          " number between 0" +
+                                          " and 65535")
 
-            for array_name in array_names:
-                self.read_arrays(array_name)
-                arraybyid = self.ph5.Array_t[array_name]['byid']
-                arrayorder = self.ph5.Array_t[array_name]['order']
-                for ph5_station in arrayorder:
-                    station_list = arraybyid.get(ph5_station)
-                    for deployment in station_list:
-                        station_len = len(station_list[deployment])
-                        for st_num in range(0, station_len):
-                            station_id = station_list[deployment][
-                                st_num]['id_s']
-                            serial = station_list[deployment][
-                                st_num]['das/serial_number_s']
-                            channel = station_list[deployment][
-                                st_num]['channel_number_i']
-                            logging.info("\n##############")
-                            logging.info("Station " + str(station_id) +
-                                         " Channel " + str(channel) + "\n")
-                            try:
-                                if not (0 <= int(station_list[deployment]
-                                                 [st_num]['id_s']) <= 65535):
-                                    logging.error("Station ID not" +
-                                                  " between 0 and 65535")
-                            except ValueError:
-                                logging.error("Station ID not a whole" +
-                                              " number between 0" +
-                                              " and 65535")
+                        if not (1 <= len(station_list[deployment][st_num][
+                                             'seed_station_name_s']) <= 5):
+                            logging.error("SEED station name not" +
+                                          " between 1 and 5 characters.")
 
-                            if not (1 <= len(station_list[deployment][st_num][
-                                                 'seed_station_name_s']) <= 5):
-                                logging.error("SEED station name not" +
-                                              " between 1 and 5 characters.")
+                        if not station_list[deployment][
+                                st_num]['seed_station_name_s']:
+                            logging.error("SEED station name required.")
 
-                            if not station_list[deployment][
-                                    st_num]['seed_station_name_s']:
-                                logging.error("SEED station name required.")
+                        if not station_list[deployment][
+                                st_num]['seed_band_code_s']:
+                            logging.error("SEED band code required. ")
 
-                            if not station_list[deployment][
-                                    st_num]['seed_band_code_s']:
-                                logging.error("SEED band code required. ")
+                        if not station_list[deployment][
+                                st_num]['seed_instrument_code_s']:
+                            logging.error("SEED instrument code required.")
 
-                            if not station_list[deployment][
-                                    st_num]['seed_instrument_code_s']:
-                                logging.error("SEED instrument code required.")
+                        if not station_list[deployment][
+                                st_num]['seed_orientation_code_s']:
+                            logging.error("SEED orientation code" +
+                                          " required.")
 
-                            if not station_list[deployment][
-                                    st_num]['seed_orientation_code_s']:
-                                logging.error("SEED orientation code" +
-                                              " required.")
+                        response_t = self.ph5.get_response_t_by_n_i(
+                            station_list[deployment][st_num][
+                                'response_table_n_i'])
+                        if response_t is None:
+                            logging.error("No Response table found." +
+                                          "Have you run load_resp yet?")
 
-                            response_t = self.ph5.get_response_t_by_n_i(
-                                station_list[deployment][st_num][
-                                    'response_table_n_i'])
-                            if response_t is None:
-                                logging.error("No Response table found." +
-                                              "Have you run load_resp yet?")
+                        deploy_time = station_list[deployment][
+                                st_num]['deploy_time/epoch_l']
+                        pickup_time = station_list[deployment][
+                                st_num]['pickup_time/epoch_l']
 
-                            deploy_time = station_list[deployment][
-                                    st_num]['deploy_time/epoch_l']
-                            pickup_time = station_list[deployment][
-                                    st_num]['pickup_time/epoch_l']
+                        if deploy_time > pickup_time:
+                            logging.error("Deploy time is after" +
+                                          " pickup time")
+                        else:
+                            self.ph5.read_das_t(serial, pickup_time,
+                                                deploy_time, reread=False)
 
-                            if deploy_time > pickup_time:
-                                logging.error("Deploy time is after" +
-                                              " pickup time")
-                            else:
-                                self.ph5.read_das_t(serial, pickup_time,
-                                                    deploy_time, reread=False)
+                        if serial not in self.ph5.Das_t:
+                            logging.error("No Data found for: " +
+                                          str(station_id) +
+                                          " You may need " +
+                                          "to reload the raw data for " +
+                                          "this station.")
+                        try:
+                            ph5api.filter_das_t(self.ph5.Das_t[
+                                                serial]['rows'],
+                                                channel)
+                        except BaseException:
+                            logging.error("NO Data found for channel " +
+                                          str(channel) +
+                                          " Other channels seem to exist")
 
-                            if serial not in self.ph5.Das_t:
-                                logging.error("No Data found for: " +
-                                              str(station_id) +
-                                              " You may need " +
-                                              "to reload the raw data for " +
-                                              "this station.")
-                            try:
-                                ph5api.filter_das_t(self.ph5.Das_t[
-                                                    serial]['rows'],
-                                                    channel)
-                            except:
-                                logging.error("NO Data found for channel " +
-                                              str(channel) +
-                                              " Other channels seem to exist")
+                        if station_list[deployment][st_num][
+                                'location/X/value_d'] == 0:
+                            logging.warning("Location/X/value_d" +
+                                            " 'longitude'seems to be 0." +
+                                            " Is this correct???")
 
-                            if station_list[deployment][st_num][
-                                    'location/X/value_d'] == 0:
-                                logging.warning("Location/X/value_d" +
-                                                " 'longitude'seems to be 0." +
-                                                " Is this correct???")
+                        if station_list[deployment][st_num][
+                                'location/Y/value_d'] == 0:
+                            logging.warning("Location/Y/value_d" +
+                                            " 'latitude' seems to be 0." +
+                                            " Is this correct???")
 
-                            if station_list[deployment][st_num][
-                                    'location/Y/value_d'] == 0:
-                                logging.warning("Location/Y/value_d" +
-                                                " 'latitude' seems to be 0." +
-                                                " Is this correct???")
+                        if station_list[deployment][st_num][
+                                'sample_rate_i'] == 0:
+                            logging.warning("Sample rate seems to be 0." +
+                                            " Is this correct???")
 
-                            if station_list[deployment][st_num][
-                                    'sample_rate_i'] == 0:
-                                logging.warning("Sample rate seems to be 0." +
-                                                " Is this correct???")
+                        if station_list[deployment][st_num][
+                                'sample_rate_multiplier_i'] == 0:
+                            logging.warning("Sample rate multiplier 0." +
+                                            " Is this correct???")
 
-                            if station_list[deployment][st_num][
-                                    'sample_rate_multiplier_i'] == 0:
-                                logging.warning("Sample rate multiplier 0." +
-                                                " Is this correct???")
+                        if not station_list[deployment][st_num][
+                                'das/manufacturer_s']:
+                            logging.warning("DAS manufacturer is missing" +
+                                            " Is this correct???")
 
-                            if not station_list[deployment][st_num][
-                                    'das/manufacturer_s']:
-                                logging.warning("DAS manufacturer is missing" +
-                                                " Is this correct???")
+                        if not station_list[deployment][st_num][
+                                'das/model_s']:
+                            logging.warning("DAS model is missing" +
+                                            " Is this correct???")
+                        if not station_list[deployment][st_num][
+                                'sensor/manufacturer_s']:
+                            logging.warning("Sensor manufacturer is" +
+                                            " missing. Is this correct???")
 
-                            if not station_list[deployment][st_num][
-                                    'das/model_s']:
-                                logging.warning("DAS model is missing" +
-                                                " Is this correct???")
-                            if not station_list[deployment][st_num][
-                                    'sensor/manufacturer_s']:
-                                logging.warning("Sensor manufacturer is" +
-                                                " missing. Is this correct???")
-
-                            if not station_list[deployment][st_num][
-                                    'sensor/model_s']:
-                                logging.warning("Sensor model is missing." +
-                                                " Is this correct???")
+                        if not station_list[deployment][st_num][
+                                'sensor/model_s']:
+                            logging.warning("Sensor model is missing." +
+                                            " Is this correct???")
             return
 
 

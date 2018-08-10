@@ -10,7 +10,8 @@ from ph5.core.tests.test_ph5utils import TestPH5Utils
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Runs tests for PH5 Web Services.')
+    parser = argparse.ArgumentParser(
+        description='Runs tests for PH5 Web Services.')
     parser.add_argument('--include_ph5_dependent',
                         help='Run tests that require access to the PH5 archive.',
                         default=False,
@@ -18,9 +19,10 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+
 def run_test(class_name):
     suite = unittest.TestLoader().loadTestsFromTestCase(test_class)
-    runner=unittest.TextTestRunner(verbosity=3)
+    runner = unittest.TextTestRunner(verbosity=3)
     return runner.run(suite)
 
 
@@ -33,6 +35,6 @@ if __name__ == '__main__':
         if test_result.failures:
             passed = False
     if not passed:
-        exit(1) # One or more test failed
+        exit(1)  # One or more test failed
     else:
-        exit(0) # All tests passing
+        exit(0)  # All tests passing
