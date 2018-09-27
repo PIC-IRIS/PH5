@@ -1,8 +1,10 @@
 #!/usr/bin/env pnpython3
 
 import firfilt_py
+import logging
 
-PROG_VERSION = "2013.261"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def decimate(decfacts, data_in):
@@ -17,7 +19,6 @@ def decimate(decfacts, data_in):
 
 if __name__ == '__main__':
     import math as m
-    import sys
     ts = []
     #   build a 36000 sample sine wave
     for i in range(36000):
@@ -26,6 +27,6 @@ if __name__ == '__main__':
 
     #   Decimate by a factor of 2 X 4 X 5 = 40
     shift, data = decimate('2,4,5', ts)
-    sys.stderr.write("Shift: %d\n" % shift)
+    LOGGER.info("Shift: %d\n" % shift)
     for d in data:
         print d

@@ -1,12 +1,14 @@
 #!/usr/bin/env pnpython3
 
 import sys
+import logging
 import os
 import string
 import re
 from ph5.core import columns
 
-PROG_VERSION = '2016.106 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #   This line contains a key/value entered as is
 # keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
@@ -56,7 +58,7 @@ class Kef:
             self.fh = file(self.filename)
         except Exception as e:
             self.fh = None
-            raise KefError("Failed to open %s. Exception: %s\n" %
+            raise KefError("Failed to open %s. Exception: %s" %
                            (self.filename, e))
 
     def close(self):
@@ -121,8 +123,8 @@ class Kef:
                 key, value = mo.groups()
                 sincepath -= nchars
             else:
-                sys.stderr.write(
-                    "Warning: unparsable line: %s\nSkipping\n" % line)
+                LOGGER.warning("Unparsable line: {0} ... Skipping"
+                               .format(line))
                 continue
 
             key = string.strip(key)
@@ -190,10 +192,10 @@ class Kef:
         while p:
             if trace is True:
                 kys = kv.keys()
-                sys.stderr.write('=-' * 30)
-                sys.stderr.write("\n%s\n" % p)
+                LOGGER.info('=-' * 30)
+                LOGGER.info("{0}".format(p))
                 for k in kys:
-                    sys.stderr.write("\t%s = %s\n" % (k, kv[k]))
+                    LOGGER.info("\t{0} = {1}".format(k, kv[k]))
 
             DELETE = False
             #   Update or Append or Delete
@@ -216,10 +218,8 @@ class Kef:
             # columns.TABLES keeps a dictionary of key = table name, value =
             # reference to table
             if p not in columns.TABLES:
-                sys.stderr.write(
-                    "Warning: No table reference for key: %s\n" % p)
-                sys.stderr.write(
-                    "Possibly ph5 file is not open or initialized?\n")
+                LOGGER.warning("No table reference for key: {0}".format(p))
+                LOGGER.info("Possibly ph5 file is not open or initialized?")
                 p, kv = self.next()
                 continue
 
@@ -227,15 +227,15 @@ class Kef:
             ref = columns.TABLES[p]
             #   key needs to be list for columns.validate
             if trace is True:
-                sys.stderr.write("Validating...\n")
+                LOGGER.info("Validating...")
 
             errs_keys, errs_required = columns.validate(ref, kv, key)
             for e in errs_keys + errs_required:
                 err = True
-                sys.stderr.write(e + '\n')
+                LOGGER.error(e)
 
             if trace is True:
-                sys.stderr.write("Done\n")
+                LOGGER.info("Done")
 
             if len(key) == 0:
                 key = None
@@ -244,17 +244,17 @@ class Kef:
 
             if DELETE:
                 if trace is True:
-                    sys.stderr.write("Deleting...")
+                    LOGGER.info("Deleting...")
                 else:
                     columns.delete(ref, kv[key], key)
             else:
                 if trace is True:
-                    sys.stderr.write("Updating...")
+                    LOGGER.info("Updating...")
                 else:
                     columns.populate(ref, kv, key)
 
             if trace is True:
-                sys.stderr.write("Skipped\n")
+                LOGGER.info("Skipped")
 
             p, kv = self.next()
 

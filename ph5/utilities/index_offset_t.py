@@ -5,9 +5,11 @@
 #   Steve Azevedo, March 2012
 #
 import sys
+import logging
 from ph5.core import experiment
 
-PROG_VERSION = "2017.257"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 EX = None
 PH5 = None
@@ -51,7 +53,7 @@ def get_args():
 
     NAME = options.offset_table_name
     if NAME is None:
-        sys.stderr.write("Required option missing: --offset_table.\n")
+        LOGGER.error("Required option missing: --offset_table.")
         sys.exit()
 
 

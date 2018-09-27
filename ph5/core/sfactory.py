@@ -17,8 +17,10 @@ import os
 import time
 import string
 import sys
+import logging
 
-PROG_VERSION = "2013.232.2"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -105,15 +107,15 @@ class Ssegy:
         try:
             fd.write(self.trace_header.get()[:180])
         except Exception as e:
-            sys.stderr.write("{0:s}\n{1:s}\n".format(
-                e, repr(self.trace_header.__dict__)))
+            LOGGER.error("{0:s}\n{1:s}"
+                         .format(e, repr(self.trace_header.__dict__)))
         # os.write (fd, self.extended_header.get ())
         #   60 bytes
         try:
             fd.write(self.extended_header.get()[:60])
         except Exception as e:
-            sys.stderr.write("{0:s}\n{1:s}\n".format(
-                e, repr(self.extended_header.__dict__)))
+            LOGGER.error("{0:s}\n{1:s}\n"
+                         .format(e, repr(self.extended_header.__dict__)))
 
     def write_data_array(self, fd):
         #   Pad data to correct length with the median value
@@ -142,7 +144,7 @@ class Ssegy:
             elif self.trace_type == 'float':
                 x_d = numpy.array(data, numpy.float32)
             else:
-                sys.stderr.write(
+                LOGGER.error(
                     "Trace type unknown: {0}\n".format(self.trace_type))
 
             #   Write the data on the end of the file
@@ -170,8 +172,8 @@ class Ssegy:
                     bw = 1.
                 x_f *= bw
             except Exception as e:
-                sys.stderr.write(
-                    "Warning: Problem applying trace bit weight.\n{0}\n"
+                LOGGER.warning(
+                    "Problem applying trace bit weight.\n{0}"
                     .format(e))
 
             # if sys.byteorder == 'little' :
@@ -317,7 +319,7 @@ class Ssegy:
         try:
             self.text_header.set(txt)
         except segy_h.HeaderError as e:
-            sys.stderr.write(e + "\n")
+            LOGGER.error(e)
 
     def set_reel_header(self, traces):
         rel = {}
@@ -350,7 +352,7 @@ class Ssegy:
         try:
             self.reel_header.set(rel)
         except segy_h.HeaderError as e:
-            sys.stderr.write(e + '\n')
+            LOGGER.error(e)
 
     def set_break_standard(self, tof=False):
         self.break_standard = tof
@@ -723,12 +725,8 @@ class Ssegy:
         if self.event_t:
             try:
                 tra['energySourcePt'] = int(self.event_t['id_s'])
-                # sys.stderr.write ("Shot: {0:d}\n"\
-                # .format (int (self.event_t['id_s'])))
             except Exception:
                 tra['energySourcePt'] = 0
-                # sys.stderr.write ("Error: {0:s} Shot ID: {1:s}\n"\
-                # .format (e, self.event_t['id_s']))
 
             #   Set source location here
             try:

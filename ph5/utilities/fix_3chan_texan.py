@@ -9,11 +9,14 @@
 #
 
 import sys
+import logging
 import time
 #   This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2017.257 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
 #   Valid horizontal channel numbers
 HORIZ = [2, 3, 5, 6]
 #   Array_t_xxxx keyed on xxxx
@@ -157,10 +160,9 @@ def read_receivers(das=None):
     for d in dass:
         # d = str (d)
         d = "Das_g_{0}".format(str(d))
-        # sys.stderr.write ("DAS '{0}'\n".format (d))
         #   Get node reference
         if d not in DASGROUPS:
-            sys.stderr.write("#No key '{0}'\n".format(d))
+            LOGGER.warning("#No key '{0}'\n".format(d))
             continue
 
         g = DASGROUPS[d]
@@ -185,8 +187,8 @@ def main():
     try:
         PH5 = sys.argv[1]
     except IndexError:
-        sys.stderr.write("v{1} Usage: {0} file.ph5\n".format(
-            sys.argv[0], PROG_VERSION))
+        LOGGER.info("v{1} Usage: {0} file.ph5".format(sys.argv[0],
+                                                      PROG_VERSION))
         sys.exit()
 
     initialize_ph5()

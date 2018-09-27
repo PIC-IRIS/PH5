@@ -6,10 +6,12 @@
 #
 import os
 import sys
+import logging
 
 from ph5.utilities import pforma_io
 
-PROG_VERSION = "2016.049 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
@@ -51,20 +53,20 @@ def get_args():
     options, args = oparser.parse_args()
 
     if options.infile and options.merge_minis:
-        sys.stderr.write(
-            "Error: Loading and merging must be done as seperate operations.\
-             Exiting.\n")
+        LOGGER.error(
+            "Loading and merging must be done as seperate operations. "
+            "Exiting.")
         sys.exit(1)
 
     if options.infile is not None and not os.path.exists(options.infile):
-        sys.stderr.write("Error: Can not find {0}.\n".format(options.infile))
+        LOGGER.error("Can not find {0}.".format(options.infile))
         sys.exit(1)
     else:
         RAW_LST = options.infile
 
     if options.home is None:
-        sys.stderr.write(
-            "Error: Project home required, --project_home. Exiting.")
+        LOGGER.error(
+            "Project home required, --project_home. Exiting.")
         sys.exit(1)
     else:
         PROJECT = options.home
@@ -170,7 +172,7 @@ def run(fio):
 
 def main():
     if not exexists('xterm'):
-        sys.stderr.write("The external program xterm required. Not found.\n")
+        LOGGER.error("The external program xterm required. Not found.")
         sys.exit()
 
     get_args()
@@ -192,34 +194,34 @@ def main():
         try:
             fio.open()
         except pforma_io.FormaIOError as e:
-            sys.stderr.write(
-                "Error: {0} Message: {1}\n".format(e.errno, e.message))
+            LOGGER.error(
+                "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
         #   Pre-process raw files
         try:
             fio.read()
         except pforma_io.FormaIOError as e:
-            sys.stderr.write(
-                "Error: {0} Message: {1}\n".format(e.errno, e.message))
+            LOGGER.error(
+                "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
         #   Adjust the number M and the number of families if needed
-        print "Total raw size: {0:7.2f}GB".format(
-            float(fio.total_raw / 1024. / 1024. / 1024.))
+        LOGGER.info("Total raw size: {0:7.2f}GB"
+                    .format(float(fio.total_raw / 1024. / 1024. / 1024.)))
         adjust(fio)
         # Set up the processing directory structure, and reset M if mini files
         # already exist
         try:
             fio.initialize_ph5()
         except pforma_io.FormaIOError as e:
-            sys.stderr.write(
-                "Error: {0} Message: {1}\n".format(e.errno, e.message))
+            LOGGER.error(
+                "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
         #   Read JSON db
         try:
             fio.readDB()
         except pforma_io.FormaIOError as e:
-            sys.stderr.write(
-                "Error: {0} Message: {1}\n".format(e.errno, e.message))
+            LOGGER.error(
+                "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
         # Resolve JSON db with list of files we are loading (have they been
         # loaded already)

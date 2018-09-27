@@ -12,9 +12,11 @@ import logging
 import time
 import json
 from math import modf
+from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, columns, segyreader, timedoy
 
-PROG_VERSION = "2015.092 Developmental"
+PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * .5  # 1/2GB (1024 X 1024 X 1024 X .5)
 DAS_INFO = {}
@@ -157,7 +159,7 @@ def get_args():
         if SR.FH is None:
             raise IOError()
     except Exception as e:
-        sys.stderr.write("Error: Can't open infile (SEG-Y).\n{0}\n".format(e))
+        LOGGER.error("Can't open infile (SEG-Y).\n{0}\n".format(e))
         sys.exit()
 
     #   Set extended header type
@@ -168,7 +170,7 @@ def get_args():
     if options.outfile is not None:
         PH5 = options.outfile
     else:
-        sys.stderr.write("Error: No outfile (PH5) given.\n")
+        LOGGER.error("No outfile (PH5) given.\n")
         sys.exit()
     #   Is this gather in receiver order?
     RECV_ORDER = options.recvorder
@@ -199,12 +201,13 @@ def get_args():
         SR.set_txt_hdr_type('E')
     else:
         SR.set_txt_hdr_type('A')
-    #   Set up basic logging
-    logging.basicConfig(
-        filename=os.path.join('.', "segy2ph5.log"),
-        format="%(asctime)s %(message)s",
-        level=logging.INFO
-    )
+        # Write log to file
+        ch = logging.FileHandler(os.path.join(".", "segy2ph5.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
 
 
 def reopenPH5s():
@@ -243,7 +246,6 @@ def openPH5(filename):
                 return EXREC
     except BaseException:
         pass
-    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -364,7 +366,7 @@ def update_index_t_info(starttime, samples, sps):
 
     DAS_INFO[das].append(di)
     MAP_INFO[das].append(dm)
-    logging.info(
+    LOGGER.info(
         "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
@@ -468,9 +470,7 @@ def update_external_references():
           Receivers_t    '''
     global EX
 
-    sys.stderr.write("Updating external references...")
-    sys.stderr.flush()
-    logging.info("Updating external references...")
+    LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
@@ -485,8 +485,7 @@ def update_external_references():
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
-            # pass
-            print "DAS nuke ", e
+            LOGGER.error("DAS nuke - {0}".format(e))
 
         #   Re-create node
         try:
@@ -494,12 +493,9 @@ def update_external_references():
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception as e:
-            # pass
-            sys.stderr.write("{0}\n".format(e))
+            LOGGER.error("{0}\n".format(e))
 
-        # sys.exit ()
-    sys.stderr.write("done, {0} das nodes recreated.\n".format(n))
-    logging.info("done, {0} das nodes recreated.\n".format(n))
+    LOGGER.info("done, {0} das nodes recreated.\n".format(n))
 
     n = 0
     for i in INDEX_T_MAP.rows:
@@ -531,11 +527,8 @@ def update_external_references():
             n += 1
         except Exception as e:
             # pass
-            sys.stderr.write("{0}\n".format(e))
-
-        # sys.exit ()
-    sys.stderr.write("done, {0} map nodes recreated.\n".format(n))
-    logging.info("done, {0} map nodes recreated.\n".format(n))
+            LOGGER.error("{0}\n".format(e))
+    LOGGER.info("done, {0} map nodes recreated.\n".format(n))
 
 
 def read_trace():
@@ -856,7 +849,7 @@ def process_trace(th, bh, rh, eh, tr):
 
         EXREC = get_current_data_only(SIZE, Das)
         if EXREC.filename != MINIPH5:
-            sys.stderr.write("Opened: {0}...\n".format(EXREC.filename))
+            LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
             MINIPH5 = EXREC.filename
 
         #   This is gain in dB since it is from SEG-Y
@@ -874,12 +867,9 @@ def process_trace(th, bh, rh, eh, tr):
                 EX.ph5_g_responses.populateResponse_t(p_response_t)
                 RESP.update()
         except Exception as e:
-            sys.stderr.write(
-                "Warning: bit weight or gain improperly defined in SEG-Y file.\
-                \n{0}\n".format(e))
-            logging.warn(
-                "Warning: bit weight or gain improperly defined in SEG-Y file.\
-                \n")
+            LOGGER.warn("Bit weight or gain improperly "
+                        "defined in SEG-Y file - {0}"
+                        .format(e))
 
         #   Check to see if group exists for this das, if not build it
         das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas(Das)
@@ -1064,9 +1054,9 @@ def main():
 
         MINIPH5 = None
         get_args()
-        logging.info("segy2ph5 Version: {0}".format(PROG_VERSION))
-        logging.info("Opened: {0}".format(SR.infile))
-        logging.info("{0}".format(repr(sys.argv)))
+        LOGGER.info("segy2ph5 Version: {0}".format(PROG_VERSION))
+        LOGGER.info("Opened: {0}".format(SR.infile))
+        LOGGER.info("{0}".format(repr(sys.argv)))
         initializeExperiment()
         RESP = Resp(EX.ph5_g_responses)
         rows, keys = EX.ph5_g_receivers.read_index()

@@ -12,6 +12,7 @@ import sys
 import os
 import re
 import time
+import logging
 from math import radians, cos, tan, sqrt, pi
 from PyQt4 import QtGui, QtCore, Qt
 from ph5.core import timedoy
@@ -19,7 +20,8 @@ from ph5.core import timedoy
 # from __future__ import unicode_literals
 # from future_builtins import *
 
-PROG_VERSION = __version__ = "2014.322 Developmental"
+PROG_VERSION = __version__ = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 #   Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000
@@ -269,7 +271,7 @@ def build_shot(order, line, n):
 
     if 'Shot-ID' not in order:
         #   XXX   Need a error dialog here   XXX
-        sys.stderr.write("Error: Shot-ID needed to create dep file.\n")
+        LOGGER.error("Shot-ID needed to create dep file.\n")
         return None
 
     try:
@@ -311,8 +313,8 @@ def build_shot(order, line, n):
         else:
             STime = line[order['STimeY:J:H:M:S.s']]
     except Exception as e:
-        sys.stderr.write(
-            "Error {1}:\n\tCan't convert time {0}\n".format(line, e))
+        LOGGER.error(
+            "{1}:\n\tCan't convert time {0}\n".format(line, e))
         return
 
     keys = order.keys()
@@ -846,7 +848,7 @@ def build_recv(order, line, n):
         return None
 
     if 'Receiver-ID' not in order:
-        sys.stderr.write("Error: Receiver-ID needed to create dep file.\n")
+        LOGGER.error("Receiver-ID needed to create dep file.\n")
         return None
 
     DTime = ''
@@ -920,8 +922,8 @@ def build_recv(order, line, n):
                 except BaseException:
                     PTime = None
         except Exception as e:
-            sys.stderr.write(
-                "Error {1}:\n\tCan't convert time {0}\n".format(line, e))
+            LOGGER.error(
+                "{1}:\n\tCan't convert time {0}\n".format(line, e))
             return
 
     keys = order.keys()
@@ -1345,7 +1347,7 @@ class SetupDialog(QtGui.QDialog):
         self.emit(QtCore.SIGNAL("changed"))
 
     def rejected(self):
-        sys.stdout.write("Reject\n")
+        LOGGER.info("Reject")
 
 
 class Novitiate(QtGui.QMainWindow):
@@ -1415,7 +1417,6 @@ class Novitiate(QtGui.QMainWindow):
         status.showMessage("Ready", 5000)
 
     def configure(self):
-        # sys.stdout.write ('At configure\n')
         self.settingsDialog = SetupDialog(self.settings, self)
         self.connect(self.settingsDialog, QtCore.SIGNAL(
             "changed"), self.refreshTable)
@@ -1426,7 +1427,7 @@ class Novitiate(QtGui.QMainWindow):
         # print (SEPMAP, key)
         sep = SEPMAP[str(key)]
         # sep = self.settings['colSep']
-        # sys.stdout.write ("Refresh, '{0}' \n".format (sep))
+        LOGGER.debug("Refresh, '{0}' \n".format(sep))
 
         maxY = 0
         LINES = []
@@ -1489,10 +1490,8 @@ class Novitiate(QtGui.QMainWindow):
         # self.table.setDragEnabled (True)
 
     def openInfile(self):
-        # sys.stdout.write ("Open\n")
         inFileName = QtGui.QFileDialog.getOpenFileName(
             self, 'Open input file', os.getcwd())
-        # sys.stdout.write ('{0}\n'.format (inFileName))
         if os.path.exists(inFileName):
             # self.table.clear ()
             # self.table = MyQTableWidget()
@@ -1506,7 +1505,6 @@ class Novitiate(QtGui.QMainWindow):
             self.readFileLines = None
 
     def saveAs(self):
-        # sys.stdout.write ("Save\n")
         saveFileName = QtGui.QFileDialog.getSaveFileName(
             self, 'Save output as', os.getcwd())
         if not saveFileName:
@@ -1520,7 +1518,6 @@ class Novitiate(QtGui.QMainWindow):
             line = line.strip()
             if not line:
                 continue
-            # print (line)
             flds = line.split(sep)
             build_recv(self.table.colKey, flds, n + skip)
             sline = build_shot(self.table.colKey, flds, n + skip)

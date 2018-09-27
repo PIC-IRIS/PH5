@@ -5,7 +5,7 @@
 #   Steve Azevedo, March 2015
 #
 
-import sys
+import logging
 import os
 import time
 import re
@@ -14,7 +14,8 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2018.222'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
 # No time corrections applied if slope exceeds this value, normally 0.001
@@ -320,8 +321,7 @@ class PH5(experiment.ExperimentGroup):
                 lat1 = event_t['location/Y/value_d']
                 az, baz, dist = run_geod(lat0, lon0, lat1, lon1)
         except Exception as e:
-            sys.stderr.write(
-                "Warning: Couldn't get offset. {0}\n".format(repr(e)))
+            LOGGER.warning("Couldn't get offset. {0}".format(repr(e)))
 
         return {'event_id_s': evt_id, 'receiver_id_s': sta_id,
                 'azimuth/value_f': az, 'azimuth/units_s': 'degrees',
@@ -1135,11 +1135,6 @@ class PH5(experiment.ExperimentGroup):
                     t.clock.comment.append(
                         "Time correction mismatch. {0}ms/{1}ms"
                         .format(time_correction, time_cor_guess_ms))
-
-                # except APIError as e :
-                # sys.stderr.write ("Warning: {0}: {1}"\
-                # .format (e.errno, e.msg))
-                # time_correction = 0.
             else:
                 time_correction = 0.
             #   Set time correction
@@ -1583,7 +1578,7 @@ def calc_offset_sign(offsets):
             X.append(x)
             Y.append(y)
         except Exception as e:
-            sys.stderr.write("%s\n" % e)
+            LOGGER.error(e)
 
     #   The seismic line is abx + c (ab => w)
     ab, c, err = linreg(X, Y)
@@ -1618,9 +1613,8 @@ def calc_offset_sign(offsets):
 
             OO.append(offset_t)
         except Exception as e:
-            sys.stderr.write("%s\n" % e)
+            LOGGER.error(e)
 
-    sys.stdout.flush()
     #   Returning Oh not zero
     return OO
 

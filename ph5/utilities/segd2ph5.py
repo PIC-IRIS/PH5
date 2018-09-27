@@ -8,6 +8,7 @@
 #   Modified to read SEG-D from 3C's, July 2016
 #
 
+import argparse
 import os
 import sys
 import logging
@@ -15,10 +16,12 @@ import time
 import json
 import re
 from math import modf
+from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2018.127 Developmental"
+PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -119,7 +122,7 @@ def read_infile(infile):
     try:
         fh = file(infile)
     except BaseException:
-        sys.stderr.write("Warning: Failed to open %s\n" % infile)
+        LOGGER.warning("Failed to open %s\n" % infile)
         return
 
     while True:
@@ -142,90 +145,92 @@ def get_args():
 
     TSPF = False
 
-    from optparse import OptionParser
-    oparser = OptionParser()
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = ("Version: {0} Usage: segd2ph5 [options]"
+                    .format(PROG_VERSION))
 
-    oparser.usage = "Version: {0} Usage: segd2ph5 [options]".format(
-        PROG_VERSION)
+    parser.add_argument("-r", "--raw", dest="rawfile",
+                        help="Fairfield SEG-D v1.6 file.", metavar="raw_file")
 
-    oparser.add_option("-r", "--raw", dest="rawfile",
-                       help="Fairfield SEG-D v1.6 file.", metavar="raw_file")
+    parser.add_argument("-f", action="store", dest="infile", type=str,
+                        help=("File containing list of Fairfield SEG-D "
+                              "v1.6 file names."))
 
-    oparser.add_option("-f", action="store", dest="infile", type="string",
-                       help="File containing list of Fairfield SEG-D\
-                        v1.6 file names.")
+    parser.add_argument("-n", "--nickname", dest="outfile",
+                        help="The ph5 file prefix (experiment nick name).",
+                        metavar="output_file_prefix")
 
-    oparser.add_option("-n", "--nickname", dest="outfile",
-                       help="The ph5 file prefix (experiment nick name).",
-                       metavar="output_file_prefix")
+    parser.add_argument("-U", "--UTM", dest="utm_zone",
+                        help="Locations in SEG-D file are UTM, --UTM=utmzone.",
+                        type=int, default=0,
+                        metavar="utm_zone")
 
-    oparser.add_option("-U", "--UTM", dest="utm_zone",
-                       help="Locations in SEG-D file are UTM, --UTM=utmzone.",
-                       type='int', default=0,
-                       metavar="utm_zone")
+    parser.add_argument("-T", "--TSPF", dest="texas_spc",
+                        help="Locations are in texas state plane coordinates.",
+                        action='store_true', default=False)
 
-    oparser.add_option("-T", "--TSPF", dest="texas_spc",
-                       help="Locations are in texas state plane coordinates.",
-                       action='store_true', default=False)
+    parser.add_argument("-M", "--num_mini", dest="num_mini",
+                        help="Create a given number of miniPH5 files.",
+                        metavar="num_mini", type=int, default=None)
 
-    oparser.add_option("-M", "--num_mini", dest="num_mini",
-                       help="Create a given number of miniPH5 files.",
-                       metavar="num_mini", type='int', default=None)
+    parser.add_argument("-S", "--first_mini", dest="first_mini",
+                        help="The index of the first miniPH5_xxxxx.ph5 file.",
+                        metavar="first_mini", type=int, default=1)
 
-    oparser.add_option("-S", "--first_mini", dest="first_mini",
-                       help="The index of the first miniPH5_xxxxx.ph5 file.",
-                       metavar="first_mini", type='int', default=1)
+    parser.add_argument("-c", "--combine", dest="combine",
+                        help=("Combine this number if SEG-D traces to one "
+                              "PH5 trace."),
+                        metavar="combine", type=int, default=APPEND)
 
-    oparser.add_option("-c", "--combine", dest="combine",
-                       help="Combine this number if SEG-D traces to one\
-                        PH5 trace.",
-                       metavar="combine", type='int', default=APPEND)
+    parser.add_argument("-E", "--allevents",
+                        action="store_true",
+                        dest="all_events",
+                        default=False)
 
-    oparser.add_option("-E", "--allevents", action="store_true",
-                       dest="all_events",
-                       default=False, metavar="all_events")
+    parser.add_argument("--manufacturers_code", dest="manufacturers_code",
+                        help=("Manufacturers code. Defaults to 20 for "
+                              "Fairfield. Most likely will not work for SEG-D "
+                              "written by other data loggers."),
+                        type=int, default=FAIRFIELD)
 
-    oparser.add_option("--manufacturers_code", dest="manufacturers_code",
-                       help="Manufacturers code. Defaults to 20 for Fairfield.\
-                        Most likely will not work for SEG-D written by other\
-                         data loggers,",
-                       type='int', default=FAIRFIELD)
-
-    options, args = oparser.parse_args()
+    args = parser.parse_args()
 
     FILES = []
     PH5 = None
 
-    EVERY = options.all_events
-    NUM_MINI = options.num_mini
-    FIRST_MINI = options.first_mini
-    UTM = options.utm_zone
-    TSPF = options.texas_spc
-    APPEND = options.combine
-    MANUFACTURERS_CODE = options.manufacturers_code
+    EVERY = args.all_events
+    NUM_MINI = args.num_mini
+    FIRST_MINI = args.first_mini
+    UTM = args.utm_zone
+    TSPF = args.texas_spc
+    APPEND = args.combine
+    MANUFACTURERS_CODE = args.manufacturers_code
 
-    if options.infile is not None:
-        read_infile(options.infile)
+    if args.infile is not None:
+        read_infile(args.infile)
 
-    elif options.rawfile is not None:
-        FILES.append(options.rawfile)
+    elif args.rawfile is not None:
+        FILES.append(args.rawfile)
 
     if len(FILES) == 0:
-        sys.stderr.write("Error: No input file given.\n")
+        LOGGER.error("No input file given.\n")
         sys.exit()
 
     #   Set output file
-    if options.outfile is not None:
-        PH5 = options.outfile
+    if args.outfile is not None:
+        PH5 = args.outfile
     else:
-        sys.stderr.write("Error: No outfile (PH5) given.\n")
+        LOGGER.error("No outfile (PH5) given.\n")
         sys.exit()
 
-    logging.basicConfig(
-        filename=os.path.join('.', "segd2ph5.log"),
-        format="%(asctime)s %(message)s",
-        level=logging.INFO
-    )
+    # Write log to file
+    ch = logging.FileHandler(os.path.join(".", "segd2toph5.log"))
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
     #   Need to process in order: R309_674.1.0.rg16, 309 == line,
     #   674 = receiver point, 1 = first file
     #   Sorted where the file list is read...
@@ -251,7 +256,6 @@ def openPH5(filename):
                 return EXREC
     except BaseException:
         pass
-    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -276,7 +280,7 @@ def update_index_t_info(starttime, samples, sps):
 
     DAS_INFO[das].append(di)
     MAP_INFO[das].append(dm)
-    logging.info(
+    LOGGER.info(
         "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
@@ -285,9 +289,7 @@ def update_external_references():
     '''   Update external references in master.ph5 to
           miniPH5 files in Receivers_t    '''
     global F
-    # sys.stderr.write ("Updating external references...\n");
-    #  sys.stderr.flush ()
-    logging.info("Updating external references...")
+    LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
@@ -311,13 +313,9 @@ def update_external_references():
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception as e:
-            # pass
-            sys.stderr.write("{0}\n".format(e.message))
+            LOGGER.error("{0}\n".format(e.message))
 
-        # sys.exit ()
-    # sys.stderr.write ("done, {0} das nodes recreated.\n".format (n))
-
-    logging.info("done, {0} das nodes recreated.\n".format(n))
+    LOGGER.info("done, {0} das nodes recreated.\n".format(n))
 
     n = 0
     for i in INDEX_T_MAP.rows:
@@ -348,12 +346,9 @@ def update_external_references():
                 '/Experiment_g/Maps_g', external_group, target)
             n += 1
         except Exception as e:
-            # pass
-            sys.stderr.write("{0}\n".format(e.message))
+            LOGGER.error("{0}\n".format(e.message))
 
-        # sys.exit ()
-    # sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
-    logging.info("done, {0} map nodes recreated.\n".format(n))
+    LOGGER.info("done, {0} map nodes recreated.\n".format(n))
 
 
 # @profile
@@ -486,7 +481,7 @@ def process_traces(rh, th, tr):
             true_channel = rh.channel_set_to_streamer_cable_map[
                 th.trace_header.channel_set]
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "There may be a problem with reel header\
                  channel_set_to_streamer_cable_map.\nUsing channel set read\
                   from the trace header.\n{0}\n".format(
@@ -538,7 +533,7 @@ def process_traces(rh, th, tr):
             p_das_t['receiver_table_n_i'] = M[th.trace_header.channel_set]
         else:
             p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
-            logging.warn(
+            LOGGER.warn(
                 "Header channel set: {0}. Check Receiver_t entries!".format(
                     th.trace_header.channel_set))
 
@@ -550,7 +545,7 @@ def process_traces(rh, th, tr):
         try:
             trace_epoch = th.trace_header_N[2].shot_epoch
         except Exception as e:
-            logging.warn("Failed to read shot epoch: {0}.".format(e.message))
+            LOGGER.warn("Failed to read shot epoch: {0}.".format(e.message))
             trace_epoch = 0.
 
         f, i = modf(trace_epoch / 1000000.)
@@ -589,7 +584,7 @@ def process_traces(rh, th, tr):
         try:
             p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Failed to read trace pre amp gain: {0}.".format(e.message))
             p_response_t['gain/value_i'] = 0.
             p_response_t['gain/units_s'] = 'Unknown'
@@ -617,10 +612,9 @@ def process_traces(rh, th, tr):
             #   Failed, leave as float
             # for x in tr : print x/LSB
             # print e.message
-            sys.stderr.write(
-                "Warning: Could not convert trace to counts. max: {1},\
-                 min {2}\n{0}".format(
-                    e.message, tr.max(), tr.min()))
+            LOGGER.warning(
+                "Could not convert trace to counts. max: {1}, min {2}\n{0}"
+                .format(e.message, tr.max(), tr.min()))
             p_response_t['bit_weight/value_d'] = 1.
             EXREC.ph5_g_receivers.newarray(
                 p_das_t['array_name_data_a'], tr, dtype='float32',
@@ -741,7 +735,7 @@ def process_traces(rh, th, tr):
         try:
             f, i = modf(rh.extended_header_1.epoch_deploy / 1000000.)
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Failed to read extended header 1 deploy epoch: {0}.".format(
                     e.message))
             f = i = 0.
@@ -752,7 +746,7 @@ def process_traces(rh, th, tr):
         try:
             f, i = modf(rh.extended_header_1.epoch_pickup / 1000000.)
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Failed to read extended header 1 pickup epoch: {0}.".format(
                     e.message))
             f = i = 0.
@@ -769,7 +763,7 @@ def process_traces(rh, th, tr):
             # else:
             # p_array_t['das/model_s'] = DM[1]
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Failed to read channel sets per scan: {0}.".format(e.message))
             p_array_t['das/model_s'] = 'zland-[13]C'
         p_array_t['das/serial_number_s'] = Das
@@ -802,7 +796,7 @@ def process_traces(rh, th, tr):
             p_array_t['location/Z/value_d'] =\
                 th.trace_header_N[4].receiver_point_depth_final / 10.
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Failed to read receiver point depth: {0}.".format(e.message))
             p_array_t['location/Z/value_d'] = 0.
 
@@ -812,14 +806,14 @@ def process_traces(rh, th, tr):
             p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
                 Das, rh.extended_header_1.id_number)
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Failed to read extended header 1 ID number: {0}.".format(
                     e.message))
 
         try:
             line = th.trace_header_N[4].line_number
         except Exception as e:
-            logging.warn("Failed to read line number: {0}.".format(e.message))
+            LOGGER.warn("Failed to read line number: {0}.".format(e.message))
             line = 0
 
         chan_set = th.trace_header.channel_set
@@ -1100,8 +1094,8 @@ def main():
         get_args()
 
         initializeExperiment()
-        logging.info("segd2ph5 {0}".format(PROG_VERSION))
-        logging.info("{0}".format(sys.argv))
+        LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
+        LOGGER.info("{0}".format(sys.argv))
         if len(FILES) > 0:
             RESP = Resp(EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index()
@@ -1116,9 +1110,7 @@ def main():
             try:
                 SIZE = os.path.getsize(f)
             except Exception as e:
-                sys.stderr.write("Error: failed to read {0}, {1}.\
-                 Skipping...\n".format(f, str(e.message)))
-                logging.error("Error: failed to read {0}, {1}.\
+                LOGGER.error("Error: failed to read {0}, {1}.\
                  Skipping...\n".format(f, str(e.message)))
                 continue
 
@@ -1129,9 +1121,7 @@ def main():
             RH = False
             # print "isSEGD"
             if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
-                sys.stdout.write(":<Error>: {0}\n".format(SD.name()))
-                sys.stdout.flush()
-                logging.info(
+                LOGGER.info(
                     "{0} is not a Fairfield SEG-D file. Skipping.".format(
                         SD.name()))
                 continue
@@ -1146,9 +1136,7 @@ def main():
                 # print "external headers"
                 SD.process_external_headers()
             except segdreader.InputsError as e:
-                sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
-                sys.stdout.flush()
-                logging.info(
+                LOGGER.info(
                     "Error: Possible bad SEG-D file -- {0}".format(
                         "".join(e.message)))
                 continue
@@ -1161,16 +1149,11 @@ def main():
             part_number, node_id, number_of_channels = get_node(SD)
             #
             EXREC = get_current_data_only(SIZE, Das)
-            # sys.stderr.write ("Processing: {0}... Size: {1}\n".format\
-            #  (SD.name (), SIZE))
-            sys.stdout.write(":<Processing>: {0}\n".format(SD.name()))
-            sys.stdout.flush()
-            logging.info(
+            LOGGER.info(
                 "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
             if EXREC.filename != MINIPH5:
-                # sys.stderr.write ("Opened: {0}...\n".format (EXREC.filename))
-                logging.info("Opened: {0}...\n".format(EXREC.filename))
-                logging.info(
+                LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
+                LOGGER.info(
                     "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
                         Das, node_id, part_number, number_of_channels))
                 MINIPH5 = EXREC.filename
@@ -1210,13 +1193,8 @@ def main():
                 try:
                     trace, cs = SD.process_trace()
                 except segdreader.InputsError as e:
-                    # sys.stderr.write ("Error 2: Possible bad SEG-D file \
-                    # -- {0}".format ("".join (e)))
-                    sys.stdout.write(":<Error:> {0}\n".format(F))
-                    sys.stdout.flush()
-                    logging.info(
-                        "Error: Possible bad SEG-D file -- {0}".format(
-                            "".join(e.message)))
+                    LOGGER.error("Possible bad SEG-D file -- {0}"
+                                 .format("".join(e.message)))
                     break
 
                 if not LAT and not LON:
@@ -1241,9 +1219,8 @@ def main():
                             LON = SD.trace_headers.trace_header_N[
                                       4].receiver_point_X_final / 10.
                     except Exception as e:
-                        logging.warn(
-                            "Failed to convert location: {0}.\n".format(
-                                e.message))
+                        LOGGER.warn("Failed to convert location: {0}.\n"
+                                    .format(e.message))
 
                 trace_headers_list.append(SD.trace_headers)
                 # for cs in range (SD.chan_sets_per_scan) :
@@ -1304,9 +1281,7 @@ def main():
                 log_array, name = getLOG()
                 for line in TRACE_JSON:
                     log_array.append(line)
-
-            sys.stdout.write(":<Finished>: {0}\n".format(F))
-            sys.stdout.flush()
+            LOGGER.info(":<Finished>: {0}\n".format(F))
 
         write_arrays(ARRAY_T)
         seconds = time.time() - then
@@ -1315,22 +1290,10 @@ def main():
             EX.ph5close()
             EXREC.ph5close()
         except Exception as e:
-            sys.stderr.write("Warning: {0}\n".format("".join(e.message)))
+            LOGGER.warning("{0}\n".format("".join(e.message)))
 
-        print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
-        logging.info("Done...{0:b}".format(int(seconds / 6.)))
+        LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
         logging.shutdown
-
-    # Profile
-    # import cProfile, pstats
-    # sys.stderr.write ("Warning: Profiling enabled!\n")
-    # cProfile.run ('prof ()', "segd2ph5.profile")
-
-    # p = pstats.Stats ("segd2ph5.profile")
-    # p.sort_stats('time').print_stats(40)
-    # Profile stop
-
-    #   No profile
     prof()
 
 

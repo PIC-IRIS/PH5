@@ -94,6 +94,7 @@ setup(
             'ph5_total = ph5.utilities.ph5_total:main',
             'ph5_validate = ph5.utilities.ph5validate:main',
             'recreate_external_references = ph5.utilities.recreate_external_references:main',
+            'report_gen = ph5.utilities.report_gen:main',
             'reporttoph5 = ph5.utilities.report2ph5:main',
             'resp_load = ph5.utilities.resp_load:main',
             'seg2toph5 = ph5.utilities.seg2toph5:main',

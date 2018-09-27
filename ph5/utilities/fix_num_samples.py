@@ -7,6 +7,7 @@
 #
 
 import sys
+import logging
 import os
 import os.path
 import time
@@ -18,7 +19,8 @@ from ph5.core import experiment
 os.environ['TZ'] = 'UTM'
 time.tzset()
 
-PROG_VERSION = '2010.214'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #
 #   These are to hold different parts of the meta-data
@@ -124,13 +126,13 @@ def get_args():
         DEBUG = options.debug
 
     if PH5 is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help")
         sys.exit(-1)
 
     PH5 = os.path.join(PATH, PH5)
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        sys.stderr.write("Error: %s does not exist!\n" % PH5)
+        LOGGER.error("{0} does not exist!".format(PH5))
         sys.exit()
 
 #

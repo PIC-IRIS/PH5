@@ -6,15 +6,17 @@ loads the RESP files and create new array and response kefs
 
 import sys
 import os
+import argparse
+from ph5 import LOGGING_FORMAT
 from ph5.core import ph5utils
 from ph5.core import ph5api
 import tables
 import subprocess
 import logging
 
-logging.basicConfig(filename='resp_load.log', level=logging.DEBUG)
-logging.info("###################################################\n\n")
-PROG_VERSION = "2018.128"
+
+PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 
 class Station(object):
@@ -117,18 +119,9 @@ class n_i_fix(object):
                             Das_t = ph5api.filter_das_t(
                                 self.ph5.Das_t[serial]['rows'], channel)
                         except BaseException:
-                            logging.warning(
-                                "No DAS table found for das " +
-                                str(serial) +
-                                " channel " +
-                                str(channel) +
-                                ".\n")
-                            sys.stderr.write(
-                                "Error - No DAS table found for das " +
-                                str(serial) +
-                                " channel " +
-                                str(channel) +
-                                ".\n")
+                            LOGGER.warning(
+                                "No DAS table found for das {0} channel "
+                                "{1}.\n".format(serial, channel))
                             break
                         for entry in Das_t:
                             if (entry['sample_rate_i'] == sample_rate and
@@ -147,18 +140,9 @@ class n_i_fix(object):
                             bit_weight_units = Response_t['bit_weight/units_s']
                             gain_units = Response_t['gain/units_s']
                         else:
-                            logging.warning(
-                                "No Response table found for das " +
-                                str(serial) +
-                                " channel " +
-                                str(channel) +
-                                ".\n")
-                            sys.stderr.write(
-                                "Error - No Response table found for das " +
-                                str(serial) +
-                                " channel " +
-                                str(channel) +
-                                ".\n")
+                            LOGGER.warning(
+                                "No Response table found for das {0} channel "
+                                "{1}.\n".format(serial, channel))
                         try:
                             stations.append(
                                 Station(
@@ -177,7 +161,7 @@ class n_i_fix(object):
                                     gain_units,
                                     serial))
                         except BaseException:
-                            sys.stderr.write("Couldn't add station")
+                            LOGGER.error("Couldn't add station.")
                             continue
         return stations
 
@@ -290,14 +274,7 @@ class n_i_fix(object):
                 file_name, path)
             subprocess.call(command, shell=True)
             time.sleep(0.5)
-            logging.info(
-                "array_t_" +
-                str(x) +
-                " Loaded into PH5\n")
-            sys.stdout.write(
-                "array_t_" +
-                str(x) +
-                " Loaded into PH5\n")
+            LOGGER.info("array_t_{0} Loaded into PH5".format(str(x)))
 
     def create_template(self, data):
         data_list = []
@@ -315,19 +292,15 @@ class n_i_fix(object):
             unique_list_complete.append(x)
         outfile = open("input.csv", 'w')
         outfile.write(
-            "Das Model, Sensor Model, Sample Rate, sample rate multiplier," +
+            "Das Model, Sensor Model, Sample Rate, sample rate multiplier,"
             "Gain, Das RESP path, Sensor RESP path\n")
         for x in unique_list_complete:
             line = ",".join(x)
             outfile.write(line + "\n")
-        logging.info("input.csv written. This is a template.\nYou will " +
-                     "need to fill out the full path to each RESP file " +
-                     "in the CSV file then re-run this progam with the " +
-                     "-i input.csv option")
-        sys.stdout.write(
-            "input.csv written. This is a template.\n You will need to fill" +
-            "out the full path to each RESP file in the CSV file then re-run" +
-            "this progam with the -i input.csv option\n\n")
+        LOGGER.info("input.csv written. This is a template.\nYou will "
+                    "need to fill out the full path to each RESP file "
+                    "in the CSV file then re-run this program with the "
+                    "-i input.csv option")
 
     def load_response(self, path, nickname, data, input_csv):
         ph5 = tables.open_file(os.path.join(path, nickname), "a")
@@ -361,24 +334,12 @@ class n_i_fix(object):
                                 name.replace(
                                     " ", ""), das_data)
                             loaded_das.append(name)
-                            sys.stdout.write(
-                                "loaded " +
-                                name.replace(
-                                    " ",
-                                    "") +
-                                "\n")
+                            LOGGER.info(
+                                "Loaded {0}".format(name.replace(" ", "")))
                         except BaseException:
-                            logging.warning(
-                                "Could not load " +
-                                name.replace(
-                                    " ",
-                                    ""))
-                            sys.stderr.write(
-                                "Could not load " +
-                                name.replace(
-                                    " ",
-                                    "") +
-                                "\n")
+                            LOGGER.warning(
+                                "Could not load {0}"
+                                .format(name.replace(" ", "")))
 
                 if len(line_list) >= 6:
                     if line_list[6] == '\n':
@@ -393,60 +354,36 @@ class n_i_fix(object):
                                 line_list[1].replace(
                                     " ", ""), sensor_data)
                             loaded_sensor.append(line_list[1])
-                            sys.stdout.write(
-                                "loaded " +
-                                line_list[1].replace(
-                                    " ",
-                                    "") +
-                                "\n")
+                            LOGGER.info(
+                                "Loaded {0}"
+                                .format(line_list[1].replace(" ", "")))
                         except BaseException:
-                            logging.warning(
-                                "Could not load " +
-                                line_list[1].replace(
-                                    " ",
-                                    ""))
-                            sys.stderr.write(
-                                "Could not load " +
-                                line_list[1].replace(
-                                    " ",
-                                    "") +
-                                "\n")
-
+                            LOGGER.warning(
+                                "Could not load {0}"
+                                .format(line_list[1].replace(" ", "")))
         ph5.close()
 
         process = subprocess.Popen(
-            "ph5tokef -n " +
-            nickname +
-            " -p " +
-            str(path) +
-            " -R  > response_t.kef",
+            "ph5tokef -n {0} -p {1} -R  > response_t.kef"
+            .format(nickname, path),
             shell=True,
             stdout=subprocess.PIPE)
         process.wait()
         process = subprocess.Popen(
-            "nuke_table -n " +
-            nickname +
-            " -p " +
-            str(path) +
-            " -R ",
+            "nuke_table -n {0} -p {1} -R"
+            .format(nickname, path),
             shell=True,
             stdout=subprocess.PIPE)
         process.wait()
         process = subprocess.Popen(
-            "keftoph5 -n " +
-            nickname +
-            " -p " +
-            str(path) +
-            " -k response_t.kef",
+            "keftoph5 -n {0} -p {1} -k response_t.kef"
+            .format(nickname, path),
             shell=True,
             stdout=subprocess.PIPE)
         process.wait()
         process = subprocess.Popen(
-            "ph5tokef -n " +
-            nickname +
-            " -p " +
-            str(path) +
-            " -R  > response_t.kef",
+            "ph5tokef --n {0} -p {1} -k response_t.kef"
+            .format(nickname, path),
             shell=True,
             stdout=subprocess.PIPE)
         process.wait()
@@ -511,10 +448,8 @@ class n_i_fix(object):
             path)
         subprocess.Popen(command, shell=True)
 
-        logging.info(
+        LOGGER.info(
             "response_t.kef written into PH5")
-        sys.stdout.write(
-            "response_t.kef written into PH5\n\n")
 
         for station in data:
             for x in data_update:
@@ -535,14 +470,12 @@ class n_i_fix(object):
 
 
 def get_args():
-    import argparse
-
     parser = argparse.ArgumentParser(
-        description='This fixes then n_i numbers in the arrays, creates\
-        new array.kef files, loads RESP files into PH5 and creates\
-        a new response.kef',
-        usage='Version: {0} resp_load  --nickname="Master_PH5_file"\
-         [options]'.format(PROG_VERSION))
+        description=("This fixes then n_i numbers in the arrays, creates "
+                     "new array.kef files, loads RESP files into PH5 and "
+                     "creates a new 'response.kef'."),
+        usage=('Version: {0} resp_load  --nickname="Master_PH5_file [options]'
+               .format(PROG_VERSION)))
 
     parser.add_argument(
         "-n", "--nickname", action="store", required=True,
@@ -561,15 +494,15 @@ def get_args():
         "-i",
         "--input_csv",
         action="store",
-        help="input csv. If no input is given a template will be created " +
-             "for you based on the experiment.",
+        help=("input csv. If no input is given a template will be created "
+              "for you based on the experiment."),
         type=str,
         dest="input_csv",
         metavar="input_csv",
         default=None)
 
-    the_args = parser.parse_args()
-    return the_args
+    args = parser.parse_args()
+    return args
 
 
 def main():
@@ -578,13 +511,21 @@ def main():
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)
     else:
-        ph5file = os.path.join(args.ph5path, args.nickname + '.ph5')
-        args.nickname += '.ph5'
+        args.nickname = '{0}.ph5'.format(args.nickname)
+        ph5file = os.path.join(args.ph5path, args.nickname)
 
     if not os.path.exists(ph5file):
-        logging.warning("{0} not found.\n".format(ph5file))
-        sys.stderr.write("Error - {0} not found.\n".format(ph5file))
+        LOGGER.warning("{0} not found.\n".format(ph5file))
         sys.exit(-1)
+    else:
+        #   Set up logging
+        # Write log to file
+        ch = logging.FileHandler(os.path.join('.', "resp_load.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
 
     if args.array:
         args.array = args.array.split(',')

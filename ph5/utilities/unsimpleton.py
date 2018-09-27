@@ -11,9 +11,11 @@
 #
 import sys
 import os
+import logging
 from ph5.core import segdreader
 
-PROG_VERSION = "2017.257"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
@@ -23,30 +25,36 @@ def get_args():
 
     from argparse import ArgumentParser
 
-    aparser = ArgumentParser()
+    parser = ArgumentParser()
 
-    aparser.add_argument("-f", "--filelist", dest="segdfilelist",
-                         help="The list of SEG-D files to link.",
-                         required=True)
+    parser.description = ("A command line utility to link fairfield SEG-D "
+                          "file names that expose information about the "
+                          "contents of the file, ie. makes file names for "
+                          "carbon units. v{0}"
+                          .format(PROG_VERSION))
 
-    aparser.add_argument("-d", "--linkdir", dest="linkdirectory",
-                         help="Name directory to place renamed links.",
-                         required=True)
+    parser.add_argument("-f", "--filelist", dest="segdfilelist",
+                        help="The list of SEG-D files to link.",
+                        required=True)
 
-    aparser.add_argument("--hardlinks", dest="hardlinks", action="store_true",
-                         help="Create hard links inplace of soft links.")
+    parser.add_argument("-d", "--linkdir", dest="linkdirectory",
+                        help="Name directory to place renamed links.",
+                        required=True)
 
-    ARGS = aparser.parse_args()
+    parser.add_argument("--hardlinks", dest="hardlinks", action="store_true",
+                        help="Create hard links inplace of soft links.")
+
+    ARGS = parser.parse_args()
 
     if not os.path.exists(ARGS.segdfilelist):
-        sys.stderr.write("Error: Can not read {0}!".format(ARGS.segdfilelist))
+        LOGGER.error("Can not read {0}!".format(ARGS.segdfilelist))
         sys.exit()
 
     if not os.path.exists(ARGS.linkdirectory):
         try:
             os.mkdir(ARGS.linkdirectory)
         except Exception as e:
-            sys.stderr.write("Error: {0}!\n".format(e.message))
+            LOGGER.error(e.message)
             sys.exit()
 
 
@@ -162,14 +170,14 @@ def main():
                 break
             filename = line.strip()
             if not os.path.exists(filename):
-                sys.stderr.write("Warning: can't find: {0}\n".format(filename))
+                LOGGER.warning("Can't find: {0}".format(filename))
                 continue
             RH = segdreader.ReelHeaders()
             try:
                 sd = segdreader.Reader(infile=filename)
             except BaseException:
-                sys.stderr.write(
-                    "Failed to properly read {0}.\n".format(filename))
+                LOGGER.error(
+                    "Failed to properly read {0}.".format(filename))
                 sys.exit()
 
             general_headers(sd)
@@ -199,18 +207,18 @@ def main():
                     try:
                         os.link(filename, linkname)
                     except Exception as e:
-                        sys.stderr.write(
-                            "Failed to create HARD link:\n{0}\n".format(
-                                e.message))
+                        LOGGER.error(
+                            "Failed to create HARD link:\n{0}"
+                            .format(e.message))
                         sys.exit()
                 else:
                     print filename, 'soft->', linkname
                     try:
                         os.symlink(filename, linkname)
                     except Exception as e:
-                        sys.stderr.write(
-                            "Failed to create soft link:\n{0}\n".format(
-                                e.message))
+                        LOGGER.error(
+                            "Failed to create soft link:\n{0}"
+                            .format(e.message))
                         sys.exit()
 
                 lh.write("{0} -> {1}\n".format(filename, linkname))

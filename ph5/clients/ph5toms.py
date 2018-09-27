@@ -7,21 +7,22 @@ Also allows for creation of preview png images of traces.
 
 import sys
 import os
+import logging
+import obspy
+import copy
+import itertools
+import io
 from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import SACTrace
-import obspy
-import copy
-import itertools
 from ph5.core import ph5utils
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
-import io
 
-
-PROG_VERSION = "2018.222"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 LENGTH = int(86400)
 
 
@@ -994,7 +995,7 @@ def main():
         args.nickname += '.ph5'
 
     if not os.path.exists(ph5file):
-        sys.stderr.write("Error - {0} not found.\n".format(ph5file))
+        LOGGER.error("{0} not found.\n".format(ph5file))
         sys.exit(-1)
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
@@ -1063,7 +1064,7 @@ def main():
                         sac.write(ph5ms.filenamesac_nongen(trace))
 
     except PH5toMSAPIError as err:
-        sys.stderr.write("{0}\n".format(err.message))
+        LOGGER.error("{0}".format(err.message))
         exit(-1)
 
     ph5API_object.close()

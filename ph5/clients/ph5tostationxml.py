@@ -8,8 +8,9 @@ import os
 import argparse
 import fnmatch
 import multiprocessing
-from datetime import datetime
+import logging
 import obspy
+from datetime import datetime
 from obspy import read_inventory  # noqa
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
@@ -17,13 +18,13 @@ from obspy.core import UTCDateTime
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 
-
-PROG_VERSION = "2018.106"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
     parser = argparse.ArgumentParser(
-            description='Takes PH5 files and returns stationxml.',
+            description='Takes PH5 files and returns StationXML.',
             usage=('Version: {0} ph5tostationxml --nickname="Master_PH5_file" '
                    '[options]'.format(PROG_VERSION))
             )
@@ -32,7 +33,7 @@ def get_args():
 
     parser.add_argument("-p", "--ph5path", action="store",
                         help=("Comma separated list of paths to ph5 "
-                              "experiments"),
+                              "experiments."),
                         type=str, metavar="ph5path")
 
     parser.add_argument("--network", action="store", dest="network_list",
@@ -898,11 +899,11 @@ def main():
         elif out_format == "TEXT":
             inv.write(args.outfile, format="STATIONTXT", level=level)
         else:
-            sys.stderr.write("Incorrect output format. "
-                             "Formats are STATIONXML or KML")
+            LOGGER.error("Incorrect output format. "
+                         "Formats are STATIONXML, KML, SACPZ, and TEXT.")
             sys.exit()
     except Exception as err:
-        sys.stderr.write(str("Error - {0}\n".format(err.message)))
+        LOGGER.error(err.message)
 
 
 if __name__ == '__main__':

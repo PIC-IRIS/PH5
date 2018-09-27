@@ -8,11 +8,13 @@
 import json
 import os
 import sys
+import logging
 from os.path import expanduser
 from PyQt4 import QtGui, QtCore
 from ph5.utilities import novenqc, novenkef
 
 PROG_VERSION = '2017.342'
+LOGGER = logging.getLogger(__name__)
 
 RECEIVER_CFG_S = '{\n'\
     '   "description_s": {\n'\
@@ -419,7 +421,7 @@ class SetupDialog(QtGui.QDialog):
         # print "Emitted"
 
     def rejected(self):
-        sys.stdout.write("Reject\n")
+        LOGGER.info("Reject")
 
 
 class Novitiate(QtGui.QMainWindow):

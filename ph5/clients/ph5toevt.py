@@ -5,22 +5,23 @@
 #   Steve Azevedo, August 2016
 #
 
+import argparse
 import os
 import sys
 import logging
+from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
 PROG_VERSION = "2017.312 Developmental"
+LOGGER = logging.getLogger(__name__)
 #   This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
-
 DECIMATION_FACTORS = segyfactory.DECIMATION_FACTORS
 
 
 def get_args():
     '''   Read command line argments   '''
     global ARGS, P5
-    import argparse
 
     parser = argparse.ArgumentParser()
 
@@ -178,14 +179,14 @@ def get_args():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        sys.stderr.write("Error: Can't open {0} at {1}.".format(
+        LOGGER.error("Can't open {0} at {1}.".format(
             ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit(-1)
     #
     if ARGS.shot_file:
         if not ARGS.shot_line:
-            sys.stderr.write(
-                "Error: Shot line switch, --shot_line,\
+            LOGGER.error(
+                "Shot line switch, --shot_line,\
                 required when using external shot file.")
             sys.exit(-3)
         external = external_file.External(ARGS.shot_file)
@@ -204,8 +205,8 @@ def get_args():
         ARGS.evt_list = [ARGS.start_time]
     #
     if not ARGS.evt_list and not ARGS.all_events:
-        sys.stderr.write(
-            "Error: Required argument missing.\
+        LOGGER.error(
+            "Required argument missing.\
             event_number|evt_list|all_events.\n")
         sys.exit(-1)
     #   Event or shot line
@@ -216,7 +217,7 @@ def get_args():
             ARGS.shot_line = "Event_t_{0:03d}".format(ARGS.shot_line)
         #
     elif not ARGS.start_time:
-        sys.stderr.write("Error: Shot line or start time required.")
+        LOGGER.error("Shot line or start time required.")
         sys.exit(-2)
     #   Array or station line
     ARGS.station_array = "Array_t_{0:03d}".format(ARGS.station_array)
@@ -247,9 +248,9 @@ def gather():
             else:
                 event_t = None
 
-            logging.info("Extracting receivers for event {0:s}.".format(evt))
+            LOGGER.info("Extracting receivers for event {0:s}.".format(evt))
         except Exception as e:
-            logging.warn("Warning: The event {0} not found.\n".format(evt))
+            LOGGER.warn("Warning: The event {0} not found.\n".format(evt))
             continue
         #
         fh = None
@@ -271,7 +272,7 @@ def gather():
         else:
             event_tdoy = evt
             Offset_t = None
-            logging.warn("Warning: No shot to receiver distances found.")
+            LOGGER.warn("Warning: No shot to receiver distances found.")
         if ARGS.seconds_offset_from_shot:
             event_tdoy += ARGS.seconds_offset_from_shot
         end_tdoy = event_tdoy + ARGS.length
@@ -286,8 +287,8 @@ def gather():
         i = 0
         skipped_chans = 0
         for sta in ARGS.stations_to_gather:
-            logging.info("-=" * 20)
-            logging.info(
+            LOGGER.info("-=" * 20)
+            LOGGER.info(
                 "Attempting to find data for station {0}.".format(sta))
             #   Shot to station information
             if Offset_t and sta in Offset_t:
@@ -295,8 +296,8 @@ def gather():
                 sf.set_offset_t(offset_t)
             #   Array geometry
             if sta not in Array_t:
-                logging.info("Warning: The station {0} is not in array {1}."
-                             .format(sta, ARGS.station_array))
+                LOGGER.info("Warning: The station {0} is not in array {1}."
+                            .format(sta, ARGS.station_array))
                 continue
             array_t = Array_t[sta]
             #   Filter out unwanted channels
@@ -312,7 +313,7 @@ def gather():
             #   Loop through channels
             for c in chans:
                 if c not in array_t:
-                    logging.warn("Warning: No channel information\
+                    LOGGER.warn("Warning: No channel information\
                     for {0} in array {1}.".format(c, ARGS.station_array))
                     skipped_chans += 1
                     continue
@@ -321,22 +322,22 @@ def gather():
                     if ARGS.seed_location and\
                        array_t[c][0]['seed_location_code_s']\
                        != ARGS.seed_location:
-                        logging.info("Location code mismatch: {0}/{1}/{2}"
-                                     .format(array_t[c][0]
-                                             ['seed_location_code_s'],
-                                             ARGS.seed_location,
-                                             c))
+                        LOGGER.info("Location code mismatch: {0}/{1}/{2}"
+                                    .format(array_t[c][0]
+                                            ['seed_location_code_s'],
+                                            ARGS.seed_location,
+                                            c))
                         continue
                     #   Filter out unwanted seed channels
                     seed_channel_code_s = ph5api.seed_channel_code(
                         array_t[c][0])
                     if ARGS.seed_channel and seed_channel_code_s \
                        != ARGS.seed_channel:
-                        logging.info("Channel code mismatch: {0}/{1}/{2}"
-                                     .format(array_t[c][0]
-                                             ['seed_channel_code_s'],
-                                             ARGS.seed_channel,
-                                             c))
+                        LOGGER.info("Channel code mismatch: {0}/{1}/{2}"
+                                    .format(array_t[c][0]
+                                            ['seed_channel_code_s'],
+                                            ARGS.seed_channel,
+                                            c))
                         continue
                 except BaseException:
                     pass
@@ -354,12 +355,12 @@ def gather():
                             stop_epoch,
                             event_tdoy.epoch(),
                             end_tdoy.epoch()):
-                        logging.info("Data logger {0} not deployed\
+                        LOGGER.info("Data logger {0} not deployed\
                         between {1} to {2} at {3}.".format(
                             array_t[c][t]['das/serial_number_s'],
                             event_tdoy, end_tdoy, sta))
                         if ARGS.deploy_pickup:
-                            logging.info("Skipping.")
+                            LOGGER.info("Skipping.")
                             continue
                     #   Read Das table, may already be read so don't reread it
                     #   XXX   Debug only
@@ -370,7 +371,7 @@ def gather():
                             stop_epoch=stop_fepoch,
                             reread=False)
                     except BaseException:
-                        logging.warn("Failed to read DAS:\
+                        LOGGER.warn("Failed to read DAS:\
                         {0} between {1} and {2}.".format(
                             das,
                             timedoy.epoch2passcal(start_epoch),
@@ -378,7 +379,7 @@ def gather():
                         continue
 
                     if das_or_fail is None:
-                        logging.warn("Failed to read DAS:\
+                        LOGGER.warn("Failed to read DAS:\
                         {0} between {1} and {2}.".format(
                             das,
                             timedoy.epoch2passcal(start_epoch),
@@ -404,7 +405,7 @@ def gather():
                         pass
                     # Need to check against command line sample rate here
                     if ARGS.sample_rate and ARGS.sample_rate != sr:
-                        logging.warn(
+                        LOGGER.warn(
                             "Warning: Sample rate for {0} is not {1}.\
                             Skipping.".format(das, sr))
                         continue
@@ -426,7 +427,7 @@ def gather():
                             reduction velocity: {0}."\
                             .format(e.message)
                         for e in errs:
-                            logging.info(e)
+                            LOGGER.info(e)
                         cut_start_fepoch += secs
                         cut_stop_fepoch += secs
                     #
@@ -442,26 +443,26 @@ def gather():
                                     sample_rate=sr,
                                     apply_time_correction=ARGS.do_time_correct)
                     if len(traces[0].data) == 0:
-                        logging.warn(
+                        LOGGER.warn(
                             "Warning: No data found for {0} for station {1}."
                             .format(das, sta))
                         continue
                     trace = ph5api.pad_traces(traces)
                     if ARGS.do_time_correct:
-                        logging.info("Applied time drift correction by\
+                        LOGGER.info("Applied time drift correction by\
                         shifting trace by {0} samples.".format(
                             -1 * sr * (trace.time_correction_ms / 1000.)))
-                        logging.info("Correction is {0} ms.".format(
+                        LOGGER.info("Correction is {0} ms.".format(
                             trace.time_correction_ms))
-                        logging.info(
+                        LOGGER.info(
                             "Clock drift (seconds/second): {0}"
                             .format(trace.clock.slope))
                         for tccomment in trace.clock.comment:
                             tccmt = tccomment.split('\n')
                             for tcc in tccmt:
-                                logging.info("Clock comment: {0}".format(tcc))
+                                LOGGER.info("Clock comment: {0}".format(tcc))
                     if trace.padding != 0:
-                        logging.warn(
+                        LOGGER.warn(
                             "Warning: There were {0} samples of padding added\
                             to fill gap at middle or end of trace."
                             .format(trace.padding))
@@ -482,7 +483,7 @@ def gather():
                     #   Did we read any data?
                     if trace.nsamples == 0:
                         #   Failed to read any data
-                        logging.warning(
+                        LOGGER.warning(
                             "Warning: No data for data logger {2}/{0}\
                             starting at {1}."
                             .format(das, trace.start_time, sta))
@@ -492,7 +493,7 @@ def gather():
                     if receiver_t:
                         sf.set_receiver_t(receiver_t)
                     else:
-                        logging.warning(
+                        LOGGER.warning(
                             "No sensor orientation found in ph5 file.")
                     #   Read gain and bit weight
 
@@ -506,26 +507,26 @@ def gather():
                     if response_t:
                         sf.set_response_t(response_t)
                     else:
-                        logging.warning(
+                        LOGGER.warning(
                             "No gain or bit weight found in ph5 file.")
                     #   Increment line sequence
                     i += 1
                     sf.set_line_sequence(i)
                     sf.set_das_t(trace.das_t[0])
-                    logging.info("=-" * 20)
-                    logging.info("trace: {0}".format(i))
-                    logging.info("Extracted: Station ID {0}".format(sta))
-                    logging.info("Chan: {2} Start: {0:s}, Stop: {1:s}."
-                                 .format(event_tdoy,
-                                         end_tdoy,
-                                         c))
-                    logging.info("Lat: %f Lon: %f Elev: %f %s"
-                                 % (array_t[c][t]['location/Y/value_d'],
-                                    array_t[c][t]['location/X/value_d'],
-                                    array_t[c][t]['location/Z/value_d'],
-                                    array_t[c][t]['location/Z/units_s']
-                                    .strip()))
-                    logging.info("{0}".format(array_t[c][t]['description_s']))
+                    LOGGER.info("=-" * 20)
+                    LOGGER.info("trace: {0}".format(i))
+                    LOGGER.info("Extracted: Station ID {0}".format(sta))
+                    LOGGER.info("Chan: {2} Start: {0:s}, Stop: {1:s}."
+                                .format(event_tdoy,
+                                        end_tdoy,
+                                        c))
+                    LOGGER.info("Lat: %f Lon: %f Elev: %f %s"
+                                % (array_t[c][t]['location/Y/value_d'],
+                                   array_t[c][t]['location/X/value_d'],
+                                   array_t[c][t]['location/Z/value_d'],
+                                   array_t[c][t]['location/Z/units_s']
+                                   .strip()))
+                    LOGGER.info("{0}".format(array_t[c][t]['description_s']))
                     #
                     # Open SEG-Y file
                     #
@@ -534,8 +535,8 @@ def gather():
                             try:
                                 fh = sys.stdout
                             except Exception as e:
-                                logging.error("{0}".format(e.message))
-                                logging.error(
+                                LOGGER.error("{0}".format(e.message))
+                                LOGGER.error(
                                     "Failed to open STDOUT. Can not continue.")
                                 sys.exit(-1)
                         else:
@@ -564,11 +565,11 @@ def gather():
                             #   Open SEG-Y file
                             try:
                                 fh = open(outfilename, 'w+')
-                                logging.info("Opened: {0}".format(outfilename))
+                                LOGGER.info("Opened: {0}".format(outfilename))
                             except Exception as e:
-                                logging.error("Error: Failed to open\
+                                LOGGER.error("Failed to open\
                                 {0}.\t{1}".format(outfilename, e.message))
-                                sys.stderr.write("Error: Failed to open {0}.\
+                                LOGGER.error("Failed to open {0}.\
                                 \t{1}".format(
                                           outfilename, e.message))
                                 sys.exit()
@@ -577,18 +578,18 @@ def gather():
                             trace, fh, sf, num_traces)
                         #   Write any messages
                         for l in logs:
-                            logging.info(l)
+                            LOGGER.info(l)
                     else:
                         #   Write trace
                         logs = segyfactory.write_segy(trace, fh, sf)
                         for l in logs:
-                            logging.info(l)
+                            LOGGER.info(l)
             #   chan
         #   Traces found does not match traces expected
         if i != num_traces and fh:
             #   Need to update reel_header
             if (num_traces - skipped_chans) < i:
-                logging.warn("Warning: Wrote {0} of {1}\
+                LOGGER.warn("Warning: Wrote {0} of {1}\
                 trace/channels listed in {2}.".format(
                                                   i,
                                                   num_traces -
@@ -610,24 +611,19 @@ def gather():
 
 def main():
     get_args()
-    #   --stream set
-    if ARGS.write_stdout:
-        logging.basicConfig(
-            format="%(asctime)s %(message)s",
-            level=logging.ERROR
-        )
-    #   Write log to file
-    else:
-        logging.basicConfig(
-            filename=os.path.join(ARGS.out_dir, "ph5toevt.log"),
-            format="%(asctime)s %(message)s",
-            level=logging.INFO
-        )
+    if not ARGS.write_stdout:
+        # Write log to file
+        ch = logging.FileHandler(os.path.join(ARGS.out_dir, "ph5toevt.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
     ###
-    logging.info("{0}: {1}".format(PROG_VERSION, sys.argv))
+    LOGGER.info("{0}: {1}".format(PROG_VERSION, sys.argv))
     if not ARGS.start_time:
         if ARGS.shot_line not in P5.Event_t_names:
-            logging.error("Error: {0} not found. {1}\n".format(
+            LOGGER.error("{0} not found. {1}\n".format(
                 ARGS.shot_line, " ".join(P5.Event_t_names)))
             sys.exit(-1)
         else:
@@ -637,7 +633,7 @@ def main():
                 P5.Event_t = ARGS.shot_file
     P5.read_array_t_names()
     if ARGS.station_array not in P5.Array_t_names:
-        logging.error("Error: {0} not found.  {1}\n".format(
+        LOGGER.error("{0} not found.  {1}\n".format(
             ARGS.station_array, " ".join(P5.Array_t_names)))
         sys.exit(-1)
     else:
@@ -648,25 +644,24 @@ def main():
     P5.read_experiment_t()
     if P5.Experiment_t is not None and P5.Experiment_t['rows'] != []:
         experiment_t = P5.Experiment_t['rows'][-1]
-        logging.info("Experiment: {0}".format(
+        LOGGER.info("Experiment: {0}".format(
             experiment_t['longname_s'].strip()))
-        logging.info("Summary: {0}".format(
+        LOGGER.info("Summary: {0}".format(
             experiment_t['summary_paragraph_s'].strip()))
         if ARGS.seed_network and P5.Experiment_t['net_code_s'] !=\
            ARGS.seed_network:
-            logging.info(
+            LOGGER.info(
                 "Netcode mis-match: {0}/{1}".format(
                     P5.Experiment_t['net_code_s'],
                     ARGS.seed_network))
             sys.exit(-1)
     else:
-        logging.warning(
+        LOGGER.warning(
             "Warning: No experiment information found. Contact PIC.")
     gather()
-    logging.info("Done.")
+    LOGGER.info("Done.")
     logging.shutdown()
     P5.close()
-    sys.stderr.write("Done\n")
 
 
 if __name__ == '__main__':

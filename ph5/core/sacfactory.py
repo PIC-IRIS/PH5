@@ -13,9 +13,11 @@ from ph5.core import sac_h
 import math
 import numpy
 import sys
+import logging
 import time
 
-PROG_VERSION = "2014.216.b"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 class SACError (Exception):
@@ -157,8 +159,6 @@ class Ssac (object):
                 #   Event depth
                 f['evdp'] = self.event_t['depth/value_d']
             except Exception as e:
-                # print >>sys.stderr, "Warn: {0}".format (e)
-                # print self.event_t.rows
                 pass
 
         if self.offset_t:
@@ -207,8 +207,6 @@ class Ssac (object):
                 #   Event ID
                 i['nevid'] = int(self.event_t['id_s'])
             except Exception as e:
-                # print >>sys.stderr, "Warn: {0}".format (e)
-                # print self.event_t.rows
                 pass
 
         #   Number of points
@@ -244,8 +242,6 @@ class Ssac (object):
                 #   Event name
                 c['kevnm'] = "{0:<16}".format(self.event_t['id_s'])
             except Exception as e:
-                # print >>sys.stderr, "Warn: {0}".format (e)
-                # print self.event_t.rows
                 pass
 
         #   Network name
@@ -293,8 +289,8 @@ class Ssac (object):
                 x_d *= bw
 
         except Exception as e:
-            sys.stderr.write(
-                "Warning: Problem applying trace bit weight.\n{0}\n".format(e))
+            LOGGER.warning(
+                "Problem applying trace bit weight.\n{0}".format(e))
 
         i += x_d.shape[0]
 
@@ -362,16 +358,12 @@ class Ssac (object):
             fd.write(self.float_header.get()[:280])
         except Exception as e:
             raise SACError("Failed to write SAC float header: {0}".format(e))
-            # sys.stderr.write ("{0:s}\n{1:s}\n"
-            # .format (e, repr (self.float_header.__dict__)))
 
     def write_int_header(self, fd):
         try:
             fd.write(self.int_header.get()[:160])
         except Exception as e:
             raise SACError("Failed to write SAC integer header: {0}".format(e))
-            # sys.stderr.write ("{0:s}\n{1:s}\n"
-            # .format (e, repr (self.int_header.__dict__)))
 
     def write_char_header(self, fd):
         try:
@@ -379,15 +371,12 @@ class Ssac (object):
         except Exception as e:
             raise SACError(
                 "Failed to write SAC character header: {0}".format(e))
-            # sys.stderr.write ("{0:s}\n{1:s}\n"
-            # .format (e, repr (self.int_header.__dict__)))
 
     def write_data_array(self, fd, nparray):
         try:
             nparray.tofile(file=fd)
         except Exception as e:
             raise SACError("Failed to write SAC data array: {0}".format(e))
-        #   MixIns
 
 
 def units_stub(have, want):

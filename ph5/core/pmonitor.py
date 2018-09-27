@@ -12,6 +12,7 @@
 
 
 import sys
+import logging
 import os
 import re
 from threading import Thread
@@ -20,7 +21,8 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
-PROG_VERSION = '2016.230 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
 try:
@@ -28,7 +30,7 @@ try:
     from PySide import QtGui, QtCore
     # import QtCore.Signal as Signal
 except Exception as e:
-    print "No PySide", e.message
+    LOGGER.error("No PySide: {0}".format(e.message))
     from PyQt4 import QtGui, QtCore
     QtCore.Signal = QtCore.pyqtSignal
 
@@ -144,7 +146,6 @@ class ErrorsDialog (QtGui.QMainWindow):
 
         errors.reverse()
         self.parent = parent
-        # print self.parent.current_file, self.parent.current_list
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         saveAction = QtGui.QAction('Save log...', self)
@@ -214,7 +215,6 @@ class ErrorsDialog (QtGui.QMainWindow):
     def setIt(self, text):
         self.text.clear()
         text = '\n'.join(text)
-        # print text
         self.text.setText(text)
 
     def saveFile(self):
@@ -302,12 +302,10 @@ class Monitor (QtGui.QWidget):
         self.seconds = secs
 
     def setundefinedError(self):
-        # print "undefined error..."
         self.fp.undefinedError()
 
     def timedOut(self):
-        '''   Go here in case of timeout.   '''
-        # print "Timed out..."
+        '''Go here in case of timeout.'''
         self.log.append("Conversion process timed out...")
         self.running = False
 
@@ -372,7 +370,7 @@ class Monitor (QtGui.QWidget):
             #   Kill the shell
             self.pee.send_signal(SIGINT)
         except Exception as e:
-            print 'W', e.message
+            LOGGER.error("W {0}".format(e.message))
 
         if self.cnt < self.numFiles:
             self.log.append("{0} of {1} raw files processed.".format(
@@ -408,7 +406,7 @@ class Monitor (QtGui.QWidget):
         '''
         #   The list of raw files that we are trying to read does not exist
         if notexistRE.match(line):
-            print 'File not exist', line,
+            LOGGER.info('File not exist {0}'.format(line))
 
         #   From the fifo it appears that the conversion process is 'Done'.
         elif batchDoneRE.match(line):
@@ -457,7 +455,6 @@ class Monitor (QtGui.QWidget):
         #   This file didn't read cleanly.
         # :<Error>:
         elif fileErrorRE.match(line):
-            # print "File error:", line
             self.log.append(
                 "Processing error at about line {0} in file list."
                 .format(self.cnt + 1))
@@ -512,7 +509,7 @@ class Monitor (QtGui.QWidget):
                         tmp = self.process_line(line)
                         self.log.append(tmp)
                     except Exception as e:
-                        print 'X', e.message
+                        LOGGER.error('X {0}'.format(e.message))
                     # The process if finished, are there more commands that
                     # need to be executed
                     self.log.append(
@@ -550,12 +547,12 @@ def enqueue_output(out, queue):
         for line in iter(out.readline, b''):
             queue.put(line)
     except Exception as e:
-        sys.stderr.write("Exception in read queue: {0}.\n".format(e.message))
+        LOGGER.error("Exception in read queue: {0}.\n".format(e.message))
 
     try:
         out.close()
     except Exception as e:
-        print "Y", e.message
+        LOGGER.error("Y {0}".format(e.message))
 #
 # Set up non-blocking read and watchdog
 #
@@ -599,20 +596,17 @@ if __name__ == '__main__':
         try:
             fio.open()
         except pforma_io.FormaIOError as e:
-            print e.errno, e.message
+            LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
         try:
             fio.read()
-            # print "M:", fio.M
-            # print "N:", fio.nmini
-            # time.sleep (10)
         except pforma_io.FormaIOError as e:
-            print e.errno, e.message
+            LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
         try:
             fio.readDB()
         except pforma_io.FormaIOError as e:
-            print e.errno, e.message
+            LOGGER.error("{0}: {1}".format(e.errno, e.message))
             sys.exit(-1)
 
         fio.resolveDB()
@@ -627,13 +621,12 @@ if __name__ == '__main__':
     application = QtGui.QApplication(sys.argv)
     MMM = {}
     for F in fams:
-        # print cmds[F]
         bl = info[F]['lists']
         blah = 0
         for b in bl:
             blah += get_len(b)
         if True:
-            print "Files in", F, blah
+            LOGGER.info("Files in {0} {1}".format(F, blah))
             MMM[F] = Monitor(fio, cmds[F], title=F, mmax=blah)
             MMM[F].show()
     application.exec_()

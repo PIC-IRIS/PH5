@@ -11,10 +11,13 @@ import re
 import sys
 import time
 import numpy as npy
+import argparse
+import logging
 from ph5.core import ph5api, timedoy
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = "2017.324 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #   Match lines related to timing in SOH
 timetoRE = re.compile(
@@ -33,35 +36,29 @@ timefromRE = re.compile(
 def get_args():
     global ARGS
 
-    import argparse
-    oparser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    oparser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix\
+    parser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix\
      [-p path]".format(
         PROG_VERSION)
 
-    oparser.description = "Generates kef file to populate Time_t from SOH_A_."
+    parser.description = "Generates kef file to populate Time_t from SOH_A_."
     #   -n master.ph5
-    oparser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
-                         help="The ph5 file prefix (experiment nickname).",
-                         metavar="ph5_file_prefix")
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
     #   -p /path/to/ph5/family/files
-    oparser.add_argument("-p", "--path", dest="ph5_path",
-                         help="Path to ph5 files Defaults current directory.",
-                         metavar="ph5_path", default='.')
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help="Path to ph5 files Defaults current directory.",
+                        metavar="ph5_path", default='.')
 
-    # oparser.add_argument ("-d", dest = "debug", action = "store_true",
+    # parser.add_argument ("-d", dest = "debug", action = "store_true",
     # default = False)
     #
-    oparser.add_argument("-r", "--clock_report", action="store_true",
-                         default=False,
-                         help="Write clock performance log, time-kef-gen.log")
-
-    ARGS = oparser.parse_args()
-
-    if ARGS.ph5_file_prefix is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
-        sys.exit(-1)
+    parser.add_argument("-r", "--clock_report", action="store_true",
+                        default=False,
+                        help="Write clock performance log, time-kef-gen.log")
+    ARGS = parser.parse_args()
 
 
 def read_soh(das_group):
@@ -177,7 +174,7 @@ def print_kef(das, clock):
 def report(stats, no_cor):
     '''   Write clock performance for each DAS to a log file
     '''
-    sys.stderr.write("Writing time-kef-gen.log.\n")
+    LOGGER.info("Writing time-kef-gen.log.")
     with open("time-kef-gen.log", 'w+') as fh:
         fh.write("{0}\n".format(sys.argv))
         for das in no_cor:
@@ -209,8 +206,8 @@ def main():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        sys.stderr.write("Error: Can't open {0} at {1}.".format(
-            ARGS.ph5_file_prefix, ARGS.ph5_path))
+        LOGGER.error("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
+                                                     ARGS.ph5_path))
         sys.exit(-1)
 
     dasGroups = P5.ph5_g_receivers.alldas_g()

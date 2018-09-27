@@ -10,11 +10,12 @@
 #
 
 import exceptions
-import sys
+import logging
 import construct
 from ph5.core import ibmfloat, ebcdic
 
-PROG_VERSION = '2014.261'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def __version__():
@@ -1451,7 +1452,7 @@ class iNova (object):
 
 class Sioseis (Seg):
     def __init__(self, endian='big'):
-        sys.stderr.write("SioSeis extended header not implemented.\n")
+        LOGGER.info("SioSeis extended header not implemented.")
         Seg.__init__(self, endian)
 
 

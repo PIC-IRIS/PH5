@@ -71,10 +71,11 @@ import tables
 import types
 import os
 import string
-import sys
+import logging
 
 PH5VERSION = '2017.171'
-PROG_VERSION = '2016.309 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #  TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
 
@@ -986,7 +987,7 @@ def append(ltable, p):
         try:
             r[k] = val
         except Exception as e:
-            sys.stderr.write("Warning in append: Exception \'%s\'\n" % e)
+            LOGGER.warning("Warning in append: Exception \'%s\'" % e)
 
     r.append()
     ltable.flush()
@@ -1026,8 +1027,7 @@ def populate(ltable, p, key=None):
             update(ltable, p, key)
             # ltable.flush ()
         else:
-            sys.stderr.write(
-                "Warning: No data for key. p.has_key (key) fails\n")
+            LOGGER.warning("No data for key. p.has_key (key) fails")
             return
     #   no key so get a new row to append
     else:

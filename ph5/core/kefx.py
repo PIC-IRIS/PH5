@@ -5,12 +5,15 @@
 #
 
 import sys
+import logging
 import os
 import string
 import re
 from ph5.core import columns
+from StringIO import StringIO
 
-PROG_VERSION = '2017.117 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #   This line contains a key/value entered as is
 # keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
@@ -57,6 +60,15 @@ class Kef:
         # print 'iter'
         while True:
             yield self.next()
+
+    def to_str(self):
+        stio = StringIO()
+        for p, kv in self:
+            keys = sorted(kv.keys())
+            stio.write("{0}\n".format(p))
+            for k in keys:
+                stio.write("\t{0}={1}\n".format(k, kv[k]))
+        return stio.getvalue()
 
     def open(self):
         try:
@@ -135,8 +147,7 @@ class Kef:
                 key, value = mo.groups()
                 sincepath -= nchars
             else:
-                sys.stderr.write(
-                    "Warning: unparsable line: %s\nSkipping\n" % line)
+                LOGGER.warning("Unparsable line: %s\nSkipping\n" % line)
                 continue
 
             key = string.strip(key)
@@ -214,10 +225,10 @@ class Kef:
         for p, kv in self:
             if trace is True:
                 kys = kv.keys()
-                sys.stderr.write('=-' * 30)
-                sys.stderr.write("\n%s\n" % p)
+                print('=-' * 30)
+                print("\n%s\n" % p)
                 for k in kys:
-                    sys.stderr.write("\t%s = %s\n" % (k, kv[k]))
+                    print("\t%s = %s\n" % (k, kv[k]))
 
             DELETE = False
             #   Update or Append or Delete
@@ -234,16 +245,15 @@ class Kef:
 
             # if receiverRE.match (p) :
                 # We are trying to update something in a Receivers_g
-                # sys.stderr.write ("Warning: Attempting to modify
+                # LOGGER.warning("Attempting to modify
                 # something under /Experiment_g/Receivers_g.\n")
 
             # columns.TABLES keeps a dictionary of key = table name, value =
             # reference to table
             if p not in columns.TABLES:
-                sys.stderr.write(
-                    "Warning: No table reference for key: %s\n" % p)
-                sys.stderr.write(
-                    "Possibly ph5 file is not open or initialized?\n")
+                LOGGER.warning("No table reference for key: {0}\n"
+                               "Possibly ph5 file is not open or initialized?"
+                               .format(p))
                 # p, kv = self.next ()
                 continue
 
@@ -251,15 +261,15 @@ class Kef:
             ref = columns.TABLES[p]
             #   key needs to be list for columns.validate
             if trace is True:
-                sys.stderr.write("Validating...\n")
+                LOGGER.info("Validating...\n")
 
             errs_keys, errs_required = columns.validate(ref, kv, key)
             for e in errs_keys + errs_required:
                 err = True
-                sys.stderr.write(e + '\n')
+                LOGGER.info(e + '\n')
 
             if trace is True:
-                sys.stderr.write("Done\n")
+                LOGGER.info("Done\n")
 
             if len(key) == 0:
                 key = None
@@ -268,17 +278,17 @@ class Kef:
 
             if DELETE:
                 if trace is True:
-                    sys.stderr.write("Deleting...")
+                    LOGGER.info("Deleting...")
                 else:
                     columns.delete(ref, kv[key], key)
             else:
                 if trace is True:
-                    sys.stderr.write("Updating...")
+                    LOGGER.info("Updating...")
                 else:
                     columns.populate(ref, kv, key)
 
             if trace is True:
-                sys.stderr.write("Skipped\n")
+                LOGGER.info("Skipped\n")
 
             # p, kv = self.next ()
 
@@ -344,6 +354,7 @@ class Kef:
             # tmp = sorted (elements, key=lambda k: k[key])
             # elements.sort (cmp_on_key)
             self.parsed[k] = tmp
+
 #
 # Mixins
 #
@@ -368,9 +379,9 @@ def print_kef(p, kv, action='', key=None):
                 "Error: {0} not valid key. Example: Update:id_s."
                 .format(key))
         action = ':' + action + ':' + key
-    sys.stdout.write("{0}{1}\n".format(p, action))
+    print("{0}{1}".format(p, action))
     for k in keys:
-        sys.stdout.write("\t{0}={1}\n".format(k, kv[k]))
+        print("\t{0}={1}".format(k, kv[k]))
 
 
 #

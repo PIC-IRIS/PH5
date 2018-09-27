@@ -6,6 +6,7 @@
 #   Steve Azevedo, Sept 2006, July 2012
 #
 
+import argparse
 import logging
 import math
 import os
@@ -14,9 +15,12 @@ import re
 import string
 import sys
 import time
+from ph5 import LOGGING_FORMAT
 from ph5.core import columns, experiment, kef, pn125, timedoy
 
-PROG_VERSION = '2016.200 Developmental'
+PROG_VERSION = '2018.268 Developmental'
+LOGGER = logging.getLogger(__name__)
+
 MAX_PH5_BYTES = 1073741824 * 2  # GB (1024 X 1024 X 1024 X 2)
 # MAX_PH5_BYTES = 1024 * 1024 * 2   #   2MB (1024 X 1024 X 2)
 INDEX_T = None
@@ -90,7 +94,7 @@ def read_infile(infile):
     try:
         fh = file(infile)
     except BaseException:
-        sys.stderr.write("Warning: Failed to open %s\n" % infile)
+        LOGGER.warning("Failed to open %s" % infile)
         return
 
     while True:
@@ -124,12 +128,12 @@ def read_windows_file(f):
             continue
         flds = line.split()
         if len(flds) != 2:
-            sys.stderr.write("Error in window file: %s\n" % line)
+            LOGGER.error("Error in window file: %s" % line)
             continue
 
         ttuple = flds[0].split(':')
         if len(ttuple) != 5:
-            sys.stderr.write("Error in window file: %s\n" % flds[0])
+            LOGGER.error("Error in window file: %s" % flds[0])
             continue
 
         try:
@@ -158,8 +162,7 @@ def read_windows_file(f):
             start_secs = tDOY.epoch()
             stop_secs = int(flds[1]) + start_secs
         except Exception as e:
-            sys.stderr.write("Error in window file: %s\n" % line)
-            sys.stderr.write("%s" % e)
+            LOGGER.error("Error in window file: {0}\n{1}".format(line, e))
             continue
 
         w.append([start_secs, stop_secs])
@@ -180,65 +183,68 @@ def get_args():
     '''
     global FILES, PH5, SR, WINDOWS, OVERIDE, NUM_MINI, FIRST_MINI
 
-    from optparse import OptionParser
-
-    oparser = OptionParser()
-    oparser.usage = "Version %s 125a2ph5 [--help][--raw raw_file |\
-    --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
-    oparser.description = "Read a raw texan files and optionally a kef\
-    file into ph5 format."
-    oparser.add_option("-r", "--raw", dest="rawfile",
-                       help="RT-125(a) texan raw file", metavar="raw_file")
-    oparser.add_option("-f", "--file", dest="infile",
-                       help="File containing list of RT-125(a)\
-                       raw file names.",
-                       metavar="file_list_file")
-    oparser.add_option("-o", "--overide", dest="overide",
-                       help="Overide file name checks.",
-                       action="store_true", default=False)
-    oparser.add_option("-n", "--nickname", dest="outfile",
-                       help="The ph5 file prefix (experiment nick name).",
-                       metavar="output_file_prefix")
-    oparser.add_option("-M", "--num_mini", dest="num_mini",
-                       help="Create given number of miniPH5_xxxxx.ph5 files.",
-                       metavar="num_mini", type='int', default=None)
-    oparser.add_option("-S", "--first_mini", dest="first_mini",
-                       help="The index of the first miniPH5_xxxxx.ph5 file.",
-                       metavar="first_mini", type='int', default=1)
-    # oparser.add_option ("-d", "--dep", dest = "depfile",
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = ("Version {0} 125a2ph5 [--help][--raw raw_file | "
+                    "--file file_list_file] --nickname output_file_prefix"
+                    .format(PROG_VERSION))
+    parser.description = ("Read a raw texan files and optionally a kef "
+                          "file into ph5 format.")
+    parser.add_argument("-r", "--raw", dest="rawfile",
+                        help="RT-125(a) texan raw file", metavar="raw_file")
+    parser.add_argument("-f", "--file", dest="infile",
+                        help=("File containing list of RT-125(a) "
+                              "raw file names."),
+                        metavar="file_list_file")
+    parser.add_argument("-o", "--overide", dest="overide",
+                        help="Overide file name checks.",
+                        action="store_true", default=False)
+    parser.add_argument("-n", "--nickname", dest="outfile",
+                        help="The ph5 file prefix (experiment nick name).",
+                        metavar="output_file_prefix")
+    parser.add_argument("-M", "--num_mini", dest="num_mini",
+                        help="Create given number of miniPH5_xxxxx.ph5 files.",
+                        metavar="num_mini", type=int, default=None)
+    parser.add_argument("-S", "--first_mini", dest="first_mini",
+                        help="The index of the first miniPH5_xxxxx.ph5 file.",
+                        metavar="first_mini", type=int, default=1)
+    # parser.add_argument ("-d", "--dep", dest = "depfile",
     # help = "Rawmeet dep file.",
     # metavar = "dep_file")
-    oparser.add_option("-s", "--samplerate", dest="samplerate",
-                       help="Extract only data at given sample rate.",
-                       metavar="samplerate")
-    oparser.add_option("-w", "--windows_file", dest="windows_file",
-                       help="File containing list of time windows to process.\
-                        Window start time   Window length, seconds\n\
-                        -----------------   ----\n\
-                        YYYY:JJJ:HH:MM:SS   SSSS",
-                       metavar="windows_file")
-    oparser.add_option("-p", dest="doprint",
-                       action="store_true", default=False)
-    options, args = oparser.parse_args()
-    # print options.outfile
+    parser.add_argument("-s", "--samplerate", dest="samplerate",
+                        help="Extract only data at given sample rate.",
+                        metavar="samplerate")
+    parser.add_argument("-w", "--windows_file", dest="windows_file",
+                        help=("File containing list of time windows to "
+                              "process. Window start time Window length, "
+                              "seconds\n "
+                              "-----------------   ----\n "
+                              "YYYY:JJJ:HH:MM:SS   SSSS"),
+                        metavar="windows_file")
+    parser.add_argument("-p",
+                        help="Do print",
+                        dest="doprint",
+                        action="store_true",
+                        default=False)
+    args = parser.parse_args()
 
     FILES = []
     PH5 = None
-    OVERIDE = options.overide
-    SR = options.samplerate
-    NUM_MINI = options.num_mini
-    FIRST_MINI = options.first_mini
+    OVERIDE = args.overide
+    SR = args.samplerate
+    NUM_MINI = args.num_mini
+    FIRST_MINI = args.first_mini
 
-    if options.infile is not None:
-        read_infile(options.infile)
+    if args.infile is not None:
+        read_infile(args.infile)
 
-    elif options.rawfile is not None:
-        FILES.append(options.rawfile)
+    elif args.rawfile is not None:
+        FILES.append(args.rawfile)
 
-    if options.outfile is not None:
-        PH5 = options.outfile
+    if args.outfile is not None:
+        PH5 = args.outfile
 
-    if options.doprint is not False:
+    if args.doprint is not False:
         ex = experiment.ExperimentGroup()
         ex.ph5open(True)
         ex.initgroup()
@@ -246,42 +252,40 @@ def get_args():
         ex.ph5close()
         sys.exit()
 
-    # if options.keffile != None :
-        # KEFFILE = options.keffile
+    # if args.keffile != None :
+        # KEFFILE = args.keffile
 
-    # if options.depfile != None :
-        # DEPFILE = options.depfile
+    # if args.depfile != None :
+        # DEPFILE = args.depfile
 
-    if options.windows_file is not None:
-        WINDOWS = read_windows_file(options.windows_file)
+    if args.windows_file is not None:
+        WINDOWS = read_windows_file(args.windows_file)
     else:
         WINDOWS = None
 
     if PH5 is None:
         # print H5, FILES
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help\n")
         sys.exit()
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        sys.stderr.write("Error: %s does not exist!\n" % PH5)
+        LOGGER.error("{0} not found.".format(PH5))
         sys.exit()
-
     else:
         #   Set up logging
-        # if not os.path.exists (OUTPATH) :
-            # os.mkdir (OUTPATH)
-
-        logging.basicConfig(
-            filename=os.path.join('.', "125a2ph5.log"),
-            format="%(asctime)s %(message)s",
-            level=logging.INFO
-        )
+        # Write log to file
+        ch = logging.FileHandler(os.path.join('.', "125a2ph5.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
 
 
 def print_it(a):
     # a.sort ()
     for k in a:
-        print "\t" + k
+        print("\t" + k)
 
 
 def keys(ex):
@@ -318,36 +322,36 @@ def keys(ex):
     #   Under Experiment_g/Responses_g/Responses_t
     response_table, j = columns.keys(ex.ph5_g_responses.ph5_t_response)
 
-    print "\t\t\t\t\t\t\t\tPH5 TABLE KEYS\n"
+    print("\t\t\t\t\t\t\t\tPH5 TABLE KEYS\n")
 
-    print "/Experiment_g/Experiment_t"
+    print("/Experiment_g/Experiment_t")
     print_it(experiment_table)
 
-    print "/Experiment_g/Receivers_g/Das_g_[sn]/Das_t"
+    print("/Experiment_g/Receivers_g/Das_g_[sn]/Das_t")
     print_it(das_table)
 
-    print "/Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t"
+    print("/Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t")
     print_it(receiver_table)
 
-    print "/Experiment_g/Receivers_g/Das_g_[sn]/Time_t"
+    print("/Experiment_g/Receivers_g/Das_g_[sn]/Time_t")
     print_it(time_table)
 
-    print "/Experiment_g/Sorts_g/Sort_t"
+    print("/Experiment_g/Sorts_g/Sort_t")
     print_it(sort_table)
 
-    print "/Experiment_g/Sorts_g/Array_t_[nnn]"
+    print("/Experiment_g/Sorts_g/Array_t_[nnn]")
     print_it(sort_array_table)
 
-    print "/Experiment_g/Sorts_g/Offset_t"
+    print("/Experiment_g/Sorts_g/Offset_t")
     print_it(sort_offset_table)
 
-    print "/Experiment_g/Sorts_g/Event_t"
+    print("/Experiment_g/Sorts_g/Event_t")
     print_it(sort_event_table)
 
-    print "/Experiment_g/Reports_g/Report_t"
+    print("/Experiment_g/Reports_g/Report_t")
     print_it(report_table)
 
-    print "/Experiment_g/Responses_g/Response_t"
+    print("/Experiment_g/Responses_g/Response_t")
     print_it(response_table)
 
 
@@ -473,10 +477,9 @@ def update_index_t_info(starttime, samples, sps):
         DAS_INFO[das] = []
 
     DAS_INFO[das].append(di)
-    logging.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}"
-                 .format(
-                     das, ph5file, time.ctime(starttime),
-                     time.ctime(stoptime)))
+    LOGGER.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}"
+                .format(das, ph5file, time.ctime(starttime),
+                        time.ctime(stoptime)))
     # startms, startsecs = math.modf (starttime)
     # startms = int (startms * 1000.); startsecs = int (startsecs)
     # stopms, stopsecs = math.modf (stoptime)
@@ -595,7 +598,7 @@ def writeET(et):
 
 
 def openPH5(filename):
-    # sys.stderr.write ("***   Opening: {0} ".format (filename))
+    LOGGER.info("Opening: {0}".format(filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -706,10 +709,7 @@ def writeINDEX():
 
 def updatePH5(f):
     global EX, EXREC
-    # sys.stdout.write ("Processing: %s %s =" % (f, CURRENT_DAS))
-    sys.stdout.write(":<Processing>: %s\n" % (f))
-    sys.stdout.flush()
-    logging.info("Processing: %s..." % f)
+    LOGGER.info("Processing: %s..." % f)
     size_of_data = os.path.getsize(f) * 1.250
     try:
         EXREC.ph5close()
@@ -723,9 +723,8 @@ def updatePH5(f):
         try:
             points = pn.getEvent()
         except pn125.TRDError as e:
-            sys.stderr.write("\nTRD read error. {0}".format(e))
-            sys.stdout.write(":<Error>: {0}\n".format(f))
-            sys.stdout.flush()
+            LOGGER.error("\nTRD read error. {0}\n"
+                         ":<Error>: {1}".format(e, f))
             break
 
         if points == 0:
@@ -744,9 +743,7 @@ def updatePH5(f):
         writeET(pn.eventTable)
 
     # ph5flush ()
-    # sys.stdout.write (" done\n")
-    sys.stdout.write(":<Finished>: {0}\n".format(f))
-    sys.stdout.flush()
+    LOGGER.info(":<Finished>: {0}\n".format(f))
 
 
 def ph5flush():
@@ -819,9 +816,7 @@ def ph5flush():
 
 def update_external_references():
     global EX, INDEX_T
-
-    # sys.stderr.write ("Updating external references..."); sys.stderr.flush ()
-    logging.info("Updating external references...")
+    LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T.rows:
         external_file = i['external_file_name_s'][2:]
@@ -845,12 +840,8 @@ def update_external_references():
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception as e:
-            # pass
-            sys.stderr.write("{0}\n".format(e))
-
-        # sys.exit ()
-    # sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
-    logging.info("done, {0} nodes recreated.\n".format(n))
+            LOGGER.info("{0}\n".format(e))
+    LOGGER.info("done, {0} nodes recreated.\n".format(n))
 
 
 def main():
@@ -861,8 +852,8 @@ def main():
 
         # print "Initializing ph5 file..."
         initializeExperiment()
-        logging.info("125a2ph5 {0}".format(PROG_VERSION))
-        logging.info("{0}".format(sys.argv))
+        LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))
+        LOGGER.info("{0}".format(sys.argv))
         if len(FILES) > 0:
             RESP = Resp(EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index()
@@ -888,10 +879,9 @@ def main():
 
                 updatePH5(f)
             else:
-                sys.stdout.write(":<Error>: {0}\n".format(f))
-                sys.stdout.flush()
-                sys.stderr.write(
-                    "Warning: Unrecognized raw file name {0}. Skipping!\n"
+                LOGGER.error(f)
+                LOGGER.warning(
+                    "Warning: Unrecognized raw file name {0}. Skipping!"
                     .format(f))
 
         update_external_references()
@@ -905,7 +895,6 @@ def main():
 
         # ph5flush ()
         closePH5()
-        print "Done"
         logging.shutdown()
     '''
     #   Profile

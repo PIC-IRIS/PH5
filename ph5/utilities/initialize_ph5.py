@@ -2,9 +2,11 @@
 
 from ph5.core import kef, experiment
 import sys
+import logging
 import os
 
-PROG_VERSION = "2016.181 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 RECEIVER_T = "kef.tmp"
 RECEIVER_T_STRING = str("""
@@ -76,7 +78,7 @@ def get_args():
 
     if PH5 is None:
         # print H5, FILES
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help")
         os.remove("kef.tmp")
         sys.exit()
 
@@ -104,13 +106,12 @@ def main():
         k.batch_update()
         k.close()
     else:
-        sys.stderr.write(
-            "Warning: /Experiment_g/Receivers_g/Receiver_t not set!\n")
+        LOGGER.warning("Experiment_g/Receivers_g/Receiver_t not set!")
         os.remove("kef.tmp")
 
     #   Close PH5 file
     ex.ph5close()
-    print "Done..."
+    LOGGER.info("Done...")
     os.remove("kef.tmp")
 
 

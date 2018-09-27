@@ -7,6 +7,7 @@ import json
 import os
 import os.path
 import sys
+import logging
 import time
 # from collections import OrderedDict
 #   This provides the base functionality
@@ -14,7 +15,8 @@ from ph5.core import experiment, timedoy
 
 #   The wiggles are stored as numpy arrays
 
-PROG_VERSION = '2017.257 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #
 #   These are to hold different parts of the meta-data
@@ -159,8 +161,7 @@ def get_args():
     EXPERIMENT_GEN = options.experiment_gen
 
     if PH5 is None:
-        sys.stderr.write(
-            "Error: Missing required option --nickname. Try --help\n")
+        LOGGER.error("Missing required option --nickname. Try --help")
         sys.exit(-1)
 
 
@@ -532,7 +533,7 @@ def write_data():
                          'first_epoch': i['start_time/epoch_l'],
                          'last_epoch': i['end_time/epoch_l']}
                 except timedoy.TimeError as e:
-                    sys.stderr.write("{0}".format(e.message))
+                    LOGGER.warning(e.message)
                     continue
 
                 L['Data'].append(D)
@@ -603,13 +604,13 @@ def write_arrays():
         try:
             deploy_time = timedoy.epoch2passcal(start)
         except timedoy.TimeError as e:
-            sys.stderr.write("Time conversion error {0}\n".format(e.message))
+            LOGGER.error("Time conversion error {0}".format(e.message))
             deploy_time = ""
 
         try:
             pickup_time = timedoy.epoch2passcal(stop)
         except timedoy.TimeError as e:
-            sys.stderr.write("Time conversion error {0}\n".format(e.message))
+            LOGGER.error("Time conversion error {0}".format(e.message))
             pickup_time = ""
 
         this_array = {'array': str(a[-3:]), 'sample_rate': sample_rate,

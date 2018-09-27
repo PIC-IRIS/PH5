@@ -7,9 +7,11 @@
 #
 
 import sys
+import logging
 from ph5.core import sacreader
 
-PROG_VERSION = "2013.365.a"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
@@ -31,7 +33,7 @@ def get_args():
     if options.infile is not None:
         INFILE = options.infile
     else:
-        sys.stderr.write("No infile given.\n")
+        LOGGER.error("No infile given.")
         sys.exit()
 
     PRINT = options.print_true

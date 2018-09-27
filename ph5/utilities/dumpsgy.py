@@ -7,11 +7,13 @@
 #
 
 import sys
+import logging
 import os
 from ph5.core import segy_h, ibmfloat, ebcdic
 import construct
 
-PROG_VERSION = '2017.256'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 SAMPLE_LENGTH = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
 
@@ -127,7 +129,7 @@ def get_args():
     if options.infile is not None:
         FH = open(options.infile, 'rb')
     else:
-        sys.stderr.write("No infile given.\n")
+        LOGGER.error("No infile given.")
         sys.exit()
 
     if options.ttype is not None:
@@ -222,7 +224,7 @@ def read_binary_header():
     try:
         ret = b.parse(buf)
     except Exception as e:
-        sys.stderr.write("Error: {0}\n".format(e))
+        LOGGER.error(e)
 
     return ret
 

@@ -10,9 +10,11 @@ import exceptions
 import os
 import struct
 import sys
+import logging
 import rt_125a_py
 
-PROG_VERSION = '2015.054'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 if sys.version_info >= (2, 3):
     import warnings
@@ -432,8 +434,7 @@ class pn125:
         elif self.page.pageType == 5:
             self.table(b[1:])
         else:
-            sys.stderr.write("Warning: Unrecognized page type: %d\n",
-                             self.page.pageType)
+            LOGGER.warning("Unrecognized page type: %d" % self.page.pageType)
 
     def getEvent(self):
         '''   Get next event   '''

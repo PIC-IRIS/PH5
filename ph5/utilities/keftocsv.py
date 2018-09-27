@@ -1,8 +1,10 @@
-import csv
 import argparse
+import csv
+import logging
 
 
 PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
@@ -51,6 +53,8 @@ def main():
             w.fieldnames = fieldnames
             w.writerow(dh)
             w.writerows(kef_dict_list)
+    LOGGER.info("Wrote {0} records to '{1}'.".format(len(kef_dict_list),
+                                                     args.outfile))
 
 
 if __name__ == "__main__":

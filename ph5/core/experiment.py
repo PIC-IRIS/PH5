@@ -11,6 +11,7 @@ import os
 import os.path
 import time
 import sys
+import logging
 import string
 import re
 from ph5.core import columns
@@ -19,7 +20,8 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2017.069 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 
 os.environ['TZ'] = 'UTM'
@@ -395,9 +397,10 @@ class SortsGroup:
                 try:
                     shot = int(row['event_id_s'])
                 except BaseException:
-                    sys.stderr.write("Warning: Non-numeric event in Offset_t.\
-                    Event: {0} Station: {1}.\n".format(
-                        row['event_id_s'], row['receiver_id_s']))
+                    LOGGER.warning("Non-numeric event in Offset_t."
+                                   "Event: {0} Station: {1}."
+                                   .format(row['event_id_s'],
+                                           row['receiver_id_s']))
                     continue
 
                 if shot > shotrange[1]:
@@ -412,9 +415,10 @@ class SortsGroup:
                 try:
                     station = str(int(row['receiver_id_s']))
                 except BaseException:
-                    sys.stderr.write("Warning: Non-numeric station in Offset_t\
-                    Event_t : {0} Station: {1}.\n".format(
-                        row['event_id_s'], row['receiver_id_s']))
+                    LOGGER.warning("Non-numeric station in Offset_t "
+                                   "Event_t : {0} Station: {1}."
+                                   .format(row['event_id_s'],
+                                           row['receiver_id_s']))
                     continue
 
                 if station not in stations:
@@ -836,8 +840,8 @@ class ReceiversGroup:
             else:
                 t = "undetermined"
         except Exception as e:
-            sys.stderr.write(
-                "Unable to get trace element type.\n(0)\n".format(e.message))
+            LOGGER.info("Unable to get trace element type.\n{0}"
+                        .format(e.message))
             t = "undetermined"
 
         return t, trace_ref.byteorder
@@ -857,10 +861,10 @@ class ReceiversGroup:
             node = self.ph5.get_node(
                 self.current_g_das, name=name, classname='Array')
         except Exception as e:
-            sys.stderr.write("Warning: DAS group: {0} Name: {1} Error: {2}\n"
-                             .format(self.current_g_das,
-                                     name,
-                                     e.message))
+            LOGGER.warning("DAS group: {0} Name: {1} Error: {2}"
+                           .format(self.current_g_das,
+                                   name,
+                                   e.message))
             node = None
 
         return node
@@ -1079,8 +1083,8 @@ class ReceiversGroup:
         if self.current_g_das is not None:
             try:
                 self.ph5.remove_node(self.current_g_das, name=name)
-                sys.stderr.write(
-                    "Warning: Node %s exists. Overwritten. " % name)
+                LOGGER.warning("Node {0} exists. Overwritten."
+                               .format(name))
             except Exception:
                 pass
 
@@ -1240,7 +1244,7 @@ class ReportsGroup:
             buf = node.read()
             # print len (buf), node.itemsize
         except Exception:
-            sys.stderr.write("Error: Failed to read report %s\n" % name)
+            LOGGER.error("Failed to read report {0}".format(name))
 
         return buf
 
@@ -1248,7 +1252,8 @@ class ReportsGroup:
         name = title
         try:
             self.ph5.remove_node(self.current_g_reports, name=name)
-            sys.stderr.write("Warning: Node %s exists. Overwritten. " % name)
+            LOGGER.warning("Node {0} exists. Overwritten."
+                           .format(name))
         except Exception:
             pass
 
@@ -1305,7 +1310,7 @@ class ResponsesGroup:
             for i in node:
                 out = out + i
         except Exception:
-            sys.stderr.write("Error: Failed to read response %s\n" % name)
+            LOGGER.error("Failed to read response {0}".format(name))
 
         return out
 

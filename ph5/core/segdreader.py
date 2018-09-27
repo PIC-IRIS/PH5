@@ -7,12 +7,14 @@
 #
 
 import sys
+import logging
 import os
 import exceptions
 import numpy as np
 from ph5.core import segd_h
 
-PROG_VERSION = "2018.039 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 class InputsError (exceptions.Exception):
@@ -79,7 +81,7 @@ class Reader ():
         try:
             self.FH = open(self.infile)
         except Exception as e:
-            sys.stderr.write("Error: {0}\n".format(e))
+            LOGGER.error(e)
             self.FH = None
 
     def read_buf(self, size):
@@ -88,12 +90,9 @@ class Reader ():
             self.open_infile()
 
         try:
-            'XXX'
-            # print "Reading:", size,
             buf = self.FH.read(size)
-            # print "read:", len (buf)
         except Exception as e:
-            sys.stderr.write("Error: {0}\n".format(e))
+            LOGGER.error(e)
 
         if not buf:
             self.FH.close()
@@ -119,7 +118,7 @@ class Reader ():
 
         for k in keys:
             what = 'container.{0}'.format(k)
-            print k, eval(what)
+            LOGGER.info("{0} {1}".format(k, eval(what)))
 
     def read_general_header_block_1(self):
         '''   Read the first General Header Block   '''
@@ -637,4 +636,4 @@ if __name__ == '__main__':
             # for s in trace :
             # print s
 
-    print "There were {0} traces.".format(n)
+    LOGGER.info("There were {0} traces.".format(n))

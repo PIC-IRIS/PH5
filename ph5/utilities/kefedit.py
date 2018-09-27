@@ -8,6 +8,7 @@
 
 # import from python packages
 import sys
+import logging
 import os
 import time
 import numpy
@@ -16,7 +17,6 @@ from tempfile import mkdtemp
 from copy import deepcopy
 from operator import itemgetter
 from PyQt4 import QtGui, QtCore
-# from ph5.core import columns
 from ph5.core import kefutility
 
 
@@ -24,12 +24,13 @@ from ph5.core import kefutility
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
 
 
-VER = 2018057
+VER = 2018268
 if kefutility.VER > VER:
     VER = kefutility.VER
 VER_str = str(VER)
 VER_str = VER_str[:4] + '.' + VER_str[4:]
-PROG_VERSION = "%s Developmental" % VER_str
+PROG_VERSION = VER_str
+LOGGER = logging.getLogger(__name__)
 
 EXPL = {}
 
@@ -1982,8 +1983,8 @@ class TablePanel(QtGui.QMainWindow):
                     for c in range(len(self.labels)):
                         row[self.labels[c]] = self.updatedTable[r][c]
                 except Exception, e:
-                    sys.stderr.write(
-                        "Warning in append: Exception \'%s\'\n" % e)
+                    LOGGER.warning(
+                        "Warning in append: Exception \'{0}\'".format(e))
                 row.append()
 
         # flush all changes

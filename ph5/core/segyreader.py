@@ -6,13 +6,15 @@
 #
 
 import sys
+import logging
 import os
 import exceptions
 import construct
 import numpy as np
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = '2014.138.a'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 SAMPLE_LENGTH = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
 
@@ -174,7 +176,7 @@ class Reader ():
         try:
             self.FH = open(self.infile)
         except Exception as e:
-            sys.stderr.write("Error: {0}\n".format(e))
+            LOGGER.error(e)
             self.FH = None
 
     def read_buf(self, size):
@@ -185,7 +187,7 @@ class Reader ():
         try:
             buf = self.FH.read(size)
         except Exception as e:
-            sys.stderr.write("Error: {0}\n".format(e))
+            LOGGER.error(e)
 
         if not buf:
             self.FH.close()

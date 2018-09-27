@@ -15,11 +15,13 @@ import os
 import time
 import string
 import sys
+import logging
 from pyproj import Geod
 from ph5.core.cs2cs import geod2utm
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = "2016.328 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -236,8 +238,8 @@ class Ssegy:
                 x_d = x_d.astype(numpy.uint32)
 
             else:
-                sys.stderr.write(
-                    "Trace type unknown: {0}\n".format(self.trace_type))
+                LOGGER.warning(
+                    "Trace type unknown: {0}".format(self.trace_type))
 
             #   Always byte order of requesting machine
             # print sys.byteorder, self.trace_byteorder
@@ -1203,7 +1205,6 @@ def write_segy_hdr(trace, fd, sf, num_traces):
         sf.set_reel_header(num_traces)
         sf.set_trace_header()
     except Exception as e:
-        # logging.error (e.message)
         errors.append(e.message)
         raise SEGYError(
             "Error: Failed to set reel or first trace header. {0}\n".format(
@@ -1215,8 +1216,7 @@ def write_segy_hdr(trace, fd, sf, num_traces):
         n, nparray = sf.set_data_array()
     except Exception as e:
         errors.append(e.message)
-        sys.stderr.write(
-            "Error: Failed to set data array. {0}\n".format(e.message))
+        LOGGER.error("Failed to set data array. {0}".format(e.message))
         # traceback.print_exception(exc_type, exc_value, exc_traceback,
         # limit=2, file=sys.stderr)
 
@@ -1224,19 +1224,19 @@ def write_segy_hdr(trace, fd, sf, num_traces):
         sf.write_text_header(fd)
     except Exception as e:
         errors.append(e.message)
-        sys.stderr.write("Error: {0}\n".format(e.message))
+        LOGGER.error(e.message)
 
     try:
         sf.write_reel_header(fd)
     except Exception as e:
         errors.append(e.message)
-        sys.stderr.write("Error: {0}\n".format(e.message))
+        LOGGER.error(e.message)
 
     try:
         sf.write_trace_header(fd)
     except Exception as e:
         errors.append(e.message)
-        sys.stderr.write("Error: {0}\n".format(e.message))
+        LOGGER.error(e.message)
 
     try:
         sf.write_data_array(fd, nparray)
@@ -1341,7 +1341,6 @@ def calc_red_vel_secs(offset_t, red_vel):
         # print secs
         return secs, errors
     except Exception:
-        # logging.warn("{0:s}\n".format(e.message))
         return 0., errors
 
 

@@ -5,6 +5,7 @@
 
 import os
 import sys
+import logging
 import exceptions
 # import sqlite3 as db
 import json
@@ -14,9 +15,8 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-# import subprocess
-
-PROG_VERSION = '2017.324 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 # JSON_DB = 'pforma.json'
 HOME = os.environ['HOME']
@@ -433,7 +433,7 @@ class FormaIO():
             try:
                 self.open()
             except FormaIOError as e:
-                sys.stderr.write("{0}: {1}".format(e.errno, e.message))
+                LOGGER.error("{0}: {1}".format(e.errno, e.message))
                 sys.exit()
         if self.infh is None:
             return
@@ -451,8 +451,8 @@ class FormaIO():
                 continue
             #   Skip files that do not exist
             if not os.path.exists(line):
-                sys.stderr.write(
-                    "Warning: {0} not found. Skipping.\n".format(line))
+                LOGGER.warning(
+                    "{0} not found. Skipping.".format(line))
                 continue
             n += 1
             # Try to guess data logger type and serial number based on file
@@ -589,7 +589,7 @@ class FormaIO():
                     if p.returncode is None:
                         somerunning = True
                     elif p.returncode != 0:
-                        sys.stderr.write("Process {0} failed.".format(p.args))
+                        LOGGER.error("Process {0} failed.".format(p.args))
 
                 if somerunning is False:
                     return
@@ -843,10 +843,8 @@ def read_json(filename):
     try:
         fh = open(filename)
         x = json.load(fh)
-        # print 'X', x
         fh.close()
     except Exception:
-        # sys.stderr.write (e.message)
         x = {}
 
     return x

@@ -5,15 +5,17 @@
 #   Steve Azevedo, August 2016
 #
 
+import argparse
 import os
 import sys
 import logging
+from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
 PROG_VERSION = "2017.312 Developmental"
+LOGGER = logging.getLogger(__name__)
 #   This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
-
 DECIMATION_FACTORS = segyfactory.DECIMATION_FACTORS
 
 
@@ -22,7 +24,6 @@ def get_args():
        Program arguments
     '''
     global ARGS, P5
-    import argparse
 
     parser = argparse.ArgumentParser()
 
@@ -157,14 +158,13 @@ def get_args():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        sys.stderr.write("Error: Can't open {0} at {1}.".format(
+        LOGGER.error("Can't open {0} at {1}.".format(
             ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit(-1)
     #
     if ARGS.shot_file:
         if not ARGS.shot_line:
-            sys.stderr.write(
-                "Error: Shot line required when using external shot file.")
+            LOGGER.error("Shot line required when using external shot file.")
             sys.exit(-2)
         external = external_file.External(ARGS.shot_file)
         ARGS.shot_file = external.Event_t
@@ -205,17 +205,17 @@ def gather():
             else:
                 P5.read_array_t(ARGS.station_array)
                 array_t = P5.Array_t[ARGS.station_array]['byid'][sta]
-            logging.info(
+            LOGGER.info(
                 "Extracting receiver(s) at station {0:s}.".format(sta))
-            logging.info("Found the following components:")
+            LOGGER.info("Found the following components:")
             for c in array_t.keys():
-                logging.info("DAS: {0} component: {1}".format(
+                LOGGER.info("DAS: {0} component: {1}".format(
                     array_t[c][0]['das/serial_number_s'], c))
-                logging.info("Lat: {0} Lon: {1} Elev: {2}"
-                             .format(array_t[c][0]['location/Y/value_d'],
-                                     array_t[c][0]['location/X/value_d'],
-                                     array_t[c][0]['location/Z/value_d']))
-                logging.info("{0}".format(array_t[c][0]['description_s']))
+                LOGGER.info("Lat: {0} Lon: {1} Elev: {2}"
+                            .format(array_t[c][0]['location/Y/value_d'],
+                                    array_t[c][0]['location/X/value_d'],
+                                    array_t[c][0]['location/Z/value_d']))
+                LOGGER.info("{0}".format(array_t[c][0]['description_s']))
             #   Read the appropriate line from Das_t and get the sample rate
             P5.read_das_t(array_t[c][0]['das/serial_number_s'],
                           array_t[c][0]['deploy_time/epoch_l'],
@@ -225,7 +225,7 @@ def gather():
                            P5.Das_t[array_t[c][0]['das/serial_number_s']]
                            ['rows'][0]['sample_rate_multiplier_i'])
         except KeyError as e:
-            logging.warn(
+            LOGGER.warn(
                 "Warning: The station {0} not found in the current array.\n"
                 .format(sta))
             continue
@@ -300,19 +300,19 @@ def gather():
                 #   Filter out unwanted seed loc codes
                 if ARGS.seed_location and\
                    array_t[c][0]['seed_location_code_s'] != ARGS.seed_location:
-                    logging.info("Location code mismatch: {0}/{1}/{2}"
-                                 .format(array_t[c][0]['seed_location_code_s'],
-                                         ARGS.seed_location,
-                                         c))
+                    LOGGER.info("Location code mismatch: {0}/{1}/{2}"
+                                .format(array_t[c][0]['seed_location_code_s'],
+                                        ARGS.seed_location,
+                                        c))
                     continue
                 #   Filter out unwanted seed channels
                 seed_channel_code_s = ph5api.seed_channel_code(array_t[c][0])
                 if ARGS.seed_channel and\
                    seed_channel_code_s != ARGS.seed_channel:
-                    logging.info("Channel code mismatch: {0}/{1}/{2}"
-                                 .format(array_t[c][0]['seed_channel_code_s'],
-                                         ARGS.seed_channel,
-                                         c))
+                    LOGGER.info("Channel code mismatch: {0}/{1}/{2}"
+                                .format(array_t[c][0]['seed_channel_code_s'],
+                                        ARGS.seed_channel,
+                                        c))
                     continue
                 #   DAS
                 das = array_t[c][0]['das/serial_number_s']
@@ -326,14 +326,14 @@ def gather():
                             start_epoch, stop_epoch,
                             event_tdoy.epoch(),
                             end_tdoy.epoch()):
-                        logging.info("Data logger {0} not deployed between\
+                        LOGGER.info("Data logger {0} not deployed between\
                         {1} to {2} at {3}.".format(
                                                array_t[c][t][
                                                    'das/serial_number_s'],
                                                event_tdoy, end_tdoy,
                                                sta))
                         if ARGS.deploy_pickup:
-                            logging.info("Skipping.")
+                            LOGGER.info("Skipping.")
                             continue
 
                     # Need to apply reduction velocity here
@@ -348,7 +348,7 @@ def gather():
                             {0}.".format(
                                 e.message)
                         for e in errs:
-                            logging.info(e)
+                            LOGGER.info(e)
                         start_fepoch += secs
                         stop_fepoch += secs
                     #   Set array_t in segyfactory
@@ -362,28 +362,27 @@ def gather():
                                     stop_fepoch, chan=c, sample_rate=sr)
                     trace = ph5api.pad_traces(traces)
                     if ARGS.do_time_correct:
-                        logging.info("Applied time drift correction by\
+                        LOGGER.info("Applied time drift correction by\
                         shifting trace by {0} samples.".format(
                             -1 * sr * (trace.time_correction_ms / 1000.)))
-                        logging.info("Correction is {0} ms.".format(
+                        LOGGER.info("Correction is {0} ms.".format(
                             trace.time_correction_ms))
-                        logging.info(
+                        LOGGER.info(
                             "Clock drift (seconds/second): {0}"
                             .format(trace.clock.slope))
                         for tccomment in trace.clock.comment:
                             tccmt = tccomment.split('\n')
                             for tcc in tccmt:
-                                logging.info("Clock comment: {0}".format(tcc))
+                                LOGGER.info("Clock comment: {0}".format(tcc))
                     if trace.nsamples == 0:
-                        logging.info("No data found for DAS\
-                        {0} between {1} and {2}."
-                                     .format(
-                                         das,
-                                         event_tdoy.getPasscalTime(),
-                                         end_tdoy.getPasscalTime()))
+                        LOGGER.info("No data found for DAS "
+                                    "{0} between {1} and {2}."
+                                    .format(das,
+                                            event_tdoy.getPasscalTime(),
+                                            end_tdoy.getPasscalTime()))
                         continue
                     if trace.padding != 0:
-                        logging.warn(
+                        LOGGER.warn(
                             "Warning: There were {0} samples of padding\
                             added to fill gap(s) in original traces."
                             .trace.padding)
@@ -402,7 +401,7 @@ def gather():
 
                     if trace.nsamples == 0:
                         #   Failed to read any data
-                        logging.warning("Warning: No data for data\
+                        LOGGER.warning("Warning: No data for data\
                         logger {0} starting at {1}.".format(
                             das, trace.start_time))
                         continue
@@ -426,22 +425,22 @@ def gather():
                     if response_t:
                         sf.set_response_t(response_t)
                     else:
-                        logging.warning(
+                        LOGGER.warning(
                             "No gain or bit weight found in ph5 file.")
                     if receiver_t:
                         sf.set_receiver_t(receiver_t)
                     else:
-                        logging.warning(
+                        LOGGER.warning(
                             "No sensor orientation found in ph5 file.")
                     #   Some informational logging
-                    logging.info("trace: {0}".format(i))
-                    logging.info("-=" * 20)
-                    logging.info("Extracting: Event ID %s" % event_t['id_s'])
-                    logging.info("Chan: {2} Start: {0:s}, Stop: {1:s}."
-                                 .format(event_tdoy,
-                                         end_tdoy,
-                                         c))
-                    logging.info("Lat: %f Lon: %f Elev:\
+                    LOGGER.info("trace: {0}".format(i))
+                    LOGGER.info("-=" * 20)
+                    LOGGER.info("Extracting: Event ID %s" % event_t['id_s'])
+                    LOGGER.info("Chan: {2} Start: {0:s}, Stop: {1:s}."
+                                .format(event_tdoy,
+                                        end_tdoy,
+                                        c))
+                    LOGGER.info("Lat: %f Lon: %f Elev:\
                     %f %s" % (event_t['location/Y/value_d'],
                               event_t['location/X/value_d'],
                               event_t['location/Z/value_d'],
@@ -454,8 +453,8 @@ def gather():
                             try:
                                 fh = sys.stdout
                             except Exception as e:
-                                logging.error("{0}".format(e.message))
-                                logging.error(
+                                LOGGER.error("{0}".format(e.message))
+                                LOGGER.error(
                                     "Failed to open STDOUT. Can not continue.")
                                 sys.exit(-1)
                         else:
@@ -483,17 +482,10 @@ def gather():
                             #   Open SEG-Y file
                             try:
                                 fh = open(outfilename, 'w+')
-                                logging.info("Opened: {0}".format(outfilename))
+                                LOGGER.info("Opened: {0}".format(outfilename))
                             except Exception as e:
-                                logging.error("Error: Failed to open {0}.\t{1}"
-                                              .format(
-                                                  outfilename,
-                                                  e.message))
-                                sys.stderr.write("Error: Failed to open\
-                                {0}.\t{1}"
-                                                 .format(
-                                                     outfilename,
-                                                     e.message))
+                                LOGGER.error("Failed to open {0}.\t{1}"
+                                             .format(outfilename, e.message))
                                 sys.exit()
                         #   Write reel headers and first trace
                         try:
@@ -501,25 +493,25 @@ def gather():
                                 trace, fh, sf, num_traces)
                             #   Write any messages
                             for l in logs:
-                                logging.info(l)
+                                LOGGER.info(l)
                         except segyfactory.SEGYError as e:
-                            logging.error("Error: Header write failure.")
+                            LOGGER.error("Header write failure.")
                             sys.exit()
                     else:
                         #   Write trace
                         try:
                             logs = segyfactory.write_segy(trace, fh, sf)
                             for l in logs:
-                                logging.info(l)
-                            logging.info('=-' * 40)
+                                LOGGER.info(l)
+                            LOGGER.info('=-' * 40)
                         except segyfactory.SEGYError as e:
-                            logging.error("Error: Trace write failure.")
+                            LOGGER.error("Trace write failure.")
                             sys.exit()
                 #
         #   Traces found does not match traces expected
         if fh and i != num_traces:
             #   Need to update reel_header
-            logging.warn("Wrote {0} of {1} traces listed in {2}.".format(
+            LOGGER.warn("Wrote {0} of {1} traces listed in {2}.".format(
                 i, num_traces, ARGS.station_array))
             sf.set_text_header(i)
             fh.seek(0, os.SEEK_SET)
@@ -535,25 +527,19 @@ def gather():
 def main():
     # global STATIONS_ALL, SHOTS_ALL
     get_args()
-    #   --stream set
-    if ARGS.write_stdout:
-        logging.basicConfig(
-            # stream = sys.stderr,
-            format="%(asctime)s %(message)s",
-            level=logging.ERROR
-        )
-    #   Write log to file
-    else:
-        logging.basicConfig(
-            filename=os.path.join(ARGS.out_dir, "ph5torec.log"),
-            format="%(asctime)s %(message)s",
-            level=logging.INFO
-        )
+    if not ARGS.write_stdout:
+        # Write log to file
+        ch = logging.FileHandler(os.path.join(ARGS.out_dir, "ph5torec.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
     ###
-    logging.info("{0}: {1}".format(PROG_VERSION, sys.argv))
+    LOGGER.info("{0}: {1}".format(PROG_VERSION, sys.argv))
     # P5.read_event_t_names ()
     if ARGS.shot_line not in P5.Event_t_names:
-        logging.error("Error: {0} not found. {1}\n".format(
+        LOGGER.error("{0} not found. {1}\n".format(
             ARGS.shot_line, " ".join(P5.Event_t_names)))
         sys.exit(-1)
     else:
@@ -564,7 +550,7 @@ def main():
         # SHOTS_ALL = P5.Event_t[ARGS.shot_line]['byid'].keys ()
     P5.read_array_t_names()
     if ARGS.station_array not in P5.Array_t_names:
-        logging.error("Error: {0} not found.  {1}\n".format(
+        LOGGER.error("{0} not found.  {1}\n".format(
             ARGS.station_array, " ".join(P5.Array_t_names)))
         sys.exit(-1)
     else:
@@ -577,25 +563,23 @@ def main():
     P5.read_sort_t()
     if P5.Experiment_t:
         experiment_t = P5.Experiment_t['rows'][-1]
-        logging.info("Experiment: {0}".format(
+        LOGGER.info("Experiment: {0}".format(
             experiment_t['longname_s'].strip()))
-        logging.info("Summary: {0}".format(
+        LOGGER.info("Summary: {0}".format(
             experiment_t['summary_paragraph_s'].strip()))
         if ARGS.seed_network and\
            P5.Experiment_t['net_code_s'] != ARGS.seed_network:
-            logging.info(
+            LOGGER.info(
                 "Netcode mis-match: {0}/{1}"
                 .format(P5.Experiment_t['net_code_s'], ARGS.seed_network))
             sys.exit(-1)
     else:
-        logging.warning(
-            "Warning: No experiment information found. Contact PIC.")
+        LOGGER.warning("No experiment information found. Contact PIC.")
 
     gather()
-    logging.info("Done.")
+    LOGGER.info("Done.")
     logging.shutdown()
     P5.close()
-    sys.stderr.write("Done\n")
 
 
 if __name__ == '__main__':

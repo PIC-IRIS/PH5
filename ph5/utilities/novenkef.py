@@ -10,10 +10,12 @@
 import time
 import re
 import math
-import sys
+import logging
 from ph5.core import timedoy
 
-PROG_VERSION = '2017.086 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
 KEF_COLS = {}
 #   /Experiment_g/Sorts_g/Array_t_xxx columns as of Feb 2015
 KEF_COLS['receiver'] = ['id_s', 'location/X/value_d', 'location/X/units_s',
@@ -72,8 +74,8 @@ def get_times(key, value):
         except timedoy.TimeError:
             #   This SHOULD never happen
             pre = key.split('/')[0]
-            sys.stderr.write(
-                "Error: Bad time value for {0} {1}.".format(key, value))
+            LOGGER.error(
+                "Bad time value for {0} {1}.".format(key, value))
             line = "\t{0}/ascii_s = {1}\n".format(pre, time.ctime(int(0)))
             line += "\t{0}/epoch_l = {1}\n".format(pre, int(0))
             line += "\t{0}/micro_seconds_i = {1}\n".format(pre,
@@ -146,8 +148,8 @@ def write_receiver(top, filename):
                                 else:
                                     fh.write("\t{0} = {1}\n".format(k, row[k]))
                             except Exception as e:
-                                sys.stderr.write(
-                                    "Error writing kef file: {0}.\n".format(
+                                LOGGER.error(
+                                    "Error writing kef file: {0}.".format(
                                         e.message))
 
     fh.close()

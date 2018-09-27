@@ -1,8 +1,11 @@
-import csv
 import argparse
+import csv
+import logging
 from datetime import datetime
 
+
 PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
@@ -41,6 +44,8 @@ def main():
                 if key != 'table':
                     keffile.write("    {0}={1}\n".format(key, kef_dict[key]))
             row_index += 1
+    LOGGER.info("Wrote {0} records to '{1}'.".format(len(kef_dict_list),
+                                                     args.outfile))
 
 
 if __name__ == "__main__":

@@ -5,25 +5,31 @@ Runs a set of checks on PH5 archive to test for
 errors and make sur eit is ready for archival at IRIS DMC
 """
 import logging
+import os
+import argparse
 import subprocess
-import sys
+from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api
 
-PROG_VERSION = "2018.136"
+
+PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 
 class PH5Validate(object):
+
     def __init__(self, ph5API_object, ph5path, level):
+        # Set up logging
+        # Write log to file
+        ch = logging.FileHandler(os.path.join('.', "PH5Validate.log"))
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
         if level == "error":
-            logging.basicConfig(filename='PH5Validate.log',
-                                format='%(levelname)s: %(message)s',
-                                filemode='w',
-                                level=logging.ERROR)
+            ch.setLevel(logging.ERROR)
         else:
-            logging.basicConfig(filename='PH5Validate.log',
-                                format='%(levelname)s: %(message)s',
-                                filemode='w',
-                                level=logging.DEBUG)
+            ch.setLevel(logging.DEBUG)
+        LOGGER.addHandler(ch)
 
         self.ph5 = ph5API_object
         self.path = ph5path
@@ -31,12 +37,8 @@ class PH5Validate(object):
             self.ph5.read_array_t_names()
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
-        # Set up logging. Do not append
-
-        return
 
     def read_arrays(self, name):
-
         if name is None:
             for n in self.ph5.Array_t_names:
                 self.ph5.read_array_t(n)
@@ -44,7 +46,6 @@ class PH5Validate(object):
             self.ph5.read_array_t(name)
 
     def read_events(self, name):
-
         if name is None:
             for n in self.ph5.Event_t_names:
                 self.ph5.read_event_t(n)
@@ -53,50 +54,50 @@ class PH5Validate(object):
 
     def check_experiment_t(self):
         experiment_t = self.ph5.Experiment_t['rows']
-        logging.info("Checking Experiment Table")
+        LOGGER.info("Checking Experiment Table")
         if len(experiment_t) == 0:
-            logging.error("Experiment_t does not exist. " +
-                          "run experiment_t_gen to create table")
+            LOGGER.error("Experiment_t does not exist. "
+                         "run experiment_t_gen to create table")
             return
         if not experiment_t[0]['net_code_s']:
-            logging.error('Network code was not found: ' +
-                          'A 2 character network code is required.')
+            LOGGER.error("Network code was not found: "
+                         "A 2 character network code is required.")
 
         if not experiment_t[0]['net_code_s'][0].isdigit() and \
                 experiment_t[0]['net_code_s'][0] != "X" and \
                 experiment_t[0]['net_code_s'][0] != "Y" and \
                 experiment_t[0]['net_code_s'][0] != "z":
-            logging.warning("Network code is a permanent FDSN:" +
-                            " Network code should be a temporary code.")
+            LOGGER.warning("Network code is a permanent FDSN: "
+                           "Network code should be a temporary code.")
 
         if not experiment_t[0]['experiment_id_s']:
-            logging.error('Experiment ID was not found: ' +
-                          'An experiment id (YY-XXX) is required.')
+            LOGGER.error("Experiment ID was not found: "
+                         "An experiment id (YY-XXX) is required.")
 
         if not experiment_t[0]['nickname_s']:
-            logging.warning('Nickname was not found: ' +
-                            'It is suggested you include a nickname ' +
-                            'for your experiment')
+            LOGGER.warning("Nickname was not found: "
+                           "It is suggested you include a nickname "
+                           "for your experiment")
 
         if not experiment_t[0]['longname_s']:
-            logging.warning('long name was not found: ' +
-                            'It is suggested you include a long name ' +
-                            'for your experiment')
+            LOGGER.warning("Long name was not found: "
+                           "It is suggested you include a long name "
+                           "for your experiment")
 
         if not experiment_t[0]['PIs_s']:
-            logging.warning('PIs were not found: ' +
-                            'It is suggested you include the PIs ' +
-                            'for your experiment')
+            LOGGER.warning("PIs were not found: "
+                           "It is suggested you include the PIs "
+                           "for your experiment ")
 
         if not experiment_t[0]['institutions_s']:
-            logging.warning("Institutions were not found: " +
-                            "It is suggested you include the institutions " +
-                            "for your experiment")
+            LOGGER.warning("Institutions were not found: "
+                           "It is suggested you include the institutions "
+                           "for your experiment")
 
         if (experiment_t[0]['north_west_corner/X/value_d'] == 0.0):
-            logging.warning('A bounding box was not detected: ' +
-                            'A suggested bounding box has been calculated ' +
-                            'and saved in experiment_t_bounding_box.kef')
+            LOGGER.warning("A bounding box was not detected: "
+                           "A suggested bounding box has been calculated "
+                           "and saved in 'experiment_t_bounding_box.kef'")
             max_lat = None
             min_lat = None
             max_lon = None
@@ -165,10 +166,9 @@ class PH5Validate(object):
                         min_lon = longitude
 
             process = subprocess.Popen(
-                "ph5tokef -n master.ph5 -p " +
-                str(self.path) +
-                " -E >" +
-                "experiment_t_bounding_box.kef",
+                ("ph5tokef -n master.ph5 -p {0} -E >"
+                 "experiment_t_bounding_box.kef"
+                 .format(self.path)),
                 shell=True,
                 stdout=subprocess.PIPE)
             process.wait()
@@ -196,7 +196,7 @@ class PH5Validate(object):
         return
 
     def checK_stations(self):
-        logging.info("Checking Stations...")
+        LOGGER.info("Checking Stations...")
         array_names = sorted(self.ph5.Array_t_names)
         for array_name in array_names:
             self.read_arrays(array_name)
@@ -213,47 +213,48 @@ class PH5Validate(object):
                             st_num]['das/serial_number_s']
                         channel = station_list[deployment][
                             st_num]['channel_number_i']
-                        logging.info("\n##############")
-                        logging.info("Station " + str(station_id) +
-                                     " Channel " + str(channel) + "\n")
+                        LOGGER.info("##############")
+                        LOGGER.info("Station {0} Channel {1}"
+                                    .format(str(station_id),
+                                            str(channel)))
                         try:
                             if not (0 <= int(station_list[deployment]
                                              [st_num]['id_s']) <= 65535):
-                                logging.error("Station ID not" +
-                                              " between 0 and 65535")
+                                LOGGER.error("Station ID not "
+                                             "between 0 and 65535")
                         except ValueError:
-                            logging.error("Station ID not a whole" +
-                                          " number between 0" +
-                                          " and 65535")
+                            LOGGER.error("Station ID not a whole "
+                                         "number between 0 "
+                                         "and 65535 ")
 
                         if not (1 <= len(station_list[deployment][st_num][
                                              'seed_station_name_s']) <= 5):
-                            logging.error("SEED station name not" +
-                                          " between 1 and 5 characters.")
+                            LOGGER.error("SEED station name not "
+                                         "between 1 and 5 characters.")
 
                         if not station_list[deployment][
                                 st_num]['seed_station_name_s']:
-                            logging.error("SEED station name required.")
+                            LOGGER.error("SEED station name required.")
 
                         if not station_list[deployment][
                                 st_num]['seed_band_code_s']:
-                            logging.error("SEED band code required. ")
+                            LOGGER.error("SEED band code required. ")
 
                         if not station_list[deployment][
                                 st_num]['seed_instrument_code_s']:
-                            logging.error("SEED instrument code required.")
+                            LOGGER.error("SEED instrument code required.")
 
                         if not station_list[deployment][
                                 st_num]['seed_orientation_code_s']:
-                            logging.error("SEED orientation code" +
-                                          " required.")
+                            LOGGER.error("SEED orientation code "
+                                         "required.")
 
                         response_t = self.ph5.get_response_t_by_n_i(
                             station_list[deployment][st_num][
                                 'response_table_n_i'])
                         if response_t is None:
-                            logging.error("No Response table found." +
-                                          "Have you run load_resp yet?")
+                            LOGGER.error("No Response table found. "
+                                         "Have you run load_resp yet?")
 
                         deploy_time = station_list[deployment][
                                 st_num]['deploy_time/epoch_l']
@@ -261,74 +262,68 @@ class PH5Validate(object):
                                 st_num]['pickup_time/epoch_l']
 
                         if deploy_time > pickup_time:
-                            logging.error("Deploy time is after" +
-                                          " pickup time")
+                            LOGGER .error("Deploy time is after pickup time")
                         else:
                             self.ph5.read_das_t(serial, pickup_time,
                                                 deploy_time, reread=False)
 
                         if serial not in self.ph5.Das_t:
-                            logging.error("No Data found for: " +
-                                          str(station_id) +
-                                          " You may need " +
-                                          "to reload the raw data for " +
-                                          "this station.")
+                            LOGGER .error("No data found for station {0}. "
+                                          "You may need to reload the raw "
+                                          "data for this station."
+                                          .format(str(station_id)))
                         try:
                             ph5api.filter_das_t(self.ph5.Das_t[
                                                 serial]['rows'],
                                                 channel)
                         except BaseException:
-                            logging.error("NO Data found for channel " +
-                                          str(channel) +
-                                          " Other channels seem to exist")
+                            LOGGER .error("No data found for channel {0}. "
+                                          "Other channels seem to exist"
+                                          .format(str(channel)))
 
                         if station_list[deployment][st_num][
                                 'location/X/value_d'] == 0:
-                            logging.warning("Location/X/value_d" +
-                                            " 'longitude'seems to be 0." +
-                                            " Is this correct???")
+                            LOGGER.warning("Location/X/value_d "
+                                           "'longitude'seems to be 0. "
+                                           "Is this correct???")
 
                         if station_list[deployment][st_num][
                                 'location/Y/value_d'] == 0:
-                            logging.warning("Location/Y/value_d" +
-                                            " 'latitude' seems to be 0." +
-                                            " Is this correct???")
+                            LOGGER.warning("Location/Y/value_d "
+                                           "'latitude' seems to be 0. "
+                                           "Is this correct???")
 
                         if station_list[deployment][st_num][
                                 'sample_rate_i'] == 0:
-                            logging.warning("Sample rate seems to be 0." +
-                                            " Is this correct???")
+                            LOGGER.warning("Sample rate seems to be 0. "
+                                           "Is this correct???")
 
                         if station_list[deployment][st_num][
                                 'sample_rate_multiplier_i'] == 0:
-                            logging.warning("Sample rate multiplier 0." +
-                                            " Is this correct???")
+                            LOGGER.warning("Sample rate multiplier 0. "
+                                           "Is this correct???")
 
                         if not station_list[deployment][st_num][
                                 'das/manufacturer_s']:
-                            logging.warning("DAS manufacturer is missing" +
-                                            " Is this correct???")
+                            LOGGER.warning("DAS manufacturer is missing. "
+                                           "Is this correct???")
 
                         if not station_list[deployment][st_num][
                                 'das/model_s']:
-                            logging.warning("DAS model is missing" +
-                                            " Is this correct???")
+                            LOGGER.warning("DAS model is missing. "
+                                           "Is this correct???")
                         if not station_list[deployment][st_num][
                                 'sensor/manufacturer_s']:
-                            logging.warning("Sensor manufacturer is" +
-                                            " missing. Is this correct???")
+                            LOGGER.warning("Sensor manufacturer is "
+                                           "missing. Is this correct???")
 
                         if not station_list[deployment][st_num][
                                 'sensor/model_s']:
-                            logging.warning("Sensor model is missing." +
-                                            " Is this correct???")
-            return
+                            LOGGER.warning("Sensor model is missing. "
+                                           "Is this correct???")
 
 
 def get_args():
-
-    import argparse
-
     parser = argparse.ArgumentParser(
         description='Runs set of checks on PH5 archvive',
         usage='Version: {0} ph5validate--nickname="Master_PH5_file" [options]'
@@ -357,8 +352,8 @@ def main():
     ph5validate.check_experiment_t()
     ph5validate.checK_stations()
     ph5API_object.close()
-    sys.stdout.write("\nWarnings, Errors and suggests written to logfile: " +
-                     "PH5Validate.log\n\n")
+    LOGGER.info("\nWarnings, Errors and suggests written to logfile: "
+                "PH5Validate.log\n\n")
 
 
 if __name__ == '__main__':

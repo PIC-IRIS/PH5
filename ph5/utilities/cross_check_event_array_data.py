@@ -21,11 +21,13 @@
 
 import os
 import sys
+import logging
 import json
 from ph5.core import timedoy
 from ph5.core.ph5api import is_in
 
-PROG_VERSION = "2017.311 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 __version__ = PROG_VERSION
 
 
@@ -92,7 +94,7 @@ def read_json():
 
     if len(nope) != 0:
         for n in nope:
-            sys.stderr.write("Error: {0} not found.".format(n))
+            LOGGER.error("{0} not found.".format(n))
         sys.exit()
 
     EVENT = _read_json(ARGS.event_json)

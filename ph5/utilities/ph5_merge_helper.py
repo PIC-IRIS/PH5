@@ -9,9 +9,12 @@
 
 import re
 import sys
+import logging
+import argparse
 from subprocess import call
 
-PROG_VERSION = '2017.251'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 
@@ -33,26 +36,24 @@ def get_args():
     '''
     global FIRST_MINI_INDEX
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = "ph5_merge_helper [-s miniPH5_start_index]"
 
-    oparser = OptionParser()
+    parser.description = ("Modify Index_t.kef and miniPH5_xxxxx.ph5 file "
+                          "names so they can be merged.")
 
-    oparser.usage = "ph5_merge_helper [-s miniPH5_start_index]"
+    parser.add_argument("-s", dest="mini_ph5_index",
+                        help=("For the first miniPH5_xxxxx.ph5, xxxxx should "
+                              "equal the given value."),
+                        metavar="mini_ph5_index", action='store', type=int)
 
-    oparser.description = "Modify Index_t.kef and miniPH5_xxxxx.ph5 file names\
-     so they can be merged."
+    parser.add_argument("-d", dest="debug", action="store_true", default=False)
 
-    oparser.add_option("-s", dest="mini_ph5_index",
-                       help="For the first miniPH5_xxxxx.ph5, xxxxx should\
-                        equal the given value.",
-                       metavar="mini_ph5_index", action='store', type='int')
+    args = parser.parse_args()
 
-    oparser.add_option("-d", dest="debug", action="store_true", default=False)
-
-    options, args = oparser.parse_args()
-
-    if options.mini_ph5_index:
-        FIRST_MINI_INDEX = options.mini_ph5_index
+    if args.mini_ph5_index:
+        FIRST_MINI_INDEX = args.mini_ph5_index
 
 
 def dump_Index_t():
@@ -60,7 +61,7 @@ def dump_Index_t():
     command = "ph5tokef -n master.ph5 -I 2>&1 > Index_t.kef"
     ret = call(command, shell=True)
     if ret < 0:
-        sys.stderr.write("Error: Failed to read master.ph5, {0}\n".format(ret))
+        LOGGER.error("Failed to read master.ph5, {0}".format(ret))
         sys.exit()
 
 
@@ -69,7 +70,7 @@ def dump_M_Index_t():
     command = "ph5tokef -n master.ph5 -M 2>&1 > M_Index_t.kef"
     ret = call(command, shell=True)
     if ret < 0:
-        sys.stderr.write("Error: Failed to read master.ph5, {0}\n".format(ret))
+        LOGGER.error("Failed to read master.ph5, {0}".format(ret))
         sys.exit()
 
 
@@ -84,8 +85,8 @@ def resequence_Index_t():
         fh = open('Index_t.kef', 'rU')
         of = open('_Index_t.kef', 'w')
     except Exception as e:
-        sys.stderr.write(
-            "Error: Failed to open 'Index_t.kef', {0}\n".format(e))
+        LOGGER.error(
+            "Failed to open 'Index_t.kef', {0}\n".format(e))
         sys.exit()
 
     while True:
@@ -117,7 +118,7 @@ def resequence_Index_t():
               str(FIRST_MINI_INDEX) + ".kef 2>&1 > /dev/null"
     ret = call(command, shell=True)
     if ret < 0:
-        sys.stderr.write("Error: Index_t.kef may not be correct.\n")
+        LOGGER.error("Index_t.kef may not be correct.")
 
 
 def resequence_M_Index_t():
@@ -131,8 +132,8 @@ def resequence_M_Index_t():
         fh = open('M_Index_t.kef', 'rU')
         of = open('_M_Index_t.kef', 'w')
     except Exception as e:
-        sys.stderr.write(
-            "Error: Failed to open 'Index_t.kef', {0}\n".format(e))
+        LOGGER.error(
+            "Error: Failed to open 'Index_t.kef', {0}".format(e))
         sys.exit()
 
     while True:
@@ -164,7 +165,7 @@ def resequence_M_Index_t():
               str(FIRST_MINI_INDEX) + ".kef 2>&1 > /dev/null"
     ret = call(command, shell=True)
     if ret < 0:
-        sys.stderr.write("Error: Index_t.kef may not be correct.\n")
+        LOGGER.error("Index_t.kef may not be correct.")
 
 
 def rename_miniPH5():
@@ -175,7 +176,7 @@ def rename_miniPH5():
         print command
         ret = call(command, shell=True)
         if ret < 0:
-            sys.stderr.write("File rename may have failed.\n")
+            LOGGER.error("File rename may have failed.")
 
 
 def main():

@@ -7,17 +7,18 @@
 
 import os
 import sys
+import logging
 import time
 from ph5.core import experiment, timedoy
-# from ph5.utilities import tabletokef as T2K
 import tabletokef as T2K
 
-PROG_VERSION = '2017.325 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
-    sys.stderr.write(
-        "Found old version of tabletokef.py."
-        " Requires version 2017.317 or newer.")
+    LOGGER.error(
+        "Found old version of tabletokef.py. "
+        "Requires version 2017.317 or newer.")
     sys.exit(-2)
 
 
@@ -131,10 +132,10 @@ def get_args():
         try:
             OFFSET_TABLE = map(int, options.offset_t_.split("_"))
         except Exception as e:
-            sys.stderr.write(
+            LOGGER.error(
                 "Offset table should be entered as arrayID underscore"
                 "shotLineID, eg. 1_2 or 0_0.")
-            sys.stderr.write(e.message)
+            LOGGER.error(e.message)
             sys.exit()
     else:
         OFFSET_TABLE = None
@@ -159,7 +160,7 @@ def get_args():
         DAS_TABLE = None
 
     if PH5 is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help")
         sys.exit(-1)
 
     NO_BACKUP = options.no_backup
@@ -197,8 +198,8 @@ def backup(table_type, table_path, table):
     if os.access(os.getcwd(), os.W_OK):
         print "Writing table backup: {0}.".format(os.path.join(outfile))
     else:
-        sys.stderr.write(
-            "Can't write: {0}.\nExiting!\n".format(os.getcwd(), outfile))
+        LOGGER.error(
+            "Can't write: {0}.\nExiting!".format(os.getcwd(), outfile))
         sys.exit(-3)
     #
     try:
@@ -206,17 +207,18 @@ def backup(table_type, table_path, table):
         T2K.table_print(table_path, table, fh=fh)
         fh.close()
     except Exception:
-        sys.stderr.write(
-            "Failed to save {0}.\ne.message\nExiting!\n".format(os.getcwd(),
-                                                                outfile))
+        LOGGER.error(
+            "Failed to save {0}.\ne.message\nExiting!".format(os.getcwd(),
+                                                              outfile))
         sys.exit(-4)
 
 
 def exclaim(n):
     if (int(time.time()) % 235) == 0:
-        print "{0} I am become Death, the Destroyer of Worlds.".format(n)
+        LOGGER.info("{0} I am become Death, the Destroyer of Worlds."
+                    .format(n))
     else:
-        print "{0} It worked.".format(n)
+        LOGGER.info("{0} It worked.".format(n))
 
 
 def main():

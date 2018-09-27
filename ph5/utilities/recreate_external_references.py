@@ -4,12 +4,15 @@
 #
 #   Steve Azevedo, September 2012
 #
+import argparse
 import os
-import sys
+import logging
 import time
 from ph5.core import experiment
 
-PROG_VERSION = '2016.307'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
 INDEX_T = {}
 M_INDEX_T = {}
 PATH = None
@@ -64,9 +67,7 @@ def read_m_index_table():
 def update_external_references():
     global EX, INDEX_T
 
-    sys.stderr.write("Updating external references...")
-    sys.stderr.flush()
-    # logging.info ("Updating external references...")
+    LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T.rows:
         external_file = i['external_file_name_s']
@@ -74,24 +75,20 @@ def update_external_references():
         das = i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        print external_file, external_path, das, target, external_group
 
         #   Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
-
-            print "E1 ", e.message
-
+            LOGGER.error("E1 {0}".format(e.message))
         #   Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception as e:
-
-            print "E2 ", e.message
+            LOGGER.error("E2 {0}".format(e.message))
 
     m = 0
     for i in M_INDEX_T.rows:
@@ -107,8 +104,7 @@ def update_external_references():
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
-
-            print "E3 ", e.message
+            LOGGER.error("E3: {0}".format(e.message))
 
         #   Re-create node
         try:
@@ -116,14 +112,10 @@ def update_external_references():
                 '/Experiment_g/Maps_g', external_group, target)
             m += 1
         except Exception as e:
-
-            print "E4 ", e.message
-
-        # sys.exit ()
-    sys.stderr.write(
-        "done, Index_t {0} nodes recreated. M_Index_t {1} nodes recreated.\n"
-        .format(n, m))
-    # logging.info ("done, {0} nodes recreated.\n".format (n))
+            LOGGER.error("E4: {0}".format(e.message))
+            LOGGER.error("Done, Index_t {0} nodes recreated. "
+                         "M_Index_t {1} nodes recreated.\n"
+                         .format(n, m))
 
 
 #
@@ -148,40 +140,27 @@ def initialize_ph5(editmode=False):
 def get_args():
     global PH5, PATH
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = "recreate_external_references --nickname=ph5-file-prefix"
 
-    oparser = OptionParser()
+    parser.description = ("Version: {0} Rebuild external references under "
+                          "Receivers_g from info in Index_t."
+                          .format(PROG_VERSION))
 
-    oparser.usage = "recreate_external_references --nickname=ph5-file-prefix"
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.description = "Version: {0} Rebuild external references under\
-     Receivers_g from info in Index_t.".format(
-        PROG_VERSION)
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help=("Path to ph5 files. Default to current "
+                              "directory."),
+                        metavar="ph5_path", default=".")
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    args = parser.parse_args()
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Default to current directory.",
-                       metavar="ph5_path")
-
-    options, args = oparser.parse_args()
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    if PH5 is None:
-        sys.stderr.write(
-            "Error: Missing required option --nickname. Try --help\n")
-        sys.exit(-1)
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
 
 
 def main():

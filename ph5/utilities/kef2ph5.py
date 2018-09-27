@@ -7,11 +7,13 @@
 
 from ph5.core import experiment, kefx, columns
 import sys
+import logging
 import os
 import os.path
 import time
 
-PROG_VERSION = '2016.113 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #   Force time zone to UTC
 os.environ['TZ'] = 'UTC'
@@ -61,7 +63,7 @@ def get_args():
         PATH = "."
 
     if KEFFILE is None or PH5 is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help")
         sys.exit(-1)
 
 
@@ -132,7 +134,7 @@ def populateTables():
 
     k.close()
     if err is True:
-        sys.stderr.write("\nError: There were errors! See output.\n")
+        LOGGER.error("There were errors! See output.")
 
 
 def closePH5():
@@ -166,7 +168,7 @@ def update_log():
         fh.write(line)
         fh.close()
     except BaseException:
-        sys.stderr.write("Warning: Failed to write kef2ph5.log file.\n")
+        LOGGER.warning("Failed to write kef2ph5.log file.")
 
 
 def main():

@@ -4,18 +4,21 @@
 #   Generate the reports "data_description.txt" and "data_report_key.txt"
 #
 
+import argparse
 import os
 import os.path
 import sys
+import logging
 import time
 
 #   This provides the base functionality
 from ph5.core import experiment
 from ph5.core import timedoy
 
-#   The wiggles are stored as numpy arrays
+#   Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2011.144'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #
 #   These are to hold different parts of the meta-data
@@ -92,80 +95,54 @@ class Offset_Azimuth(object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, KEY_GIN, DES_GIN, DAS_SN
+    global PH5, PATH, DEBUG, KEY_GEN, DES_GEN, DAS_SN
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = "report_gen --nickname=ph5-file-prefix options"
 
-    oparser.usage = "report-gin --nickname=ph5-file-prefix options"
+    parser.description = ("Generate data_description.txt and/or "
+                          "data_request_key.txt.")
 
-    oparser.description = "Generate data_description.txt and/or\
-     data_request_key.txt."
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help=("Path to ph5 files. Default to current "
+                              "directory."),
+                        metavar="ph5_path", default=".")
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Default to current directory.",
-                       metavar="ph5_path")
+    parser.add_argument("-k", "--key", dest="key_gen",
+                        help="Write data_request_key.txt.",
+                        action="store_true", default=False)
 
-    oparser.add_option("-k", "--key", dest="key_gin",
-                       help="Write data_request_key.txt.",
-                       action="store_true", default=False)
+    parser.add_argument("-d", "--description", dest="des_gen",
+                        help="Write data_description.txt.",
+                        action="store_true", default=False)
 
-    oparser.add_option("-d", "--description", dest="des_gin",
-                       help="Write data_description.txt.",
-                       action="store_true", default=False)
+    parser.add_argument("--debug", dest="debug",
+                        action="store_true", default=False)
 
-    # oparser.add_option ("-D", "--das_sn", dest = "das_sn",
-    # help = "Only consider a single DAS. Required with --key option.",
-    # metavar = "das_sn")
+    args = parser.parse_args()
 
-    oparser.add_option("--bug", dest="debug",
-                       action="store_true", default=False)
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
+    DEBUG = args.debug
+    KEY_GEN = args.key_gen
+    DES_GEN = args.des_gen
+    if KEY_GEN:
+        LOGGER.warning("Generation of data_request_key.txt is no "
+                       "longer needed.")
 
-    options, args = oparser.parse_args()
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    if options.debug is not None:
-        DEBUG = options.debug
-
-    KEY_GIN = options.key_gin
-    DES_GIN = options.des_gin
-    # DAS_SN = options.das_sn
-    if KEY_GIN:
-        sys.stderr.write(
-            "Warning: Generation of data_request_key.txt is no longer needed.")
-
-    if KEY_GIN is False and DES_GIN is False:
-        sys.stderr.write(
-            "Error: Either --key or --description option is required.\n")
+    if KEY_GEN is False and DES_GEN is False:
+        LOGGER.error("Either --key or --description option is required.")
         sys.exit(-3)
 
-    # if DAS_SN == None and KEY_GIN == True :
-    # sys.stderr.write ("Error: --das_sn option required with --key option.\n")
-    # sys.exit (-4)
-
     if PH5 is None:
-        sys.stderr.write(
-            "Error: Missing required option --nickname. Try --help\n")
+        LOGGER.error("Error: Missing required option --nickname. Try --help")
         sys.exit(-1)
-
-    # ph5_path = os.path.join (PATH, PH5) + '.ph5'
-    # if not os.path.exists (ph5_path) :
-    # sys.stderr.write ("Error: %s does not exist.\n" % ph5_path)
-    # sys.exit (-2)
 
 
 #
@@ -485,7 +462,7 @@ def write_key_report():
     try:
         fh = open("data_request_key.txt", "w+")
     except BaseException:
-        sys.stderr.write("Failed to open \"data_request_key.txt\".\n")
+        LOGGER.error("Failed to open \"data_request_key.txt\".")
         return
 
     A = {}
@@ -637,48 +614,32 @@ def write_des_report():
     fh.close()
 
 
-if __name__ == '__main__':
-    global KEY_GIN, DES_GIN
+def main():
+    global KEY_GEN, DES_GEN
 
     get_args()
 
-    sys.stderr.write("Opening...")
+    LOGGER.info("Opening...")
 
     initialize_ph5()
 
     read_sort_arrays()
     read_event_table()
-    DASS = read_das_groups()
+    DASS = read_das_groups() # NOQA
 
-    if KEY_GIN is True:
-        sys.stderr.write("Writing data key report...\n")
+    if KEY_GEN is True:
+        LOGGER.info("Writing data key report...")
         read_sort_table()
         write_key_report()
 
-    if DES_GIN is True:
-        sys.stderr.write("Writing data description report...\n")
+    if DES_GEN is True:
+        LOGGER.info("Writing data description report...")
         read_experiment_table()
         write_des_report()
 
-    # read_sort_arrays ()
-
-    # for k in ARRAY_T.keys () :
-    # debug_print (ARRAY_T[k])
-
-    # if OFFSET == True :
-    # read_offset_table ()
-    # read_sort_table ()
-    # read_sort_arrays ()
-    # strip_offset_t ()
-    # debug_print (OFFSET_T)
-    # strip_array_t ()
-    # for k in ARRAY_T.keys () :
-    # debug_print (ARRAY_T[k])
-    # order_station_by_offset ()
-    # info_print ()
-    # for k in ARRAY_T.keys () :
-    # rk = build_array_from_offset (ARRAY_T[k])
-    # table_print ('/Experiment_g/Sorts_g/' + k, rk)
-
     EX.ph5close()
-    sys.stderr.write("Done..\n")
+    LOGGER.info("Done..")
+
+
+if __name__ == '__main__':
+    main()

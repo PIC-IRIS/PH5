@@ -1,13 +1,16 @@
 #!/usr/bin/env pnpython3
 
-from ph5.core import experiment, kef, columns
+import argparse
 import os.path
 import re
 import string
 import sys
+import logging
 import time
+from ph5.core import experiment, kef, columns
 
-PROG_VERSION = '2013.347'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 updateRE = re.compile("(/.*):Update:(.*)\s*")
 
@@ -22,58 +25,40 @@ def get_args():
     '''
     global FILE, KEF, PH5, PATH
 
-    err = False
-    PATH = '.'
-    KEF = None
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    from optparse import OptionParser
-    oparser = OptionParser()
+    parser.usage = ("report2ph5 --file report-file --nickname "
+                    "experiment-nickname [--path path-to-kef-file]"
+                    "[--kef kef-file]")
+    parser.description = "Load a report (pdf) into a ph5 file."
+    parser.add_argument("-n", "--nickname", dest="nickname",
+                        help="Experiment nickname.", required=True)
+    parser.add_argument("-p", "--path", dest="path", default=".",
+                        help="Path to where ph5 files are stored. "
+                             "Defaults to current working directory."
+                        )
+    parser.add_argument("-f", "--file", dest="report_file",
+                        help="The file containing the report, "
+                             "(pdf, doc, ps, etc.).", required=True)
+    parser.add_argument("-k", "--kef", dest="kef_file", default=None,
+                        help="Kef file describing row in Report_t "
+                             "for the report. Not required.")
+    args = parser.parse_args()
 
-    oparser.usage = "report2ph5 --file report-file --nickname\
-     experiment-nickname [--path path-to-kef-file][--kef kef-file]"
-    oparser.description = "Load a report (pdf) into a ph5 file."
-    oparser.add_option("-f", "--file", dest="report_file",
-                       help="The file containing the report,\
-                        (pdf, doc, ps, etc.).")
-    oparser.add_option("-k", "--kef", dest="kef_file",
-                       help="Kef file describing row in Report_t\
-                        for the report. Not required.")
-    oparser.add_option("-n", "--nickname", dest="nickname",
-                       help="Experiment nickname.")
-    oparser.add_option("-p", "--path", dest="path",
-                       help="Path to where ph5 files are stored")
-    options, args = oparser.parse_args()
+    FILE = args.report_file
+    if not os.path.exists(FILE):
+        LOGGER.error("{0} does not exist!".format(FILE))
+        sys.exit(-1)
 
-    if options.report_file is not None:
-        FILE = options.report_file
-        if not os.path.exists(FILE):
-            sys.stderr.write("Error: %s does not exist!\n" % FILE)
-            sys.exit(-1)
-    else:
-        err = True
-
-    if options.kef_file is not None:
-        KEF = options.kef_file
+    KEF = args.kef_file
+    if KEF is not None:
         if not os.path.exists(KEF):
-            sys.stderr.write("Error: %s does not exist!\n" % KEF)
+            LOGGER.error("{0} does not exist!".format(KEF))
             sys.exit(-2)
 
-    if options.nickname is not None:
-        PH5 = options.nickname
-    else:
-        err = True
-
-    if options.path is not None:
-        PATH = options.path
-
-    if err is True:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
-        sys.exit(-3)
-
-    # if not os.path.exists (os.path.join (PATH, PH5) + '.ph5') :
-    # sys.stderr.write ("Error: %s does not exist.\n" %\
-    #  (os.path.join (PATH, PH5) + 'ph5'))
-    # sys.exit (-4)
+    PH5 = args.nickname
+    PATH = args.path
 
 
 def initializeExperiment():
@@ -102,22 +87,23 @@ def update():
         if 'array_name_a' in kv:
             ARRAY_NAME = kv['array_name_a']
         else:
-            sys.stderr.write(
-                "Error: Kef file does not contain entry for array_name_a.\
-                \nCan not continue!\n")
+            LOGGER.error(
+                "Kef file does not contain entry for array_name_a. "
+                "Can not continue!")
             return False
 
         #   XXX   We always append   XXX
         # mo = updateRE.match (p)
         ref = EX.ph5_g_reports.ph5_t_report
         if p not in columns.TABLES:
-            sys.stderr.write("Warning: No table reference for key: %s\n" % p)
-            sys.stderr.write("Possibly ph5 file is not open or initialized?\n")
+            LOGGER.warning("No table reference for key: {0}. "
+                           "Possibly ph5 file is not open or initialized?"
+                           .format(p))
 
         key = []
         errs_keys, errs_required = columns.validate(ref, kv, key)
         for e in errs_keys + errs_required:
-            sys.stderr.write(e + '\n')
+            LOGGER.error(e)
 
         key = None
         columns.populate(ref, kv, key)
@@ -127,16 +113,14 @@ def update():
 
 def load_report():
     global ARRAY_NAME
-    #   XXX
+
     if not ARRAY_NAME:
-        sys.stderr.write(
-            "Error: It appears that 'array_name_a' is not set in kef file\n")
+        LOGGER.error("It appears that 'array_name_a' is not set in kef file.")
         sys.exit()
 
     fh = open(FILE)
     buf = fh.read()
     fh.close()
-    # print len (buf)
 
     EX.ph5_g_reports.newarray(ARRAY_NAME, buf)
 
@@ -173,7 +157,7 @@ def get_kef_info():
     description = get_input("File description")
 
     kef = array + ".kef"
-    print "Writing: %s" % kef
+    LOGGER.info("Writing: {0}".format(kef))
     fh = open(kef, 'w+')
     fh.write("#   %s   report2ph5 version: %s   ph5 version: %s\n" %
              (time.ctime(time.time()), PROG_VERSION, EX.version()))

@@ -7,10 +7,12 @@
 #
 
 import sys
+import logging
 from ph5.core import sac_h
 import numpy as np
 
-PROG_VERSION = "2013.360.a"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 class SacError(Exception):
@@ -52,7 +54,7 @@ class Reader (object):
         try:
             buf = self.FH.read(size)
         except Exception as e:
-            sys.stderr.write("Error: {0}\n".format(e))
+            LOGGER.error(e)
 
         if not buf:
             self.FH.close()

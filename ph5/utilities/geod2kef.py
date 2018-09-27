@@ -5,11 +5,13 @@
 #   Steve Azevedo, July 2017
 #
 import sys
+import logging
 import numpy as npy
 from ph5.core import ph5api
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = "2017.185.a Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 #
@@ -42,7 +44,7 @@ def get_args():
     ARGS = oparser.parse_args()
 
     if ARGS.ph5_file_prefix is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help")
         sys.exit(-1)
 
 
@@ -114,15 +116,15 @@ def main():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        sys.stderr.write("Error: Can't open {0} at {1}.".format(
-            ARGS.ph5_file_prefix, ARGS.ph5_path))
+        LOGGER.error("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
+                                                     ARGS.ph5_path))
         sys.exit(-1)
 
     P5.read_array_t_names()
     P5.read_event_t_names()
     if not P5.Array_t_names or not P5.Event_t_names:
-        print >> sys.stderr, "No arrays or no events defined in ph5 file.\
-        Can not continue!"
+        LOGGER.error("No arrays or no events defined in ph5 file."
+                     "Can not continue!")
         P5.close()
         sys.exit()
     print "#   geod2kef v{0}, PH5 v{1}".format(PROG_VERSION, ph5version)

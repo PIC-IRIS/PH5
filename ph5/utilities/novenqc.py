@@ -6,6 +6,7 @@
 #
 
 import sys
+import logging
 import os
 import re
 from random import randint
@@ -16,7 +17,8 @@ import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = "2017.086 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
          'mm': 1. / 1000., 'kmi': 1852.0, 'in': 0.0254, 'ft': 0.3048,
@@ -58,7 +60,7 @@ def qc_map(outfile):
         base_path = os.path.dirname(os.path.abspath(__file__))
         base = os.path.join(base_path, 'kmlicons')
     except Exception as e:
-        sys.stderr.write(e.message)
+        LOGGER.error(e.message)
         sys.exit()
 
     def get_lat_lon(row):

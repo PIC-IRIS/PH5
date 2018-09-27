@@ -5,13 +5,15 @@
 
 import os
 import sys
+import logging
 from PySide import QtCore, QtGui
 from psutil import cpu_count, cpu_percent
-# import pformaGUI_rc
 from ph5.core import pmonitor
 from ph5.utilities import pforma_io, watchit
 
-PROG_VERSION = "2017.324 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
 
 UTMZone = None
 
@@ -135,10 +137,7 @@ class MdiChildDos(QtGui.QProgressDialog):
         mess = QtGui.QMessageBox()
         mess.setWindowTitle("Merge Progress Summary")
         mess.setDetailedText('\n'.join(msgs))
-        # mess.setSizeGripEnabled (True)
         mess.exec_()
-        # print "Done"
-        # self.cancel ()
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -170,7 +169,6 @@ class MainWindow(QtGui.QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
 
     def killchildren(self):
-        # print 'kill'
         try:
             for f in self.children.keys():
                 c = self.children[f]
@@ -178,7 +176,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.mdiArea.removeSubWindow(c)
             self.mdiArea.closeAllSubWindows()
         except Exception as e:
-            print "Z", e.message
+            LOGGER.error("Z: {0}".format(e.message))
 
     def resetIt(self):
         '''
@@ -229,10 +227,8 @@ class MainWindow(QtGui.QMainWindow):
                 done.append(c)
 
         if not somerunning:
-            # print "Nobody running..."; sys.stdout.flush ()
             for c in self.children.keys():
                 m = self.children[c]
-                # XXX
                 m.fio.merge(m.processedFiles.keys())
 
             # XXX
@@ -540,24 +536,17 @@ def init_fio(f, d, utm=None, combine=None):
     try:
         fio.open()
     except pforma_io.FormaIOError as e:
-        print e.errno, e.message
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
     try:
         fio.read()
-        # gb = fio.total_raw / 1024. / 1024. / 1024.
-        # timeout = (gb / get_len (f)) * 1000.
-        # print "Total raw: {0}GB".format (int (fio.total_raw / 1024 / 1024 /\
-        #  1024))
-        # print "M:", fio.M
-        # print "N:", fio.nmini
-        # time.sleep (10)
     except pforma_io.FormaIOError as e:
-        print e.errno, e.message
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
     try:
         fio.readDB()
     except pforma_io.FormaIOError as e:
-        print e.errno, e.message
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
         sys.exit(-1)
 
     fio.resolveDB()
@@ -566,8 +555,6 @@ def init_fio(f, d, utm=None, combine=None):
 
 
 def startapp():
-    import sys
-
     app = QtGui.QApplication(sys.argv)
     mainWin = MainWindow()
     mainWin.show()

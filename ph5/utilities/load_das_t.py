@@ -8,10 +8,11 @@
 
 import os
 import re
+import logging
 import subprocess
-import sys
 
-PROG_VERSION = '2017.342'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 all = os.listdir('.')
 
@@ -43,12 +44,6 @@ def get_args():
     ARGS = parser.parse_args()
 
 
-def flush(what):
-    sys.stdout.write(what + '\n')
-    sys.stdout.flush()
-    sys.stderr.flush()
-
-
 #   Save table as a kef then clear
 
 
@@ -62,15 +57,15 @@ def save_kefs():
             #   Save table as kef (S stands for saved)
             new = "Das_t_S_{0}.kef".format(das)
             command = "ph5tokef -n {2} -D {0} > {1}".format(das, new, MASTER)
-            flush(command)
+            LOGGER.info(command)
             # ret = os.system (command)
             ret = subprocess.call(command, shell=True)
             if ret < 0:
-                flush("Command failed: {0}".format(ret))
+                LOGGER.error("Command failed: {0}".format(ret))
                 continue
             #   Clear existing table
             command = "delete_table -n {1} -D {0}".format(das, MASTER)
-            flush(command)
+            LOGGER.info(command)
             # p = os.popen (command + '2>&1 > /dev/null', 'w')
             try:
                 p = subprocess.Popen(command,
@@ -89,9 +84,9 @@ def save_kefs():
                                      creationflags=0)
                 p.stdin.write('y\n')
             except Exception as e:
-                flush("Command failed: {0}".format(e.message))
+                LOGGER.error("Command failed: {0}".format(e.message))
 
-    flush("-=" * 40)
+    LOGGER.info("-=" * 40)
 
 
 #   Load das teble kef
@@ -102,11 +97,11 @@ def load_kefs():
         mo = RE.match(f)
         if mo:
             command = "keftoph5 -n {1} -k {0}".format(f, MASTER)
-            flush(command)
+            LOGGER.info(command)
             # ret = os.system (command)
             ret = subprocess.call(command, shell=True)
             if ret < 0:
-                flush("Command failed: {0}".format(ret))
+                LOGGER.error("Command failed: {0}".format(ret))
 
 
 def main():
