@@ -1,67 +1,21 @@
 #!/usr/bin/env pnpython3
 #
-#   A low level SAC library
+# A low level SAC library
 #
-#   Steve Azevedo, August 2012
+# Steve Azevedo, August 2012
 #
 
 import exceptions
 import sys
 import construct
 
-# sys.path.append (os.path.join (os.environ['PASSCAL'],
-# "apps",
-# "pn3",
-# "reconstruct-2.03dev-py2.6.egg"))
 
-# import reconstruct as construct
-
-PROG_VERSION = '2014.002 Alpha'
+PROG_VERSION = '2018.268'
 
 
 def __version__():
     print PROG_VERSION
 
-
-'''
-NULL_SAC_HEADER_FLOAT = (-12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0,
-                         -12345.0, -12345.0, -12345.0, -12345.0, -12345.0)
-
-NULL_SAC_HEADER_INT = (-12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345,
-                       -12345, -12345, -12345, -12345, -12345)
-
-NULL_SAC_HEADER_CHAR = ("-12345  ",
-                        "-12345          ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ","-12345  ",
-                        "-12345  ")
-'''
 
 ICONSTANTS = {"IREAL": 0,		# undocumented
               "ITIME": 1,		# file: time series data
@@ -179,7 +133,7 @@ class HeaderError (exceptions.Exception):
     def __init__(self, args=None):
         self.args = args
 
-#   SAC Little Endian binary header, float part
+# SAC Little Endian binary header, float part
 
 
 def bin_header_le_float():
@@ -222,7 +176,7 @@ def bin_header_le_float():
                            # Fini or end of event time (seconds relative to
                            # reference
                            construct.LFloat32("f"),
-                           #   time.)
+                           # time.)
                            construct.LFloat32("resp0"),   #
                            construct.LFloat32("resp1"),   #
                            construct.LFloat32("resp2"),   #
@@ -242,7 +196,7 @@ def bin_header_le_float():
                            # Station depth below surface (meters). [not
                            # currently
                            construct.LFloat32("stdp"),
-                           #   used]
+                           # used]
                            # Event latitude (degrees north positive).
                            construct.LFloat32("evla"),
                            # Event longitude (degrees east positive).
@@ -293,7 +247,7 @@ def bin_header_le_float():
                            construct.LFloat32("unused11"),
                            construct.LFloat32("unused12"))
     return BIN
-#   SAC Little Endian binary header, int part
+# SAC Little Endian binary header, int part
 
 
 def bin_header_le_int():
@@ -322,26 +276,26 @@ def bin_header_le_int():
                            construct.SLInt32("unused15"),   #
                            # Type of file [required]:
                            construct.SLInt32("iftype"),
-                           #      * ITIME {Time series file}
-                           #      * IRLIM {Spectral file---real and imaginary}
-                           #      * IAMPH {Spectral file---amplitude and phase}
-                           #      * IXY {General x versus y data}
-                           #      * IXYZ {General XYZ (3-D) file}
+                           #    * ITIME {Time series file}
+                           #    * IRLIM {Spectral file---real and imaginary}
+                           #    * IAMPH {Spectral file---amplitude and phase}
+                           #    * IXY {General x versus y data}
+                           #    * IXYZ {General XYZ (3-D) file}
                            # Type of dependent variable:
                            construct.SLInt32("idep"),
-                           #      * IUNKN (Unknown)
-                           #      * IDISP (Displacement in nm)
-                           #      * IVEL (Velocity in nm/sec)
-                           #      * IVOLTS (Velocity in volts)
-                           #      * IACC (Acceleration in nm/sec/sec)
+                           #    * IUNKN (Unknown)
+                           #    * IDISP (Displacement in nm)
+                           #    * IVEL (Velocity in nm/sec)
+                           #    * IVOLTS (Velocity in volts)
+                           #    * IACC (Acceleration in nm/sec/sec)
                            # Reference time equivalence:
                            construct.SLInt32("iztype"),
-                           #      * IUNKN (5): Unknown
-                           #      * IB (9): Begin time
-                           #      * IDAY (10): Midnight of refernece GMT day
-                           #      * IO (11): Event origin time
-                           #      * IA (12): First arrival time
-                           #      * ITn (13-22): User defined time pick n,n=0,9
+                           #    * IUNKN (5): Unknown
+                           #    * IB (9): Begin time
+                           #    * IDAY (10): Midnight of refernece GMT day
+                           #    * IO (11): Event origin time
+                           #    * IA (12): First arrival time
+                           #    * ITn (13-22): User defined time pick n,n=0,9
                            construct.SLInt32("unused16"),   #
                            # Type of recording instrument. [currently not used]
                            construct.SLInt32("iinst"),
@@ -350,46 +304,46 @@ def bin_header_le_int():
                            # Event geographic region. [not currently used]
                            construct.SLInt32("ievreg"),
                            construct.SLInt32("ievtyp"),  # Type of event:
-                           #   * IUNKN (Unknown)
-                           #   * INUCL (Nuclear event)
-                           #   * IPREN (Nuclear pre-shot event)
-                           #   * IPOSTN (Nuclear post-shot event)
-                           #   * IQUAKE (Earthquake)
-                           #   * IPREQ (Foreshock)
-                           #   * IPOSTQ (Aftershock)
-                           #   * ICHEM (Chemical explosion)
-                           #   * IQB (Quarry or mine blast confirmed by quarry)
-                           #   * IQB1 (Quarry/mine blast with designed shot
-                           #     info-ripple fired)
-                           #   * IQB2 (Quarry/mine blast with observed shot
-                           #     info-ripple fired)
-                           #   * IQMT (Quarry/mining-induced events:
-                           #     tremors and rockbursts)
-                           #   * IEQ (Earthquake)
-                           #   * IEQ1 (Earthquakes in a swarm or aftershock
-                           #     sequence)
-                           #   * IEQ2 (Felt earthquake)
-                           #   * IME (Marine explosion)
-                           #   * IEX (Other explosion)
-                           #   * INU (Nuclear explosion)
-                           #   * INC (Nuclear cavity collapse)
-                           #   * IO\_ (Other source of known origin)
-                           #   * IR (Regional event of unknown origin)
-                           #   * IT (Teleseismic event of unknown origin)
-                           #   * IU (Undetermined or conflicting information)
+                           # * IUNKN (Unknown)
+                           # * INUCL (Nuclear event)
+                           # * IPREN (Nuclear pre-shot event)
+                           # * IPOSTN (Nuclear post-shot event)
+                           # * IQUAKE (Earthquake)
+                           # * IPREQ (Foreshock)
+                           # * IPOSTQ (Aftershock)
+                           # * ICHEM (Chemical explosion)
+                           # * IQB (Quarry or mine blast confirmed by quarry)
+                           # * IQB1 (Quarry/mine blast with designed shot
+                           #   info-ripple fired)
+                           # * IQB2 (Quarry/mine blast with observed shot
+                           #   info-ripple fired)
+                           # * IQMT (Quarry/mining-induced events:
+                           #   tremors and rockbursts)
+                           # * IEQ (Earthquake)
+                           # * IEQ1 (Earthquakes in a swarm or aftershock
+                           #   sequence)
+                           # * IEQ2 (Felt earthquake)
+                           # * IME (Marine explosion)
+                           # * IEX (Other explosion)
+                           # * INU (Nuclear explosion)
+                           # * INC (Nuclear cavity collapse)
+                           # * IO\_ (Other source of known origin)
+                           # * IR (Regional event of unknown origin)
+                           # * IT (Teleseismic event of unknown origin)
+                           # * IU (Undetermined or conflicting information)
                            # Quality of data [not currently used]:
                            construct.SLInt32("iqual"),
-                           #      * IGOOD (Good data)
-                           #      * IGLCH (Glitches)
-                           #      * IDROP (Dropouts)
-                           #      * ILOWSN (Low signal to noise ratio)
-                           #      * IOTHER (Other)
+                           #    * IGOOD (Good data)
+                           #    * IGLCH (Glitches)
+                           #    * IDROP (Dropouts)
+                           #    * ILOWSN (Low signal to noise ratio)
+                           #    * IOTHER (Other)
                            # Synthetic data flag [not currently used]:
                            construct.SLInt32("isynth"),
-                           #      * IRLDTA (Real data)
-                           #      * ?????
-                           #      (Flags for various synthetic seismogram
-                           #        codes)
+                           #    * IRLDTA (Real data)
+                           #    * ?????
+                           #    (Flags for various synthetic seismogram
+                           #      codes)
                            construct.SLInt32("imagtyp"),    #
                            construct.SLInt32("imagsrc"),    #
                            construct.SLInt32("unused19"),   #
@@ -405,16 +359,16 @@ def bin_header_le_int():
                            # TRUE if station components have a positive
                            # polarity
                            construct.SLInt32("lpspol"),
-                           #   (left-hand rule).
+                           # (left-hand rule).
                            # TRUE if it is okay to overwrite this file on disk.
                            construct.SLInt32("lovrok"),
                            # TRUE if DIST AZ BAZ and GCARC are to be calculated
                            # from
                            construct.SLInt32("lcalda"),
-                           #   st event coordinates.
+                           # st event coordinates.
                            construct.SLInt32("unused27"))
     return BIN
-#   SAC Little Endian binary header, string part
+# SAC Little Endian binary header, string part
 
 
 def bin_header_le_char():
@@ -451,7 +405,7 @@ def bin_header_le_char():
     # recording instrument
     return BIN
 
-#   SAC Big Endian binary header, float part
+# SAC Big Endian binary header, float part
 
 
 def bin_header_be_float():
@@ -527,7 +481,7 @@ def bin_header_be_float():
                            construct.BFloat32("unused11"),
                            construct.BFloat32("unused12"))
     return BIN
-#   SAC Big Endian binary header, int part
+# SAC Big Endian binary header, int part
 
 
 def bin_header_be_int():
@@ -573,7 +527,7 @@ def bin_header_be_int():
                            construct.SBInt32("lcalda"),
                            construct.SBInt32("unused27"))
     return BIN
-#   SAC Big Endian binary header, string part
+# SAC Big Endian binary header, string part
 
 
 def bin_header_be_char():
@@ -631,7 +585,7 @@ class SAC_float (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
+                # XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -676,7 +630,7 @@ class SAC_int (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
+                # XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -717,7 +671,7 @@ class SAC_char (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
+                # XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -739,7 +693,7 @@ class SAC_char (object):
 
         return t.parse(buf)
 
-#   Mixins
+# Mixins
 
 
 def bfloat():
@@ -752,8 +706,6 @@ def lfloat():
     PFLOAT = construct.Struct("PFLOAT",
                               construct.LFloat32("x"))
     return PFLOAT
-
-#   x => list of floats, byteorder => 'little' or 'big'
 
 
 def build_floats(x, byteorder=sys.byteorder):

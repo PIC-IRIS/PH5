@@ -1,10 +1,10 @@
 #!/usr/bin/env pnpython3
 #
-#   Generate kef from csv
+# Generate kef from csv
 #
-#   Steve Azevedo, Feb 2015
+# Steve Azevedo, Feb 2015
 #
-#   ***   Expects geographic coordinates   ***
+# ***   Expects geographic coordinates   ***
 #
 
 import time
@@ -17,7 +17,7 @@ PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
 KEF_COLS = {}
-#   /Experiment_g/Sorts_g/Array_t_xxx columns as of Feb 2015
+# /Experiment_g/Sorts_g/Array_t_xxx columns as of Feb 2015
 KEF_COLS['receiver'] = ['id_s', 'location/X/value_d', 'location/X/units_s',
                         'location/Y/value_d', 'location/Y/units_s',
                         'location/Z/value_d', 'location/Z/units_s',
@@ -37,7 +37,7 @@ KEF_COLS['receiver'] = ['id_s', 'location/X/value_d', 'location/X/units_s',
                         "seed_orientation_code_s", "seed_location_code_s",
                         "seed_station_name_s", 'SEED_Channel', 'sample_rate_i',
                         'sample_rate_multiplier_i']
-#   /Experiment_g/Sorts_g/Event_t[_xxx] columns as of Feb 2015
+# /Experiment_g/Sorts_g/Event_t[_xxx] columns as of Feb 2015
 KEF_COLS['event'] = ['id_s', 'location/X/value_d', 'location/X/units_s',
                      'location/Y/value_d', 'location/Y/units_s',
                      'location/Z/value_d',
@@ -55,7 +55,7 @@ seed_channelRE = re.compile("SEED_Channel")
 
 
 def get_header():
-    header = "#   Written by novenkef v{0} at {1}\n"\
+    header = "# Written by novenkef v{0} at {1}\n"\
         .format(PROG_VERSION,
                 timedoy.epoch2passcal(
                     time.time()))
@@ -72,7 +72,7 @@ def get_times(key, value):
         try:
             fepoch = timedoy.passcal2epoch(value, fepoch=True)
         except timedoy.TimeError:
-            #   This SHOULD never happen
+            # This SHOULD never happen
             pre = key.split('/')[0]
             LOGGER.error(
                 "Bad time value for {0} {1}.".format(key, value))
@@ -122,7 +122,6 @@ def write_receiver(top, filename):
                     for k in row.keys():
                         if k in KEF_COLS['receiver']:
                             try:
-                                # print k
                                 if timeRE.match(k):
                                     fh.write(get_times(k, row[k]))
                                 elif locationRE.match(k):
@@ -136,7 +135,7 @@ def write_receiver(top, filename):
                                     pre = mo.groups()[0]
                                     fh.write("\t{0} = {1}\n".format(k, row[k]))
                                     fh.write("\t{0}units_s = m\n".format(pre))
-                                #   Check if seed channel and split into band,
+                                # Check if seed channel and split into band,
                                 # instrument, and orientation
                                 elif seed_channelRE.match(k):
                                     fh.write("\t{0} = {1}\n".format(
@@ -158,7 +157,6 @@ def write_receiver(top, filename):
 PATH['event'] = '/Experiment_g/Sorts_g/Event_t_{0:03d}'
 
 
-# PATH['event'] = '/Experiment_g/Sorts_g/Event_t'
 def write_event(top, filename):
     '''
        Write /Experiment_g/Sorts_g/Event_t[_xxx] entries

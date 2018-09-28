@@ -423,13 +423,6 @@ class PH5toMSeed(object):
             for trace in traces:
                 if trace.nsamples == 0:
                     continue
-                # if start time is before requested start time move up 1 sample
-                # and delete first sample of data
-                # if trace.start_time.epoch() < stc.starttime:
-                #    trace.start_time = trace.start_time + \
-                #        (1 / float(stc.sample_rate))
-                #   trace.data = trace.data[1:]
-
                 try:
                     obspy_trace = Trace(data=trace.data)
                     obspy_trace.stats.array = stc.array_code

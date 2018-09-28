@@ -1,9 +1,9 @@
 #!/usr/bin/env pnpython3
 
 #
-#   Read rt-125 or rt-125a files and convert to ph5.
+# Read rt-125 or rt-125a files and convert to ph5.
 #
-#   Steve Azevedo, Sept 2006, July 2012
+# Steve Azevedo, Sept 2006, July 2012
 #
 
 import argparse
@@ -18,11 +18,10 @@ import time
 from ph5 import LOGGING_FORMAT
 from ph5.core import columns, experiment, kef, pn125, timedoy
 
-PROG_VERSION = '2018.268 Developmental'
+PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 2  # GB (1024 X 1024 X 1024 X 2)
-# MAX_PH5_BYTES = 1024 * 1024 * 2   #   2MB (1024 X 1024 X 2)
 INDEX_T = None
 
 TRDfileRE = re.compile(".*[Ii](\d\d\d\d)[Rr][Aa][Ww].*")
@@ -31,14 +30,14 @@ miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 CURRENT_DAS = None
 DAS_INFO = {}
-#   Current raw file processing
+# Current raw file processing
 F = None
 
 os.environ['TZ'] = 'GMT'
 time.tzset()
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -78,7 +77,6 @@ class Resp (object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -117,8 +115,6 @@ def read_windows_file(f):
         fh = open(f)
     except BaseException:
         return w
-
-    # tdoy = TimeDoy.TimeDoy ()
     while True:
         line = fh.readline()
         if not line:
@@ -146,19 +142,6 @@ def read_windows_file(f):
                                    microsecond=0,
                                    doy=ttuple[1],
                                    epoch=None)
-            # mo, da = tdoy.getMonthDay (int (ttuple[0]), int (ttuple[1]))
-            # print flds[0], mo, da
-            # start_secs = time.mktime ((int (ttuple[0]),   #   Year
-            # mo,                #   Month
-            # da,                #   Day
-            # int (ttuple[2]),   #   Hour
-            # int (ttuple[3]),   #   Minute
-            # int (ttuple[4]),   #   Seconds
-            # -1,                #   Weekday
-            # int (ttuple[1]),   #   Day of year
-            # 0))                #   DST
-
-            # start_secs = int (start_secs)
             start_secs = tDOY.epoch()
             stop_secs = int(flds[1]) + start_secs
         except Exception as e:
@@ -175,8 +158,8 @@ def get_args():
            -r   raw file
            -f   file containing list of raw files
            -n   output file
-           -k   kef file   #   REMOVED
-           -d   dep file   #   REMOVED
+           -k   kef file   # REMOVED
+           -d   dep file   # REMOVED
            -p   print out table list
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
@@ -208,9 +191,6 @@ def get_args():
     parser.add_argument("-S", "--first_mini", dest="first_mini",
                         help="The index of the first miniPH5_xxxxx.ph5 file.",
                         metavar="first_mini", type=int, default=1)
-    # parser.add_argument ("-d", "--dep", dest = "depfile",
-    # help = "Rawmeet dep file.",
-    # metavar = "dep_file")
     parser.add_argument("-s", "--samplerate", dest="samplerate",
                         help="Extract only data at given sample rate.",
                         metavar="samplerate")
@@ -252,19 +232,12 @@ def get_args():
         ex.ph5close()
         sys.exit()
 
-    # if args.keffile != None :
-        # KEFFILE = args.keffile
-
-    # if args.depfile != None :
-        # DEPFILE = args.depfile
-
     if args.windows_file is not None:
         WINDOWS = read_windows_file(args.windows_file)
     else:
         WINDOWS = None
 
     if PH5 is None:
-        # print H5, FILES
         LOGGER.error("Missing required option. Try --help\n")
         sys.exit()
 
@@ -272,7 +245,7 @@ def get_args():
         LOGGER.error("{0} not found.".format(PH5))
         sys.exit()
     else:
-        #   Set up logging
+        # Set up logging
         # Write log to file
         ch = logging.FileHandler(os.path.join('.', "125a2ph5.log"))
         ch.setLevel(logging.INFO)
@@ -283,43 +256,41 @@ def get_args():
 
 
 def print_it(a):
-    # a.sort ()
     for k in a:
         print("\t" + k)
 
 
 def keys(ex):
-    #   Under Experiment_g/Experiment_t
-    experiment_table, j = columns.keys(ex.ph5_t_experiment)              #
-    #   Under Experiment_g/Sorts_g/Sort_t
-    sort_table, j = columns.keys(ex.ph5_g_sorts.ph5_t_sort)              #
+    # Under Experiment_g/Experiment_t
+    experiment_table, j = columns.keys(ex.ph5_t_experiment)
+    # Under Experiment_g/Sorts_g/Sort_t
+    sort_table, j = columns.keys(ex.ph5_g_sorts.ph5_t_sort)
     ex.ph5_g_sorts.newSort('001')
-    #   Under Experiment_g/Sorts_g/Array_t
+    # Under Experiment_g/Sorts_g/Array_t
     k = ex.ph5_g_sorts_ph5_t_array.keys()
     if k:
         sort_array_table, j = columns.keys(
-            ex.ph5_g_sorts.ph5_t_array[k[0]])       #
-    #   Under Experiment_g/Sorts_g/Offset_t
+            ex.ph5_g_sorts.ph5_t_array[k[0]])
+    # Under Experiment_g/Sorts_g/Offset_t
     k = ex.ph5_g_sorts.ph5_t_offset.keys()
     if k:
         sort_offset_table, j = columns.keys(
-            ex.ph5_g_sorts.ph5_t_offset[k[0]])     #
-    #   Under Experiment_g/Sorts_g/Event_t
+            ex.ph5_g_sorts.ph5_t_offset[k[0]])
+    # Under Experiment_g/Sorts_g/Event_t
     k = ex.ph5_g_sorts.ph5_t_event.keys()
     if k:
         sort_event_table, j = columns.keys(
-            ex.ph5_g_sorts.ph5_t_event[k[0]])       #
-    #
+            ex.ph5_g_sorts.ph5_t_event[k[0]])
     ex.ph5_g_receivers.newdas('9999')
     g = ex.ph5_g_receivers.getdas_g('9999')
-    #   Under Experiment_g/Receivers_g/Das_g_9999/Das_t
-    das_table, j = columns.keys(g.Das_t)                                 #
-    #   Under Experiment_g/Receivers_g/das_g_9999/Receiver_t
-    receiver_table, j = columns.keys(g.Receiver_t)                       #
+    # Under Experiment_g/Receivers_g/Das_g_9999/Das_t
+    das_table, j = columns.keys(g.Das_t)
+    # Under Experiment_g/Receivers_g/das_g_9999/Receiver_t
+    receiver_table, j = columns.keys(g.Receiver_t)
     time_table, j = columns.keys(g.Time_t)
-    #   Under Experiment_g/Reports_g/[title]/
+    # Under Experiment_g/Reports_g/[title]/
     report_table, j = columns.keys(ex.ph5_g_reports.ph5_t_report)
-    #   Under Experiment_g/Responses_g/Responses_t
+    # Under Experiment_g/Responses_g/Responses_t
     response_table, j = columns.keys(ex.ph5_g_responses.ph5_t_response)
 
     print("\t\t\t\t\t\t\t\tPH5 TABLE KEYS\n")
@@ -377,47 +348,17 @@ def closePH5():
     global EX
     EX.ph5close()
 
-# def writeReceiver_t (page) :
-    # global EX
-    # p_receiver_t = {}
-
-    # das_number = str (page.unitID)
-    # das_g, das_t, receiver_t, time_t = EX.ph5_g_receivers.newdas (das_number)
-
-    # p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
-    # p_receiver_t['orientation/azimuth/value_f'] = 0.0
-    # p_receiver_t['orientation/dip/units_s'] = 'degrees'
-    # p_receiver_t['orientation/dip/value_f'] = -90.0
-    # p_receiver_t['orientation/description_s'] = 'Z'
-    # EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
-
-    # p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
-    # p_receiver_t['orientation/azimuth/value_f'] = 0.0
-    # p_receiver_t['orientation/dip/units_s'] = 'degrees'
-    # p_receiver_t['orientation/dip/value_f'] = 0.0
-    # p_receiver_t['orientation/description_s'] = 'N'
-    # EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
-
-    # p_receiver_t['orientation/azimuth/units_s'] = 'degrees'
-    # p_receiver_t['orientation/azimuth/value_f'] = 90.0
-    # p_receiver_t['orientation/dip/units_s'] = 'degrees'
-    # p_receiver_t['orientation/dip/value_f'] = 0.0
-    # p_receiver_t['orientation/description_s'] = 'E'
-    # EX.ph5_g_receivers.populateReceiver_t (p_receiver_t)
-
 
 def window_contained(e):
     '''   Is this event in the data we want to keep?   '''
     global WINDOWS
 
-    #   We want to keep all the data
+    # We want to keep all the data
     if WINDOWS is None:
         return True
 
     if not e:
         return False
-
-    # tdoy = TimeDoy.TimeDoy ()
     sample_rate = e.sampleRate
     sample_count = e.sampleCount
     tDOY = timedoy.TimeDOY(year=e.year,
@@ -429,16 +370,6 @@ def window_contained(e):
                            microsecond=0,
                            doy=e.doy,
                            epoch=None)
-    # mo, da = tdoy.getMonthDay (e.year, e.doy)
-    # event_start_epoch = time.mktime ((e.year,
-    # mo,
-    # da,
-    # e.hour,
-    # e.minute,
-    # int (e.seconds),
-    # -1,
-    # e.doy,
-    # 0))
 
     event_start_epoch = tDOY.epoch()
     event_stop_epoch = int(
@@ -448,15 +379,15 @@ def window_contained(e):
         window_start_epoch = w[0]
         window_stop_epoch = w[1]
 
-        #   Window start in event KEEP
+        # Window start in event KEEP
         if event_start_epoch <= window_start_epoch and event_stop_epoch >=\
            window_start_epoch:
             return True
-        #   Entire event in window KEEP
+        # Entire event in window KEEP
         if event_start_epoch >= window_start_epoch and event_stop_epoch <=\
            window_stop_epoch:
             return True
-        #   Event stop in window KEEP
+        # Event stop in window KEEP
         if event_start_epoch <= window_stop_epoch and event_stop_epoch >=\
            window_stop_epoch:
             return True
@@ -466,7 +397,6 @@ def window_contained(e):
 
 def update_index_t_info(starttime, samples, sps):
     global DAS_INFO
-    # tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
         EXREC.ph5_g_receivers.current_g_das._v_name
@@ -480,13 +410,6 @@ def update_index_t_info(starttime, samples, sps):
     LOGGER.info("DAS: {0} File: {1} First Sample: {2} Last Sample: {3}"
                 .format(das, ph5file, time.ctime(starttime),
                         time.ctime(stoptime)))
-    # startms, startsecs = math.modf (starttime)
-    # startms = int (startms * 1000.); startsecs = int (startsecs)
-    # stopms, stopsecs = math.modf (stoptime)
-    # stopms = int (stopms * 1000.); stopsecs = int (stopsecs)
-    # ptimestart = tdoy.epoch2PasscalTime (startsecs, startms)
-    # ptimestop  = tdoy.epoch2PasscalTime (stopsecs, stopms)
-    # print ph5file, ph5path, ptimestart, ptimestop
 
 
 def writeEvent(trace, page):
@@ -500,7 +423,7 @@ def writeEvent(trace, page):
 
     das_number = str(page.unitID)
 
-    #   The gain and bit weight
+    # The gain and bit weight
     p_response_t['gain/value_i'] = trace.gain
     p_response_t['bit_weight/units_s'] = 'volts/count'
     p_response_t['bit_weight/value_d'] = 10.0 / trace.gain / trace.fsd
@@ -513,9 +436,9 @@ def writeEvent(trace, page):
         EX.ph5_g_responses.populateResponse_t(p_response_t)
         RESP.update()
 
-    #   Check to see if group exists for this das, if not build it
+    # Check to see if group exists for this das, if not build it
     das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas(das_number)
-    #   Fill in das_t
+    # Fill in das_t
     p_das_t['raw_file_name_s'] = os.path.basename(F)
     p_das_t['array_name_SOH_a'] = EXREC.ph5_g_receivers.nextarray('SOH_a_')
     p_das_t['response_table_n_i'] = n_i
@@ -536,19 +459,19 @@ def writeEvent(trace, page):
                            epoch=None)
 
     p_das_t['time/epoch_l'] = tDOY.epoch()
-    #   XXX   need to cross check here   XXX
+    # XXX   need to cross check here   XXX
     p_das_t['time/ascii_s'] = time.asctime(
         time.gmtime(p_das_t['time/epoch_l']))
     p_das_t['time/type_s'] = 'BOTH'
-    #   XXX   Should this get set????   XXX
+    # XXX   Should this get set????   XXX
     p_das_t['time/micro_seconds_i'] = 0
     # XXX   Need to check if array name exists and generate unique name.   XXX
     p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray('Data_a_')
     des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
         " Channel: " + str(trace.channel_number)
-    #   XXX   This should be changed to handle exceptions   XXX
+    # XXX   This should be changed to handle exceptions   XXX
     EXREC.ph5_g_receivers.populateDas_t(p_das_t)
-    #   Write out array data (it would be nice if we had int24) we use int32!
+    # Write out array data (it would be nice if we had int24) we use int32!
     EXREC.ph5_g_receivers.newarray(
         p_das_t['array_name_data_a'],
         trace.trace, dtype='int32', description=des)
@@ -561,7 +484,7 @@ def writeEvent(trace, page):
 def writeSOH(soh):
     global EXREC
 
-    #   Check to see if any data has been written
+    # Check to see if any data has been written
     if EXREC.ph5_g_receivers.current_g_das is None or\
        EXREC.ph5_g_receivers.current_t_das is None:
         return
@@ -581,7 +504,7 @@ def writeET(et):
     '''   '''
     global EXREC
 
-    #   Check to see if any data has been written
+    # Check to see if any data has been written
     if EXREC.ph5_g_receivers.current_g_das is None or\
        EXREC.ph5_g_receivers.current_t_das is None:
         return
@@ -609,8 +532,6 @@ def get_current_data_only(size_of_data, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
-    # global NM
-    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -629,26 +550,24 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(CURRENT_DAS)
     newestfile = ''
-    #   Get the most recent data only PH5 file or match DAS serialnumber
+    # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T.rows:
-        #   This DAS already exists in a ph5 file
+        # This DAS already exists in a ph5 file
         if index_t['serial_number_s'] == das:
             newestfile = sstripp(index_t['external_file_name_s'])
             return openPH5(newestfile)
-        #   miniPH5_xxxxx.ph5 with largest xxxxx
+        # miniPH5_xxxxx.ph5 with largest xxxxx
         mh = miniPH5RE.match(index_t['external_file_name_s'])
         if n < int(mh.groups()[0]):
             newestfile = sstripp(index_t['external_file_name_s'])
             n = int(mh.groups()[0])
 
     if not newestfile:
-        #   This is the first file added
+        # This is the first file added
         return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    # print size_of_data, size_of_exrec, size_of_data +\
-    # size_of_exrec, MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
@@ -719,7 +638,6 @@ def updatePH5(f):
     EXREC = get_current_data_only(size_of_data)
     pn = pn125.pn125(f)
     while True:
-        # i = i + 1
         try:
             points = pn.getEvent()
         except pn125.TRDError as e:
@@ -741,77 +659,12 @@ def updatePH5(f):
 
     if len(pn.eventTable) > 0:
         writeET(pn.eventTable)
-
-    # ph5flush ()
     LOGGER.info(":<Finished>: {0}\n".format(f))
 
 
 def ph5flush():
     global EX
     EX.ph5flush()
-
-# def dep_update () :
-    # global EX, DEPFILE
-
-    # dp = Dep.Dep (DEPFILE)
-    # dp.open ()
-    # dp.read ()
-    # dp.rewindReceiver ()
-    # dp.rewindShot ()
-    # dp.rewindTime ()
-
-    # Populate shot table Event_t
-    #  print "Event_t"
-    # while 1 :
-    # p = dp.nextShot ()
-    # if not p : break
-    # b = dp._build (p)
-    # b = b['Event_t']
-    # EX.ph5_g_sorts.populateEvent_t (b)
-
-    # self.rewindShot ()
-    # current_array = None
-    # ref = None
-    # Populate Sort_t and Array_t tables
-    # XXX   Assumes that Line designation is
-    # grouped together in dep file   XXX
-    # while 1 :
-    # p = dp.nextReceiver ()
-    # if not p : break
-    # b = dp._build (p)
-
-    # tmp = p['R_array']   #   p['R_line']
-    ##
-    # if tmp != current_array :
-    # current_array = tmp
-    # next = EX.ph5_g_sorts.nextName ()
-    # ref = EX.ph5_g_sorts.newSort (next)
-    # s = b['Sort_t']
-    # s['array_t_name_s'] = next
-    # print "Sort_t"
-    # EX.ph5_g_sorts.populateSort_t (s)
-
-    # a = b['Array_t']
-    # print "Array_t"
-    # EX.ph5_g_sorts.populateArray_t (a)
-
-    # Process TIME from dep
-    # while 1 :
-    # p = dp.nextTime ()
-    # if not p : break
-    # try :
-    # filename = p['T_file']
-    # das = str (int (filename[1:5]) + 10000)
-    # except :
-    # sys.stderr.write ("Warning: Can't update Time_t.
-    # Unuseable filename from TIME section of dep file.\n")
-    # continue
-
-    # if EX.ph5_g_receivers.getdas_g (das) :
-    # b = dp._build (p)
-    # EX.ph5_g_receivers.populateTime_t (b['Time_t'])
-    # else :
-    # sys.stderr.write ("Warning: No data for %s\n" % das)
 
 
 def update_external_references():
@@ -824,9 +677,7 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
-
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
@@ -834,7 +685,7 @@ def update_external_references():
             pass
             # print "E1 ", e
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
@@ -850,7 +701,6 @@ def main():
 
         get_args()
 
-        # print "Initializing ph5 file..."
         initializeExperiment()
         LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))
         LOGGER.info("{0}".format(sys.argv))
@@ -858,8 +708,6 @@ def main():
             RESP = Resp(EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index()
             INDEX_T = Rows_Keys(rows, keys)
-            # print INDEX_T
-            # print "Processing TRD files..."
 
         for f in FILES:
             F = f
@@ -885,27 +733,8 @@ def main():
                     .format(f))
 
         update_external_references()
-        # if DEPFILE :
-        # print "Processing dep file..."
-        # dep_update ()
-
-        # if KEFFILE :
-        # print "Processing kef file..."
-        # populateExperimentTable ()
-
-        # ph5flush ()
         closePH5()
         logging.shutdown()
-    '''
-    #   Profile
-    import cProfile, pstats
-    sys.stderr.write ("Warning: Profiling enabled!\n")
-    cProfile.run ('prof ()', "125a2ph5.profile")
-
-    p = pstats.Stats ("125a2ph5.profile")
-    p.sort_stats('time').print_stats(40)
-    '''
-    #   No profile
     prof()
 
 

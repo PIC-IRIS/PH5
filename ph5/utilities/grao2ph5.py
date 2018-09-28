@@ -1,8 +1,9 @@
 #!/usr/bin/env pnpython4
 #
-#   Nuture SEED to become a PH5 garden
+# A command line program to load MSEED data into a family of ph5 files.
+# Can also read using web services.
 #
-#   Steve Azevedo, June 2016
+# Steve Azevedo, June 2016
 #
 import os
 import sys
@@ -14,18 +15,18 @@ import obspy
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, timedoy
 
-PROG_VERSION = "2016.268 Developmental"
+PROG_VERSION = "2018.268"
 LOGGER = logging.getLogger(__name__)
 
-#   Max size of each ph5 mini file
+# Max size of each ph5 mini file
 MAX_PH5_BYTES = 1073741824 * 6  # GB (1024 X 1024 X 1024 X 6)
-#  Band code to sample rate map
+# Band code to sample rate map
 CHAN_SR_MAP = {'F': 5000, 'G': 5000, 'D': 1000, 'C': 1000, 'E': 250, 'S': 80,
                'H': 250, 'B': 80, 'M': 10, 'L': 1,
                'V': 0.1, 'U': 0.01, 'R': 0.001, 'P': 0.0001, 'T': 0.00001,
                'Q': 0.000001, 'A': None, 'O': None}
 LAST_SAMPLE_RATE = 250
-#   Factor between mseed and PH5 file size: mseed_size * SIZE_FACTOR = PH5_size
+# Factor between mseed and PH5 file size: mseed_size * SIZE_FACTOR = PH5_size
 SIZE_FACTOR = 1.0
 DEBUG = False
 
@@ -56,11 +57,9 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
-
         return -1
 
     def next_i(self):
@@ -118,7 +117,8 @@ def get_args():
     parser.usage = ("Version {0} grao2ph5 [--help][--raw raw_file | "
                     "--file file_list_file] --nickname output_file_prefix"
                     .format(PROG_VERSION))
-    parser.description = "Read data via web services into ph5 format."
+    parser.description = ("Load MSEED data into a family of ph5 files. "
+                          "Can also read using web services.")
     parser.add_argument("-f", "--file", dest="infile",
                         help=("File containing list of:\nWS:net_code:station:"
                               "location:channel:deploy_time:pickup_time:"
@@ -187,8 +187,6 @@ def get_current_data_only(size_of_data, das=None):
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
 
-    # global NM
-    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -207,26 +205,24 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(CURRENT_DAS)
     newestfile = ''
-    #   Get the most recent data only PH5 file or match DAS serialnumber
+    # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T.rows:
-        #   This DAS already exists in a ph5 file
+        # This DAS already exists in a ph5 file
         if index_t['serial_number_s'] == das:
             newestfile = sstripp(index_t['external_file_name_s'])
             return openPH5(newestfile)
-        #   miniPH5_xxxxx.ph5 with largest xxxxx
+        # miniPH5_xxxxx.ph5 with largest xxxxx
         mh = miniPH5RE.match(index_t['external_file_name_s'])
         if n < int(mh.groups()[0]):
             newestfile = sstripp(index_t['external_file_name_s'])
             n = int(mh.groups()[0])
 
     if not newestfile:
-        #   This is the first file added
+        # This is the first file added
         return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,\
-    # MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
@@ -252,31 +248,24 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
-
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             pass
-            # print "E1 ", e
-
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception as e:
             LOGGER.error(e)
-
-        # sys.exit ()
     LOGGER.info("done, {0} nodes recreated.\n".format(n))
 
 
 def update_index_t_info(starttime, samples, sps):
     global DAS_INFO
-    # tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
               EXREC.ph5_g_receivers.current_g_das._v_name
@@ -337,13 +326,10 @@ def writeINDEX():
 
 def updatePH5(stream):
     global EXREC, CURRENT_DAS, LAST_SAMPLE_RATE
-    # XXX
     CHAN_MAP = {"EL1": 1, "EL2": 2, "ELZ": 3, "EDH": 4, "HH1": 1,
                 "HH2": 2, "HHZ": 3, "HDH": 4, "BHE": 1, "BHN": 2, "BHZ": 3}
     size_guess = SIZE_GUESS
     for trace in stream:
-        # print trace.stats.starttime.timetuple ()
-        # print trace.stats.starttime._get_microsecond ()
         p_das_t = {}
         p_response_t = {}
         try:
@@ -358,7 +344,7 @@ def updatePH5(stream):
         EXREC = get_current_data_only(size_guess)
         size_guess -= size_of_data
 
-        #   The gain and bit weight
+        # The gain and bit weight
         p_response_t['gain/value_i'] = 1
         p_response_t['bit_weight/units_s'] = 'volts/count'
         p_response_t['bit_weight/value_d'] = 1
@@ -371,31 +357,29 @@ def updatePH5(stream):
             EX.ph5_g_responses.populateResponse_t(p_response_t)
             RESP.update()
 
-        #   Check to see if group exists for this das, if not build it
+        # Check to see if group exists for this das, if not build it
         EXREC.ph5_g_receivers.newdas(CURRENT_DAS)
-        #   Fill in das_t
+        # Fill in das_t
         p_das_t['raw_file_name_s'] = F
         p_das_t['response_table_n_i'] = n_i
         p_das_t['channel_number_i'] = CHAN_MAP[trace.stats.channel]
         p_das_t['sample_count_i'] = trace.stats.npts
         p_das_t['sample_rate_i'] = trace.stats.sampling_rate
         p_das_t['sample_rate_multiplier_i'] = 1
-        #
         tdoy = timedoy.UTCDateTime2tdoy(trace.stats.starttime)
         p_das_t['time/epoch_l'] = tdoy.epoch()
-        #   XXX   need to cross check here   XXX
+        # XXX   need to cross check here   XXX
         p_das_t['time/ascii_s'] = time.asctime(
             time.gmtime(p_das_t['time/epoch_l']))
         p_das_t['time/type_s'] = 'BOTH'
-        #   XXX   Should this get set????   XXX
+        # XXX   Should this get set????   XXX
         p_das_t['time/micro_seconds_i'] = tdoy.microsecond()
         # XXX   Need to check if array name exists and generate unique name.
-        # XXX
         p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
             'Data_a_')
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
               " Channel: " + trace.stats.channel
-        #   XXX   This should be changed to handle exceptions   XXX
+        # XXX   This should be changed to handle exceptions   XXX
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         # Write out array data (it would be nice if we had int24) we use int32!
         EXREC.ph5_g_receivers.newarray(
@@ -422,7 +406,6 @@ def get_das(f):
 
 
 def get_ds(network, station, location, channel, starttime, length):
-    # azevedo@passcal.nmt.edu  				haL8muerte       Mw8graco
     from obspy.clients.fdsn import Client
 
     t0 = obspy.core.UTCDateTime(starttime)
@@ -435,7 +418,6 @@ def get_ds(network, station, location, channel, starttime, length):
                    debug=DEBUG)
     except Exception as e:
         print e.message
-    # print c
     try:
         stream = None
         stream = c.get_waveforms(network,
@@ -513,11 +495,6 @@ def main():
 
         update_external_references()
         LOGGER.info(":<Finished>: {0}\n".format(f))
-        # else :
-        # CURRENT_DAS = get_das (f)
-        # if CURRENT_DAS == None :
-        # continue
-        # updatePH5 (f)
 
 
 if __name__ == '__main__':

@@ -17,7 +17,6 @@ class Watchdog:
 
     def reset(self):
         self.timer.cancel()
-        # print "Timeout reset:", self.timeout
         self.timer = Timer(self.timeout, self.handler)
 
     def start(self):
@@ -38,9 +37,8 @@ if __name__ == '__main__':
     def goHere():
         global go
         go = False
-        print "done"
+        print "Done"
         sys.exit()
-        # return
 
     def loop():
         global go
@@ -54,5 +52,4 @@ if __name__ == '__main__':
     wd = Watchdog(23, userHandler=goHere)
     go = True
     wd.start()
-    # wd.stop ()
     loop()

@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Update a ph5 file from a kef file
+# Update a ph5 file from a kef file
 #
-#   Steve Azevedo, January 2007
+# Steve Azevedo, January 2007
 #
 
 from ph5.core import experiment, kefx, columns
@@ -15,7 +15,7 @@ import time
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
-#   Force time zone to UTC
+# Force time zone to UTC
 os.environ['TZ'] = 'UTC'
 time.tzset()
 
@@ -27,8 +27,8 @@ def get_args():
 
     oparser = OptionParser()
 
-    oparser.usage = "kef2ph5 --kef kef_file --nickname ph5_file_prefix\
-     [--path path]\nVersion: %s" % PROG_VERSION
+    oparser.usage = ("kef2ph5 --kef kef_file --nickname ph5_file_prefix "
+                     "[--path path]\nVersion: {0}".format(PROG_VERSION))
 
     oparser.description = "Update a ph5 file from a kef file."
 
@@ -81,14 +81,12 @@ def add_references(rs):
     import string
     global EX
 
-    # receiver = EX.ph5_g_receivers
-
     for r in rs:
         flds = string.split(r, '/')
         das = string.split(flds[3], '_')[2]
         g = EX.ph5_g_receivers.getdas_g(das)
         EX.ph5_g_receivers.setcurrent(g)
-        #   Set reference
+        # Set reference
         columns.add_reference(r, EX.ph5_g_receivers.current_t_das)
 
 
@@ -103,15 +101,14 @@ def populateTables():
             err = "Empty kef file."
             break
 
-        #   Get Das_g references
+        # Get Das_g references
         ret = k.strip_receiver_g()
 
         if ret:
             add_references(ret)
 
-        #   Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
+        # Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
         arrays, events, offsets = k.strip_a_e_o()
-        # print arrays
         if arrays:
             for a in arrays:
                 a = a.split(':')[0]
@@ -145,7 +142,7 @@ def closePH5():
 def update_log():
     '''   Write a log of kef2ph5 activities.   '''
     global PH5, KEFFILE, PATH, TRACE
-    #   Don't log when run with the -c option
+    # Don't log when run with the -c option
     if TRACE is True:
         return
 

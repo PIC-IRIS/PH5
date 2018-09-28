@@ -1,9 +1,9 @@
 #!/usr/bin/env pnpython3
 
 #
-#   Translate and dump a binary SAC file to stdout
+# Translate and dump a binary SAC file to stdout
 #
-#   December 2013, Steve Azevedo
+# December 2013, Steve Azevedo
 #
 
 import sys

@@ -128,12 +128,10 @@ class Turkey (object):
         # make x axis date axis
         self._axes.xaxis_date()
 
-        #
         rule = mdates.rrulewrapper(mdates.HOURLY, interval=3)
         loc = mdates.RRuleLocator(rule)
         formatter = mdates.DateFormatter("%y-%m-%d %H:%M:%S")
 
-        # self._axes.xaxis (xmin=self._format_date (self._bd.min))
         self._axes.xaxis.set_major_locator(loc)
         self._axes.xaxis.set_major_formatter(formatter)
         xlabels = self._axes.get_xticklabels()
@@ -152,7 +150,6 @@ class Turkey (object):
         self._configure_yaxis()
 
         self._axes.grid(True, color='gray')
-        # self._set_legend()
         self._figure.autofmt_xdate()
 
     def _bars(self):
@@ -199,22 +196,21 @@ class Turkey (object):
         plt.xlabel('Deployment')
         plt.title("Shot Coverage\nPH5 Array: {0}".format(self._bd.array))
         self._shots()
-        # plt.legend ()
         plt.xlim((self._format_date(self._bd.min),
                   self._format_date(self._bd.max)))
         plt.show()
 
-#   mixins
+# mixins
 
 
 def covered(deploy, pickup, start, stop):
-    #   Window start time is within deploy and pickup
+    # Window start time is within deploy and pickup
     if start >= deploy and start <= pickup:
         return True
-    #   Window stop time is within deploy and pickup
+    # Window stop time is within deploy and pickup
     elif stop >= deploy and stop <= pickup:
         return True
-    #   Entire window is within deploy and pickup times
+    # Entire window is within deploy and pickup times
     elif start >= deploy and stop <= pickup:
         return True
 

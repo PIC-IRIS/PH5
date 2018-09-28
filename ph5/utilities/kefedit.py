@@ -1,12 +1,10 @@
 #!/usr/bin/env pnpython3
 #
-#   KefEdit
+# KefEdit
 #
-#   Credit: Lan Dam
+# Credit: Lan Dam
 #
-#   Updated Feb 2018
-
-# import from python packages
+# Updated Feb 2018
 import sys
 import logging
 import os
@@ -79,10 +77,6 @@ class KefEdit(QtGui.QMainWindow):
         deleteCol.setStyleSheet(" background-color: %s" % deleteColName)
         statusLayout.addWidget(deleteCol)
 
-        # statusLayout.addSpacing(50)
-        # self.statusText = QtGui.QLabel()
-        # statusLayout.addWidget(self.statusText)
-
         statusLayout.addStretch(1)
 
         self.path_tabWidget = QtGui.QTabWidget()  # each tab keep a table
@@ -97,9 +91,7 @@ class KefEdit(QtGui.QMainWindow):
         if event.type() == QtCore.QEvent.Enter:
             if object not in EXPL.keys():
                 return False
-            # print object
             P = object.pos()
-            # print P
             QtGui.QToolTip.showText(
                 self.mapToGlobal(QtCore.QPoint(P.x(), P.y() + 20)),
                 EXPL[object])
@@ -148,7 +140,6 @@ class KefEdit(QtGui.QMainWindow):
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.closeEvent)
 
-        ###############################################
         # ADDING MENU #####################
         menubar = QtGui.QMenuBar()
         self.setMenuBar(menubar)
@@ -202,11 +193,9 @@ class KefEdit(QtGui.QMainWindow):
         sys.exit(application.exec_())
 
     def OnManual(self):
-        # print "onManual"
         self.manualWin = ManWindow("manual")
 
     def OnWhatsnew(self):
-        # print "onWhatsnew"
         self.whatsnewWin = ManWindow("whatsnew")
 
     ###############################
@@ -215,10 +204,9 @@ class KefEdit(QtGui.QMainWindow):
     # updated: 201702
     # * open Kef file, read data into self.dataTabel, keySets then into
     # labelSets
-    #   (each set represent for data in a path)
+    # (each set represent for data in a path)
     # * then call self.setData() to set the given data in display
     def OnOpenKef(self):
-        # print "onOpenKef"
         self.kefFilename = filename = str(
             QtGui.QFileDialog.getOpenFileName(directory="/home/",
                                               filter="Kef Files(*.kef)"))
@@ -234,13 +222,9 @@ class KefEdit(QtGui.QMainWindow):
             self.ph5api = None
         self.openTableAction.setEnabled(False)
         self.updatePH5Action.setEnabled(False)
-        # try:
         self.dataTable, self.labelSets, self.totalLines, self.types =\
             kefutility.Kef2TableData(
                 self.statusBar, filename)
-        # except Exception, e:
-        # QtGui.QMessageBox.warning(self, "Error", str(e) )
-        # return
         if self.totalLines > 10000:
             self.statusBar.showMessage(
                 "Please be patient while displaying...")
@@ -254,14 +238,13 @@ class KefEdit(QtGui.QMainWindow):
     # Open PH5 file
     # * use kefutility.GetPrePH5Info give user list of tables and info to
     # select
-    #   to get info from kefutility.PH5toDataTable
+    # to get info from kefutility.PH5toDataTable
     # * call SelectTableDialog for user to select which table(s) to display
     # * in SelectTableDialog, the following tasks will be perfomed:
-    #   [Read data into self.dataTable, keySets into labelSets
-    #   (each set represent for data in a path)
-    #   then call self.setData() to set the given data in display]
+    # [Read data into self.dataTable, keySets into labelSets
+    # (each set represent for data in a path)
+    # then call self.setData() to set the given data in display]
     def OnOpenPH5(self):
-        # print "onOpenPH5"
         filename =\
             str(QtGui.QFileDialog.getOpenFileName(directory="/home/",
                                                   filter="PH5 Files(*.ph5)"))
@@ -290,9 +273,9 @@ class KefEdit(QtGui.QMainWindow):
     # getPrePH5Info
     # * reshow SelTableDlg for user to select which table(s) to display
     # * in SelectTableDialog, the following tasks will be perfomed:
-    #   [Read data into self.dataTable, keySets into labelSets
-    #    (each set represent for data in a path)
-    #    then call self.setData() to set the given data in display]
+    # [Read data into self.dataTable, keySets into labelSets
+    #  (each set represent for data in a path)
+    #  then call self.setData() to set the given data in display]
     def OnOpenCurrPH5(self):
         self.selTableDlg.show()
         self.selTableDlg.move(70,
@@ -337,7 +320,6 @@ class KefEdit(QtGui.QMainWindow):
 
         if not savefilename:
             return
-        # if '.kef' not in savefilename: savefilename += '.kef'
 
         START = time.time()
         # start kef file with the version of KefEdit
@@ -392,11 +374,6 @@ class KefEdit(QtGui.QMainWindow):
 
         self.notsave = False  # after saving, reset notsave
 
-        # if result == QtGui.QMessageBox.Yes:
-        #    doclose = True
-
-        ###############################
-
     # def OnSavePH5
     # author: Lan Dam
     # updated: 201802
@@ -411,7 +388,6 @@ class KefEdit(QtGui.QMainWindow):
     # * call os.system() to run kef2ph5 script to add the tables in temp.
     # kef file to the filename that user chose
     def OnSavePH5(self):
-        # print "onSavePH5"
         if not self._checkAddTableView():
             return
 
@@ -450,12 +426,6 @@ class KefEdit(QtGui.QMainWindow):
                                                  options['path2ph5'], p)
                 if delResult is False:
                     return
-
-        # add tables from kef file to ph5 file
-        # cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s"
-        # % options
-        # print cmdStr % options
-        # os.system(cmdStr % options)
 
         from subprocess import Popen, PIPE, STDOUT
 
@@ -541,8 +511,6 @@ class KefEdit(QtGui.QMainWindow):
         i = 0
         for tab in self.path_tabs:
             currText, i = tab.ToString(currText, i)
-            # if i % 50 == 0:
-
         try:
             saveFile = open(savefilename, 'w')
             saveFile.write(currText)
@@ -614,8 +582,6 @@ class KefEdit(QtGui.QMainWindow):
             QtCore.QCoreApplication.instance().quit()
             sys.exit(application.exec_())
 
-            ###############################
-
     # def setData
     # author: Lan Dam
     # updated: 201702
@@ -634,7 +600,6 @@ class KefEdit(QtGui.QMainWindow):
         while self.path_tabs != []:
             self.path_tabWidget.removeTab(len(self.path_tabs) - 1)
             self.path_tabs.pop(len(self.path_tabs) - 1)
-            # del ptab
 
         self.processedLine = 0
         # set tab for each path
@@ -646,7 +611,6 @@ class KefEdit(QtGui.QMainWindow):
                          "the selected PH5 is a master file."
                 QtGui.QMessageBox.warning(self, "Error", errMsg % p)
                 return
-                # print "path:%s **** %s" % (p, len(self.dataTable[p]))
             pathWidget = TablePanel(self, p, self.dataTable[p],
                                     self.labelSets[p], self.types[p])
             self.path_tabWidget.addTab(pathWidget, p)
@@ -673,8 +637,8 @@ DELETECOLOR = QtGui.QBrush(QtGui.QColor(70, 10, 70, 100))  # light purple
 # CLASS ####################
 # class TablePanel: Each path will have a tableView to display its data
 # with path: path in Kef/PH5
-#     table: data in list
-#     labels: list of columns/keys
+#   table: data in list
+#   labels: list of columns/keys
 class TablePanel(QtGui.QMainWindow):
 
     def __init__(self, parent, path, table, labels, types):
@@ -702,7 +666,6 @@ class TablePanel(QtGui.QMainWindow):
         self.mainTableView.installEventFilter(self)
         EXPL[self.mainTableView] = "MainView where main data are displayed."
         self.mainTableView.cellClicked.connect(self.OnMainTableClick)
-        # self.mainTableView.cellChanged.connect(self.OnCellChanged)
         self.mainTableView.setSelectionMode(
             QtGui.QAbstractItemView.SingleSelection)
         mainLayout.addWidget(self.mainTableView)
@@ -1031,8 +994,6 @@ class TablePanel(QtGui.QMainWindow):
             return True
         return False
 
-        ###############################
-
     # def _setButtonsDisabled
     # author: Lan Dam
     # updated: 201703
@@ -1162,8 +1123,6 @@ class TablePanel(QtGui.QMainWindow):
             self.deleteBtn.setEnabled(False)
             self.unDeleteBtn.setEnabled(False)
 
-            ###############################
-
     # def OnAddTableClick
     # author: Lan Dam
     # updated: 201703
@@ -1234,7 +1193,6 @@ class TablePanel(QtGui.QMainWindow):
                 currItem.setSelected(True)
                 selectedCells.append((r, column))
                 selectedRows.append(str(r + 1))
-                # print "%s-%s" % (self.table[r][0], self.table[r][-1])
         return selectedCells, selectedRows
 
     ###############################
@@ -1243,9 +1201,9 @@ class TablePanel(QtGui.QMainWindow):
     # updated: 201705
     # check condition to decide to enable plusX__ buttons in need
     # if XCtrl is integer:
-    #   * enable plusX2CharBtn if all chars at the selected position(s) of
+    # * enable plusX2CharBtn if all chars at the selected position(s) of
     # the selected column are digit
-    #   * enable plusX2ColBtn if type of col is int or float, in case of the
+    # * enable plusX2ColBtn if type of col is int or float, in case of the
     # str type, check if all column's values are digit
     def OnXChanged(self, arg):
         # print "OnXChanged:", arg
@@ -1274,11 +1232,10 @@ class TablePanel(QtGui.QMainWindow):
     # author: Lan Dam
     # updated: 201705
     # when characterOrderCtrl is changed:
-    #    * change item list of noOfCharsCtrl
-    #    * reset nondigitList (list of chars at the selected position(s) of
+    #  * change item list of noOfCharsCtrl
+    #  * reset nondigitList (list of chars at the selected position(s) of
     # the selected column that are non-digit)
     def OnChangeCharOrder(self, arg):
-        # print "OnChangeCharOrder", arg
         if not self.characterOrderCtrl.isEnabled():
             return
         self.noOfCharsCtrl.clear()
@@ -1295,7 +1252,6 @@ class TablePanel(QtGui.QMainWindow):
     # if nondigitList is [] (all are digit, enable plus2CharBtn according
     # to XCtrl)
     def OnChangeNoOfChars(self, arg):
-        # print "OnChangeNoOfChars"
         order = self.characterOrderCtrl.currentIndex()
         noOfChars = arg + 1
 
@@ -1321,7 +1277,6 @@ class TablePanel(QtGui.QMainWindow):
     # value in case checking type has error
     # then _updateColItem
     def OnChangeChar2X(self):
-        # print "OnChangeChar2X"
         if not self._checkEmpty("character"):
             return
         # check type
@@ -1371,7 +1326,6 @@ class TablePanel(QtGui.QMainWindow):
     # in case checking type has error
     # then _updateColItem
     def OnPlusX2Char(self):
-        # print "OnPlusX2Char"
         type_ = self.types[
             self.labels.index(str(self.selectedColumnCtrl.text()))]
         try:
@@ -1433,7 +1387,6 @@ class TablePanel(QtGui.QMainWindow):
     # updated: 201705
     # change the cells value of the selectedCol to the value in XCtrl
     def OnChangeCol2X(self):
-        # print "OnChangeCol2X"
         if not self._checkEmpty("column"):
             return
 
@@ -1528,8 +1481,6 @@ class TablePanel(QtGui.QMainWindow):
                 if r in self.updateList:
                     self.updateList.remove(r)
 
-                ###############################
-
     # def _afterUpdateCol
     # author: Lan Dam
     # updated: 201705
@@ -1537,7 +1488,6 @@ class TablePanel(QtGui.QMainWindow):
     # set characterOrderCtrl, changeChar2XBtn, plusX2ColBtn, plusX2Col
     # depend on type and length of the selectedColList
     def _afterUpdateCol(self):
-        # print "_afterUpdateCol"
         self.selectedColList = self.updatedTable[:, self.selectedCol]
         difLen = [len(item) for item in self.selectedColList if
                   len(item.strip()) != len(self.selectedColList[0].strip())]
@@ -1563,17 +1513,17 @@ class TablePanel(QtGui.QMainWindow):
     # author: Lan Dam
     # updated: 201703
     # Change the values of the selected cells into the value in changedValCtrl
-    #    on MainTableView if self.addCells == None
-    #     * not change if there are any rows deleted
-    #     * change text in cell(s)
-    #     * if the change is back to the orginal value, cell color will be
+    #  on MainTableView if self.addCells == None
+    #   * not change if there are any rows deleted
+    #   * change text in cell(s)
+    #   * if the change is back to the orginal value, cell color will be
     # resetted (then rows => remove from updateList)
-    #     * else: change foreground color of cell(s), change background color
+    #   * else: change foreground color of cell(s), change background color
     # of row(s)  => add to updateList if not in updateList yet
-    #        => get the rowdata from the table with the new value at the col,
+    #      => get the rowdata from the table with the new value at the col,
     # but the type keep the same
-    #    on AddTableView if self.addCells != None
-    #     * change text & color in cell(s) and change the column value to the
+    #  on AddTableView if self.addCells != None
+    #   * change text & color in cell(s) and change the column value to the
     # one in changedValCtrl but type keep the same
     def OnChange(self, event):
         if self.addCells is None:
@@ -1650,7 +1600,6 @@ class TablePanel(QtGui.QMainWindow):
     # * disable delete option, enable undelete option
     def OnDelete(self, event):
         for row, column in self.selectedCells:
-            # currItem = self.mainTableView.item(row, column)
             self._changeRowBackground(row, DELETECOLOR)
             if row not in self.deleteList:
                 self.deleteList.append(row)
@@ -1667,7 +1616,6 @@ class TablePanel(QtGui.QMainWindow):
     # * enable delete option, disable undelete option
     def OnUndelete(self, event):
         for row, column in self.selectedCells:
-            # currItem = self.mainTableView.item(row, column)
             if row in self.updateList:
                 self._changeRowBackground(row, UPDATECOLOR)
             else:
@@ -1909,8 +1857,8 @@ class TablePanel(QtGui.QMainWindow):
                     tableCount, self.parent.totalLines))
                 print "Saving Kef file: %s/%s" % (
                     tableCount, self.parent.totalLines)
-            currText += "\n#   Table row %d" % tableCount
-            #   Print table name
+            currText += "\n# Table row %d" % tableCount
+            # Print table name
             currText += "\n" + self.path
             for c in range(len(self.labels)):
                 currText += "\n\t%s=%s" % (
@@ -2050,7 +1998,6 @@ class SelectTableDialog(QtGui.QDialog):
         btnLayout.addWidget(cancelBtn)
         btnLayout.stretch(1)
 
-        # self.setLayout(mainLayout)
         self._disableCtrls()
         self.show()
 
@@ -2109,22 +2056,16 @@ class SelectTableDialog(QtGui.QDialog):
         else:
             p.arg = None
 
-        # print p.arg
         if errorCtrl is not None:
             msg = "For Table '%s', %s must be selected." % (
                 p.tableType, errorCtrl)
             QtGui.QMessageBox.warning(self, "Warning", msg)
             return
 
-        # try:
         p.dataTable, p.labelSets, p.totalLines, p.types =\
             kefutility.PH5toTableData(
                 p.statusBar, p.ph5api, p.filename,
                 p.path2file, p.tableType, p.arg)
-        # except Exception, e:
-        # QtGui.QMessageBox.warning(self, "Error", str(e) )
-        # return
-        # print "totalLInes: %s" % p.totalLines
 
         p.setData()
         p.openTableAction.setEnabled(True)

@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython4
 #
-#   Sort an Array_t_xxx.kef file by station ID, id_s.
+# Sort an Array_t_xxx.kef file by station ID, id_s.
 #
-#   Steve Azevedo, Feb 2017
+# Steve Azevedo, Feb 2017
 #
 
 import argparse

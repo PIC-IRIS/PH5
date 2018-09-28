@@ -1,9 +1,10 @@
 #!/usr/bin/env pnpython4
 #
-#   Program to generate offset tables from Array_t_nnn and Event_t_nnn.
+# Program to generate offset tables from Array_t_nnn and Event_t_nnn.
 #
-#   Steve Azevedo, July 2017
+# Steve Azevedo, July 2017
 #
+import argparse
 import sys
 import logging
 import numpy as npy
@@ -15,37 +16,33 @@ LOGGER = logging.getLogger(__name__)
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
 def get_args():
     global ARGS
 
-    import argparse
-    oparser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    oparser.usage = "Version: {0}, geod2kef --nickname ph5-file-prefix\
+    parser.usage = "Version: {0}, geod2kef --nickname ph5-file-prefix\
      [-p path]".format(
         PROG_VERSION)
 
-    oparser.description = "Read locations and calculate offsets from events to\
-     receivers. Produce kef file to populate ph5 file."
-    #   -n master.ph5
-    oparser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
-                         help="The ph5 file prefix (experiment nickname).",
-                         metavar="ph5_file_prefix")
-    #   -p /path/to/ph5/family/files
-    oparser.add_argument("-p", "--path", dest="ph5_path",
-                         help="Path to ph5 files. Defaults to current\
-                          directory.",
-                         metavar="ph5_path", default='.')
+    parser.description = ("Read locations and calculate offsets from "
+                          "events to receivers. Produce kef file to "
+                          "populate ph5 file.")
+    # -n master.ph5
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
+    # -p /path/to/ph5/family/files
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help=("Path to ph5 files. Defaults to current "
+                              "directory."),
+                        metavar="ph5_path", default='.')
 
-    ARGS = oparser.parse_args()
-
-    if ARGS.ph5_file_prefix is None:
-        LOGGER.error("Missing required option. Try --help")
-        sys.exit(-1)
+    ARGS = parser.parse_args()
 
 
 def print_kef(array_num, event_num, Offset_t):
@@ -59,7 +56,7 @@ def print_kef(array_num, event_num, Offset_t):
     keys = Offset_t['keys']
     for o in order:
         N += 1
-        print "#   {0}".format(N)
+        print "# {0}".format(N)
         print table_path
         offset_t = Offset_t['byid'][o]
         offsets[0].append(offset_t['receiver_id_s'])
@@ -74,14 +71,14 @@ def print_kef(array_num, event_num, Offset_t):
 def write_log(array, shot_line, shot, offsets):
     '''   Write log file with offset statistics
     '''
-    #   Calculate mean of offsets
+    # Calculate mean of offsets
     ave = npy.mean(offsets[2])
-    #   Calculate standard deviation
+    # Calculate standard deviation
     sd = npy.std(offsets[2])
-    #   Calculate max and min offset
+    # Calculate max and min offset
     max_offset = npy.max(offsets[2])
     min_offset = npy.min(offsets[2])
-    #   Calculate offsets below and 1st percentile and above 99th percentile
+    # Calculate offsets below and 1st percentile and above 99th percentile
     per = npy.percentile(offsets[2], [1, 99])
     print >> LOG, "{0} {1} Event: {2} Mean offset: {3:12.1f} Std: {4:12.1f}\
      Maximum: {5:12.1f} Minimum: {6:12.1f}".format(
@@ -101,9 +98,6 @@ def write_log(array, shot_line, shot, offsets):
         if offsets[2][i] == per[0]:
             print >> LOG, "\tStation: {0} Event: {1} Offset: {2:12.1f}".format(
                 offsets[0][i], shot, offsets[2][i])
-            # print "\t{0} Station: {1} {2} Event: {3} Offset: {4}".format \
-            # (array, offsets[0][i], shot_line, shot, offsets[2][i])
-
     print >> LOG, "-=" * 40
 
 
@@ -127,7 +121,7 @@ def main():
                      "Can not continue!")
         P5.close()
         sys.exit()
-    print "#   geod2kef v{0}, PH5 v{1}".format(PROG_VERSION, ph5version)
+    print "# geod2kef v{0}, PH5 v{1}".format(PROG_VERSION, ph5version)
     with open("geod2kef.log", 'w+') as LOG:
         print >> LOG, sys.argv
         print >> LOG, "***\nOffset statistics:"
@@ -143,7 +137,6 @@ def main():
                         Array_t_name, shot_id, shot_line=Event_t_name)
                     offsets = print_kef(array_num, event_num, Offset_t)
                     write_log(Array_t_name, Event_t_name, event_num, offsets)
-
     P5.close()
 
 

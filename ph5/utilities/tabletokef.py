@@ -1,27 +1,27 @@
 #!/usr/bin/env pnpython4
 
 #
-#   Dump tables in ph5 file to kef format.
+# Dump tables in ph5 file to kef format.
 #
-#   Steve Azevedo, April 2007
-#   readPH5() edited by Lan Dam on 2018067
+# Steve Azevedo, April 2007
+# readPH5() edited by Lan Dam on 2018067
 
 import argparse
 import string
 import sys
 import logging
 import time
-#   This provides the base functionality
+# This provides the base functionality
 from ph5.core import experiment
 
-#   Timeseries are stored as numpy arrays
+# Timeseries are stored as numpy arrays
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
 
 #
-#   These are to hold different parts of the meta-data
+# These are to hold different parts of the meta-data
 #
 
 
@@ -29,41 +29,41 @@ def init_local():
     global EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T
     global ARRAY_T, DAS_T
     global RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, TABLE_KEY
-    #   /Experiment_g/Experiment_t
+    # /Experiment_g/Experiment_t
     EXPERIMENT_T = None
-    #   /Experiment_g/Sorts_g/Event_t
+    # /Experiment_g/Sorts_g/Event_t
     EVENT_T = {}
-    #   /Experiment_g/Sorts_g/Offset_t
+    # /Experiment_g/Sorts_g/Offset_t
     OFFSET_T = {}
-    #   /Experiment_g/Sorts_g/Sort_t
+    # /Experiment_g/Sorts_g/Sort_t
     SORT_T = None
-    #   /Experiment_g/Responses_g/Response_t
+    # /Experiment_g/Responses_g/Response_t
     RESPONSE_T = None
-    #   /Experiment_g/Reports_g/Report_t
+    # /Experiment_g/Reports_g/Report_t
     REPORT_T = None
-    #   /Experiment_g/Sorts_g/Array_t_[nnn]
+    # /Experiment_g/Sorts_g/Array_t_[nnn]
     ARRAY_T = {}
-    #   /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
+    # /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
     DAS_T = {}
-    #   /Experiment_g/Receivers_g/Receiver_t
+    # /Experiment_g/Receivers_g/Receiver_t
     RECEIVER_T = None
-    #   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by
-    #   SOH_a_[n] name)
+    # /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n] (keyed on DAS then by
+    # SOH_a_[n] name)
     SOH_A = {}
-    #   /Experiment_g/Receivers_g/Index_t
+    # /Experiment_g/Receivers_g/Index_t
     INDEX_T = None
-    #   /Experiment_g/Maps_g/Index_t
+    # /Experiment_g/Maps_g/Index_t
     M_INDEX_T = None
-    #   A list of Das_Groups that refers to Das_g_[sn]'s
+    # A list of Das_Groups that refers to Das_g_[sn]'s
     DASS = []
-    #   /Experiment_g/Receivers_g/Time_t
+    # /Experiment_g/Receivers_g/Time_t
     TIME_T = None
     #
     TABLE_KEY = None
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -82,7 +82,7 @@ class Rows_Keys(object):
 
 
 #
-#   To hold DAS sn and references to Das_g_[sn]
+# To hold DAS sn and references to Das_g_[sn]
 #
 
 
@@ -95,7 +95,7 @@ class Das_Groups(object):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
@@ -245,7 +245,7 @@ def get_args():
 
 
 #
-#   Initialize ph5 file
+# Initialize ph5 file
 #
 
 
@@ -259,7 +259,7 @@ def initialize_ph5(editmode=False):
 
 
 #
-#   Print Rows_Keys
+# Print Rows_Keys
 #
 def table_print(t, a, fh=None):
     global TABLE_KEY
@@ -270,17 +270,17 @@ def table_print(t, a, fh=None):
     s = s + \
         "#\n#\t%s\tph5 version: %s\n#\n" % (
             time.ctime(time.time()), EX.version())
-    #   Loop through table rows
+    # Loop through table rows
     for r in a.rows:
         i += 1
 
         s = s + "#   Table row %d\n" % i
-        #   Print table name
+        # Print table name
         if TABLE_KEY in a.keys:
             s = s + "{0}:Update:{1} \n".format(t, TABLE_KEY)
         else:
             s = s + t + "\n"
-        #   Loop through each row column and print
+        # Loop through each row column and print
         for k in a.keys:
             s = s + "\t" + str(k) + "=" + str(r[k]) + "\n"
         if fh is None:
@@ -289,13 +289,8 @@ def table_print(t, a, fh=None):
         else:
             fh.write(s)
             s = ''
-    # f=open(PATH+"/temp.kef", "w")
-    # f.write(s)
 
 
-#
-#
-#
 def read_time_table():
     global EX, TIME_T
 
@@ -366,44 +361,6 @@ def read_offset_table():
     '''   Read /Experinent_t/Sorts_g/Offset_t   '''
     global EX, OFFSET_T
 
-    # offset_t = []
-    # array = int (OFFSET_TABLE[0])
-    # if array < 1 : array = 1
-    # array = "Array_t_{0:03d}".format (array)
-    # try :
-    # arrays, array_keys = EX.ph5_g_sorts.read_arrays (array)
-    # except Exception as e :
-    # sys.stderr.write ("Error: Can't read {0}.\n".format (array))
-    # sys.exit ()
-
-    # event = int (OFFSET_TABLE[1])
-    # if event == 0 :
-    # event = "Event_t"
-    # name = "Offset_t"
-    # else :
-    # event = "Event_t_{0:03d}".format (event)
-    # name = "Offset_t_{0:03d}_{1:03d}".format (int (OFFSET_TABLE[0]),
-    # int (OFFSET_TABLE[1]))
-
-    # try :
-    # events, event_keys = EX.ph5_g_sorts.read_events (event)
-    # except Exception as e :
-    # sys.stderr.write ("Error: Can't read {0}.\n".format (event))
-    # sys.exit ()
-
-    # for array_t in arrays :
-    # sta = array_t['id_s']
-    # for event_t in events :
-    # evt = event_t['id_s']
-    # try :
-    # offset = EX.ph5_g_sorts.read_offset_fast (evt, sta, name=name)
-    # except Exception as e :
-    # sys.stderr.write ("Error: Problem reading offset for sta {0}, shot {1}.
-    #  PH5 table {3}.".format (sta, evt, name))
-    # break
-
-    # offset_t.append (offset)
-
     if OFFSET_TABLE[0] == 0 or OFFSET_TABLE[1] == 0:
         name = "Offset_t"
     else:
@@ -415,7 +372,6 @@ def read_offset_table():
     except Exception:
         return
 
-    # print offset_t
     OFFSET_T[name] = Rows_Keys(rows, keys)
 
 
@@ -434,14 +390,14 @@ def read_sort_arrays():
     '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
     global EX, ARRAY_T
 
-    #   We get a list of Array_t_[n] names here...
-    #   (these are also in Sort_t)
+    # We get a list of Array_t_[n] names here...
+    # (these are also in Sort_t)
     names = EX.ph5_g_sorts.names()
     for n in names:
         arrays, array_keys = EX.ph5_g_sorts.read_arrays(n)
 
         rowskeys = Rows_Keys(arrays, array_keys)
-        #   We key this on the name since there can be multiple arrays
+        # We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
 
 
@@ -459,7 +415,7 @@ def read_response_table():
 def read_receiver_table():
     global EX, RECEIVER_T
 
-    #   Read /Experiment_g/Receivers_g/Receiver_t
+    # Read /Experiment_g/Receivers_g/Receiver_t
     receiver, receiver_keys = EX.ph5_g_receivers.read_receiver()
     rowskeys = Rows_Keys(receiver, receiver_keys)
     RECEIVER_T = rowskeys
@@ -485,31 +441,31 @@ def read_receivers(das=None):
 
     dasGroups = EX.ph5_g_receivers.alldas_g()
     if das is None:
-        #   Get references for all das groups keyed on das
+        # Get references for all das groups keyed on das
         dass = sorted(dasGroups.keys())
-        #   Sort by das sn
+        # Sort by das sn
     else:
         dass = [das]
 
     for d in dass:
-        #   Get node reference
+        # Get node reference
         if "Das_g_" + d not in dasGroups:
             continue
 
         g = dasGroups["Das_g_" + d]
         dg = Das_Groups(d, g)
-        #   Save a master list for later
+        # Save a master list for later
         DASS.append(dg)
 
-        #   Set the current das group
+        # Set the current das group
         EX.ph5_g_receivers.setcurrent(g)
 
-        #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
+        # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das()
         rowskeys = Rows_Keys(das, das_keys)
         DAS_T[d] = rowskeys
 
-        #   Read SOH file(s) for this das
+        # Read SOH file(s) for this das
         SOH_A[d] = EX.ph5_g_receivers.read_soh()
 
 
@@ -545,7 +501,6 @@ def readPH5(exp, filename, path, tableType, arg=None):
         # read_offset_table() will read from global var. OFFSET_TABLE to add
         # new item into dict. OFFSET_T
         read_offset_table()
-        # keys = OFFSET_T.keys ()
         return OFFSET_T
 
     if tableType == "All_Offset_t":

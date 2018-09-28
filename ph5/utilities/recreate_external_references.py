@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Recreate external references under Receivers_g, and Maps_g from Index_t
+# Recreate external references under Receivers_g, and Maps_g from Index_t
 #
-#   Steve Azevedo, September 2012
+# Steve Azevedo, September 2012
 #
 import argparse
 import os
@@ -23,7 +23,7 @@ time.tzset()
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -41,9 +41,6 @@ class Rows_Keys(object):
             self.keys = keys
 
 
-#
-
-
 def read_index_table():
     global EX, INDEX_T
 
@@ -51,17 +48,11 @@ def read_index_table():
     INDEX_T = Rows_Keys(rows, keys)
 
 
-#
-
-
 def read_m_index_table():
     global EX, M_INDEX_T
 
     rows, keys = EX.ph5_g_maps.read_index()
     M_INDEX_T = Rows_Keys(rows, keys)
-
-
-#
 
 
 def update_external_references():
@@ -76,13 +67,13 @@ def update_external_references():
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             LOGGER.error("E1 {0}".format(e.message))
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
@@ -99,14 +90,14 @@ def update_external_references():
         external_group = external_path.split('/')[3]
         print external_file, external_path, das, target, external_group
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             LOGGER.error("E3: {0}".format(e.message))
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Maps_g', external_group, target)
@@ -119,7 +110,7 @@ def update_external_references():
 
 
 #
-#   Initialize ph5 file
+# Initialize ph5 file
 #
 
 
@@ -133,7 +124,7 @@ def initialize_ph5(editmode=False):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 

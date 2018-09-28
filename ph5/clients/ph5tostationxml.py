@@ -11,7 +11,7 @@ import multiprocessing
 import logging
 import obspy
 from datetime import datetime
-from obspy import read_inventory  # noqa
+from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 

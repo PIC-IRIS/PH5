@@ -10,28 +10,28 @@ LOGGER = logging.getLogger(__name__)
 
 RECEIVER_T = "kef.tmp"
 RECEIVER_T_STRING = str("""
-#   Table row 1
+# Table row 1
 /Experiment_g/Receivers_g/Receiver_t
         orientation/azimuth/value_f = 0.0
         orientation/azimuth/units_s = degrees
         orientation/dip/value_f = 90.0
         orientation/dip/units_s = degrees
         orientation/description_s = Z
-#   Table row 2
+# Table row 2
 /Experiment_g/Receivers_g/Receiver_t
         orientation/azimuth/value_f = 0.0
         orientation/azimuth/units_s = degrees
         orientation/dip/value_f = 0.0
         orientation/dip/units_s = degrees
         orientation/description_s = N
-#   Table row 3
+# Table row 3
 /Experiment_g/Receivers_g/Receiver_t
         orientation/azimuth/value_f = 90.0
         orientation/azimuth/units_s = degrees
         orientation/dip/value_f = 0.0
         orientation/dip/units_s = degrees
         orientation/description_s = E
-#   Table row 4
+# Table row 4
 /Experiment_g/Receivers_g/Receiver_t
         orientation/azimuth/value_f = 0.0
         orientation/azimuth/units_s = degrees
@@ -77,7 +77,6 @@ def get_args():
         RECEIVER_T = os.path.abspath(options.receiver_t)
 
     if PH5 is None:
-        # print H5, FILES
         LOGGER.error("Missing required option. Try --help")
         os.remove("kef.tmp")
         sys.exit()
@@ -86,12 +85,12 @@ def get_args():
 def main():
     global PH5, KEFFILE
     get_args()
-    #   Create ph5 file
+    # Create ph5 file
     EDITMODE = True
     ex = experiment.ExperimentGroup(nickname=PH5)
     ex.ph5open(EDITMODE)
     ex.initgroup()
-    #   Update Experiment_t
+    # Update Experiment_t
     if KEFFILE:
         k = kef.Kef(KEFFILE)
         k.open()
@@ -109,7 +108,7 @@ def main():
         LOGGER.warning("Experiment_g/Receivers_g/Receiver_t not set!")
         os.remove("kef.tmp")
 
-    #   Close PH5 file
+    # Close PH5 file
     ex.ph5close()
     LOGGER.info("Done...")
     os.remove("kef.tmp")

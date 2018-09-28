@@ -1,7 +1,7 @@
 #!/usr/bin/env pnpython2
 
 #
-#   From: Don Perterson
+# From: Don Perterson
 #
 
 import types

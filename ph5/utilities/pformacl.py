@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Load PH5 from RAW in parallel
+# Load PH5 from RAW in parallel
 #
-#   Steve Azevedo, August 2015
+# Steve Azevedo, August 2015
 #
 import os
 import sys
@@ -71,8 +71,6 @@ def get_args():
     else:
         PROJECT = options.home
 
-    # JSON_DB = os.path.join (PROJECT, "pforma.json")
-    # JSON_CFG = os.path.join (PROJECT, "pforma.cfg")
     if options.nfamilies is None:
         NFAMILY = cpu_count() + 1
     else:
@@ -106,9 +104,9 @@ def run(fio):
     # cmds -> cmds[Family] => List of commands to execute
     # pees -> pees[Family] => Subprocess
     # i -> The index of the list of commands that is running
-    #   XXX   Debug
+    # XXX   Debug
     cmds, pees, i = fio.run()
-    ###
+
     ll = {'A': i, 'B': i, 'C': i, 'D': i, 'E': i, 'F': i, 'G': i, 'H': i,
           'I': i, 'J': i, 'K': i, 'L': i, 'M': i, 'N': i, 'O': i, 'P': i}
     out = {}
@@ -129,10 +127,7 @@ def run(fio):
         for m in fio.nmini:
             if pees[m] is None:
                 continue
-            # print m, pees[m].pid, 'running' if pees[m].poll () ==\
-            #  None else pees[m].poll ()
             if pees[m].poll() == 0:
-                # pees[m].kill ()
                 ll[m] += 1
                 t, ll[m] = fio.run_cmds(cmds, x=ll[m], ems=m)
                 if t is not None:
@@ -142,30 +137,16 @@ def run(fio):
         for m in fio.nmini:
             if pees[m] is None:
                 continue
-            # print "Open STDOUT"
             out[m] = open(fifo[m], 'w', 0)
-            # print '.'
             out[m].write(pees[m].stdout.read(1))
-            # print '.'
             pees[m].stdout.flush()
-            # print '.'
             out[m].close()
 
-        # print cnt, '-------------------'; cnt += 1
     for m in fio.nmini:
         out[m] = open(fifo[m], 'w', 0)
         out[m].write(pees[m].stdout.read())
         pees[m].stdout.flush()
         out[m].close()
-        # print "Open STDERR"
-        # with open (fifo[m], 'w', 0) as out[m] :
-        # print '.'
-        # out[m].write (pees[m].stderr.read ())
-        # print '.'
-        # pees[m].stderr.flush ()
-        # print '.'
-        # out[m].close ()
-        # print "Done"
 
     return xterms
 
@@ -176,35 +157,35 @@ def main():
         sys.exit()
 
     get_args()
-    #   Inputs list of raw files and project directory
+    # Inputs list of raw files and project directory
     fio = pforma_io.FormaIO(infile=RAW_LST, outdir=PROJECT)
-    #   Number of families is (default) number of CPU's + 1 or set
+    # Number of families is (default) number of CPU's + 1 or set
     fio.set_nmini(NFAMILY)
-    #   M is the number of mini ph5 files per family, otherwise set in fio.read
+    # M is the number of mini ph5 files per family, otherwise set in fio.read
     if M:
         fio.set_M(M)
-    #   Set UTM zone for segd2ph5 if needed
+    # Set UTM zone for segd2ph5 if needed
     if UTM:
         fio.set_utm(UTM)
     if TSPF:
         fio.set_tspf(TSPF)
-    #   Don't merge just process raw to PH5
+    # Don't merge just process raw to PH5
     if not MERGE:
-        #   Open list of input files
+        # Open list of input files
         try:
             fio.open()
         except pforma_io.FormaIOError as e:
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
-        #   Pre-process raw files
+        # Pre-process raw files
         try:
             fio.read()
         except pforma_io.FormaIOError as e:
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
-        #   Adjust the number M and the number of families if needed
+        # Adjust the number M and the number of families if needed
         LOGGER.info("Total raw size: {0:7.2f}GB"
                     .format(float(fio.total_raw / 1024. / 1024. / 1024.)))
         adjust(fio)
@@ -216,7 +197,7 @@ def main():
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
             sys.exit(1)
-        #   Read JSON db
+        # Read JSON db
         try:
             fio.readDB()
         except pforma_io.FormaIOError as e:
@@ -226,14 +207,12 @@ def main():
         # Resolve JSON db with list of files we are loading (have they been
         # loaded already)
         fio.resolveDB()
-        #   Do the conversions to PH5
+        # Do the conversions to PH5
         xterms = run(fio)
-        #   Merge loaded raw files with existing JSON db and write new JSON db
+        # Merge loaded raw files with existing JSON db and write new JSON db
         fio.merge(fio.resolved.keys())
 
-        # if MERGE :
-        # fio.unite ()
-        #   Write configuration
+        # Write configuration
         fio.write_cfg()
 
         yn = raw_input("Kill xterms? (y/n) ")
@@ -241,7 +220,7 @@ def main():
             for k in xterms.keys():
                 xterms[k].kill()
     else:
-        #   Unite all PH5 families to one...
+        # Unite all PH5 families to one...
         msgs = fio.unite('Sigma')
         for m in msgs:
             print m

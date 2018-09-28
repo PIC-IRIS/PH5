@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   PH5 meta-data initializer GUI
+# PH5 meta-data initializer GUI
 #
-#   Steve Azevedo, refactor Feb 2015
+# Steve Azevedo, refactor Feb 2015
 #
 
 import json
@@ -13,7 +13,7 @@ from os.path import expanduser
 from PyQt4 import QtGui, QtCore
 from ph5.utilities import novenqc, novenkef
 
-PROG_VERSION = '2017.342'
+PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
 RECEIVER_CFG_S = '{\n'\
@@ -215,24 +215,19 @@ class MyWorker(QtCore.QThread):
         self.working = True
 
     def run(self):
-        # print "Run"
-        # time.sleep (5)
         if self.command == 'qc_receivers':
             while self.working:
-                # print '*'
                 self.working = novenqc.qc_receivers(self.table,
                                                     self.names,
                                                     self.cols,
                                                     self.sep)
         elif self.command == 'qc_shots':
             while self.working:
-                # print '!'
                 self.working = novenqc.qc_shots(self.table,
                                                 self.names,
                                                 self.cols,
                                                 self.sep)
         elif self.command == 'qc_map':
-            # print '#'
             while self.working:
                 self.working = novenqc.qc_map(self.outfile)
         else:
@@ -317,7 +312,6 @@ class ErrorsDialog(QtGui.QMainWindow):
     def setIt(self, text):
         self.text.clear()
         text = '\n'.join(text)
-        # print text
         self.text.setText(text)
 
     def saveFile(self):
@@ -326,7 +320,6 @@ class ErrorsDialog(QtGui.QMainWindow):
         filename = str(filename)
         if not filename:
             return
-        # f = open(filename[0], 'w')
         f = open(filename, 'w')
         filedata = self.text.toPlainText()
         f.write(filedata)
@@ -383,7 +376,6 @@ class SetupDialog(QtGui.QDialog):
                                            QtGui.QDialogButtonBox.Close)
 
         grid = QtGui.QGridLayout()
-        #
         grid.addWidget(inputFileTypeLabel, 0, 0)
         grid.addWidget(self.inputFileType, 0, 1)
         grid.addWidget(outfileFormatLabel, 1, 0)
@@ -405,20 +397,14 @@ class SetupDialog(QtGui.QDialog):
                      self, QtCore.SLOT("reject ()"))
 
         self.setWindowTitle("Configure")
-        # self.changed = QtCore.Signal ()
 
     def apply(self):
-        #
-        # print "Apply"
         self.settings['linesView'] = int(self.viewLines.value())
         self.settings['colSep'] = str(self.fieldSeparator.currentText())
         self.settings['outFormat'] = str(self.outfileFormat.currentText())
         self.settings['linesSkip'] = int(self.skipLines.value())
         self.settings['inFormat'] = str(self.inputFileType.currentText())
-        # print "Emit"
-        # self.emit (QtCore.Signal ("changed"))
         self.changed.emit()
-        # print "Emitted"
 
     def rejected(self):
         LOGGER.info("Reject")
@@ -434,7 +420,6 @@ class Novitiate(QtGui.QMainWindow):
 
         self.settings = dict(inFormat='receiver', outFormat='kef',
                              colSep='comma', linesSkip=0, linesView=3)
-        #
         self.setWindowTitle('Noven Version: ' + PROG_VERSION)
 
         self.readFileLines = []
@@ -446,7 +431,7 @@ class Novitiate(QtGui.QMainWindow):
 
         main()
         #
-        #   Setup menus
+        # Setup menus
         #
         openin = QtGui.QAction('Open...', self)
         openin.setShortcut('Ctrl+O')
@@ -496,7 +481,7 @@ class Novitiate(QtGui.QMainWindow):
             file.addAction(exit)
 
         #
-        #   Table
+        # Table
         #
         self.table = MyQTableWidget()
         self.setCentralWidget(self.table)
@@ -507,17 +492,13 @@ class Novitiate(QtGui.QMainWindow):
         self.setGeometry(300, 300, 1200, 300)
 
     def configure(self):
-        #
         self.settingsDialog = SetupDialog(self.settings, self)
-        # self.connect (self.settingsDialog, QtCore.SIGNAL ("changed"),
-        # self.refreshTable)
         self.settingsDialog.changed.connect(self.refreshTable)
         self.settingsDialog.show()
 
     def refreshTable(self):
         self.TOP = {}
         key = self.settings['colSep']
-        #
         sep = SEPMAP[str(key)]
 
         maxY = 0
@@ -538,7 +519,6 @@ class Novitiate(QtGui.QMainWindow):
 
         self.table.setColumnCount(maxY)
         self.table.setRowCount(maxX)
-        #
         hh = self.table.horizontalHeader()
         hh.hide()
         vh = self.table.verticalHeader()
@@ -553,7 +533,6 @@ class Novitiate(QtGui.QMainWindow):
                     y += 1
 
         except AttributeError:
-            # print e.message
             if self.settings['inFormat'] == 'receiver':
                 cvalues = RECEIVER_CFG.keys()
             else:
@@ -565,7 +544,6 @@ class Novitiate(QtGui.QMainWindow):
                 try:
                     ci = self.comboBoxes[y].currentIndex()
                 except Exception:
-                    # print e.message
                     ci = None
 
                 cb = MyQComboBox(values=cvalues)
@@ -603,16 +581,14 @@ class Novitiate(QtGui.QMainWindow):
                 item.setTextAlignment(QtCore.Qt.AlignRight |
                                       QtCore.Qt.AlignVCenter)
 
-                #
                 self.table.setItem(x + 1, y, item)
 
         self.table.resizeColumnsToContents()
         self.table.setAcceptDrops(True)
         self.setWindowTitle(self.settings['inFormat'])
 
-    #   Slot for QCombobox highlight signal
+    # Slot for QCombobox highlight signal
     def huh(self, x):
-        # print x
         if x == 0:
             return
         x -= 1
@@ -623,10 +599,6 @@ class Novitiate(QtGui.QMainWindow):
 
         keys = cols.keys()
         keys = sorted(map(str, keys))
-        # keys = ["Ignore"] + keys
-        # cols["Ignore"] = {}; cols["Ignore"]['help'] =
-        #  "Ignore the entire column."
-        # print keys
         help = cols[keys[x]]['help']
         self.status.showMessage(help)
 
@@ -662,16 +634,11 @@ class Novitiate(QtGui.QMainWindow):
         self.TOP = novenqc.TOP
 
     def openInfile(self):
-        #
         filters = 'CSV files: (*.csv);; Text files: (*.txt);; All: (*)'
         selected = 'CSV files: (*.csv)'
         inFileName = QtGui.QFileDialog.getOpenFileName(
             self, "Open input file", os.getcwd(), filters, selected)
-        #
-        # if os.path.exists (inFileName[0]) :
         if os.path.exists(inFileName):
-            #
-            # fh = open (inFileName[0], 'U')
             fh = open(inFileName, 'U')
             self.readFileLines = fh.readlines()
             fh.close()
@@ -688,17 +655,14 @@ class Novitiate(QtGui.QMainWindow):
 
         outFileName = QtGui.QFileDialog.getSaveFileName(
             self, 'Output KML file name.', os.getcwd(), filter='*.kml')
-        # print outFileName
         if outFileName:
             if outFileName[-4:] != '.kml':
                 outFileName += '.kml'
 
             self.status.showMessage("Working on kml...")
             worker = MyWorker('qc_map', outfile=outFileName)
-            # worker.finished.connect (self.qcDone)
             worker.start()
             worker.wait()
-            # novenqc.qc_map (outFileName)
 
     def checkInFile(self):
         if not self.readFileLines:
@@ -706,7 +670,6 @@ class Novitiate(QtGui.QMainWindow):
                 self, "Can't continue.",
                 "Must open and configure csv file first.")
             return
-        # print 'Checking infile...'
         names = map(lambda x: str(x.currentText()), self.comboBoxes)
         tmp = []
         for n in names:
@@ -719,38 +682,23 @@ class Novitiate(QtGui.QMainWindow):
                 tmp.append(n)
 
         if self.settings['inFormat'] == 'receiver':
-            # print 'Receiver check'
             worker = MyWorker('qc_receivers',
                               self.readFileLines[self.settings['linesSkip']:],
                               names,
                               RECEIVER_CFG,
                               sep=SEPMAP[self.settings['colSep']])
-            # ret = novenqc.qc_receivers (self.readFileLines[self.
-            # settings['linesSkip']:],
-            # map (lambda x : str (x.currentText ()), self.comboBoxes),
-            # RECEIVER_CFG,
-            # sep=SEPMAP[self.settings['colSep']])
         elif self.settings['inFormat'] == 'event':
-            # print 'Event check'
             worker = MyWorker('qc_shots',
                               self.readFileLines[self.settings['linesSkip']:],
                               names,
                               EVENT_CFG,
                               sep=SEPMAP[self.settings['colSep']])
-            # ret = novenqc.qc_shots (self.readFileLines[self.
-            # settings['linesSkip']:],
-            # map (lambda x : str (x.currentText ()), self.comboBoxes),
-            # EVENT_CFG,
-            # sep=SEPMAP[self.settings['colSep']])
-        # print worker
         self.status.showMessage("Working on QC...")
         worker.finished.connect(self.qcDone)
         worker.start()
         worker.wait()
-        # print '.'
 
     def saveAs(self):
-        #
         if self.TOP == {}:
             QtGui.QMessageBox.information(
                 self, "Can't continue.",
@@ -799,7 +747,6 @@ def startapp():
             f = open(os.path.join(home, '.PH5', 'Event.cfg'), 'w')
             f.write(str(EVENT_CFG_S))
             f.close()
-            # else:
             RECEIVER_CFG = json.loads(RECEIVER_CFG_S)
             EVENT_CFG = json.loads(EVENT_CFG_S)
     else:

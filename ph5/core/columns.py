@@ -1,70 +1,70 @@
 #
-#   This file defines the table organization of the PIC Kitchen HDF5 file,
-#   File suffix is ph5, and named: experimentnickname[nnn].ph5.
-#   Overall organization is defined in the Experiment module.
-#   Several mixins defined at end
-#   of this file.
+# This file defines the table organization of the PIC Kitchen HDF5 file,
+# File suffix is ph5, and named: experimentnickname[nnn].ph5.
+# Overall organization is defined in the Experiment module.
+# Several mixins defined at end
+# of this file.
 #
-#   Overall Organization
-#   (as of October 2006, revised July 2007, revised April 2016)
-#   Groups and Tables
-#   _g is a grouping structure defined in Experiment module
-#   _t is a table as defined in this file,
-#     instance defined in Experiment module
-#   _a is an array as defined in Experiment module
-#   Columns
-#   _a string name of array
-#   _i 8, 16, 32 bit integer
-#   _l 64 bit integer
-#   _f 32 bit float
-#   _d 64 bit float
-#   _s string
+# Overall Organization
+# (as of October 2006, revised July 2007, revised April 2016)
+# Groups and Tables
+# _g is a grouping structure defined in Experiment module
+# _t is a table as defined in this file,
+#   instance defined in Experiment module
+# _a is an array as defined in Experiment module
+# Columns
+# _a string name of array
+# _i 8, 16, 32 bit integer
+# _l 64 bit integer
+# _f 32 bit float
+# _d 64 bit float
+# _s string
 #
-#   /Experiment_g
-#                /Experiment_t
-#                /Maps_g
-#                        /Das_g_[nnnn]
-#                                /Hdr_a_[nnnn]
-#                        /Sta_g_[nnnn]
-#                        /Evt_g_[nnnn]
-#                        */Guides_g_[nnnn]
-#                                */Guide_t
-#                                */Fn_a_[nnnn]
-#                        */Blush_t
-#                                *out_s
-#                                *sub_s
-#                                *n_i
-#                /Sorts_g
-#                        /Sort_t
-#                        /Array_t_[nnn]
-#                        */Offset_t(_[aaa]_[sss]) aaa -> array number,
-#                                             sss -> shot line number
-#                        */Event_t(_[nnn])
-#                /Receivers_g
-#                        /Das_g_[das_sn]
-#                                /Das_t
-#                                /Data_a_[nnnn]
-#                                /SOH_a_[nnnn]
-#                                /Event_a_[nnnn]
-#                                /Log_a_[nnnn]
-#                        /Time_t
-#                        /Receiver_t
-#                        /Index_t
-#                /Reports_g
-#                        /Report_t
-#                        /Report_name
-#                /Responses_g
-#                        /Response_t
-#                                /gain
-#                                        /value_d
-#                                        /units_s
-#                                /bit_weight
-#                                        /value_d
-#                                        /units_s
-#                       /Response_a_[n]   *** PZ or RESP file
+# /Experiment_g
+#              /Experiment_t
+#              /Maps_g
+#                      /Das_g_[nnnn]
+#                              /Hdr_a_[nnnn]
+#                      /Sta_g_[nnnn]
+#                      /Evt_g_[nnnn]
+#                      */Guides_g_[nnnn]
+#                              */Guide_t
+#                              */Fn_a_[nnnn]
+#                      */Blush_t
+#                              *out_s
+#                              *sub_s
+#                              *n_i
+#              /Sorts_g
+#                      /Sort_t
+#                      /Array_t_[nnn]
+#                      */Offset_t(_[aaa]_[sss]) aaa -> array number,
+#                                           sss -> shot line number
+#                      */Event_t(_[nnn])
+#              /Receivers_g
+#                      /Das_g_[das_sn]
+#                              /Das_t
+#                              /Data_a_[nnnn]
+#                              /SOH_a_[nnnn]
+#                              /Event_a_[nnnn]
+#                              /Log_a_[nnnn]
+#                      /Time_t
+#                      /Receiver_t
+#                      /Index_t
+#              /Reports_g
+#                      /Report_t
+#                      /Report_name
+#              /Responses_g
+#                      /Response_t
+#                              /gain
+#                                      /value_d
+#                                      /units_s
+#                              /bit_weight
+#                                      /value_d
+#                                      /units_s
+#                     /Response_a_[n]   *** PZ or RESP file
 #
 #
-#   Steve Azevedo, August 21, 2006
+# Steve Azevedo, August 21, 2006
 #
 
 import tables
@@ -133,12 +133,12 @@ LOGGER = logging.getLogger(__name__)
 
 # class Orientation (tables.IsDescription) :
 # '''   Orientation of sensor   '''
-# dip               = Units32 ()                         #   Zero is up
+# dip               = Units32 ()                         # Zero is up
 # class dip (tables.IsDescription) :
 # '''   32 bit float with units   '''
 # units             = tables.StringCol (16)
 # value             = tables.Float32Col ()
-# azimuth           = Units32 ()                         #   Zero is north
+# azimuth           = Units32 ()                         # Zero is north
 # class azimuth (tables.IsDescription) :
 # '''   32 bit float with units   '''
 # units             = tables.StringCol (16)
@@ -146,11 +146,11 @@ LOGGER = logging.getLogger(__name__)
 
 # Enumeration for convention of Orientation Use SEED way by default
 
-#   Column descriptions: XXX THE MEAT STARTS HERE XXX
+# Column descriptions: XXX THE MEAT STARTS HERE XXX
 
 
 class Experiment (tables.IsDescription):
-    # time_stamp        = Time ()                            #   Time stamp
+    # time_stamp        = Time ()                            # Time stamp
     # for these entries
     class time_stamp (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
@@ -167,7 +167,7 @@ class Experiment (tables.IsDescription):
     longname_s = tables.StringCol(256, pos=4)  # Experiment name
     PIs_s = tables.StringCol(1024, pos=5)  # Experiment principal investigators
     institutions_s = tables.StringCol(1024, pos=6)  # Institutions
-    # north_west_corner = Location ()                        #   Bounding box
+    # north_west_corner = Location ()                        # Bounding box
     # nw corner
 
     class north_west_corner (tables.IsDescription):
@@ -200,7 +200,7 @@ class Experiment (tables.IsDescription):
         #
         # Any additional comments
         description_s = tables.StringCol(1024, pos=7)
-    # south_east_corner = Location ()                        #   Bounding box
+    # south_east_corner = Location ()                        # Bounding box
     # se corner
 
     class south_east_corner (tables.IsDescription):
@@ -238,12 +238,12 @@ class Experiment (tables.IsDescription):
         2048, pos=9)  # Experiment description
 
 # Need to generate experiment table with additions to what was in power point:
-#    Short name, ie nick name
-#    Principal Investigator
-#    Change location to be bounding box
-#    Net code, Report number,
-#    Experiment number
-#    Summary paragraph
+#  Short name, ie nick name
+#  Principal Investigator
+#  Change location to be bounding box
+#  Net code, Report number,
+#  Experiment number
+#  Summary paragraph
 
 
 class Data (tables.IsDescription):
@@ -252,7 +252,7 @@ class Data (tables.IsDescription):
     response_table_n_i = tables.Int32Col()
     time_table_n_i = tables.Int32Col()
     #
-    # start_time       = Time ()                             #   Start time of
+    # start_time       = Time ()                             # Start time of
     # trace
 
     class time (tables.IsDescription):
@@ -288,14 +288,14 @@ class Time (tables.IsDescription):
         model_s = tables.StringCol(64, pos=2)
         serial_number_s = tables.StringCol(64, pos=1)
         notes_s = tables.StringCol(1024, pos=4)
-    #   Time of first lock
+    # Time of first lock
 
     class start_time (tables.IsDescription):
         type_s = tables.StringCol(8)
         epoch_l = tables.Int64Col()
         ascii_s = tables.StringCol(32)
         micro_seconds_i = tables.Int32Col()
-    #   Time of ending lock
+    # Time of ending lock
 
     class end_time (tables.IsDescription):
         type_s = tables.StringCol(8)
@@ -322,22 +322,22 @@ class Receiver (tables.IsDescription):
     # epoch_l = tables.Int64Col ()        # Seconds since January 1, 1970
     # ascii_s  = tables.StringCol (32)              # WWW MMM DD HH:MM:SS YYYY
     # micro_seconds_i     = tables.Int32Col ()
-    # das              = Instrument ()                #   The digitizer
+    # das              = Instrument ()                # The digitizer
     # class das (tables.IsDescription) :
     # '''   Generalized instrument of some sort   '''
     # manufacturer_s      = tables.StringCol (64)
     # model_s             = tables.StringCol (64)
     # serial_number_s     = tables.StringCol (64)
     # notes_s             = tables.StringCol (1024)
-    #   Should sensor info be moved to its own table?
-    # sensor           = Instrument ()           #   The geophone/seismometer
+    # Should sensor info be moved to its own table?
+    # sensor           = Instrument ()           # The geophone/seismometer
     # class sensor (tables.IsDescription) :
     # '''   Generalized instrument of some sort   '''
     # manufacturer_s      = tables.StringCol (64)
     # model_s             = tables.StringCol (64)
     # serial_number_s     = tables.StringCol (64)
     # notes_s             = tables.StringCol (1024)
-    # location         = Location ()                    #   The location
+    # location         = Location ()                    # The location
     # class location (tables.IsDescription) :
     # '''   Geographic position   '''
     # coordinate_system_s = tables.StringCol (32)       # UTM etc.
@@ -357,17 +357,17 @@ class Receiver (tables.IsDescription):
     # value_d             = tables.Float64Col ()
     ##
     # description_s       = tables.StringCol (1024) # Any additional comments
-    # orientation      = Orientation ()             #   Orientation
+    # orientation      = Orientation ()             # Orientation
     # of geophone/seismometer
     class orientation (tables.IsDescription):
         '''   Orientation of sensor   '''
-        # dip               = Units32 ()                        #   Zero is up
+        # dip               = Units32 ()                        # Zero is up
         class dip (tables.IsDescription):
             '''   32 bit float with units   '''
             _v_pos = 2
             units_s = tables.StringCol(16)
             value_f = tables.Float32Col(pos=1)
-        # azimuth           = Units32 ()                         #   Zero is
+        # azimuth           = Units32 ()                         # Zero is
         # north
 
         class azimuth (tables.IsDescription):
@@ -386,23 +386,23 @@ class Index (tables.IsDescription):
     external_file_name_s = tables.StringCol(
         32)  # Name of external file. Example: 08-005_0001_of_0009
     hdf5_path_s = tables.StringCol(64)  # HDF5 path in external file.
-    #   Example: /Experiment_g/Receivers_g/Das_g_xxxxx
+    # Example: /Experiment_g/Receivers_g/Das_g_xxxxx
     serial_number_s = tables.StringCol(64)  # DAS serial number
-    #   Time stamp (last write time)
+    # Time stamp (last write time)
 
     class time_stamp (tables.IsDescription):
         type_s = tables.StringCol(8)
         epoch_l = tables.Int64Col()
         ascii_s = tables.StringCol(32)
         micro_seconds_i = tables.Int32Col()
-    #   First sample time
+    # First sample time
 
     class start_time (tables.IsDescription):
         type_s = tables.StringCol(8)
         epoch_l = tables.Int64Col()
         ascii_s = tables.StringCol(32)
         micro_seconds_i = tables.Int32Col()
-    #   Last sample time
+    # Last sample time
 
     class end_time (tables.IsDescription):
         type_s = tables.StringCol(8)
@@ -413,12 +413,12 @@ class Index (tables.IsDescription):
 # class Sort (tables.IsDescription) :
     # '''   Table to describe a data subset, such as a gather.
     # Also associates an instrument with a location on the ground   '''
-    # id               = tables.StringCol (16)     #   Station ID/stake number
-    # receiver_sn      = tables.StringCol (64)     #   DAS serial number
-    # channel_number   = tables.Int8Col ()         #   Channel number
-    # start_time       = Time ()                   #   Start time
-    # end_time         = Time ()                   #   End time
-    # array_name       = tables.StringCol (16)     #   Name of array
+    # id               = tables.StringCol (16)     # Station ID/stake number
+    # receiver_sn      = tables.StringCol (64)     # DAS serial number
+    # channel_number   = tables.Int8Col ()         # Channel number
+    # start_time       = Time ()                   # Start time
+    # end_time         = Time ()                   # End time
+    # array_name       = tables.StringCol (16)     # Name of array
     # that contains the trace
 
 # Time stamp on sort table
@@ -429,7 +429,7 @@ class Sort (tables.IsDescription):
     '''   Provides a way to group data   '''
     event_id_s = tables.StringCol(16)  # The event that this covers
     array_name_s = tables.StringCol(16, pos=2)  # Name of array
-    # time_stamp       = Time ()                              #   Time this
+    # time_stamp       = Time ()                              # Time this
     # was first requested
 
     class time_stamp (tables.IsDescription):
@@ -442,7 +442,7 @@ class Sort (tables.IsDescription):
         micro_seconds_i = tables.Int32Col()
     #
     array_t_name_s = tables.StringCol(16, pos=1)  # Name Array_t
-    # start_time       = Time ()                              #   Deployment
+    # start_time       = Time ()                              # Deployment
     # time of array
 
     class start_time (tables.IsDescription):
@@ -454,7 +454,7 @@ class Sort (tables.IsDescription):
         # WWW MMM DD HH:MM:SS YYYY
         ascii_s = tables.StringCol(32, pos=1)
         micro_seconds_i = tables.Int32Col(pos=3)
-    # end_time         = Time ()                              #   Pickup time
+    # end_time         = Time ()                              # Pickup time
     # of array
 
     class end_time (tables.IsDescription):
@@ -504,7 +504,6 @@ class Array (tables.IsDescription):
         model_s = tables.StringCol(64, pos=2)
         serial_number_s = tables.StringCol(64, pos=1)
         notes_s = tables.StringCol(1024, pos=5)
-    #
 
     class sensor (tables.IsDescription):
         '''   Generalized instrument of some sort   '''
@@ -513,7 +512,7 @@ class Array (tables.IsDescription):
         model_s = tables.StringCol(64, pos=2)
         serial_number_s = tables.StringCol(64, pos=1)
         notes_s = tables.StringCol(1024, pos=4)
-    # location         = Location ()                         #   The location
+    # location         = Location ()                         # The location
 
     class location (tables.IsDescription):
         '''   Geographic position   '''
@@ -542,7 +541,7 @@ class Array (tables.IsDescription):
             _v_pos = 3
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        #
+
         # Any additional comments
         description_s = tables.StringCol(1024, pos=7)
     # class start_time (tables.IsDescription) :
@@ -551,10 +550,10 @@ class Array (tables.IsDescription):
         # ascii_s = tables.StringCol (32)       # WWW MMM DD HH:MM:SS YYYY
         # micro_seconds_i = tables.Int32Col ()
     #
-    # data_array_a       = tables.StringCol (16)                #   Name of
+    # data_array_a       = tables.StringCol (16)                # Name of
     # data array
     channel_number_i = tables.Int8Col()  # Channel number
-    #   SEEDling (This belongs in the Maps_g!)
+    # SEEDling (This belongs in the Maps_g!)
     seed_band_code_s = tables.StringCol(1, pos=8)
     # Trace sample rate (samples per second)
     sample_rate_i = tables.Int16Col(pos=9)
@@ -573,7 +572,7 @@ class Array (tables.IsDescription):
 class Event (tables.IsDescription):
     '''   Table to describe an event, such as a shot   '''
     id_s = tables.StringCol(16, pos=1)  # Event ID/stake number
-    # location         = Location ()                         #   Location of
+    # location         = Location ()                         # Location of
     # event
 
     class location (tables.IsDescription):
@@ -603,10 +602,9 @@ class Event (tables.IsDescription):
             _v_pos = 3
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        #
         # Any additional comments
         description_s = tables.StringCol(1024, pos=7)
-    # time             = Time ()                             #   Time of event
+    # time             = Time ()                             # Time of event
 
     class time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
@@ -618,7 +616,7 @@ class Event (tables.IsDescription):
         # WWW MMM DD HH:MM:SS YYYY
         ascii_s = tables.StringCol(32, pos=1)
         micro_seconds_i = tables.Int32Col(pos=3)
-    # size             = Units64 ()                          #   Size of
+    # size             = Units64 ()                          # Size of
     # event, lbs of dynamite, Mb etc.
 
     class size (tables.IsDescription):
@@ -626,7 +624,7 @@ class Event (tables.IsDescription):
         _v_pos = 4
         units_s = tables.StringCol(16)
         value_d = tables.Float64Col(pos=1)
-    # depth            = Units64 ()                          #   Depth of event
+    # depth            = Units64 ()                          # Depth of event
 
     class depth (tables.IsDescription):
         '''   64 bit float with units   '''
@@ -655,7 +653,7 @@ class Offset (tables.IsDescription):
     '''   Offsets from events to receivers   '''
     event_id_s = tables.StringCol(16)  # Event ID
     receiver_id_s = tables.StringCol(16)  # Receiver ID
-    # offset           = Units64 ()                           #   The distance
+    # offset           = Units64 ()                           # The distance
 
     class offset (tables.IsDescription):
         '''   64 bit float with units   '''
@@ -675,12 +673,12 @@ class Offset (tables.IsDescription):
 
 class Response (tables.IsDescription):
     n_i = tables.Int32Col(pos=1)  # Response number
-    # gain_i                  = tables.Int16Col (pos=2)         #   Gain
+    # gain_i                  = tables.Int16Col (pos=2)         # Gain
 
     class gain (tables.IsDescription):
         units_s = tables.StringCol(16)
         value_i = tables.Int16Col()
-    # bit_weight_d            = tables.Float64Col (pos=3)      #   Bit weight
+    # bit_weight_d            = tables.Float64Col (pos=3)      # Bit weight
     # nV/count
 
     class bit_weight (tables.IsDescription):
@@ -695,10 +693,10 @@ class Response (tables.IsDescription):
 
 
 #
-#   -=-=-=-=-=-=-=-=-=-= Mixins =-=-=-=-=-=-=-=-=-=-
+# -=-=-=-=-=-=-=-=-=-= Mixins =-=-=-=-=-=-=-=-=-=-
 #
 
-#   Table name to handle lookup
+# Table name to handle lookup
 TABLES = {}
 
 
@@ -709,7 +707,6 @@ def add_reference(key, ref):
     TABLES[key] = ref
 
 
-#
 LAST_ARRAY_NODE_MAPS = {}
 
 
@@ -721,7 +718,6 @@ def add_last_array_node_maps(mapsgroup, key, ref):
     LAST_ARRAY_NODE_MAPS[name][key] = ref
 
 
-#
 LAST_ARRAY_NODE_DAS = {}
 
 
@@ -760,25 +756,25 @@ def _flatten(sequence, result=None, pre=None):
     if pre is None:
         pre = []
 
-    #   Loop through each item
+    # Loop through each item
     for item in sequence:
-        #   This is a leaf, so add it to the result
+        # This is a leaf, so add it to the result
         # print item
         if isinstance(item, str):
-            #   If this leaf has a node above it then include it
+            # If this leaf has a node above it then include it
             if pre:
                 key = string.join(pre, '/') + '/' + item
             else:
                 key = item
 
             result[key] = True
-        #   This is not a leaf so push it on the stack and recurse
+        # This is not a leaf so push it on the stack and recurse
         elif isinstance(item, tuple):
             pre.append(item[0])
             item = item[1][:]
             _flatten(item, result, pre)
         else:
-            #   If we ever get here something is really wrong!
+            # If we ever get here something is really wrong!
             print "oops: ", item
 
     if len(pre) > 0:
@@ -791,13 +787,10 @@ def keys(ltable):
     names = ltable.colnames
     all = []
     cols = ltable.cols._v_colpathnames
-    # print "Names: ", names
-    # print "cols: ", cols
     try:
         all_keys = {}
         for k in ltable.colpathnames:
             all_keys[k] = True
-
     except AttributeError:
         all_keys = _flatten(names)
 
@@ -807,7 +800,7 @@ def keys(ltable):
 
     return all, names
 
-#   XXX   Should required_keys be a single key???   XXX
+# XXX   Should required_keys be a single key???   XXX
 
 
 def validate(ltable, p, required_keys=[]):
@@ -819,7 +812,7 @@ def validate(ltable, p, required_keys=[]):
     fail_keys = []
     fail_required = []
     #
-    #   Try colpathnames, version 2 only, first
+    # Try colpathnames, version 2 only, first
     try:
         all_keys = {}
         for k in ltable.colpathnames:
@@ -828,16 +821,13 @@ def validate(ltable, p, required_keys=[]):
     except AttributeError:
         all_keys = _flatten(ltable.colnames)
 
-    # print all_keys
     for k in p.keys():
-        # print k, all_keys.has_key (k)
         if k not in all_keys:
-            #   Column does not exist so remove it from p
+            # Column does not exist so remove it from p
             del p[k]
             fail_keys.append("Error: No such column: " + k)
 
     for k in required_keys:
-        # print "K: ", k
         if k not in p:
             fail_required.append("Error: Required key missing: " + k)
 
@@ -854,7 +844,6 @@ def node(ph5, path, classname):
 
 
 def _cast(vtype, val):
-    # print type, val
     if not vtype:
         return None
 
@@ -892,15 +881,11 @@ def _cast(vtype, val):
                 val = int(val)
             except ValueError:
                 val = None
-        # elif vtype == 'Enum' or vtype == 'enum' :
-            # XXX   This only works since we only have a single enum   XXX
-            # val = TIME_TYPE[val]
-
     return val
 
 
 def search(ltable, key, value):
-    #   XXX   More sophisticated searches using table.where???
+    # XXX   More sophisticated searches using table.where???
     if isinstance(value, types.StringType):
         v = value.strip()
 
@@ -949,7 +934,7 @@ def update(ltable, p, key):
     if isinstance(p[key], types.StringType):
         v = p[key].strip()
 
-    #   Not sure why this does not work using the search proceedure above?
+    # Not sure why this does not work using the search proceedure above?
     for r in ltable.iterrows():
         if isinstance(r[key], types.StringType):
             rk = r[key].strip()
@@ -961,7 +946,7 @@ def update(ltable, p, key):
                 try:
                     r.__setitem__(k, p[k])
                 except IndexError:
-                    #   Not all columns need exist
+                    # Not all columns need exist
                     pass
 
             r.update()
@@ -999,7 +984,7 @@ def is_mini(ltable):
     '''
     from tables import openFile
     from re import compile
-    #   Das_t is always in an external file
+    # Das_t is always in an external file
     Das_tRE = compile("(/Experiment_g/Receivers_g/Das_g_.*)/Das_t")
     ltablepath = ltable._v_pathname
     if Das_tRE.match(ltablepath):
@@ -1020,7 +1005,7 @@ def populate(ltable, p, key=None):
           If key is set then update, otherwise append.
     '''
     # ltable = is_mini (ltable)
-    #   key is set so update
+    # key is set so update
     if key:
         if key in p:
             # print "update"
@@ -1029,7 +1014,7 @@ def populate(ltable, p, key=None):
         else:
             LOGGER.warning("No data for key. p.has_key (key) fails")
             return
-    #   no key so get a new row to append
+    # no key so get a new row to append
     else:
         # print "append"
         append(ltable, p)

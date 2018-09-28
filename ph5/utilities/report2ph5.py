@@ -72,12 +72,10 @@ def initializeExperiment():
 
 def update():
     global EX, ARRAY_NAME, KEF
-    #   There is a bug in batch update that kills kv
+    # There is a bug in batch update that kills kv
     k = kef.Kef(KEF)
     k.open()
     k.read()
-    # k.batch_update ()
-    # k.close () ; sys.exit ()
     k.rewind()
     ARRAY_NAME = None
     while True:
@@ -92,8 +90,6 @@ def update():
                 "Can not continue!")
             return False
 
-        #   XXX   We always append   XXX
-        # mo = updateRE.match (p)
         ref = EX.ph5_g_reports.ph5_t_report
         if p not in columns.TABLES:
             LOGGER.warning("No table reference for key: {0}. "
@@ -177,7 +173,7 @@ def main():
     get_args()
     initializeExperiment()
 
-    #   If there is no kef file prompt for its contents.
+    # If there is no kef file prompt for its contents.
     if KEF is None:
         get_kef_info()
 
@@ -185,13 +181,7 @@ def main():
         sys.exit(-1)
 
     load_report()
-
-    # buf = EX.ph5_g_reports.get_report ('Report_a_005')
-    # hf = open ('junk.png', 'w+')
-    # hf.write (buf)
-    #   Read report into an array, populate ph5
-    #   Read kef file and populate ph5
-    #   Close ph5
+    # Close ph5
     EX.ph5close()
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env pnpython2
 
 #
-#   Generate the reports "data_description.txt" and "data_report_key.txt"
+# Generate the reports "data_description.txt" and "data_report_key.txt"
 #
 
 import argparse
@@ -11,38 +11,38 @@ import sys
 import logging
 import time
 
-#   This provides the base functionality
+# This provides the base functionality
 from ph5.core import experiment
 from ph5.core import timedoy
 
-#   Timeseries are stored as numpy arrays
+# Timeseries are stored as numpy arrays
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
 #
-#   These are to hold different parts of the meta-data
+# These are to hold different parts of the meta-data
 #
-#   /Experiment_g/Experiment_t
+# /Experiment_g/Experiment_t
 EXPERIMENT_T = None
-#   /Experiment_g/Sorts_g/Event_t
+# /Experiment_g/Sorts_g/Event_t
 EVENT_T = None
-#   /Experiment_g/Sorts_g/Offset_t
+# /Experiment_g/Sorts_g/Offset_t
 OFFSET_T = None
-#   /Experiment_g/Sorts_g/Sort_t
+# /Experiment_g/Sorts_g/Sort_t
 SORT_T = None
-#   /Experiment_g/Responses_g/Response_t
+# /Experiment_g/Responses_g/Response_t
 RESPONSE_T = None
-#   /Experiment_g/Sorts_g/Array_t_[nnn]
+# /Experiment_g/Sorts_g/Array_t_[nnn]
 ARRAY_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
+# /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
 DAS_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
+# /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
 RECEIVER_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
-#   (keyed on DAS then by SOH_a_[n] name)
+# /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
+# (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
-#   A list of Das_Groups that refers to Das_g_[sn]'s
+# A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = {}
 
 os.environ['TZ'] = 'UTM'
@@ -50,7 +50,7 @@ time.tzset()
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -69,7 +69,7 @@ class Rows_Keys(object):
 
 
 #
-#   To hold DAS sn and references to Das_g_[sn]
+# To hold DAS sn and references to Das_g_[sn]
 #
 
 
@@ -90,7 +90,7 @@ class Offset_Azimuth(object):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
@@ -146,7 +146,7 @@ def get_args():
 
 
 #
-#   Initialize ph5 file
+# Initialize ph5 file
 #
 
 
@@ -160,18 +160,16 @@ def initialize_ph5(editmode=False):
 
 
 #
-#   Print Rows_Keys
+# Print Rows_Keys
 #
 
 
 def debug_print(a):
     i = 1
-    #   Loop through table rows
+    # Loop through table rows
     for r in a.rows:
-        #   Print line number
-        # print "%d) " % i,
         i += 1
-        #   Loop through each row column and print
+        # Loop through each row column and print
         for k in a.keys:
             print k, "=>", r[k], ",",
         print
@@ -186,19 +184,19 @@ def info_print():
 
 
 #
-#   Print Rows_Keys
+# Print Rows_Keys
 #
 
 
 def table_print(t, a):
     i = 0
-    #   Loop through table rows
+    # Loop through table rows
     for r in a.rows:
         i += 1
         print "#   Table row %d" % i
-        #   Print table name
+        # Print table name
         print t
-        #   Loop through each row column and print
+        # Loop through each row column and print
         for k in a.keys:
             print "\t", k, "=", r[k]
 
@@ -251,14 +249,14 @@ def read_sort_arrays():
     '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
     global EX, ARRAY_T
 
-    #   We get a list of Array_t_[n] names here...
-    #   (these are also in Sort_t)
+    # We get a list of Array_t_[n] names here...
+    # (these are also in Sort_t)
     names = EX.ph5_g_sorts.names()
     for n in names:
         arrays, array_keys = EX.ph5_g_sorts.read_arrays(n)
 
         rowskeys = Rows_Keys(arrays, array_keys)
-        #   We key this on the name since there can be multiple arrays
+        # We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
 
 
@@ -273,38 +271,38 @@ def read_response_table():
     RESPONSE_T = rowskeys
 
 
-#   NOT USED
+# NOT USED
 
 
 def read_receivers():
     '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
     global EX, DAS_T, RECEIVER_T, DASS, SOH_A
 
-    #   Get references for all das groups keyed on das
+    # Get references for all das groups keyed on das
     dasGroups = EX.ph5_g_receivers.alldas_g()
     dass = sorted(dasGroups.keys())
-    #   Sort by das sn
+    # Sort by das sn
     for d in dass:
-        #   Get node reference
+        # Get node reference
         g = dasGroups[d]
         dg = Das_Groups(d, g)
-        #   Save a master list for later
+        # Save a master list for later
         DASS.append(dg)
 
-        #   Set the current das group
+        # Set the current das group
         EX.ph5_g_receivers.setcurrent(g)
 
-        #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
+        # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das()
         rowskeys = Rows_Keys(das, das_keys)
         DAS_T[d] = rowskeys
 
-        #   Read /Experiment_g/Receivers_g/Receiver_t
+        # Read /Experiment_g/Receivers_g/Receiver_t
         receiver, receiver_keys = EX.ph5_g_receivers.read_receiver()
         rowskeys = Rows_Keys(receiver, receiver_keys)
         RECEIVER_T[d] = rowskeys
 
-        #   Read SOH file(s) for this das
+        # Read SOH file(s) for this das
         SOH_A[d] = EX.ph5_g_receivers.read_soh()
 
 
@@ -312,7 +310,7 @@ def read_das_groups():
     '''   Get das groups   '''
     global EX
 
-    #   Get references for all das groups keyed on das
+    # Get references for all das groups keyed on das
     return EX.ph5_g_receivers.alldas_g()
 
 
@@ -443,12 +441,12 @@ def get_sample_rate(a, start, stop):
                     das_t['sample_rate_i'] /
                     float(das_t['sample_rate_multiplier_i']))
 
-            #   Start contained
+            # Start contained
             if das_start >= start and das_start <= stop:
                 return int(das_t['sample_rate_i'] /
                            float(das_t['sample_rate_multiplier_i']))
 
-            #   Stop contained
+            # Stop contained
             if das_stop >= start and das_stop <= stop:
                 return int(das_t['sample_rate_i'] /
                            float(das_t['sample_rate_multiplier_i']))
@@ -471,8 +469,6 @@ def write_key_report():
         start, stop = array_start_stop(a)
         array_i = int(k[-3:])
         A[array_i] = (start, stop)
-
-    # tdoy = timedoy.TimeDOY ()
     fh.write("shot|time|arrays\n")
     array_i_keys = A.keys()
     for e in EVENT_T.rows:
@@ -501,10 +497,6 @@ def write_key_report():
     for s in SORT_T.rows:
         secs = int(s['end_time/epoch_l']) - int(s['start_time/epoch_l'])
         ttuple = time.gmtime(int(s['start_time/epoch_l']))
-        # wday, amo, da, hrmnsc, yr = string.split (s['start_time/ascii_s'])
-        # hr, mn, sc = string.split (hrmnsc, ':')
-        # pictime = tdoy.getPasscalTime (amo, int (da), int (hr), int (mn),\
-        #  int (sc), int (yr))
         pictime = "%4d:%03d:%02d:%02d:%02d" % (ttuple[0],
                                                ttuple[7],
                                                ttuple[3],
@@ -556,10 +548,6 @@ def write_des_report():
     for e in EVENT_T.rows:
         ttuple = time.gmtime(int(e['time/epoch_l']))
         secs = ttuple[5] + (e['time/micro_seconds_i'] / 1000000.)
-        # wday, amo, da, hrmnsc, yr = string.split (s['start_time/ascii_s'])
-        # hr, mn, sc = string.split (hrmnsc, ':')
-        # pictime = tdoy.getPasscalTime (amo, int (da), int (hr), int (mn),
-        # int (sc), int (yr))
         pictime = "%4d:%03d:%02d:%02d:%06.3f" % (ttuple[0],
                                                  ttuple[7],
                                                  ttuple[3],
@@ -586,13 +574,13 @@ def write_des_report():
         sample_rate = get_sample_rate(a, start, stop)
 
         fh.write("\nArray: %s\n" % a[-3:])
-        #   Sample rate:
+        # Sample rate:
         fh.write("\t\tSample Rate: %d sps\n" % sample_rate)
-        #   Sensor type
-        #   Deployment time
+        # Sensor type
+        # Deployment time
         fh.write("\t\tDeployment Time: %s\n" %
                  tdoy.epoch2PasscalTime(start)[:-10])
-        #   Pickup time
+        # Pickup time
         fh.write("\t\tPickup Time:     %s\n" %
                  tdoy.epoch2PasscalTime(stop)[:-10])
         fh.write("\t\tComponents: 1 => Z, 2 => N, 3 => E\n\n")
@@ -609,7 +597,7 @@ def write_des_report():
                       float(e['location/Z/value_d']),
                       e['channel_number_i']))
 
-    #   Need to write sorts here!
+    # Need to write sorts here!
 
     fh.close()
 

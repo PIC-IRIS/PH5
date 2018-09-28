@@ -1,11 +1,11 @@
 #!/usr/bin/env pnpython4
 # -*- coding: iso-8859-15 -*-
 #
-#   Read Fairfield SEG-D (Version 1.6) from the Sweetwater experiment.
-#   Write PH5
+# Read Fairfield SEG-D (Version 1.6) from the Sweetwater experiment.
+# Write PH5
 #
-#   Steve Azevedo, May 2014
-#   Modified to read SEG-D from 3C's, July 2016
+# Steve Azevedo, May 2014
+# Modified to read SEG-D from 3C's, July 2016
 #
 
 import argparse
@@ -32,12 +32,11 @@ APPEND = 1  # Number of SEG-D events to append to make 1 ph5 event.
 
 DAS_INFO = {}
 MAP_INFO = {}
-#   Current raw file processing
+# Current raw file processing
 F = None
-#   RE for mini files
+# RE for mini files
 miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 
-# LSB = 6.402437066e-6   #   From Malcolm UCSD
 LSB00 = 2500. / (2 ** 23)  # 0dB
 LSB12 = 625. / (2 ** 23)  # 12dB
 LSB24 = 156. / (2 ** 23)  # 24dB
@@ -46,13 +45,13 @@ LSB = LSB36
 
 LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
 
-#   Manufacturers codes
+# Manufacturers codes
 FAIRFIELD = 20
 OTHER = 0
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -92,7 +91,6 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -116,7 +114,6 @@ def read_infile(infile):
     global FILES
 
     def fn_sort(a, b):
-        # print os.path.basename (a), os.path.basename (b)
         return cmp(os.path.basename(a), os.path.basename(b))
 
     try:
@@ -217,7 +214,7 @@ def get_args():
         LOGGER.error("No input file given.\n")
         sys.exit()
 
-    #   Set output file
+    # Set output file
     if args.outfile is not None:
         PH5 = args.outfile
     else:
@@ -231,10 +228,6 @@ def get_args():
     formatter = logging.Formatter(LOGGING_FORMAT)
     ch.setFormatter(formatter)
     LOGGER.addHandler(ch)
-    #   Need to process in order: R309_674.1.0.rg16, 309 == line,
-    #   674 = receiver point, 1 = first file
-    #   Sorted where the file list is read...
-    # FILES.sort ()
 
 
 def initializeExperiment():
@@ -297,17 +290,15 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             pass
-            # print "DAS nuke ", e.message
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
@@ -319,28 +310,20 @@ def update_external_references():
 
     n = 0
     for i in INDEX_T_MAP.rows:
-        #   XXX
-        # keys = i.keys ()
-        # keys.sort ()
-        # for k in keys :
-        # print k, i[k]
-
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             pass
-            # print "MAP nuke ", e.message
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Maps_g', external_group, target)
@@ -351,50 +334,11 @@ def update_external_references():
     LOGGER.info("done, {0} map nodes recreated.\n".format(n))
 
 
-# @profile
-# def get_current_data_only (size_of_data, das = None) :
-# '''   Return opened file handle for data only PH5 file that will be
-# less than MAX_PH5_BYTES after raw data is added to it.
-# '''
-
-# newest = 0
-# newestfile = ''
-# Get the most recent data only PH5 file or match DAS serialnumber
-# for index_t in INDEX_T_DAS.rows :
-# This DAS already exists in a ph5 file
-# if index_t['serial_number_s'] == str (das) :
-# newestfile = index_t['external_file_name_s']
-# newestfile = newestfile.replace ('.ph5', '')
-# newestfile = newestfile.replace ('./', '')
-# return openPH5 (newestfile)
-# Find most recent ph5 file
-# if index_t['time_stamp/epoch_l'] > newest :
-# newest = index_t['time_stamp/epoch_l']
-# newestfile = index_t['external_file_name_s']
-# newestfile = newestfile.replace ('.ph5', '')
-# newestfile = newestfile.replace ('./', '')
-
-# print newest, newestfile
-# if not newestfile :
-# This is the first file added
-# return openPH5 ('miniPH5_00001')
-
-# size_of_exrec = os.path.getsize (newestfile + '.ph5')
-# print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
-# MAX_PH5_BYTES
-# if (size_of_data + size_of_exrec) > MAX_PH5_BYTES :
-# newestfile = "miniPH5_{0:05d}".format (int (newestfile[8:13]) + 1)
-
-# return openPH5 (newestfile)
-
-
 def get_current_data_only(size_of_data, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
 
-    # global NM
-    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -413,26 +357,24 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(das)
     newestfile = ''
-    #   Get the most recent data only PH5 file or match DAS serialnumber
+    # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T_DAS.rows:
-        #   This DAS already exists in a ph5 file
+        # This DAS already exists in a ph5 file
         if index_t['serial_number_s'] == das:
             newestfile = sstripp(index_t['external_file_name_s'])
             return openPH5(newestfile)
-        #   miniPH5_xxxxx.ph5 with largest xxxxx
+        # miniPH5_xxxxx.ph5 with largest xxxxx
         mh = miniPH5RE.match(index_t['external_file_name_s'])
         if n < int(mh.groups()[0]):
             newestfile = sstripp(index_t['external_file_name_s'])
             n = int(mh.groups()[0])
 
     if not newestfile:
-        #   This is the first file added
+        # This is the first file added
         return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
-    # MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
@@ -476,7 +418,7 @@ def process_traces(rh, th, tr):
     '''
 
     def get_true_channel():
-        #   Find channel by mapping to streamer_cable_number
+        # Find channel by mapping to streamer_cable_number
         try:
             true_channel = rh.channel_set_to_streamer_cable_map[
                 th.trace_header.channel_set]
@@ -487,8 +429,6 @@ def process_traces(rh, th, tr):
                   from the trace header.\n{0}\n".format(
                     e.message))
             true_channel = th.trace_header.channel_set
-        # print rh.channel_set_to_streamer_cable_map,\
-        # th.trace_header.channel_set, true_channel
         return true_channel
 
     def process_das():
@@ -518,13 +458,13 @@ def process_traces(rh, th, tr):
                 array_name_log_a
         '''
 
-        #   Check to see if group exists for this das, if not build it
+        # Check to see if group exists for this das, if not build it
         das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas(
             str(Das))
-        #   Build maps group (XXX)
+        # Build maps group (XXX)
         EXREC.ph5_g_maps.newdas('Das_g_', str(Das))
         if rh.general_header_block_1.chan_sets_per_scan == 1:
-            #   Single channel
+            # Single channel
             p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
         elif rh.general_header_block_1.chan_sets_per_scan >= 3:
             # 1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5), 3 (Z Node) -> 0
@@ -540,8 +480,7 @@ def process_traces(rh, th, tr):
         p_das_t['response_table_n_i'] = None
         p_das_t['time_table_n_i'] = 0
         p_das_t['time/type_s'] = 'BOTH'
-        # trace_epoch = th.trace_header_N[2].gps_tim1 * 4294967296 +\
-        #  th.trace_header_N[2].gps_tim2
+
         try:
             trace_epoch = th.trace_header_N[2].shot_epoch
         except Exception as e:
@@ -561,9 +500,7 @@ def process_traces(rh, th, tr):
         p_das_t['raw_file_name_s'] = os.path.basename(SD.name())
         p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
             'Data_a_')
-        # p_das_t['array_name_SOH_a'] = None
-        # p_das_t['array_name_event_a'] = None
-        # p_das_t['array_name_log_a'] = None
+
         p_response_t = {}
         '''
             n_i
@@ -600,18 +537,15 @@ def process_traces(rh, th, tr):
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
               " Channel: " + str(p_das_t['channel_number_i'])
-        #   Write trace data here
+        # Write trace data here
         try:
-            #   Convert to counts
-            # print tr.max (), tr.min ()
+            # Convert to counts
             tr_counts = tr / LSB
             EXREC.ph5_g_receivers.newarray(
                 p_das_t['array_name_data_a'], tr_counts, dtype='int32',
                 description=des)
         except Exception as e:
-            #   Failed, leave as float
-            # for x in tr : print x/LSB
-            # print e.message
+            # Failed, leave as float
             LOGGER.warning(
                 "Could not convert trace to counts. max: {1}, min {2}\n{0}"
                 .format(e.message, tr.max(), tr.min()))
@@ -619,7 +553,6 @@ def process_traces(rh, th, tr):
             EXREC.ph5_g_receivers.newarray(
                 p_das_t['array_name_data_a'], tr, dtype='float32',
                 description=des)
-        #
         update_index_t_info(p_das_t['time/epoch_l'] + (
                     float(p_das_t['time/micro_seconds_i']) / 1000000.),
                             p_das_t['sample_count_i'],
@@ -627,7 +560,6 @@ def process_traces(rh, th, tr):
                                 'sample_rate_multiplier_i'])
 
     def process_array():
-        # global DN
         p_array_t = {}
 
         def seen_sta():
@@ -636,7 +568,6 @@ def process_traces(rh, th, tr):
             elif Das not in ARRAY_T[line]:
                 return False
             elif chan_set in ARRAY_T[line][Das]:
-                # chans = ARRAY_T[line][Das].keys()  # All channels seen
                 if not ARRAY_T[line][Das][chan_set]:
                     return False
                 else:
@@ -714,7 +645,6 @@ def process_traces(rh, th, tr):
            chan 1 -> Z
         '''
         if SD.chan_sets_per_scan >= 3:
-            # true_chan = get_true_channel ()
             OM = {1: '1', 2: '2', 3: 'Z'}
         elif SD.chan_sets_per_scan == 1:
             OM = {1: 'Z'}
@@ -724,7 +654,6 @@ def process_traces(rh, th, tr):
             orientation_code = th.trace_header.channel_set
         else:
             orientation_code = OM[th.trace_header.channel_set]
-        # for cs in range (SD.chan_sets_per_scan) :
         p_array_t['seed_band_code_s'] = band_code
         p_array_t['seed_instrument_code_s'] = instrument_code
         p_array_t['seed_orientation_code_s'] = orientation_code
@@ -758,10 +687,6 @@ def process_traces(rh, th, tr):
         DM = {1: 'ZLAND 1C', 3: "ZLAND 3C"}
         try:
             p_array_t['das/model_s'] = DM[SD.chan_sets_per_scan]
-            # if SD.chan_sets_per_scan >= 3:
-            # p_array_t['das/model_s'] = DM[3]
-            # else:
-            # p_array_t['das/model_s'] = DM[1]
         except Exception as e:
             LOGGER.warn(
                 "Failed to read channel sets per scan: {0}.".format(e.message))
@@ -801,7 +726,6 @@ def process_traces(rh, th, tr):
             p_array_t['location/Z/value_d'] = 0.
 
         p_array_t['channel_number_i'] = th.trace_header.channel_set
-        # p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
         try:
             p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
                 Das, rh.extended_header_1.id_number)
@@ -826,9 +750,6 @@ def process_traces(rh, th, tr):
 
         if not seen_sta():
             ARRAY_T[line][Das][chan_set].append(p_array_t)
-            # if rh.general_header_block_1.chan_sets_per_scan ==\
-            #  len (ARRAY_T[line].keys ()) :
-            # DN = True
 
     def process_reel_headers():
         global RH
@@ -841,31 +762,31 @@ def process_traces(rh, th, tr):
                 ll, sort_keys=True, indent=4).split('\n'))
 
         log_array, log_name = getLOG()
-        #   General header 1
+        # General header 1
         process(rh.general_header_block_1, 'General 1')
-        #   General header 1
+        # General header 1
         process(rh.general_header_block_2, 'General 2')
-        #   General header N
+        # General header N
         for i in range(len(rh.general_header_block_N)):
             ht = "General {0}".format(i + 3)
             process(rh.general_header_block_N[i], ht)
-        #   Channel set descriptors
+        # Channel set descriptors
         for i in range(len(rh.channel_set_descriptor)):
             ht = "Channel Set {0}".format(i + 1)
             process(rh.channel_set_descriptor, ht)
-        #   Extended header 1
+        # Extended header 1
         process(rh.extended_header_1, "Extended 1")
-        #   Extended header 2
+        # Extended header 2
         process(rh.extended_header_2, "Extended 2")
-        #   Extended header 3
+        # Extended header 3
         process(rh.extended_header_3, "Extended 3")
-        #   Extended header 4 - n
+        # Extended header 4 - n
         for i in range(len(rh.extended_header_4)):
             ht = "Extended 4 ({0})".format(i + 1)
             process(rh.extended_header_4[i], ht)
-        #   External header
+        # External header
         process(rh.external_header, "External Header")
-        #   External header shot
+        # External header shot
         for i in range(len(rh.external_header_shot)):
             ht = "External Shot {0}".format(i + 1)
             process(rh.external_header_shot[i], ht)
@@ -882,26 +803,16 @@ def process_traces(rh, th, tr):
             TRACE_JSON.append(json.dumps(
                 ll, sort_keys=True, indent=4).split('\n'))
 
-        # log_array, log_name = getLOG ()
-
         process(th.trace_header, "Trace Header")
         for i in range(len(th.trace_header_N)):
             ht = "Header N-{0}".format(i + 1)
             process(th.trace_header_N[i], ht)
 
-    #
-    #
-    #
-    # print "\tprocess das"
-    # for cs in range (rh.chan_sets_per_scan) :
     process_das()
-    # if not DN :
-    # print "\tprocess array"
     process_array()
-    # print "\tprocess headers"
+
     if not RH:
         process_reel_headers()
-    # print "\tprocess trace header"
     process_trace_header()
 
 
@@ -912,16 +823,15 @@ def write_arrays(Array_t):
         return cmp(x['id_s'], y['id_s'])
 
     lines = sorted(Array_t.keys())
-    #   Loop through arrays/lines
+    # Loop through arrays/lines
     for line in lines:
-        # name = EX.ph5_g_sorts.nextName ()
         name = "Array_t_{0:03d}".format(int(line))
         a = EX.ph5_g_sorts.newArraySort(name)
         stations = sorted(Array_t[line].keys())
-        #   Loop through stations
+        # Loop through stations
         for station in stations:
             chan_sets = sorted(Array_t[line][station].keys())
-            #   Loop through channel sets
+            # Loop through channel sets
             for chan_set in chan_sets:
                 try:
                     for array_t in Array_t[line][station][chan_set]:
@@ -1001,11 +911,11 @@ def txncsptolatlon(northing, easting):
        Convert texas state plane coordinates in feet to
        geographic coordinates, WGS84.
     '''
-    #   Texas NC state plane feet Zone 4202
+    # Texas NC state plane feet Zone 4202
     sp = Proj(init='epsg:32038')
-    #   WGS84, geographic
+    # WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
-    #   Texas SP coordinates: survey foot is 1200/3937 meters
+    # Texas SP coordinates: survey foot is 1200/3937 meters
     lon, lat = transform(sp, wgs, easting * 0.30480060960121924,
                          northing * 0.30480060960121924)
 
@@ -1018,18 +928,15 @@ def utmcsptolatlon(northing, easting):
        Convert UTM to
        geographic coordinates, WGS84.
     '''
-    #   UTM
+    # UTM
     utmc = Proj(proj='utm', zone=UTM, ellps='WGS84')
-    #   WGS84, geographic
+    # WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
-    #
     lon, lat = transform(utmc, wgs, easting, northing)
-
     return lat, lon
 
 
 def correct_append_number():
-    # from math import modf
     traces = SD.reel_headers.extended_header_2['number_records']
     x = traces % APPEND
     APPEND - x
@@ -1048,7 +955,7 @@ def main():
         ARRAY_T = {}
 
         def get_das(sd):
-            #   Return line_station or das#[-9:]
+            # Return line_station or das#[-9:]
             try:
                 das = "{0}X{1}".format(
                     sd.reel_headers.extended_header_3.line_number,
@@ -1070,7 +977,7 @@ def main():
             return das
 
         def get_node(sd):
-            #   Return node part number, node id, and number of channels
+            # Return node part number, node id, and number of channels
             pn = None  # Part Number
             id = None  # Node ID
             nc = None  # Number of channel sets
@@ -1117,9 +1024,7 @@ def main():
             SD = segdreader.Reader(infile=f)
             LAT = None
             LON = None
-            # DN = False;
             RH = False
-            # print "isSEGD"
             if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
                 LOGGER.info(
                     "{0} is not a Fairfield SEG-D file. Skipping.".format(
@@ -1127,13 +1032,9 @@ def main():
                 continue
 
             try:
-                # print "general headers"
                 SD.process_general_headers()
-                # print "channel sets"
                 SD.process_channel_set_descriptors()
-                # print "extended headers"
                 SD.process_extended_headers()
-                # print "external headers"
                 SD.process_external_headers()
             except segdreader.InputsError as e:
                 LOGGER.info(
@@ -1141,13 +1042,9 @@ def main():
                         "".join(e.message)))
                 continue
 
-            # Das = (SD.reel_headers.extended_header_3.line_number * 1000) +\
-            #  SD.reel_headers.extended_header_3.receiver_point
-            # APPEND = correct_append_number ()
             nleft = APPEND
             Das = get_das(SD)
             part_number, node_id, number_of_channels = get_node(SD)
-            #
             EXREC = get_current_data_only(SIZE, Das)
             LOGGER.info(
                 "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
@@ -1160,10 +1057,7 @@ def main():
 
             n = 0
             trace_headers_list = []
-            # lat = None
-            # lon = None
             while True:
-                #
                 if SD.isEOF():
                     if n != 0:
                         thl = []
@@ -1184,8 +1078,6 @@ def main():
 
                         traces = new_traces
                         process_traces(SD.reel_headers, thl[0], t)
-                        # process_traces (SD.reel_headers,\
-                        # trace_headers_list[0], trace)
                         if DAS_INFO:
                             writeINDEX()
                     break
@@ -1200,14 +1092,14 @@ def main():
                 if not LAT and not LON:
                     try:
                         if UTM:
-                            #   UTM
+                            # UTM
                             LAT, LON = utmcsptolatlon(
                                 SD.trace_headers.trace_header_N[
                                     4].receiver_point_Y_final / 10.,
                                 SD.trace_headers.trace_header_N[
                                     4].receiver_point_X_final / 10.)
                         elif TSPF:
-                            #   Texas State Plane coordinates
+                            # Texas State Plane coordinates
                             LAT, LON = txncsptolatlon(
                                 SD.trace_headers.trace_header_N[
                                     4].receiver_point_Y_final / 10.,
@@ -1223,18 +1115,12 @@ def main():
                                     .format(e.message))
 
                 trace_headers_list.append(SD.trace_headers)
-                # for cs in range (SD.chan_sets_per_scan) :
                 if n == 0:
                     traces.append(Trace(trace, SD.trace_headers))
                     n = 1
-                    #   Node kludge
-                    # Das = (SD.trace_headers.trace_header_N[0]\
-                    # .receiver_line * 1000) + SD.trace_headers.\
-                    # trace_header_N[0].receiver_point
                     Das = get_das(SD)
                 else:
                     traces.append(Trace(trace, SD.trace_headers))
-                    # traces = npappend (traces, trace)
 
                 if n >= nleft or EVERY is True:
                     thl = []
@@ -1248,12 +1134,10 @@ def main():
                         if chan_set is None:
                             chan_set = T.headers.trace_header.channel_set
                         if chan_set == T.headers.trace_header.channel_set:
-                            # print type (t)
                             if isinstance(t, type(None)):
                                 t = T.trace
                             else:
                                 t = npappend(t, T.trace)
-                            # print len (t), t.min (), t.max ()
                         else:
                             new_traces.append(T)
                             if chan_set_next is None:

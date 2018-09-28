@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Program to re-initialize a table in a ph5 file.
+# Program to re-initialize a table in a ph5 file.
 #
-#   Steve Azevedo, February 2013
+# Steve Azevedo, February 2013
 #
 
 import os
@@ -23,7 +23,7 @@ if float(T2K.PROG_VERSION[0:8]) < 2017.317:
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
@@ -167,7 +167,7 @@ def get_args():
 
 
 #
-#   Initialize ph5 file
+# Initialize ph5 file
 #
 
 
@@ -181,27 +181,25 @@ def initialize_ph5(editmode=True):
 
 
 def backup(table_type, table_path, table):
-    '''   Create a backup in kef format. File has year and doy in name.
-    '''
+    '''   Create a backup in kef format. File has year and doy in name.    '''
     if NO_BACKUP or table.rows == []:
         return
     tdoy = timedoy.TimeDOY(epoch=time.time())
     tt = "{0:04d}{1:03d}".format(tdoy.dtobject.year, tdoy.dtobject.day)
     prefix = "{0}_{1}".format(table_type, tt)
     outfile = "{0}_00.kef".format(prefix)
-    #   Do not overwite existing file
+    # Do not overwite existing file
     i = 1
     while os.path.exists(outfile):
         outfile = "{0}_{1:02d}.kef".format(prefix, i)
         i += 1
-    #   Exit if we can't write backup kef
+    # Exit if we can't write backup kef
     if os.access(os.getcwd(), os.W_OK):
         print "Writing table backup: {0}.".format(os.path.join(outfile))
     else:
         LOGGER.error(
             "Can't write: {0}.\nExiting!".format(os.getcwd(), outfile))
         sys.exit(-3)
-    #
     try:
         fh = open(outfile, 'w')
         T2K.table_print(table_path, table, fh=fh)
@@ -226,19 +224,19 @@ def main():
     initialize_ph5()
     T2K.init_local()
     T2K.EX = EX
-    #   /Experiment_g/Experiment_t
+    # /Experiment_g/Experiment_t
     if EXPERIMENT_TABLE:
         table_type = 'Experiment_t'
         T2K.read_experiment_table()
         backup(table_type, '/Experiment_g/Experiment_t', T2K.EXPERIMENT_T)
         EX.nuke_experiment_t()
-    #   /Experiment_g/Sorts_g/Sort_t
+    # /Experiment_g/Sorts_g/Sort_t
     if SORT_TABLE:
         table_type = 'Sort_t'
         T2K.read_sort_table()
         backup(table_type, '/Experiment_g/Sorts_g/Sort_t', T2K.SORT_T)
         EX.ph5_g_sorts.nuke_sort_t()
-    #   /Experiment_g/Sorts_g/Offset_t
+    # /Experiment_g/Sorts_g/Offset_t
     if OFFSET_TABLE is not None:
         T2K.OFFSET_TABLE = OFFSET_TABLE
         T2K.read_offset_table()
@@ -264,7 +262,7 @@ def main():
                 exclaim(OFFSET_TABLE)
             else:
                 print "{0} Not found.".format(OFFSET_TABLE)
-    #   /Experiment_g/Sorts_g/Event_t
+    # /Experiment_g/Sorts_g/Event_t
     if EVENT_TABLE is not None:
         T2K.EVENT_TABLE = EVENT_TABLE
         T2K.read_event_table()
@@ -285,7 +283,7 @@ def main():
                 exclaim(EVENT_TABLE)
             else:
                 print "{0} Not found.".format(EVENT_TABLE)
-    #   /Experiment_g/Sorts_g/Array_t_xxx
+    # /Experiment_g/Sorts_g/Array_t_xxx
     if ARRAY_TABLE:
         T2K.ARRAY_TABLE = ARRAY_TABLE
         T2K.read_sort_arrays()
@@ -299,25 +297,25 @@ def main():
         else:
             print "{0} Not found.".format(ARRAY_TABLE)
 
-    #   /Experiment_g/Receivers_g/Time_t
+    # /Experiment_g/Receivers_g/Time_t
     if TIME_TABLE:
         table_type = 'Time_t'
         T2K.read_time_table()
         backup(table_type, '/Experiment_g/Receivers_g/Time_t', T2K.TIME_T)
         EX.ph5_g_receivers.nuke_time_t()
-    #   /Experiment_g/Receivers_g/Index_t
+    # /Experiment_g/Receivers_g/Index_t
     if INDEX_TABLE:
         table_type = 'Index_t'
         T2K.read_index_table()
         backup(table_type, '/Experiment_g/Receivers_g/Index_t', T2K.INDEX_T)
         EX.ph5_g_receivers.nuke_index_t()
-    #   /Experiment_g/Maps_g/Index_t
+    # /Experiment_g/Maps_g/Index_t
     if M_INDEX_TABLE:
         table_type = 'M_Index_t'
         T2K.read_m_index_table()
         backup(table_type, '/Experiment_g/Maps_g/Index_t', T2K.M_INDEX_T)
         EX.ph5_g_maps.nuke_index_t()
-    #   /Experiment_g/Receivers_g/Receiver_t
+    # /Experiment_g/Receivers_g/Receiver_t
     if RECEIVER_TABLE:
         table_type = 'Receiver_t'
         T2K.read_receiver_table()
@@ -326,7 +324,7 @@ def main():
             '/Experiment_g/Receivers_g/Receiver_t',
             T2K.RECEIVER_T)
         EX.ph5_g_receivers.nuke_receiver_t()
-    #   /Experiment_g/Responses_g/Response_t
+    # /Experiment_g/Responses_g/Response_t
     if RESPONSE_TABLE:
         table_type = 'Response_t'
         T2K.read_response_table()
@@ -335,13 +333,12 @@ def main():
             '/Experiment_g/Responses_g/Response_t',
             T2K.RESPONSE_T)
         EX.ph5_g_responses.nuke_response_t()
-    #   /Experiment_g/Reports_g/Report_t
+    # /Experiment_g/Reports_g/Report_t
     if REPORT_TABLE:
         table_type = 'Report_t'
         T2K.read_report_table()
         backup(table_type, '/Experiment_g/Reports_g/Report_t', T2K.REPORT_T)
         EX.ph5_g_reports.nuke_report_t()
-    #
     if DAS_TABLE:
         yon = raw_input(
             "Are you sure you want to delete all data in Das_t for das {0}?"
@@ -355,7 +352,6 @@ def main():
                        '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
                            DAS_TABLE), T2K.DAS_T[DAS_TABLE])
             EX.ph5_g_receivers.nuke_das_t(DAS_TABLE)
-
     EX.ph5close()
 
 

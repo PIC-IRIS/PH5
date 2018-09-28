@@ -1,9 +1,9 @@
 #!/usr/bin/env pnpython3
 #
-#   A class to read Fairfield SEG-D Version
-#   1.5-1 & 1.6 files from the Sweetwater experiment.
+# A class to read Fairfield SEG-D Version
+# 1.5-1 & 1.6 files from the Sweetwater experiment.
 #
-#   Steve Azevedo, May 2014
+# Steve Azevedo, May 2014
 #
 
 import sys
@@ -60,22 +60,19 @@ class Reader ():
         self.infile = infile
         self.FH = None
         self.endianess = 'big'  # SEG-D is always big endian(?)
-        #   From General headers
+        # From General headers
         self.file_number = None
         self.record_length_sec = None
         self.chan_sets_per_scan = None
         self.extended_header_blocks = None
         self.external_header_blocks = None
         self.sample_rate = None
-        #   From Channel set headers
+        # From Channel set headers
         self.channel_set_start_time_sec = None
         self.channel_set_end_time_sec = None
-        #   From trace headers
+        # From trace headers
         self.samples = None
         self.bytes_read = 0
-    #
-    ####
-    #
 
     def open_infile(self):
         try:
@@ -210,28 +207,28 @@ class Reader ():
             self.read_general_header_block_1()
         self.reel_headers.general_header_block_2 =\
             self.read_general_header_block_2()
-        #   Set file number
+        # Set file number
         if self.reel_headers.general_header_block_1.file_number == 0xFFFF:
             self.file_number = self.reel_headers.\
                 read_general_header_block_2.extended_file_number
         else:
             self.file_number = self.reel_headers.\
                 general_header_block_1.file_number
-        #   Set record length
+        # Set record length
         if self.reel_headers.general_header_block_1.record_length == 0xFFF:
             self.record_length_sec = self.reel_headers.\
                 general_header_block_2.extended_record_length
         else:
             self.record_length_sec = self.reel_headers.\
                 general_header_block_1.record_length * 0.512
-        #   Set number of channel sets
+        # Set number of channel sets
         if self.reel_headers.general_header_block_1.chan_sets_per_scan == 0xFF:
             self.chan_sets_per_scan = self.reel_headers.\
                 general_header_block_2.extended_chan_sets_per_scan_type
         else:
             self.chan_sets_per_scan = self.reel_headers.\
                 general_header_block_1.chan_sets_per_scan
-        #   Number of extended headers
+        # Number of extended headers
         if self.reel_headers.general_header_block_1.\
            number_extended_header_blocks == 0xFF:
             self.extended_header_blocks = self.reel_headers.\
@@ -239,7 +236,7 @@ class Reader ():
         else:
             self.extended_header_blocks = self.reel_headers.\
                 general_header_block_1.number_extended_header_blocks
-        #   Number of external headers
+        # Number of external headers
         if self.reel_headers.general_header_block_1.\
            number_external_header_blocks == 0xFF:
             self.external_header_blocks = self.\
@@ -248,14 +245,14 @@ class Reader ():
             self.external_header_blocks = self.\
                 reel_headers.general_header_block_1.\
                 number_external_header_blocks
-        #   Get sample rate from base scan interval (LSB is 1/16 milli-second)
+        # Get sample rate from base scan interval (LSB is 1/16 milli-second)
         self.sample_rate = int(
             (1. / (self.reel_headers.
                    general_header_block_1.base_scan_interval / 16.)) * 1000.)
 
     def process_channel_set_descriptors(self):
         def create_key():
-            #   Create a mapping between channel sets to streamer cable numbers
+            # Create a mapping between channel sets to streamer cable numbers
             kv = {}
             for cs in self.reel_headers.channel_set_descriptor:
                 k = cs.chan_set_number
@@ -267,16 +264,16 @@ class Reader ():
         for i in range(self.chan_sets_per_scan):
             cs = self.read_channel_set_descriptor()
             self.reel_headers.channel_set_descriptor.append(cs)
-            #   ***   Should we get current channel set number   ***
-            #   Channel set start time in seconds
+            # ***   Should we get current channel set number   ***
+            # Channel set start time in seconds
             self.channel_set_start_time_sec =\
                 self.reel_headers.channel_set_descriptor[i].\
                 chan_set_start_time * 0.002
-            #   Channel set end time in seconds
+            # Channel set end time in seconds
             self.channel_set_end_time_sec =\
                 self.reel_headers.channel_set_descriptor[
                     i].chan_set_end_time * 0.002
-            #   ***   Calculate scale factor for mili-volts.
+            # ***   Calculate scale factor for mili-volts.
             # Fairfield data recorded as mili-volts   ***
         self.reel_headers.channel_set_to_streamer_cable_map = create_key()
 
@@ -298,7 +295,7 @@ class Reader ():
         if n > 1:
             self.reel_headers.external_header_shot.append(
                 self.read_external_header_shot())
-            #   Throw away remaining external headers
+            # Throw away remaining external headers
             s = (n - 2) * 32
             self.read_buf(s)
 
@@ -439,7 +436,7 @@ class Reader ():
         if n > 0:
             self.trace_headers.trace_header_N.append(
                 self.read_trace_header_10())
-        #   Note: SEG-D 2.1 allows a total of 15 trace header extensions.
+        # Note: SEG-D 2.1 allows a total of 15 trace header extensions.
         # We only read 10 as per Fairfield rg1.6
         self.samples = self.trace_headers.trace_header_N[0][
             'samples_per_trace']
@@ -458,20 +455,16 @@ class Reader ():
               8048 -- 32 bit hexidecimal
               8058 -- 32 bit IEEE float   '''
 
-        # XXX
-        # self.reel_headers.general_header_block_1.data_sample_format_code
-        # XXX
         f = self.trace_fmt = self.reel_headers.\
             general_header_block_1.data_sample_format_code
-        #
-        #
+
         bytes_per_sample = 4  # Assumes 32 bit IEEE floats
         buf = self.read_buf(bytes_per_sample * number_of_samples)
-        #   IEEE floats - 4 byte - Should be big endian
+        # IEEE floats - 4 byte - Should be big endian
         if f == 8058:
             try:
                 if self.endianess != sys.byteorder:
-                    #   Swap 4 byte
+                    # Swap 4 byte
                     ret = np.fromstring(buf, dtype=np.float32)
                     ret = ret.byteswap()
                 else:
@@ -486,11 +479,10 @@ class Reader ():
         return ret
 
     def process_trace(self):
-        # for chan_set in range (self.chan_sets_per_scan) :
         samples = self.process_trace_headers()
         ret = self.read_trace(samples)
         cs = self.trace_headers.trace_header.channel_set
-        #   Return trace and channel set number
+        # Return trace and channel set number
         return ret, cs
 
     def isEOF(self):
@@ -524,7 +516,7 @@ class Reader ():
         return ret
 
 #
-#   Mix in's
+# Mix in's
 #
 
 
@@ -617,8 +609,6 @@ if __name__ == '__main__':
             print_container(c)
 
         trace = traces[cs]
-        # for s in trace :
-        # print s
         n += 1
         while True:
             if sd.isEOF():
@@ -630,10 +620,6 @@ if __name__ == '__main__':
                 print i
                 i += 1
                 print_container(c)
-
             n += 1
-            #
-            # for s in trace :
-            # print s
 
     LOGGER.info("There were {0} traces.".format(n))

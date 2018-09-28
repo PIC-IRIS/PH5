@@ -1,9 +1,9 @@
 #!/usr/bin/env pnpython3
 
 #
-#   Simple program to read and display SEG-Y file
+# Simple program to read and display SEG-Y file
 #
-#   Steve Azevedo
+# Steve Azevedo
 #
 
 import sys
@@ -252,7 +252,6 @@ def print_trace_header(container):
     print "---------- Trace Header ----------"
     for k in keys:
         what = "container.{0}".format(k)
-        # print repr (what)
         try:
             if tt == 9999:
                 raise
@@ -324,14 +323,14 @@ def read_trace(n, l, f=5):
     if PRINT is True:
         for i in range(n):
             buf = FH.read(l)
-            #   IBM floats - 4 byte - Must be big endian
+            # IBM floats - 4 byte - Must be big endian
             if f == 1:
                 ret.append(construct.BFloat32(
                     "x").parse(ibmfloat.ibm2ieee32(buf)))
-            #   INT - 4 byte or 2 byte
+            # INT - 4 byte or 2 byte
             elif f == 2:
                 if ENDIAN == 'little':
-                    #   Swap 4 byte
+                    # Swap 4 byte
                     b = construct.SLInt32("x").parse(buf)
                 else:
                     b = construct.SBInt32("x").parse(buf)
@@ -339,22 +338,22 @@ def read_trace(n, l, f=5):
                 ret.append(b)
             elif f == 3:
                 if ENDIAN == 'little':
-                    #   Swap 2 byte
+                    # Swap 2 byte
                     b = construct.SLInt16("x").parse(buf)
                 else:
                     b = construct.SBInt16("x").parse(buf)
 
                 ret.append(b)
-            #   IEEE floats - 4 byte
+            # IEEE floats - 4 byte
             elif f == 5:
                 if ENDIAN == 'little':
-                    #   Swap 4 byte
+                    # Swap 4 byte
                     b = construct.LFloat32("x").parse(buf)
                 else:
                     b = construct.BFloat32("x").parse(buf)
 
                 ret.append(b)
-            #   INT - 1 byte
+            # INT - 1 byte
             elif f == 8:
                 ret.append(construct.SBInt8("x").parse(buf))
 
@@ -387,33 +386,33 @@ def main():
     print_binary_header(binary_container)
 
     if binary_container:
-        #   Number of Extended Textural Headers
+        # Number of Extended Textural Headers
         nt = binary_container.extxt
-        #   Samples per trace
+        # Samples per trace
         n = binary_container.hns
-        #   Trace sample format
+        # Trace sample format
         if F is None:
             F = binary_container.format
-        #   Bytes per sample
+        # Bytes per sample
         try:
             ll = SAMPLE_LENGTH[binary_container.format]
         except KeyError:
             ll = 4
 
-        #   Bytes per trace
+        # Bytes per trace
         if L is None:
             L = ll * n
         else:
             n = int(L) / ll
 
-        #   Traces per record
+        # Traces per record
         if T is None:
             T = binary_container.ntrpr
     else:
         T = 1
         n = ll = F = 0
 
-    #   Print Extended Textural Headers
+    # Print Extended Textural Headers
     if nt > 0:
         for x in range(nt):
             text_container = read_text_header()

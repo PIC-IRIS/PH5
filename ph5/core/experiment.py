@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Core functionality to manipulate ph5 files
+# Core functionality to manipulate ph5 files
 #
-#   Steve Azevedo, August 2006
+# Steve Azevedo, August 2006
 #
 
 import tables
@@ -93,11 +93,11 @@ class MapsGroup:
 
     def initgroup(self):
         try:
-            #   Create Maps group
+            # Create Maps group
             self.ph5_g_maps = initialize_group(self.ph5,
                                                '/Experiment_g',
                                                'Maps_g')
-            #   Create Index table
+            # Create Index table
             self.ph5_t_index = initialize_table(self.ph5,
                                                 '/Experiment_g/Maps_g',
                                                 'Index_t',
@@ -112,7 +112,7 @@ class MapsGroup:
         self.initgroup()
 
     def setcurrent(self, g):
-        #   If this is an external link it needs to be redirected.
+        # If this is an external link it needs to be redirected.
         if externalLinkRE.match(g.__str__()):
             g = g()
 
@@ -130,13 +130,13 @@ class MapsGroup:
         return None
 
     def newdas(self, what, sn):
-        #   Create a new group for a DAS, Station, or Event
+        # Create a new group for a DAS, Station, or Event
         choices = ['Das_g_', 'Stn_g_', 'Evt_g_']
         if what in choices:
             sn = what + sn
         else:
             return None
-        #   Create the das group
+        # Create the das group
         d = initialize_group(self.ph5, '/Experiment_g/Maps_g', sn)
 
         self.current_g_das = d
@@ -183,7 +183,6 @@ class MapsGroup:
         return nombre
 
     def newearray(self, name, description=None):
-        #
         batom = tables.StringAtom(itemsize=40)
         a = create_empty_earray(self.ph5,
                                 self.current_g_das,
@@ -224,18 +223,17 @@ class MapsGroup:
 #
 # Mixins refactor here Dec 11
 #
-# import sqlite3 as sql
 
 
 class SortsGroup:
     '''   /Experiment_g/Sorts_g
                                /Sort_t #groups data by time and location
                                /Array_t_[array]
-                               #   columns.Array, groups data by location
+                               # columns.Array, groups data by location
                                /Offset_t(_[array]_[shotline])
-                               #   columns.Offset, source to receiver offsets
+                               # columns.Offset, source to receiver offsets
                                /Event_t(_[shotline])
-                               #   columns.Event, list of events
+                               # columns.Event, list of events
     '''
 
     def __init__(self, ph5):
@@ -257,7 +255,6 @@ class SortsGroup:
         names = columns.TABLES.keys()
         for n in names:
             name = os.path.basename(n)
-            # for re in (self.Array_tRE, self.Event_tRE, self.Offset_tRE) :
             mo = self.Array_tRE.match(name)
             if mo:
                 self.ph5_t_array[name] = columns.TABLES[n]
@@ -272,7 +269,7 @@ class SortsGroup:
 
     def read_offset(self, offset_name=None):
         if offset_name is None and 'Offset_t' in self.ph5_t_offset:
-            #   Legacy naming
+            # Legacy naming
             ret, keys = read_table(self.ph5_t_offset['Offset_t'])
         else:
             try:
@@ -290,7 +287,7 @@ class SortsGroup:
 
     def read_events(self, event_name=None):
         if event_name is None and 'Event_t' in self.ph5_t_event:
-            #   Legacy
+            # Legacy
             ret, keys = read_table(self.ph5_t_event['Event_t'])
         else:
             try:
@@ -333,31 +330,25 @@ class SortsGroup:
                  weight -> kind of index,
                  'ultralight', 'light', 'medium', 'full'.
         '''
-        #
         try:
-            #
             self.ph5_t_offset[name].cols.event_id_s.create_index(
                 optlevel=level, kind=weight)
         except (ValueError,
                 tables.exceptions.NodeError,
                 tables.exceptions.FileModeError):
-            # print e.message
             pass
 
         try:
-            #
             self.ph5_t_offset[name].cols.receiver_id_s.create_index(
                 optlevel=level, kind=weight)
         except (ValueError,
                 tables.exceptions.NodeError,
                 tables.exceptions.FileModeError):
-            # print e.message
             pass
 
     def read_offset_fast(self, shot, station, name=None):
-        #
         if name is None and 'Offset_t' in self.ph5_t_offset:
-            #   Legacy
+            # Legacy
             name = 'Offset_t'
 
         ret = {}
@@ -382,7 +373,6 @@ class SortsGroup:
     def read_offsets(self, shotrange=None, stations=None, name='Offset_t'):
         offsets = []
 
-        # shots = map (int, shots); shots = map (str, shots)
         if stations is not None:
             stations = map(int, stations)
             stations = map(str, stations)
@@ -390,9 +380,6 @@ class SortsGroup:
         keys, names = columns.keys(self.ph5_t_offset[name])
 
         for row in self.ph5_t_offset[name].iterrows():
-            # for row in self.ph5_t_offset.itersorted
-            # (self.ph5_t_offset.cols._f_col ('event_id_s'), checkCSI=False) :
-            # #   forceCSI to True
             if shotrange is not None:
                 try:
                     shot = int(row['event_id_s'])
@@ -407,9 +394,7 @@ class SortsGroup:
                     continue
 
                 if not (shot >= shotrange[0] and shot <= shotrange[1]):
-                    # print "Reject Shot", shot, shotrange
                     continue
-                # else : print "Accept Shot", shot, shotrange
 
             if stations is not None:
                 try:
@@ -422,19 +407,14 @@ class SortsGroup:
                     continue
 
                 if station not in stations:
-                    # print "Reject Station", station, stations
                     continue
 
-            # print "Match", shot, shotrange
             r = {}
             for k in keys:
                 r[k] = row[k]
 
             offsets.append(r)
 
-        # ret = columns.rowstolist (offsets, keys)
-        # for o in offsets : print o
-        # sys.exit ()
         return offsets, keys
 
     def newOffsetSort(self, name):
@@ -444,7 +424,6 @@ class SortsGroup:
                              columns.Offset)
 
         self.ph5_t_offset[name] = o
-        # self.index_offset_table (name=name)
 
         columns.add_reference('/Experiment_g/Sorts_g/' +
                               name, self.ph5_t_offset[name])
@@ -468,8 +447,7 @@ class SortsGroup:
         '''   Names should be 000 - 999
               Array_t_xxx
         '''
-        # name = 'Array_t_' + name
-        #   Create Array table
+        # Create Array table
         a = initialize_table(self.ph5,
                              '/Experiment_g/Sorts_g',
                              name,
@@ -484,10 +462,6 @@ class SortsGroup:
 
     def NewSort(self, name):
         return self.newArraySort(name)
-
-    #   June 18, 2015
-    # def _names (self, what)
-    # def _nextName (self, what)
 
     def nextName(self):
         names = []
@@ -541,7 +515,6 @@ class SortsGroup:
         return names
 
     def populate(self, ref, p, key=[]):
-        #
         populate_table(ref, p, key)
 
         ref.flush()
@@ -559,11 +532,11 @@ class SortsGroup:
         self.populate(self.ph5_t_offset[name], p, pkey)
 
     def initgroup(self):
-        #   Create Sorts group
+        # Create Sorts group
         self.ph5_g_sorts = initialize_group(
             self.ph5, '/Experiment_g', 'Sorts_g')
 
-        #   Create Sort table
+        # Create Sort table
         self.ph5_t_sort = initialize_table(self.ph5,
                                            '/Experiment_g/Sorts_g',
                                            'Sort_t',
@@ -571,7 +544,7 @@ class SortsGroup:
 
         columns.add_reference('/Experiment_g/Sorts_g/Sort_t', self.ph5_t_sort)
 
-        #   Reference Offset table(s)   ***   See Offset_tRE   ***
+        # Reference Offset table(s)   ***   See Offset_tRE   ***
         offsets = get_nodes_by_name(self.ph5,
                                     '/Experiment_g/Sorts_g',
                                     self.Offset_tRE,
@@ -581,9 +554,8 @@ class SortsGroup:
             nombre = offsets[k]._v_name
             columns.add_reference(
                 '/Experiment_g/Sorts_g/' + nombre, offsets[k])
-            # self.index_offset_table (name=nombre)
 
-        #   Reference Event table   ***   See Event_tRE   ***
+        # Reference Event table   ***   See Event_tRE   ***
         events = get_nodes_by_name(self.ph5,
                                    '/Experiment_g/Sorts_g',
                                    self.Event_tRE,
@@ -593,7 +565,7 @@ class SortsGroup:
             nombre = events[k]._v_name
             columns.add_reference('/Experiment_g/Sorts_g/' + nombre, events[k])
 
-        #   Find any Attay_t_[nnn]
+        # Find any Attay_t_[nnn]
         arrays = get_nodes_by_name(self.ph5,
                                    '/Experiment_g/Sorts_g',
                                    self.Array_tRE,
@@ -614,7 +586,6 @@ class SortsGroup:
                                   name=nombre,
                                   classname='Table')
             n.remove()
-            # self.newSort (nombre)
             return True
         else:
             return False
@@ -636,7 +607,7 @@ class SortsGroup:
             return False
 
     def nuke_offset_t(self, name='Offset_t'):
-        #   Remove the indexes before removing the table
+        # Remove the indexes before removing the table
         try:
             self.ph5_t_offset[name].cols.event_id_s.remove_index()
         except Exception:
@@ -646,7 +617,7 @@ class SortsGroup:
             self.ph5_t_offset[name].cols.receiver_id_s.remove_index()
         except Exception:
             pass
-        #   Remove cruft left from failed indexing
+        # Remove cruft left from failed indexing
         cruftRE = re.compile(".*value_d")
         nodes = get_nodes_by_name(
             self.ph5, '/Experiment_g/Sorts_g/', cruftRE, None)
@@ -655,7 +626,7 @@ class SortsGroup:
                 nodes[k].remove()
             except Exception:
                 pass
-        #   Remove the offset table
+        # Remove the offset table
         try:
             self.ph5_t_offset[name].remove()
             self.initgroup()
@@ -671,22 +642,22 @@ class Data_Trace (object):
 
 class ReceiversGroup:
     '''   /Experiment_g/Receivers_g/Das_g_[sn]#Data for this DAS in this group
-                                              /Das_t #   columns.Data
+                                              /Das_t # columns.Data
                                               /Data_a_[n]
                                               #A 1 x n array containing
                                               the data for an event
                                               /SOH_a_[n]
-                                              #   State of health data,
+                                              # State of health data,
                                               usually a list of strings
                                               /Event_a_[n]
-                                              #   Event table, usually a
+                                              # Event table, usually a
                                               list of strings
                                               /Log_a_[n]
-                                              #   Log channel
+                                              # Log channel
           /Experiment_g/Receivers_g
-                                    /Receiver_t            #   columns.Receiver
-                                    /Time_t                #   columns.Time
-                                    /Index_t               #   columns.Index
+                                    /Receiver_t            # columns.Receiver
+                                    /Time_t                # columns.Time
+                                    /Index_t               # columns.Index
     '''
 
     def __init__(self, ph5):
@@ -694,11 +665,7 @@ class ReceiversGroup:
         self.ph5_g_receivers = None  # Receivers group
         self.current_g_das = None  # Current das group
         self.current_t_das = None  # Current das table
-        # self.current_t_receiver = None                     #   Current
-        # receiver table
         self.ph5_t_receiver = None  # Current receiver table
-        # self.current_t_time = None                         #   Current time
-        # table
         self.ph5_t_time = None  # Current time table
         self.ph5_t_index = None                             #
         # Match arrays under Das_g_[sn]
@@ -724,17 +691,14 @@ class ReceiversGroup:
         ret = []
         keys = None
         ret_read, keys = read_table(self.current_t_das)
-        # print ret_read
         if ret_read is not None:
             ret_read.sort(cmp=cmp_epoch)
         else:
             return ret, keys
-        #
-        #   We look through each Das_t line and make sure it has the column
-        #   sample_rate_multiplier_i and if it is missing we set it to 1.
-        #   This column was added after data had been archived without it
-        #   at the DMC.
-        #
+        # We look through each Das_t line and make sure it has the column
+        # sample_rate_multiplier_i and if it is missing we set it to 1.
+        # This column was added after data had been archived without it
+        # at the DMC.
         for r in ret_read:
             if 'sample_rate_multiplier_i' not in r:
                 r['sample_rate_multiplier_i'] = 1
@@ -764,12 +728,6 @@ class ReceiversGroup:
         if not self.ph5.__contains__('/Experiment_g/Receivers_g/Index_t'):
             return ret, keys
 
-        # rows = []
-        # keys, name = columns.keys (self.ph5_t_index)
-        # for row in self.ph5_t_index.iterrows () :
-            # rows.append (row)
-
-        # ret = columns.rowstolist (rows, keys)
         ret, keys = read_table(self.ph5_t_index)
 
         return ret, keys
@@ -791,7 +749,6 @@ class ReceiversGroup:
         except AttributeError:
             return ret
 
-        # print "Das ", das_g
         arrays = get_nodes_by_name(self.ph5,
                                    self.current_g_das,
                                    re.compile('SOH_a_' + "(\d+)"),
@@ -800,7 +757,6 @@ class ReceiversGroup:
         for k in keys:
             name = arrays[k]._v_name
             ret[name] = arrays[k].read()
-            # print name, ret[name]
 
         return ret
 
@@ -827,12 +783,9 @@ class ReceiversGroup:
         return ret
 
     def trace_info(self, trace_ref):
-        # print trace_ref.atom
         try:
             s = repr(trace_ref.atom)
-            # print s
             s = s.split("(")[0]
-            # print s
             if s == "Int32Atom":
                 t = "int"
             elif s == "Float32Atom":
@@ -848,12 +801,10 @@ class ReceiversGroup:
 
     def read_trace(self, trace_ref, start=None, stop=None):
         '''   Read data trace   '''
-        #
         if start is None and stop is None:
             data = trace_ref.read()
         else:
             data = trace_ref.read(start=start, stop=stop)
-        #
         return data
 
     def find_trace_ref(self, name):
@@ -875,20 +826,20 @@ class ReceiversGroup:
         receiver_t = []
 
         x = 0
-        #   Get all Das_g
+        # Get all Das_g
         for g in self.ph5.iter_nodes('/Experiment_g/Receivers_g'):
             traces = []
-            #   Not sure why it returns its own name???
+            # Not sure why it returns its own name???
             if g._v_name == 'Receivers_g':
                 continue
 
-            #   Get Das_t
+            # Get Das_t
             t = g.Das_t
 
-            #   Get Receiver_t
+            # Get Receiver_t
             tr = g.Receiver_t
             tkeys, names = columns.keys(tr)
-            #   XXX   This is a kludge!   XXX
+            # XXX   This is a kludge!   XXX
             for receiver in tr:
                 receiver_t.append(receiver)
 
@@ -901,30 +852,29 @@ class ReceiversGroup:
                 an = self.ph5.get_node(
                     '/Experiment_g/Receivers_g/' + g._v_name + '/' + a)
                 n = an.nrows
-                #   Length of trace in seconds
+                # Length of trace in seconds
                 ll = float(n) / float(sps)
-                #   Epoch of last sample
+                # Epoch of last sample
                 s = e + ll
-                #   Does epoch fall in trace? epoch == None flag to get all
+                # Does epoch fall in trace? epoch == None flag to get all
                 if (epoch >= e and epoch <= s) or epoch is None:
-                    #   Get an instance of our Data_Trace (structure?)
+                    # Get an instance of our Data_Trace (structure?)
                     dt = Data_Trace()
                     dt.das = g._v_name[6:]
                     dt.epoch = e
                     dt.length = ll
                     dt.channel = r['channel_number_i']
                     dt.data_trace = an
-                    #   Just return receiver table row for this das
+                    # Just return receiver table row for this das
                     dt.receiver = receiver_t[i]
                     dt.keys = tkeys
-                    # print dt.receiver['sensor/serial_number_s']
                     traces.append(dt)
 
             x = x + 1
-            #   No epoch so key on x
+            # No epoch so key on x
             if epoch is None:
                 das_dict[str(x)] = traces
-            #   We have an epoch so key on das
+            # We have an epoch so key on das
             else:
                 das_dict[dt.das] = traces
 
@@ -933,10 +883,8 @@ class ReceiversGroup:
     def setcurrent(self, g):
         '''
         '''
-        #   If this is an external link it needs to be redirected.
-        # print g, g.__str__(), g.__repr__()
+        # If this is an external link it needs to be redirected.
         if externalLinkRE.match(g.__str__()):
-            # print g
             try:
                 if self.ph5.mode == 'r':
                     g = g()
@@ -949,9 +897,6 @@ class ReceiversGroup:
 
         self.current_g_das = g
         self.current_t_das = g.Das_t
-
-        # self.current_t_receiver = g.Receiver_t
-        # self.current_t_time = g.Time_t
 
     def getdas_g(self, sn):
         '''   Return group for a given serial number   '''
@@ -972,7 +917,6 @@ class ReceiversGroup:
                                       None)
 
         return dasGroups
-    #
 
     def init_Das_t(self, sn):
         sn = 'Das_g_' + sn
@@ -981,12 +925,13 @@ class ReceiversGroup:
                              'Das_t',
                              columns.Data, expectedrows=1000)
         return t
-    #   New das group and tables
+
+    # New das group and tables
 
     def newdas(self, sn):
         t = None
         sn = 'Das_g_' + sn
-        #   Create the das group
+        # Create the das group
         d = initialize_group(self.ph5,
                              '/Experiment_g/Receivers_g',
                              sn)
@@ -1012,9 +957,7 @@ class ReceiversGroup:
             mo = self.arrayRE.match(columns.LAST_ARRAY_NODE_DAS[name][prefix])
             cprefix, an = mo.groups()
             nombre = "%s%04d" % (prefix, int(an) + 1)
-            #
         else:
-            #
             for n in self.ph5.iter_nodes(
                     self.current_g_das, classname='Array'):
                 mo = self.arrayRE.match(n._v_name)
@@ -1032,9 +975,6 @@ class ReceiversGroup:
         return nombre
 
     def newearray(self, name, description=None, expectedrows=None):
-        # prefix, body, suffix = string.split (name, '_')
-        # pbody = "_".join ([prefix, body]) + '_'
-
         batom = tables.StringAtom(itemsize=80)
         a = create_empty_earray(self.ph5,
                                 self.current_g_das,
@@ -1071,7 +1011,7 @@ class ReceiversGroup:
 
               returns: tables array descriptor
         '''
-        #   If this is a data array convert it to a numarray.array
+        # If this is a data array convert it to a numarray.array
         prefix, body1, suffix = string.split(name, '_')
         "_".join([prefix, body1]) + '_'
         if prefix == 'Data':
@@ -1091,7 +1031,6 @@ class ReceiversGroup:
             if dtype == 'int32':
                 a = self.newdataearray(name, data, batom=tables.Int32Atom())
             elif dtype == 'float32':
-                ###
                 a = self.newdataearray(name, data, batom=tables.Float32Atom())
             else:
                 a = self.ph5.create_array(self.current_g_das, name, data)
@@ -1135,45 +1074,39 @@ class ReceiversGroup:
         '''   Set up indexing on DAS SN and external mini filename   '''
         try:
             self.ph5_t_index.cols.serial_number_s.create_csindex()
-            # self.ph5_t_index.cols.external_file_name_s.create_csindex ()
         except (ValueError,
                 tables.exceptions.NodeError,
                 tables.exceptions.FileModeError):
-            # print e.message
             pass
-        # print self.ph5_t_index.autoindex
         try:
-            # self.ph5_t_index.cols.serial_number_s.create_csindex ()
             self.ph5_t_index.cols.external_file_name_s.create_csindex()
         except (ValueError,
                 tables.exceptions.NodeError,
                 tables.exceptions.FileModeError):
-            # print e.message
             pass
 
     def initgroup(self):
-        #   Create receivers group
+        # Create receivers group
         self.ph5_g_receivers = initialize_group(self.ph5,
                                                 '/Experiment_g',
                                                 'Receivers_g')
-        #   Create receivers table
+        # Create receivers table
         self.ph5_t_receiver = initialize_table(self.ph5,
                                                '/Experiment_g/Receivers_g',
                                                'Receiver_t',
                                                columns.Receiver,
                                                expectedrows=1)
-        #   Create time table
+        # Create time table
         self.ph5_t_time = initialize_table(self.ph5,
                                            '/Experiment_g/Receivers_g',
                                            'Time_t',
                                            columns.Time)
-        #   Create index table
+        # Create index table
         self.ph5_t_index = initialize_table(self.ph5,
                                             '/Experiment_g/Receivers_g',
                                             'Index_t',
                                             columns.Index)
         self.ph5_t_index.expectedrows = 1000000
-        # self.indexIndex_t ()
 
         columns.add_reference(
             '/Experiment_g/Receivers_g/Receiver_t', self.ph5_t_receiver)
@@ -1200,14 +1133,13 @@ class ReceiversGroup:
             return False
         self.setcurrent(g)
         self.current_t_das.truncate(0)
-        # self.newdas (das)
         return True
 
 
 class ReportsGroup:
-    '''   /Experiment_g/Reports_g #   Group to hold experiment reports
-                                 /Report_t #   Report table, columns.Report
-                                 /Report_a_[title]#   The report in pdf format
+    '''   /Experiment_g/Reports_g # Group to hold experiment reports
+                                 /Report_t # Report table, columns.Report
+                                 /Report_a_[title]# The report in pdf format
     '''
 
     def __init__(self, ph5):
@@ -1242,7 +1174,6 @@ class ReportsGroup:
             node = self.ph5.get_node(
                 self.ph5_g_reports, name=name, classname='Array')
             buf = node.read()
-            # print len (buf), node.itemsize
         except Exception:
             LOGGER.error("Failed to read report {0}".format(name))
 
@@ -1257,7 +1188,6 @@ class ReportsGroup:
         except Exception:
             pass
 
-        # print "Len: ", len (data)
         a = self.ph5.create_array(self.ph5_g_reports, name, data)
         if description is not None:
             a.attrs.description = description
@@ -1270,11 +1200,11 @@ class ReportsGroup:
         self.ph5.flush()
 
     def initgroup(self):
-        #   Create reports group
+        # Create reports group
         self.ph5_g_reports = initialize_group(self.ph5,
                                               '/Experiment_g',
                                               'Reports_g')
-        #   Create reports table
+        # Create reports table
         self.ph5_t_report = initialize_table(self.ph5,
                                              '/Experiment_g/Reports_g',
                                              'Report_t',
@@ -1315,7 +1245,6 @@ class ResponsesGroup:
         return out
 
     def newearray(self, name, description=None):
-        #
         batom = tables.StringAtom(itemsize=40)
         a = create_empty_earray(self.ph5,
                                 self.current_g_das,
@@ -1329,11 +1258,11 @@ class ResponsesGroup:
         return a
 
     def initgroup(self):
-        #   Create response group
+        # Create response group
         self.ph5_g_responses = initialize_group(self.ph5,
                                                 '/Experiment_g',
                                                 'Responses_g')
-        #   Create response table
+        # Create response table
         self.ph5_t_response = initialize_table(self.ph5,
                                                '/Experiment_g/Responses_g',
                                                'Response_t',
@@ -1378,7 +1307,7 @@ class ExperimentGroup:
               self.h5 -- Reference to hdf5 file   '''
         if os.path.exists(self.filename):
             if tables.is_pytables_file(self.filename):
-                #   XXX Needs to be modified to return version of ph5 XXX
+                # XXX Needs to be modified to return version of ph5 XXX
                 return True
             else:
                 return False
@@ -1403,7 +1332,7 @@ class ExperimentGroup:
                 + columns.PH5VERSION):
         '''   Open ph5 file, create it if it doesn't exist   '''
         if self.ph5exists():
-            #   XXX Needs try:except XXX
+            # XXX Needs try:except XXX
             if editmode is True:
                 self.ph5 = tables.open_file(self.filename, mode='a')
             else:
@@ -1412,14 +1341,13 @@ class ExperimentGroup:
             self.ph5 = tables.open_file(
                 self.filename, mode='w', title=ph5title)
         else:
-            # print "XXX   Edit mode???   XXX"
             self.ph5 = None
 
     def ph5close(self):
         if self.ph5 is not None and self.ph5.isopen:
             self.ph5.close()
             self.ph5 = None
-            #   This will not work with version 3
+            # This will not work with version 3
             reload(columns)
 
     def populateExperiment_t(self, p):
@@ -1444,22 +1372,22 @@ class ExperimentGroup:
               otherwise get a reference to it
               If table Experiment_t does not exist create it,
               otherwise get a reference to it   '''
-        #   Create experiment group
+        # Create experiment group
         self.ph5_g_experiment = initialize_group(self.ph5,
                                                  '/',
                                                  'Experiment_g')
-        #   Create experiment table
+        # Create experiment table
         self.ph5_t_experiment = initialize_table(self.ph5,
                                                  '/Experiment_g',
                                                  'Experiment_t',
                                                  columns.Experiment,
                                                  expectedrows=1)
 
-        #   Put handle in lookup table columns.TABLE
+        # Put handle in lookup table columns.TABLE
         columns.add_reference(
             '/Experiment_g/Experiment_t', self.ph5_t_experiment)
 
-        #   XXX This stuff should be in own methods? XXX
+        # XXX This stuff should be in own methods? XXX
         self.ph5_g_sorts = SortsGroup(self.ph5)
         self.ph5_g_sorts.initgroup()
 
@@ -1477,18 +1405,18 @@ class ExperimentGroup:
 
     def nuke_experiment_t(self):
         self.ph5_t_experiment.remove()
-        #   Create experiment group
+        # Create experiment group
         self.ph5_g_experiment = initialize_group(self.ph5,
                                                  '/',
                                                  'Experiment_g')
-        #   Create experiment table
+        # Create experiment table
         self.ph5_t_experiment = initialize_table(self.ph5,
                                                  '/Experiment_g',
                                                  'Experiment_t',
                                                  columns.Experiment,
                                                  expectedrows=1)
 
-        #   Put handle in lookup table columns.TABLE
+        # Put handle in lookup table columns.TABLE
         columns.add_reference(
             '/Experiment_g/Experiment_t', self.ph5_t_experiment)
 
@@ -1524,7 +1452,6 @@ def initialize_table(filenode, where, table, description, expectedrows=None):
 
 
 def populate_table(tablenode, key_value, key=None, required_keys=[]):
-    # if tablenode :
     err_keys, err_required = columns.validate(
         tablenode, key_value, required_keys)
 
@@ -1612,10 +1539,7 @@ def get_nodes_by_name(filenode, where, RE, classname):
 
 
 if __name__ == '__main__':
-    import os
-    # os.system ('rm -rf ./untitled-experiment.ph5')
     ex = ExperimentGroup('.', 'GEO_DESIRE')
-    # print ex.filename
     EDITMODE = False
     ex.ph5open(EDITMODE)
     ex.initgroup()
@@ -1630,15 +1554,15 @@ if __name__ == '__main__':
     first_sort = True
     i = 0
     for s in sorts:
-        #   Get a dictionary of DASs in this array
+        # Get a dictionary of DASs in this array
         a_name = s['array_t_name_s']
         array = ex.ph5_g_sorts.read_arrays(a_name)
-        #   The dictionary
+        # The dictionary
         dass = {}
         for a in array:
             dass[a['das/serial_number_s']] = True
 
-        #   Loop through events and populate the Sort_t table
+        # Loop through events and populate the Sort_t table
         events = ex.ph5_g_sorts.read_events()
         for e in events:
             ep = float(e['time/epoch_l']) + \
@@ -1647,7 +1571,7 @@ if __name__ == '__main__':
             ks = dict.keys()
             for k in ks:
 
-                #   Is this das in this array?
+                # Is this das in this array?
                 if dict[k].das not in dass:
                     print "Not found in any array: ", dict[k].das
                     continue

@@ -1,15 +1,15 @@
 #!/usr/bin/env pnpython3
 #
-#   Convert geographic coordinates to UTM and back.
-#   Assumes reference ellipsoids are the same and are 3D.
+# Convert geographic coordinates to UTM and back.
+# Assumes reference ellipsoids are the same and are 3D.
 #
-#   Steve Azevedo, January 2013
+# Steve Azevedo, January 2013
 #
 
-#   https://code.google.com/p/pyproj/
+# https://code.google.com/p/pyproj/
 from pyproj import Proj
 
-#   The proj4 program cs2cs must be in your path
+# The proj4 program cs2cs must be in your path
 # CS2CS = 'cs2cs'
 
 
@@ -43,8 +43,8 @@ def _sign(val, latlon):
 
 def lon2zone(lon):
     '''   Get UTM zone from longitude, brute force method   '''
-    #   zone 1 = -180 -> -174
-    #   zone 2 = -174 -> -168
+    # zone 1 = -180 -> -174
+    # zone 2 = -174 -> -168
     for zone in range(1, 60):
         ebound = (zone * 6) - 180
         wbound = ebound - 6
@@ -72,7 +72,7 @@ def geod2utm(zn, datum, lat, lon, elev):
 
     X, Y = p(lon, lat)
 
-    #   Return Y, X, Z
+    # Return Y, X, Z
     return Y, X, elev
 
 

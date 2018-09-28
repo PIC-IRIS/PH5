@@ -37,7 +37,6 @@ class PH5_Time(object):
             self.micro_seconds_i = 0
 
     def _passcal(self, passcal_s):
-        # tdoy = timedoy.TimeDOY ()
         flds = passcal_s.split(':')
         for i in range(5):
             try:
@@ -51,12 +50,10 @@ class PH5_Time(object):
                                second=int(flds[4]),
                                microsecond=0,
                                doy=int(flds[1]))
-        # epoch_l = tdoy.epoch (int (flds[0]), int (flds[1]), int (flds[2]),
-        # int (flds[3]), int (flds[4]))
         epoch_l = tdoy.epoch()
         self._epoch(epoch_l)
 
-    #   Read ascii time as produced by time.ctime XXX   Untested   XXX
+    # Read ascii time as produced by time.ctime XXX   Untested   XXX
     def _ascii(self, ascii_s):
         ttuple = time.strptime(ascii_s, "%a %b %d %H:%M:%S %Y")
         epoch_l = time.mktime(ttuple)
@@ -69,7 +66,7 @@ class PH5_Time(object):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 

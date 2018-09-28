@@ -1,14 +1,15 @@
 #!/usr/bin/env pnpython4
 #
-#   Rename nodal fcnt file names to RL_S.0.x.rg16 filename format.
+# Rename nodal fcnt file names to RL_S.0.x.rg16 filename format.
 #
-#   Input: List of files to rename in a file (one per line),
-#   output directory for links
+# Input: List of files to rename in a file (one per line),
+# output directory for links
 #
-#   Usage: unsimpleton list_of_files_to_link out_directory
+# Usage: unsimpleton list_of_files_to_link out_directory
 #
-#   Steve Azevedo, August 2016
+# Steve Azevedo, August 2016
 #
+import argparse
 import sys
 import os
 import logging
@@ -23,9 +24,7 @@ def get_args():
     '''
     global ARGS
 
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
 
     parser.description = ("A command line utility to link fairfield SEG-D "
                           "file names that expose information about the "
@@ -68,56 +67,18 @@ def print_container(container):
 
 def general_headers(sd):
     sd.process_general_headers()
-    # print '*' * 80
-    # print sd.infile
-    # print '*' * 80
-    # print "*** General Header Block 1 ***"
-    # print_container (sd.reel_headers.general_header_block_1)
-    # print "*** General Header Block 2 ***"
-    # print_container (sd.reel_headers.general_header_block_2)
 
 
 def channel_set_descriptors(sd):
-    # print "*** Channel Set Descriptor(s): ***"
     sd.process_channel_set_descriptors()
-    # i = 1
-    # for c in sd.reel_headers.channel_set_descriptor :
-    # print i; i += 1
-    # print_container (c)
 
 
 def extended_headers(sd):
-    # print "*** Extended Headers ***"
     sd.process_extended_headers()
-    # n = sd.extended_header_blocks
-    # if n > 0 :
-    # print_container (sd.reel_headers.extended_header_1)
-    # n -= 1
-    # else : return
-    # if n > 0 :
-    # print 2
-    # print_container (sd.reel_headers.extended_header_2)
-    # n -= 1
-    # else : return
-    # if n > 0 :
-    # print 3
-    # print_container (sd.reel_headers.extended_header_3)
-
-    # i = 1
-    # for c in sd.reel_headers.extended_header_4 :
-    # print i; i += 1
-    # print_container (c)
 
 
 def external_header(sd):
-    # print "*** External Header ***"
     sd.process_external_headers()
-    # print_container (sd.reel_headers.external_header)
-    # i = 1
-    # for c in sd.reel_headers.external_header_shot :
-    # print i; i += 1
-    # print_container (c)
-    # n = 1
 
 
 def trace_headers(sd):
@@ -133,9 +94,6 @@ def trace_headers(sd):
         print_container(c)
 
     sd.read_trace(sd.samples)
-    # for s in trace :
-    # print s
-    # n += 1
     while True:
         if sd.isEOF():
             break
@@ -150,8 +108,6 @@ def trace_headers(sd):
 
         n += 1
         sd.read_trace(sd.samples)
-        # for s in trace :
-        # print s
 
     print "There were {0} traces.".format(n)
 
@@ -185,7 +141,6 @@ def main():
             extended_headers(sd)
             external_header(sd)
 
-            # print "{0} bytes read.".format (sd.bytes_read)
             line_number = sd.reel_headers.extended_header_3['line_number']
             receiver_point = sd.reel_headers.extended_header_3[
                 'receiver_point']

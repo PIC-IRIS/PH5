@@ -10,16 +10,10 @@ from ph5.core import columns
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
-#   This line contains a key/value entered as is
-# keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
-#   This line contains a key/file read in as an array
-# keyFileRE = re.compile ("(\w*)\s*:\s*(\w*)")
+
 keyValFileRE = re.compile("(.*)\s*[;=]\s*(.*)")
-#
 updateRE = re.compile("(/.*):Update:(.*)\s*")
-#
 deleteRE = re.compile("(/.*):Delete:(.*)\s*")
-#
 receiverRE = re.compile("/Experiment_g/Receivers_g/Das_g_.*")
 
 arrayRE = re.compile("/Experiment_g/Sorts_g/Array_t_(\d+)")
@@ -48,10 +42,10 @@ class Kef:
         # The file parsed: parsed[path] = [keyval, keyval, ...] keyval = (keys
         # are table keys)
         self.parsed = {}
-        self.updateMode = False     #
+        self.updateMode = False
         self.keyvals = []  # Current key value dictionary list
-        self.current_path = None    #
-        self.paths = []             #
+        self.current_path = None
+        self.paths = []
 
     def open(self):
         try:
@@ -85,19 +79,19 @@ class Kef:
                 break
 
             nchars = len(line)
-            #   Skip empty lines and comments
+            # Skip empty lines and comments
             if line[0] == '#' or line[0] == '\n':
                 if sincepath != 0:
                     sincepath -= nchars
                 continue
 
-            #   Remove all leading and trailing whitespace
+            # Remove all leading and trailing whitespace
             line = string.strip(line)
-            #   If the length of the stripped line is 0, continue to next line
+            # If the length of the stripped line is 0, continue to next line
             if not line:
                 continue
             nret += 1
-            #   If line ends in '\' it is continued on next line
+            # If line ends in '\' it is continued on next line
             while line[-1] == '\\':
                 line = line[:-1]
                 line = line + ' '
@@ -108,7 +102,7 @@ class Kef:
                 appnd = string.strip(appnd)
                 line = line + appnd
 
-            #   This line contains the path to the table to update
+            # This line contains the path to the table to update
             if line[0] == '/':
                 if path:
                     self.parsed[path].append(keyval)
@@ -135,7 +129,7 @@ class Kef:
 
                 keyval[key] = value
 
-        #   No limits on what to read
+        # No limits on what to read
         if num is None or EOF:
             if keyval:
                 self.parsed[path].append(keyval)
@@ -168,7 +162,7 @@ class Kef:
 
         return keyval
 
-    #   Return next path and key value dictionary
+    # Return next path and key value dictionary
     def next(self):
         path = self.current_path
         keyval = self._next_keyval()
@@ -177,12 +171,10 @@ class Kef:
             keyval = self._next_keyval()
 
         return path, keyval
-    #   Rewind
 
     def rewind(self):
         self.paths = self.parsed.keys()
         self.keyvals = []
-    #
 
     def batch_update(self, trace=False):
         '''   Batch update ph5 file from kef file   '''
@@ -198,7 +190,7 @@ class Kef:
                     LOGGER.info("\t{0} = {1}".format(k, kv[k]))
 
             DELETE = False
-            #   Update or Append or Delete
+            # Update or Append or Delete
             mo = deleteRE.match(p)
             if mo:
                 DELETE = True
@@ -210,11 +202,6 @@ class Kef:
                 p, k = mo.groups()
                 key.append(k)
 
-            # if receiverRE.match (p) :
-                # We are trying to update something in a Receivers_g
-                # sys.stderr.write ("Warning: Attempting to modify
-                # something under /Experiment_g/Receivers_g.\n")
-
             # columns.TABLES keeps a dictionary of key = table name, value =
             # reference to table
             if p not in columns.TABLES:
@@ -223,9 +210,9 @@ class Kef:
                 p, kv = self.next()
                 continue
 
-            #   Get handle
+            # Get handle
             ref = columns.TABLES[p]
-            #   key needs to be list for columns.validate
+            # key needs to be list for columns.validate
             if trace is True:
                 LOGGER.info("Validating...")
 
@@ -265,7 +252,6 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            # print p
             if receiverRE.match(p):
                 base = string.split(p, ':')[0]
                 ret.append(base)
@@ -279,7 +265,6 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            # print p
             if arrayRE.match(p):
                 base = string.split(p, '/')[-1:]
                 reta[base[0]] = True
@@ -313,7 +298,6 @@ if __name__ == '__main__':
     k = Kef('Experiment_t.kef')
     k.open()
     k.read()
-    # k.batch_update ()
     k.rewind()
 
     p, kv = k.next()

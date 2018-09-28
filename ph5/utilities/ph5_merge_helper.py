@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 #
-#   A program to aid merging multiple families of ph5 files, ie if you
-#   have mulitple
-#   deployment sites in a single experiment.
+# A program to aid merging multiple families of ph5 files, ie if you
+# have mulitple
+# deployment sites in a single experiment.
 #
-#   Steve Azevedo, February 2014
+# Steve Azevedo, February 2014
 #
 
 import re
@@ -18,15 +18,15 @@ LOGGER = logging.getLogger(__name__)
 
 miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 
-#   Index of first miniPH5_xxxxx.ph5 file (value of xxxxx)
+# Index of first miniPH5_xxxxx.ph5 file (value of xxxxx)
 FIRST_MINI_INDEX = 0
-#   Dictionary, key = original miniPH5_xxxxx.ph5 file name,
-#               value = new miniPH5_xxxxx.ph5 file name.
+# Dictionary, key = original miniPH5_xxxxx.ph5 file name,
+#             value = new miniPH5_xxxxx.ph5 file name.
 OLD_NEW = None
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
@@ -107,7 +107,6 @@ def resequence_Index_t():
         m = miniPH5RE.match(value)
         if m:
             n = int(m.groups()[0])
-            # print n, FIRST_MINI_INDEX
             n = n + FIRST_MINI_INDEX - 1
             OLD_NEW[value] = "miniPH5_{0:05d}.ph5".format(n)
             of.write("\texternal_file_name_s=./{0}\n".format(OLD_NEW[value]))
@@ -154,7 +153,6 @@ def resequence_M_Index_t():
         m = miniPH5RE.match(value)
         if m:
             n = int(m.groups()[0])
-            # print n, FIRST_MINI_INDEX
             n = n + FIRST_MINI_INDEX - 1
             OLD_NEW[value] = "miniPH5_{0:05d}.ph5".format(n)
             of.write("\texternal_file_name_s=./{0}\n".format(OLD_NEW[value]))

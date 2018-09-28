@@ -1,7 +1,8 @@
 Master:
 ph5
  * made pep8 compliant
- * update all modules to use a standardized logger
+ * update all modules to use a standardized logger (issue #213)
+ * cleanup comments and remove commented out code (issue #216) 
 ph5.clients.ph5toms
  * added option to change file naming scheme
 ph5.utilities.report_gen

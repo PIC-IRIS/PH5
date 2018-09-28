@@ -1,14 +1,14 @@
 #!/usr/bin/env pnpython3
 #
-#   Monitor parallel entries into PH5
+# Monitor parallel entries into PH5
 #
-#   Steve Azevedo, November 2015
+# Steve Azevedo, November 2015
 #
-#   Monitor conversions from various 'RAW' formats to PH5
+# Monitor conversions from various 'RAW' formats to PH5
 #
-#   Set timeout of conversion process
-#   Texan and SEG-D about 120 sec/GB, RT-130 500 sec/GB
-#   Set for RT-130
+# Set timeout of conversion process
+# Texan and SEG-D about 120 sec/GB, RT-130 500 sec/GB
+# Set for RT-130
 
 
 import sys
@@ -26,33 +26,28 @@ LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
 try:
-    # raise
     from PySide import QtGui, QtCore
-    # import QtCore.Signal as Signal
 except Exception as e:
     LOGGER.error("No PySide: {0}".format(e.message))
     from PyQt4 import QtGui, QtCore
     QtCore.Signal = QtCore.pyqtSignal
 
 
-#   RE to detect when a raw data file has finished loading
+# RE to detect when a raw data file has finished loading
 fileDoneRE = re.compile(".*:<Finished>:(.*)$")
-#   RE to detect start of processing a raw file
+# RE to detect start of processing a raw file
 fileStartRE = re.compile(".*:<Processing>:(.*)$")
-#   RE for end of processing
+# RE for end of processing
 batchDoneRE = re.compile("Done.*")
-#   Error
+# Error
 fileErrorRE = re.compile(".*:<Error>:(.*)$")
-##
 readErrorRE = re.compile(".*[Ee]rror.*")
-##
 updatingRE = re.compile("Updating.*\.\.\.$")
-##
 notexistRE = re.compile("File does not exist:.*")
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-#   Style sheets for progress bar
+# Style sheets for progress bar
 DEFAULT_STYLE = """
 QProgressBar{
     border: 2px solid darkgreen;
@@ -120,11 +115,10 @@ class FamilyProgress (QtGui.QDialog):
 
         self.setLayout(hbox)
         self.pbar.setStyleSheet(START_STYLE)
-        # self.show()
 
     def processingStyle(self):
         '''
-        #   Show that processing has started
+        # Show that processing has started
         '''
         self.pbar.setStyleSheet(DEFAULT_STYLE)
 
@@ -141,7 +135,6 @@ class ErrorsDialog (QtGui.QMainWindow):
     '''
 
     def __init__(self, errors, parent=None):
-        # super (ErrorsDialog, self).__init__ ()
         super(ErrorsDialog, self).__init__(parent)
 
         errors.reverse()
@@ -184,9 +177,8 @@ class ErrorsDialog (QtGui.QMainWindow):
         self.notProcessed = []
         lstfh = open(self.parent.current_list, 'a+')
         write_it = False
-        #   File that is being processed at time of timeout
+        # File that is being processed at time of timeout
         try:
-            #
             base = os.path.basename(self.parent.current_file)
         except BaseException:
             base = None
@@ -207,7 +199,7 @@ class ErrorsDialog (QtGui.QMainWindow):
                 self.notProcessed.append('#' + line)
                 continue
             if write_it is True:
-                #   Write rest of list
+                # Write rest of list
                 self.notProcessed.append(line)
 
         lstfh.close()
@@ -220,10 +212,8 @@ class ErrorsDialog (QtGui.QMainWindow):
     def saveFile(self):
         filename, _ = QtGui.QFileDialog.getSaveFileName(
             self, 'Save File', os.getenv('HOME'))
-        # filename = filename[0]
         if not filename:
             return
-        # f = open(filename[0], 'w')
         f = open(filename, 'w')
         filedata = self.text.toPlainText()
         f.write(filedata)
@@ -232,10 +222,8 @@ class ErrorsDialog (QtGui.QMainWindow):
     def saveErrFile(self):
         filename, _ = QtGui.QFileDialog.getSaveFileName(
             self, 'Save lst file', os.getenv('HOME'))
-        #
         if not filename:
             return
-        #
         f = open(filename, 'w')
         filedata = '\n'.join(self.notProcessed)
         f.write(filedata + '\n')
@@ -246,11 +234,10 @@ class Monitor (QtGui.QWidget):
     '''
        Monitor conversions
     '''
-    #   Signal to connect to progress bar setValue slot
+    # Signal to connect to progress bar setValue slot
     trddone = QtCore.Signal(int)
-    #   This holds the start epoch of the conversion of a raw file
+    # This holds the start epoch of the conversion of a raw file
     NOW = None
-    #
 
     def __init__(self, fio, cmds, info, title='X', mmax=100):
         '''
@@ -260,7 +247,6 @@ class Monitor (QtGui.QWidget):
             mmax -> max value for progress bar
         '''
         QtGui.QWidget.__init__(self)
-        # self.sizeHint ()
         self.fio = fio  # pforma_io instance
         self.cmds = cmds  # List of commands to monitor
         self.info = info  # Info about files to convert
@@ -273,22 +259,22 @@ class Monitor (QtGui.QWidget):
         self.fp = FamilyProgress(title, mmax)  # The progress bar and friends
         box = QtGui.QVBoxLayout()
         box.addWidget(self.fp)
-        #   Set button to start conversion
+        # Set button to start conversion
         self.fp.btn.clicked.connect(self.startConversion)
         self.running = False  # Not looping on output of fifo
         self.numFiles = mmax  # Number of files to convert
         self.cnt = 0  # Number of files converted
         self.seconds = TIMEOUT  # Time out for conversion of a raw file
         self.log = []  # Running log of conversion (mostly from fifo)
-        #   trddone is signal to progress bar
+        # trddone is signal to progress bar
         # self.trddone.connect (self.fp.pbar.setValue)
         QtCore.QObject.connect(self,
                                QtCore.SIGNAL("trddone(int)"),
                                self.fp.pbar,
                                QtCore.SLOT("setValue(int)"),
                                QtCore.Qt.QueuedConnection)
-        #   Wait for progress bar to display
-        #   before starting to monitor conversion
+        # Wait for progress bar to display
+        # before starting to monitor conversion
         wd = watchit.Watchdog(1, userHandler=self.startConversion)
         wd.start()
         self.setLayout(box)
@@ -335,12 +321,12 @@ class Monitor (QtGui.QWidget):
             self.running = True
 
         self.startpee()
-        #   Set button to end conversion 'Kill'
+        # Set button to end conversion 'Kill'
         self.fp.btn.clicked.disconnect(self.startConversion)
         self.fp.btn.clicked.connect(self.endConversion)
         self.setTimeout(self.seconds)
         self.fp.btn.setText('Kill')
-        #   Loop On FIFO
+        # Loop On FIFO
         self.loop_on_fifo()
 
     def endConversion(self):
@@ -349,7 +335,7 @@ class Monitor (QtGui.QWidget):
         '''
         from signal import SIGINT
         import psutil
-        #
+
         self.running = False
         self.fp.btn.setText('Killing...')
         self.fp.btn.setDisabled(True)
@@ -357,17 +343,16 @@ class Monitor (QtGui.QWidget):
             self.log.append("Killing: {0} {1}".format(
                 self.pee.pid, self.pee.args))
         try:
-            #   pp is the parent process (the shell)
+            # pp is the parent process (the shell)
             pp = psutil.Process(self.pee.pid)
-            #   ppp is all of the children processes
+            # ppp is all of the children processes
             ppp = pp.children(recursive=True)
-            #   kill all of the sub-processes
+            # kill all of the sub-processes
             for p in ppp:
-                #
                 os.kill(p.pid, SIGINT)
 
             time.sleep(1)
-            #   Kill the shell
+            # Kill the shell
             self.pee.send_signal(SIGINT)
         except Exception as e:
             LOGGER.error("W {0}".format(e.message))
@@ -404,33 +389,33 @@ class Monitor (QtGui.QWidget):
         '''
            Process a line from fifo
         '''
-        #   The list of raw files that we are trying to read does not exist
+        # The list of raw files that we are trying to read does not exist
         if notexistRE.match(line):
             LOGGER.info('File not exist {0}'.format(line))
 
-        #   From the fifo it appears that the conversion process is 'Done'.
+        # From the fifo it appears that the conversion process is 'Done'.
         elif batchDoneRE.match(line):
             self.trddone.emit(self.cnt)
             self.log.append("Time minutes: {0}".format(
                 int((time.time() - Monitor.NOW) / 60)))
-        #   We finished processing a raw file according to the fifo
+        # We finished processing a raw file according to the fifo
         # :<Finished>:
         elif fileDoneRE.match(line):
             self.log.append("Time processing {0} seconds.".format(
                 int(time.time() - Monitor.NOW)))
             dtype, das = guess_instrument_type(
                 os.path.basename(self.current_file))
-            #   Update the list of successfully processed file
+            # Update the list of successfully processed file
             if dtype != 'unknown':
                 if das not in self.processedFiles:
                     self.processedFiles[das] = []
 
                 self.processedFiles[das].append(self.current_file)
-            #   Reset the watchdog
+            # Reset the watchdog
             if self.WD:
                 self.WD.reset()
                 self.WD.start()
-            #   Update the progressbar
+            # Update the progressbar
             self.cnt += 1
             # self.trddone.emit (self.cnt)
             # Only update pbar 100 times (or so)
@@ -446,19 +431,18 @@ class Monitor (QtGui.QWidget):
             Monitor.NOW = time.time()
             mo = fileStartRE.match(line)
             self.current_file = mo.groups()[0]
-            #   We really only need to do this once
+            # We really only need to do this once
             if self.monPercent == 0.01:
                 self.fp.processingStyle()
-        #   Updating (ph5)   Do we need this
+        # Updating (ph5)   Do we need this
         elif updatingRE.match(line):
             pass
-        #   This file didn't read cleanly.
+        # This file didn't read cleanly.
         # :<Error>:
         elif fileErrorRE.match(line):
             self.log.append(
                 "Processing error at about line {0} in file list."
                 .format(self.cnt + 1))
-            # self.cnt -= 1
 
         return line.strip()
 
@@ -479,31 +463,28 @@ class Monitor (QtGui.QWidget):
         # PH5)
         if not self.pee:
             return
-        # Only update progress bar about 100 times
-        # self.x = int ((self.numFiles/101.) + 0.5)
-        # if self.x < 1 : self.x = 1
-        #   Set up read queue and watchdog timer
+
+        # Set up read queue and watchdog timer
         Q, T, self.WD = set_up_queue(self.fifo, self.seconds, self.timedOut)
 
-        #   While the conversion is running
+        # While the conversion is running
         self.log.append("Process started: {0}".format(self.pee.args))
         while self.running:
-            #
             line = ''
             try:
-                #   Try to read a line...
+                # Try to read a line...
                 line = Q.get_nowait()
-                #   Process the line for messages from processing program
+                # Process the line for messages from processing program
                 tmp = self.process_line(line)
                 self.log.append(tmp)
             except Empty:
-                #   Queue is empty
+                # Queue is empty
                 self.pee.poll()
                 if self.pee.returncode is None:
-                    #   Process is not done
+                    # Process is not done
                     continue
                 else:
-                    #   Need to check fifo
+                    # Need to check fifo
                     try:
                         line = Q.get_nowait()
                         tmp = self.process_line(line)
@@ -533,16 +514,15 @@ class Monitor (QtGui.QWidget):
         self.fp.btn.setText('Log')
         if self.WD:
             self.WD.stop()
-        #
         self.log.append(
             "Files processed: {0}/{1}.".format(self.cnt, self.numFiles))
+
 #
 # Mix-ins
 #
 
 
 def enqueue_output(out, queue):
-    #
     try:
         for line in iter(out.readline, b''):
             queue.put(line)
@@ -553,25 +533,23 @@ def enqueue_output(out, queue):
         out.close()
     except Exception as e:
         LOGGER.error("Y {0}".format(e.message))
-#
-# Set up non-blocking read and watchdog
-#
 
 
 def set_up_queue(fifo, timeout, handler):
-    #   Set up non-blocking read.
+    '''
+        Set up non-blocking read and watchdog
+    '''
+    # Set up non-blocking read.
     q = Queue()
     t = Thread(target=enqueue_output, args=(fifo, q))
     t.daemon = True  # thread dies with the program
     t.start()
-    #   Set up watchdog for each raw file conversion.
+    # Set up watchdog for each raw file conversion.
     if timeout > 0:
-        # if False :
         wd = watchit.Watchdog(timeout, userHandler=handler)
         wd.start()
     else:
         wd = None
-
     return q, t, wd
 
 
@@ -614,7 +592,6 @@ if __name__ == '__main__':
         return fio, cmds, lsts
 
     f = os.path.join(os.getcwd(), sys.argv[1])
-    # l = get_len (f)
     d = os.path.join(os.getcwd(), sys.argv[2])
     fio, cmds, info = init_fio(f, d)
     fams = sorted(cmds.keys())

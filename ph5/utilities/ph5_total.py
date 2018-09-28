@@ -1,6 +1,6 @@
 #!/usr/bin/env pnpython3
 #
-#   Find total size of ph5 files in a directory.
+# Find total size of ph5 files in a directory.
 #
 import argparse
 import os

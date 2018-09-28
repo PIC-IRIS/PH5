@@ -165,13 +165,10 @@ class Reader ():
     def set_bytes_per_sample(self, fmt=None):
         if fmt is None:
             fmt = self.trace_fmt
-        #   Bytes per sample based on format
+        # Bytes per sample based on format
         BBS = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
         self.bytes_per_sample = BBS[fmt]
 
-    #
-    ####
-    #
     def open_infile(self):
         try:
             self.FH = open(self.infile)
@@ -226,8 +223,6 @@ class Reader ():
                     elif flds[1] == 'INOVA':
                         self.set_ext_hdr_type('N')
                     else:
-                        # raise InputsError ("S => SEG, U => MENLO,
-                        # P => PASSCAL, I => SIOSEIS, N => INOVA")
                         pass
                 except IndexError:
                     pass
@@ -311,21 +306,12 @@ class Reader ():
 
     def read_trace(self, number_of_samples, bytes_per_sample):
         '''   Read data trace and return as numpy array   '''
-        #   FIXED, NOT FULLY TESTED
-        #   First version using NumPy 2013.303.a
+        # FIXED, NOT FULLY TESTED
+        # First version using NumPy 2013.303.a
         f = self.trace_fmt
-        #
-        # for i in range (number_of_samples) :
         buf = self.read_buf(bytes_per_sample * number_of_samples)
-        #   IBM floats - 4 byte - Should be big endian
+        # IBM floats - 4 byte - Should be big endian
         if f == 1:
-            # if self.endianess != sys.byteorder :
-                # ret = np.fromstring (buf, dtype=np.uint32)
-                # ret = ret.byteswap ()
-            # else :
-                # ret = np.fromstring (buf, dtype=np.uint32)
-
-            # ret = ibm2ieee_py.ibm2ieee (ret, number_of_samples)
             import ibmfloat
             ret = []
             ll = len(buf)
@@ -338,53 +324,37 @@ class Reader ():
                     "x").parse(ibmfloat.ibm2ieee32(b)))
                 i += 4
                 ll -= 4
-            # ret.append (buf)
-            # print i
-        #   INT - 4 byte or 2 byte
+        # INT - 4 byte or 2 byte
         elif f == 2:
             if self.endianess != sys.byteorder:
-                #   Swap 4 byte
+                # Swap 4 byte
                 ret = np.fromstring(buf, dtype=np.int32)
                 ret = ret.byteswap()
             else:
                 ret = np.fromstring(buf, dtype=np.int32)
-
-            # ret.append (b)
         elif f == 3:
             if self.endianess != sys.byteorder:
-                #   Swap 2 byte
+                # Swap 2 byte
                 ret = np.fromstring(buf, dtype=np.int16)
                 ret = ret.byteswap()
             else:
                 ret = np.fromstring(buf, dtype=np.int16)
-
-            # ret.append (b)
-        #   IEEE floats - 4 byte
+        # IEEE floats - 4 byte
         elif f == 5:
             if self.endianess != sys.byteorder:
-                #   Swap 4 byte
+                # Swap 4 byte
                 ret = np.fromstring(buf, dtype=np.float32)
                 ret = ret.byteswap()
             else:
                 ret = np.fromstring(buf, dtype=np.float32)
-
-            # ret.append (b)
-        #   INT - 1 byte
+        # INT - 1 byte
         elif f == 8:
             ret = np.fromstring(buf, dtype=np.int8)
-
-        #
-        # If these are ibmfloats we need to convert them to ieee
-        #
-        # if f == 1 :
-            # ret = ibm2ieee_py.ibm2ieee (ret, number_of_samples)
-
         return ret
 
     def isEOF(self):
         if not self.FH:
             self.open_infile()
-
         try:
             n = len(self.FH.read(240))
             if n != 240:
@@ -396,53 +366,50 @@ class Reader ():
 
 
 if __name__ == "__main__":
-    # infile = sys.argv[1]
-    sr = Reader("/home/azevedo/Desktop/407455.sgy")
-    # sr = Reader ("/home/azevedo/Desktop/Clutter/INova_SGY/Nov16.sgy")
-    #   Set header type to ASCII
+    infile = sys.argv[1]  # segy file
+    sr = Reader(infile)
+    # Set header type to ASCII
     sr.set_txt_hdr_type("A")
-    # sr.set_txt_hdr_type ("E")
-    #   Set endianess of file
+    # Set endianess of file
     sr.set_endianess('little')
-    # sr.set_endianess ('big')
-    #   Read the first text header and print contents
+    # Read the first text header and print contents
     th = sr.read_text_header()
     keys = sorted(th.keys())
     for k in keys:
         print th[k]
 
-    #   Read reel header
+    # Read reel header
     bh = sr.read_binary_header()
     for k in bh.keys():
         print k, bh[k]
 
-    #   Set format of trace sample (needed)
+    # Set format of trace sample (needed)
     sr.set_trace_fmt(bh['format'])
-    #   Set number of traces per ensemble (needed)
+    # Set number of traces per ensemble (needed)
     sr.set_traces_per_ensemble(bh['ntrpr'])
     if sr.traces_per_ensemble == 0:
         sr.set_traces_per_ensemble(1)
-    #   Set samples per trace
+    # Set samples per trace
     sr.set_samples_per_trace(bh['hns'])
-    #   Set sample rate
+    # Set sample rate
     sr.set_sample_rate(bh['hdt'])
 
-    #   Print SEG-Y revision
+    # Print SEG-Y revision
     print "\nRev: ", bh['rev']
 
-    #   Read and print all extended textural headers
+    # Read and print all extended textural headers
     number_of_extended_headers = bh['extxt']
-    #   Un-defined number of extended headers
+    # Un-defined number of extended headers
     if number_of_extended_headers == -1:
         while True:
             th = sr.read_text_header()
             keys = sorted(th.keys())
             for k in keys:
                 print th[k]
-            #   Check if last header
+            # Check if last header
             if sr.last_extended_header():
                 break
-    #   Defined number of extended headers
+    # Defined number of extended headers
     elif number_of_extended_headers > 0:
         for n in range(number_of_extended_headers):
             th = sr.read_text_header()

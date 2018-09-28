@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython4
 #
-#   A simple script to convert Array_t.kef or Event_t.kef into kml.
+# A simple script to convert Array_t.kef or Event_t.kef into kml.
 #
-#   Steve Azevedo, March 2017
+# Steve Azevedo, March 2017
 #
 
 import os
@@ -18,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 arrayRE = re.compile(".*Array_t_*(\d+)*")
 eventRE = re.compile(".*Event_t_*(\d+)*")
 
-#   Point colors
+# Point colors
 COLORS = {0: simplekml.Color.whitesmoke, 1: simplekml.Color.blue,
           2: simplekml.Color.green, 3: simplekml.Color.plum,
           4: simplekml.Color.lightblue,
@@ -81,7 +81,6 @@ def parseArray(kv, a):
             break
         else:
             x -= 10
-    # print "Array:", a, "Color:", x, "Length:", len (COLORS)
     col = COLORS[x]
 
     pnt = KML.newpoint(name=nam)

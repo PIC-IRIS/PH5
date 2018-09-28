@@ -1,9 +1,9 @@
 #!/usr/bin/env pnpython4
 #
-#   Merge Response_t from ph5 files and create corrected Das_t files
-#   Only creates corrected Response_t and Das_t files.
+# Merge Response_t from ph5 files and create corrected Das_t files
+# Only creates corrected Response_t and Das_t files.
 #
-#   Steve Azevedo, Mar 2017
+# Steve Azevedo, Mar 2017
 #
 
 import argparse
@@ -26,12 +26,7 @@ def get_args():
     parser.usage = "v{0}: set_n_i_response\
     (Run from top level families directory.)".format(
         PROG_VERSION)
-    #   Usually master.ph5
-    #
-    # parser.add_argument ("-R", dest="catted_response_kef", required=False,
-    # default="Response_t_by_family.kef",
-    # help="Catted Respons_t kef files from all families. First line at start
-    # of new family example: '## A'")
+
     parser.add_argument("-F", dest="families_directory", required=False,
                         help="Directory that holds the family directories."
                              "Absolute path.")
@@ -80,7 +75,7 @@ def dump_kefs():
 
 
 #
-#   First line at start of family kef: "## A" (as an example)
+# First line at start of family kef: "## A" (as an example)
 #
 
 
@@ -105,25 +100,21 @@ def parse_kef():
             if not line:
                 break
             if line[0] == '#':
-                #   Comment with family
+                # Comment with family
                 family = line[3:].strip()
                 if family not in ret:
                     ret[family] = []
                 if len(line) == 5 and line[1] == '#':
-                    #   Save row, Just finished last family so save last row
+                    # Save row, Just finished last family so save last row
                     if row is not None:
                         row['n_i_family'] = len(ret[family])
                         ret[family].append(row)
 
                     row = {}
-                    #   Get family name and set to empty list
 
-                # Families directory
-                # elif len (line) > 4 and line[3] == '/' :
-                # ARGS.families_directory = line[3:].strip ()
-            #   We start a new row in the table here
+            # We start a new row in the table here
             elif line[0] == '/':
-                #   Save row if there is one
+                # Save row if there is one
                 if row != {}:
                     row['n_i_family'] = len(ret[family])
                     ret[family].append(row)
@@ -141,7 +132,6 @@ def parse_kef():
                     row['kv'] = {}
                 row['kv'][key] = value
 
-        # row['n_i_all'] = n_i_all + ARGS.first_n_i
         row['n_i_family'] = last_n_i + ARGS.first_n_i
         ret[family].append(row)
     return ret
@@ -176,7 +166,6 @@ def print_new_Das_t(P5, n_i_map, family):
     for das_g in P5.Das_g_names:
         das = P5.read_das_t(das_g)
         MAP = n_i_map[family]
-        # if not das : continue
         if not das or das not in P5.Das_t:
             LOGGER.warning("#***\tMissing: {0}".format(das))
             continue

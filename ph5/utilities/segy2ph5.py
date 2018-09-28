@@ -1,10 +1,10 @@
 #!/usr/bin/env pnpython3
 #
-#   Program to read a standard SEG-Y file and load it into a PH5 file.
+# Program to read a standard SEG-Y file and load it into a PH5 file.
 #
-#   Steve Azevedo, May 2013
+# Steve Azevedo, May 2013
 #
-#   Last modified to work with geod SEG-Y, May 2014
+# Last modified to work with geod SEG-Y, May 2014
 #
 import os
 import sys
@@ -22,14 +22,13 @@ MAX_PH5_BYTES = 1073741824 * .5  # 1/2GB (1024 X 1024 X 1024 X .5)
 DAS_INFO = {}
 MAP_INFO = {}
 
-#   SEG-Y Reel Header 3255-3256
+# SEG-Y Reel Header 3255-3256
 MFEET = {0: 'Unknown', 1: 'meters', 2: 'feet'}
-#   SEG-Y Trace Header 89-90
+# SEG-Y Trace Header 89-90
 CUNITS = {0: 'Unknown', 1: MFEET, 2: 'seconds',
           3: 'degrees', 4: 'degrees,minutes,seconds'}
 TTYPE = {'S': 'SEG-Y', 'U': 'Menlo',
          'P': 'PASSCAL', 'I': 'SioSeis', 'N': 'iNova'}
-#
 DTYPE = {1: 'float32', 2: 'int32', 3: 'int16', 5: 'float32', 8: 'int8'}
 
 os.environ['TZ'] = 'GMT'
@@ -37,7 +36,7 @@ time.tzset()
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -77,7 +76,6 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -152,7 +150,6 @@ def get_args():
     options, args = oparser.parse_args()
 
     try:
-        # FH = open (options.infile, 'rb')
         SIZE = os.path.getsize(options.infile)
         SR = segyreader.Reader(options.infile)
         SR.open_infile()
@@ -162,40 +159,40 @@ def get_args():
         LOGGER.error("Can't open infile (SEG-Y).\n{0}\n".format(e))
         sys.exit()
 
-    #   Set extended header type
+    # Set extended header type
     if options.ttype is not None:
         SR.set_ext_hdr_type(options.ttype)
 
-    #   Set output file
+    # Set output file
     if options.outfile is not None:
         PH5 = options.outfile
     else:
         LOGGER.error("No outfile (PH5) given.\n")
         sys.exit()
-    #   Is this gather in receiver order?
+    # Is this gather in receiver order?
     RECV_ORDER = options.recvorder
-    #   Print contents of gather as ASCII
+    # Print contents of gather as ASCII
     PRINT = options.print_true
-    #   3 channel data?
+    # 3 channel data?
     CHAN3 = options.chan3
 
     if options.bytes_per_trace is not None:
-        #   Override bytes per trace from values in trace and bin headers
+        # Override bytes per trace from values in trace and bin headers
         L = options.bytes_per_trace
 
     if options.traces_per_ensemble is not None:
-        #   Override traces per ensemble in bin header
+        # Override traces per ensemble in bin header
         T = options.traces_per_ensemble
 
     if options.trace_format is not None:
-        #   Override value in bin header
+        # Override value in bin header
         F = options.trace_format
 
     DAS = options.das
-    #   'big' or 'little' endian?
+    # 'big' or 'little' endian?
     ENDIAN = options.endian
     SR.set_endianess(ENDIAN)
-    #   Is text header EBCDIC or ASCII?
+    # Is text header EBCDIC or ASCII?
     EBCDIC = options.ebcdic
     if EBCDIC is True:
         SR.set_txt_hdr_type('E')
@@ -219,7 +216,6 @@ def reopenPH5s():
         ex = experiment.ExperimentGroup(nickname=filename)
         ex.ph5open(True)
         ex.initgroup()
-
         return ex
 
     EX = reopen(EX)
@@ -351,7 +347,6 @@ def writeINDEX():
 def update_index_t_info(starttime, samples, sps):
     '''   Update info that gets saved in Index_t   '''
     global DAS_INFO, MAP_INFO
-    # tdoy = timedoy.TimeDOY ()
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
               EXREC.ph5_g_receivers.current_g_das._v_name
@@ -371,9 +366,6 @@ def update_index_t_info(starttime, samples, sps):
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
 
-# @profile
-
-
 def get_current_data_only(size_of_data, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
@@ -381,45 +373,30 @@ def get_current_data_only(size_of_data, das=None):
 
     newest = 0
     newestfile = ''
-    #   Get the most recent data only PH5 file or match DAS serialnumber
+    # Get the most recent data only PH5 file or match DAS serialnumber
     for index_t in INDEX_T_DAS.rows:
-        #   This DAS already exists in a ph5 file
+        # This DAS already exists in a ph5 file
         if index_t['serial_number_s'] == das:
             newestfile = index_t['external_file_name_s']
             newestfile = newestfile.replace('.ph5', '')
             newestfile = newestfile.replace('./', '')
             return openPH5(newestfile)
-        #   Find most recent ph5 file
+        # Find most recent ph5 file
         if index_t['time_stamp/epoch_l'] > newest:
             newest = index_t['time_stamp/epoch_l']
             newestfile = index_t['external_file_name_s']
             newestfile = newestfile.replace('.ph5', '')
             newestfile = newestfile.replace('./', '')
 
-    # print newest, newestfile
     if not newestfile:
-        #   This is the first file added
+        # This is the first file added
         return openPH5('miniPH5_00001')
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
-    # MAX_PH5_BYTES
     if (size_of_data + size_of_exrec) > MAX_PH5_BYTES:
         newestfile = "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
 
     return openPH5(newestfile)
-
-
-# def newMiniPH5 (f) :
-# global EX, EXREC
-
-# size_of_data = os.path.getsize (f)
-# try :
-# EXREC.ph5close ()
-# except :
-# pass
-
-# EXREC = get_current_data_only (size_of_data)
 
 
 def read_extended_headers(th):
@@ -447,19 +424,19 @@ def read_extended_headers(th):
 
 def set_from_binary_header(bh):
     '''   Set some things from the binary header we might need later.   '''
-    #   Format of trace sample
+    # Format of trace sample
     SR.set_trace_fmt(bh['format'])
-    #   Number of traces per ensemble
+    # Number of traces per ensemble
     SR.set_traces_per_ensemble(bh['ntrpr'])
-    #   Number of aux traces per ensemble
+    # Number of aux traces per ensemble
     SR.set_aux_traces_per_ensemble(bh['nart'])
-    #   Number of samples per trace
+    # Number of samples per trace
     SR.set_samples_per_trace(bh['hns'])
-    #   Sample rate
+    # Sample rate
     SR.set_sample_rate(bh['hdt'])
-    #   SEG-Y revision
+    # SEG-Y revision
     SR.set_segy_revision(bh['rev'])
-    #   Number of extended textural headers
+    # Number of extended textural headers
     SR.set_number_of_extended_text_headers(bh['extxt'])
     #
     SR.set_bytes_per_sample()
@@ -478,16 +455,15 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             LOGGER.error("DAS nuke - {0}".format(e))
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
@@ -499,34 +475,25 @@ def update_external_references():
 
     n = 0
     for i in INDEX_T_MAP.rows:
-        #   XXX
-        # keys = i.keys ()
-        # keys.sort ()
-        # for k in keys :
-        # print k, i[k]
-
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             pass
-            # print "MAP nuke ", e
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Maps_g', external_group, target)
             n += 1
         except Exception as e:
-            # pass
             LOGGER.error("{0}\n".format(e))
     LOGGER.info("done, {0} map nodes recreated.\n".format(n))
 
@@ -540,26 +507,25 @@ def read_trace():
     if not th:
         return None, None, None
     eh = SR.read_extended_header()
-    # th.update (eh)
     tr = SR.read_trace(SR.samples_per_trace, SR.bytes_per_sample)
-    #   Trace header, extended trace header, trace
+    # Trace header, extended trace header, trace
     return th, eh, tr
 
 
 #
-#   Input: th => Textural header
-#          bh => Binary header
-#          rh => Trace header
-#          eh => Extended trace header
-#          tr => Trace
+# Input: th => Textural header
+#        bh => Binary header
+#        rh => Trace header
+#        eh => Extended trace header
+#        tr => Trace
 #
 
 
 def process_trace(th, bh, rh, eh, tr):
     global ARRAY_T, EVENT_T
 
-    #   If samples per second is less than 1,
-    #   return int sample rate with appropriate divisor
+    # If samples per second is less than 1,
+    # return int sample rate with appropriate divisor
     def as_ints(v):
         if v >= 1:
             return int(v), 1
@@ -579,7 +545,7 @@ def process_trace(th, bh, rh, eh, tr):
         '''   Save textural header under Receivers_g/Das_g as Log_a_   '''
         global EXREC
 
-        #   Check to see if any data has been written
+        # Check to see if any data has been written
         if EXREC.ph5_g_receivers.current_g_das is None or\
                 EXREC.ph5_g_receivers.current_t_das is None:
             return
@@ -599,13 +565,12 @@ def process_trace(th, bh, rh, eh, tr):
         '''   Save reel header information in
               Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
         log_array, log_name = getLOG()
-        #   Standard header
+        # Standard header
         keys = sorted(bh.keys())
-        #   ell zero
+        # ell zero
         l0 = {}
         for k in keys:
             l0[k] = bh[k]
-            # l.append ("{0}\t{1}".format (k, rh[k]))
 
         ll = [{'FileType': 'SEG-Y', 'HeaderType': 'reel'}, l0]
 
@@ -615,23 +580,20 @@ def process_trace(th, bh, rh, eh, tr):
         '''   Save trace header information in
               Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
         log_array, log_name = getLOG()
-        #   Standard header
+        # Standard header
         keys = sorted(rh.keys())
-        #   ell zero
+        # ell zero
         l0 = {}
         for k in keys:
             l0[k] = rh[k]
-            # l.append ("{0}\t{1}".format (k, rh[k]))
 
-        # log_array.append (l)
-        #   Portion of header after byte 180
+        # Portion of header after byte 180
         keys = eh.keys()
         keys.sort()
-        #   ell one
+        # ell one
         l1 = {}
         for k in keys:
             l1[k] = eh[k]
-            # l.append ("{0}\t{1}".format (k, eh[k]))
 
         ht = TTYPE[SR.ext_hdr_type]
         ll = [{'FileType': 'SEG-Y', 'HeaderType': 'trace',
@@ -641,18 +603,17 @@ def process_trace(th, bh, rh, eh, tr):
         log_array.append(json.dumps(ll, sort_keys=True, indent=4).split('\n'))
 
     def process_event():
-        #   Process channel 1 (Z)
+        # Process channel 1 (Z)
         if rh['lineSeq'] != 1:
             return
 
-        #   Have we already seen this event?
+        # Have we already seen this event?
         if rh['event_number'] in EVENT_T:
             return
 
         p_event_t = {}
 
         p_event_t['id_s'] = rh['event_number']
-        # tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -660,7 +621,7 @@ def process_trace(th, bh, rh, eh, tr):
         seconds = rh['second']
         delay_time_secs = rh['delay'] / 1000.
         if SR.ext_hdr_type == 'U':
-            #   Menlo USGS
+            # Menlo USGS
             year = eh['shot_year']
             doy = eh['shot_doy']
             hour = eh['shot_hour']
@@ -669,7 +630,7 @@ def process_trace(th, bh, rh, eh, tr):
             p_event_t['time/micro_seconds_i'] = eh['shot_us']
             delay_time_secs = 0.0
         elif SR.ext_hdr_type == 'P':
-            #   PASSCAL
+            # PASSCAL
             year = eh['trigyear']
             doy = eh['trigday']
             hour = eh['trighour']
@@ -680,8 +641,6 @@ def process_trace(th, bh, rh, eh, tr):
         else:
             p_event_t['time/micro_seconds_i'] = 0
 
-        # p_event_t['time/epoch_l'] = tdoy.epoch (year, doy, hour, minute,\
-        #  seconds)
         tdoy = timedoy.TimeDOY(year=year,
                                month=None,
                                day=None,
@@ -692,8 +651,7 @@ def process_trace(th, bh, rh, eh, tr):
                                doy=doy,
                                epoch=None,
                                dtobject=None)
-        # tmp_epoch = tdoy.epoch (year, doy, hour, minute, seconds) +\
-        #  delay_time_secs
+
         tmp_epoch = tdoy.epoch() + delay_time_secs
         f, i = modf(tmp_epoch)
         p_event_t['time/epoch_l'] = int(i)
@@ -702,15 +660,15 @@ def process_trace(th, bh, rh, eh, tr):
         p_event_t['time/type_s'] = 'BOTH'
 
         if SR.ext_hdr_type == 'S':
-            #   SEG
+            # SEG
             if eh['Spn'] != 0:
                 p_event_t['id_s'] = eh['Spn']
         elif SR.ext_hdr_type == 'I':
-            #   iNova
+            # iNova
             if eh['ShotID'] != 0:
                 p_event_t['id_s'] = eh['ShotID']
         else:
-            #   As used by PIC
+            # As used by PIC
             if rh['energySourcePt'] != 0:
                 p_event_t['id_s'] = rh['energySourcePt']
 
@@ -772,7 +730,6 @@ def process_trace(th, bh, rh, eh, tr):
         p_array_t['location/Z/value_d'] = rh['datumElevRec'] * elevationScale
         p_array_t['location/Z/units_s'] = MFEET[bh['mfeet']]
 
-        # tdoy = timedoy.TimeDOY ()
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -789,11 +746,11 @@ def process_trace(th, bh, rh, eh, tr):
                                epoch=None,
                                dtobject=None)
         if SR.ext_hdr_type == 'U':
-            #   Menlo USGS
+            # Menlo USGS
             p_array_t['deploy_time/micro_seconds_i'] = eh['start_usec']
             p_array_t['pickup_time/micro_seconds_i'] = eh['start_usec']
         elif SR.ext_hdr_type == 'P':
-            #   PASSCAL
+            # PASSCAL
             p_array_t['deploy_time/micro_seconds_i'] = int(
                 eh['m_secs'] / 1000.)
             p_array_t['pickup_time/micro_seconds_i'] = int(
@@ -838,13 +795,10 @@ def process_trace(th, bh, rh, eh, tr):
 
         ARRAY_T[ffid].append(p_array_t)
 
-    # @profile
     def process_das():
         '''   Save trace data   '''
-        # p_das_t = {}
         p_response_t = {}
         # Make Data_a and fill in Das_t
-        ###
         global EXREC, MINIPH5
 
         EXREC = get_current_data_only(SIZE, Das)
@@ -852,7 +806,7 @@ def process_trace(th, bh, rh, eh, tr):
             LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
             MINIPH5 = EXREC.filename
 
-        #   This is gain in dB since it is from SEG-Y
+        # This is gain in dB since it is from SEG-Y
         try:
             p_response_t['gain/value_i'] = rh['gainConst']
             p_response_t['gain/units_s'] = 'dB'
@@ -871,17 +825,13 @@ def process_trace(th, bh, rh, eh, tr):
                         "defined in SEG-Y file - {0}"
                         .format(e))
 
-        #   Check to see if group exists for this das, if not build it
+        # Check to see if group exists for this das, if not build it
         das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas(Das)
-        #   Build maps group (XXX)
+        # Build maps group (XXX)
         EXREC.ph5_g_maps.newdas('Das_g_', Das)
-        #   XXX
         p_das_t['array_name_log_a'] = EXREC.ph5_g_receivers.nextarray('Log_a_')
-        # log_array, log_name = getLOG ()
-        # p_das_t['array_name_log_a'] = log_name
         p_das_t['response_table_n_i'] = n_i
-        # fsd = rh['traceWeightingFactor']
-        # tdoy = timedoy.TimeDOY ()
+
         year = rh['year']
         doy = rh['day']
         hour = rh['hour']
@@ -898,10 +848,10 @@ def process_trace(th, bh, rh, eh, tr):
                                epoch=None,
                                dtobject=None)
         if SR.ext_hdr_type == 'U':
-            #   Menlo USGS
+            # Menlo USGS
             p_das_t['time/micro_seconds_i'] = eh['start_usec']
         elif SR.ext_hdr_type == 'P':
-            #   PASSCAL
+            # PASSCAL
             p_das_t['time/micro_seconds_i'] = int(eh['m_secs'] / 1000.)
         else:
             p_das_t['time/micro_seconds_i'] = 0
@@ -916,7 +866,6 @@ def process_trace(th, bh, rh, eh, tr):
         p_das_t['time/ascii_s'] = time.ctime(p_das_t['time/epoch_l'])
         p_das_t['time/type_s'] = 'BOTH'
 
-        # p_das_t['channel_number_i'] = rh['lineSeq']
         if rh['lineSeq'] == 0:
             rh['lineSeq'] = 1
 
@@ -935,15 +884,10 @@ def process_trace(th, bh, rh, eh, tr):
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
               " Channel: " + str(p_das_t['channel_number_i'])
-        #   Write trace data here
+        # Write trace data here
         EXREC.ph5_g_receivers.newarray(
             p_das_t['array_name_data_a'], tr, dtype=DTYPE[SR.trace_fmt],
             description=des)
-        # if p_das_t['channel_number_i'] == 1 :
-        # update_index_t_info (p_das_t['time/epoch_l'] +\
-        #  (float (p_das_t['time/micro_seconds_i']) / 1000000.),\
-        #  p_das_t['sample_count_i'], p_das_t['sample_rate_i'] /\
-        #  p_das_t['sample_rate_multiplier_i'])
         update_index_t_info(p_das_t['time/epoch_l'] + (
                     float(p_das_t['time/micro_seconds_i']) / 1000000.),
                             p_das_t['sample_count_i'],
@@ -1015,33 +959,6 @@ def write_events(Event_t):
             columns.populate(a, event_t)
 
 
-# def write_textural_binary_hdrs (th, bh) :
-# for t in th :
-# keys = t.keys ()
-# keys.sort ()
-# buf = ''
-# for k in keys :
-# buf += "{0:<25}{1:<72}\n".format (k, t[k])
-# buf += "=-" * 40; buf += '\n'
-
-# keys = bh.keys ()
-# keys.sort ()
-# for k in keys :
-# buf += "{0:<25}{1:<72}\n".format (k, bh[k])
-# buf += "=-" * 40 + '\n'
-
-# aname = EX.ph5_g_reports.nextName ()
-# EX.ph5_g_reports.newarray (aname, buf)
-
-# p_report_t = {}
-# p_report_t['array_name_a'] = aname
-# p_report_t['title_s'] = "Textural and Binary Header Values"
-# p_report_t['format_s'] = 'TXT'
-# p_report_t['description_s'] = SR.infile
-
-# EX.ph5_g_reports.populate (p_report_t)
-
-
 def main():
     def prof():
         global INDEX_T_DAS, INDEX_T_MAP, RESP, EXREC, MINIPH5, ARRAY_T,\
@@ -1063,23 +980,22 @@ def main():
         INDEX_T_DAS = Rows_Keys(rows, keys)
         rows, keys = EX.ph5_g_maps.read_index()
         INDEX_T_MAP = Rows_Keys(rows, keys)
-        #   Read text header
+        # Read text header
         th = SR.read_text_header()
         if PRINT is True:
             print_header(th)
-        #   Read binary header
+        # Read binary header
         bh = SR.read_binary_header()
-        #   Save some things from binary header that we will refer to later
+        # Save some things from binary header that we will refer to later
         set_from_binary_header(bh)
         if PRINT:
             print_header(bh)
-        #   Read extended headers (+ textural header) into list of dictionaries
+        # Read extended headers (+ textural header) into list of dictionaries
         th = read_extended_headers(th)
         if PRINT is True and len(th) > 1:
             for h in th[1:]:
                 print_header(h)
 
-        #
         ctr = 0
         while True:
             ctr += 1
@@ -1096,10 +1012,10 @@ def main():
 
             Das = 0
             if DAS is None:
-                #   This is the field trace number
+                # This is the field trace number
                 Das = str(int(rh['channel_number']) & 0x7FFFFFFF)
             else:
-                #   Set on the command line
+                # Set on the command line
                 Das = str(DAS)
 
             if Das == 0:
@@ -1111,18 +1027,12 @@ def main():
             th = process_trace(th, bh, rh, eh, tr)
             if DAS_INFO:
                 writeINDEX()
-            #   Does this speed things up?
-            # reopenPH5s ()
-            # if ctr >= 600 :
-            # break
-            # reopenPH5s ()
-            # ctr = 0
 
-        #   Do this if its in receiver order
+        # Do this if its in receiver order
         askip, tmp_array_t = clean_array(
             ARRAY_T, 'location/Y/value_d', 'location/X/value_d')
-        #   Do this if its in shot order
-        #   XXX   This should clean based on time!!!   XXX
+        # Do this if its in shot order
+        # XXX   This should clean based on time!!!   XXX
         eskip, tmp_event_t = clean_array(
             EVENT_T, 'location/Y/value_d', 'location/X/value_d')
 
@@ -1142,12 +1052,8 @@ def main():
             write_arrays(tmp_array_t)
             write_events(EVENT_T)
         else:
-            # write_arrays (ARRAY_T)
             write_arrays(tmp_array_t)
-            # write_events (tmp_event_t)
             write_events(EVENT_T)
-
-        # write_textural_binary_hdrs (th, bh)
 
         update_external_references()
 
@@ -1157,14 +1063,10 @@ def main():
         except Exception:
             pass
 
-        print "Done..."
+        LOGGER.info("Done...")
 
-    #   Entry point
-    if False:
-        import cProfile as cp
-        cp.run('prof ()', filename='segy2ph5.profile', sort=-1)
-    else:
-        prof()
+    # Entry point
+    prof()
 
 
 if __name__ == '__main__':

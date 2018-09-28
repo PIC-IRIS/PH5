@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython4
 #
-#   Produce SEG-Y in shot (event) order from PH5 file using API
+# Produce SEG-Y in shot (event) order from PH5 file using API
 #
-#   Steve Azevedo, August 2016
+# Steve Azevedo, August 2016
 #
 
 import argparse
@@ -14,7 +14,7 @@ from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
 PROG_VERSION = "2017.312 Developmental"
 LOGGER = logging.getLogger(__name__)
-#   This should never get used. See ph5api.
+# This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
 DECIMATION_FACTORS = segyfactory.DECIMATION_FACTORS
 
@@ -45,23 +45,23 @@ def get_args():
     --decimation=[2,4,5,8,10,20]\n\t--out_dir=output_directory"
 
     parser.description = "Generate SEG-Y gathers in shot order..."
-    #   Usually master.ph5
+    # Usually master.ph5
     parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
                         help="The ph5 file prefix (experiment nickname).",
                         metavar="ph5_file_prefix", required=True)
-    #   Path to the directory that holds master.ph5
+    # Path to the directory that holds master.ph5
     parser.add_argument("-p", "--path", dest="ph5_path",
                         help="Path to ph5 files. Default current directory.",
                         metavar="ph5_path", default='.')
-    #   SEED channel
+    # SEED channel
     parser.add_argument("--channel", dest="seed_channel",
                         help="Filter on SEED channel.",
                         metavar="seed_channel")
-    #   SEED network code
+    # SEED network code
     parser.add_argument("--network", dest="seed_network",
                         help="Filter on SEED net code.",
                         metavar="seed_network")
-    #   SEED loc code
+    # SEED loc code
     parser.add_argument("--location", dest="seed_location",
                         help="Filter on SEED loc code.",
                         metavar="seed_location")
@@ -72,54 +72,54 @@ def get_args():
                         Default = 1,2,3.",
                         type=str, dest="channels", metavar="channels",
                         default='1,2,3')
-    #   Extract a single event
+    # Extract a single event
     parser.add_argument("-e", "--eventnumber", action="store",
                         dest="event_number",
                         type=int, metavar="event_number")
-    #   Event id's in order, comma seperated
+    # Event id's in order, comma seperated
     parser.add_argument("--event_list", dest="evt_list",
                         help="Comma separated list of event id's\
                         to gather from defined or selected events.",
                         metavar="evt_list")
-    #   Extract all events in Event_t
+    # Extract all events in Event_t
     parser.add_argument("-E", "--allevents", action="store_true",
                         dest="all_events",
                         help="Extract all events in event table.",
                         default=False)
-    #   The shot line number, 0 for Event_t
+    # The shot line number, 0 for Event_t
     parser.add_argument("--shot_line", dest="shot_line", action="store",
                         help="The shot line number that holds the shots.",
                         type=int, metavar="shot_line")
-    #   External shot line file
+    # External shot line file
     parser.add_argument("--shot_file", dest="shot_file", action="store",
                         help="Input an external kef file that contains\
                         event information, Event_t.kef.",
                         type=str, metavar="shot_file")
-    #   Extract data for all stations starting at this time
+    # Extract data for all stations starting at this time
     parser.add_argument("-s", "--starttime", action="store", dest="start_time",
                         type=str, metavar="start_time")
-    #   The array number
+    # The array number
     parser.add_argument("-A", "--station_array", dest="station_array",
                         action="store",
                         help="The array number that holds the station(s).",
                         type=int, metavar="station_array", required=True)
-    #   Length of traces to put in gather
+    # Length of traces to put in gather
     parser.add_argument("-l", "--length", action="store", required=True,
                         type=int, dest="length", metavar="length")
-    #   Start trace at time offset from shot time
+    # Start trace at time offset from shot time
     parser.add_argument("-O", "--seconds_offset_from_shot", "--offset",
                         metavar="seconds_offset_from_shot",
                         help="Time in seconds from shot time\
                         to start the trace.",
                         type=float, default=0.)
-    #   Do not time correct texan data
+    # Do not time correct texan data
     parser.add_argument("-N", "--notimecorrect", action="store_false",
                         default=True,
                         dest="do_time_correct")
-    #   Output directory
+    # Output directory
     parser.add_argument("-o", "--out_dir", action="store", dest="out_dir",
                         metavar="out_dir", type=str, default=".")
-    #   Write to stdout
+    # Write to stdout
     parser.add_argument("--stream", action="store_true", dest="write_stdout",
                         help="Write to stdout instead of a file.",
                         default=False)
@@ -130,31 +130,31 @@ def get_args():
                         help="Use deploy and pickup times to determine\
                         if data exists for a station.",
                         dest="deploy_pickup")
-    #   Stations to gather, comma seperated
+    # Stations to gather, comma seperated
     parser.add_argument("-S", "--stations", "--station_list",
                         dest="stations_to_gather",
                         help="Comma separated list of stations\
                         to receiver gather.",
                         metavar="stations_to_gather", required=False)
-    #   Filter out all sample rates except the listed
+    # Filter out all sample rates except the listed
     parser.add_argument("-r", "--sample_rate_keep", action="store",
                         dest="sample_rate",
                         metavar="sample_rate", type=float)
-    #   Apply a reduction velocity, km
+    # Apply a reduction velocity, km
     parser.add_argument("-V", "--reduction_velocity", action="store",
                         dest="red_vel",
                         help="Reduction velocity in km/sec.",
                         metavar="red_vel", type=float, default="-1.")
-    #   Decimate data. Decimation factor
+    # Decimate data. Decimation factor
     parser.add_argument("-d", "--decimation", action="store",
                         choices=["2", "4", "5", "8", "10", "20"],
                         dest="decimation",
                         metavar="decimation")
-    #   Convert geographic coordinated in ph5 to UTM before creating gather
+    # Convert geographic coordinated in ph5 to UTM before creating gather
     parser.add_argument("-U", "--UTM", action="store_true", dest="use_utm",
                         help="Fill SEG-Y headers with UTM instead of lat/lon.",
                         default=False)
-    #   How to fill in the extended trace header
+    # How to fill in the extended trace header
     parser.add_argument("-x", "--extended_header", action="store",
                         dest="ext_header",
                         help="Extended trace header style: \
@@ -164,10 +164,10 @@ def get_args():
                         default = U",
                         choices=["P", "S", "U", "I", "N"], default="U",
                         metavar="extended_header_style")
-    #   Ignore channel in Das_t. Only useful with texans
+    # Ignore channel in Das_t. Only useful with texans
     parser.add_argument("--ic", action="store_true",
                         dest="ignore_channel", default=False)
-    #   Allow traces to be 2^16 samples long vs 2^15
+    # Allow traces to be 2^16 samples long vs 2^15
     parser.add_argument("--break_standard", action="store_false",
                         dest="break_standard",
                         help="Force traces to be no longer than 2^15 samples.",
@@ -182,7 +182,7 @@ def get_args():
         LOGGER.error("Can't open {0} at {1}.".format(
             ARGS.ph5_file_prefix, ARGS.ph5_path))
         sys.exit(-1)
-    #
+
     if ARGS.shot_file:
         if not ARGS.shot_line:
             LOGGER.error(
@@ -194,7 +194,7 @@ def get_args():
         P5.Event_t_names = ARGS.shot_file.keys()
     else:
         P5.read_event_t_names()
-    #
+
     if ARGS.event_number:
         ARGS.evt_list = list([str(ARGS.event_number)])
     elif ARGS.evt_list:
@@ -203,27 +203,26 @@ def get_args():
         ARGS.start_time = timedoy.TimeDOY(
             epoch=timedoy.passcal2epoch(ARGS.start_time, fepoch=True))
         ARGS.evt_list = [ARGS.start_time]
-    #
+
     if not ARGS.evt_list and not ARGS.all_events:
         LOGGER.error(
             "Required argument missing.\
             event_number|evt_list|all_events.\n")
         sys.exit(-1)
-    #   Event or shot line
+    # Event or shot line
     if ARGS.shot_line is not None:
         if ARGS.shot_line == 0:
             ARGS.shot_line = "Event_t"
         else:
             ARGS.shot_line = "Event_t_{0:03d}".format(ARGS.shot_line)
-        #
     elif not ARGS.start_time:
         LOGGER.error("Shot line or start time required.")
         sys.exit(-2)
-    #   Array or station line
+    # Array or station line
     ARGS.station_array = "Array_t_{0:03d}".format(ARGS.station_array)
-    #   Order of channels in gather
+    # Order of channels in gather
     ARGS.channels = map(int, ARGS.channels.split(','))
-    #   Stations to gather
+    # Stations to gather
     if ARGS.stations_to_gather:
         ARGS.stations_to_gather = map(int, ARGS.stations_to_gather.split(','))
         ARGS.stations_to_gather.sort()
@@ -252,18 +251,18 @@ def gather():
         except Exception as e:
             LOGGER.warn("Warning: The event {0} not found.\n".format(evt))
             continue
-        #
+
         fh = None
-        #   Initialize
+        # Initialize
         sf = segyfactory.Ssegy(None, event_t, utm=ARGS.use_utm)
-        #   Allow lenght of traces to be up to 2^16 samples long
+        # Allow lenght of traces to be up to 2^16 samples long
         sf.set_break_standard(ARGS.break_standard)
-        #   Set external header type
+        # Set external header type
         sf.set_ext_header_type(ARGS.ext_header)
-        #   Set event information
+        # Set event information
         if event_t:
             sf.set_event_t(event_t)
-            #   Event time
+            # Event time
             event_tdoy = timedoy.TimeDOY(microsecond=event_t
                                          ['time/micro_seconds_i'],
                                          epoch=event_t['time/epoch_l'])
@@ -276,41 +275,41 @@ def gather():
         if ARGS.seconds_offset_from_shot:
             event_tdoy += ARGS.seconds_offset_from_shot
         end_tdoy = event_tdoy + ARGS.length
-        #   Event start time
+        # Event start time
         start_fepoch = event_tdoy.epoch(fepoch=True)
-        #   Trace cut end time
+        # Trace cut end time
         stop_fepoch = end_tdoy.epoch(fepoch=True)
         Array_t = P5.Array_t[ARGS.station_array]['byid']
-        #   All channels (components) available for this array
+        # All channels (components) available for this array
         chans_available = P5.channels_Array_t(ARGS.station_array)
-        #   The trace sequence
+        # The trace sequence
         i = 0
         skipped_chans = 0
         for sta in ARGS.stations_to_gather:
             LOGGER.info("-=" * 20)
             LOGGER.info(
                 "Attempting to find data for station {0}.".format(sta))
-            #   Shot to station information
+            # Shot to station information
             if Offset_t and sta in Offset_t:
                 offset_t = Offset_t[sta]
                 sf.set_offset_t(offset_t)
-            #   Array geometry
+            # Array geometry
             if sta not in Array_t:
                 LOGGER.info("Warning: The station {0} is not in array {1}."
                             .format(sta, ARGS.station_array))
                 continue
             array_t = Array_t[sta]
-            #   Filter out unwanted channels
+            # Filter out unwanted channels
             chans = []
             for c in ARGS.channels:
                 if c in chans_available:
                     chans.append(c)
-            #   Create channel name for output file name
+            # Create channel name for output file name
             chan_name = ''
             for c in chans:
                 chan_name += "{0}".format(c)
             num_traces = len(chans) * len(ARGS.stations_to_gather)
-            #   Loop through channels
+            # Loop through channels
             for c in chans:
                 if c not in array_t:
                     LOGGER.warn("Warning: No channel information\
@@ -318,7 +317,7 @@ def gather():
                     skipped_chans += 1
                     continue
                 try:
-                    #   Filter out unwanted seed loc codes
+                    # Filter out unwanted seed loc codes
                     if ARGS.seed_location and\
                        array_t[c][0]['seed_location_code_s']\
                        != ARGS.seed_location:
@@ -328,7 +327,7 @@ def gather():
                                             ARGS.seed_location,
                                             c))
                         continue
-                    #   Filter out unwanted seed channels
+                    # Filter out unwanted seed channels
                     seed_channel_code_s = ph5api.seed_channel_code(
                         array_t[c][0])
                     if ARGS.seed_channel and seed_channel_code_s \
@@ -341,15 +340,15 @@ def gather():
                         continue
                 except BaseException:
                     pass
-                #   Loop for each array_t per id_s and channel
+                # Loop for each array_t per id_s and channel
                 for t in range(len(array_t[c])):
-                    #   DAS
+                    # DAS
                     das = array_t[c][t]['das/serial_number_s']
-                    #   Deploy time
+                    # Deploy time
                     start_epoch = array_t[c][t]['deploy_time/epoch_l']
-                    #   Pickup time
+                    # Pickup time
                     stop_epoch = array_t[c][t]['pickup_time/epoch_l']
-                    #   Is this shot within the deploy and pickup times
+                    # Is this shot within the deploy and pickup times
                     if not ph5api.is_in(
                             start_epoch,
                             stop_epoch,
@@ -362,8 +361,7 @@ def gather():
                         if ARGS.deploy_pickup:
                             LOGGER.info("Skipping.")
                             continue
-                    #   Read Das table, may already be read so don't reread it
-                    #   XXX   Debug only
+                    # Read Das table, may already be read so don't reread it
                     try:
                         das_or_fail = P5.read_das_t(
                             das,
@@ -386,7 +384,7 @@ def gather():
                             timedoy.epoch2passcal(stop_epoch)))
                         continue
 
-                    #   Sample rate
+                    # Sample rate
                     if array_t[c][t]['das/serial_number_s'] in P5.Das_t:
                         sr = float(P5.Das_t[array_t[c][t]
                                             ['das/serial_number_s']]['rows']
@@ -395,7 +393,7 @@ def gather():
                             ['rows'][0]['sample_rate_multiplier_i'])
                     else:
                         sr = 0.  # Oops! No data for this DAS
-                    #   Check v4 sample rate from array_t
+                    # Check v4 sample rate from array_t
                     try:
                         if sr != array_t[c][0]['sample_rate_i'] / \
                                 float(array_t[c][0]
@@ -413,7 +411,7 @@ def gather():
                         int((stop_fepoch - start_fepoch) * sr))
 
                     # Need to apply reduction velocity here
-                    #   Set cut start and stop times
+                    # Set cut start and stop times
                     cut_start_fepoch = start_fepoch
                     cut_stop_fepoch = stop_fepoch
                     if ARGS.red_vel > 0.:
@@ -430,12 +428,12 @@ def gather():
                             LOGGER.info(e)
                         cut_start_fepoch += secs
                         cut_stop_fepoch += secs
-                    #
+
                     sf.set_cut_start_epoch(cut_start_fepoch)
                     sf.set_array_t(array_t[c][t])
-                    #
+
                     # Cut trace
-                    #     Need to pad iff multiple traces
+                    # Need to pad iff multiple traces
                     traces = P5.cut(das,
                                     cut_start_fepoch,
                                     cut_stop_fepoch,
@@ -468,34 +466,34 @@ def gather():
                             .format(trace.padding))
                     # Need to apply decimation here
                     if ARGS.decimation:
-                        #   Decimate
+                        # Decimate
                         shift, data = decimate.decimate(
                             DECIMATION_FACTORS[ARGS.decimation], trace.data)
-                        #   Set new sample rate
+                        # Set new sample rate
                         wsr = int(sr / int(ARGS.decimation))
                         sf.set_sample_rate(wsr)
                         trace.sample_rate = wsr
-                        #   Set length of trace in samples
+                        # Set length of trace in samples
                         sf.set_length_points(len(data))
                         sf.length_points_all = len(data)
                         trace.nsamples = len(data)
                         trace.data = data
-                    #   Did we read any data?
+                    # Did we read any data?
                     if trace.nsamples == 0:
-                        #   Failed to read any data
+                        # Failed to read any data
                         LOGGER.warning(
                             "Warning: No data for data logger {2}/{0}\
                             starting at {1}."
                             .format(das, trace.start_time, sta))
                         continue
-                    #   Read receiver and response tables
+                    # Read receiver and response tables
                     receiver_t = trace.receiver_t
                     if receiver_t:
                         sf.set_receiver_t(receiver_t)
                     else:
                         LOGGER.warning(
                             "No sensor orientation found in ph5 file.")
-                    #   Read gain and bit weight
+                    # Read gain and bit weight
 
                     if 'response_table_n_i' in array_t[c][t] and\
                        array_t[c][t]['response_table_n_i'] is not -1:
@@ -509,7 +507,7 @@ def gather():
                     else:
                         LOGGER.warning(
                             "No gain or bit weight found in ph5 file.")
-                    #   Increment line sequence
+                    # Increment line sequence
                     i += 1
                     sf.set_line_sequence(i)
                     sf.set_das_t(trace.das_t[0])
@@ -556,13 +554,13 @@ def gather():
                                 chan_name)
                             outfilename = "{1:s}/{0:s}_0001.SGY".format(
                                 base, ARGS.out_dir)
-                            #   Make sure that the name in unique
+                            # Make sure that the name in unique
                             j = 1
                             while os.path.exists(outfilename):
                                 j += 1
                                 tmp = outfilename[:-8]
                                 outfilename = "{0}{1:04d}.SGY".format(tmp, j)
-                            #   Open SEG-Y file
+                            # Open SEG-Y file
                             try:
                                 fh = open(outfilename, 'w+')
                                 LOGGER.info("Opened: {0}".format(outfilename))
@@ -573,21 +571,20 @@ def gather():
                                 \t{1}".format(
                                           outfilename, e.message))
                                 sys.exit()
-                        #   Write reel headers and first trace
+                        # Write reel headers and first trace
                         logs = segyfactory.write_segy_hdr(
                             trace, fh, sf, num_traces)
-                        #   Write any messages
+                        # Write any messages
                         for l in logs:
                             LOGGER.info(l)
                     else:
-                        #   Write trace
+                        # Write trace
                         logs = segyfactory.write_segy(trace, fh, sf)
                         for l in logs:
                             LOGGER.info(l)
-            #   chan
-        #   Traces found does not match traces expected
+        # Traces found does not match traces expected
         if i != num_traces and fh:
-            #   Need to update reel_header
+            # Need to update reel_header
             if (num_traces - skipped_chans) < i:
                 LOGGER.warn("Warning: Wrote {0} of {1}\
                 trace/channels listed in {2}.".format(
@@ -605,8 +602,6 @@ def gather():
             fh.close()
         except AttributeError:
             pass
-        #   sta
-    #   evt
 
 
 def main():
@@ -619,7 +614,6 @@ def main():
         formatter = logging.Formatter(LOGGING_FORMAT)
         ch.setFormatter(formatter)
         LOGGER.addHandler(ch)
-    ###
     LOGGER.info("{0}: {1}".format(PROG_VERSION, sys.argv))
     if not ARGS.start_time:
         if ARGS.shot_line not in P5.Event_t_names:

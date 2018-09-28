@@ -518,7 +518,7 @@ def main():
         LOGGER.warning("{0} not found.\n".format(ph5file))
         sys.exit(-1)
     else:
-        #   Set up logging
+        # Set up logging
         # Write log to file
         ch = logging.FileHandler(os.path.join('.', "resp_load.log"))
         ch.setLevel(logging.INFO)

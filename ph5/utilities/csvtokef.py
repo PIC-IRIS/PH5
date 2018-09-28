@@ -1,3 +1,6 @@
+#
+# Convert csv file generated using keftocsv back into a kef file.
+#
 import argparse
 import csv
 import logging

@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Program to generate /Experiment_g/Sorts_g/Sort_t entries
+# Program to generate /Experiment_g/Sorts_g/Sort_t entries
 #
-#   Steve Azevedo, July 2007
+# Steve Azevedo, July 2007
 #
 
 import argparse
@@ -13,19 +13,19 @@ import os.path
 import time
 import math
 from ph5 import LOGGING_FORMAT
-#   This provides the base functionality
+# This provides the base functionality
 from ph5.core import experiment
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
-#   Make sure we are all on the same time zone ;^)
+# Make sure we are all on the same time zone ;^)
 os.environ['TZ'] = 'UTM'
 time.tzset()
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -44,7 +44,7 @@ class Rows_Keys(object):
 
 
 #
-#   To hold DAS sn and references to Das_g_[sn]
+# To hold DAS sn and references to Das_g_[sn]
 #
 
 
@@ -57,7 +57,7 @@ class Das_Groups(object):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
@@ -117,7 +117,7 @@ def get_args():
 
 
 #
-#   Initialize ph5 file
+# Initialize ph5 file
 #
 
 
@@ -130,7 +130,7 @@ def initialize_ph5(editmode=False):
     EX.initgroup()
 
 
-#   XXX   Not used
+# XXX   Not used
 
 
 def read_sort_table():
@@ -180,10 +180,9 @@ def read_das_table(das):
         return False
 
     R = []
-    #   Get sample count for this array
+    # Get sample count for this array
     for r0 in r:
         r0['array_name_data_a']
-        # samples = get_sample_count (das_group, data_array_name)
         r0['samples'] = r0['sample_count_i']
         R.append(r0)
 
@@ -200,33 +199,28 @@ def read_all_das():
     global EX, DAS_T
 
     rows = {}
-    #   Get all of the das groups
+    # Get all of the das groups
     dasGroups = EX.ph5_g_receivers.alldas_g()
-    #   For each das
+    # For each das
     dass = dasGroups.keys()
     if not dass:
         return False
 
     for das in dass:
-        #   Set the current group
+        # Set the current group
         das_group = dasGroups[das]
         EX.ph5_g_receivers.setcurrent(das_group)
-        #   Read the das table for this das
+        # Read the das table for this das
         r, k = EX.ph5_g_receivers.read_das()
 
         if r is None or k is None:
             continue
 
         R = []
-        #   Get sample count for this array by counting the array
+        # Get sample count for this array by counting the array
         for r0 in r:
             if r0['channel_number_i'] != 1:
                 continue  # Exclude all but channel 1
-            # data_array_name = r0['array_name_data_a']
-            # samples = get_sample_count (das_group, data_array_name)
-            #   If for some reason counting the number of samples in an array
-            #   fails use value from Das_t
-            # if samples == None :
             samples = r0['sample_count_i']
             r0['time/epoch_f'] =\
                 float(r0['time/epoch_l']) +\
@@ -237,25 +231,25 @@ def read_all_das():
 
         k.append('samples')
 
-        #   Create a dictionary of rows keyed by start epoch
-        #   This should contain all of the recording windows
+        # Create a dictionary of rows keyed by start epoch
+        # This should contain all of the recording windows
         for r in R:
             rows[r['time/epoch_l']] = r
 
-    #   Sort by start time epoch
+    # Sort by start time epoch
     epochs = sorted(rows.keys())
-    #   Get the rows list back
+    # Get the rows list back
     row = []
     for e in epochs:
         row.append(rows[e])
 
-    #   Set DAS_T
+    # Set DAS_T
     DAS_T = Rows_Keys(row, k)
 
     return True
 
 
-#   XXX   Not used
+# XXX   Not used
 
 
 def get_arrays():
@@ -311,7 +305,7 @@ def report_gen():
             LOGGER.warning("Failed to read any DAS information!\n")
 
         for d in DAS_T.rows:
-            #   Skip everything but channel 1
+            # Skip everything but channel 1
             if d['channel_number_i'] != 1:
                 continue
             t0 = d['time/epoch_l'] + (d['time/micro_seconds_i'] / 1000000)
@@ -341,14 +335,6 @@ def report_gen():
                 print "\ttime_stamp/micro_seconds_i = 0"
                 print "\ttime_stamp/type_s = BOTH"
                 r += 1
-            # else :
-            # sys.stderr.write ("#Warning: DAS {0} time outside of deploy
-            # pickup times!\n")
-            # sys.stderr.write ("#\tArray: {0} Deploy: {1} Pickup: {2}\n"\
-            # .format (a, array_deploy, array_pickup))
-            # sys.stderr.write ("#DAS: {0} Deploy: {1} Pickup:
-            # {2}\n".format (array_t['das/serial_number_s'],
-            # d['time/epoch_l'], int_part))
 
 
 def main():
@@ -356,11 +342,7 @@ def main():
 
     get_args()
     initialize_ph5()
-    '''
-    if not read_sort_table () :
-        sys.stderr.write ("Failed to read /Experiment_g/Sorts_g/Sort_t\n")
-        sys.exit ()
-    '''
+
     if SN is not None:
         if not read_das_table(SN):
             LOGGER.error("Failed to read Das_t for {0}.".format(SN))

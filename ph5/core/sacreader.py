@@ -1,9 +1,9 @@
 #!/usr/bin/env pnpython3
 
 #
-#   Read a SAC file
+# Read a SAC file
 #
-#   December 2013, Steve Azevedo
+# December 2013, Steve Azevedo
 #
 
 import sys
