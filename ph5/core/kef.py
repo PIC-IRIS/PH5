@@ -184,10 +184,10 @@ class Kef:
         while p:
             if trace is True:
                 kys = kv.keys()
-                LOGGER.info('=-' * 30)
-                LOGGER.info("{0}".format(p))
+                print("=-" * 30)
+                print("{0}".format(p))
                 for k in kys:
-                    LOGGER.info("\t{0} = {1}".format(k, kv[k]))
+                    print("\t{0} = {1}".format(k, kv[k]))
 
             DELETE = False
             # Update or Append or Delete

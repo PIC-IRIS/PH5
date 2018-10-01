@@ -6,6 +6,8 @@
 #
 # Last modified to work with geod SEG-Y, May 2014
 #
+
+import argparse
 import os
 import sys
 import logging
@@ -90,110 +92,134 @@ def get_args():
     global SR, TYPE, PRINT, L, T, F, ENDIAN, EBCDIC, PH5, RECV_ORDER, DAS,\
         SIZE, CHAN3
 
-    from optparse import OptionParser
-    oparser = OptionParser()
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser.usage = "Version: {0} Usage: segy2ph5 [options]".format(
-        PROG_VERSION)
+    parser.usage = "segy2ph5 --nickname=ph5-file-prefix [options]"
 
-    oparser.add_option("-f", action="store", dest="infile", type="string",
-                       help="Input SEG-Y file.")
+    parser.description = ("Read a standard SEG-Y file and load it into a "
+                          "PH5 file.\n\nVersion: {0}"
+                          .format(PROG_VERSION))
 
-    oparser.add_option("-n", "--nickname", dest="outfile",
-                       help="The ph5 file prefix (experiment nick name).",
-                       metavar="output_file_prefix")
+    parser.add_argument("-f",
+                        action="store",
+                        dest="infile",
+                        type=str,
+                        help="Input SEG-Y file.")
 
-    oparser.add_option("-S", "--recv-order", dest="recvorder",
-                       help="The SEG-Y input file is in receiver order.",
-                       action="store_true", default=False)
+    parser.add_argument("-n", "--nickname",
+                        dest="outfile",
+                        help="The ph5 file prefix (experiment nick name).",
+                        metavar="output_file_prefix",
+                        required=True)
 
-    oparser.add_option("-t", action="store", dest="ttype",
-                       choices=['U', 'P', 'S', 'N', 'I'],
-                       default='S',
-                       help="Extended trace header style. U => USGS Menlo,\
-                        P => PASSCAL, S => SEG, I => SIOSEIS,\
-                         N => iNova FireFly")
+    parser.add_argument("-S", "--recv-order",
+                        dest="recvorder",
+                        help="The SEG-Y input file is in receiver order.",
+                        action="store_true",
+                        default=False)
 
-    oparser.add_option("-p", action="store_true",
-                       dest="print_true", default=False)
+    parser.add_argument("-t",
+                        action="store",
+                        dest="ttype",
+                        choices=['U', 'P', 'S', 'N', 'I'],
+                        default='S',
+                        help="Extended trace header style. U => USGS Menlo, "
+                             "P => PASSCAL, S => SEG, I => SIOSEIS, "
+                             "N => iNova FireFly")
 
-    oparser.add_option("-L", action="store", dest="bytes_per_trace",
-                       type="int",
-                       help="Force bytes per trace. Overrides header values.")
+    parser.add_argument("-p",
+                        action="store_true",
+                        dest="print_true",
+                        default=False)
 
-    oparser.add_option("-T", action="store", dest="traces_per_ensemble",
-                       type="int",
-                       help="Force traces per ensemble.\
-                        Overrides header value.")
+    parser.add_argument("-L",
+                        action="store",
+                        dest="bytes_per_trace",
+                        type=int,
+                        help="Force bytes per trace. Overrides header values.")
 
-    oparser.add_option("-F", action="store", dest="trace_format", type="int",
-                       help="1 = IBM - 4 bytes, 2 = INT - 4 bytes,\
-                        3 = INT - 2 bytes, 5 = IEEE - 4 bytes,\
-                         8 = INT - 1 byte. Override header value.")
+    parser.add_argument("-T", action="store", dest="traces_per_ensemble",
+                        type=int,
+                        help="Force traces per ensemble. Overrides header "
+                             "value.")
 
-    oparser.add_option("-e", action="store", dest="endian", type="str",
-                       default='big',
-                       help="Endianess: 'big' or 'little'. \
-                       Default = 'big'. Override header value.")
+    parser.add_argument("-F", action="store", dest="trace_format", type=int,
+                        help="1 = IBM - 4 bytes, 2 = INT - 4 bytes, "
+                             "3 = INT - 2 bytes, 5 = IEEE - 4 bytes, "
+                             "8 = INT - 1 byte. Override header value.")
 
-    oparser.add_option("-i", action="store_false", dest="ebcdic", default=True,
-                       help="EBCDIC textural header. Override header value.")
+    parser.add_argument("-e",
+                        action="store",
+                        dest="endian",
+                        type=str,
+                        default='big',
+                        help="Endianess: 'big' or 'little'. "
+                             "Default = 'big'. Override header value.")
 
-    oparser.add_option("-d", action="store", dest="das", type="int",
-                       help="Set station ID for all traces,\
-                        otherwise field trace number is used.")
+    parser.add_argument("-i",
+                        action="store_false",
+                        dest="ebcdic",
+                        default=True,
+                        help="EBCDIC textural header. Override header value.")
 
-    oparser.add_option("-3", action="store_true", dest="chan3", default=False,
-                       help="The gather contains data recorded using 3\
-                        channels, 1, 2, 3.")
+    parser.add_argument("-d",
+                        action="store",
+                        dest="das",
+                        type=int,
+                        help="Set station ID for all traces, "
+                             "otherwise field trace number is used.")
 
-    options, args = oparser.parse_args()
+    parser.add_argument("-3",
+                        action="store_true",
+                        dest="chan3",
+                        default=False,
+                        help="The gather contains data recorded using 3 "
+                             "channels, 1, 2, 3.")
+
+    args = parser.parse_args()
 
     try:
-        SIZE = os.path.getsize(options.infile)
-        SR = segyreader.Reader(options.infile)
+        SIZE = os.path.getsize(args.infile)
+        SR = segyreader.Reader(args.infile)
         SR.open_infile()
         if SR.FH is None:
             raise IOError()
     except Exception as e:
-        LOGGER.error("Can't open infile (SEG-Y).\n{0}\n".format(e))
+        LOGGER.error("Can't open infile (SEG-Y). {0}".format(e))
         sys.exit()
 
     # Set extended header type
-    if options.ttype is not None:
-        SR.set_ext_hdr_type(options.ttype)
+    if args.ttype is not None:
+        SR.set_ext_hdr_type(args.ttype)
 
     # Set output file
-    if options.outfile is not None:
-        PH5 = options.outfile
-    else:
-        LOGGER.error("No outfile (PH5) given.\n")
-        sys.exit()
+    PH5 = args.outfile
     # Is this gather in receiver order?
-    RECV_ORDER = options.recvorder
+    RECV_ORDER = args.recvorder
     # Print contents of gather as ASCII
-    PRINT = options.print_true
+    PRINT = args.print_true
     # 3 channel data?
-    CHAN3 = options.chan3
+    CHAN3 = args.chan3
 
-    if options.bytes_per_trace is not None:
+    if args.bytes_per_trace is not None:
         # Override bytes per trace from values in trace and bin headers
-        L = options.bytes_per_trace
+        L = args.bytes_per_trace
 
-    if options.traces_per_ensemble is not None:
+    if args.traces_per_ensemble is not None:
         # Override traces per ensemble in bin header
-        T = options.traces_per_ensemble
+        T = args.traces_per_ensemble
 
-    if options.trace_format is not None:
+    if args.trace_format is not None:
         # Override value in bin header
-        F = options.trace_format
+        F = args.trace_format
 
-    DAS = options.das
+    DAS = args.das
     # 'big' or 'little' endian?
-    ENDIAN = options.endian
+    ENDIAN = args.endian
     SR.set_endianess(ENDIAN)
     # Is text header EBCDIC or ASCII?
-    EBCDIC = options.ebcdic
+    EBCDIC = args.ebcdic
     if EBCDIC is True:
         SR.set_txt_hdr_type('E')
     else:

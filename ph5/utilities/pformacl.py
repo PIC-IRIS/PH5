@@ -4,10 +4,13 @@
 #
 # Steve Azevedo, August 2015
 #
+
+import argparse
 import os
 import sys
 import logging
 
+from multiprocessing import cpu_count
 from ph5.utilities import pforma_io
 
 PROG_VERSION = '2018.268'
@@ -17,68 +20,62 @@ LOGGER = logging.getLogger(__name__)
 def get_args():
     global JSON_DB, JSON_CFG, RAW_LST, PROJECT, NFAMILY, M, MERGE, UTM, TSPF
 
-    from optparse import OptionParser
-    from multiprocessing import cpu_count
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
-    oparser.usage = "Version %s: pforma --project_home=/path/to/project\
-     --files=list_of_raw_files [options] |\
-      --project_home=/path/to/project --merge" % PROG_VERSION
-    oparser.description = "Create or open a project and process raw data\
-     to PH5 in parallel."
+    parser.usage = ("pforma --project_home=/path/to/project "
+                    "--files=list_of_raw_files [options] | "
+                    "--project_home=/path/to/project --merge")
+    parser.description = ("Create or open a project and process raw data "
+                          "to PH5 in parallel.\n\nVersion: {0}"
+                          .format(PROG_VERSION))
 
-    oparser.add_option("-f", "--files", dest="infile",
-                       help="File containing list of raw file names.",
-                       metavar="file_list_file")
-    oparser.add_option("-p", "--project_home", dest="home",
-                       help="Path to project directory.")
-    oparser.add_option("-n", "--num_families", dest="nfamilies",
-                       help="Number of PH5 families to process. Defaults to\
-                        number of CPU's + 1 else number of raw files.",
-                       type='int')
-    oparser.add_option("-M", "--num_minis", dest="num_minis",
-                       help="Number of mini ph5 files per family.",
-                       type='int')
-    oparser.add_option("-U", dest="utm",
-                       help="The UTM zone if required for SEG-D conversion.",
-                       type='int')
-    oparser.add_option("-T", "--TSPF", dest="tspf",
-                       help="Coordinates is texas state plane coordinates\
-                        (SEG-D).",
-                       action="store_true", default=False)
-    oparser.add_option("-m", "--merge", dest="merge_minis",
-                       help="Merge all families to one royal family in A.",
-                       action="store_true", default=False)
+    parser.add_argument("-f", "--files", dest="infile",
+                        help="File containing list of raw file names.",
+                        metavar="file_list_file")
+    parser.add_argument("-p", "--project_home", dest="home",
+                        help="Path to project directory.", default=".")
+    parser.add_argument("-n", "--num_families", dest="nfamilies",
+                        help="Number of PH5 families to process. Defaults to "
+                             "number of CPU's + 1 else number of raw files.",
+                        type=int)
+    parser.add_argument("-M", "--num_minis", dest="num_minis",
+                        help="Number of mini ph5 files per family.",
+                        type=int)
+    parser.add_argument("-U", dest="utm",
+                        help="The UTM zone if required for SEG-D conversion.",
+                        type=int)
+    parser.add_argument("-T", "--TSPF", dest="tspf",
+                        help="Coordinates is texas state plane coordinates "
+                             "(SEG-D).",
+                        action="store_true", default=False)
+    parser.add_argument("-m", "--merge", dest="merge_minis",
+                        help="Merge all families to one royal family in A.",
+                        action="store_true", default=False)
 
-    options, args = oparser.parse_args()
+    args = parser.parse_args()
 
-    if options.infile and options.merge_minis:
+    if args.infile and args.merge_minis:
         LOGGER.error(
             "Loading and merging must be done as seperate operations. "
             "Exiting.")
         sys.exit(1)
 
-    if options.infile is not None and not os.path.exists(options.infile):
-        LOGGER.error("Can not find {0}.".format(options.infile))
+    if args.infile is not None and not os.path.exists(args.infile):
+        LOGGER.error("Can not find {0}.".format(args.infile))
         sys.exit(1)
     else:
-        RAW_LST = options.infile
+        RAW_LST = args.infile
 
-    if options.home is None:
-        LOGGER.error(
-            "Project home required, --project_home. Exiting.")
-        sys.exit(1)
-    else:
-        PROJECT = options.home
-
-    if options.nfamilies is None:
+    if args.nfamilies is None:
         NFAMILY = cpu_count() + 1
     else:
-        NFAMILY = options.nfamilies
-    M = options.num_minis
-    UTM = options.utm
-    TSPF = options.tspf
-    MERGE = options.merge_minis
+        NFAMILY = args.nfamilies
+    PROJECT = args.home
+    M = args.num_minis
+    UTM = args.utm
+    TSPF = args.tspf
+    MERGE = args.merge_minis
 
 
 def exexists(exe):

@@ -4,6 +4,8 @@
 #
 # Steve Azevedo, March 2012
 #
+
+import argparse
 import sys
 import logging
 from ph5.core import experiment
@@ -19,42 +21,33 @@ PATH = None
 def get_args():
     global PH5, PATH, NAME
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = "index_offset_t --nickname ph5-file-prefix"
 
-    oparser = OptionParser()
+    parser.description = ("Index offset table in ph5 file to speed up in "
+                          "kernal searches.\n\nVersion: {0}"
+                          .format(PROG_VERSION))
 
-    oparser.usage = "Version: {0}\nindex_offset_t --nickname ph5-file-prefix"\
-        .format(PROG_VERSION)
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help=("Path to ph5 files. Default to current "
+                              "directory."),
+                        metavar="ph5_path", default=".")
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Default to current directory.",
-                       metavar="ph5_path")
+    parser.add_argument("-t", "--offset_table", dest="offset_table_name",
+                        help=("The name of the offset table. Example: "
+                              "Offset_t_001_003."),
+                        metavar="offset_table_name", required=True)
 
-    oparser.add_option("-t", "--offset_table", dest="offset_table_name",
-                       help="The name of the offset table. Example:\
-                       Offset_t_001_003.",
-                       metavar="offset_table_name")
+    args = parser.parse_args()
 
-    options, args = oparser.parse_args()
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    NAME = options.offset_table_name
-    if NAME is None:
-        LOGGER.error("Required option missing: --offset_table.")
-        sys.exit()
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
+    NAME = args.offset_table_name
 
 
 #

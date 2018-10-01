@@ -68,7 +68,7 @@ class Kef:
             self.fh = file(self.filename)
         except Exception as e:
             self.fh = None
-            raise KefError("Failed to open %s. Exception: %s\n" %
+            raise KefError("Failed to open %s. Exception: %s" %
                            (self.filename, e))
 
     def close(self):
@@ -140,7 +140,7 @@ class Kef:
                 key, value = mo.groups()
                 sincepath -= nchars
             else:
-                LOGGER.warning("Unparsable line: %s\nSkipping\n" % line)
+                LOGGER.warning("Unparsable line: %s\nSkipping" % line)
                 continue
 
             key = string.strip(key)
@@ -215,10 +215,10 @@ class Kef:
         for p, kv in self:
             if trace is True:
                 kys = kv.keys()
-                print('=-' * 30)
-                print("\n%s\n" % p)
+                print("=-" * 30)
+                print("{0}".format(p))
                 for k in kys:
-                    print("\t%s = %s\n" % (k, kv[k]))
+                    print("\t{0} = {1}".format(k, kv[k]))
 
             DELETE = False
             # Update or Append or Delete
@@ -245,15 +245,15 @@ class Kef:
             ref = columns.TABLES[p]
             # key needs to be list for columns.validate
             if trace is True:
-                LOGGER.info("Validating...\n")
+                LOGGER.info("Validating...")
 
             errs_keys, errs_required = columns.validate(ref, kv, key)
             for e in errs_keys + errs_required:
                 err = True
-                LOGGER.info(e + '\n')
+                LOGGER.info(e)
 
             if trace is True:
-                LOGGER.info("Done\n")
+                LOGGER.info("Done")
 
             if len(key) == 0:
                 key = None
@@ -272,7 +272,7 @@ class Kef:
                     columns.populate(ref, kv, key)
 
             if trace is True:
-                LOGGER.info("Skipped\n")
+                LOGGER.info("Skipped")
 
         return err
 

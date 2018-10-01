@@ -5,12 +5,12 @@
 # Steve Azevedo, January 2007
 #
 
-from ph5.core import experiment, kefx, columns
-import sys
+import argparse
 import logging
 import os
 import os.path
 import time
+from ph5.core import experiment, kefx, columns
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
@@ -23,48 +23,33 @@ time.tzset()
 def get_args():
     global KEFFILE, PH5, PATH, TRACE
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = ("kef2ph5 --kef kef_file --nickname ph5_file_prefix "
+                    "[--path path]")
 
-    oparser.usage = ("kef2ph5 --kef kef_file --nickname ph5_file_prefix "
-                     "[--path path]\nVersion: {0}".format(PROG_VERSION))
+    parser.description = ("Update a ph5 file from a kef file.\n\nVersion: {0}"
+                          .format(PROG_VERSION))
 
-    oparser.description = "Update a ph5 file from a kef file."
+    parser.add_argument("-n", "--nickname", dest="outfile",
+                        help="The ph5 file prefix (experiment nickname).",
+                        required=True)
+    parser.add_argument("-k", "--kef", dest="keffile",
+                        help="Kitchen Exchange Format file.", required=True)
+    parser.add_argument("-p", "--path", dest="path",
+                        help="Path to directory where ph5 files are stored.",
+                        default=".")
+    parser.add_argument("-c", "--check", action="store_true", default=False,
+                        dest="check",
+                        help="Show what will be done but don't do it!")
 
-    oparser.add_option("-n", "--nickname", dest="outfile",
-                       help="The ph5 file prefix (experiment nickname).")
-    oparser.add_option("-k", "--kef", dest="keffile",
-                       help="Kitchen Exchange Format file.")
-    oparser.add_option("-p", "--path", dest="path",
-                       help="Path to directory where ph5 files are stored.")
-    oparser.add_option("-c", "--check", action="store_true", default=False,
-                       dest="check",
-                       help="Show what will be done but don't do it!")
+    args = parser.parse_args()
 
-    options, args = oparser.parse_args()
-
-    PH5 = None
-    KEFFILE = None
-    TRACE = False
-
-    if options.check is True:
-        TRACE = True
-
-    if options.outfile is not None:
-        PH5 = options.outfile
-
-    if options.keffile is not None:
-        KEFFILE = options.keffile
-
-    if options.path is not None:
-        PATH = options.path
-    else:
-        PATH = "."
-
-    if KEFFILE is None or PH5 is None:
-        LOGGER.error("Missing required option. Try --help")
-        sys.exit(-1)
+    KEFFILE = args.keffile
+    PH5 = args.outfile
+    PATH = args.path
+    TRACE = args.check
 
 
 def initializeExperiment():
@@ -92,6 +77,7 @@ def add_references(rs):
 
 def populateTables():
     global EX, KEFFILE, TRACE
+    LOGGER.info("Loading {0} into {1}.".format(KEFFILE, PH5))
     k = kefx.Kef(KEFFILE)
     k.open()
 
@@ -161,6 +147,7 @@ def update_log():
                -------------\n" + line
 
     try:
+        LOGGER.info("Updated kef2ph5.log file.")
         fh = open(klog, 'a+')
         fh.write(line)
         fh.close()

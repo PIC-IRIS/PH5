@@ -6,7 +6,7 @@
 # Steve Azevedo
 #
 
-import sys
+import argparse
 import logging
 import os
 from ph5.core import segy_h, ibmfloat, ebcdic
@@ -89,69 +89,52 @@ def get_args():
     T = None
     F = None
 
-    from optparse import OptionParser
-    oparser = OptionParser()
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser.usage = "Version: {0} Usage: dumpsgy [options]".format(
+    parser.usage = "Version: {0} Usage: dumpsgy [options]".format(
         PROG_VERSION)
 
-    oparser.add_option("-f", action="store", dest="infile", type="string")
+    parser.add_argument("-f", action="store", dest="infile", type=str,
+                        required=True)
 
-    oparser.add_option("-t", action="store", dest="ttype",
-                       choices=['U', 'P', 'S', 'N', 'I'],
-                       help="Extended trace header style. U => USGS Menlo,\
-                       P => PASSCAL, S => SEG, I => SIOSEIS,\
-                       N => iNova FireFly")
+    parser.add_argument("-t", action="store", dest="ttype",
+                        choices=['U', 'P', 'S', 'N', 'I'],
+                        help=("Extended trace header style. U => USGS Menlo, "
+                              "P => PASSCAL, S => SEG, I => SIOSEIS, "
+                              "N => iNova FireFly"), default='S')
 
-    oparser.add_option("-p", action="store_true",
-                       dest="print_true", default=False)
+    parser.add_argument("-p", action="store_true",
+                        dest="print_true", default=False)
 
-    oparser.add_option("-L", action="store",
-                       dest="bytes_per_trace", type="int")
+    parser.add_argument("-L", action="store",
+                        dest="bytes_per_trace", type=int)
 
-    oparser.add_option("-T", action="store",
-                       dest="traces_per_ensemble", type="int")
+    parser.add_argument("-T", action="store",
+                        dest="traces_per_ensemble", type=int)
 
-    oparser.add_option("-F", action="store", dest="trace_format", type="int",
-                       help="1 = IBM - 4 bytes, 2 = INT - 4 bytes,\
-                       3 = INT - 2 bytes, 5 = IEEE - 4 bytes,\
-                       8 = INT - 1 byte")
+    parser.add_argument("-F", action="store", dest="trace_format", type=int,
+                        help=("1 = IBM - 4 bytes, 2 = INT - 4 bytes, "
+                              "3 = INT - 2 bytes, 5 = IEEE - 4 bytes, "
+                              "8 = INT - 1 byte"))
 
-    oparser.add_option("-e", action="store", dest="endian",
-                       type="str", default='big',
-                       help="Endianess: 'big' or 'little'. Default = 'big'")
+    parser.add_argument("-e", action="store", dest="endian",
+                        type=str, default='big',
+                        help="Endianess: 'big' or 'little'. Default = 'big'")
 
-    oparser.add_option("-i", action="store_false", dest="ebcdic", default=True,
-                       help="EBCDIC textural header.")
+    parser.add_argument("-i", action="store_false", dest="ebcdic",
+                        default=True, help="EBCDIC textural header.")
 
-    options, args = oparser.parse_args()
+    args = parser.parse_args()
 
-    if options.infile is not None:
-        FH = open(options.infile, 'rb')
-    else:
-        LOGGER.error("No infile given.")
-        sys.exit()
-
-    if options.ttype is not None:
-        TYPE = options.ttype
-    else:
-        TYPE = 'S'
-
-    PRINT = options.print_true
-
-    if options.bytes_per_trace is not None:
-        L = options.bytes_per_trace
-
-    if options.traces_per_ensemble is not None:
-        T = options.traces_per_ensemble
-
-    if options.trace_format is not None:
-        F = options.trace_format
-
-    if options.endian is not None:
-        ENDIAN = options.endian
-
-    EBCDIC = options.ebcdic
+    FH = open(args.infile, 'rb')
+    TYPE = args.ttype
+    PRINT = args.print_true
+    L = args.bytes_per_trace
+    T = args.traces_per_ensemble
+    F = args.trace_format
+    ENDIAN = args.endian
+    EBCDIC = args.ebcdic
 
 
 def read_text_header():

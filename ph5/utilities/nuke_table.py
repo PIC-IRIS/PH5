@@ -5,6 +5,7 @@
 # Steve Azevedo, February 2013
 #
 
+import argparse
 import os
 import sys
 import logging
@@ -33,104 +34,96 @@ def get_args():
         ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE,\
         INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE, NO_BACKUP
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = ("delete_table --nickname ph5-file-prefix "
+                    "[options]".format(PROG_VERSION))
 
-    oparser.usage = "Version: {0}\ndelete_table --nickname ph5-file-prefix\
-    options".format(PROG_VERSION)
+    parser.description = ("Initialize a table in a ph5 file. Caution:"
+                          "Deletes contents of table!\n\nVersion: {0}"
+                          .format(PROG_VERSION))
 
-    oparser.description = "Initialize a table in a ph5 file. Caution:" \
-                          "Deletes contents of table!"
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help="Path to ph5 files. Default to current "
+                             "directory.",
+                        metavar="ph5_path", default=".")
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Default to current directory.",
-                       metavar="ph5_path")
+    parser.add_argument("-d", dest="debug", action="store_true", default=False)
 
-    oparser.add_option("-d", dest="debug", action="store_true", default=False)
+    parser.add_argument("-N", "--no_backup", dest="no_backup",
+                        action="store_true", default=False,
+                        help="Do NOT create a kef file backup of the table.")
 
-    oparser.add_option("-N", "--no_backup", dest="no_backup",
-                       action="store_true", default=False,
-                       help="Do NOT create a kef file backup of the table.")
+    parser.add_argument("-E", "--Experiment_t", dest="experiment_t",
+                        action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Experiment_t.")
 
-    oparser.add_option("-E", "--Experiment_t", dest="experiment_t",
-                       action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Experiment_t.")
+    parser.add_argument("-S", "--Sort_t", dest="sort_t", action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Sorts_g/Sort_t.")
 
-    oparser.add_option("-S", "--Sort_t", dest="sort_t", action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Sorts_g/Sort_t.")
+    parser.add_argument("-O", "--Offset_t", dest="offset_t_", metavar="a_e",
+                        help="Nuke "
+                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID] "
+                             "to a kef file.")
 
-    oparser.add_option("-O", "--Offset_t", dest="offset_t_", metavar="a_e",
-                       help="Nuke\
-                       /Experiment_g/Sort_g/Offset_t_[arrayID_eventID] "
-                            "to a kef file.")
+    parser.add_argument("-V", "--Event_t", dest="event_t_", metavar="n",
+                        type=int,
+                        help="Nuke /Experiment_g/Sorts_g/Event_t_[n]. "
+                             "Use 0 for Event_t")
 
-    oparser.add_option("-V", "--Event_t", dest="event_t_", metavar="n",
-                       type=int,
-                       help="Nuke /Experiment_g/Sorts_g/Event_t_[n].\
-                       Use 0 for Event_t")
+    parser.add_argument("-A", "--Array_t_", dest="array_t_", metavar="n",
+                        help="Nuke /Experiment_g/Sorts_g/Array_t_[n].",
+                        type=int)
 
-    oparser.add_option("-A", "--Array_t_", dest="array_t_", metavar="n",
-                       help="Nuke /Experiment_g/Sorts_g/Array_t_[n].",
-                       type=int)
+    parser.add_argument("-R", "--Response_t", dest="response_t",
+                        action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Responses_g/Response_t.")
 
-    oparser.add_option("-R", "--Response_t", dest="response_t",
-                       action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Responses_g/Response_t.")
+    parser.add_argument("-P", "--Report_t", dest="report_t",
+                        action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Reports_g/Report_t.")
 
-    oparser.add_option("-P", "--Report_t", dest="report_t",
-                       action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Reports_g/Report_t.")
+    parser.add_argument("-C", "--Receiver_t", dest="receiver_t",
+                        action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Receivers_g/Receiver_t.")
 
-    oparser.add_option("-C", "--Receiver_t", dest="receiver_t",
-                       action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Receivers_g/Receiver_t.")
+    parser.add_argument("-I", "--Index_t", dest="index_t", action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Receivers_g/Index_t.")
 
-    oparser.add_option("-I", "--Index_t", dest="index_t", action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Receivers_g/Index_t.")
+    parser.add_argument("-M", "--M_Index_t", dest="m_index_t",
+                        action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Maps_g/Index_t.")
 
-    oparser.add_option("-M", "--M_Index_t", dest="m_index_t",
-                       action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Maps_g/Index_t.")
+    parser.add_argument("-D", "--Das_t", dest="das_t_", metavar="das",
+                        help="Nuke/Experiment_g/Receivers_g/Das_g_[das]/"
+                             "Das_t.")
 
-    oparser.add_option("-D", "--Das_t", dest="das_t_", metavar="das",
-                       help="Nuke/Experiment_g/Receivers_g/Das_g_[das]/Das_t.")
+    parser.add_argument("-T", "--Time_t", dest="time_t", action="store_true",
+                        default=False,
+                        help="Nuke /Experiment_g/Receivers_g/Time_t.")
 
-    oparser.add_option("-T", "--Time_t", dest="time_t", action="store_true",
-                       default=False,
-                       help="Nuke /Experiment_g/Receivers_g/Time_t.")
+    args = parser.parse_args()
 
-    options, args = oparser.parse_args()
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    if options.debug is not None:
-        DEBUG = options.debug
-
-    EXPERIMENT_TABLE = options.experiment_t
-    SORT_TABLE = options.sort_t
-    if options.offset_t_ is not None:
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
+    DEBUG = args.debug
+    EXPERIMENT_TABLE = args.experiment_t
+    SORT_TABLE = args.sort_t
+    if args.offset_t_ is not None:
         try:
-            OFFSET_TABLE = map(int, options.offset_t_.split("_"))
+            OFFSET_TABLE = map(int, args.offset_t_.split("_"))
         except Exception as e:
             LOGGER.error(
                 "Offset table should be entered as arrayID underscore"
@@ -139,31 +132,16 @@ def get_args():
             sys.exit()
     else:
         OFFSET_TABLE = None
-    EVENT_TABLE = options.event_t_
-    TIME_TABLE = options.time_t
-    INDEX_TABLE = options.index_t
-    M_INDEX_TABLE = options.m_index_t
-
-    if options.array_t_ is not None:
-        ARRAY_TABLE = options.array_t_
-    else:
-        ARRAY_TABLE = None
-
-    RESPONSE_TABLE = options.response_t
-    REPORT_TABLE = options.report_t
-
-    RECEIVER_TABLE = options.receiver_t
-
-    if options.das_t_ is not None:
-        DAS_TABLE = options.das_t_
-    else:
-        DAS_TABLE = None
-
-    if PH5 is None:
-        LOGGER.error("Missing required option. Try --help")
-        sys.exit(-1)
-
-    NO_BACKUP = options.no_backup
+    EVENT_TABLE = args.event_t_
+    TIME_TABLE = args.time_t
+    INDEX_TABLE = args.index_t
+    M_INDEX_TABLE = args.m_index_t
+    ARRAY_TABLE = args.array_t_
+    RESPONSE_TABLE = args.response_t
+    REPORT_TABLE = args.report_t
+    RECEIVER_TABLE = args.receiver_t
+    DAS_TABLE = args.das_t_
+    NO_BACKUP = args.no_backup
 
 
 #
@@ -195,7 +173,7 @@ def backup(table_type, table_path, table):
         i += 1
     # Exit if we can't write backup kef
     if os.access(os.getcwd(), os.W_OK):
-        print "Writing table backup: {0}.".format(os.path.join(outfile))
+        LOGGER.info("Writing table backup: {0}.".format(os.path.join(outfile)))
     else:
         LOGGER.error(
             "Can't write: {0}.\nExiting!".format(os.getcwd(), outfile))

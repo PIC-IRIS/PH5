@@ -1334,14 +1334,21 @@ class ExperimentGroup:
         if self.ph5exists():
             # XXX Needs try:except XXX
             if editmode is True:
+                LOGGER.info("Opened ph5 file {0} in append edit mode."
+                            .format(self.filename))
                 self.ph5 = tables.open_file(self.filename, mode='a')
             else:
+                LOGGER.info("Opened ph5 file {0} in read only mode."
+                            .format(self.filename))
                 self.ph5 = tables.open_file(self.filename, mode='r')
         elif editmode is True:
+            LOGGER.info("No PH5 file exists at '{0}'! Creating new ph5 file."
+                        .format(self.filename))
             self.ph5 = tables.open_file(
                 self.filename, mode='w', title=ph5title)
         else:
-            self.ph5 = None
+            raise OSError('Unable to open "{0}". Does this file exist?'
+                          .format(self.filename))
 
     def ph5close(self):
         if self.ph5 is not None and self.ph5.isopen:
@@ -1474,6 +1481,7 @@ def read_table(tablenode):
     if not tablenode:
         return ret, keys
 
+    LOGGER.info("Read {0}".format(tablenode))
     try:
         tableiterator = tablenode.iterrows()
         keys, names = columns.keys(tablenode)

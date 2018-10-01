@@ -6,7 +6,7 @@
 # December 2013, Steve Azevedo
 #
 
-import sys
+import argparse
 import logging
 from ph5.core import sacreader
 
@@ -17,26 +17,23 @@ LOGGER = logging.getLogger(__name__)
 def get_args():
     global INFILE, PRINT, ENDIAN
 
-    from optparse import OptionParser
-    oparser = OptionParser()
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser.usage = "Version: {0} Usage: dumpsac [options]".format(
-        PROG_VERSION)
+    parser.usage = "Version: {0} Usage: dumpsac [options]".format(PROG_VERSION)
 
-    oparser.add_option("-f", action="store", dest="infile", type="string")
+    parser.description = "Translate and dump a binary SAC file to stdout."
 
-    oparser.add_option("-p", action="store_true",
-                       dest="print_true", default=False)
+    parser.add_argument("-f", action="store", dest="infile", type=str,
+                        required=True)
 
-    options, args = oparser.parse_args()
+    parser.add_argument("-p", action="store_true",
+                        dest="print_true", default=False)
 
-    if options.infile is not None:
-        INFILE = options.infile
-    else:
-        LOGGER.error("No infile given.")
-        sys.exit()
+    args = parser.parse_args()
 
-    PRINT = options.print_true
+    INFILE = args.infile
+    PRINT = args.print_true
 
 
 def print_it(header):

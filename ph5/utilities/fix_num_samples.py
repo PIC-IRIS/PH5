@@ -6,6 +6,7 @@
 # Feb 2009
 #
 
+import argparse
 import sys
 import logging
 import os
@@ -85,50 +86,38 @@ class Das_Groups (object):
 def get_args():
     global PH5, PATH, CHECK, DEBUG
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = ("fix_num_samples --nickname ph5-file-prefix "
+                    "[--path path-to-ph5-files]")
 
-    oparser.usage = ("Version: {0} fix_num_samples --nickname ph5-file-prefix "
-                     "[--path path-to-ph5-files]".format(PROG_VERSION))
+    parser.description = ("Correct number of samples in time series array\n"
+                          "to work around a bug in certain data loggers.\n"
+                          "Set sample_count_i in Das_t based on length\n"
+                          "of data array. Writes kef file, 1 per DAS.\n\n"
+                          "Version: {0}".format(PROG_VERSION))
 
-    oparser.description = ("Set sample_count_i in Das_t based on length "
-                           "of data array. Writes kef file, 1 per DAS.")
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help=("Path to ph5 files. Default to current "
+                              "directory."),
+                        metavar="ph5_path", default=".")
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files. Default to current directory.",
-                       metavar="ph5_path")
+    parser.add_argument("-c", "--check", dest="check",
+                        action="store_true", default=False)
 
-    oparser.add_option("-c", "--check", dest="check",
-                       action="store_true", default=False)
+    parser.add_argument("-d", dest="debug", action="store_true", default=False)
 
-    oparser.add_option("-d", dest="debug", action="store_true", default=False)
+    args = parser.parse_args()
 
-    options, args = oparser.parse_args()
-
-    CHECK = options.check
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    if options.debug is not None:
-        DEBUG = options.debug
-
-    if PH5 is None:
-        LOGGER.error("Missing required option. Try --help")
-        sys.exit(-1)
-
+    CHECK = args.check
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
+    DEBUG = args.debug
     PH5 = os.path.join(PATH, PH5)
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):

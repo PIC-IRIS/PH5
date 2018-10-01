@@ -8,6 +8,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import argparse
 import sys
 import os
 import re
@@ -34,50 +35,44 @@ DEP = False
 
 def get_args():
     global DEP
-    from optparse import OptionParser
 
-    oparser = OptionParser()
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser.usage = "Version: {0}: novitiate [options]".format(PROG_VERSION)
+    parser.usage = "novitiate [options]"
 
-    oparser.description = "Interactive GUI to create a dep file from a csv" \
-                          " spread sheet."
+    parser.description = ("Interactive GUI to create a dep file from a csv "
+                          "spread sheet.\n\nVersion: {0}".format(PROG_VERSION))
 
-    oparser.add_option("-s", "--das_sn_range", dest="das_sn_range",
-                       action='store',
-                       help="The serial number range of DAS's on experiment. "
-                            "--das_sn_range=10000-20000",
-                       metavar="das_sn_range")
+    parser.add_argument("-s", "--das_sn_range", dest="das_sn_range",
+                        action='store',
+                        help="The serial number range of DAS's on experiment. "
+                             "--das_sn_range=10000-20000")
 
-    oparser.add_option("-f", "--dont_use_face_plate_sn",
-                       dest="use_face_plate_sn", action="store_false",
-                       help="Do not assume face plate serial numbers, ie."
-                            " do not add 10000 to sn from csv file. "
-                            "Default is to use face plate sn.",
-                       default=True, metavar="use_face_plate_sn")
+    parser.add_argument("-f", "--dont_use_face_plate_sn",
+                        dest="use_face_plate_sn", action="store_false",
+                        help="Do not assume face plate serial numbers, ie. "
+                             "do not add 10000 to sn from csv file. "
+                             "Default is to use face plate sn.",
+                        default=True)
 
-    oparser.add_option("-l", "--location_tolerance", dest="location_tolerance",
-                       action='store',
-                       help="Flag distances exceed this value in location."
-                            " --location_tolerance=100.",
-                       metavar="location_tolerance", type='float')
+    parser.add_argument("-l", "--location_tolerance",
+                        dest="location_tolerance",
+                        action='store',
+                        help="Flag distances exceed this value in location. "
+                             "--location_tolerance=100.", type=float)
 
-    oparser.add_option("--generate_kefs", dest="generate_kefs",
-                       action='store_false',
-                       help="Write kef files instead of dep files.",
-                       default=True, metavar="generate_kefs")
+    parser.add_argument("--generate_kefs", dest="generate_kefs",
+                        action='store_false',
+                        help="Write kef files instead of dep files.",
+                        default=True)
 
-    options, args = oparser.parse_args()
+    args = parser.parse_args()
 
-    if options.das_sn_range:
-        MAX_DAS_SN, MIN_DAS_SN = options.das_sn_range.split('-')
+    if args.das_sn_range:
+        MAX_DAS_SN, MIN_DAS_SN = args.das_sn_range.split('-')
         MAX_DAS_SN = int(MAX_DAS_SN)
         MIN_DAS_SN = int(MIN_DAS_SN)
-
-    options.use_face_plate_sn
-
-    if options.location_tolerance:
-        options.location_tolerance
 
 
 def _sign(val, latlon):

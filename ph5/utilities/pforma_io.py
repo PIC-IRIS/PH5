@@ -47,6 +47,7 @@ class FormaIO():
         self.infh = None  # File handle for infile
         self.raw_files = {}  # Raw files organized by type
         self.total_raw = 0.0  # Total size of raw
+        self.number_raw = 0
         self.home = outdir  # Where the processing of the ph5 files happens
         self.whereami = os.getcwd()  # Where the program was started
         self.M = None  # How many mini files in each ph5 family
