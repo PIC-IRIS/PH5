@@ -3,6 +3,7 @@
 # Generate Station/Array, Event, Data info
 #
 
+import argparse
 import json
 import os
 import os.path
@@ -97,67 +98,54 @@ def get_args():
     global PH5, PATH, DEBUG, RECEIVER_GEN, EVENT_GEN, DATA_GEN, DAS_SN,\
         EXPERIMENT_GEN
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = ("meta-data-gen --nickname=ph5-file-prefix "
+                    "options".format(PROG_VERSION))
 
-    oparser.usage = "Version: {0}\nmeta-data-gen --nickname=ph5-file-prefix" \
-                    "options".format(PROG_VERSION)
+    parser.description = ("Write info about receivers, events, or data.\n\n"
+                          "Version: {0}")
 
-    oparser.description = "Write info about receivers, events, or data."
+    parser.add_argument("-E", "--experiment", dest="experiment_gen",
+                        help="Write info about experiment to stdout,"
+                             "Experiment_t.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-E", "--experiment", dest="experiment_gen",
-                       help="Write info about experiment to stdout,"
-                            "Experiment_t.json",
-                       action="store_true", default=False)
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help="Path to ph5 files.Defaults to current "
+                             "directory.", default=".",
+                        metavar="ph5_path")
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files.Defaults to current directory.",
-                       metavar="ph5_path")
+    parser.add_argument("-r", "--receivers", dest="receiver_gen",
+                        help="Write info about receivers to stdout,"
+                             "Array_t_all.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-r", "--receivers", dest="receiver_gen",
-                       help="Write info about receivers to stdout,"
-                            "Array_t_all.json",
-                       action="store_true", default=False)
+    parser.add_argument("-e", "--events", dest="event_gen",
+                        help="Write info about events to stdout, Event_t.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-e", "--events", dest="event_gen",
-                       help="Write info about events to stdout, Event_t.json",
-                       action="store_true", default=False)
+    parser.add_argument("-d", "--data", dest="data_gen",
+                        help="Write info about data to stdout, Das_t_all.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-d", "--data", dest="data_gen",
-                       help="Write info about data to stdout, Das_t_all.json",
-                       action="store_true", default=False)
+    parser.add_argument("--debug", dest="debug",
+                        action="store_true", default=False)
 
-    oparser.add_option("--bug", dest="debug",
-                       action="store_true", default=False)
+    args = parser.parse_args()
 
-    options, args = oparser.parse_args()
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    if options.debug is not None:
-        DEBUG = options.debug
-
-    RECEIVER_GEN = options.receiver_gen
-    EVENT_GEN = options.event_gen
-    DATA_GEN = options.data_gen
-    EXPERIMENT_GEN = options.experiment_gen
-
-    if PH5 is None:
-        LOGGER.error("Missing required option --nickname. Try --help")
-        sys.exit(-1)
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
+    DEBUG = args.debug
+    RECEIVER_GEN = args.receiver_gen
+    EVENT_GEN = args.event_gen
+    DATA_GEN = args.data_gen
+    EXPERIMENT_GEN = args.experiment_gen
 
 
 #
@@ -654,20 +642,19 @@ def main():
 
     initialize_ph5()
 
-    read_sort_arrays()
-    read_event_table()
-    DASS = read_das_groups()
-    read_experiment_table()
-    read_index_table()
-
     if EXPERIMENT_GEN is True:
+        read_experiment_table()
         write_experiment()
     if DATA_GEN is True:
+        DASS = read_das_groups()
         if DASS:
+            read_index_table()
             write_data()
     if EVENT_GEN is True:
+        read_event_table()
         write_events()
     if RECEIVER_GEN is True:
+        read_sort_arrays()
         write_arrays()
 
     EX.ph5close()
