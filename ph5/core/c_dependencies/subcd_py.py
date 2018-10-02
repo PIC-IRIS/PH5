@@ -1,17 +1,26 @@
-
 from distutils.core import setup, Extension
-import os
-import numpy
+
+try:
+    import numpy  # @UnusedImport # NOQA
+except ImportError:
+    msg = ("No module named numpy. "
+           "Please install numpy first, it is needed before installing PH5.")
+    raise ImportError(msg)
+
+
+def get_extension_options():
+    options = ("bcd_py",
+               ["ph5/core/c_dependencies/bcd_py.c",
+                "ph5/core/c_dependencies/bcdwrapper_py.c"])
+    return options
 
 
 def install():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-
-    setup(name="bcd_py", version="2014.119",
-          include_dirs=[numpy.get_include()],
-          ext_modules=[Extension("bcd_py",
-                                 ["{0}/bcd_py.c".format(dir_path),
-                                  "{0}/bcdwrapper_py.c".format(dir_path)],)])
+    setup(name="bcd_py",
+          version="2014.119",
+          ext_modules=[Extension(*get_extension_options(),
+                                 include_dirs=[numpy.get_include()]
+                                 )])
 
 
 if __name__ == '__main__':
