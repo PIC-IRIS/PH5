@@ -1,0 +1,17 @@
+six
+Cython
+nose
+numpy
+numexpr
+pyproj
+psutil
+obspy
+vispy
+pyicu
+lxml
+construct==2.5.1
+simplekml
+tables
+matplotlib<2
+#pyqt4 - required external program
+#PySide - required external program
