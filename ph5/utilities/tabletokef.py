@@ -237,8 +237,8 @@ def get_args():
 
     table_list = [EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, EVENT_TABLE,
                   TIME_TABLE, INDEX_TABLE, M_INDEX_TABLE, ARRAY_TABLE,
-                  ALL_ARRAYS, ALL_EVENTS, RESPONSE_TABLE, RECEIVER_TABLE,
-                  DAS_TABLE]
+                  ALL_ARRAYS, ALL_EVENTS, RESPONSE_TABLE, REPORT_TABLE,
+                  RECEIVER_TABLE, DAS_TABLE]
     if all(not t for t in table_list):
         LOGGER.error("No table specified for output. See --help for more "
                      "details.")
