@@ -2,35 +2,48 @@
 #
 """
 Runs a set of checks on PH5 archive to test for
-errors and make sur eit is ready for archival at IRIS DMC
+errors and make sure it is ready for archival at IRIS DMC
 """
-import logging
-import os
+from __future__ import print_function
+
 import argparse
+import logging
+import re
 import subprocess
-from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api
 
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2018.278"
 LOGGER = logging.getLogger(__name__)
+
+
+class ValidationBlock(object):
+
+    def __init__(self, heading="", info=[], warning=[], error=[]):
+        self.heading = heading
+        self.info = info
+        self.warning = warning
+        self.error = error
+
+    def write_to_log(self, log_file, level):
+        if self.error and (level == "INFO" or level == "WARNING" or
+           level == "ERROR"):
+            log_file.write(self.heading)
+            for e in self.error:
+                log_file.write("ERROR: {}\n".format(e))
+        if self.warning and (level == "INFO" or level == "WARNING"):
+            log_file.write(self.heading)
+            for w in self.warning:
+                log_file.write("WARNING: {}\n".format(w))
+        if self.info and level == "INFO":
+            log_file.write(self.heading)
+            for i in self.info:
+                log_file.write("INFO: {}\n".format(i))
 
 
 class PH5Validate(object):
 
-    def __init__(self, ph5API_object, ph5path, level):
-        # Set up logging
-        # Write log to file
-        ch = logging.FileHandler(os.path.join('.', "PH5Validate.log"))
-        # Add formatter
-        formatter = logging.Formatter(LOGGING_FORMAT)
-        ch.setFormatter(formatter)
-        if level == "error":
-            ch.setLevel(logging.ERROR)
-        else:
-            ch.setLevel(logging.DEBUG)
-        LOGGER.addHandler(ch)
-
+    def __init__(self, ph5API_object, ph5path):
         self.ph5 = ph5API_object
         self.path = ph5path
         if not self.ph5.Array_t_names:
@@ -52,52 +65,107 @@ class PH5Validate(object):
         else:
             self.ph5.read_event_t(name)
 
-    def check_experiment_t(self):
-        experiment_t = self.ph5.Experiment_t['rows']
-        LOGGER.info("Checking Experiment Table")
+    def validate_ph5_reportnum(self, reportnum_code):
+        """
+        Method for validating report number argument.
+        :param reportnum_code: report number to validate
+        :type: str
+        :returns: True if report number code is valid
+        :type: boolean
+        """
+        regex = re.compile(r"(^[\d\?\*]+$)")
+        if '-' in reportnum_code:
+            c1, c2 = reportnum_code.split('-', 1)
+            if (re.match(regex, c1) and len(c1) <= 2
+                and (len(c1) == 2 or '*' in c1)) and \
+               (re.match(regex, c2) and len(c2) <= 3
+                    and (len(c2) == 3 or '*' in c2)):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def check_experiment_t_completeness(self, experiment_t):
+        """
+        Checks that the following are present in Experiment_t:
+          #### NETWORK LEVEL CHECKS CHECKS
+          - experiment_id_s
+          - nickname_s
+          - longname_s
+          - PIs_s
+          - institutions_s
+          - summary_paragraph_s
+        """
+        info = []
+        warning = []
+        error = []
         if len(experiment_t) == 0:
-            LOGGER.error("Experiment_t does not exist. "
+            error.append("Experiment_t does not exist. "
                          "run experiment_t_gen to create table")
             return
         if not experiment_t[0]['net_code_s']:
-            LOGGER.error("Network code was not found: "
+            error.append("Network code was not found: "
                          "A 2 character network code is required.")
+        if not (1 <= len(experiment_t[0]['net_code_s']) <= 2):
+            error.append("SEED network code not "
+                         "between 1 and 2 characters.")
 
         if not experiment_t[0]['net_code_s'][0].isdigit() and \
                 experiment_t[0]['net_code_s'][0] != "X" and \
                 experiment_t[0]['net_code_s'][0] != "Y" and \
                 experiment_t[0]['net_code_s'][0] != "z":
-            LOGGER.warning("Network code is a permanent FDSN: "
-                           "Network code should be a temporary code.")
+            error.append("Network code is a permanent FDSN: "
+                         "Network code should be a temporary code.")
 
-        if not experiment_t[0]['experiment_id_s']:
-            LOGGER.error("Experiment ID was not found: "
+        reportnum_code = experiment_t[0]['experiment_id_s']
+        if not reportnum_code:
+            error.append("Experiment ID was not found: "
                          "An experiment id (YY-XXX) is required.")
 
+        if not self.validate_ph5_reportnum(reportnum_code):
+            error.append('Invalid report number code {0}. '
+                         'Must match pattern [0-9][0-9]-[0-9][0-9][0-9].'
+                         .format(reportnum_code))
+
         if not experiment_t[0]['nickname_s']:
-            LOGGER.warning("Nickname was not found: "
+            warning.append("Nickname was not found: "
                            "It is suggested you include a nickname "
                            "for your experiment")
 
         if not experiment_t[0]['longname_s']:
-            LOGGER.warning("Long name was not found: "
+            warning.append("Long name was not found: "
                            "It is suggested you include a long name "
                            "for your experiment")
 
         if not experiment_t[0]['PIs_s']:
-            LOGGER.warning("PIs were not found: "
+            warning.append("PIs were not found: "
                            "It is suggested you include the PIs "
                            "for your experiment ")
 
         if not experiment_t[0]['institutions_s']:
-            LOGGER.warning("Institutions were not found: "
+            warning.append("Institutions were not found: "
                            "It is suggested you include the institutions "
                            "for your experiment")
 
+        if not experiment_t[0]['summary_paragraph_s']:
+            warning.append("Summary Paragraph was not found: "
+                           "It is suggested you include a short summary "
+                           "paragraph describing the experiment or data")
+        return info, warning, error
+
+    def check_experiment_t_bounding_box(self, experiment_t):
+        """
+        Checks for the existence of an Experiment_t bounding box. Creates a
+        suggested bounding box if one does not exists.
+        """
+        info = []
+        warning = []
+        error = []
         if (experiment_t[0]['north_west_corner/X/value_d'] == 0.0):
-            LOGGER.warning("A bounding box was not detected: "
-                           "A suggested bounding box has been calculated "
-                           "and saved in 'experiment_t_bounding_box.kef'")
+            error.append("A bounding box was not detected: "
+                         "A suggested bounding box has been calculated "
+                         "and saved in 'experiment_t_bounding_box.kef'")
             max_lat = None
             min_lat = None
             max_lon = None
@@ -176,151 +244,419 @@ class PH5Validate(object):
             with open("experiment_t_bounding_box.kef") as f:
                 kef = f.readlines()
             for line in kef:
-                if line.startswith("	north_west_corner/X/value_d="):
-                    new_kef.append("	north_west_corner/X/value_d=" +
+                if line.startswith("    north_west_corner/X/value_d="):
+                    new_kef.append("    north_west_corner/X/value_d=" +
                                    str(min_lon) + "\n")
-                elif line.startswith("	north_west_corner/Y/value_d="):
-                    new_kef.append("	north_west_corner/Y/value_d=" +
+                elif line.startswith("    north_west_corner/Y/value_d="):
+                    new_kef.append("    north_west_corner/Y/value_d=" +
                                    str(max_lat) + "\n")
-                elif line.startswith("	south_east_corner/X/value_d="):
-                    new_kef.append("	south_east_corner/X/value_d=" +
+                elif line.startswith("    south_east_corner/X/value_d="):
+                    new_kef.append("    south_east_corner/X/value_d=" +
                                    str(max_lon) + "\n")
-                elif line.startswith("	south_east_corner/Y/value_d"):
-                    new_kef.append("	south_east_corner/Y/value_d=" +
+                elif line.startswith("    south_east_corner/Y/value_d"):
+                    new_kef.append("    south_east_corner/Y/value_d=" +
                                    str(min_lat) + "\n")
                 else:
                     new_kef.append(line)
+            info.append("Created a suggested bounding box in file "
+                        "'experiment_t_bounding_box.kef'")
             outfile = open("experiment_t_bounding_box.kef", 'w')
             for line in new_kef:
                 outfile.write("%s" % line)
-        return
 
-    def checK_stations(self):
-        LOGGER.info("Checking Stations...")
-        array_names = sorted(self.ph5.Array_t_names)
-        for array_name in array_names:
-            self.read_arrays(array_name)
-            arraybyid = self.ph5.Array_t[array_name]['byid']
-            arrayorder = self.ph5.Array_t[array_name]['order']
-            for ph5_station in arrayorder:
-                station_list = arraybyid.get(ph5_station)
-                for deployment in station_list:
-                    station_len = len(station_list[deployment])
-                    for st_num in range(0, station_len):
-                        station_id = station_list[deployment][
-                            st_num]['id_s']
-                        serial = station_list[deployment][
-                            st_num]['das/serial_number_s']
-                        channel = station_list[deployment][
-                            st_num]['channel_number_i']
-                        LOGGER.info("##############")
-                        LOGGER.info("Station {0} Channel {1}"
-                                    .format(str(station_id),
-                                            str(channel)))
-                        try:
-                            if not (0 <= int(station_list[deployment]
-                                             [st_num]['id_s']) <= 65535):
-                                LOGGER.error("Station ID not "
-                                             "between 0 and 65535")
-                        except ValueError:
-                            LOGGER.error("Station ID not a whole "
-                                         "number between 0 "
-                                         "and 65535 ")
+        return info, warning, error
 
-                        if not (1 <= len(station_list[deployment][st_num][
-                                             'seed_station_name_s']) <= 5):
-                            LOGGER.error("SEED station name not "
-                                         "between 1 and 5 characters.")
+    def check_experiment_t(self):
+        """
+        Checks Experiment_t table
+        """
+        LOGGER.info("Validating Experiment_t")
+        experiment_t = self.ph5.Experiment_t['rows']
 
-                        if not station_list[deployment][
-                                st_num]['seed_station_name_s']:
-                            LOGGER.error("SEED station name required.")
+        validation_blocks = []
+        info1, warning1, error1 = \
+            self.check_experiment_t_completeness(experiment_t)
+        info2, warning2, error2 = \
+            self.check_experiment_t_bounding_box(experiment_t)
+        if info1 or warning1 or error1 or \
+           info2 or warning2 or error2:
+            header = ("-=-=-=-=-=-=-=-=-\n"
+                      "Exeriment_t\n"
+                      "{0} error, {1} warning, {2} info\n"
+                      "-=-=-=-=-=-=-=-=-\n"
+                      .format(len(error1) + len(error2),
+                              len(warning1) + len(warning2),
+                              len(info1) + len(info2)))
+            info = info1 + info2
+            warning = warning1 + warning2
+            error = error1 + error2
+            vb = ValidationBlock(heading=header, info=info, warning=warning,
+                                 error=error)
+            validation_blocks.append(vb)
+        return validation_blocks
 
-                        if not station_list[deployment][
-                                st_num]['seed_band_code_s']:
-                            LOGGER.error("SEED band code required. ")
+    def check_station_completeness(self, station):
+        """
+        Checks that the following are present in Experiment_t:
+          #### STATION LEVEL CHECKS
+          - id_s
+          - description_s
+          - seed_station_name_s
+            - check that 1 <= len(seed_station_name_s) <= 5
+          #### CHANNEL LEVEL CHECKS CHECKS
+          - seed_location_code_s
+            - check that 0 <= len(seed_location_code_s) <= 2
+          - seed_channel_code_s
+            - check that 1 <= len(seed_channel_code_s) <= 3
+          - seed_band_code_s
+          - seed_instrument_code_s
+          - seed_orientation_code_s
+          - sample_rate_i
+            - check that sample_rate_i > 0
+          - sample_rate_multiplier
+            - check that sample_rate_multiplier > 0
+          - response_table_n_i
+          #### CHANNEL LOCATION
+          - location/X/value_d
+          - location/Y/value_d
+          - location/Z/value_d
+          #### CHANNEL DEPLOY/PICKUP
+          - deploy_time/epoch_l
+          - pickup_time/epoch_l
+            - check if deploy time is after pickup time
+          #### CHANNEL SENSOR/DAS
+          - das/serial_number_s
+          - das/manufacturer_s
+          - das/model_s
+          - sensor/serial_number_s
+          - sensor/manufacturer_s
+          - sensor/model_s
+        """
+        info = []
+        warning = []
+        error = []
+        # STATION LEVEL CHECKS CHECKS
+        station_id = station['id_s']
+        try:
+            if not (0 <= int(station_id) <= 65535):
+                error.append("Station ID not "
+                             "between 0 and 65535")
+        except ValueError:
+            error.append("Station ID not a whole "
+                         "number between 0 "
+                         "and 65535 ")
 
-                        if not station_list[deployment][
-                                st_num]['seed_instrument_code_s']:
-                            LOGGER.error("SEED instrument code required.")
+        if not station['description_s']:
+            warning.append("No station description found.")
 
-                        if not station_list[deployment][
-                                st_num]['seed_orientation_code_s']:
-                            LOGGER.error("SEED orientation code "
-                                         "required.")
+        if not station['seed_station_name_s']:
+            error.append("SEED station code required.")
 
-                        response_t = self.ph5.get_response_t_by_n_i(
-                            station_list[deployment][st_num][
-                                'response_table_n_i'])
-                        if response_t is None:
-                            LOGGER.error("No Response table found. "
-                                         "Have you run load_resp yet?")
+        if not (1 <= len(station['seed_station_name_s']) <= 5):
+            error.append("SEED station code not "
+                         "between 1 and 5 characters.")
 
-                        deploy_time = station_list[deployment][
-                                st_num]['deploy_time/epoch_l']
-                        pickup_time = station_list[deployment][
-                                st_num]['pickup_time/epoch_l']
+        # CHANNEL LEVEL CHECKS CHECKS
+        if station['seed_location_code_s'] is None:
+            error.append("SEED location code "
+                         "required.")
 
-                        if deploy_time > pickup_time:
-                            LOGGER .error("Deploy time is after pickup time")
-                        else:
-                            self.ph5.read_das_t(serial, pickup_time,
-                                                deploy_time, reread=False)
+        if not (0 <= len(station['seed_location_code_s']) <= 2):
+            error.append("SEED location code not "
+                         "between 0 and 2 characters.")
 
-                        if serial not in self.ph5.Das_t:
-                            LOGGER .error("No data found for station {0}. "
-                                          "You may need to reload the raw "
-                                          "data for this station."
-                                          .format(str(station_id)))
-                        try:
-                            ph5api.filter_das_t(self.ph5.Das_t[
-                                                serial]['rows'],
-                                                channel)
-                        except BaseException:
-                            LOGGER .error("No data found for channel {0}. "
-                                          "Other channels seem to exist"
-                                          .format(str(channel)))
+        if not station['seed_band_code_s']:
+            error.append("SEED band code required.")
 
-                        if station_list[deployment][st_num][
-                                'location/X/value_d'] == 0:
-                            LOGGER.warning("Location/X/value_d "
-                                           "'longitude'seems to be 0. "
-                                           "Is this correct???")
+        if not station['seed_instrument_code_s']:
+            error.append("SEED instrument code required.")
 
-                        if station_list[deployment][st_num][
-                                'location/Y/value_d'] == 0:
-                            LOGGER.warning("Location/Y/value_d "
-                                           "'latitude' seems to be 0. "
-                                           "Is this correct???")
+        if not station['seed_orientation_code_s']:
+            error.append("SEED orientation code "
+                         "required.")
 
-                        if station_list[deployment][st_num][
-                                'sample_rate_i'] == 0:
-                            LOGGER.warning("Sample rate seems to be 0. "
-                                           "Is this correct???")
+        if station['sample_rate_i'] <= 0:
+            warning.append("Sample rate seems to be <= 0. "
+                           "Is this correct???")
 
-                        if station_list[deployment][st_num][
-                                'sample_rate_multiplier_i'] == 0:
-                            LOGGER.warning("Sample rate multiplier 0. "
-                                           "Is this correct???")
+        if station['sample_rate_multiplier_i'] <= 0:
+            warning.append("Sample rate multiplier <= 0. "
+                           "Is this correct???")
 
-                        if not station_list[deployment][st_num][
-                                'das/manufacturer_s']:
-                            LOGGER.warning("DAS manufacturer is missing. "
-                                           "Is this correct???")
+        response_t = self.ph5.get_response_t_by_n_i(
+            station['response_table_n_i'])
+        if response_t is None:
+            error.append("No Response table found. "
+                         "Have you run load_resp yet?")
 
-                        if not station_list[deployment][st_num][
-                                'das/model_s']:
-                            LOGGER.warning("DAS model is missing. "
-                                           "Is this correct???")
-                        if not station_list[deployment][st_num][
-                                'sensor/manufacturer_s']:
-                            LOGGER.warning("Sensor manufacturer is "
-                                           "missing. Is this correct???")
+        # CHANNEL LOCATION
+        if station['location/X/value_d'] == 0:
+            warning.append("Channel location/X/value_d "
+                           "'longitude' seems to be 0. "
+                           "Is this correct???")
 
-                        if not station_list[deployment][st_num][
-                                'sensor/model_s']:
-                            LOGGER.warning("Sensor model is missing. "
-                                           "Is this correct???")
+        if station['location/X/units_s'] is None:
+            warning.append("No Station location/X/units_s value "
+                           "found.")
+
+        if station['location/Y/value_d'] == 0:
+            warning.append("Channel location/Y/value_d "
+                           "'latitude' seems to be 0. "
+                           "Is this correct???")
+
+        if station['location/Y/units_s'] is None:
+            warning.append("No Station location/Y/units_s value "
+                           "found.")
+
+        if not station['location/Z/value_d']:
+            warning.append("No Channel location/Z/value_d value")
+
+        if station['location/Z/units_s'] is None:
+            warning.append("No Station location/Z/units_s value "
+                           "found.")
+
+        # CHANNEL DEPLOY/PICKUP
+        deploy_time = station['deploy_time/epoch_l']
+
+        if deploy_time is None:
+            error.append("No deploy_time value "
+                         "found for channel.")
+
+        pickup_time = station['pickup_time/epoch_l']
+
+        if pickup_time is None:
+            error.append("No pickup_time value "
+                         "found for channel.")
+
+        das_serial = station['das/serial_number_s']
+        sensor_serial = station['sensor/serial_number_s']
+        if deploy_time > pickup_time:
+            error.append("Deploy time is after pickup time")
+        else:
+            self.ph5.read_das_t(das_serial, pickup_time,
+                                deploy_time, reread=False)
+
+        # CHANNEL SENSOR/DAS
+        channel_id = station['channel_number_i']
+        if das_serial is None:
+            error.append("Das serial number is missing.")
+
+        if sensor_serial is None:
+            warning.append("Sensor serial number is missing.")
+
+        if das_serial not in self.ph5.Das_t:
+            error.append("No data found for station {0}. "
+                         "You may need to reload the raw "
+                         "data for this station."
+                         .format(str(station_id)))
+        try:
+            ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'], channel_id)
+        except BaseException:
+            error.append("No data found for channel {0}. "
+                         "Other channels seem to exist"
+                         .format(str(channel_id)))
+
+        if not station['sensor/manufacturer_s']:
+            warning.append("Sensor manufacturer is "
+                           "missing. Is this correct???")
+
+        if not station['sensor/model_s']:
+            warning.append("Sensor model is missing. "
+                           "Is this correct???")
+
+        if not station['das/manufacturer_s']:
+            warning.append("DAS manufacturer is missing. "
+                           "Is this correct???")
+
+        if not station['das/model_s']:
+            warning.append("DAS model is missing. "
+                           "Is this correct???")
+
+        return info, warning, error
+
+    def check_array_t(self):
+        LOGGER.info("Validating Array_t")
+        validation_blocks = []
+        info = []
+        warning = []
+        error = []
+        if not self.ph5.Array_t_names:
+            header = ("-=-=-=-=-=-=-=-=-\n"
+                      "Array_t\n"
+                      "-=-=-=-=-=-=-=-=-\n")
+            msg = "Array_t table not found."
+            vb = ValidationBlock(heading=header, error=[msg])
+            validation_blocks.append(vb)
+            LOGGER.error(msg)
+        else:
+            array_names = sorted(self.ph5.Array_t_names)
+            for array_name in array_names:
+                self.read_arrays(array_name)
+                arraybyid = self.ph5.Array_t[array_name]['byid']
+                arrayorder = self.ph5.Array_t[array_name]['order']
+                for ph5_station in arrayorder:
+                    station_list = arraybyid.get(ph5_station)
+                    for deployment in station_list:
+                        station_len = len(station_list[deployment])
+                        for st_num in range(0, station_len):
+                            station = station_list[deployment][st_num]
+                            station_id = station['id_s']
+                            channel_id = station['channel_number_i']
+                            LOGGER.debug("Validating Station {0} Channel {1}"
+                                         .format(str(station_id),
+                                                 str(channel_id)))
+                            info, warning, error = \
+                                self.check_station_completeness(station)
+                            if info or warning or error:
+                                header = ("-=-=-=-=-=-=-=-=-\n"
+                                          "Station {0} Channel {1}\n"
+                                          "{2} error, {3} warning, "
+                                          "{4} info\n"
+                                          "-=-=-=-=-=-=-=-=-\n"
+                                          .format(str(station_id),
+                                                  str(channel_id),
+                                                  len(error),
+                                                  len(info),
+                                                  len(warning)))
+                                vb = ValidationBlock(heading=header,
+                                                     info=info,
+                                                     warning=warning,
+                                                     error=error)
+                                validation_blocks.append(vb)
+        return validation_blocks
+
+    def check_event_t_completeness(self, event):
+        """
+        Checks that the following are present in Event_t:
+          #### EVENT CHECKS
+          - id_s
+          - description_s
+          #### EVENT LOCATION
+          - location/coordinate_system_s
+          - location/projection_s
+          - location/ellipsoid_s
+          - location/description_s
+          - location/X/value_d
+          - location/Y/value_d
+          - location/Z/value_d
+          #### EVENT TIME
+          - time/epoch_l
+          - time/micro_seconds_i
+          #### EVENT SIZE
+          - size/value_d
+          - size/units_s
+          #### EVENT DEPTH
+          - depth/value_d
+          - depth/units_s
+        """
+        info = []
+        warning = []
+        error = []
+        # EVENT CHECKS
+        if not event['id_s']:
+            error.append("Event id is missing.")
+        if not event['description_s']:
+            warning.append("Event description is missing.")
+        # EVENT LOCATION
+        if event['location/coordinate_system_s'] is None:
+            warning.append("No Event location/coordinate_system_s value "
+                           "found.")
+
+        if event['location/projection_s'] is None:
+            warning.append("No Event location/projection_s value "
+                           "found.")
+
+        if event['location/ellipsoid_s'] is None:
+            warning.append("No Event location/ellipsoid_s value "
+                           "found.")
+
+        if event['location/description_s'] is None:
+            warning.append("No Event location/description_s value "
+                           "found.")
+
+        if event['location/X/value_d'] == 0:
+            error.append("Event location/X/value_d "
+                         "'longitude' seems to be 0. "
+                         "Is this correct???")
+        if event['location/X/units_s'] is None:
+            error.append("No Event location/X/units_s value "
+                         "found.")
+
+        if event['location/Y/value_d'] == 0:
+            error.append("Event location/Y/value_d "
+                         "'latitude' seems to be 0. "
+                         "Is this correct???")
+        if event['location/X/units_s'] is None:
+            error.append("No Event location/Y/units_s value "
+                         "found.")
+
+        if not event['location/Z/value_d']:
+            error.append("No Event location/Z/value_d value "
+                         "found.")
+        if event['location/X/units_s'] is None:
+            error.append("No Event location/Z/units_s value "
+                         "found.")
+        # EVENT TIME
+        if event['time/epoch_l'] is None:
+            error.append("No Event time/epoch_l value found.")
+        if event['time/micro_seconds_i'] is None:
+            error.append("No Event time/micro_seconds_i value "
+                         "found.")
+        # EVENT SIZE
+        if event['size/value_d'] is None:
+            warning.append("No Event size/value_d value found.")
+        if event['size/units_s'] is None:
+            warning.append("No Event size/units_s value found.")
+        # EVENT DEPTH
+        if event['depth/value_d'] is None:
+            warning.append("No Event depth/value_d value found.")
+        if event['depth/units_s'] is None:
+            warning.append("No Event depth/units_s value found.")
+
+        return info, warning, error
+
+    def check_event_t(self):
+        LOGGER.info("Validating Event_t")
+        validation_blocks = []
+        info = []
+        warning = []
+        error = []
+        self.ph5.read_event_t_names()
+        if not self.ph5.Event_t_names:
+            header = ("-=-=-=-=-=-=-=-=-\n"
+                      "Event_t\n"
+                      "-=-=-=-=-=-=-=-=-\n"
+                      .format())
+            msg = ("Event_t table not found. "
+                   "Did this experiment have shots???")
+            LOGGER.warning(msg)
+            vb = ValidationBlock(heading=header, error=[msg])
+            validation_blocks.append(vb)
+        else:
+            shot_lines = sorted(self.ph5.Event_t_names)
+            for shot_line in shot_lines:
+                self.ph5.read_event_t(shot_line)
+                event_t = self.ph5.Event_t[shot_line]['byid']
+                for _, event in event_t.items():
+                    LOGGER.debug("Validating Event {0}"
+                                 .format(str(event['id_s'])))
+                    info, warning, error = \
+                        self.check_event_t_completeness(event)
+                    if info or warning or error:
+                        header = ("-=-=-=-=-=-=-=-=-\n"
+                                  "Event_t {0}\n"
+                                  "{1} error, {2} warning, {3} info\n"
+                                  "-=-=-=-=-=-=-=-=-\n"
+                                  .format(event['id_s'],
+                                          len(error),
+                                          len(warning),
+                                          len(info)))
+                        vb = ValidationBlock(heading=header,
+                                             info=info,
+                                             warning=warning,
+                                             error=error)
+                        validation_blocks.append(vb)
+        return validation_blocks
 
 
 def get_args():
@@ -338,22 +674,46 @@ def get_args():
         type=str, metavar="ph5_path")
 
     parser.add_argument(
-        "-l", "--level", action="store", default="error",
+        "-l", "--level", action="store", default="INFO",
+        help="Logging level. Choose from 'error, 'warning', "
+             "and 'info' (default).",
         type=str, metavar="level")
 
-    the_args = parser.parse_args()
-    return the_args
+    parser.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Verbose logging.")
+
+    args = parser.parse_args()
+
+    # Add formatter
+    args.level = str(args.level).upper()
+    if args.level != "ERROR" and args.level != "WARNING" and \
+            args.level != "INFO":
+        raise ValueError("Invalid logging level.")
+
+    if args.verbose is True:
+        LOGGER.parent.handlers[0].setLevel(logging.DEBUG)
+    return args
 
 
 def main():
-    args = get_args()
-    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname,)
-    ph5validate = PH5Validate(ph5API_object, args.ph5path, level=args.level)
-    ph5validate.check_experiment_t()
-    ph5validate.checK_stations()
-    ph5API_object.close()
-    LOGGER.info("\nWarnings, Errors and suggests written to logfile: "
-                "PH5Validate.log\n\n")
+    try:
+        args = get_args()
+        ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
+        ph5validate = PH5Validate(ph5API_object, args.ph5path)
+        validation_blocks = []
+        validation_blocks += ph5validate.check_experiment_t()
+        validation_blocks += ph5validate.check_array_t()
+        validation_blocks += ph5validate.check_event_t()
+        with open("ph5_validate.log", "w") as log_file:
+            for vb in validation_blocks:
+                vb.write_to_log(log_file,
+                                args.level)
+        ph5API_object.close()
+        print("\nWarnings, Errors and suggests written to logfile: "
+              "ph5_validate.log\n")
+    except Exception as e:
+        LOGGER.error(e)
 
 
 if __name__ == '__main__':

@@ -793,8 +793,8 @@ class ReceiversGroup:
             else:
                 t = "undetermined"
         except Exception as e:
-            LOGGER.info("Unable to get trace element type.\n{0}"
-                        .format(e.message))
+            LOGGER.debug("Unable to get trace element type.\n{0}"
+                         .format(e.message))
             t = "undetermined"
 
         return t, trace_ref.byteorder
@@ -1334,16 +1334,16 @@ class ExperimentGroup:
         if self.ph5exists():
             # XXX Needs try:except XXX
             if editmode is True:
-                LOGGER.info("Opened ph5 file {0} in append edit mode."
-                            .format(self.filename))
+                LOGGER.debug("Opened ph5 file {0} in append edit mode."
+                             .format(self.filename))
                 self.ph5 = tables.open_file(self.filename, mode='a')
             else:
-                LOGGER.info("Opened ph5 file {0} in read only mode."
-                            .format(self.filename))
+                LOGGER.debug("Opened ph5 file {0} in read only mode."
+                             .format(self.filename))
                 self.ph5 = tables.open_file(self.filename, mode='r')
         elif editmode is True:
-            LOGGER.info("No PH5 file exists at '{0}'! Creating new ph5 file."
-                        .format(self.filename))
+            LOGGER.debug("No PH5 file exists at '{0}'! Creating new ph5 file."
+                         .format(self.filename))
             self.ph5 = tables.open_file(
                 self.filename, mode='w', title=ph5title)
         else:
@@ -1481,7 +1481,7 @@ def read_table(tablenode):
     if not tablenode:
         return ret, keys
 
-    LOGGER.info("Read {0}".format(tablenode))
+    LOGGER.debug("Read {0}".format(tablenode))
     try:
         tableiterator = tablenode.iterrows()
         keys, names = columns.keys(tablenode)
