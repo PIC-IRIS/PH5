@@ -1,31 +1,33 @@
 #!/usr/bin/env pnpython4
 #
-#   Cross check Array_t_all.json, Event_t_all.json and Data.json.
-#   Simulates cutting data for each event for all stations, 65536 samples.
-#   The columns returned are:
-#      Event table name
-#      Event ID
-#      Shot time
-#      Cut end time
-#      Array table name
-#      Station ID
-#      SEED station name
-#      DAS SN
-#      Component
-#      First sample time in match window
-#      Last sample time in match window
-#      Gaps start and end time preceded by a tab (if any)
+# Cross check Array_t_all.json, Event_t_all.json and Data.json.
+# Simulates cutting data for each event for all stations, 65536 samples.
+# The columns returned are:
+#    Event table name
+#    Event ID
+#    Shot time
+#    Cut end time
+#    Array table name
+#    Station ID
+#    SEED station name
+#    DAS SN
+#    Component
+#    First sample time in match window
+#    Last sample time in match window
+#    Gaps start and end time preceded by a tab (if any)
 #
-#   Steve Azevedo, November 2016
+# Steve Azevedo, November 2016
 #
 
 import os
 import sys
+import logging
 import json
 from ph5.core import timedoy
 from ph5.core.ph5api import is_in
 
-PROG_VERSION = "2017.311 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 __version__ = PROG_VERSION
 
 
@@ -92,13 +94,13 @@ def read_json():
 
     if len(nope) != 0:
         for n in nope:
-            sys.stderr.write("Error: {0} not found.".format(n))
+            LOGGER.error("{0} not found.".format(n))
         sys.exit()
 
     EVENT = _read_json(ARGS.event_json)
     ARRAY = _read_json(ARGS.array_json)
     DATA = {}
-    #   Organize DATA by DAS SN for easy lookup
+    # Organize DATA by DAS SN for easy lookup
     D = _read_json(ARGS.data_json)
     Datas = D['Data']
     for Data in Datas:
@@ -116,7 +118,7 @@ def read_json():
                                       hour=int(hr),
                                       minute=int(mn),
                                       second=float(sc))
-        #   Save window_start and window_stop as timedoy object
+        # Save window_start and window_stop as timedoy object
         Data['window_start'] = window_start
         Data['window_stop'] = window_stop
         DATA[Data['das']].append(Data)
@@ -151,18 +153,18 @@ def _is_in(das, shot_time, length, si):
     for d in data:
         data_start_epoch = d['window_start'].epoch(fepoch=True)
         data_stop_epoch = d['window_stop'].epoch(fepoch=True)
-        #   Call ph5api.is_in
+        # Call ph5api.is_in
         if is_in(data_start_epoch, data_stop_epoch,
                  shot_start_epoch, shot_stop_epoch):
             hits.append(d)
 
-    #   Match no gaps
+    # Match no gaps
     if len(hits) == 1:
         return hits[0]['first_sample'], hits[0]['last_sample'], gaps
-    #   No match
+    # No match
     elif len(hits) == 0:
         return None, None, gaps
-    #   Match with gaps
+    # Match with gaps
     else:
         fs = None
         ls = None

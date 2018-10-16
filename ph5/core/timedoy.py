@@ -1,8 +1,8 @@
 #!/usr/bin/env pnpython3
 #
-#   Simplified time handling
+# Simplified time handling
 #
-#   Steve Azevedo, July 2006
+# Steve Azevedo, July 2006
 #
 
 import time
@@ -16,11 +16,6 @@ PROG_VERSION = '2016.335 Developmental'
 
 DAYS_IN_MONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31)
 DAYS_IN_MONTH_LEAP = (31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31)
-
-# NUMBER_MONTH = {'Jan':1,'Feb':2,'Mar':3,'Apr':4,'May':5,'Jun':6,
-# 'Jul':7,'Aug':8,'Sep':9,'Oct':10,'Nov':11,'Dec':12 }
-# ASCII_MONTH  = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',
-# 7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec' }
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -161,13 +156,11 @@ class TimeDOY (object):
             totalDays = totalDays + days_in_month[i]
             if totalDays > doy:
                 totalDays = totalDays - days_in_month[i]
-                #
                 month = i + 1
                 day = doy - totalDays
                 if day == 0:
                     day = days_in_month[i - 1]
                     month = month - 1
-                # print totalDays, doy, days_in_month[i]
                 break
 
         if not inrange(month, 1, 12):
@@ -248,14 +241,8 @@ class TimeDOY (object):
         '''   ctime as in time.ctime   '''
         return time.ctime(self.epoch())
 
-#
-###
-#
-
 
 def UTCDateTime2tdoy(udt):
-    # from obspy.core import UTCDateTime
-
     ttuple = udt.timetuple()
     ms = udt._get_microsecond()
     tdoy = TimeDOY(year=ttuple.tm_year,
@@ -287,7 +274,6 @@ def delta(tdoy1, tdoy2):
     d = tdoy2.dtobject - tdoy1.dtobject
 
     return (d.days * 86400.) + d.seconds + (d.microseconds / 1000.)
-    # return d.total_seconds ()
 
 
 def compare(tdoy1, tdoy2):

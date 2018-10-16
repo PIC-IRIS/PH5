@@ -1,14 +1,14 @@
 #!/usr/bin/env pnpython3
 #
-#   Dump Fairfield SEG-D header values
+# Dump Fairfield SEG-D header values
 #
-#   Steve Azevedo, October 2014
+# Steve Azevedo, October 2014
 #
 import sys
 import os
 from ph5.core import segdreader
 
-PROG_VERSION = "2017.321"
+PROG_VERSION = "2016.268"
 
 
 def print_container(container):
@@ -93,7 +93,6 @@ def trace_headers(sd):
     if 'fairprint' in os.environ:
         for s in trace:
             print s
-    # n += 1
     while True:
         if sd.isEOF():
             break

@@ -1,26 +1,28 @@
 #!/usr/bin/env pnpython2
 #
-#   Process raw texan files up to CPU firmware version 1.0.26.
+# Process raw texan files up to CPU firmware version 1.0.26.
 #
-#   Steve Azevedo, March 2004
-#   125a Sept. 2006
+# Steve Azevedo, March 2004
+# 125a Sept. 2006
 #
 
 import exceptions
 import os
 import struct
 import sys
+import logging
 import rt_125a_py
 
-PROG_VERSION = '2015.054'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 if sys.version_info >= (2, 3):
     import warnings
     warnings.filterwarnings("ignore", category=FutureWarning, append=1)
 
-#  Page size
+# Page size
 TRDPAGE = 528
-#  Define block as xx pages (not sure why 11 is the optimal number???)
+# Define block as xx pages (not sure why 11 is the optimal number???)
 TRDBLOCK = TRDPAGE * 66
 
 
@@ -134,21 +136,21 @@ class Table125 (object):
 
 class pn125:
     def __init__(self, filename=None):
-        #   Input file name
+        # Input file name
         self.filename = filename
-        #   Open file handle
+        # Open file handle
         self.pnfh = None
-        #   Page stuff
+        # Page stuff
         self.page = Page125()
-        #   Event stuff
+        # Event stuff
         self.trace = Event125()
-        #   State of Health Buffer
+        # State of Health Buffer
         self.sohbuf = []
-        #   Raw data buffer
+        # Raw data buffer
         self.buf = ReadBuffer()
-        #   Count of pages left in buffer
+        # Count of pages left in buffer
         self.bufPages = 0
-        #   Event table buffer
+        # Event table buffer
         self.eventTable = []
 
     def openTRD(self):
@@ -173,10 +175,10 @@ class pn125:
         '''   Read a block of data   '''
         if self.pnfh is None:
             self.openTRD()
-        #   Attempt to read pages
+        # Attempt to read pages
         b = os.read(self.pnfh, TRDBLOCK)
         self.buf.set(b)
-        #   Number of pages in buffer
+        # Number of pages in buffer
         self.bufPages = self.buf.len / TRDPAGE
 
     def nullPage(self):
@@ -210,7 +212,7 @@ class pn125:
         # return
         # Number of entries in this page
         e = struct.unpack("!B", b[0])[0]
-        # print e
+
         # Number of entries per file
         b = b[7:]
         # Now process each line
@@ -245,21 +247,17 @@ class pn125:
                 return False
             return True
 
-        # print len (b)
-        #   Get byte count
+        # Get byte count
         c = b[0:3]
-
-        #   Split off messages
+        # Split off messages
         m = b[3:518]
-        #   Unpack counts
+        # Unpack counts
         p = struct.unpack("!HB", c)
-        # print "Bytes: ", p[0], "Message count: ", p[1]
-        #   Number of messages
+        # Number of messages
         n = p[1]
-        #
         p = struct.unpack("!515s", m)[0]
 
-        #   Split on newlines
+        # Split on newlines
         s = p.split("\r\n")
         aflag = False
         for i in range(n):
@@ -268,23 +266,15 @@ class pn125:
                 continue
 
             if len(s[i]) < 6:
-                #   This is short, maybe its a timestring that contained '\r\n'
+                # This is short, maybe its a timestring that contained '\r\n'
                 s[i] = s[i] + "\r\n" + s[i + 1]
                 aflag = True
 
             element = SOH125()
-            #
             yr = 1984 + ord(s[i][0])
 
-            #
             jd = ord(s[i][1]) * 100 + ord(s[i][2]) + 1
-            #   Now build up rest of line
-            # line = "%04d:%03d:%02d:%02d:%02d %s" % (yr,
-            #                                        jd,
-            #                                        ord (s[i][3]),
-            #                                        ord (s[i][4]),
-            #                                        ord (s[i][5]),
-            #                                        s[i][6:])
+
             element.year = yr
             element.doy = jd
             element.hour = ord(s[i][3])
@@ -305,15 +295,12 @@ class pn125:
         hr = p[3]
         mn = p[4]
         sc = p[5]
-        sr = p[6]
-        # print yr, jd, hr, mn, sc, sr
-        #   sr is the sample rate
+        sr = p[6]  # sample rate
         return yr, jd, hr, mn, sc, sr
 
     def evtc(self, b):
         '''   Translate gain/event/sample count   '''
         p = struct.unpack("!BHB", b)
-        # print "Event samples: ", p
         return p
 
     def extg(self, g):
@@ -323,51 +310,20 @@ class pn125:
         gk = (32, 1, 2, 4, 8, 16, 32, 64, 128, 256)
         return fk[fsd], gk[gain]
 
-    # def processEvent (self, b, n) :
-        # Process event to 32bit counts
-        # #print n
-        # for i in range (n) :
-        # offset = i * 3
-        # Get the 3 bytes (24 bits)
-        # pt = struct.unpack ("!BBB", b[offset:3 + offset])
-        # Right shift later results in a long so mask it here
-        # #pt0 = pt[0] & 0xFF
-        # #pt1 = pt[1] & 0xFF
-        # #pt2 = pt[2] & 0xFF
-        # pt0 = pt[0]
-        # pt1 = pt[1]
-        # pt2 = pt[2]
-
-        # Convert point to counts
-        # p = (pt0 << 16) + (pt1 << 8) + pt2
-        # Extend sign bit
-        # if pt0 & 0x80 :
-        # p -= 0x1000000
-
-        # #print hex (p)
-        # #p *= s
-        # #p = p & 0xFFFFFFFF
-        # self.trace.trace.append (p)
-        # #print "%d" % p
-        # #p = (pt2 << 24) + (pt1 << 16) + (pt0 << 8) + pt3
-
     def processEvent(self, b, n):
         d = rt_125a_py.data_decode(b, n)
-        # print d
         self.trace.trace.extend(d)
 
     def data(self, b):
         '''   Process data file   '''
-        #   Get gain event number and page sample count
+        # Get gain event number and page sample count
         g, self.trace.event, n = self.evtc(b[0:4])
-        # print "Event: ", self.trace.event, "Samples: ", n
         b = b[4:]
-        #   First page or extended header flag
+        # First page or extended header flag
         if self.page.first or self.page.ext:
-            #   Read extended header
-            #   year, doy, hour, minute, seconds, samplerate
+            # Read extended header
+            # year, doy, hour, minute, seconds, samplerate
             if self.trace.year is None:
-                # if 1 :
                 p = self.exth(b[0:9])
                 self.trace.year = p[0]
                 self.trace.doy = p[1]
@@ -376,11 +332,9 @@ class pn125:
                 self.trace.seconds = p[4]
                 self.trace.sampleRate = p[5]
                 self.trace.fsd, self.trace.gain = self.extg(g)
-                # print p
 
             b = b[9:]
 
-        # print len (b)
         self.processEvent(b, n)
 
     def getPage(self):
@@ -391,19 +345,19 @@ class pn125:
             if self.bufPages == 0:
                 self.closeTRD()
                 return
-        #   Fix these next 3 lines, they are slooooow....
-        #   Page header
+        # Fix these next 3 lines, they are slooooow....
+        # Page header
         h = self.buf.get(6)
-        #   Page data
+        # Page data
         b = self.buf.get(TRDPAGE - 6)
-        #   Remove this page from buffer
+        # Remove this page from buffer
         # self.buf = self.buf[TRDPAGE:]
-        #   Number of pages remaining
+        # Number of pages remaining
         self.bufPages -= 1
 
-        #   Page type, Unit ID, Sequence, Flags
+        # Page type, Unit ID, Sequence, Flags
         p = struct.unpack("!BHHB", h)
-        #   Skip bad or erased pages
+        # Skip bad or erased pages
         if p[0] == 0xFF or p[0] == 0x00:
             self.page.pageType = -1
             return
@@ -412,7 +366,7 @@ class pn125:
         self.page.unitID = p[1] + 10000
         self.page.sequence = p[2]
 
-        #   Check and set page flags
+        # Check and set page flags
         self.page.first = p[3] & 0x01
         self.page.last = (p[3] & 0x02) >> 1
         self.page.ext = (p[3] & 0x04) >> 2
@@ -420,7 +374,6 @@ class pn125:
         if self.page.last == 1:
             pass
 
-        #
         if 0:
             print self.page.pageType, self.page.unitID,
             self.page.sequence, p[3]
@@ -432,8 +385,7 @@ class pn125:
         elif self.page.pageType == 5:
             self.table(b[1:])
         else:
-            sys.stderr.write("Warning: Unrecognized page type: %d\n",
-                             self.page.pageType)
+            LOGGER.warning("Unrecognized page type: %d" % self.page.pageType)
 
     def getEvent(self):
         '''   Get next event   '''
@@ -444,24 +396,20 @@ class pn125:
             except Exception as e:
                 raise TRDError(e)
 
-            #   Debug
+            # Debug
             if self.page.pageType == 3:
                 pass
 
             if self.page.pageType is None:
-                #   We are at end of file, return 0
+                # We are at end of file, return 0
                 return 0
             elif self.page.pageType == -1:
                 continue
 
             if self.page.last and self.page.pageType != 5:
-                #   End of this event, return sample count
+                # End of this event, return sample count
                 self.closeEvent()
                 return self.trace.sampleCount
-
-            # if self.page.first :
-                #   Beginning of event
-                # self.openEvent ()
 
 
 if __name__ == "__main__":
@@ -482,11 +430,7 @@ if __name__ == "__main__":
             tr.seconds,\
                 tr.sampleRate, tr.sampleCount, tr.channel_number,
             tr.stream_number, tr.gain, bitweight
-            # if tr.event == 194 :
-            # for pt in tr.trace :
-            # print pt
 
-        # print ".",
         print "SOH: "
         for el in pn.sohbuf:
             print el.year, el.doy, el.hour, el.minute, el.seconds, el.message

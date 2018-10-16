@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-#   Handle shot or array inputs from an external text file
+# Handle shot or array inputs from an external text file
 #
-#   Steve Azevedo, November 2017
+# Steve Azevedo, November 2017
 #
 
 from ph5.core import kefx
@@ -46,24 +46,21 @@ def kef_open(filename):
         raise kefx.KefError(e.message)
 
     return kx
-#
 
 
 def cast(kv):
     kk = kv.keys()
     for k in kk:
         t = k[-2:]
-        #   Cast to integer
+        # Cast to integer
         if t == '_i' or t == '_l':
             kv[k] = int(kv[k])
-        #   Cast to float
+        # Cast to float
         if t == '_d' or t == '_f':
             kv[k] = float(kv[k])
-        #   Else leave as string
-
+        # Else leave as string
     return kv
 
 
 if __name__ == '__main__':
     ex = External('/home/azevedo/Data/SIIOS/Event_t_all.kef')
-    print

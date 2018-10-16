@@ -1,5 +1,6 @@
 #!/usr/bin/env pnpython4
 
+import argparse
 import os
 import sys
 import warnings
@@ -9,14 +10,15 @@ import time
 import math
 import json
 from math import modf
+from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, timedoy, RESP
 
 from obspy import read as readSEG2
 
-PROG_VERSION = "2017.117 Alpha"
+PROG_VERSION = "2018.268"
+LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
-
 miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 DAS_INFO = {}
@@ -47,7 +49,7 @@ def read_infile(infile):
     try:
         fh = file(infile)
     except BaseException:
-        sys.stderr.write("Warning: Failed to open %s\n" % infile)
+        LOGGER.warning("Failed to open %s" % infile)
         return
 
     while True:
@@ -73,7 +75,6 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        # print self.lines
         for l in self.lines:
             if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
                 return l['n_i']
@@ -108,32 +109,32 @@ def get_args():
     '''
     global FILES, PH5, SR, NUM_MINI, FIRST_MINI, PATH
 
-    from argparse import ArgumentParser
-
-    aparser = ArgumentParser()
-    aparser.usage = "Version %s seg2toph5 [--help][--raw raw_file |\
+    parser = argparse.ArgumentParser()
+    parser.usage = "Version %s seg2toph5 [--help][--raw raw_file |\
      --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
-    aparser.description = "Read data in SEG-2 revision 1 (StrataVisor)\
+    parser.description = "Read data in SEG-2 revision 1 (StrataVisor)\
      into ph5 format."
-    aparser.add_argument("-f", "--file", dest="infile",
-                         help="File containing list of absolute paths\
-                          to SEG-2 file.",
-                         metavar="file_list_file")
-    aparser.add_argument("-n", "--nickname", dest="outfile",
-                         help="The ph5 file prefix (experiment nick name).",
-                         metavar="output_file_prefix")
-    aparser.add_argument("-M", "--num_mini", dest="num_mini",
-                         help="Create a given number of miniPH5  files.",
-                         metavar="num_mini", type=int, default=None)
-    aparser.add_argument("-S", "--first_mini", dest="first_mini",
-                         help="The index of the first miniPH5_xxxxx.ph5 file.",
-                         metavar="first_mini", type=int, default=1)
-    aparser.add_argument("-s", "--samplerate", dest="samplerate",
-                         help="Extract only data at given sample rate.",
-                         metavar="samplerate")
-    aparser.add_argument("-p", dest="doprint",
-                         action="store_true", default=False)
-    args = aparser.parse_args()
+    parser.add_argument("-f", "--file", dest="infile",
+                        help=("File containing list of absolute paths "
+                              "to SEG-2 file."),
+                        metavar="file_list_file")
+    parser.add_argument("-n", "--nickname", dest="outfile",
+                        help="The ph5 file prefix (experiment nick name).",
+                        metavar="output_file_prefix")
+    parser.add_argument("-M", "--num_mini", dest="num_mini",
+                        help="Create a given number of miniPH5  files.",
+                        metavar="num_mini", type=int, default=None)
+    parser.add_argument("-S", "--first_mini", dest="first_mini",
+                        help="The index of the first miniPH5_xxxxx.ph5 file.",
+                        metavar="first_mini", type=int, default=1)
+    parser.add_argument("-s", "--samplerate", dest="samplerate",
+                        help="Extract only data at given sample rate.",
+                        metavar="samplerate")
+    parser.add_argument("-p",
+                        help="Do print",
+                        dest="doprint",
+                        action="store_true", default=False)
+    args = parser.parse_args()
 
     FILES = []
     PH5 = None
@@ -148,23 +149,23 @@ def get_args():
         PH5 = args.outfile
 
     if PH5 is None:
-        # print H5, FILES
-        sys.stderr.write("Error: Missing required option. Try --help\n")
+        LOGGER.error("Missing required option. Try --help")
         sys.exit()
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        sys.stderr.write("Error: %s does not exist!\n" % PH5)
+        LOGGER.error("{0} does not exist!".format(PH5))
         sys.exit()
     else:
         PATH = os.path.dirname(PH5) or '.'
         # Debugging
         os.chdir(PATH)
-        #   Set up logging
-        logging.basicConfig(
-            filename=os.path.join("seg2toph5.log"),
-            format="%(asctime)s %(message)s",
-            level=logging.INFO
-        )
+        # Write log to file
+        ch = logging.FileHandler(os.path.join(".", "seg2toph5.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
 
 
 def initializeExperiment():
@@ -177,8 +178,7 @@ def initializeExperiment():
 
 
 def openPH5(filename):
-    # filename = os.path.join (PATH, filename)
-    # sys.stderr.write ("***   Opening: {0} ".format (filename))
+    LOGGER.info("Opening: {0}".format(filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -190,8 +190,6 @@ def get_current_data_only(size_of_data, das=None):
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
 
-    # global NM
-    # global INDEX_T, CURRENT_DAS
     def sstripp(s):
         s = s.replace('.ph5', '')
         s = s.replace('./', '')
@@ -210,29 +208,27 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(CURRENT_DAS)
     newestfile = ''
-    #   Get the most recent data only PH5 file or match DAS serialnumber
+    # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T_DAS.rows:
-        #   This DAS already exists in a ph5 file
+        # This DAS already exists in a ph5 file
         if index_t['serial_number_s'] == das:
             newestfile = sstripp(index_t['external_file_name_s'])
             return openPH5(newestfile)
-        #   miniPH5_xxxxx.ph5 with largest xxxxx
+        # miniPH5_xxxxx.ph5 with largest xxxxx
         mh = miniPH5RE.match(index_t['external_file_name_s'])
         if n < int(mh.groups()[0]):
             newestfile = sstripp(index_t['external_file_name_s'])
             n = int(mh.groups()[0])
 
     if not newestfile:
-        #   This is the first file added
+        # This is the first file added
         mf = 'miniPH5_{0:05d}'.format(FIRST_MINI)
         return openPH5(mf)
     else:
         mf = newestfile + '.ph5'
 
     size_of_exrec = os.path.getsize(mf)
-    # print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
-    # MAX_PH5_BYTES
     if NUM_MINI is not None:
         fm = FIRST_MINI - 1
         if (int(newestfile[8:13]) - fm) < NUM_MINI:
@@ -250,8 +246,7 @@ def get_current_data_only(size_of_data, das=None):
 def update_external_references():
     global EX, INDEX_T_DAS
 
-    # sys.stderr.write ("Updating external references..."); sys.stderr.flush ()
-    logging.info("Updating external references...")
+    LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
@@ -259,60 +254,45 @@ def update_external_references():
         i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
-        # print external_file, external_path, das, target, external_group
 
-        #   Nuke old node
+        # Nuke old node
         try:
             group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception as e:
             pass
-            # print "E1 ", e
 
-        #   Re-create node
+        # Re-create node
         try:
             EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception as e:
-            # pass
-            sys.stderr.write("{0}\n".format(e))
+            LOGGER.error(e)
 
         n = 0
         for i in INDEX_T_MAP.rows:
-            #   XXX
-            # keys = i.keys ()
-            # keys.sort ()
-            # for k in keys :
-            # print k, i[k]
-
             external_file = i['external_file_name_s'][2:]
             external_path = i['hdf5_path_s']
             i['serial_number_s']
             target = external_file + ':' + external_path
             external_group = external_path.split('/')[3]
-            # print external_file, external_path, das, target, external_group
 
-            #   Nuke old node
+            # Nuke old node
             try:
                 group_node = EX.ph5.get_node(external_path)
                 group_node.remove()
             except Exception as e:
                 pass
-                # print "MAP nuke ", e.message
 
-            #   Re-create node
+            # Re-create node
             try:
                 EX.ph5.create_external_link(
                     '/Experiment_g/Maps_g', external_group, target)
                 n += 1
             except Exception as e:
-                # pass
-                sys.stderr.write("{0}\n".format(e.message))
-
-        # sys.exit ()
-    # sys.stderr.write ("done, {0} nodes recreated.\n".format (n))
-    logging.info("done, {0} nodes recreated.\n".format(n))
+                LOGGER.error(e.message)
+    LOGGER.info("Done, {0} nodes recreated.\n".format(n))
 
 
 def update_index_t_info(starttime, samples, sps):
@@ -332,7 +312,7 @@ def update_index_t_info(starttime, samples, sps):
 
     DAS_INFO[das].append(di)
     MAP_INFO[das].append(dm)
-    logging.info(
+    LOGGER.info(
         "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
@@ -347,7 +327,6 @@ def writeINDEX():
         mi = {}
         start = sys.maxsize
         stop = 0.
-        # das_info = DAS_INFO[das]
         dm = [(d, m) for d in DAS_INFO[das] for m in MAP_INFO[das]]
         for d, m in dm:
             di['external_file_name_s'] = './' + os.path.basename(d.ph5file)
@@ -412,9 +391,6 @@ def updatePH5(stream):
 
     size_guess = len(stream[0].data) * len(stream)
     for trace in stream:
-        # print trace.stats.starttime, trace.stats.endtime, trace.data.dtype,
-        # trace.data.max (), trace.data.min ()
-        #
         p_das_t = {}
         p_response_t = {}
         try:
@@ -422,13 +398,13 @@ def updatePH5(stream):
         except BaseException:
             pass
         LAST_SAMPLE_RATE = trace.stats.sampling_rate
-        #   XXX
+
         try:
             CURRENT_DAS = "{0}SV{1:02d}".format(
                 trace.stats.seg2['INSTRUMENT'].split(' ')[-1],
                 int(trace.stats.seg2['CHANNEL_NUMBER']))
         except Exception as e:
-            logging.warn(
+            LOGGER.warn(
                 "Can not set DAS serial number: {0}. Set to 0000SV00".format(
                     e.message))
             CURRENT_DAS = "0000SV00"
@@ -439,7 +415,7 @@ def updatePH5(stream):
         EXREC = get_current_data_only(size_guess)
         size_guess -= size_of_data
 
-        #   The gain and bit weight
+        # The gain and bit weight
         try:
             gain, units = trace.stats.seg2['FIXED_GAIN'].split(' ')
         except KeyError:
@@ -464,9 +440,9 @@ def updatePH5(stream):
             EX.ph5_g_responses.populateResponse_t(p_response_t)
             RESP.update()
 
-        #   Check to see if group exists for this das, if not build it
+        # Check to see if group exists for this das, if not build it
         EXREC.ph5_g_receivers.newdas(CURRENT_DAS)
-        #   Update Maps_g
+        # Update Maps_g
         fd = {}
         td = {}
         for k in trace.stats.seg2:
@@ -488,29 +464,28 @@ def updatePH5(stream):
         process(fd, "File Descriptor Block")
         process(td, "Trace Descriptor Block")
         log_array.close()
-        #   Fill in das_t
+        # Fill in das_t
         p_das_t['raw_file_name_s'] = F
         p_das_t['response_table_n_i'] = n_i
         p_das_t['channel_number_i'] = 1
         p_das_t['sample_count_i'] = int(trace.stats.npts)
         p_das_t['sample_rate_i'] = int(trace.stats.sampling_rate)
         p_das_t['sample_rate_multiplier_i'] = 1
-        #
+
         tdoy = timedoy.UTCDateTime2tdoy(trace.stats.starttime)
         p_das_t['time/epoch_l'] = tdoy.epoch()
-        #   XXX   need to cross check here   XXX
+        # XXX   need to cross check here   XXX
         p_das_t['time/ascii_s'] = time.asctime(
             time.gmtime(p_das_t['time/epoch_l']))
         p_das_t['time/type_s'] = 'BOTH'
-        #   XXX   Should this get set????   XXX
+        # XXX   Should this get set????   XXX
         p_das_t['time/micro_seconds_i'] = tdoy.microsecond()
         # XXX   Need to check if array name exists and generate unique name.
-        # XXX
         p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
             'Data_a_')
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
               " Channel: " + trace.stats.channel
-        #   XXX   This should be changed to handle exceptions   XXX
+        # XXX   This should be changed to handle exceptions   XXX
         EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         # Write out array data (it would be nice if we had int24) we use int32!
         EXREC.ph5_g_receivers.newarray(
@@ -550,8 +525,8 @@ def main():
     global F
     get_args()
     initializeExperiment()
-    logging.info("seg2toph5 {0}".format(PROG_VERSION))
-    logging.info("{0}".format(sys.argv))
+    LOGGER.info("seg2toph5 {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
 
     if len(FILES) > 0:
         Resp(EX.ph5_g_responses)
@@ -560,16 +535,14 @@ def main():
 
     for f in FILES:
         F = f
-        sys.stdout.write(":<Processing>: %s\n" % (f))
-        sys.stdout.flush()
-        logging.info("Processing: %s..." % f)
+        LOGGER.info("Processing: {0}...".format(f))
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 stream = readSEG2(f, format='SEG2')
 
             if stream is not None:
-                logging.info(
+                LOGGER.info(
                     "Adding stream for {0}:{3} starting at {1} and ending at\
                      {2} to PH5".format(
                         stream[0].stats.station,
@@ -578,30 +551,15 @@ def main():
                         stream[0].stats.channel))
                 updatePH5(stream)
             else:
-                logging.info("Failed to read: {0}.".format(f))
-                sys.stdout.write(":<Error>: Can't process {0}".format(f))
+                LOGGER.info("Failed to read: {0}.".format(f))
+                LOGGER.error("Can't process {0}".format(f))
                 continue
         except Exception as e:
-            sys.stdout.write(
-                ":<Error>: {0}. Can't process {1}".format(e.message, f))
+            LOGGER.error(
+                "{0}. Can't process {1}".format(e.message, f))
             continue
-
-        # print str (st[0])
-        # meta = st[0].stats
-        # print meta.keys ()
-
-        # for k in meta['seg2'].keys () :
-        # if k == 'NOTE' :
-        # print k, ':'
-        # for kk in meta['seg2'][k] :
-        # print '\t', kk, ':', meta['seg2'][k][kk]
-        # else :
-        # print k, ':', meta['seg2'][k]
-
-        # print
         update_external_references()
-        sys.stdout.write(":<Finished>: {0}\n".format(f))
-        sys.stdout.flush()
+        LOGGER.info(":<Finished>: {0}\n".format(f))
 
 
 if __name__ == '__main__':

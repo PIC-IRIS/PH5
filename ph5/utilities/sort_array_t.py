@@ -1,37 +1,53 @@
 #!/usr/bin/env pnpython4
 #
-#   Sort an Array_t_xxx.kef file by station ID, id_s.
+# Sort an Array_t_xxx.kef file by station ID, id_s.
 #
-#   Steve Azevedo, Feb 2017
+# Steve Azevedo, Feb 2017
 #
 
-import re
+import argparse
 import sys
+import logging
 from ph5.core import kefx
 
-PROG_VERSION = "2017.033"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = ("sort_array_t Array_t_unsorted.kef -f "
+                    "Array_t_unsorted.kef")
+    parser.description = ("Sort an Array_t_xxx.kef file by station ID, id_s. "
+                          "v{0}".format(PROG_VERSION))
+    parser.add_argument("-f", "--file", dest="infile", required=True,
+                        help="KEF file containing unsorted stations.")
+    parser.add_argument("-o", "--outfile", action="store",
+                        help="Sorted KEF file create. Defaults to stdout.",
+                        default=sys.stdout)
+    args = parser.parse_args()
+    return args
 
 
 def main():
-    nodeIDRE = re.compile("\d+X\d+")
+    args = get_args()
+
+    kefin = args.infile
+
     try:
-        kefin = sys.argv[1]
         kx = kefx.Kef(kefin)
         kx.open()
-    except BaseException:
-        print "Version: {0} Usage: sort_array_t Array_t_unsorted.kef >\
-         Array_t_sorted.kef".format(
-            PROG_VERSION)
-        sys.exit()
-
-    kx.read()
-    kx.rewind()
-    kx.ksort('id_s')
-    kx.rewind()
-    for p, kv in kx:
-        if nodeIDRE.match(kv['id_s']):
-            kv['id_s'] = kv['id_s'].split('X')[1]
-        kefx.print_kef(p, kv)
+    except Exception as e:
+        LOGGER.error("Error opening kef file {0} - {1}".format(kefin, e))
+    else:
+        kx.read()
+        kx.rewind()
+        kx.ksort('id_s')
+        kx.rewind()
+        if isinstance(args.outfile, (str, unicode)):
+            args.outfile = open(args.outfile, "w")
+        args.outfile.write(kx.to_str())
 
 
 if __name__ == "__main__":

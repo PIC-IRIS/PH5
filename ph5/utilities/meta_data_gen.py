@@ -1,44 +1,46 @@
 #!/usr/bin/env pnpython3
 #
-#   Generate Station/Array, Event, Data info
+# Generate Station/Array, Event, Data info
 #
 
+import argparse
 import json
 import os
 import os.path
 import sys
+import logging
 import time
-# from collections import OrderedDict
-#   This provides the base functionality
+# This provides the base functionality
 from ph5.core import experiment, timedoy
 
-#   The wiggles are stored as numpy arrays
+# Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2017.257 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 #
-#   These are to hold different parts of the meta-data
+# These are to hold different parts of the meta-data
 #
-#   /Experiment_g/Experiment_t
+# /Experiment_g/Experiment_t
 EXPERIMENT_T = None
-#   /Experiment_g/Sorts_g/Event_t
+# /Experiment_g/Sorts_g/Event_t
 EVENT_T = {}
-#   /Experiment_g/Sorts_g/Offset_t
+# /Experiment_g/Sorts_g/Offset_t
 OFFSET_T = {}
-#   /Experiment_g/Sorts_g/Sort_t
+# /Experiment_g/Sorts_g/Sort_t
 SORT_T = None
-#   /Experiment_g/Responses_g/Response_t
+# /Experiment_g/Responses_g/Response_t
 RESPONSE_T = None
-#   /Experiment_g/Sorts_g/Array_t_[nnn]
+# /Experiment_g/Sorts_g/Array_t_[nnn]
 ARRAY_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
+# /Experiment_g/Receivers_g/Das_g_[sn]/Das_t (keyed on DAS)
 DAS_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
+# /Experiment_g/Receivers_g/Das_g_[sn]/Receiver_t (keyed on DAS)
 RECEIVER_T = {}
-#   /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
-#   (keyed on DAS then by SOH_a_[n] name)
+# /Experiment_g/Receivers_g/Das_g_[sn]/SOH_a_[n]
+# (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
-#   A list of Das_Groups that refers to Das_g_[sn]'s
+# A list of Das_Groups that refers to Das_g_[sn]'s
 DASS = {}
 #
 INDEX_T = {}
@@ -48,7 +50,7 @@ time.tzset()
 
 
 #
-#   To hold table rows and keys
+# To hold table rows and keys
 #
 
 
@@ -67,7 +69,7 @@ class Rows_Keys(object):
 
 
 #
-#   To hold DAS sn and references to Das_g_[sn]
+# To hold DAS sn and references to Das_g_[sn]
 #
 
 
@@ -88,7 +90,7 @@ class Offset_Azimuth(object):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
@@ -96,76 +98,58 @@ def get_args():
     global PH5, PATH, DEBUG, RECEIVER_GEN, EVENT_GEN, DATA_GEN, DAS_SN,\
         EXPERIMENT_GEN
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = ("meta-data-gen --nickname=ph5-file-prefix "
+                    "options".format(PROG_VERSION))
 
-    oparser.usage = "Version: {0}\nmeta-data-gen --nickname=ph5-file-prefix" \
-                    "options".format(PROG_VERSION)
+    parser.description = ("Write info about receivers, events, or data.\n\n"
+                          "Version: {0}")
 
-    oparser.description = "Write info about receivers, events, or data."
+    parser.add_argument("-E", "--experiment", dest="experiment_gen",
+                        help="Write info about experiment to stdout,"
+                             "Experiment_t.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-E", "--experiment", dest="experiment_gen",
-                       help="Write info about experiment to stdout,"
-                            "Experiment_t.json",
-                       action="store_true", default=False)
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
 
-    oparser.add_option("-n", "--nickname", dest="ph5_file_prefix",
-                       help="The ph5 file prefix (experiment nickname).",
-                       metavar="ph5_file_prefix")
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help="Path to ph5 files.Defaults to current "
+                             "directory.", default=".",
+                        metavar="ph5_path")
 
-    oparser.add_option("-p", "--path", dest="ph5_path",
-                       help="Path to ph5 files.Defaults to current directory.",
-                       metavar="ph5_path")
+    parser.add_argument("-r", "--receivers", dest="receiver_gen",
+                        help="Write info about receivers to stdout,"
+                             "Array_t_all.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-r", "--receivers", dest="receiver_gen",
-                       help="Write info about receivers to stdout,"
-                            "Array_t_all.json",
-                       action="store_true", default=False)
+    parser.add_argument("-e", "--events", dest="event_gen",
+                        help="Write info about events to stdout, Event_t.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-e", "--events", dest="event_gen",
-                       help="Write info about events to stdout, Event_t.json",
-                       action="store_true", default=False)
+    parser.add_argument("-d", "--data", dest="data_gen",
+                        help="Write info about data to stdout, Das_t_all.json",
+                        action="store_true", default=False)
 
-    oparser.add_option("-d", "--data", dest="data_gen",
-                       help="Write info about data to stdout, Das_t_all.json",
-                       action="store_true", default=False)
+    parser.add_argument("--debug", dest="debug",
+                        action="store_true", default=False)
 
-    # oparser.add_option ("--json", dest = "json",
-    # help = "Write using JSON format.",
-    # action = "store_true", default = False)
+    args = parser.parse_args()
 
-    oparser.add_option("--bug", dest="debug",
-                       action="store_true", default=False)
-
-    options, args = oparser.parse_args()
-
-    if options.ph5_file_prefix is not None:
-        PH5 = options.ph5_file_prefix
-    else:
-        PH5 = None
-
-    if options.ph5_path is not None:
-        PATH = options.ph5_path
-    else:
-        PATH = "."
-
-    if options.debug is not None:
-        DEBUG = options.debug
-
-    RECEIVER_GEN = options.receiver_gen
-    EVENT_GEN = options.event_gen
-    DATA_GEN = options.data_gen
-    EXPERIMENT_GEN = options.experiment_gen
-
-    if PH5 is None:
-        sys.stderr.write(
-            "Error: Missing required option --nickname. Try --help\n")
-        sys.exit(-1)
+    PH5 = args.ph5_file_prefix
+    PATH = args.ph5_path
+    DEBUG = args.debug
+    RECEIVER_GEN = args.receiver_gen
+    EVENT_GEN = args.event_gen
+    DATA_GEN = args.data_gen
+    EXPERIMENT_GEN = args.experiment_gen
 
 
 #
-#   Initialize ph5 file
+# Initialize ph5 file
 #
 
 
@@ -179,18 +163,16 @@ def initialize_ph5(editmode=False):
 
 
 #
-#   Print Rows_Keys
+# Print Rows_Keys
 #
 
 
 def debug_print(a):
     i = 1
-    #   Loop through table rows
+    # Loop through table rows
     for r in a.rows:
-        #   Print line number
-        # print "%d) " % i,
         i += 1
-        #   Loop through each row column and print
+        # Loop through each row column and print
         for k in a.keys:
             print k, "=>", r[k], ",",
         print
@@ -205,19 +187,19 @@ def info_print():
 
 
 #
-#   Print Rows_Keys
+# Print Rows_Keys
 #
 
 
 def table_print(t, a):
     i = 0
-    #   Loop through table rows
+    # Loop through table rows
     for r in a.rows:
         i += 1
-        print "#   Table row %d" % i
-        #   Print table name
+        print "# Table row %d" % i
+        # Print table name
         print t
-        #   Loop through each row column and print
+        # Loop through each row column and print
         for k in a.keys:
             print "\t", k, "=", r[k]
 
@@ -277,14 +259,14 @@ def read_sort_arrays():
     '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
     global EX, ARRAY_T
 
-    #   We get a list of Array_t_[n] names here...
-    #   (these are also in Sort_t)
+    # We get a list of Array_t_[n] names here...
+    # (these are also in Sort_t)
     names = EX.ph5_g_sorts.names()
     for n in names:
         arrays, array_keys = EX.ph5_g_sorts.read_arrays(n)
 
         rowskeys = Rows_Keys(arrays, array_keys)
-        #   We key this on the name since there can be multiple arrays
+        # We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
 
 
@@ -299,38 +281,38 @@ def read_response_table():
     RESPONSE_T = rowskeys
 
 
-#   NOT USED
+# NOT USED
 
 
 def read_receivers():
     '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
     global EX, DAS_T, RECEIVER_T, DASS, SOH_A
 
-    #   Get references for all das groups keyed on das
+    # Get references for all das groups keyed on das
     dasGroups = EX.ph5_g_receivers.alldas_g()
     dass = sorted(dasGroups.keys())
-    #   Sort by das sn
+    # Sort by das sn
     for d in dass:
-        #   Get node reference
+        # Get node reference
         g = dasGroups[d]
         dg = Das_Groups(d, g)
-        #   Save a master list for later
+        # Save a master list for later
         DASS.append(dg)
 
-        #   Set the current das group
+        # Set the current das group
         EX.ph5_g_receivers.setcurrent(g)
 
-        #   Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
+        # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
         das, das_keys = EX.ph5_g_receivers.read_das()
         rowskeys = Rows_Keys(das, das_keys)
         DAS_T[d] = rowskeys
 
-        #   Read /Experiment_g/Receivers_g/Receiver_t
+        # Read /Experiment_g/Receivers_g/Receiver_t
         receiver, receiver_keys = EX.ph5_g_receivers.read_receiver()
         rowskeys = Rows_Keys(receiver, receiver_keys)
         RECEIVER_T[d] = rowskeys
 
-        #   Read SOH file(s) for this das
+        # Read SOH file(s) for this das
         SOH_A[d] = EX.ph5_g_receivers.read_soh()
 
 
@@ -338,7 +320,7 @@ def read_das_groups():
     '''   Get das groups   '''
     global EX
 
-    #   Get references for all das groups keyed on das
+    # Get references for all das groups keyed on das
     return EX.ph5_g_receivers.alldas_g()
 
 
@@ -472,12 +454,12 @@ def get_sample_rate(a, start, stop):
                     das_t['sample_rate_i'] /
                     float(das_t['sample_rate_multiplier_i']))
 
-            #   Start contained
+            # Start contained
             if das_start >= start and das_start <= stop:
                 return int(das_t['sample_rate_i'] /
                            float(das_t['sample_rate_multiplier_i']))
 
-            #   Stop contained
+            # Stop contained
             if das_stop >= start and das_stop <= stop:
                 return int(das_t['sample_rate_i'] /
                            float(das_t['sample_rate_multiplier_i']))
@@ -508,19 +490,7 @@ def write_data():
     for das_group in dass:
         for i in INDEX_T.rows:
             d = das_group[6:]
-            # print i['serial_number_s'], d
             if i['serial_number_s'] == d:
-                # D = _Data ()
-                # D.das = d
-                # D.first_sample = time.ctime (i['start_time/epoch_l'])
-                # D.last_sample = time.ctime (i['end_time/epoch_l'])
-                # D.first_epoch = i['start_time/epoch_l']
-                # D.last_epoch = i['end_time/epoch_l']
-                # D = { 'das': d, 'first_sample': time.ctime
-                # (i['start_time/epoch_l']), 'last_sample': time.ctime
-                # (i['end_time/epoch_l']), 'first_epoch':
-                # i['start_time/epoch_l'], 'last_epoch':
-                # i['end_time/epoch_l'] }
                 try:
                     D = {'das': d,
                          'first_sample': timedoy.epoch2passcal(
@@ -532,22 +502,12 @@ def write_data():
                          'first_epoch': i['start_time/epoch_l'],
                          'last_epoch': i['end_time/epoch_l']}
                 except timedoy.TimeError as e:
-                    sys.stderr.write("{0}".format(e.message))
+                    LOGGER.warning(e.message)
                     continue
 
                 L['Data'].append(D)
 
     fh.write(json.dumps(L, sort_keys=True, indent=4))
-
-
-# class _Event (object) :
-# __slots__ = ('id', 'time', 'lat', 'lon', 'elev', 'mag', 'depth')
-
-# def cough (self) :
-# RET = {}
-# RET['Event'] = { 'id':self.id, 'time':self.time, 'lat':self.lat,
-# 'lon':self.lon, 'elev':self.elev, 'mag':self.mag, 'depth':self.depth }
-# return RET
 
 
 def write_events():
@@ -581,7 +541,6 @@ def write_events():
 def write_arrays():
     global ARRAY_T
 
-    # tdoy = timedoy.TimeDOY ()
     fh = sys.stdout
     A = {}
     for k in ARRAY_T.keys():
@@ -597,19 +556,17 @@ def write_arrays():
     for a in arrays:
         stations = []
         start, stop = A[int(a[-3:])]
-        # start_tdoy = timedoy.TimeDOY (epoch=start)
-        # stop_tdoy = timedoy.TimeDOY (epoch=stop)
         sample_rate = get_sample_rate(a, start, stop)
         try:
             deploy_time = timedoy.epoch2passcal(start)
         except timedoy.TimeError as e:
-            sys.stderr.write("Time conversion error {0}\n".format(e.message))
+            LOGGER.error("Time conversion error {0}".format(e.message))
             deploy_time = ""
 
         try:
             pickup_time = timedoy.epoch2passcal(stop)
         except timedoy.TimeError as e:
-            sys.stderr.write("Time conversion error {0}\n".format(e.message))
+            LOGGER.error("Time conversion error {0}".format(e.message))
             pickup_time = ""
 
         this_array = {'array': str(a[-3:]), 'sample_rate': sample_rate,
@@ -666,15 +623,9 @@ def write_experiment():
         E.PIs = e['PIs_s']
         E.institutions = e['institutions_s']
         E.summary = e['summary_paragraph_s']
-        # P['NW'] = { 'X': e['north_west_corner/X/value_d'],
-        # 'Y': e['north_west_corner/Y/value_d'],
-        # 'Z': e['north_west_corner/Z/value_d'] }
         E.nw = {'longitude': e['north_west_corner/X/value_d'],
                 'latitude': e['north_west_corner/Y/value_d'],
                 'elevation': e['north_west_corner/Z/value_d']}
-        # P['SE'] = { 'X': e['south_east_corner/X/value_d'],
-        # 'Y': e['south_east_corner/Y/value_d'],
-        # 'Z': e['south_east_corner/Z/value_d'] }
         E.se = {'longitude': e['south_east_corner/X/value_d'],
                 'latitude': e['south_east_corner/Y/value_d'],
                 'elevation': e['south_east_corner/Z/value_d']}
@@ -691,20 +642,19 @@ def main():
 
     initialize_ph5()
 
-    read_sort_arrays()
-    read_event_table()
-    DASS = read_das_groups()
-    read_experiment_table()
-    read_index_table()
-
     if EXPERIMENT_GEN is True:
+        read_experiment_table()
         write_experiment()
     if DATA_GEN is True:
+        DASS = read_das_groups()
         if DASS:
+            read_index_table()
             write_data()
     if EVENT_GEN is True:
+        read_event_table()
         write_events()
     if RECEIVER_GEN is True:
+        read_sort_arrays()
         write_arrays()
 
     EX.ph5close()

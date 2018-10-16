@@ -1,22 +1,24 @@
 #!/usr/bin/env pnpython4
 #
-#   A simple script to convert Array_t.kef or Event_t.kef into kml.
+# A simple script to convert Array_t.kef or Event_t.kef into kml.
 #
-#   Steve Azevedo, March 2017
+# Steve Azevedo, March 2017
 #
 
 import os
 import sys
+import logging
 import simplekml
 import re
 from ph5.core import kefx
 
-PROG_VERSION = "2018.029"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 arrayRE = re.compile(".*Array_t_*(\d+)*")
 eventRE = re.compile(".*Event_t_*(\d+)*")
 
-#   Point colors
+# Point colors
 COLORS = {0: simplekml.Color.whitesmoke, 1: simplekml.Color.blue,
           2: simplekml.Color.green, 3: simplekml.Color.plum,
           4: simplekml.Color.lightblue,
@@ -45,7 +47,7 @@ def get_args():
     ARGS = aparser.parse_args()
 
     if not os.path.exists(ARGS.kefile):
-        sys.stderr.write("Error: Can not read {0}!".format(ARGS.kefile))
+        LOGGER.error("Can not read {0}!".format(ARGS.kefile))
         sys.exit()
 
 
@@ -59,7 +61,7 @@ def read_kef():
         KEF.read()
         KEF.rewind()
     except Exception as e:
-        sys.stderr.write(e.message)
+        LOGGER.error(e.message)
         sys.exit()
 
 
@@ -79,7 +81,6 @@ def parseArray(kv, a):
             break
         else:
             x -= 10
-    # print "Array:", a, "Color:", x, "Length:", len (COLORS)
     col = COLORS[x]
 
     pnt = KML.newpoint(name=nam)
@@ -127,7 +128,7 @@ def process_kef():
                 a = 1
             parseEvent(kv, a)
         else:
-            sys.stderr.write("Error: Can't convert {0}! Exiting.".format(p))
+            LOGGER.error("Can't convert {0}! Exiting.".format(p))
             sys.exit()
 
     KML.save(ARGS.title)

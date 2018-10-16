@@ -1,11 +1,12 @@
 #!/usr/bin/env pnpython3
 #
-#   QC receiver and shot csv files
+# QC receiver and shot csv files
 #
-#   Steve Azevedo, Feb 2015
+# Steve Azevedo, Feb 2015
 #
 
 import sys
+import logging
 import os
 import re
 from random import randint
@@ -16,7 +17,8 @@ import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = "2017.086 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
          'mm': 1. / 1000., 'kmi': 1852.0, 'in': 0.0254, 'ft': 0.3048,
@@ -32,21 +34,18 @@ typeRE = re.compile("(\D+)(\d+)")
 #
 timeRE = re.compile(".*time/ascii_s")
 
-#   List of table rows.
+# List of table rows.
 TABLE = []
-#   Ordered list of column names.
+# Ordered list of column names.
 NAMES = []
-#   Configuration that describes table columns
+# Configuration that describes table columns
 COLS = {}
-#   Table column seperators
+# Table column seperators
 SEP = ''
-#   List of errors
+# List of errors
 ERR = []
-#
-#   receiver: TOP[varray][vid][vchan] = list of dictionary of matching rows
-#    from csv
-#   event: TOP[varray][vid] = list of dictionary of matching rows from csv
-#
+# receiver: TOP[varray][vid][vchan] = list of dictionary of matching rows
+# event: TOP[varray][vid] = list of dictionary of matching rows from csv
 TOP = {}
 
 
@@ -58,7 +57,7 @@ def qc_map(outfile):
         base_path = os.path.dirname(os.path.abspath(__file__))
         base = os.path.join(base_path, 'kmlicons')
     except Exception as e:
-        sys.stderr.write(e.message)
+        LOGGER.error(e.message)
         sys.exit()
 
     def get_lat_lon(row):
@@ -79,7 +78,7 @@ def qc_map(outfile):
     mmap = kml.Kml()
     if is_rec:
         for varray in varrays:
-            #   receiver
+            # receiver
             vids = sorted(TOP[varray].keys())
             for vid in vids:
                 chans = TOP[varray][vid].keys()
@@ -107,10 +106,9 @@ def qc_map(outfile):
                         pt.style.iconstyle.icon.href = 'file:/{0}'.format(
                             os.path.join(base, 'station.png'))
                         pt.style.iconstyle.scale = 0.5
-                        #
     else:
         for varray in varrays:
-            #   event
+            # event
             vids = TOP[varray].keys()
             for vid in vids:
                 rows = TOP[varray][vid]
@@ -121,12 +119,10 @@ def qc_map(outfile):
                         des = "Event time: {0}\n".format(r["time/ascii_s"])
                     if "size/value_d" in r:
                         des += " Size: {0}".format(r["size/value_d"])
-
                     pt = mmap.newpoint(name=str(vid), coords=[
                         llz], description=des)
                     pt.style.iconstyle.icon.href = 'file://{0}'.format(
                         os.path.join(base, 'shot.png'))
-                    #
 
     mmap.save(outfile)
 
@@ -145,7 +141,6 @@ def mk_table(table, sep):
     for t in table:
         t = t.strip()
         n += 1
-        # print '.', t
         if t[0] == '#' or t == '':
             continue
         try:
@@ -180,9 +175,7 @@ def churn():
             vals[k] = v
 
         vals['in_file_line_number'] = n
-        #
         vid_s = int(vals['id_s'])
-        #
         if is_rec:
             varray = int(vals['Array'])
             vchannel_number_i = int(vals['channel_number_i'])
@@ -266,7 +259,6 @@ def qc_deploy_pickup(rows):
             xs.append(r['location/X/value_d'])
             zs.append(r['location/Z/value_d'])
         except KeyError:
-            # print e.message
             pass
 
         try:
@@ -276,7 +268,6 @@ def qc_deploy_pickup(rows):
             elif dop == 'P':
                 dptime['P'] = r['pickup_time/ascii_s']
         except KeyError:
-            # print e.message
             try:
                 dptime['D'] = r['deploy_time/ascii_s']
                 dptime['P'] = r['pickup_time/ascii_s']
@@ -284,17 +275,17 @@ def qc_deploy_pickup(rows):
                 dptime['D'] = "1970:001:00:00:00.000"
                 dptime['P'] = "2052:001:00:00:00.000"
 
-    #   How far should we allow between the deploy and pickup locations?
+    # How far should we allow between the deploy and pickup locations?
     az, baz, dist, zdelta = qc_dist(ys, xs, zs)
     if dist is not None and dist > 5:
-        #   XXX   ERROR   XXX
+        # XXX   ERROR   XXX
         errs.append(
             "{0}-{1} Warning: Distance between deployment and pickup locations"
             " seems large for station {2}.".format(
                 line_numbers[0], line_numbers[1], r['id_s']))
-    #   What should be the time between deployment and pickup?
+    # What should be the time between deployment and pickup?
     time_delta = qc_time(dptime['D'], dptime['P'])
-    #   About 6 months
+    # About 6 months
     if time_delta > 15552000 or time_delta < 0:
         errs.append(
             "{0}-{1} Warning: time between deployment and pickup unusual for"
@@ -302,26 +293,6 @@ def qc_deploy_pickup(rows):
                 line_numbers[0], line_numbers[1], r['id_s']))
 
     return errs
-
-
-def qc_bulogic_shot():
-    '''
-       Entry point to qc shot business logic.
-       Nothing to see here
-    '''
-    ret = []
-    # varrays = TOP.keys ()
-    # varrays.sort ()
-    # for varray in varrays :
-    # vids = TOP[varray].keys ()
-    # vids.sort ()
-    # for vid in vids :
-    # if isinstance (TOP[varray][vid], list) :
-    # rows = TOP[varray][vid]
-    # err = qc_deploy_pickup (rows)
-    # if err :
-    # ret += err
-    return ret
 
 
 def qc_bulogic_receiver():
@@ -397,7 +368,6 @@ def match_type(value, ttype):
             v = int(value)
             if not isinstance(v, int):
                 return False
-            # print value, ttype
             maximum = 2 ** int(ll) - 1
             minimum = (maximum + 1) * -1
             if v < maximum and v > minimum:
@@ -453,25 +423,25 @@ def qc_fields():
                 rrange = COLS[key]['range']
             else:
                 rrange = None
-            #   Check regular expression
+            # Check regular expression
             if not match_re(v, rre):
                 ret.append(
                     "{0}: Value of column {1} {2} does not match re. Help:"
                     " {3}".format(
                         n, key, v, hhelp))
-            #   Check type
+            # Check type
             if not match_type(v, ttype):
                 ret.append(
                     "{0}: Value of column {1} {2} does not match type. Type:"
                     " {3}".format(
                         n, key, v, ttype))
-            #   Check range
+            # Check range
             if not match_range(v, rrange):
                 ret.append(
                     "{0}: Value of column {1} {2} does not match expected"
                     " range. Range: {3}".format(
                         n, key, v, rrange))
-            #   Check if ascii time
+            # Check if ascii time
             if timeRE.match(key):
                 try:
                     timedoy.fdsn2epoch(v, fepoch=True)
@@ -517,12 +487,12 @@ def qc_receivers(table, names, cols, sep=','):
     COLS = cols
     ERR = []
     TOP = {}
-    #   Do we have the required named columns
+    # Do we have the required named columns
     ret = qc_req_cols()
-    #   Convert to list (rows) of lists ()
+    # Convert to list (rows) of lists ()
     TABLE, err = mk_table(table, sep)
     if err != [] or ret != []:
-        #   Fatal errors in input
+        # Fatal errors in input
         ERR = ret + err
         return False
 
@@ -547,12 +517,12 @@ def qc_shots(table, names, cols, sep=','):
     COLS = cols
     ERR = []
     TOP = {}
-    #   Do we have the required named columns
+    # Do we have the required named columns
     ret = qc_req_cols()
-    #   Convert to list (rows) of lists ()
+    # Convert to list (rows) of lists ()
     TABLE, err = mk_table(table, sep)
     if err != [] or ret != []:
-        #   Fatal errors in input
+        # Fatal errors in input
         ERR = ret + err
         return False
 
@@ -562,7 +532,6 @@ def qc_shots(table, names, cols, sep=','):
         return False
 
     TOP = churn()
-    ERR = qc_bulogic_shot()
 
     return False
 

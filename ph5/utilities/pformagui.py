@@ -1,17 +1,19 @@
 #!/usr/bin/env pnpython3
 #
-#   Steve Azevedo, February 2016
+# Steve Azevedo, February 2016
 #
 
 import os
 import sys
+import logging
 from PySide import QtCore, QtGui
 from psutil import cpu_count, cpu_percent
-# import pformaGUI_rc
 from ph5.core import pmonitor
 from ph5.utilities import pforma_io, watchit
 
-PROG_VERSION = "2017.324 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
 
 UTMZone = None
 
@@ -24,14 +26,14 @@ class GetInputs(QtGui.QWidget):
     def __init__(self, parent=None):
         super(GetInputs, self).__init__(parent)
 
-        #   Button to start run
+        # Button to start run
         self.runButton = QtGui.QPushButton("Run")
-        #   Select master list of raw files
+        # Select master list of raw files
         self.lstButton = self.createButton("Browse...", self.getList)
         self.lstButton.setStatusTip("Browse for raw lst file.")
         self.lstCombo = self.createComboBox()
         lstText = QtGui.QLabel("RAW list file:")
-        #   Select processing directory
+        # Select processing directory
         lstLayout = QtGui.QHBoxLayout()
         lstLayout.addStretch(False)
         lstLayout.addWidget(lstText)
@@ -124,9 +126,6 @@ class MdiChildDos(QtGui.QProgressDialog):
             mess.exec_()
             self.good = False
 
-        # self.wd = watchit.Watchdog (3, userHandler=self.run)
-        # self.wd.start ()
-
     def run(self):
         msgs = self.fio.unite('Sigma')
         self.setLabelText("Completed")
@@ -135,10 +134,7 @@ class MdiChildDos(QtGui.QProgressDialog):
         mess = QtGui.QMessageBox()
         mess.setWindowTitle("Merge Progress Summary")
         mess.setDetailedText('\n'.join(msgs))
-        # mess.setSizeGripEnabled (True)
         mess.exec_()
-        # print "Done"
-        # self.cancel ()
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -170,7 +166,6 @@ class MainWindow(QtGui.QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
 
     def killchildren(self):
-        # print 'kill'
         try:
             for f in self.children.keys():
                 c = self.children[f]
@@ -178,7 +173,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.mdiArea.removeSubWindow(c)
             self.mdiArea.closeAllSubWindows()
         except Exception as e:
-            print "Z", e.message
+            LOGGER.error("Z: {0}".format(e.message))
 
     def resetIt(self):
         '''
@@ -214,12 +209,10 @@ class MainWindow(QtGui.QMainWindow):
         '''
            Check status of all mdi processes
         '''
-        # self.wd.reset (); self.wd.start (); return
         done = []
         running = []
         somerunning = False
-        # if False :
-        #   Loop through all children
+        # Loop through all children
         for c in self.children.keys():
             m = self.children[c]
             if m.running is True:
@@ -229,13 +222,10 @@ class MainWindow(QtGui.QMainWindow):
                 done.append(c)
 
         if not somerunning:
-            # print "Nobody running..."; sys.stdout.flush ()
             for c in self.children.keys():
                 m = self.children[c]
-                # XXX
                 m.fio.merge(m.processedFiles.keys())
 
-            # XXX
             self.fio.write_cfg()
             self.wd.stop()
             self.statsig.emit("All processes finished. Wrote pforma.cfg.")
@@ -244,12 +234,6 @@ class MainWindow(QtGui.QMainWindow):
             self.wd.start()
             load = cpu_percent()
             self.statsig.emit("Load: {0}%".format(load))
-            # ter = len (done)
-            # run = len (running)
-            # self.statusBar().showMessage ("Processing {0}".format ("/"\
-            # .join (self.children.keys ())))
-            # self.statusBar ().showMessage ("Familys terminated: {0}.\
-            #  Familys processing: {1}.".format (ter, run))
 
     def mergeFamily(self):
         mydir = self.inputs.dirCombo.currentText()
@@ -275,30 +259,30 @@ class MainWindow(QtGui.QMainWindow):
            Create a new mdi's
         '''
         self.statsig.emit("Setting up/Checking processing area.")
-        #   Set up family processing via fio
+        # Set up family processing via fio
         if not self.setupProcessing():
             return
-        #   Ts is a list of family names
+        # Ts is a list of family names
         Ts = sorted(self.info.keys())
         self.children = {}
         self.inputs.runButton.setDisabled(True)
         self.runAct.setDisabled(True)
         for T in Ts:
-            #   Commands to run for this family
+            # Commands to run for this family
             c = self.cmds[T]
-            #   What are the types of data being converted?
+            # What are the types of data being converted?
             i = self.info[T]
-            #   Get number of raw files to convert in this family
+            # Get number of raw files to convert in this family
             m = 0
             for f in self.info[T]['lists']:
                 m += get_len(f)
 
             if m > 0:
-                #   Create a new mdi child
+                # Create a new mdi child
                 child = self.createMdiChild(c, i, T, m)
                 child.show()
                 self.children[T] = child
-        #   Set up an after to check on children
+        # Set up an after to check on children
         self.wd = watchit.Watchdog(12, userHandler=self.checkOnChildren)
         self.wd.start()
         self.statsig.emit("Processing {0}".format(
@@ -367,10 +351,6 @@ class MainWindow(QtGui.QMainWindow):
                                       statusTip="Show pforma's About box",
                                       triggered=self.about)
 
-        # self.aboutQtAct = QtGui.QAction("About &Qt", self,
-        # statusTip="Show the Qt library's About box",
-        # triggered=QtGui.qApp.aboutQt)
-
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.runAct)
@@ -385,7 +365,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpMenu.addAction(self.aboutAct)
-        # self.helpMenu.addAction(self.aboutQtAct)
 
     def createDockWidget(self):
         '''
@@ -401,11 +380,6 @@ class MainWindow(QtGui.QMainWindow):
     def createStatusBar(self):
         self.statsig.connect(self.statusBar().showMessage,
                              type=QtCore.Qt.QueuedConnection)
-        # QtCore.QObject.connect (self,
-        # QtCore.SIGNAL ("statsig()"),
-        # self,
-        # QtCore.SLOT ("showMessage()"),
-        # QtCore.Qt.QueuedConnection)
         self.statsig.emit("Ready")
 
     def readSettings(self):
@@ -472,14 +446,9 @@ class MainWindow(QtGui.QMainWindow):
         '''
            Read inputs and start processing (Run)
         '''
-        # XXX Set UTM zone for segd2ph5 if needed
-        # if self.UTMZone : self.fio.set_utm (self.UTMZone)
-        # if self.combine : self.fio.set_combine (self.combine)
         mydir = self.inputs.dirCombo.currentText()
         mylst = self.inputs.lstCombo.currentText()
         if not mydir or not mylst:
-            # self.statusBar ().showMessage ("RAW list or processing\
-            #  directory not set.")
             mess = QtGui.QMessageBox()
             mess.setText(
                 "A RAW file list and processing directory must be set!")
@@ -489,7 +458,6 @@ class MainWindow(QtGui.QMainWindow):
             "Setting up processing of list {0} at {1}".format(mylst, mydir))
         self.fio, self.cmds, self.info = init_fio(
             mylst, mydir, utm=self.UTMZone, combine=self.combine)
-        # if TSPF : fio.set_tspf (TSPF)
         fams = self.cmds.keys()
         self.statsig.emit("Processing families {0}".format(" ".join(fams)))
         return True
@@ -524,7 +492,6 @@ def init_fio(f, d, utm=None, combine=None):
             cmds -> list of conversion commands
             lsts -> info about processing sub-lists and types of instruments
     '''
-    # from multiprocessing import cpu_count
     fio = pforma_io.FormaIO(infile=f, outdir=d)
     if utm:
         fio.set_utm(utm)
@@ -540,24 +507,17 @@ def init_fio(f, d, utm=None, combine=None):
     try:
         fio.open()
     except pforma_io.FormaIOError as e:
-        print e.errno, e.message
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
     try:
         fio.read()
-        # gb = fio.total_raw / 1024. / 1024. / 1024.
-        # timeout = (gb / get_len (f)) * 1000.
-        # print "Total raw: {0}GB".format (int (fio.total_raw / 1024 / 1024 /\
-        #  1024))
-        # print "M:", fio.M
-        # print "N:", fio.nmini
-        # time.sleep (10)
     except pforma_io.FormaIOError as e:
-        print e.errno, e.message
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
     try:
         fio.readDB()
     except pforma_io.FormaIOError as e:
-        print e.errno, e.message
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
         sys.exit(-1)
 
     fio.resolveDB()
@@ -566,8 +526,6 @@ def init_fio(f, d, utm=None, combine=None):
 
 
 def startapp():
-    import sys
-
     app = QtGui.QApplication(sys.argv)
     mainWin = MainWindow()
     mainWin.show()

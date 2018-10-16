@@ -1,21 +1,23 @@
 #!/usr/bin/env pnpython3
 
 #
-#   Build SAC file.
+# Build SAC file.
 #
-#   This sits between the code that talks to the ph5
-#   file and the code that generates the SAC file.
+# This sits between the code that talks to the ph5
+# file and the code that generates the SAC file.
 #
-#   Steve Azevedo, October 2013
+# Steve Azevedo, October 2013
 #
 
 from ph5.core import sac_h
 import math
 import numpy
 import sys
+import logging
 import time
 
-PROG_VERSION = "2014.216.b"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 class SACError (Exception):
@@ -44,38 +46,31 @@ class Ssac (object):
         self.das_t = None
         self.sample_rate = None
         self.sort_t = sort_t
-        #
         self.time_t = None
         self.event_t = event_t
         self.response_t = None
         self.offset_t = None
-        #
         if byteorder:
             self.trace_byteorder = byteorder  # Current data trace byteorder
         else:
             self.trace_byteorder = sys.byteorder
-
         self.init_float_header()
         self.init_int_header()
         self.init_char_header()
 
     def init_float_header(self):
-        '''   '''
         self.float_header = sac_h.SAC_float()
 
     def init_int_header(self):
-        '''   '''
         self.int_header = sac_h.SAC_int()
 
     def init_char_header(self):
-        '''   '''
         self.char_header = sac_h.SAC_char()
 
     def set_sample_rate(self, sample_rate):
         self.sample_rate = sample_rate
 
     def set_event_t(self, event_t):
-        # print "E ", event_t
         if event_t == []:
             self.event_t = None
         else:
@@ -116,7 +111,7 @@ class Ssac (object):
     def set_float_header(self):
         f = {}
         xxx = -12345.0
-        #   Sample interval
+        # Sample interval
         if self.sample_rate:
             self.das_t['sample_rate_i'] = self.sample_rate
             self.length_points_all = self.length_points
@@ -124,55 +119,53 @@ class Ssac (object):
         f['delta'] = 1. / (float(self.das_t['sample_rate_i']) /
                            float(self.das_t['sample_rate_multiplier_i']))
         if self.data:
-            #   Min dependent variable
+            # Min dependent variable
             f['depmin'] = numpy.amin(numpy.array(self.data))
-            #   Max dependent variable
+            # Max dependent variable
             f['depmax'] = numpy.amax(numpy.array(self.data))
 
-        #   Beginning value of independent variable
+        # Beginning value of independent variable
         bbb = self.cut_start_epoch
         f['b'] = 0.0
-        #   Ending value of independent variable
+        # Ending value of independent variable
         eee = bbb + self.length_points_all / \
             (float(self.das_t['sample_rate_i']) /
              float(self.das_t['sample_rate_multiplier_i']))
         f['e'] = eee - bbb
 
         if self.array_t:
-            #   Station lat
+            # Station lat
             f['stla'] = self.array_t['location/Y/value_d']
-            #   Station lon
+            # Station lon
             f['stlo'] = self.array_t['location/X/value_d']
-            #   Station elev
+            # Station elev
             f['stel'] = self.array_t['location/Z/value_d']
 
         if self.event_t:
             try:
-                #   Event lat
+                # Event lat
                 f['evla'] = self.event_t['location/Y/value_d']
-                #   Event lon
+                # Event lon
                 f['evlo'] = self.event_t['location/X/value_d']
-                #   Event elev
+                # Event elev
                 f['evel'] = self.event_t['location/Z/value_d']
-                #   Event depth
+                # Event depth
                 f['evdp'] = self.event_t['depth/value_d']
             except Exception as e:
-                # print >>sys.stderr, "Warn: {0}".format (e)
-                # print self.event_t.rows
                 pass
 
         if self.offset_t:
-            #   Station to Event distance km
+            # Station to Event distance km
             f['dist'] = self.offset_t['offset/value_d']
-            #   Event to station azimuth
+            # Event to station azimuth
             f['az'] = self.offset_t['azimuth/value_f']
-            #   Station to event az
+            # Station to event az
             f['baz'] = xxx
 
         if self.receiver_t:
-            #   Sensor channel azimuth
+            # Sensor channel azimuth
             f['cmpaz'] = self.receiver_t['orientation/azimuth/value_f']
-            #   Sensor incident angle
+            # Sensor incident angle
             f['cmpinc'] = self.receiver_t['orientation/dip/value_f']
 
         try:
@@ -186,44 +179,40 @@ class Ssac (object):
         cor_low, cor_high, sort_start_time = self._cor()
         corrected_start_time = self.cut_start_epoch + (cor_low / 1000.0)
 
-        # ttuple = time.gmtime (self.das_t['time/epoch_l'])
         ttuple = time.gmtime(corrected_start_time)
-        #   Year
+        # Year
         i['nzyear'] = ttuple[0]
-        #   Day of year
+        # Day of year
         i['nzjday'] = ttuple[7]
-        #   Hour
+        # Hour
         i['nzhour'] = ttuple[3]
-        #   Minute
+        # Minute
         i['nzmin'] = ttuple[4]
-        #   Second
+        # Second
         i['nzsec'] = ttuple[5]
-        #   milli-second
-        # i['nzmsec'] = float (self.das_t['time/micro_seconds_i']) / 1000.
+        # milli-second
         i['nzmsec'] = int(math.modf(corrected_start_time)[0] * 1000.0)
 
         if self.event_t:
             try:
-                #   Event ID
+                # Event ID
                 i['nevid'] = int(self.event_t['id_s'])
             except Exception as e:
-                # print >>sys.stderr, "Warn: {0}".format (e)
-                # print self.event_t.rows
                 pass
 
-        #   Number of points
+        # Number of points
         i['npts'] = self.length_points_all
-        #   Type of file
+        # Type of file
         i['iftype'] = sac_h.ICONSTANTS['ITIME']
-        #   Type of dependent variable
+        # Type of dependent variable
         i['idep'] = sac_h.ICONSTANTS['IVOLTS']
-        #   Reference time
+        # Reference time
         i['iztype'] = sac_h.ICONSTANTS['IB']
-        #   Is data evenly spaced
+        # Is data evenly spaced
         i['leven'] = True
-        #   Are Distance, Azimuth, calculated from station event coordinates
+        # Are Distance, Azimuth, calculated from station event coordinates
         i['lcalda'] = True
-        #   Header version number
+        # Header version number
         i['nvhdr'] = 6
 
         try:
@@ -236,21 +225,19 @@ class Ssac (object):
         c = {}
         xxx = '-12345  '
         if self.array_t:
-            #   Station name
+            # Station name
             c['kstnm'] = "{0:<8}".format(self.array_t['id_s'])
 
         if self.event_t:
             try:
-                #   Event name
+                # Event name
                 c['kevnm'] = "{0:<16}".format(self.event_t['id_s'])
             except Exception as e:
-                # print >>sys.stderr, "Warn: {0}".format (e)
-                # print self.event_t.rows
                 pass
 
-        #   Network name
+        # Network name
         c['knetwk'] = xxx
-        #   Recording instrument
+        # Recording instrument
         c['kinst'] = xxx
 
         try:
@@ -260,7 +247,7 @@ class Ssac (object):
                 "Possible overflow in SAC character header: {0}".format(e))
 
     def set_data_array(self):
-        #   Pad data to correct length with the median value
+        # Pad data to correct length with the median value
         pad = numpy.array([])
         if len(self.data) < self.length_points_all:
             if len(self.data) == 0:
@@ -269,15 +256,12 @@ class Ssac (object):
                 m = numpy.median(self.data)
 
             short = self.length_points_all - len(self.data)
-            #   XXX
-            # print "Short:", short
             pad = [m] * short
 
-        #
         data = numpy.append(self.data, pad)
 
         i = 0
-        #   Do we need to byte swap
+        # Do we need to byte swap
         if sys.byteorder != self.trace_byteorder:
             x_d = numpy.array(data, numpy.float32).byteswap()
         else:
@@ -293,8 +277,8 @@ class Ssac (object):
                 x_d *= bw
 
         except Exception as e:
-            sys.stderr.write(
-                "Warning: Problem applying trace bit weight.\n{0}\n".format(e))
+            LOGGER.warning(
+                "Problem applying trace bit weight.\n{0}".format(e))
 
         i += x_d.shape[0]
 
@@ -330,27 +314,24 @@ class Ssac (object):
             self.time_t['start_time/micro_seconds_i'])
         delta_time = sort_mid_time - data_start_time
 
-        #   1% drift is excessive, don't time correct.
+        # 1% drift is excessive, don't time correct.
         if abs(self.time_t['slope_d']) >= max_drift_rate:
             time_correction_ms = 0
         else:
             time_correction_ms = int(
                 self.time_t['slope_d'] * 1000.0 * delta_time)
 
-        #   Sample interval
+        # Sample interval
         si = 1.0 / float(int(self.sample_rate))
-        #   Check if we need to time correct?
+        # Check if we need to time correct?
         if abs(self.time_t['offset_d']) < (si / 2.0):
             time_correction_ms = 0
-        #    KLUDGE reverse sign here
+        #  KLUDGE reverse sign here
         if time_correction_ms < 0:
             time_correction_ms *= -1
             sgn = 1
         else:
             sgn = -1
-
-        # print self.time_t['das/serial_number_s'],
-        # time_correction_ms & 0xFFFF * sgn, sort_start_time, new_start_time
 
         return (
             0xFFFF & time_correction_ms) * sgn, (0xFFFF
@@ -362,16 +343,12 @@ class Ssac (object):
             fd.write(self.float_header.get()[:280])
         except Exception as e:
             raise SACError("Failed to write SAC float header: {0}".format(e))
-            # sys.stderr.write ("{0:s}\n{1:s}\n"
-            # .format (e, repr (self.float_header.__dict__)))
 
     def write_int_header(self, fd):
         try:
             fd.write(self.int_header.get()[:160])
         except Exception as e:
             raise SACError("Failed to write SAC integer header: {0}".format(e))
-            # sys.stderr.write ("{0:s}\n{1:s}\n"
-            # .format (e, repr (self.int_header.__dict__)))
 
     def write_char_header(self, fd):
         try:
@@ -379,15 +356,12 @@ class Ssac (object):
         except Exception as e:
             raise SACError(
                 "Failed to write SAC character header: {0}".format(e))
-            # sys.stderr.write ("{0:s}\n{1:s}\n"
-            # .format (e, repr (self.int_header.__dict__)))
 
     def write_data_array(self, fd, nparray):
         try:
             nparray.tofile(file=fd)
         except Exception as e:
             raise SACError("Failed to write SAC data array: {0}".format(e))
-        #   MixIns
 
 
 def units_stub(have, want):
