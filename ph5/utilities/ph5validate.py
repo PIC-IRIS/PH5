@@ -13,7 +13,7 @@ import subprocess
 from ph5.core import ph5api
 
 
-PROG_VERSION = "2018.278"
+PROG_VERSION = "2018.296"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -112,9 +112,9 @@ class PH5Validate(object):
                          "between 1 and 2 characters.")
 
         if not experiment_t[0]['net_code_s'][0].isdigit() and \
-                experiment_t[0]['net_code_s'][0] != "X" and \
-                experiment_t[0]['net_code_s'][0] != "Y" and \
-                experiment_t[0]['net_code_s'][0] != "z":
+                experiment_t[0]['net_code_s'][0].upper() != "X" and \
+                experiment_t[0]['net_code_s'][0].upper() != "Y" and \
+                experiment_t[0]['net_code_s'][0].upper() != "Z":
             error.append("Network code is a permanent FDSN: "
                          "Network code should be a temporary code.")
 
@@ -516,8 +516,8 @@ class PH5Validate(object):
                                           .format(str(station_id),
                                                   str(channel_id),
                                                   len(error),
-                                                  len(info),
-                                                  len(warning)))
+                                                  len(warning),
+                                                  len(info)))
                                 vb = ValidationBlock(heading=header,
                                                      info=info,
                                                      warning=warning,
