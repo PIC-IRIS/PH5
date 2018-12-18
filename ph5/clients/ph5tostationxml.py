@@ -14,6 +14,7 @@ from datetime import datetime
 from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
+from obspy.core.inventory.response import Response
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
@@ -395,9 +396,7 @@ class PH5toStationXMLParser(object):
             })
         obs_channel.extra = extra
 
-        if self.manager.level == "RESPONSE" or \
-                (self.manager.level == "CHANNEL" and
-                 self.manager.format == "TEXT"):
+        if self.manager.level == "RESPONSE" or self.manager.level == "CHANNEL":
             # read response and add it to obspy channel inventory
             self.response_table_n_i = \
                 station_list[deployment][0]['response_table_n_i']
@@ -463,10 +462,21 @@ class PH5toStationXMLParser(object):
                 self.resp_manager.add_response(sensor_keys,
                                                datalogger_keys,
                                                inv_resp)
-                return inv_resp
+                if self.manager.level == "CHANNEL":
+                    return Response(
+                        instrument_sensitivity=inv_resp.instrument_sensitivity
+                        )
+                else:
+                    return inv_resp
         else:
-            return self.resp_manager.get_response(sensor_keys,
-                                                  datalogger_keys)
+            inv_resp = self.resp_manager.get_response(sensor_keys,
+                                                      datalogger_keys)
+            if self.manager.level == "CHANNEL":
+                    return Response(
+                        instrument_sensitivity=inv_resp.instrument_sensitivity
+                        )
+            else:
+                return inv_resp
 
     def read_channels(self, sta_xml_obj, station_list):
 
@@ -741,11 +751,6 @@ class PH5toStationXMLParser(object):
             for station in network.stations:
                 station.selected_number_of_channels = 0
                 station.channels = []
-        elif self.manager.level == "CHANNEL" and \
-                self.manager.format != "TEXT":
-            for station in network.stations:
-                for channel in station.channels:
-                    channel.response = None
         return network
 
     def get_network(self, path):
