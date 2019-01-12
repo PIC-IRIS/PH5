@@ -15,7 +15,7 @@ PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
 
-UTMZone = None
+UTMZone = '13N'
 
 
 class GetInputs(QtGui.QWidget):
@@ -425,12 +425,10 @@ class MainWindow(QtGui.QMainWindow):
             self.timeout = a
 
     def setUTMZone(self):
-        a, _ = QtGui.QInputDialog.getInt(self, "Set UTM zone", "UTM Zone:",
-                                         minValue=1, maxValue=60)
+        a, _ = QtGui.QInputDialog.getText(self, "Set UTM zone", "UTM Zone: "+self.UTMZone)
         if _:
             self.UTMZone = a
-        else:
-            self.UTMZone = None
+
 
     def setCombineSEGD(self):
         a, _ = QtGui.QInputDialog.getInt(self,
