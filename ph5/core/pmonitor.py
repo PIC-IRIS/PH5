@@ -21,7 +21,7 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
@@ -42,7 +42,7 @@ batchDoneRE = re.compile("Done.*")
 # Error
 fileErrorRE = re.compile(".*:<Error>:(.*)$")
 readErrorRE = re.compile(".*[Ee]rror.*")
-updatingRE = re.compile("Updating.*\.\.\.$")
+updatingRE = re.compile(r"Updating.*\.\.\.$")
 notexistRE = re.compile("File does not exist:.*")
 
 ON_POSIX = 'posix' in sys.builtin_module_names

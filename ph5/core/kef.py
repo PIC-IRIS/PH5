@@ -7,18 +7,18 @@ import string
 import re
 from ph5.core import columns
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 
-keyValFileRE = re.compile("(.*)\s*[;=]\s*(.*)")
-updateRE = re.compile("(/.*):Update:(.*)\s*")
-deleteRE = re.compile("(/.*):Delete:(.*)\s*")
+keyValFileRE = re.compile(r"(.*)\s*[;=]\s*(.*)")
+updateRE = re.compile(r"(/.*):Update:(.*)\s*")
+deleteRE = re.compile(r"(/.*):Delete:(.*)\s*")
 receiverRE = re.compile("/Experiment_g/Receivers_g/Das_g_.*")
 
-arrayRE = re.compile("/Experiment_g/Sorts_g/Array_t_(\d+)")
-eventRE = re.compile("/Experiment_g/Sorts_g/Event_t(_(\d+))?")
-offsetRE = re.compile("/Experiment_g/Sorts_g/Offset_t(_(\d+)_(\d+))?")
+arrayRE = re.compile(r"/Experiment_g/Sorts_g/Array_t_(\d+)")
+eventRE = re.compile(r"/Experiment_g/Sorts_g/Event_t(_(\d+))?")
+offsetRE = re.compile(r"/Experiment_g/Sorts_g/Offset_t(_(\d+)_(\d+))?")
 
 
 class KefError (Exception):

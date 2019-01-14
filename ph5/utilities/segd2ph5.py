@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2018.127 Developmental"
+PROG_VERSION = "2019.14"
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -32,7 +32,7 @@ MAP_INFO = {}
 #   Current raw file processing
 F = None
 #   RE for mini files
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 # LSB = 6.402437066e-6   #   From Malcolm UCSD
 LSB00 = 2500. / (2 ** 23)  # 0dB
@@ -354,7 +354,6 @@ def update_external_references():
         # sys.exit ()
     # sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
     logging.info("done, {0} map nodes recreated.\n".format(n))
-
 
 
 def get_current_data_only(size_of_data, das=None):

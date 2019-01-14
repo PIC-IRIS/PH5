@@ -233,7 +233,7 @@ class Reader ():
         '''   Return True if this contains an EndText stanza?   '''
         import re
         lastRE = re.compile(
-            ".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
+            r".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
 
         keys = segy_h.Text().__keys__
         for k in keys:

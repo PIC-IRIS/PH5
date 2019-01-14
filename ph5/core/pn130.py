@@ -19,11 +19,11 @@ import math
 import logging
 from ph5.core import rt_130_h, timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
-fileRE = re.compile(".*\w{9}_\w{8}$")
-sohRE = re.compile(".*[Ss][Oo][Hh]\.[Rr][Tt]$")
+fileRE = re.compile(r".*\w{9}_\w{8}$")
+sohRE = re.compile(r".*[Ss][Oo][Hh]\.[Rr][Tt]$")
 skipRE = re.compile("__recursion_lock__|Reserved.*")
 
 PACKET_SIZE = 1024

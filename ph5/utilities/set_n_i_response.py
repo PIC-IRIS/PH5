@@ -12,7 +12,7 @@ import os
 import re
 from ph5.core import ph5api
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 ALL_FAMILIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G',
@@ -45,7 +45,7 @@ def dump_kefs():
           Label start of each Response_t with the family name '## A' as example
     '''
     global ORIG_RESPS
-    miniRE = re.compile("miniPH5_\d{5}.ph5")
+    miniRE = re.compile(r"miniPH5_\d{5}.ph5")
     here = os.getcwd()
     first = True
     if not os.path.exists("RESPONSE_T_N_I"):

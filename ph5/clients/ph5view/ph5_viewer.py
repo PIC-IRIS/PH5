@@ -35,7 +35,7 @@ from vispy import gloo, visuals, app
 import matplotlib.pyplot as plt
 
 # ###########################################################
-VER = 2018116
+VER = 201914
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
 VER_str = str(VER)
@@ -4484,7 +4484,6 @@ class MainControl(QtGui.QMainWindow):
         gc.collect()
         return y
 
-
 ###################################
 # Author: Lan
 # def: createVal():201506
@@ -4495,6 +4494,7 @@ class MainControl(QtGui.QMainWindow):
 #     span maximizedly on its room
 #  + include the overlaping in calculating center
     def createVal(self, createFromBeg=True, appNewSimpFactor=False):
+
         global processInfo
         start = time.time()
         showStatus('1/%s' % totalSteps, 'Getting PH5Data ')
@@ -5953,7 +5953,6 @@ class ES_Gui(QtGui.QWidget):
             self.selectedStationChks.append(i)
             self.stationChks[i].setCheckState(QtCore.Qt.Checked)
 
-
 ###################################
 # Author: Lan
 # def: onSelectShot
@@ -5986,7 +5985,6 @@ class ES_Gui(QtGui.QWidget):
                 e[ctrlName].setChecked(False)
                 e['markLbl'].setStyleSheet(
                     " background-color: %s" % DISABLEDCOLOR)
-
 
 ###################################
 # Author: Lan

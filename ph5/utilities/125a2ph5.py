@@ -18,15 +18,15 @@ import time
 from ph5 import LOGGING_FORMAT
 from ph5.core import columns, experiment, kef, pn125, timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 2  # GB (1024 X 1024 X 1024 X 2)
 INDEX_T = None
 
-TRDfileRE = re.compile(".*[Ii](\d\d\d\d)[Rr][Aa][Ww].*")
-TRDfileREpunt = re.compile(".*(\d\d\d\d).*[Tt][Rr][Dd]$")
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+TRDfileRE = re.compile(r".*[Ii](\d\d\d\d)[Rr][Aa][Ww].*")
+TRDfileREpunt = re.compile(r".*(\d\d\d\d).*[Tt][Rr][Dd]$")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 CURRENT_DAS = None
 DAS_INFO = {}

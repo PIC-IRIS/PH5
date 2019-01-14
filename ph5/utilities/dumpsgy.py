@@ -12,7 +12,7 @@ import os
 from ph5.core import segy_h, ibmfloat, ebcdic
 import construct
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 SAMPLE_LENGTH = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
@@ -147,7 +147,7 @@ def read_text_header():
 def last_extended_header(container):
     '''   Return True if this contains an EndText stanza?   '''
     import re
-    lastRE = re.compile(".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
+    lastRE = re.compile(r".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
     keys = segy_h.Text().__keys__
     for k in keys:
         what = "container.{0}".format(k)

@@ -12,11 +12,11 @@ import simplekml
 import re
 from ph5.core import kefx
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
-arrayRE = re.compile(".*Array_t_*(\d+)*")
-eventRE = re.compile(".*Event_t_*(\d+)*")
+arrayRE = re.compile(r".*Array_t_*(\d+)*")
+eventRE = re.compile(r".*Event_t_*(\d+)*")
 
 # Point colors
 COLORS = {0: simplekml.Color.whitesmoke, 1: simplekml.Color.blue,

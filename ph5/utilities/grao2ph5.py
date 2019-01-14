@@ -15,7 +15,7 @@ import obspy
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, timedoy
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2019.14"
 LOGGER = logging.getLogger(__name__)
 
 # Max size of each ph5 mini file
@@ -30,7 +30,7 @@ LAST_SAMPLE_RATE = 250
 SIZE_FACTOR = 1.0
 DEBUG = False
 
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 DAS_INFO = {}
 
