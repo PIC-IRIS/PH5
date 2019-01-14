@@ -364,9 +364,9 @@ class SortsGroup:
             ret['offset/value_d'],
             ret['offset/units_s'],
             ret['azimuth/value_f'],
-            ret['azimuth/units_s'] = result[0]
-            ret['event_id_s'] = str(shot)
-            ret['receiver_id_s'] = str(station)
+            ret['azimuth/units_s'] = result[0],
+            ret['event_id_s'] = str(shot),
+            ret['receiver_id_s'] = str(station),
 
         return ret
 

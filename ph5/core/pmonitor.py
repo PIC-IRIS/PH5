@@ -490,7 +490,7 @@ class Monitor (QtGui.QWidget):
                         tmp = self.process_line(line)
                         self.log.append(tmp)
                     except Exception as e:
-                        LOGGER.error('X {0}'.format(e.message))
+                        LOGGER.info('X {0}'.format(e.message))
                     # The process if finished, are there more commands that
                     # need to be executed
                     self.log.append(
