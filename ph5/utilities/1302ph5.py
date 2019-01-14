@@ -18,7 +18,7 @@ import re
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, kef, pn130, timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 4  # 2GB (1024 X 1024 X 1024 X 4)
@@ -26,10 +26,10 @@ NUM_CHANNELS = pn130.NUM_CHANNELS
 NUM_STREAMS = pn130.NUM_STREAMS
 
 ZIPfileRE = re.compile(
-    ".*\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[TtZz][AaIi][RrPp]")
-RAWfileRE = re.compile(".*(\w\w\w\w)\.[Cc][Ff]")
-REFfileRE = re.compile(".*(\w\w\w\w)\.[Rr][Ee][Ff]")
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+    r".*\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[TtZz][AaIi][RrPp]")
+RAWfileRE = re.compiler(r".*(\w\w\w\w)\.[Cc][Ff]")
+REFfileRE = re.compile(r".*(\w\w\w\w)\.[Rr][Ee][Ff]")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 CURRENT_DAS = None
 DAS_INFO = {}

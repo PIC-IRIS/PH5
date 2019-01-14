@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 
@@ -87,8 +87,8 @@ class MapsGroup:
     def __init__(self, ph5):
         self.ph5 = ph5
         self.current_g_das = None
-        self.arrayRE = re.compile("([H]\w+_a_)(\d+)")
-        self.groupRE = re.compile("([DSE]\w+_g_)(\d+)")
+        self.arrayRE = re.compile(r"([H]\w+_a_)(\d+)")
+        self.groupRE = re.compile(r"([DSE]\w+_g_)(\d+)")
         self.ph5_t_index = None
 
     def initgroup(self):
@@ -147,7 +147,7 @@ class MapsGroup:
         '''   Find array nodes based on name prefix   '''
         return get_nodes_by_name(self.ph5,
                                  '/Experiment_g/Maps_g',
-                                 re.compile(name + '(\d+)'), None)
+                                 re.compile(name + r'(\d+)'), None)
 
     def writeheader(self, hdr_json_list, desc=None):
         nxt = self.nextarray('Hdr_a_')
@@ -243,9 +243,9 @@ class SortsGroup:
         self.ph5_t_array = {}  # Local cached nodes keyed on Array_t_xxx
         self.ph5_t_offset = {}  # Local cached nodes keyed on Offset_t_aaa_sss
         self.ph5_t_event = {}  # Local cached nodes keyed on Event_t_xxx
-        self.Array_tRE = re.compile("Array_t_(\d+)")
-        self.Event_tRE = re.compile("Event_t(_(\d+))?")
-        self.Offset_tRE = re.compile("Offset_t(_(\d+)_(\d+))?")
+        self.Array_tRE = re.compile(r"Array_t_(\d+)")
+        self.Event_tRE = re.compile(r"Event_t(_(\d+))?")
+        self.Offset_tRE = re.compile(r"Offset_t(_(\d+)_(\d+))?")
 
     def update_local_table_nodes(self):
         '''
@@ -364,9 +364,9 @@ class SortsGroup:
             ret['offset/value_d'],
             ret['offset/units_s'],
             ret['azimuth/value_f'],
-            ret['azimuth/units_s'] = result[0]
-            ret['event_id_s'] = str(shot)
-            ret['receiver_id_s'] = str(station)
+            ret['azimuth/units_s'] = result[0],
+            ret['event_id_s'] = str(shot),
+            ret['receiver_id_s'] = str(station),
 
         return ret
 
@@ -669,8 +669,8 @@ class ReceiversGroup:
         self.ph5_t_time = None  # Current time table
         self.ph5_t_index = None                             #
         # Match arrays under Das_g_[sn]
-        self.arrayRE = re.compile("([DSEL]\w+_a_)(\d+)")
-        self.dasRE = re.compile("Das_g_(.+)")  # Match Das_g groups
+        self.arrayRE = re.compile(r"([DSEL]\w+_a_)(\d+)")
+        self.dasRE = re.compile(r"Das_g_(.+)")  # Match Das_g groups
         self.byteorder = None  # Trace atom byte order
         self.elementtype = None  # atom type"int","float",or"undetermined"
 
@@ -736,7 +736,7 @@ class ReceiversGroup:
         '''   Find array nodes based on name prefix   '''
         arrays = get_nodes_by_name(self.ph5,
                                    '/Experiment_g/Receivers_g',
-                                   re.compile(name + "(\d+)"),
+                                   re.compile(name + r"(\d+)"),
                                    'Array')
 
         return arrays
@@ -751,7 +751,7 @@ class ReceiversGroup:
 
         arrays = get_nodes_by_name(self.ph5,
                                    self.current_g_das,
-                                   re.compile('SOH_a_' + "(\d+)"),
+                                   re.compile('SOH_a_' + r"(\d+)"),
                                    'Array')
         keys = arrays.keys()
         for k in keys:
@@ -913,7 +913,7 @@ class ReceiversGroup:
     def alldas_g(self):
         dasGroups = get_nodes_by_name(self.ph5,
                                       '/Experiment_g/Receivers_g',
-                                      re.compile('Das_g_' + '(\w+)'),
+                                      re.compile('Das_g_' + r'(\w+)'),
                                       None)
 
         return dasGroups
@@ -1146,7 +1146,7 @@ class ReportsGroup:
         self.ph5 = ph5
         self.ph5_g_reports = None
         self.ph5_t_report = None
-        self.Report_aRE = re.compile("Report_a_(\d\d\d)")
+        self.Report_aRE = re.compile(r"Report_a_(\d\d\d)")
 
     def read_reports(self):
         ret, keys = read_table(self.ph5_t_report)

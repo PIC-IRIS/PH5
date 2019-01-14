@@ -14,7 +14,7 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 HOME = os.environ['HOME']
@@ -728,15 +728,15 @@ def check_sum(filename):
 
 
 # For type 'texan'
-texanRE = re.compile("[Ii](\d\d\d\d).*[Tt][Rr][Dd]")
+texanRE = re.compile(r"[Ii](\d\d\d\d).*[Tt][Rr][Dd]")
 # For type 'rt-130'
-rt130RE = re.compile("\d\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[Zz][Ii][Pp]")
+rt130RE = re.compile(r"\d\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[Zz][Ii][Pp]")
 # For type 'nodal'
-nodalRE = re.compile("[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
+nodalRE = re.compile(r"[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
 # For simpleton 'nodal'
-simpletonodalRE = re.compile("\d+\.fcnt")
+simpletonodalRE = re.compile(r"\d+\.fcnt")
 # For PIC rename
-picnodalRE = re.compile("PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
+picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
 
 
 def guess_instrument_type(filename):
@@ -803,10 +803,10 @@ if __name__ == '__main__':
     # 2015-08-10 18:18:59,197 Processing:
     # /home/azevedo/Salt/Raw/D069-10Mar/Greg/I1700RAWDO69.TRD...
     processRE = re.compile(
-        "(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\,\d\d\d Processing:\
+        r"(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\,\d\d\d Processing:\
          (.*[TtZz][RrIi][DdPp])\.\.\..*")
     doneRE = re.compile(
-        "(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d).*nodes recreated\..*")
+        r"(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d).*nodes recreated\..*")
 
     fio = FormaIO(infile='./trd2.lst', outdir='/storage/Salt')
     fio.initialize_ph5()

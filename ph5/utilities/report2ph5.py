@@ -9,10 +9,10 @@ import logging
 import time
 from ph5.core import experiment, kef, columns
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
-updateRE = re.compile("(/.*):Update:(.*)\s*")
+updateRE = re.compile(r"(/.*):Update:(.*)\s*")
 
 
 def get_args():

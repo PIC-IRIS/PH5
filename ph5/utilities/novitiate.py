@@ -19,7 +19,7 @@ from PyQt4 import QtGui, QtCore, Qt
 from ph5.core import timedoy
 
 
-PROG_VERSION = __version__ = "2018.268"
+PROG_VERSION = __version__ = "2019.14"
 LOGGER = logging.getLogger(__name__)
 
 # Gives range of expected data logger serial numbers
@@ -923,8 +923,8 @@ def write_recv_header(fh):
         "R_shots;R_comment\n")
 
 
-SEPMAP = {'tab': '\t', 'comma': ',',
-          'semi-colon': ';', 'colon': ':', 'space': '\s'}
+SEPMAP = {r'tab': '\t', 'comma': ',',
+          'semi-colon': ';', 'colon': ':', 'space': r'\s'}
 
 
 class MyQTableWidget(QtGui.QTableWidget):

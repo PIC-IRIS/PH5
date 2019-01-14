@@ -8,10 +8,10 @@ Also allows for creation of preview png images of traces.
 import sys
 import os
 import logging
-import obspy
 import copy
 import itertools
 import io
+from obspy.core.inventory.inventory import read_inventory as read_inventory
 from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
@@ -338,7 +338,7 @@ class PH5toMSeed(object):
                                             )
                 with io.BytesIO(response_file_das_a) as buf:
                     buf.seek(0, 0)
-                    dl_resp = obspy.read_inventory(buf, format="RESP")
+                    dl_resp = read_inventory(buf, format="RESP")
                 dl_resp = dl_resp[0][0][0].response
             # parse sensor response if present
             if response_file_sensor_a_name:
@@ -348,7 +348,7 @@ class PH5toMSeed(object):
                                             )
                 with io.BytesIO(response_file_sensor_a) as buf:
                     buf.seek(0, 0)
-                    sensor_resp = obspy.read_inventory(buf, format="RESP")
+                    sensor_resp = read_inventory(buf, format="RESP")
                 sensor_resp = sensor_resp[0][0][0].response
 
             inv_resp = None

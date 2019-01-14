@@ -21,10 +21,10 @@ LOGGER = logging.getLogger(__name__)
 
 # Match lines related to timing in SOH
 timetoRE = re.compile(
-    ".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
+    r".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
     (\d{4}/\d{4})\s+MS")
 timefromRE = re.compile(
-    ".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
+    r".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
     (\d{4}/\d{4})\s+MS")
 
 

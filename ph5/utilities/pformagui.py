@@ -11,7 +11,7 @@ from psutil import cpu_count, cpu_percent
 from ph5.core import pmonitor
 from ph5.utilities import pforma_io, watchit
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -425,10 +425,10 @@ class MainWindow(QtGui.QMainWindow):
             self.timeout = a
 
     def setUTMZone(self):
-        a, _ = QtGui.QInputDialog.getText(self, "Set UTM zone", "UTM Zone: "+self.UTMZone)
+        a, _ = QtGui.QInputDialog.getText(self, "Set UTM zone",
+                                          "UTM Zone: "+self.UTMZone)
         if _:
             self.UTMZone = a
-
 
     def setCombineSEGD(self):
         a, _ = QtGui.QInputDialog.getInt(self,

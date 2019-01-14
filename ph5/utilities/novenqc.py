@@ -17,7 +17,7 @@ import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
@@ -30,7 +30,7 @@ FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
          'ind-yd': 0.91439523, 'ind-ft': 0.30479841, 'ind-ch': 20.11669506}
 
 #  RE for type descripters, ie int31
-typeRE = re.compile("(\D+)(\d+)")
+typeRE = re.compile(r"(\D+)(\d+)")
 #
 timeRE = re.compile(".*time/ascii_s")
 

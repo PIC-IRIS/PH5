@@ -13,10 +13,10 @@ import logging
 import argparse
 from subprocess import call
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 # Index of first miniPH5_xxxxx.ph5 file (value of xxxxx)
 FIRST_MINI_INDEX = 0

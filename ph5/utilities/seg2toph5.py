@@ -15,11 +15,11 @@ from ph5.core import experiment, timedoy, RESP
 
 from obspy import read as readSEG2
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2019.14"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 DAS_INFO = {}
 MAP_INFO = {}

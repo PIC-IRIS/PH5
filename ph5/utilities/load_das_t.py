@@ -11,7 +11,7 @@ import re
 import logging
 import subprocess
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 
 all = os.listdir('.')
@@ -31,9 +31,9 @@ def get_args():
                         help="Path to merged PH5 families. Normally in /Sigma")
     # Regular expression of das table kef files.
     parser.add_argument('--re', type=str,
-                        default="Das_t_response_n_i_(\w{3,16})\.kef",
-                        help="Regular expression for das table kef files."
-                             "Default: \"Das_t_response_n_i_(\w{3,16})\.kef\"")
+                        default=r"Das_t_response_n_i_(\w{3,16})\.kef",
+                        help=r"Regular expression for das table kef files."
+                             r"Default:\"Das_t_response_n_i_(\w{3,16})\.kef\"")
     # Only load, don't save and clear first.
     parser.add_argument('--onlyload', action='store_true',
                         help="Only load table, don't clear existing table.")
