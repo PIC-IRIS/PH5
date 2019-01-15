@@ -53,7 +53,7 @@ class TestPH5toMSeed(unittest.TestCase):
                                     longitude=21.75392,
                                     experiment_id="13-005",
                                     array_code="001",
-                                    das_manufacturer = "REF TEK",
+                                    das_manufacturer="REF TEK",
                                     das_model="RT 125 & 125A",
                                     sensor_type="Geo Space/OYO GS-11D",
                                     elev=997.6,
