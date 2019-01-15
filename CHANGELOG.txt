@@ -12,7 +12,8 @@ ph5.utilities.pformagui
  * added North South designation to pforma
  * Displayed current utm zone (issue #234)
 ph5.core.utilities.segdtoph5
- * Fixed bug causing pforma to finish correctly on node (issue #233)
+ * Fixed bug causing pforma to finish correctly on node (issue #233)\
+ * fixed bug in utmzone processing
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
 ph5.clients.tests.test_ph5toms
