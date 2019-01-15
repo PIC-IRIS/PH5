@@ -988,16 +988,19 @@ def utmcsptolatlon(northing, easting):
        geographic coordinates, WGS84.
     '''
     #   UTM
+    new_UTM = re.split(r'(\d+)', UTM) 
+    utmzone = str(new_UTM[1])
 
-    if UTM[-1:].upper() == 'N':
+    if str(new_UTM[2]).upper() == 'N':
         NS = 'north'
-    elif UTM[-1:].upper() == 'S':
+    elif str(new_UTM[2]).upper() == 'S':
         NS = 'south'
     else:
         NS = 'north'
-    utmzone = UTM[:2]
+
 
     utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
+    print
     #   WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
     #
