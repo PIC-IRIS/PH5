@@ -14,7 +14,7 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.15'
 LOGGER = logging.getLogger(__name__)
 
 HOME = os.environ['HOME']
@@ -52,6 +52,7 @@ class FormaIO():
         self.whereami = os.getcwd()  # Where the program was started
         self.M = None  # How many mini files in each ph5 family
         self.UTM = None  # UTM zone (SEG-D)
+        self.UPS = None  # UPS zone (SEG-D) added dthomas
         self.TSPF = None  # texas state plane coordinates (SEG-D)
         self.COMBINE = 1  # Combine traces from SEG-D file
         self.read_cfg()  # Configuration info
@@ -79,6 +80,9 @@ class FormaIO():
 
     def set_utm(self, utm):
         self.UTM = utm
+
+    def set_ups(self, ups):
+        self.UPS = ups
 
     def set_combine(self, combine):
         self.COMBINE = combine
@@ -342,6 +346,12 @@ class FormaIO():
                             "{5} -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c\
                              {4} 2>&1".format(lst['nodal'], self.M,
                                               ess, self.UTM, self.COMBINE,
+                                              clprog))
+                    elif self.UPS: ## added dthomas
+                        cmd.append(
+                            "{5} -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c\
+                             {4} 2>&1".format(lst['nodal'], self.M,
+                                              ess, self.UPS, self.COMBINE,
                                               clprog))
                     elif self.TSPF:
                         cmd.append(

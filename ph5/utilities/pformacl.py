@@ -13,12 +13,12 @@ import logging
 from multiprocessing import cpu_count
 from ph5.utilities import pforma_io
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.15'
 LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
-    global JSON_DB, JSON_CFG, RAW_LST, PROJECT, NFAMILY, M, MERGE, UTM, TSPF
+    global JSON_DB, JSON_CFG, RAW_LST, PROJECT, NFAMILY, M, MERGE, UTM, UPS, TSPF
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -44,7 +44,10 @@ def get_args():
                         type=int)
     parser.add_argument("-U", dest="utm",
                         help="The UTM zone if required for SEG-D conversion.",
-                        type=int)
+                        type=str) ## changing type to str, dthomas
+    parser.add_argument("-Z", dest="ups",
+                        help="The UPS zone if required for SEG-D conversion.",
+                        type=str) ## added dthomas
     parser.add_argument("-T", "--TSPF", dest="tspf",
                         help="Coordinates is texas state plane coordinates "
                              "(SEG-D).",
@@ -74,6 +77,7 @@ def get_args():
     PROJECT = args.home
     M = args.num_minis
     UTM = args.utm
+    UPS = args.ups
     TSPF = args.tspf
     MERGE = args.merge_minis
 
@@ -164,6 +168,8 @@ def main():
     # Set UTM zone for segd2ph5 if needed
     if UTM:
         fio.set_utm(UTM)
+    if UPS:# added dthomas
+        fio.set_ups(UPS)
     if TSPF:
         fio.set_tspf(TSPF)
     # Don't merge just process raw to PH5

@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.15" # modified dthomas
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -34,7 +34,7 @@ F = None
 #   RE for mini files
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
-# LSB = 6.402437066e-6   #   From Malcolm UCSD
+# LSB = 6.402437066e-6   #   From Maolm UCSD
 LSB00 = 2500. / (2 ** 23)  # 0dB
 LSB12 = 625. / (2 ** 23)  # 12dB
 LSB24 = 156. / (2 ** 23)  # 24dB
@@ -137,7 +137,7 @@ def read_infile(infile):
 
 
 def get_args():
-    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND,\
+    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, UPS, FIRST_MINI, APPEND,\
         MANUFACTURERS_CODE
 
     TSPF = False
@@ -163,7 +163,12 @@ def get_args():
                        help="Locations in SEG-D file are UTM, --UTM=utmzone.",
                        type='str', default=0,
                        metavar="utm_zone")
-
+    
+    oparser.add_option("-Z", "--UPS", dest="ups_zone",
+                       help="Locations in SEG-D file are UPS, --UPS=upszone.",
+                       type='str', default='',
+                       metavar="ups_zone") ## added dthomas
+    
     oparser.add_option("-T", "--TSPF", dest="texas_spc",
                        help="Locations are in texas state plane coordinates.",
                        action='store_true', default=False)
@@ -200,6 +205,7 @@ def get_args():
     NUM_MINI = options.num_mini
     FIRST_MINI = options.first_mini
     UTM = options.utm_zone
+    UPS = options.ups_zone ## added dthomas
     TSPF = options.texas_spc
     APPEND = options.combine
     MANUFACTURERS_CODE = options.manufacturers_code
@@ -751,6 +757,11 @@ def process_traces(rh, th, tr):
                 'location/description_s'] = "Converted from UTM Zone {0}"\
                 .format(
                 UTM)
+        elif UPS:
+            p_array_t[
+                'location/description_s'] = "Converted from UPS Zone {0}"\
+                .format(
+                UPS) # added dthomas
         else:
             p_array_t['location/description_s'] = "Read from SEG-D as is."
 
@@ -980,6 +991,17 @@ def txncsptolatlon(northing, easting):
 
     return lat, lon
 
+def parseutm(UTM): ## added dthomas
+    nc = '' # numeric code
+    lc = '' # letter code
+    for i in range(len(UTM)):
+        ch = UTM[i]
+        if ch.isdigit():
+            nc = nc + ch
+        else:
+            lc = lc + ch
+    #print "parseutm(UTM), UTM: ", UTM, ", nc = ", nc, ", lc = ", lc
+    return int(nc), lc        
 
 def utmcsptolatlon(northing, easting):
     '''
@@ -987,24 +1009,48 @@ def utmcsptolatlon(northing, easting):
        Convert UTM to
        geographic coordinates, WGS84.
     '''
-    #   UTM
-
-    if UTM[-1:].upper() == 'N':
-        NS = 'north'
-    elif UTM[-1:].upper() == 'S':
+    (utmzone, lettercode) = parseutm(UTM);
+##    print "UTM : ", UTM, ", numeric code:", utmzone,", letter code: ", lettercode
+    if ord(lettercode) < ord("N"):
         NS = 'south'
     else:
         NS = 'north'
-    utmzone = UTM[:2]
 
-    utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
+    thestr = "+proj=utm +zone=" + str(utmzone) + " +" + NS + " + ellps=WGS84"
+##    print "thestr=", thestr
+    utmc = Proj(thestr)
+    
+    #   UTM
+
+##    utmc = Proj("+proj=utm +zone=" + utmzone +" +"+ NS +" +ellps=WGS84") ## can't get this to work!- dthomas
+    
     #   WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
     #
     lon, lat = transform(utmc, wgs, easting, northing)
+    
+    print "UTM Zone = ", UTM, ", NS=", NS, ", easting, northing = ", easting, northing
+    print "Converted lat, lon = ", lat, lon
 
     return lat, lon
 
+def upscsptolatlon(northing, easting): # added dthomas
+    '''
+       Convert UPS easting, northing to
+       geographic coordinates, WGS84.
+    '''
+    
+    (upszone, lettercode) = parseutm(UPS);
+    print "UPS : ", UPS, ", numeric code:", upszone,", letter code: ", lettercode
+
+    #   UPS
+    upsc = Proj("+proj=ups +south +ellps=WGS84")
+    #   WGS84, geographic
+    wgs = Proj(init='epsg:4326', proj='latlong')
+    #
+    lon, lat = transform(upsc, wgs, easting, northing)
+
+    return lat, lon
 
 def correct_append_number():
     # from math import modf
