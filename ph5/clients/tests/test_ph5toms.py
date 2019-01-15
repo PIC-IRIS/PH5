@@ -41,7 +41,7 @@ class TestPH5toMSeed(unittest.TestCase):
                                     station="1001",
                                     seed_station="1001",
                                     das="13953",
-                                    channel="1",
+                                    component="1",
                                     seed_channel="EPZ",
                                     starttime=st,
                                     endtime=et,
@@ -50,7 +50,15 @@ class TestPH5toMSeed(unittest.TestCase):
                                     notimecorrect=False,
                                     location="",
                                     latitude=-18.26142,
-                                    longitude=21.75392
+                                    longitude=21.75392,
+                                    experiment_id="13-005",
+                                    array_code="001",
+                                    das_manufacturer = "REF TEK",
+                                    das_model="RT 125 & 125A",
+                                    sensor_type="Geo Space/OYO GS-11D",
+                                    elev=997.6,
+                                    receiver_n_i=1,
+                                    response_n_i=1
                                     )
         station_to_cut_list = [station_to_cut]
 
@@ -170,7 +178,7 @@ class TestPH5toMSeed(unittest.TestCase):
                                     station="1003",
                                     seed_station="DAN",
                                     das="10811",
-                                    channel="1",
+                                    component="1",
                                     seed_channel="DPZ",
                                     starttime=st,
                                     endtime=et,
@@ -179,7 +187,15 @@ class TestPH5toMSeed(unittest.TestCase):
                                     notimecorrect=False,
                                     location="",
                                     latitude=-123.14976,
-                                    longitude=46.23013
+                                    longitude=46.23013,
+                                    experiment_id="13-005",
+                                    array_code="001",
+                                    das_manufacturer="REF TEK",
+                                    das_model="RT 125 & 125A",
+                                    sensor_type="Geo Space/OYO GS-11D",
+                                    elev=997.6,
+                                    receiver_n_i=1,
+                                    response_n_i=1
                                     )
         station_to_cut_list = [station_to_cut]
         expected = copy.deepcopy(station_to_cut)
