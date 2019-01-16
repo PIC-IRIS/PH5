@@ -329,7 +329,8 @@ class MainWindow(QtGui.QMainWindow):
                                          single raw file.",
                                         triggered=self.setTimeout)
         self.utmAct = QtGui.QAction("&UTM zone...", self,
-                                    statusTip="UTM zone. For some SEG-D data.",
+                                    statusTip="UTM zone. For some SEG-D data."
+                                              "zone plus N or S (13N)",
                                     triggered=self.setUTMZone)
         self.combineAct = QtGui.QAction("Combine # of SEG-D traces in ph5...",
                                         self,
@@ -425,8 +426,11 @@ class MainWindow(QtGui.QMainWindow):
             self.timeout = a
 
     def setUTMZone(self):
-        a, _ = QtGui.QInputDialog.getText(self, "Set UTM zone",
-                                          "UTM Zone: "+self.UTMZone)
+        a, _ = QtGui.QInputDialog.getText(self,
+                                          "Set UTM zone",
+                                          "UTM Zone: "+self.UTMZone +
+                                          "(Zone number plus N or S"
+                                          "designation)")
         if _:
             self.UTMZone = a
 

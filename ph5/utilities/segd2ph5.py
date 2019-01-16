@@ -160,7 +160,9 @@ def get_args():
                        metavar="output_file_prefix")
 
     oparser.add_option("-U", "--UTM", dest="utm_zone",
-                       help="Locations in SEG-D file are UTM, --UTM=utmzone.",
+                       help="Locations in SEG-D file are UTM, --UTM=utmzone."
+                            " Zone number and N or S designation"
+                            " eg 13N",
                        type='str', default=0,
                        metavar="utm_zone")
 
