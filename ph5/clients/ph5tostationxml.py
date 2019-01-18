@@ -219,7 +219,7 @@ class PH5toStationXMLRequestManager(object):
         self.nickname = nickname
         self._obs_stations = {}
         self._obs_channels = {}
-    
+
     def get_obs_station(self, station_code, start_date, end_date):
         """
         Returns a obspy station inventory instance if one has been added to the
@@ -304,14 +304,14 @@ class PH5toStationXMLParser(object):
             return False
         else:
             return True
-        
+
     def read_arrays(self, name):
         if name is None:
             for n in self.manager.ph5.Array_t_names:
                 self.manager.ph5.read_array_t(n)
         else:
             self.manager.ph5.read_array_t(name)
-        
+
     def add_ph5_stationids(self):
         """
         For each PH5toStationXML object in self.manager.request_list add the
@@ -390,7 +390,7 @@ class PH5toStationXMLParser(object):
             return network
         else:
             return
-        
+
     def get_response_inv(self, obs_channel):
 
         sensor_keys = [obs_channel.sensor.manufacturer,
@@ -485,8 +485,8 @@ class PH5toStationXMLParser(object):
     def create_obs_station(self, sta_code, start_date, end_date, sta_longitude,
                            sta_latitude, sta_elevation, creation_date,
                            termination_date, site_name):
-        
-        if self.manager.get_obs_station(sta_code, start_date, end_date): 
+
+        if self.manager.get_obs_station(sta_code, start_date, end_date):
             return self.manager.get_obs_station(sta_code, start_date, end_date)
 
         obs_station = obspy.core.inventory.Station(sta_code,
@@ -510,16 +510,17 @@ class PH5toStationXMLParser(object):
                            azimuth, dip, sensor_manufacturer, sensor_model,
                            sensor_serial, das_manufacturer, das_model,
                            das_serial):
-        
+
         if self.manager.get_obs_channel(sta_code, loc_code, cha_code,
-                                        start_date, end_date): 
-            obs_cha = self.manager.get_obs_channel(sta_code, loc_code, cha_code,
-                                                   start_date, end_date)
+                                        start_date, end_date):
+            obs_cha = self.manager.get_obs_channel(sta_code, loc_code,
+                                                   cha_code, start_date,
+                                                   end_date)
             array_code = str(array_name)[8:]
             arrays_list = obs_cha.extra.PH5Array.value.split(",")
             if array_code not in arrays_list:
                 arrays_list.append(array_code)
-                array_list.sort()
+                arrays_list.sort()
                 obs_cha.extra.PH5Array.value = ",".join(arrays_list)
             return obs_cha
 
@@ -586,7 +587,7 @@ class PH5toStationXMLParser(object):
 
         self.manager.set_obs_channel(sta_code, obs_channel)
         return obs_channel
-    
+
     def read_networks(self, path):
         self.manager.ph5.read_experiment_t()
         self.experiment_t = self.manager.ph5.Experiment_t['rows']
@@ -682,12 +683,11 @@ class PH5toStationXMLParser(object):
                                                               creation_date,
                                                               termination_date,
                                                               site_name)
-                        
+
                         if obs_station.total_number_of_channels is None:
                             obs_station.total_number_of_channels = 0
                         if obs_station.selected_number_of_channels is None:
                             obs_station.selected_number_of_channels = 0
-                            
 
                         if self.manager.level.upper() == "RESPONSE" or \
                            self.manager.level.upper() == "CHANNEL" or \
@@ -725,7 +725,7 @@ class PH5toStationXMLParser(object):
                             all_stations_keys.append(hash)
                             all_stations.append(obs_station)
         return all_stations
-    
+
     def read_channels(self, sta_xml_obj, station_list, deployment,
                       sta_code, array_name):
 
@@ -752,7 +752,7 @@ class PH5toStationXMLParser(object):
         for pattern in cha_list_patterns:
             if fnmatch.fnmatch(cha_code, pattern):
 
-                if  station_entry['seed_location_code_s']:
+                if station_entry['seed_location_code_s']:
                     loc_code = station_entry['seed_location_code_s']
                 else:
                     loc_code = ""
@@ -774,20 +774,20 @@ class PH5toStationXMLParser(object):
 
                 # compute sample rate
                 sample_rate_multiplier = \
-                            float(station_entry['sample_rate_multiplier_i'])
+                    float(station_entry['sample_rate_multiplier_i'])
                 sample_rate_ration = float(station_entry['sample_rate_i'])
                 try:
                     sample_rate = sample_rate_ration/sample_rate_multiplier
                 except ZeroDivisionError:
                     raise PH5toStationXMLError(
                              "Error - Invalid sample_rate_multiplier_i == 0")
-                    
+
                 receiver_table_n_i = station_entry['receiver_table_n_i']
                 Receiver_t = self.manager.ph5.get_receiver_t_by_n_i(
                                                             receiver_table_n_i)
                 azimuth = Receiver_t['orientation/azimuth/value_f']
                 dip = Receiver_t['orientation/dip/value_f']
-        
+
                 sensor_manufacturer = station_entry['sensor/manufacturer_s']
                 sensor_model = station_entry['sensor/model_s']
                 sensor_serial = station_entry['sensor/serial_number_s']
