@@ -28,8 +28,8 @@ install:
 
 # before scripts
 before_script:
-  "flake8 ph5"
-  "pyflakes ph5"
+  - flake8 ph5
+  - pyflakes ph5
 
 
 # command to run tests
