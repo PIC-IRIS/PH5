@@ -83,6 +83,7 @@ setup(
                       'simplekml',
                       'tables',
                       'matplotlib<2',
+                      'subprocess32'
                       #pyicu - seems to work without
                       #pyqt4 - required external program
                       #PySide - required external program
