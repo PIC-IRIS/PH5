@@ -217,6 +217,51 @@ class PH5toStationXMLRequestManager(object):
         self.level = level.upper()
         self.format = format.upper()
         self.nickname = nickname
+        self._obs_stations = {}
+        self._obs_channels = {}
+    
+    def get_obs_station(self, station_code, start_date, end_date):
+        """
+        Returns a obspy station inventory instance if one has been added to the
+        manager
+        """
+        key = "{}.{}.{}".format(station_code,
+                                start_date,
+                                end_date)
+        return self._obs_stations.get(key)
+
+    def set_obs_station(self, obs_station):
+        """
+        Add a obspy station inventory to the manager
+        """
+        key = "{}.{}.{}".format(obs_station.code,
+                                obs_station.start_date,
+                                obs_station.end_date)
+        self._obs_stations[key] = obs_station
+
+    def get_obs_channel(self, station_code, location_code, channel_code,
+                        start_date, end_date):
+        """
+        Returns a obspy channel inventory instance if one has been added to the
+        manager
+        """
+        key = "{}.{}.{}.{}.{}".format(station_code,
+                                      location_code,
+                                      channel_code,
+                                      start_date,
+                                      end_date)
+        return self._obs_channels.get(key)
+
+    def set_obs_channel(self, station_code, obs_channel):
+        """
+        Add a obspy station inventory to the manager
+        """
+        key = "{}.{}.{}.{}.{}".format(station_code,
+                                      obs_channel.location_code,
+                                      obs_channel.code,
+                                      obs_channel.start_date,
+                                      obs_channel.end_date)
+        self._obs_channels[key] = obs_channel
 
 
 class PH5toStationXMLParser(object):
@@ -277,9 +322,12 @@ class PH5toStationXMLParser(object):
         else:
             return
 
-    def create_obs_station(self, station_list, sta_code, array_name,
-                           start_date, end_date, sta_longitude,
-                           sta_latitude, sta_elevation, deployment):
+    def create_obs_station(self, sta_code, start_date, end_date, sta_longitude,
+                           sta_latitude, sta_elevation, creation_date,
+                           termination_date, site_name):
+        
+        if self.manager.get_obs_station(sta_code, start_date, end_date): 
+            return self.manager.get_obs_station(sta_code, start_date, end_date)
 
         obs_station = obspy.core.inventory.Station(sta_code,
                                                    latitude=sta_latitude,
@@ -287,27 +335,33 @@ class PH5toStationXMLParser(object):
                                                    start_date=start_date,
                                                    end_date=end_date,
                                                    elevation=sta_elevation)
+        obs_station.site = obspy.core.inventory.Site(name=site_name)
+        obs_station.creation_date = creation_date
+        obs_station.termination_date = termination_date
 
-        obs_station.creation_date = UTCDateTime(station_list[deployment][0]
-                                                ['deploy_time/epoch_l'])
-        obs_station.termination_date = UTCDateTime(station_list[deployment][0]
-                                                   ['pickup_time/epoch_l'])
-
-        extra = AttribDict({
-            'PH5Array': {
-                'value': str(array_name)[8:],
-                'namespace': self.manager.iris_custom_ns,
-                'type': 'attribute'
-            }
-        })
-        obs_station.extra = extra
-        obs_station.site = obspy.core.inventory.Site(
-            name=station_list[deployment][0]['location/description_s'])
+        self.manager.set_obs_station(obs_station)
         return obs_station
 
-    def create_obs_channel(self, station_list, deployment, cha_code, loc_code,
-                           cha_longitude, cha_latitude, cha_elevation,
-                           receiver_id):
+    def create_obs_channel(self, station_list, deployment, sta_code, loc_code,
+                           cha_code, start_date, end_date,
+                           cha_longitude, cha_latitude,
+                           cha_elevation, cha_component, receiver_id,
+                           array_name, sample_rate, sample_rate_ration,
+                           azimuth, dip, sensor_manufacturer, sensor_model,
+                           sensor_serial, das_manufacturer, das_model,
+                           das_serial):
+        
+        if self.manager.get_obs_channel(sta_code, loc_code, cha_code,
+                                        start_date, end_date): 
+            obs_cha = self.manager.get_obs_channel(sta_code, loc_code, cha_code,
+                                                   start_date, end_date)
+            array_code = str(array_name)[8:]
+            arrays_list = obs_cha.extra.PH5Array.value.split(",")
+            if array_code not in arrays_list:
+                arrays_list.append(array_code)
+                array_list.sort()
+                obs_cha.extra.PH5Array.value = ",".join(arrays_list)
+            return obs_cha
 
         obs_channel = obspy.core.inventory.Channel(
                                                    code=cha_code,
@@ -317,74 +371,43 @@ class PH5toStationXMLParser(object):
                                                    elevation=cha_elevation,
                                                    depth=0
                                             )
-        obs_channel.start_date = UTCDateTime(station_list[deployment][0]
-                                             ['deploy_time/epoch_l'])
-        obs_channel.end_date = UTCDateTime(station_list[deployment][0]
-                                           ['pickup_time/epoch_l'])
-
-        # compute sample rate
-        sample_rate_multiplier = float(station_list[deployment]
-                                       [0]['sample_rate_multiplier_i'])
-        sample_rate_ration = float(station_list[deployment]
-                                   [0]['sample_rate_i'])
+        obs_channel.start_date = start_date
+        obs_channel.end_date = end_date
+        obs_channel.sample_rate = sample_rate
         obs_channel.sample_rate_ration = sample_rate_ration
-        try:
-            obs_channel.sample_rate = sample_rate_ration/sample_rate_multiplier
-        except ZeroDivisionError:
-            raise PH5toStationXMLError(
-                            "Error - Invalid sample_rate_multiplier_i == 0")
-
         obs_channel.storage_format = "PH5"
-        receiver_table_n_i = station_list[deployment][0]['receiver_table_n_i']
-        Receiver_t = self.manager.ph5.get_receiver_t_by_n_i(receiver_table_n_i)
-        obs_channel.azimuth = Receiver_t['orientation/azimuth/value_f']
-        obs_channel.dip = Receiver_t['orientation/dip/value_f']
+        obs_channel.azimuth = azimuth
+        obs_channel.dip = dip
 
         sensor_type = " ".join(
                         [x for x in
-                         [station_list[deployment][0]['sensor/manufacturer_s'],
-                          station_list[deployment][0]['sensor/model_s']] if x])
+                         [sensor_manufacturer, sensor_model] if x])
 
         obs_channel.sensor = obspy.core.inventory.Equipment(
             type=sensor_type,
-            description=("%s %s/%s %s" %
-                         (station_list[deployment][0]['sensor/manufacturer_s'],
-                          station_list[deployment][0]['sensor/model_s'],
-                          station_list[deployment][0]['das/manufacturer_s'],
-                          station_list[deployment][0]['das/model_s'])),
-            manufacturer=station_list[deployment][0]['sensor/manufacturer_s'],
+            description=("%s %s/%s %s" % (sensor_manufacturer, sensor_model,
+                                          das_manufacturer, das_model)),
+            manufacturer=sensor_manufacturer,
             vendor="",
-            model=station_list[deployment][0]['sensor/model_s'],
-            serial_number=station_list[deployment][0]
-                                      ['sensor/serial_number_s'],
-            installation_date=UTCDateTime(station_list[deployment][0]
-                                          ['deploy_time/epoch_l']),
-            removal_date=UTCDateTime(station_list[deployment][0]
-                                     ['pickup_time/epoch_l']))
-        das_type = " ".join([x for x in [station_list[deployment][0]
-                                                     ['das/manufacturer_s'],
-                                         station_list[deployment][0]
-                                                     ['das/model_s']] if x])
+            model=sensor_model,
+            serial_number=sensor_serial,
+            installation_date=UTCDateTime(start_date),
+            removal_date=UTCDateTime(end_date))
+        das_type = " ".join([x for x in [das_manufacturer, das_model] if x])
         obs_channel.data_logger = \
             obspy.core.inventory.Equipment(
                 type=das_type,
                 description="",
-                manufacturer=station_list[deployment][0]['das/manufacturer_s'],
+                manufacturer=das_manufacturer,
                 vendor="",
-                model=station_list[deployment][0]['das/model_s'],
-                serial_number=station_list[deployment][0]
-                                          ['das/serial_number_s'],
-                installation_date=UTCDateTime(
-                        station_list[deployment][0]['deploy_time/epoch_l']
-                        ),
-                removal_date=UTCDateTime(
-                        station_list[deployment][0]['pickup_time/epoch_l']
-                        )
+                model=das_model,
+                serial_number=das_serial,
+                installation_date=UTCDateTime(start_date),
+                removal_date=UTCDateTime(end_date)
             )
         extra = AttribDict({
                 'PH5Component': {
-                    'value': str(station_list[deployment][0]
-                                 ['channel_number_i']),
+                    'value': str(cha_component),
                     'namespace': self.manager.iris_custom_ns,
                     'type': 'attribute'
                 },
@@ -392,16 +415,16 @@ class PH5toStationXMLParser(object):
                     'value': str(receiver_id),
                     'namespace': self.manager.iris_custom_ns,
                     'type': 'attribute'
+                },
+                'PH5Array': {
+                    'value': str(array_name)[8:],
+                    'namespace': self.manager.iris_custom_ns,
+                    'type': 'attribute'
                 }
             })
         obs_channel.extra = extra
 
-        if self.manager.level == "RESPONSE" or self.manager.level == "CHANNEL":
-            # read response and add it to obspy channel inventory
-            self.response_table_n_i = \
-                station_list[deployment][0]['response_table_n_i']
-            obs_channel.response = self.get_response_inv(obs_channel)
-
+        self.manager.set_obs_channel(sta_code, obs_channel)
         return obs_channel
 
     def get_response_inv(self, obs_channel):
@@ -478,64 +501,109 @@ class PH5toStationXMLParser(object):
             else:
                 return inv_resp
 
-    def read_channels(self, sta_xml_obj, station_list):
+    def read_channels(self, sta_xml_obj, station_list, deployment,
+                      sta_code, array_name):
 
         all_channels = []
         cha_list_patterns = sta_xml_obj.channel_list
         component_list_patterns = sta_xml_obj.component_list
         receiver_list_patterns = sta_xml_obj.receiver_list
         location_patterns = sta_xml_obj.location_list
-        for deployment in station_list:
-            receiver_id = str(station_list[deployment][0]['id_s'])
-            if not ph5utils.does_pattern_exists(receiver_list_patterns,
-                                                receiver_id):
-                continue
+        station_entry = station_list[deployment][0]
+        receiver_id = str(station_entry['id_s'])
+        if not ph5utils.does_pattern_exists(receiver_list_patterns,
+                                            receiver_id):
+            return
 
-            c_id = str(station_list[deployment][0]['channel_number_i'])
-            if not ph5utils.does_pattern_exists(component_list_patterns, c_id):
-                continue
+        c_id = str(station_list[deployment][0]['channel_number_i'])
+        if not ph5utils.does_pattern_exists(component_list_patterns, c_id):
+            return
 
-            seed_channel = \
-                station_list[deployment][0]['seed_band_code_s'] + \
-                station_list[deployment][0]['seed_instrument_code_s'] + \
-                station_list[deployment][0]['seed_orientation_code_s']
+        cha_code = \
+            station_entry['seed_band_code_s'] + \
+            station_entry['seed_instrument_code_s'] + \
+            station_entry['seed_orientation_code_s']
 
-            for pattern in cha_list_patterns:
-                if fnmatch.fnmatch(seed_channel, pattern):
+        for pattern in cha_list_patterns:
+            if fnmatch.fnmatch(cha_code, pattern):
 
-                    if station_list[deployment][
-                            0]['seed_location_code_s']:
-                        location = station_list[deployment][
-                            0]['seed_location_code_s']
-                    else:
-                        location = ""
+                if  station_entry['seed_location_code_s']:
+                    loc_code = station_entry['seed_location_code_s']
+                else:
+                    loc_code = ""
 
-                    if not ph5utils.does_pattern_exists(location_patterns,
-                                                        location):
-                        continue
+                if not ph5utils.does_pattern_exists(location_patterns,
+                                                    loc_code):
+                    continue
 
-                    cha_longitude = \
-                        station_list[deployment][0]['location/X/value_d']
-                    cha_latitude = \
-                        station_list[deployment][0]['location/Y/value_d']
-                    cha_elevation = \
-                        station_list[deployment][0]['location/Z/value_d']
+                cha_longitude = station_entry['location/X/value_d']
+                cha_latitude = station_entry['location/Y/value_d']
+                cha_elevation = station_entry['location/Z/value_d']
 
-                    if not self.is_lat_lon_match(sta_xml_obj,
-                                                 cha_latitude,
-                                                 cha_longitude):
-                        continue
+                if not self.is_lat_lon_match(sta_xml_obj,
+                                             cha_latitude,
+                                             cha_longitude):
+                    continue
+                start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
+                end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
 
-                    obs_channel = self.create_obs_channel(station_list,
-                                                          deployment,
-                                                          seed_channel,
-                                                          location,
-                                                          cha_longitude,
-                                                          cha_latitude,
-                                                          cha_elevation,
-                                                          receiver_id)
-                    if obs_channel not in all_channels:
-                        all_channels.append(obs_channel)
+                # compute sample rate
+                sample_rate_multiplier = \
+                            float(station_entry['sample_rate_multiplier_i'])
+                sample_rate_ration = float(station_entry['sample_rate_i'])
+                try:
+                    sample_rate = sample_rate_ration/sample_rate_multiplier
+                except ZeroDivisionError:
+                    raise PH5toStationXMLError(
+                             "Error - Invalid sample_rate_multiplier_i == 0")
+                    
+                receiver_table_n_i = station_entry['receiver_table_n_i']
+                Receiver_t = self.manager.ph5.get_receiver_t_by_n_i(
+                                                            receiver_table_n_i)
+                azimuth = Receiver_t['orientation/azimuth/value_f']
+                dip = Receiver_t['orientation/dip/value_f']
+        
+                sensor_manufacturer = station_entry['sensor/manufacturer_s']
+                sensor_model = station_entry['sensor/model_s']
+                sensor_serial = station_entry['sensor/serial_number_s']
+                das_manufacturer = station_entry['das/manufacturer_s']
+                das_model = station_entry['das/model_s']
+                das_serial = station_entry['das/serial_number_s']
+                cha_component = station_entry['channel_number_i']
+
+                obs_channel = self.create_obs_channel(station_list,
+                                                      deployment,
+                                                      sta_code,
+                                                      loc_code,
+                                                      cha_code,
+                                                      start_date,
+                                                      end_date,
+                                                      cha_longitude,
+                                                      cha_latitude,
+                                                      cha_elevation,
+                                                      cha_component,
+                                                      receiver_id,
+                                                      array_name,
+                                                      sample_rate,
+                                                      sample_rate_ration,
+                                                      azimuth,
+                                                      dip,
+                                                      sensor_manufacturer,
+                                                      sensor_model,
+                                                      sensor_serial,
+                                                      das_manufacturer,
+                                                      das_model,
+                                                      das_serial)
+
+                if (self.manager.level == "RESPONSE" or
+                        self.manager.level == "CHANNEL"):
+                    # read response and add it to obspy channel inventory
+                    self.response_table_n_i = \
+                        station_list[deployment][0]['response_table_n_i']
+                    obs_channel.response = self.get_response_inv(obs_channel)
+
+                if obs_channel not in all_channels:
+                    all_channels.append(obs_channel)
         return all_channels
 
     def read_stations(self):
@@ -559,30 +627,24 @@ class PH5toStationXMLParser(object):
                     if x not in sta_xml_obj.ph5_station_id_list:
                         continue
                     for deployment in station_list:
-
-                        sta_longitude = station_list[deployment][0][
-                            'location/X/value_d']
-                        sta_latitude = station_list[deployment][0][
-                            'location/Y/value_d']
-                        sta_elevation = station_list[deployment][0][
-                            'location/Z/value_d']
+                        station_entry = station_list[deployment][0]
+                        sta_longitude = station_entry['location/X/value_d']
+                        sta_latitude = station_entry['location/Y/value_d']
+                        sta_elevation = station_entry['location/Z/value_d']
 
                         if not self.is_lat_lon_match(sta_xml_obj,
                                                      sta_latitude,
                                                      sta_longitude):
                             continue
 
-                        if station_list[deployment][0]['seed_station_name_s']:
-                            station_name = station_list[deployment][0][
-                                                        'seed_station_name_s']
+                        if station_entry['seed_station_name_s']:
+                            station_name = station_entry['seed_station_name_s']
                         else:
                             station_name = x
 
-                        start_date = station_list[deployment][0][
-                                                        'deploy_time/epoch_l']
+                        start_date = station_entry['deploy_time/epoch_l']
                         start_date = UTCDateTime(start_date)
-                        end_date = station_list[deployment][0][
-                                                        'pickup_time/epoch_l']
+                        end_date = station_entry['pickup_time/epoch_l']
                         end_date = UTCDateTime(end_date)
                         if sta_xml_obj.start_time and \
                                 sta_xml_obj.start_time > end_date:
@@ -592,16 +654,25 @@ class PH5toStationXMLParser(object):
                                 sta_xml_obj.end_time < start_date:
                             # chosen end time before pickup
                             continue
+                        creation_date = start_date
+                        termination_date = end_date
+                        site_name = station_entry['location/description_s']
 
-                        obs_station = self.create_obs_station(station_list,
-                                                              station_name,
-                                                              array_name,
+                        obs_station = self.create_obs_station(station_name,
                                                               start_date,
                                                               end_date,
                                                               sta_longitude,
                                                               sta_latitude,
                                                               sta_elevation,
-                                                              deployment)
+                                                              creation_date,
+                                                              termination_date,
+                                                              site_name)
+                        
+                        if obs_station.total_number_of_channels is None:
+                            obs_station.total_number_of_channels = 0
+                        if obs_station.selected_number_of_channels is None:
+                            obs_station.selected_number_of_channels = 0
+                            
 
                         if self.manager.level.upper() == "RESPONSE" or \
                            self.manager.level.upper() == "CHANNEL" or \
@@ -610,28 +681,31 @@ class PH5toStationXMLParser(object):
                            sta_xml_obj.component_list != ['*'] or \
                            sta_xml_obj.receiver_list != ['*']:
                             obs_channels = self.read_channels(sta_xml_obj,
-                                                              station_list)
-                            obs_station.channels = obs_channels
-                            obs_station.total_number_of_channels = len(
-                                station_list)
-                            obs_station.selected_number_of_channels = len(
-                                obs_channels)
-                            if obs_station and \
-                                    obs_station.selected_number_of_channels \
-                                    == 0:
-                                continue
+                                                              station_list,
+                                                              deployment,
+                                                              station_name,
+                                                              array_name)
+                            if obs_channels:
+                                obs_station.channels.extend(obs_channels)
+                                obs_station.total_number_of_channels += len(
+                                    station_list)
+                                obs_station.selected_number_of_channels = len(
+                                    obs_station.channels)
+                                if (obs_station and
+                                        obs_station.selected_number_of_channels
+                                        == 0):
+                                    continue
                         else:
-                            obs_station.total_number_of_channels = len(
+                            obs_station.total_number_of_channels += len(
                                 station_list)
                             obs_station.selected_number_of_channels = 0
-                        hash = "{}.{}.{}.{}.{}.{}.{}".format(
+                        hash = "{}.{}.{}.{}.{}.{}".format(
                             obs_station.code,
                             obs_station.latitude,
                             obs_station.longitude,
                             obs_station.start_date,
                             obs_station.end_date,
-                            obs_station.elevation,
-                            obs_station.extra)
+                            obs_station.elevation)
                         if hash not in all_stations_keys:
                             all_stations_keys.append(hash)
                             all_stations.append(obs_station)
