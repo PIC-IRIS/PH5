@@ -711,11 +711,11 @@ class PH5toStationXMLParser(object):
                             obs_station.total_number_of_channels += \
                                 len(station_list)
                             obs_station.selected_number_of_channels = 0
-                        
+
                         if not self.manager.get_obs_station(sta_key):
                             all_stations.append(obs_station)
                             self.manager.set_obs_station(sta_key, obs_station)
-                        
+
         return all_stations
 
     def read_channels(self, sta_xml_obj, station_list, deployment,
