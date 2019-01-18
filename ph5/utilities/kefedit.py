@@ -30,6 +30,7 @@ EXPL = {}
 # Updated: 201702
 # CLASS: KefEdit
 
+
 class KefEdit(QtGui.QMainWindow):
 
     def __init__(self):
