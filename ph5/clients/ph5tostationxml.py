@@ -281,11 +281,11 @@ class PH5toStationXMLParser(object):
                            sta_latitude, sta_elevation, deployment):
 
         obs_station = inventory.Station(sta_code,
-                                                   latitude=sta_latitude,
-                                                   longitude=sta_longitude,
-                                                   start_date=start_date,
-                                                   end_date=end_date,
-                                                   elevation=sta_elevation)
+                                        latitude=sta_latitude,
+                                        longitude=sta_longitude,
+                                        start_date=start_date,
+                                        end_date=end_date,
+                                        elevation=sta_elevation)
 
         obs_station.creation_date = UTCDateTime(station_list[deployment][0]
                                                 ['deploy_time/epoch_l'])
