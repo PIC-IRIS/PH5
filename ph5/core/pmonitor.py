@@ -29,8 +29,11 @@ try:
     from PySide import QtGui, QtCore
 except Exception as e:
     LOGGER.error("No PySide: {0}".format(e.message))
-    from PyQt4 import QtGui, QtCore
-    QtCore.Signal = QtCore.pyqtSignal
+    try:
+        from PyQt4 import QtGui, QtCore
+        QtCore.Signal = QtCore.pyqtSignal
+    except Exception:
+        LOGGER.error("PyQt4 or PySide required: {0}".format(e.message))
 
 
 # RE to detect when a raw data file has finished loading

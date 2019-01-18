@@ -2,8 +2,13 @@
 
 import sys
 import time
+import logging
 from ph5.core import columns
-from PyQt4 import QtGui, QtCore
+LOGGER = logging.getLogger(__name__)
+try:
+    from PyQt4 import QtGui, QtCore
+except Exception:
+    LOGGER.error("PyQt4 must be installed for this to run")
 
 PROG_VERSION = "2016.245"
 

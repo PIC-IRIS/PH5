@@ -10,11 +10,16 @@ import os
 import sys
 import logging
 from os.path import expanduser
-from PyQt4 import QtGui, QtCore
 from ph5.utilities import novenqc, novenkef
+
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
+
+try:
+    from PyQt4 import QtGui, QtCore
+except Exception:
+    LOGGER.error("PyQt4 must be installed for this to run")
 
 RECEIVER_CFG_S = '{\n'\
     '   "description_s": {\n'\

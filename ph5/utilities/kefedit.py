@@ -14,29 +14,22 @@ import os.path as path
 from tempfile import mkdtemp
 from copy import deepcopy
 from operator import itemgetter
-from PyQt4 import QtGui, QtCore
 from ph5.core import kefutility
-
-
+LOGGER = logging.getLogger(__name__)
+try:
+    from PyQt4 import QtGui, QtCore
+except Exception:
+    LOGGER.error("PyQt4 must be installed for this to run")
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-
-
-VER = 2018268
-if kefutility.VER > VER:
-    VER = kefutility.VER
-VER_str = str(VER)
-VER_str = VER_str[:4] + '.' + VER_str[4:]
-PROG_VERSION = VER_str
-LOGGER = logging.getLogger(__name__)
-
+PROG_VERSION = 2018.268
 EXPL = {}
-
 
 # CLASS ####################
 # Author: Lan
 # Updated: 201702
 # CLASS: KefEdit
+
 
 class KefEdit(QtGui.QMainWindow):
 

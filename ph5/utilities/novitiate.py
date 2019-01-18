@@ -15,12 +15,15 @@ import re
 import time
 import logging
 from math import radians, cos, tan, sqrt, pi
-from PyQt4 import QtGui, QtCore, Qt
 from ph5.core import timedoy
 
 
 PROG_VERSION = __version__ = "2019.14"
 LOGGER = logging.getLogger(__name__)
+try:
+    from PyQt4 import QtGui, QtCore, Qt
+except Exception:
+    LOGGER.error("PyQt4 must be installed for this to run")
 
 # Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000
