@@ -1,13 +1,14 @@
 #!/usr/bin/env pnpython3
 #
-#   A low level rt-130 library
+# A low level rt-130 library
 #
-#   RefTek 130, CPU firmware v2.9.0
+# RefTek 130, CPU firmware v2.9.0
 #
-#   Steve Azevedo, July 2008
+# Steve Azevedo, July 2008
 #
 
 import sys
+import logging
 import exceptions
 import os
 import os.path
@@ -15,13 +16,13 @@ import string
 import rt_130_py
 import construct
 
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
+
 ver = construct.version[0] + construct.version[1] / 10.
 if ver < 2.5:
-    sys.stderr.write("Exiting: construct version is {0}\n".format(ver))
+    LOGGER.info("Exiting: construct version is {0}\n".format(ver))
     sys.exit()
-
-
-PROG_VERSION = '2014.299'
 
 
 def __version__():
@@ -89,7 +90,7 @@ class EmptyDTPacketError(exceptions.Exception):
 
 
 #
-#   Packet header
+# Packet header
 #
 
 
@@ -100,12 +101,10 @@ class PH_object(object):
 
 def packet_header():
     PH = construct.BitStruct("PH",
-                             # construct.Probe (),
                              construct.BitField("PacketType", 16),
                              construct.BitField("ExperimentNumber", 8),
                              construct.BitField("Year", 8),
                              construct.BitField("UnitIDNumber", 16),
-                             # construct.BitField ("Time", 48),
                              construct.BitField("DOY", 12),
                              construct.BitField("HH", 8),
                              construct.BitField("MM", 8),
@@ -135,7 +134,6 @@ class PacketHeader(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in packet"
                     " header.\n" %
@@ -160,38 +158,9 @@ class PacketHeader(object):
         return ret
 
     def decode(self, buf):
-        # container = self.parse (buf)
-        # print type (buf), len (buf), buf[:2]
         try:
             ph = PH_object()
-            '''
-            ph.type = ("%c" % (container.PacketType >> 8))
-            ph.type += ("%c" % (container.PacketType & 0x00FF))
-            ph.experiment = ((container.ExperimentNumber >> 4) * 10) +
-             (container.ExperimentNumber & 0x0F)
-            ph.year = ((container.Year >> 4) * 10) + (container.Year & 0x0F)
-            ph.unit = hex (container.UnitIDNumber)
-            ph.doy = ((container.DOY >> 8) * 100) + (((container.DOY & 0x0F0)
-             >> 4) * 10) + (container.DOY & 0x00F)
-            ph.hr = ((container.HH >> 4) * 10) + (container.HH & 0x0F)
-            ph.mn = ((container.MM >> 4) * 10) + (container.MM & 0x0F)
-            ph.sc = ((container.SS >> 4) * 10) + (container.SS & 0x0F)
-            ph.ms = ((container.TTT >> 8) * 100) + (((container.TTT & 0x0F0)
-             >> 4) * 10) + (container.TTT & 0x00F)
-            ph.bytes = ((container.ByteCount >> 12) * 1000) +
-            (((container.ByteCount & 0x0F00) >> 8) * 100) +
-            (((container.ByteCount & 0x00F0) >> 4) * 10) +
-            (container.ByteCount & 0x000F)
-            ph.sequence = ((container.PacketSequence >> 12) * 1000) +
-            (((container.PacketSequence & 0x0F00) >> 8) * 100) +
-            (((container.PacketSequence & 0x00F0) >> 4) * 10) +
-            (container.PacketSequence & 0x000F)
-            '''
             ret = rt_130_py.get_packet_header(buf)
-            #   XXX
-            # if ret == None :
-            #    raise CorruptPacketError
-
             ph.type = ret[0]
             ph.experiment = ret[1]
             ph.year = ret[2]
@@ -209,15 +178,11 @@ class PacketHeader(object):
             ph.sequence = ret[10]
         except Exception as e:
             raise HeaderError("Packet Header: " + e.message)
-
-        # print ph.type, ph.experiment, ph.unit, ph.year, ph.doy, ph.hr, ph.mn,
-        # ph.sc, ph.ms, ph.bytes, ph.sequence
-
         return ph
 
 
 #
-#   Data packet
+# Data packet
 #
 
 
@@ -266,7 +231,6 @@ class DT(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in"
                     " data packet.\n" %
@@ -291,49 +255,15 @@ class DT(object):
         return ret
 
     def decode(self, buf):
-        # container = self.parse (buf)
         try:
             dt = DT_object()
-            '''
-            dt.event = (((container.EventNumber & 0xF000) >> 12) * 1000) +
-            (((container.EventNumber & 0x0F00) >> 8) * 100) +
-            (((container.EventNumber & 0x00F0) >> 4) * 10) +
-            (container.EventNumber & 0x000F)
-            dt.data_stream = ((container.DataStream >> 4) * 10) +
-            (container.DataStream & 0x0F)
-            dt.channel = ((container.Channel >> 4) * 10) +
-             (container.Channel & 0x0F)
-            dt.samples = (((container.Samples & 0xF000) >> 12) * 1000) +
-            (((container.Samples & 0x0F00) >> 8) * 100) +
-            (((container.Samples & 0x00F0) >> 4) * 10) +
-            (container.Samples & 0x000F)
-            dt.calibration_flag = container.Calibration
-            dt.overscale_flag = container.Overscaled
-            dt.stacked_flag = container.StackedData
-            dt.second_eh_et_flag = container.Second_EH_ET
-            dt.last_data_packet_flag = container.LastDataPacket
-            dt.first_data_packet_flag = container.FirstDataPacket
-            dt.data_format = hex (container.DataFormat)
-            dt.data = container.Data
-            '''
-
             ret = rt_130_py.get_data_header(buf)
-            #   XXX
-            # if ret == None :
-            # raise CorruptPacketError ("Failed to parse DT packet.")
-            #   Corrupt packet header
-
             dt.event = ret[0]
             dt.data_stream = ret[1]
             dt.channel = ret[2]
             dt.samples = ret[3]
             dt.flags = ret[4]
             dt.data_format = ret[5]
-            #   This packet contains no data
-            # if dt.samples == 0 :
-            # raise EmptyDTPacketError
-            # ("Packet with no data found in DT.decode")
-
             if dt.data_format == 0x16:
                 dt.data = rt_130_py.read_int16(buf, dt.samples)
             elif dt.data_format == 0x32:
@@ -359,15 +289,6 @@ class DT(object):
                 raise Exception(
                     "Warning: Unrecognized data format: %s\n" % hex(
                         dt.data_format))
-
-            #   We may need to force to 32 bits before the write since this is
-            # a python tuple,
-            #   Here's how...
-            '''
-            for x in map (build_int, dt.data) :
-               os.write (fd, x)
-            '''
-            # if dt == None : raise
         except Exception as e:
             raise CorruptPacketError("DT Packet: " + e.message)
 
@@ -389,7 +310,7 @@ class EH_object(object):
 
 
 #
-#   Event header/Event trailer
+# Event header/Event trailer
 #
 
 
@@ -504,7 +425,6 @@ class EH(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in"
                     " event header packet.\n" %
@@ -542,12 +462,6 @@ class EH(object):
             eh.EventNumber = rt_130_py.bcd2int(buf, 32, 4)
             eh.DataStream = rt_130_py.bcd2int(buf, 36, 2)
             c = self.parse(buf)
-            # eh.EventNumber = ((c.BIN.EventNumber >> 12) * 1000) +
-            # (((c.BIN.EventNumber & 0x0F00) >> 8) * 100) +
-            # (((c.BIN.EventNumber & 0x00F0) >> 4) * 10) +
-            # (c.BIN.EventNumber & 0x000F)
-            # eh.DataStream = ((c.BIN.DataStream >> 4) * 10) +
-            # (c.BIN.DataStream & 0x0F)
             eh.Flags = c.BIN.Flags
             eh.DataFormat = hex(c.BIN.DataFormat)
             eh.TriggerTimeMessage = c.TriggerTimeMessage
@@ -612,7 +526,7 @@ class EH(object):
 
 
 #
-#   State of Health packets
+# State of Health packets
 #
 def SOH_packet():
     SH = construct.Struct("SH",
@@ -636,7 +550,6 @@ class SH(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in "
                     "SOH packet.\n" %
@@ -662,7 +575,7 @@ class SH(object):
 
 
 #
-#   Station Channel packets
+# Station Channel packets
 #
 
 
@@ -834,7 +747,7 @@ class SC(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
+                # XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in station"
                     " channel packet.\n" %
@@ -860,7 +773,7 @@ class SC(object):
 
 
 #
-#   Aux Data Parameter packets
+# Aux Data Parameter packets
 #
 
 
@@ -901,7 +814,6 @@ class AD(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in auxiliary"
                     " data packet.\n" %
@@ -927,7 +839,7 @@ class AD(object):
 
 
 #
-#   Calibration Parameter packets
+# Calibration Parameter packets
 #
 
 
@@ -1095,7 +1007,6 @@ class CD(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in auxiliary"
                     " data packet.\n" %
@@ -1121,7 +1032,7 @@ class CD(object):
 
 
 #
-#   Data Stream packets
+# Data Stream packets
 #
 
 
@@ -1308,7 +1219,6 @@ class DS(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in "
                     "auxiliary data packet.\n" %
@@ -1351,7 +1261,6 @@ class DS(object):
                 t = level_trigger()
             elif trig == 'CON':
                 t = continuous_trigger()
-            #   XXX
             elif trig == 'RAD' or trig == 'TML':
                 t = time_list_trigger()
             elif trig == 'EXT':
@@ -1371,14 +1280,12 @@ class DS(object):
         try:
             dataStreams = []
             ds = self.parse(buf)
-            # dsi = self.parse_dsi(ds.DataStreamInfo)
             for i in range(1, 5):
                 pre = "dsi.Info%s." % i
                 stream = eval(pre + "DataStream")
                 if stream[0] != " ":
                     trigger = string.strip(eval(pre + "TriggerType"))
                     tbuf = eval(pre + "TriggerDescription")
-                    # print len (tbuf)
                     td = self.parse_trigger(trigger, tbuf)
                     wo_no = DS_object()
                     wo_no.ImplementTime = ds.ImplementTime
@@ -1405,7 +1312,7 @@ class DS(object):
 
 
 #
-#   Filter Description packets
+# Filter Description packets
 #
 
 
@@ -1452,7 +1359,6 @@ class FD(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in "
                     "filter description packet.\n" %
@@ -1503,7 +1409,7 @@ class FD(object):
                     if fi.FilterBlockCount == 0:
                         break
                     format = rt_130_py.bcd2int(ibuf, 14, 2)
-                    #   Read filter coefficients
+                    # Read filter coefficients
                     for i in range(fi.PacketCoefficientCount):
                         n = i + coeffptr
                         if format == 16:
@@ -1541,7 +1447,7 @@ class FD(object):
 
 
 #
-#   Operating Mode Parameter packets
+# Operating Mode Parameter packets
 #
 
 
@@ -1596,7 +1502,6 @@ class OM(object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable %s in "
                     "filter description packet.\n" %
@@ -1636,23 +1541,12 @@ def main():
         buf = os.read(fh, 1024)
         if not buf:
             break
-        # continue
-        #
-        # pbuf = buf[:16]
         ph = PacketHeader()
         ret = ph.decode(buf)
-        # print ret.type
         if ret.type == 'DT':
             DTcnt += 1
             dt = DT()
             c = dt.decode(buf)
-            # if c.data_stream == 0 and c.channel == 0 and c.event == 2 :
-            #    for p in c.data :
-            #        print p
-            # print c.event, c.data_stream, c.channel, c.samples,
-            # hex (c.data_format)
-            # print repr (c)
-            # print c.data
         elif ret.type == 'EH' or ret.type == 'ET':
             EHcnt += 1
             eh = EH()
@@ -1708,7 +1602,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import os  # , profile
-
-    # profile.run ("main()")
     main()

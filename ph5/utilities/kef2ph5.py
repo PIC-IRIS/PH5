@@ -1,19 +1,21 @@
 #!/usr/bin/env pnpython3
 #
-#   Update a ph5 file from a kef file
+# Update a ph5 file from a kef file
 #
-#   Steve Azevedo, January 2007
+# Steve Azevedo, January 2007
 #
 
-from ph5.core import experiment, kefx, columns
-import sys
+import argparse
+import logging
 import os
 import os.path
 import time
+from ph5.core import experiment, kefx, columns
 
-PROG_VERSION = '2016.113 Developmental'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
-#   Force time zone to UTC
+# Force time zone to UTC
 os.environ['TZ'] = 'UTC'
 time.tzset()
 
@@ -21,48 +23,33 @@ time.tzset()
 def get_args():
     global KEFFILE, PH5, PATH, TRACE
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser = OptionParser()
+    parser.usage = ("kef2ph5 --kef kef_file --nickname ph5_file_prefix "
+                    "[--path path]")
 
-    oparser.usage = "kef2ph5 --kef kef_file --nickname ph5_file_prefix\
-     [--path path]\nVersion: %s" % PROG_VERSION
+    parser.description = ("Update a ph5 file from a kef file.\n\nVersion: {0}"
+                          .format(PROG_VERSION))
 
-    oparser.description = "Update a ph5 file from a kef file."
+    parser.add_argument("-n", "--nickname", dest="outfile",
+                        help="The ph5 file prefix (experiment nickname).",
+                        required=True)
+    parser.add_argument("-k", "--kef", dest="keffile",
+                        help="Kitchen Exchange Format file.", required=True)
+    parser.add_argument("-p", "--path", dest="path",
+                        help="Path to directory where ph5 files are stored.",
+                        default=".")
+    parser.add_argument("-c", "--check", action="store_true", default=False,
+                        dest="check",
+                        help="Show what will be done but don't do it!")
 
-    oparser.add_option("-n", "--nickname", dest="outfile",
-                       help="The ph5 file prefix (experiment nickname).")
-    oparser.add_option("-k", "--kef", dest="keffile",
-                       help="Kitchen Exchange Format file.")
-    oparser.add_option("-p", "--path", dest="path",
-                       help="Path to directory where ph5 files are stored.")
-    oparser.add_option("-c", "--check", action="store_true", default=False,
-                       dest="check",
-                       help="Show what will be done but don't do it!")
+    args = parser.parse_args()
 
-    options, args = oparser.parse_args()
-
-    PH5 = None
-    KEFFILE = None
-    TRACE = False
-
-    if options.check is True:
-        TRACE = True
-
-    if options.outfile is not None:
-        PH5 = options.outfile
-
-    if options.keffile is not None:
-        KEFFILE = options.keffile
-
-    if options.path is not None:
-        PATH = options.path
-    else:
-        PATH = "."
-
-    if KEFFILE is None or PH5 is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
-        sys.exit(-1)
+    KEFFILE = args.keffile
+    PH5 = args.outfile
+    PATH = args.path
+    TRACE = args.check
 
 
 def initializeExperiment():
@@ -79,19 +66,18 @@ def add_references(rs):
     import string
     global EX
 
-    # receiver = EX.ph5_g_receivers
-
     for r in rs:
         flds = string.split(r, '/')
         das = string.split(flds[3], '_')[2]
         g = EX.ph5_g_receivers.getdas_g(das)
         EX.ph5_g_receivers.setcurrent(g)
-        #   Set reference
+        # Set reference
         columns.add_reference(r, EX.ph5_g_receivers.current_t_das)
 
 
 def populateTables():
     global EX, KEFFILE, TRACE
+    LOGGER.info("Loading {0} into {1}.".format(KEFFILE, PH5))
     k = kefx.Kef(KEFFILE)
     k.open()
 
@@ -101,15 +87,14 @@ def populateTables():
             err = "Empty kef file."
             break
 
-        #   Get Das_g references
+        # Get Das_g references
         ret = k.strip_receiver_g()
 
         if ret:
             add_references(ret)
 
-        #   Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
+        # Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
         arrays, events, offsets = k.strip_a_e_o()
-        # print arrays
         if arrays:
             for a in arrays:
                 a = a.split(':')[0]
@@ -132,7 +117,7 @@ def populateTables():
 
     k.close()
     if err is True:
-        sys.stderr.write("\nError: There were errors! See output.\n")
+        LOGGER.error("There were errors! See output.")
 
 
 def closePH5():
@@ -143,7 +128,7 @@ def closePH5():
 def update_log():
     '''   Write a log of kef2ph5 activities.   '''
     global PH5, KEFFILE, PATH, TRACE
-    #   Don't log when run with the -c option
+    # Don't log when run with the -c option
     if TRACE is True:
         return
 
@@ -162,11 +147,12 @@ def update_log():
                -------------\n" + line
 
     try:
+        LOGGER.info("Updated kef2ph5.log file.")
         fh = open(klog, 'a+')
         fh.write(line)
         fh.close()
     except BaseException:
-        sys.stderr.write("Warning: Failed to write kef2ph5.log file.\n")
+        LOGGER.warning("Failed to write kef2ph5.log file.")
 
 
 def main():

@@ -8,22 +8,24 @@ import os
 import argparse
 import fnmatch
 import multiprocessing
-from datetime import datetime
+import logging
 import obspy
-from obspy import read_inventory  # noqa
+from datetime import datetime
+from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
+from obspy.core.inventory.response import Response
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 
-
-PROG_VERSION = "2018.106"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
     parser = argparse.ArgumentParser(
-            description='Takes PH5 files and returns stationxml.',
+            description='Takes PH5 files and returns StationXML.',
             usage=('Version: {0} ph5tostationxml --nickname="Master_PH5_file" '
                    '[options]'.format(PROG_VERSION))
             )
@@ -32,7 +34,7 @@ def get_args():
 
     parser.add_argument("-p", "--ph5path", action="store",
                         help=("Comma separated list of paths to ph5 "
-                              "experiments"),
+                              "experiments."),
                         type=str, metavar="ph5path")
 
     parser.add_argument("--network", action="store", dest="network_list",
@@ -394,9 +396,7 @@ class PH5toStationXMLParser(object):
             })
         obs_channel.extra = extra
 
-        if self.manager.level == "RESPONSE" or \
-                (self.manager.level == "CHANNEL" and
-                 self.manager.format == "TEXT"):
+        if self.manager.level == "RESPONSE" or self.manager.level == "CHANNEL":
             # read response and add it to obspy channel inventory
             self.response_table_n_i = \
                 station_list[deployment][0]['response_table_n_i']
@@ -462,10 +462,21 @@ class PH5toStationXMLParser(object):
                 self.resp_manager.add_response(sensor_keys,
                                                datalogger_keys,
                                                inv_resp)
-                return inv_resp
+                if self.manager.level == "CHANNEL":
+                    return Response(
+                        instrument_sensitivity=inv_resp.instrument_sensitivity
+                        )
+                else:
+                    return inv_resp
         else:
-            return self.resp_manager.get_response(sensor_keys,
-                                                  datalogger_keys)
+            inv_resp = self.resp_manager.get_response(sensor_keys,
+                                                      datalogger_keys)
+            if self.manager.level == "CHANNEL":
+                    return Response(
+                        instrument_sensitivity=inv_resp.instrument_sensitivity
+                        )
+            else:
+                return inv_resp
 
     def read_channels(self, sta_xml_obj, station_list):
 
@@ -740,11 +751,6 @@ class PH5toStationXMLParser(object):
             for station in network.stations:
                 station.selected_number_of_channels = 0
                 station.channels = []
-        elif self.manager.level == "CHANNEL" and \
-                self.manager.format != "TEXT":
-            for station in network.stations:
-                for channel in station.channels:
-                    channel.response = None
         return network
 
     def get_network(self, path):
@@ -898,11 +904,11 @@ def main():
         elif out_format == "TEXT":
             inv.write(args.outfile, format="STATIONTXT", level=level)
         else:
-            sys.stderr.write("Incorrect output format. "
-                             "Formats are STATIONXML or KML")
+            LOGGER.error("Incorrect output format. "
+                         "Formats are STATIONXML, KML, SACPZ, and TEXT.")
             sys.exit()
     except Exception as err:
-        sys.stderr.write(str("Error - {0}\n".format(err.message)))
+        LOGGER.error(err.message)
 
 
 if __name__ == '__main__':

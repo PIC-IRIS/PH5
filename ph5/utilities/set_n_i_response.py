@@ -1,17 +1,19 @@
 #!/usr/bin/env pnpython4
 #
-#   Merge Response_t from ph5 files and create corrected Das_t files
-#   Only creates corrected Response_t and Das_t files.
+# Merge Response_t from ph5 files and create corrected Das_t files
+# Only creates corrected Response_t and Das_t files.
 #
-#   Steve Azevedo, Mar 2017
+# Steve Azevedo, Mar 2017
 #
 
-import sys
+import argparse
+import logging
 import os
 import re
 from ph5.core import ph5api
 
-PROG_VERSION = '2017.250'
+PROG_VERSION = '2019.14'
+LOGGER = logging.getLogger(__name__)
 
 ALL_FAMILIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G',
                 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
@@ -19,18 +21,12 @@ ALL_FAMILIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G',
 
 def get_args():
     global ARGS, P5
-    import argparse
 
     parser = argparse.ArgumentParser()
     parser.usage = "v{0}: set_n_i_response\
     (Run from top level families directory.)".format(
         PROG_VERSION)
-    #   Usually master.ph5
-    #
-    # parser.add_argument ("-R", dest="catted_response_kef", required=False,
-    # default="Response_t_by_family.kef",
-    # help="Catted Respons_t kef files from all families. First line at start
-    # of new family example: '## A'")
+
     parser.add_argument("-F", dest="families_directory", required=False,
                         help="Directory that holds the family directories."
                              "Absolute path.")
@@ -49,14 +45,14 @@ def dump_kefs():
           Label start of each Response_t with the family name '## A' as example
     '''
     global ORIG_RESPS
-    miniRE = re.compile("miniPH5_\d{5}.ph5")
+    miniRE = re.compile(r"miniPH5_\d{5}.ph5")
     here = os.getcwd()
     first = True
     if not os.path.exists("RESPONSE_T_N_I"):
         os.mkdir("RESPONSE_T_N_I")
     ORIG_RESPS = os.path.join(here, "RESPONSE_T_N_I",
                               "Response_t_by_family.kef")
-    sys.stderr.write("Creating: {0}\n".format(ORIG_RESPS))
+    LOGGER.info("Creating: {0}".format(ORIG_RESPS))
     with open(ORIG_RESPS, 'w+') as fh:
         for fam in ALL_FAMILIES:
             if os.path.exists(os.path.join(fam, "master.ph5")):
@@ -79,7 +75,7 @@ def dump_kefs():
 
 
 #
-#   First line at start of family kef: "## A" (as an example)
+# First line at start of family kef: "## A" (as an example)
 #
 
 
@@ -104,26 +100,21 @@ def parse_kef():
             if not line:
                 break
             if line[0] == '#':
-                # print line, len (line)
-                #   Comment with family
+                # Comment with family
                 family = line[3:].strip()
                 if family not in ret:
                     ret[family] = []
                 if len(line) == 5 and line[1] == '#':
-                    #   Save row, Just finished last family so save last row
+                    # Save row, Just finished last family so save last row
                     if row is not None:
                         row['n_i_family'] = len(ret[family])
                         ret[family].append(row)
 
                     row = {}
-                    #   Get family name and set to empty list
 
-                # Families directory
-                # elif len (line) > 4 and line[3] == '/' :
-                # ARGS.families_directory = line[3:].strip ()
-            #   We start a new row in the table here
+            # We start a new row in the table here
             elif line[0] == '/':
-                #   Save row if there is one
+                # Save row if there is one
                 if row != {}:
                     row['n_i_family'] = len(ret[family])
                     ret[family].append(row)
@@ -141,7 +132,6 @@ def parse_kef():
                     row['kv'] = {}
                 row['kv'][key] = value
 
-        # row['n_i_all'] = n_i_all + ARGS.first_n_i
         row['n_i_family'] = last_n_i + ARGS.first_n_i
         ret[family].append(row)
     return ret
@@ -152,7 +142,7 @@ def print_new_Response_t(n_i_map):
     '''
     CORRECTED_RESPS = os.path.join(
         ARGS.families_directory, "RESPONSE_T_N_I", "Response_t_cor.kef")
-    sys.stderr.write("Creating: {0}\n".format(CORRECTED_RESPS))
+    LOGGER.info("Creating: {0}".format(CORRECTED_RESPS))
     with open(CORRECTED_RESPS, 'w+') as fh:
         families = sorted(n_i_map.keys())
         for family in families:
@@ -176,9 +166,8 @@ def print_new_Das_t(P5, n_i_map, family):
     for das_g in P5.Das_g_names:
         das = P5.read_das_t(das_g)
         MAP = n_i_map[family]
-        # if not das : continue
         if not das or das not in P5.Das_t:
-            sys.stderr.write("#***\tMissing: {0}\n".format(das))
+            LOGGER.warning("#***\tMissing: {0}".format(das))
             continue
 
         if not os.path.exists(os.path.join(
@@ -188,7 +177,7 @@ def print_new_Das_t(P5, n_i_map, family):
         DAS_KEF = os.path.join(
             ARGS.families_directory, "RESPONSE_T_N_I",
             "Das_t_response_n_i_{0}.kef".format(das))
-        sys.stderr.write("Creating: {0}\n".format(DAS_KEF))
+        LOGGER.info("Creating: {0}\n".format(DAS_KEF))
         with open(DAS_KEF, 'w+') as fh:
             fh.write("#   PH5VERSION: {0}\n".format(ph5api.PH5VERSION))
             keys = sorted(P5.Das_t[das]['keys'])
@@ -207,11 +196,10 @@ def print_new_Das_t(P5, n_i_map, family):
                     sr = ph5api.fepoch(
                         das_t['sample_rate_i'],
                         das_t['sample_rate_multiplier_i'])
-                    sys.stderr.write(
-                        "#   Index out of range for DAS: {0},\
-                        sample rate: {1}\n".format(
-                            das, sr))
-                    sys.stderr.write("#   Entry unchanged! Suspect data.\n")
+                    LOGGER.warning(
+                        "#   Index out of range for DAS: {0}, sample rate: {1}"
+                        .format(das, sr))
+                    LOGGER.warning("#   Entry unchanged! Suspect data.")
                     fh.write(
                         "#   {0} response_table_n_i entry suspect!\n".format(
                             i))
@@ -229,24 +217,20 @@ def main():
     try:
         n_i_map = parse_kef()
     except BaseException:
-        print "Cannot create n_i map. Make sure the directory is correct\
-         using -F flag"
-        sys.exit()
+        LOGGER.error("Cannot create n_i map. "
+                     "Make sure the directory is correct using -F flag")
+    else:
+        for family in ALL_FAMILIES:
+            ph5 = os.path.join(ARGS.families_directory, family)
+            try:
+                P5 = ph5api.PH5(path=ph5, nickname='master.ph5')
+            except Exception as e:
+                LOGGER.warning(e.msg)
+                continue
 
-    for family in ALL_FAMILIES:
-        # print ARGS.families_directory, family
-        ph5 = os.path.join(ARGS.families_directory, family)
-        # print '#***' + ph5
-        try:
-            P5 = ph5api.PH5(path=ph5, nickname='master.ph5')
-        except Exception as e:
-            sys.stderr.write("Warning: {0}\n".format(e.msg))
-            continue
-
-        print_new_Das_t(P5, n_i_map, family)
-        P5.close()
-
-    print_new_Response_t(n_i_map)
+            print_new_Das_t(P5, n_i_map, family)
+            P5.close()
+        print_new_Response_t(n_i_map)
 
 
 if __name__ == '__main__':

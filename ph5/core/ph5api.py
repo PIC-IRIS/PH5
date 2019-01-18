@@ -1,11 +1,11 @@
 #!/usr/bin/env pnpython4
 #
-#   Basic API for reading a family of ph5 files
+# Basic API for reading a family of ph5 files
 #
-#   Steve Azevedo, March 2015
+# Steve Azevedo, March 2015
 #
 
-import sys
+import logging
 import os
 import time
 import re
@@ -14,7 +14,8 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2018.222'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
 # No time corrections applied if slope exceeds this value, normally 0.001
@@ -23,7 +24,7 @@ MAX_DRIFT_RATE = 0.001
 
 __version__ = PROG_VERSION
 
-#   Conversion factors to meters
+# Conversion factors to meters
 FACTS_M = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
            'mm': 1. / 1000., 'kmi': 1852.0, 'in': 0.0254,
            'ft': 0.3048, 'yd': 0.9144, 'mi': 1609.344,
@@ -320,8 +321,7 @@ class PH5(experiment.ExperimentGroup):
                 lat1 = event_t['location/Y/value_d']
                 az, baz, dist = run_geod(lat0, lon0, lat1, lon1)
         except Exception as e:
-            sys.stderr.write(
-                "Warning: Couldn't get offset. {0}\n".format(repr(e)))
+            LOGGER.warning("Couldn't get offset. {0}".format(repr(e)))
 
         return {'event_id_s': evt_id, 'receiver_id_s': sta_id,
                 'azimuth/value_f': az, 'azimuth/units_s': 'degrees',
@@ -338,7 +338,6 @@ class PH5(experiment.ExperimentGroup):
            Returns:
               A list of dictionaries in the same format as ph5 Offset_t.
         '''
-        #
         Offset_t = []
         if not self.Array_t_names:
             self.read_array_t_names()
@@ -362,10 +361,8 @@ class PH5(experiment.ExperimentGroup):
 
         for o in order:
             array_t = Array_t['byid'][o]
-            # print array_t['id_s']
             chans = self.channels(array, o)
             c = chans[0]
-            # for c in array_t.keys () :
             offset_t = self.get_offset(
                 array, array_t[c][0]['id_s'], shot_line, shot_id)
             Offset_t.append(offset_t)
@@ -388,7 +385,7 @@ class PH5(experiment.ExperimentGroup):
                  row from the offset table.
         '''
         if shot_line == "Event_t":
-            #   Legacy Offset table name
+            # Legacy Offset table name
             offset_table_name = "Offset_t"
         else:
             offset_table_name = "Offset_t_{0}_{1}" \
@@ -792,7 +789,7 @@ class PH5(experiment.ExperimentGroup):
 
         if stop_epoch is not None and start_epoch is not None:
             for r in self.Das_t_full[das]['rows']:
-                #   Start and stop for this das event window
+                # Start and stop for this das event window
                 start = float(r['time/epoch_l']) + \
                         float(r['time/micro_seconds_i']) / 1000000.
                 stop = start + (float(r['sample_count_i']) / (
@@ -800,13 +797,13 @@ class PH5(experiment.ExperimentGroup):
                         float(r['sample_rate_multiplier_i'])))
                 sr = float(r['sample_rate_i']) / \
                     float(r['sample_rate_multiplier_i'])
-                #   We need to keep this
+                # We need to keep this
                 if is_in(start, stop, start_epoch, stop_epoch):
                     if sr not in rk:
                         rk[sr] = []
                     rk[sr].append(r)
             rkk = rk.keys()
-            #   Sort so higher sample rates are first
+            # Sort so higher sample rates are first
             rkk.sort(reverse=True)
             for s in rkk:
                 rows_keep.extend(rk[s])
@@ -866,8 +863,7 @@ class PH5(experiment.ExperimentGroup):
                     rows.append(bi[r])
                 kef += build_kef("Experiment_g/Sorts_g/{0}".format(o), rows)
             return kef
-            # raise APIError (-1, "Return of Offset_t not inplemented.")
-        #   This will change once shot lines are implemented
+        # This will change once shot lines are implemented
         elif table == "Event_t":
             rows = []
             en = []
@@ -952,8 +948,8 @@ class PH5(experiment.ExperimentGroup):
         else:
             Das_t = das_t
         #
-        #   We shift the samples to match the requested start
-        #   time to apply the time correction
+        # We shift the samples to match the requested start
+        # time to apply the time correction
         #
         clock = Clock()
         if apply_time_correction:
@@ -993,21 +989,20 @@ class PH5(experiment.ExperimentGroup):
             if (d['channel_number_i'] != chan) or (
                     sr != sample_rate) or (window_start_fepoch > stop_fepoch):
                 continue
-            #
             if window_start_fepoch0 is None:
                 window_start_fepoch0 = window_start_fepoch
-            #   Number of samples in window
+            # Number of samples in window
             window_samples = d['sample_count_i']
-            #   Window stop epoch
+            # Window stop epoch
             window_stop_fepoch = window_start_fepoch + (window_samples / sr)
 
-            #   Requested start before start of window, we must need to
-            #   start cutting at start of window
+            # Requested start before start of window, we must need to
+            # start cutting at start of window
             if start_fepoch < window_start_fepoch:
                 cut_start_fepoch = window_start_fepoch
                 cut_start_sample = 0
             else:
-                #   Cut start is somewhere in window
+                # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
                 cut_start_sample = int(round((((start_fepoch -
                                                 window_start_fepoch)) * sr)))
@@ -1033,13 +1028,10 @@ class PH5(experiment.ExperimentGroup):
             current_trace_type, current_trace_byteorder = (
                 self.ph5_g_receivers.trace_info(trace_reference))
             if first:
-                #   Correct start time to 'actual' time of first sample
-                # start_fepoch = window_start_fepoch +
-                # (float (cut_start_sample - time_cor_guess_samples)/sr)
+                # Correct start time to 'actual' time of first sample
                 start_fepoch = window_start_fepoch + cut_start_sample / sr
                 if trace_start_fepoch is None:
                     trace_start_fepoch = start_fepoch
-                    # print timedoy.TimeDOY (epoch=start_fepoch)
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float':
@@ -1050,18 +1042,15 @@ class PH5(experiment.ExperimentGroup):
                 # Time difference between the end of last window and the start
                 # of this one
                 time_diff = abs(window_start_fepoch)
-                #   Overlaps are positive
+                # Overlaps are positive
                 d['gap_overlap'] = time_diff - (1. / sr)
-                #   Data gap
+                # Data gap
                 if abs(time_diff) > (1. / sr):
                     new_trace = True
-            #
-            ###
-            #
             if len(data_tmp) > 0:
                 #  Gap!!!
                 if new_trace:
-                    #   Save trace before gap
+                    # Save trace before gap
                     trace = Trace(data,
                                   trace_start_fepoch,
                                   0,  # time_correction
@@ -1096,7 +1085,7 @@ class PH5(experiment.ExperimentGroup):
 
             window_stop_fepoch + (1. / sr)
 
-        #   Done reading all the traces catch the last bit
+        # Done reading all the traces catch the last bit
         if data is None:
             return [Trace(np.array([]), start_fepoch, 0., 0, sample_rate,
                           None, None, das_t, None, None, clock=clock)]
@@ -1121,12 +1110,11 @@ class PH5(experiment.ExperimentGroup):
             receiver_t = None
             response_t = None
         ret = []
-        #
+
         for t in traces:
             if apply_time_correction:
                 window_start_fepoch0 = t.start_time
                 window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
-                # try :
                 time_correction, clock = \
                     _cor(window_start_fepoch0.epoch(fepoch=True),
                          window_stop_fepoch.epoch(fepoch=True),
@@ -1135,17 +1123,11 @@ class PH5(experiment.ExperimentGroup):
                     t.clock.comment.append(
                         "Time correction mismatch. {0}ms/{1}ms"
                         .format(time_correction, time_cor_guess_ms))
-
-                # except APIError as e :
-                # sys.stderr.write ("Warning: {0}: {1}"\
-                # .format (e.errno, e.msg))
-                # time_correction = 0.
             else:
                 time_correction = 0.
-            #   Set time correction
+            # Set time correction
             t.time_correction_ms = time_correction
-            #
-            #   Set receiver_t and response_t
+            # Set receiver_t and response_t
             t.receiver_t = receiver_t
             t.response_t = response_t
             ret.append(t)
@@ -1156,10 +1138,6 @@ class PH5(experiment.ExperimentGroup):
                 print t
 
         return ret
-
-    #
-    ###
-    #
 
     def _Cut(self, das, start_time, stop_time, chan, sr=None, msg=None):
         '''   Find out if data exists for a given DAS, start,
@@ -1186,12 +1164,12 @@ class PH5(experiment.ExperimentGroup):
             C.msg.append("No data found for time period.")
             return C
         for das_t in self.Das_t[das]['rows']:
-            #   Filter on channel
+            # Filter on channel
             if chan != das_t['channel_number_i']:
                 continue
             das_sr = float(das_t['sample_rate_i']) / \
                 float(das_t['sample_rate_multiplier_i'])
-            #   Filter on sample rate
+            # Filter on sample rate
             if sr is not None and sr != das_sr:
                 continue
             window_start_fepoch = fepoch(
@@ -1206,12 +1184,11 @@ class PH5(experiment.ExperimentGroup):
                     C.das_t_times.append(
                         (window_start_fepoch, window_stop_fepoch))
                 else:
-                    ###
                     i = len(C.das_t_times)
                     last_start, last_stop = C.das_t_times[i - 1]
                     new_start = last_stop + 1. / das_sr
                     delta = abs(new_start - window_start_fepoch)
-                    #   Allow 1/2 sample overlap or gap
+                    # Allow 1/2 sample overlap or gap
                     if delta < ((1. / das_sr) * 1.5):
                         C.das_t_times[i - 1][1] = window_stop_fepoch
                     else:
@@ -1226,10 +1203,6 @@ class PH5(experiment.ExperimentGroup):
 
         return C
 
-    #
-    ###
-    #
-
     def shot_cut(self, array_t_name, start_time, length):
         '''    Return a generator of Cut objects, ret, in shot order
                (Used to find what data exists without cutting it)
@@ -1239,25 +1212,24 @@ class PH5(experiment.ExperimentGroup):
                length -> The length of the cut in seconds as a float
         '''
         ret = []
-        #   Make sure array exists
+        # Make sure array exists
         if array_t_name in self.Array_t:
             Array_t = self.Array_t[array_t_name]['byid']
             order = self.Array_t[array_t_name]['order']
         else:
-            # yield
             return ret
-        #   Header
+        # Header
         H = CutHeader(array=array_t_name[8:], order=[])
-        #   Loop through each station in Array
+        # Loop through each station in Array
         stations_found = {}
         for o in order:
-            #   Loop through each channel for this station
+            # Loop through each channel for this station
             chans = Array_t[o].keys()
             for c in chans:
                 # Loop through each entry for this station / channel
                 # combination
                 for array_t in Array_t[o][c]:
-                    #   Use Array sample rate if it is available
+                    # Use Array sample rate if it is available
                     if 'sample_rate_i' in array_t:
                         sr = array_t['sample_rate_i']
                     else:
@@ -1271,7 +1243,7 @@ class PH5(experiment.ExperimentGroup):
                         array_t['pickup_time/epoch_l'],
                         array_t['pickup_time/micro_seconds_i'])
                     stop_time = start_time + length
-                    #   Filter on deploy and pickup times
+                    # Filter on deploy and pickup times
                     if not is_in(deploy_fepoch, pickup_fepoch,
                                  start_time, stop_time):
                         msg = "Start: {0} and Stop: {1} outside of deploy\
@@ -1294,18 +1266,12 @@ class PH5(experiment.ExperimentGroup):
                             if H.si_us == 0:
                                 H.si_us = int((1.0 / float(sr)) * 1000000.)
                         stations_found[array_t['id_s']] = True
-                    # yield C
                     ret.append(C)
 
         if H.order != []:
-            # yield H
             ret.insert(0, H)
-        # print H.order
         return ret
 
-    #
-    ###
-    #
     def receiver_cut(self, event_t_name, array_t, length):
         '''    Return a generator of Cut objects in receiver order
                (Used to find what data exists without cutting it)
@@ -1315,7 +1281,7 @@ class PH5(experiment.ExperimentGroup):
                length -> The length of the cut in seconds as a float
         '''
         ret = []
-        #   Get sample rate if available
+        # Get sample rate if available
         sr = None
         if 'sample_rate_i' in array_t:
             sr = float(array_t['sample_rate_i']) / \
@@ -1328,7 +1294,7 @@ class PH5(experiment.ExperimentGroup):
         else:
             shot_line = event_t_name[8:]
         H = CutHeader(shot_line=shot_line, order=[])
-        #   Loop through each event ID
+        # Loop through each event ID
         events_found = {}
         for o in order:
             event_t = Event_t[o]
@@ -1342,7 +1308,7 @@ class PH5(experiment.ExperimentGroup):
             pickup_fepoch = fepoch(
                 array_t['pickup_time/epoch_l'],
                 array_t['pickup_time/micro_seconds_i'])
-            #   Filter on deploy and pickup time
+            # Filter on deploy and pickup time
             if not is_in(deploy_fepoch, pickup_fepoch, start_time, stop_time):
                 msg = "Start: {0} and Stop: {1} outside of deploy\
                 and pickup time.".format(
@@ -1363,13 +1329,9 @@ class PH5(experiment.ExperimentGroup):
                         H.si_us = int((1.0 / float(sr)) * 1000000.)
 
                 events_found[o] = True
-            #
-            # yield C
             ret.append(C)
 
         if H.order != []:
-            # print H.order
-            # yield H
             ret.insert(0, H)
 
         return ret
@@ -1419,7 +1381,7 @@ def pad_traces(traces):
         if end_time1 is not None:
             if end_time0 != end_time1:
                 n = int(((end_time1 - end_time0) * ret.sample_rate) + 0.5)
-                #   Pad
+                # Pad
                 d = pad(t.data, n, dtype=ret.ttype)
                 ret.data = np.append(ret.data, d)
                 N += n
@@ -1475,11 +1437,6 @@ def by_id(rows, key='id_s', secondary_key=None, unique_key=True):
     return byid, order
 
 
-#
-###
-#
-
-
 def run_geod(lat0, lon0, lat1, lon1):
     UNITS = 'm'
     ELLIPSOID = 'WGS84'
@@ -1493,13 +1450,8 @@ def run_geod(lat0, lon0, lat1, lon1):
     if dist:
         dist /= FACTS_M[UNITS]
 
-    #   Return list containing azimuth, back azimuth, distance
+    # Return list containing azimuth, back azimuth, distance
     return az, baz, dist
-
-
-#
-###
-#
 
 
 def deg2dms(dgs):
@@ -1514,13 +1466,8 @@ def deg2dms(dgs):
     return dms
 
 
-#
-###
-#
-#   Convert from polar to rectangular coordinates
-
-
 def rect(r, w, deg=0):
+    # Convert from polar to rectangular coordinates
     # radian if deg=0; degree if deg=1
     from math import cos, sin, pi
     if deg:
@@ -1559,7 +1506,6 @@ def linreg(X, Y):
     else:
         ss = 1.
 
-    # Var_a, Var_b = ss * N / det, ss * Sxx / det
     return a, b, (RR, ss)
 
 
@@ -1583,9 +1529,9 @@ def calc_offset_sign(offsets):
             X.append(x)
             Y.append(y)
         except Exception as e:
-            sys.stderr.write("%s\n" % e)
+            LOGGER.error(e)
 
-    #   The seismic line is abx + c (ab => w)
+    # The seismic line is abx + c (ab => w)
     ab, c, err = linreg(X, Y)
 
     if abs(ab) > 1:
@@ -1597,11 +1543,11 @@ def calc_offset_sign(offsets):
     flop = False
     for offset_t in offsets:
         try:
-            #   Rotate line to have zero slope
+            # Rotate line to have zero slope
             a = offset_t['azimuth/value_f']
 
             w = a - regangle
-            #   Pick initial sign
+            # Pick initial sign
             if sig == 0:
                 if w < 0:
                     sig = -1
@@ -1611,23 +1557,17 @@ def calc_offset_sign(offsets):
             offset_t['offset/value_d'] = sig * \
                 float(offset_t['offset/value_d'])
 
-            #   Once we pass the minimum offset flip the sign
+            # Once we pass the minimum offset flip the sign
             if abs(offsetmin) == abs(offset_t['offset/value_d']) and not flop:
                 flop = True
                 sig *= -1
 
             OO.append(offset_t)
         except Exception as e:
-            sys.stderr.write("%s\n" % e)
+            LOGGER.error(e)
 
-    sys.stdout.flush()
-    #   Returning Oh not zero
+    # Returning Oh not zero
     return OO
-
-
-#
-##
-#
 
 
 def is_in(start, stop, start_epoch, stop_epoch):
@@ -1637,22 +1577,17 @@ def is_in(start, stop, start_epoch, stop_epoch):
        start_epoch is start of desired data
        stop_epoch is stop of desired data
     '''
-    #   start_epoch is in between start and stop
+    # start_epoch is in between start and stop
     if start_epoch >= start and start_epoch <= stop:
         return True
-    #   stop_epoch is in between start and stop
+    # stop_epoch is in between start and stop
     elif stop_epoch >= start and stop_epoch <= stop:
         return True
-    #   entire recording window is in between start_epoch and stop_epoch
+    # entire recording window is in between start_epoch and stop_epoch
     elif start_epoch <= start and stop_epoch >= stop:
         return True
     else:
         return False
-
-
-#
-###
-#
 
 
 def build_kef(ts, rs):
@@ -1661,12 +1596,12 @@ def build_kef(ts, rs):
        rs -> rows object
     '''
     tdoy = timedoy.TimeDOY(epoch=time.time())
-    ret = "#\n###   Written by ph5api v{0} at {1}\n#\n".format(
+    ret = "#\n### Written by ph5api v{0} at {1}\n#\n".format(
         PROG_VERSION, tdoy.getFdsnTime())
     i = 0
     for r in rs:
         i += 1
-        ret += "#   {0}\n".format(i)
+        ret += "# {0}\n".format(i)
         ret += ts + '\n'
         keys = r.keys()
         for k in keys:
@@ -1674,11 +1609,6 @@ def build_kef(ts, rs):
             ret += line
 
     return ret
-
-
-#
-###
-#
 
 
 def fepoch(epoch, ms):
@@ -1713,7 +1643,7 @@ def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
 
     clock = Clock(slope=time_t['slope_d'], offset_secs=time_t['offset_d'],
                   max_drift_rate_allowed=max_drift_rate)
-    #   Handle fixed offset correction
+    # Handle fixed offset correction
     if time_t['slope_d'] == 0. and time_t['offset_d'] != 0.:
         return 1000. * time_t['offset_d'], clock
 
@@ -1727,13 +1657,7 @@ def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
     return time_correction_ms, clock
 
 
-#
-###
-#
-
-
 def filter_das_t(Das_t, chan):
-    #
     def sort_on_epoch(a, b):
         a_epoch = a['time/epoch_l'] + \
                   (float(a['time/micro_seconds_i']) / 1000000.)

@@ -1,28 +1,24 @@
 #!/usr/bin/env pnpython3
 
 import sys
+import logging
 import os
 import string
 import re
 from ph5.core import columns
 
-PROG_VERSION = '2016.106 Developmental'
+PROG_VERSION = '2019.14'
+LOGGER = logging.getLogger(__name__)
 
-#   This line contains a key/value entered as is
-# keyValRE = re.compile ("(\w*)\s*=\s*(\w*)")
-#   This line contains a key/file read in as an array
-# keyFileRE = re.compile ("(\w*)\s*:\s*(\w*)")
-keyValFileRE = re.compile("(.*)\s*[;=]\s*(.*)")
-#
-updateRE = re.compile("(/.*):Update:(.*)\s*")
-#
-deleteRE = re.compile("(/.*):Delete:(.*)\s*")
-#
+
+keyValFileRE = re.compile(r"(.*)\s*[;=]\s*(.*)")
+updateRE = re.compile(r"(/.*):Update:(.*)\s*")
+deleteRE = re.compile(r"(/.*):Delete:(.*)\s*")
 receiverRE = re.compile("/Experiment_g/Receivers_g/Das_g_.*")
 
-arrayRE = re.compile("/Experiment_g/Sorts_g/Array_t_(\d+)")
-eventRE = re.compile("/Experiment_g/Sorts_g/Event_t(_(\d+))?")
-offsetRE = re.compile("/Experiment_g/Sorts_g/Offset_t(_(\d+)_(\d+))?")
+arrayRE = re.compile(r"/Experiment_g/Sorts_g/Array_t_(\d+)")
+eventRE = re.compile(r"/Experiment_g/Sorts_g/Event_t(_(\d+))?")
+offsetRE = re.compile(r"/Experiment_g/Sorts_g/Offset_t(_(\d+)_(\d+))?")
 
 
 class KefError (Exception):
@@ -46,17 +42,17 @@ class Kef:
         # The file parsed: parsed[path] = [keyval, keyval, ...] keyval = (keys
         # are table keys)
         self.parsed = {}
-        self.updateMode = False     #
+        self.updateMode = False
         self.keyvals = []  # Current key value dictionary list
-        self.current_path = None    #
-        self.paths = []             #
+        self.current_path = None
+        self.paths = []
 
     def open(self):
         try:
             self.fh = file(self.filename)
         except Exception as e:
             self.fh = None
-            raise KefError("Failed to open %s. Exception: %s\n" %
+            raise KefError("Failed to open %s. Exception: %s" %
                            (self.filename, e))
 
     def close(self):
@@ -83,19 +79,19 @@ class Kef:
                 break
 
             nchars = len(line)
-            #   Skip empty lines and comments
+            # Skip empty lines and comments
             if line[0] == '#' or line[0] == '\n':
                 if sincepath != 0:
                     sincepath -= nchars
                 continue
 
-            #   Remove all leading and trailing whitespace
+            # Remove all leading and trailing whitespace
             line = string.strip(line)
-            #   If the length of the stripped line is 0, continue to next line
+            # If the length of the stripped line is 0, continue to next line
             if not line:
                 continue
             nret += 1
-            #   If line ends in '\' it is continued on next line
+            # If line ends in '\' it is continued on next line
             while line[-1] == '\\':
                 line = line[:-1]
                 line = line + ' '
@@ -106,7 +102,7 @@ class Kef:
                 appnd = string.strip(appnd)
                 line = line + appnd
 
-            #   This line contains the path to the table to update
+            # This line contains the path to the table to update
             if line[0] == '/':
                 if path:
                     self.parsed[path].append(keyval)
@@ -121,8 +117,8 @@ class Kef:
                 key, value = mo.groups()
                 sincepath -= nchars
             else:
-                sys.stderr.write(
-                    "Warning: unparsable line: %s\nSkipping\n" % line)
+                LOGGER.warning("Unparsable line: {0} ... Skipping"
+                               .format(line))
                 continue
 
             key = string.strip(key)
@@ -133,7 +129,7 @@ class Kef:
 
                 keyval[key] = value
 
-        #   No limits on what to read
+        # No limits on what to read
         if num is None or EOF:
             if keyval:
                 self.parsed[path].append(keyval)
@@ -166,7 +162,7 @@ class Kef:
 
         return keyval
 
-    #   Return next path and key value dictionary
+    # Return next path and key value dictionary
     def next(self):
         path = self.current_path
         keyval = self._next_keyval()
@@ -175,12 +171,10 @@ class Kef:
             keyval = self._next_keyval()
 
         return path, keyval
-    #   Rewind
 
     def rewind(self):
         self.paths = self.parsed.keys()
         self.keyvals = []
-    #
 
     def batch_update(self, trace=False):
         '''   Batch update ph5 file from kef file   '''
@@ -190,13 +184,13 @@ class Kef:
         while p:
             if trace is True:
                 kys = kv.keys()
-                sys.stderr.write('=-' * 30)
-                sys.stderr.write("\n%s\n" % p)
+                print("=-" * 30)
+                print("{0}".format(p))
                 for k in kys:
-                    sys.stderr.write("\t%s = %s\n" % (k, kv[k]))
+                    print("\t{0} = {1}".format(k, kv[k]))
 
             DELETE = False
-            #   Update or Append or Delete
+            # Update or Append or Delete
             mo = deleteRE.match(p)
             if mo:
                 DELETE = True
@@ -208,34 +202,27 @@ class Kef:
                 p, k = mo.groups()
                 key.append(k)
 
-            # if receiverRE.match (p) :
-                # We are trying to update something in a Receivers_g
-                # sys.stderr.write ("Warning: Attempting to modify
-                # something under /Experiment_g/Receivers_g.\n")
-
             # columns.TABLES keeps a dictionary of key = table name, value =
             # reference to table
             if p not in columns.TABLES:
-                sys.stderr.write(
-                    "Warning: No table reference for key: %s\n" % p)
-                sys.stderr.write(
-                    "Possibly ph5 file is not open or initialized?\n")
+                LOGGER.warning("No table reference for key: {0}".format(p))
+                LOGGER.info("Possibly ph5 file is not open or initialized?")
                 p, kv = self.next()
                 continue
 
-            #   Get handle
+            # Get handle
             ref = columns.TABLES[p]
-            #   key needs to be list for columns.validate
+            # key needs to be list for columns.validate
             if trace is True:
-                sys.stderr.write("Validating...\n")
+                LOGGER.info("Validating...")
 
             errs_keys, errs_required = columns.validate(ref, kv, key)
             for e in errs_keys + errs_required:
                 err = True
-                sys.stderr.write(e + '\n')
+                LOGGER.error(e)
 
             if trace is True:
-                sys.stderr.write("Done\n")
+                LOGGER.info("Done")
 
             if len(key) == 0:
                 key = None
@@ -244,17 +231,17 @@ class Kef:
 
             if DELETE:
                 if trace is True:
-                    sys.stderr.write("Deleting...")
+                    LOGGER.info("Deleting...")
                 else:
                     columns.delete(ref, kv[key], key)
             else:
                 if trace is True:
-                    sys.stderr.write("Updating...")
+                    LOGGER.info("Updating...")
                 else:
                     columns.populate(ref, kv, key)
 
             if trace is True:
-                sys.stderr.write("Skipped\n")
+                LOGGER.info("Skipped")
 
             p, kv = self.next()
 
@@ -265,7 +252,6 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            # print p
             if receiverRE.match(p):
                 base = string.split(p, ':')[0]
                 ret.append(base)
@@ -279,7 +265,6 @@ class Kef:
         self.rewind()
 
         for p in self.paths:
-            # print p
             if arrayRE.match(p):
                 base = string.split(p, '/')[-1:]
                 reta[base[0]] = True
@@ -313,7 +298,6 @@ if __name__ == '__main__':
     k = Kef('Experiment_t.kef')
     k.open()
     k.read()
-    # k.batch_update ()
     k.rewind()
 
     p, kv = k.next()

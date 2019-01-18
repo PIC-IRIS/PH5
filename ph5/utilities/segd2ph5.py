@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2018.127 Developmental"
+PROG_VERSION = "2019.14"
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -32,7 +32,7 @@ MAP_INFO = {}
 #   Current raw file processing
 F = None
 #   RE for mini files
-miniPH5RE = re.compile(".*miniPH5_(\d\d\d\d\d)\.ph5")
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 # LSB = 6.402437066e-6   #   From Malcolm UCSD
 LSB00 = 2500. / (2 ** 23)  # 0dB
@@ -160,8 +160,10 @@ def get_args():
                        metavar="output_file_prefix")
 
     oparser.add_option("-U", "--UTM", dest="utm_zone",
-                       help="Locations in SEG-D file are UTM, --UTM=utmzone.",
-                       type='int', default=0,
+                       help="Locations in SEG-D file are UTM, --UTM=utmzone."
+                            " Zone number and N or S designation"
+                            " eg 13N",
+                       type='str', default=0,
                        metavar="utm_zone")
 
     oparser.add_option("-T", "--TSPF", dest="texas_spc",
@@ -354,43 +356,6 @@ def update_external_references():
         # sys.exit ()
     # sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
     logging.info("done, {0} map nodes recreated.\n".format(n))
-
-
-# @profile
-# def get_current_data_only (size_of_data, das = None) :
-# '''   Return opened file handle for data only PH5 file that will be
-# less than MAX_PH5_BYTES after raw data is added to it.
-# '''
-
-# newest = 0
-# newestfile = ''
-# Get the most recent data only PH5 file or match DAS serialnumber
-# for index_t in INDEX_T_DAS.rows :
-# This DAS already exists in a ph5 file
-# if index_t['serial_number_s'] == str (das) :
-# newestfile = index_t['external_file_name_s']
-# newestfile = newestfile.replace ('.ph5', '')
-# newestfile = newestfile.replace ('./', '')
-# return openPH5 (newestfile)
-# Find most recent ph5 file
-# if index_t['time_stamp/epoch_l'] > newest :
-# newest = index_t['time_stamp/epoch_l']
-# newestfile = index_t['external_file_name_s']
-# newestfile = newestfile.replace ('.ph5', '')
-# newestfile = newestfile.replace ('./', '')
-
-# print newest, newestfile
-# if not newestfile :
-# This is the first file added
-# return openPH5 ('miniPH5_00001')
-
-# size_of_exrec = os.path.getsize (newestfile + '.ph5')
-# print size_of_data, size_of_exrec, size_of_data + size_of_exrec,
-# MAX_PH5_BYTES
-# if (size_of_data + size_of_exrec) > MAX_PH5_BYTES :
-# newestfile = "miniPH5_{0:05d}".format (int (newestfile[8:13]) + 1)
-
-# return openPH5 (newestfile)
 
 
 def get_current_data_only(size_of_data, das=None):
@@ -1025,7 +990,18 @@ def utmcsptolatlon(northing, easting):
        geographic coordinates, WGS84.
     '''
     #   UTM
-    utmc = Proj(proj='utm', zone=UTM, ellps='WGS84')
+    new_UTM = re.split(r'(\d+)', UTM)
+    utmzone = str(new_UTM[1])
+
+    if str(new_UTM[2]).upper() == 'N':
+        NS = 'north'
+    elif str(new_UTM[2]).upper() == 'S':
+        NS = 'south'
+    else:
+        NS = 'north'
+
+    utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
+    print
     #   WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
     #
@@ -1321,16 +1297,6 @@ def main():
         logging.info("Done...{0:b}".format(int(seconds / 6.)))
         logging.shutdown
 
-    # Profile
-    # import cProfile, pstats
-    # sys.stderr.write ("Warning: Profiling enabled!\n")
-    # cProfile.run ('prof ()', "segd2ph5.profile")
-
-    # p = pstats.Stats ("segd2ph5.profile")
-    # p.sort_stats('time').print_stats(40)
-    # Profile stop
-
-    #   No profile
     prof()
 
 

@@ -1,13 +1,16 @@
 #!/usr/bin/env pnpython2
 
+import argparse
 import os
 import os.path
 import sys
+import logging
 import time
 import re
 from ph5.core import timedoy
 
-PROG_VERSION = "2014.241 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -34,7 +37,6 @@ class PH5_Time(object):
             self.micro_seconds_i = 0
 
     def _passcal(self, passcal_s):
-        # tdoy = timedoy.TimeDOY ()
         flds = passcal_s.split(':')
         for i in range(5):
             try:
@@ -48,12 +50,10 @@ class PH5_Time(object):
                                second=int(flds[4]),
                                microsecond=0,
                                doy=int(flds[1]))
-        # epoch_l = tdoy.epoch (int (flds[0]), int (flds[1]), int (flds[2]),
-        # int (flds[3]), int (flds[4]))
         epoch_l = tdoy.epoch()
         self._epoch(epoch_l)
 
-    #   Read ascii time as produced by time.ctime XXX   Untested   XXX
+    # Read ascii time as produced by time.ctime XXX   Untested   XXX
     def _ascii(self, ascii_s):
         ttuple = time.strptime(ascii_s, "%a %b %d %H:%M:%S %Y")
         epoch_l = time.mktime(ttuple)
@@ -66,46 +66,38 @@ class PH5_Time(object):
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
 def get_args():
     global ARRAY_FILE, DEPLOY, PICKUP
 
-    from optparse import OptionParser
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
+    parser.usage = (" set_deploy_pickup_times -a Array_t_xxx.kef "
+                    "-d ASCII_deploy_time -p ASCII_pickup_time")
 
-    oparser = OptionParser()
-
-    oparser.usage = " set_deploy_pickup_times -a Array_t_xxx.kef\
-     -d ASCII_deploy_time -p ASCII_pickup_time"
-
-    oparser.description = "Version: %s: Set deploy and pickup times in an\
+    parser.description = "Version: %s: Set deploy and pickup times in an\
      Array_t_xxx.kef file." % PROG_VERSION
 
-    oparser.add_option("-a", "--array-kef", dest="array_kef",
-                       help="The Array_t_xxx.kef file to modify.",
-                       metavar="array_kef")
+    parser.add_argument("-a", "--array-kef", dest="array_kef",
+                        help="The Array_t_xxx.kef file to modify.",
+                        metavar="array_kef", required=True)
 
-    oparser.add_option("-d", "--deploy-time", dest="deploy_time",
-                       help="Array deployment time: YYYY:JJJ:HH:MM:SS",
-                       metavar="deploy_time")
+    parser.add_argument("-d", "--deploy-time", dest="deploy_time",
+                        help="Array deployment time: YYYY:JJJ:HH:MM:SS",
+                        metavar="deploy_time", required=True)
 
-    oparser.add_option("-p", "--pickup-time", dest="pickup_time",
-                       help="Array pickup time: YYYY:JJJ:HH:MM:SS",
-                       metavar="pickup_time")
+    parser.add_argument("-p", "--pickup-time", dest="pickup_time",
+                        help="Array pickup time: YYYY:JJJ:HH:MM:SS",
+                        metavar="pickup_time", required=True)
 
-    options, args = oparser.parse_args()
+    args = parser.parse_args()
 
-    ARRAY_FILE = options.array_kef
-
-    DEPLOY = options.deploy_time
-
-    PICKUP = options.pickup_time
-
-    if ARRAY_FILE is None or DEPLOY is None or PICKUP is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
-        sys.exit(-1)
+    ARRAY_FILE = args.array_kef
+    DEPLOY = args.deploy_time
+    PICKUP = args.pickup_time
 
 
 def barf(fh, of, dep_time, pu_time):
@@ -162,7 +154,7 @@ def main():
     get_args()
 
     if not os.path.exists(ARRAY_FILE):
-        sys.stderr.write("Error: Can't open %s!\n" % ARRAY_FILE)
+        LOGGER.error("Can't open {0}!".format(ARRAY_FILE))
         sys.exit()
     else:
         fh = open(ARRAY_FILE)
@@ -170,7 +162,7 @@ def main():
         base = os.path.basename(ARRAY_FILE)
         base = '_' + base
         of = open(os.path.join(mdir, base), 'w+')
-        sys.stderr.write("Opened: %s\n" % os.path.join(mdir, base))
+        LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
 
     dep_time = PH5_Time(passcal_s=DEPLOY)
 

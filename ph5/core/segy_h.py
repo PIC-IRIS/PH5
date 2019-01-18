@@ -1,20 +1,21 @@
 #!/usr/bin/env pnpython3
 #
-#   A low level SEG-Y library
+# A low level SEG-Y library
 #
-#   SEG-Y REV1, header file descriptions
+# SEG-Y REV1, header file descriptions
 #
-#   Optional PASSCAL and Menlo USGS extended trace headers
+# Optional PASSCAL and Menlo USGS extended trace headers
 #
-#   Steve Azevedo, August 2006
+# Steve Azevedo, August 2006
 #
 
 import exceptions
-import sys
+import logging
 import construct
 from ph5.core import ibmfloat, ebcdic
 
-PROG_VERSION = '2014.261'
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def __version__():
@@ -26,16 +27,16 @@ class HeaderError (exceptions.Exception):
         self.args = args
 
 #
-#   "See SEG rev 1 Data Exchange format"
-#   SEG Technical Standards Committee
-#   Release 1.0, May 2002
+# "See SEG rev 1 Data Exchange format"
+# SEG Technical Standards Committee
+# Release 1.0, May 2002
 #
-#   segy.h -- PASSCAL software release, 198?
+# segy.h -- PASSCAL software release, 198?
 #
-#   segy.h -- Colorado School of Mines, 2006
+# segy.h -- Colorado School of Mines, 2006
 #
 
-#   3200 byte text header
+# 3200 byte text header
 
 
 def text_header():
@@ -100,7 +101,6 @@ class Text (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in textural header.\n" %
@@ -115,7 +115,7 @@ class Text (object):
         return t.parse(buf)
 
 
-#   400 byte reel header
+# 400 byte reel header
 def reel_header():
     REEL = construct.Struct("REEL",
                             # Job identification number
@@ -171,7 +171,7 @@ def reel_header():
                             construct.BitField("unass2", 94))  # Unassigned
     return REEL
 
-#   400 byte reel header (Little Endian)
+# 400 byte reel header (Little Endian)
 
 
 def reel_header_le():
@@ -247,7 +247,6 @@ class Reel (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in reel header.\n" %
@@ -564,7 +563,6 @@ class Trace (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -666,7 +664,6 @@ class Passcal (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -728,15 +725,15 @@ def menlo_header():
                              construct.SBInt16("azimuth"),
                              construct.SBInt16(
                                  "sensor_type"),  # 1--L28 (PASSCAL)(4.5 Hz)\
-                             #   2--L22 (2 Hz)\
-                             #   3--L10B (8 Hz)\
-                             #   4--L4 1 Hz\
-                             #   5--L4 2 Hz\
-                             #   6--FBA\
-                             #   7--TDC-10 (4.5 Hz)\
-                             #   8--L28 (GSC)\
-                             #   9--LRS1033 (4.5 HZ)\
-                             #   99--unknown
+                             # 2--L22 (2 Hz)\
+                             # 3--L10B (8 Hz)\
+                             # 4--L4 1 Hz\
+                             # 5--L4 2 Hz\
+                             # 6--FBA\
+                             # 7--TDC-10 (4.5 Hz)\
+                             # 8--L28 (GSC)\
+                             # 9--LRS1033 (4.5 HZ)\
+                             # 99--unknown
                              # Geophone number (empty)
                              construct.SBInt16("sensor_sn"),
                              construct.UBInt16("das_sn"),  # Inst. ID number
@@ -790,15 +787,15 @@ def menlo_header_le():
                              construct.SLInt16("azimuth"),
                              construct.SLInt16(
                                  "sensor_type"),  # 1--L28 (PASSCAL)(4.5 Hz)\
-                             #   2--L22 (2 Hz)\
-                             #   3--L10B (8 Hz)\
-                             #   4--L4 1 Hz\
-                             #   5--L4 2 Hz\
-                             #   6--FBA\
-                             #   7--TDC-10 (4.5 Hz)\
-                             #   8--L28 (GSC)\
-                             #   9--LRS1033 (4.5 HZ)\
-                             #   99--unknown
+                             # 2--L22 (2 Hz)\
+                             # 3--L10B (8 Hz)\
+                             # 4--L4 1 Hz\
+                             # 5--L4 2 Hz\
+                             # 6--FBA\
+                             # 7--TDC-10 (4.5 Hz)\
+                             # 8--L28 (GSC)\
+                             # 9--LRS1033 (4.5 HZ)\
+                             # 99--unknown
                              # Geophone number (empty)
                              construct.SLInt16("sensor_sn"),
                              construct.ULInt16("das_sn"),  # Inst. ID number
@@ -833,7 +830,6 @@ class Menlo (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -892,7 +888,7 @@ def seg_header():
                              construct.SBInt16("Smsexp"),
                              # Source measurement Units
                              construct.SBInt16("Smu"),
-                             #   Last 8 bytes undefined in rev1
+                             # Last 8 bytes undefined in rev1
                              # Trace start time usec
                              construct.UBInt32("start_usec"),
                              construct.UBInt32("shot_us"))  # Shot time usec
@@ -935,7 +931,7 @@ def seg_header_le():
                              construct.SLInt16("Smsexp"),
                              # Source measurement Units
                              construct.SLInt16("Smu"),
-                             #   Last 8 bytes undefined in rev1
+                             # Last 8 bytes undefined in rev1
                              # Trace start time usec
                              construct.UBInt32("start_usec"),
                              construct.UBInt32("shot_us"))  # Shot time usec
@@ -960,7 +956,6 @@ class Seg (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -995,30 +990,30 @@ def inova_header():
                              construct.UBInt32("ShotID"),
                              # Aux channel description
                              construct.UBInt8("AuxChanSig"),
-                             #      0x08 -- Master Clock Timebreak
-                             #      0x09 -- Master Confirmation Timebreak
-                             #      0x0A -- Slave Clock Timebreak
-                             #      0x0B -- Slave Confirmation Timebreak
-                             #      0x0C -- Analog Uphole
-                             #      0x0E -- Digital Uphole
-                             #      0x10 -- Waterbreak
-                             #      0x14 -- User Specified #1
-                             #      0x18 -- User Specified #2
-                             #      0x1C -- User Specified #3
-                             #      0x20 -- Unfiltered Pilot
-                             #      0x24 -- Filtered Pilot
-                             #      0x28 -- User Specified #4
-                             #      0x2C -- User Specified #5
-                             #      0x30 -- User Specified #6
-                             #      0x31 -- Vibrator Reference
-                             #      0x32 -- Vibrator Out
-                             #      0x33 -- Vibrator User
-                             #      0x34 -- User Specified #7
-                             #      0x38 -- User Specified #8
-                             #      0x3C -- User Specified #9
-                             #      0x3D -- Aux Channel from iNova Image System
-                             #      0x3E -- GPS Aux / External Data
-                             #      0x3F -- Unused Channel
+                             #    0x08 -- Master Clock Timebreak
+                             #    0x09 -- Master Confirmation Timebreak
+                             #    0x0A -- Slave Clock Timebreak
+                             #    0x0B -- Slave Confirmation Timebreak
+                             #    0x0C -- Analog Uphole
+                             #    0x0E -- Digital Uphole
+                             #    0x10 -- Waterbreak
+                             #    0x14 -- User Specified #1
+                             #    0x18 -- User Specified #2
+                             #    0x1C -- User Specified #3
+                             #    0x20 -- Unfiltered Pilot
+                             #    0x24 -- Filtered Pilot
+                             #    0x28 -- User Specified #4
+                             #    0x2C -- User Specified #5
+                             #    0x30 -- User Specified #6
+                             #    0x31 -- Vibrator Reference
+                             #    0x32 -- Vibrator Out
+                             #    0x33 -- Vibrator User
+                             #    0x34 -- User Specified #7
+                             #    0x38 -- User Specified #8
+                             #    0x3C -- User Specified #9
+                             #    0x3D -- Aux Channel from iNova Image System
+                             #    0x3E -- GPS Aux / External Data
+                             #    0x3F -- Unused Channel
                              construct.UBInt8("AuxChanID"),  # Aux Channel ID
                              # Shot Point Line in hundredths
                              construct.UBInt32("SPL"),
@@ -1028,108 +1023,108 @@ def inova_header():
                              construct.UBInt16("unass02"),  # Unassigned
                              # Sensor Interface Unit Type
                              construct.UBInt8("SenInt"),
-                             #      18 -- VSM
-                             #      21 -- Vectorseis
-                             #      42 -- Geophone Digitizer Unit
-                             #      49 -- iNova Standard Analog Channel GDC
+                             #    18 -- VSM
+                             #    21 -- Vectorseis
+                             #    42 -- Geophone Digitizer Unit
+                             #    49 -- iNova Standard Analog Channel GDC
                              # Vectorseis sensitivity
                              construct.UBInt8("VectSens"),
-                             #      0 = 40nG
-                             #      3 = 160nG
+                             #    0 = 40nG
+                             #    3 = 160nG
                              # Absolute horizontal orientation azimuth of
                              # Vectorseis in
                              construct.UBInt16("HorAz"),
-                             #   0.0001 radians, measured from due-North
+                             # 0.0001 radians, measured from due-North
                              # Absolute vertical orientation angle, in 0.0001
                              # radians.
                              construct.UBInt16("VertAngle"),
-                             #   A vertically planted sensor will
+                             # A vertically planted sensor will
                              # have a value of
                              # 1416 (Pi * 10,000),
                              # while a horizontally planted sensor will have a
                              # value of 15708 (Pi/2 * 10,000)
                              construct.UBInt8("SourceType"),  # Source type:
-                             #      0 -- Built-in test
-                             #      1 -- Dynamite
-                             #      2 -- Vibrator
-                             #      3 -- AirGun
-                             #      4 -- WaterGun
-                             #      5 -- WeightDrop
-                             #      6 -- Other
-                             #      7 -- MixedSources
-                             #      8 -- NoSource or Unknown
-                             #      9 -- TestOsc (For GDC this is an
+                             #    0 -- Built-in test
+                             #    1 -- Dynamite
+                             #    2 -- Vibrator
+                             #    3 -- AirGun
+                             #    4 -- WaterGun
+                             #    5 -- WeightDrop
+                             #    6 -- Other
+                             #    7 -- MixedSources
+                             #    8 -- NoSource or Unknown
+                             #    9 -- TestOsc (For GDC this is an
                              # external test
                              # oscillator)
-                             #      10 -- Impulsive
+                             #    10 -- Impulsive
                              construct.UBInt8("SensorType"),  # Sensor type:
-                             #      0 -- Unknown
-                             #      1 -- Hydrophone
-                             #      2 -- Geo-Vertical Geophone, Marshphone,
+                             #    0 -- Unknown
+                             #    1 -- Hydrophone
+                             #    2 -- Geo-Vertical Geophone, Marshphone,
                              # or Z
-                             #      3 -- Geo-Horiz Inline Geophone -- X
-                             #      4 -- Geo-Horiz Cross-Line Geophone -- Y
-                             #      5 -- Geo-Horiz Other
-                             #      6 -- SVSM Vertical -- Z
-                             #      7 -- SVSM Horizontal Inline -- X
-                             #      8 -- SVSM Horizontal Crossline -- Y
-                             #      9 -- Acc-Horiz Other
+                             #    3 -- Geo-Horiz Inline Geophone -- X
+                             #    4 -- Geo-Horiz Cross-Line Geophone -- Y
+                             #    5 -- Geo-Horiz Other
+                             #    6 -- SVSM Vertical -- Z
+                             #    7 -- SVSM Horizontal Inline -- X
+                             #    8 -- SVSM Horizontal Crossline -- Y
+                             #    9 -- Acc-Horiz Other
                              # Auxillary Channel Set type
                              construct.UBInt8("AuxChanSetType"),
-                             #      0x00 -- Unused channel
-                             #      0x02 -- Timebreak
-                             #      0x03 -- Uphole
-                             #      0x04 -- Waterbreak
-                             #      0x05 -- Time Counter
-                             #      0x06 -- External Data
-                             #      0x07 -- Other
-                             #      0x08 -- Unfiltered Pilot
-                             #      0x09 -- Filtered Pilot
-                             #      0x0A -- Special #1
-                             #      0x0B -- Special #2
-                             #      0x0D -- Special #3
-                             #      0x0E -- Special #4
-                             #      0x0F -- Special #5
-                             #      0xFA -- Reserved (T2 only)
+                             #    0x00 -- Unused channel
+                             #    0x02 -- Timebreak
+                             #    0x03 -- Uphole
+                             #    0x04 -- Waterbreak
+                             #    0x05 -- Time Counter
+                             #    0x06 -- External Data
+                             #    0x07 -- Other
+                             #    0x08 -- Unfiltered Pilot
+                             #    0x09 -- Filtered Pilot
+                             #    0x0A -- Special #1
+                             #    0x0B -- Special #2
+                             #    0x0D -- Special #3
+                             #    0x0E -- Special #4
+                             #    0x0F -- Special #5
+                             #    0xFA -- Reserved (T2 only)
                              # Noise Edit Type:
                              construct.UBInt8("NoiseEditType"),
-                             #      0 -- Raw Data, Vertical Stack
-                             #      2 -- Diversity Stack
+                             #    0 -- Raw Data, Vertical Stack
+                             #    2 -- Diversity Stack
                              # Noise Edit Gate Size:
                              construct.UBInt16("NoiseEditGate"),
-                             #      0 -- Raw Data, Vertical Stack
-                             #      n -- Number of Samples in Gate,
+                             #    0 -- Raw Data, Vertical Stack
+                             #    n -- Number of Samples in Gate,
                              # Diversity Stack
                              # System Device type:
                              construct.UBInt8("SystemDevice"),
-                             #      7 -- MRX
-                             #      9 -- RSR
-                             #      17 -- VRSR
-                             #      20 -- VRSR2
-                             #      23 -- AuxUNIT-1C
-                             #      25 -- DUNIT-3C
-                             #      29 -- Analog-1C
-                             #      37 -- FireFly
-                             #      48 -- Node
+                             #    7 -- MRX
+                             #    9 -- RSR
+                             #    17 -- VRSR
+                             #    20 -- VRSR2
+                             #    23 -- AuxUNIT-1C
+                             #    25 -- DUNIT-3C
+                             #    29 -- Analog-1C
+                             #    37 -- FireFly
+                             #    48 -- Node
                              construct.BitField("FSU", 3),  # FSU Serial Number
                              # Device Channel Number
                              construct.UBInt8("DevChan"),
                              # Source coordinate confidence indicator. Rates
                              # the level
                              construct.UBInt8("SourceCoCo"),
-                             #   of confidence in the accuracy of source x,y,z.
-                             #   0 -- Good
+                             # of confidence in the accuracy of source x,y,z.
+                             # 0 -- Good
                              # Device status bits
                              construct.UBInt8("DevStatusBits"),
-                             #      Bit 0 -- A/D Modulator Over-range
-                             #      Bit 1 -- A/D Decimator Numerical Overflow
-                             #      Bit 2 -- Analog Preamp Overscale or
+                             #    Bit 0 -- A/D Modulator Over-range
+                             #    Bit 1 -- A/D Decimator Numerical Overflow
+                             #    Bit 2 -- Analog Preamp Overscale or
                              # VSMT Data Invalid
-                             #      Bit 3 -- SVSM VLFF error
-                             #      Bit 4 -- Invalid Receiver Line/Station
-                             #      Bit 5 -- Trace was Zero filled (T2 only)
-                             #      Bit 6 -- Battery improperly removed
-                             #      Bit 7 -- SVSM Dynamic Offset Filter mode,
+                             #    Bit 3 -- SVSM VLFF error
+                             #    Bit 4 -- Invalid Receiver Line/Station
+                             #    Bit 5 -- Trace was Zero filled (T2 only)
+                             #    Bit 6 -- Battery improperly removed
+                             #    Bit 7 -- SVSM Dynamic Offset Filter mode,
                              # 0 = static
                              # BIT test type and codes (0 - 28) See FireFly SEG
                              # Y Ver 3.0 Tech Bulletin
@@ -1145,50 +1140,50 @@ def inova_header():
                              construct.UBInt16("SourceEffortE"),
                              # Source measurement units
                              construct.UBInt16("SourceUnits"),
-                             #      -1 -- Other
-                             #      0 -- Unknown
-                             #      1 -- Joule
-                             #      2 -- Kilowatt
-                             #      3 -- Pascal
-                             #      4 -- Bar
-                             #      5 -- Bar-meter
-                             #      6 -- Kilograms
-                             #      7 -- Pounds
+                             #    -1 -- Other
+                             #    0 -- Unknown
+                             #    1 -- Joule
+                             #    2 -- Kilowatt
+                             #    3 -- Pascal
+                             #    4 -- Bar
+                             #    5 -- Bar-meter
+                             #    6 -- Kilograms
+                             #    7 -- Pounds
                              construct.UBInt8("EventType"),  # Event type:
-                             #      0x00 -- Zeroed or truncated trace
-                             #      0x40 -- BIT data - Raw Trace
-                             #      0x80 -- Seis data - Normal, Raw
-                             #      0x88 -- Seis data - Normal, Stack
-                             #      0x90 -- Seis data - Normal, Correlated
-                             #      0xA0 -- Seis data - Test, Raw
-                             #      0xA8 -- Seis data - Test, Stack
-                             #      0xB0 -- Seis data - Test, Correlated
+                             #    0x00 -- Zeroed or truncated trace
+                             #    0x40 -- BIT data - Raw Trace
+                             #    0x80 -- Seis data - Normal, Raw
+                             #    0x88 -- Seis data - Normal, Stack
+                             #    0x90 -- Seis data - Normal, Correlated
+                             #    0xA0 -- Seis data - Test, Raw
+                             #    0xA8 -- Seis data - Test, Stack
+                             #    0xB0 -- Seis data - Test, Correlated
                              # Sensor type ID
                              construct.UBInt8("SensorTypeID"),
-                             #      0x00 -- No sensor defined
-                             #      0x01 -- Geophone - 1 component vertical
-                             #      0x02 -- Marshphone
-                             #      0x03 -- Hydrophone
-                             #      0x04 -- Aux
-                             #      0x05 -- Geophone-3c Horizontal,
+                             #    0x00 -- No sensor defined
+                             #    0x01 -- Geophone - 1 component vertical
+                             #    0x02 -- Marshphone
+                             #    0x03 -- Hydrophone
+                             #    0x04 -- Aux
+                             #    0x05 -- Geophone-3c Horizontal,
                              # X -- In-line
-                             #      0x06 -- Geophone-3c Horizontal,
+                             #    0x06 -- Geophone-3c Horizontal,
                              # Y -- Cross-line
-                             #      0x07 -- Geophone-3c Vertical, Z
-                             #      0x08 -- Reserved
-                             #      0x0C -- Accelerometer-3c Horizontal,
+                             #    0x07 -- Geophone-3c Vertical, Z
+                             #    0x08 -- Reserved
+                             #    0x0C -- Accelerometer-3c Horizontal,
                              # X -- In-line
-                             #      0x0C -- Accelerometer-3c Horizontal,
+                             #    0x0C -- Accelerometer-3c Horizontal,
                              # Y -- Cross-line
-                             #      0x0C -- Accelerometer-3c Vertical, Z
+                             #    0x0C -- Accelerometer-3c Vertical, Z
                              # Sensor serial number
                              construct.BitField("SensorSerial", 3),
                              # Sensor version number
                              construct.UBInt8("SensorVersion"),
                              construct.UBInt8("SensorRev"),  # Sensor revision
                              construct.UBInt8("VOR"))  # VOR applied
-    #      0 -- No VOR applied
-    #      2 -- VOR applied
+    #    0 -- No VOR applied
+    #    2 -- VOR applied
     return TRACE
 #
 # iNova FireFly extened header version 3.0 (Little endian)
@@ -1203,30 +1198,30 @@ def inova_header_le():
                              construct.ULInt32("ShotID"),
                              # Aux channel description
                              construct.ULInt8("AuxChanSig"),
-                             #      0x08 -- Master Clock Timebreak
-                             #      0x09 -- Master Confirmation Timebreak
-                             #      0x0A -- Slave Clock Timebreak
-                             #      0x0B -- Slave Confirmation Timebreak
-                             #      0x0C -- Analog Uphole
-                             #      0x0E -- Digital Uphole
-                             #      0x10 -- Waterbreak
-                             #      0x14 -- User Specified #1
-                             #      0x18 -- User Specified #2
-                             #      0x1C -- User Specified #3
-                             #      0x20 -- Unfiltered Pilot
-                             #      0x24 -- Filtered Pilot
-                             #      0x28 -- User Specified #4
-                             #      0x2C -- User Specified #5
-                             #      0x30 -- User Specified #6
-                             #      0x31 -- Vibrator Reference
-                             #      0x32 -- Vibrator Out
-                             #      0x33 -- Vibrator User
-                             #      0x34 -- User Specified #7
-                             #      0x38 -- User Specified #8
-                             #      0x3C -- User Specified #9
-                             #      0x3D -- Aux Channel from iNova Image System
-                             #      0x3E -- GPS Aux / External Data
-                             #      0x3F -- Unused Channel
+                             #    0x08 -- Master Clock Timebreak
+                             #    0x09 -- Master Confirmation Timebreak
+                             #    0x0A -- Slave Clock Timebreak
+                             #    0x0B -- Slave Confirmation Timebreak
+                             #    0x0C -- Analog Uphole
+                             #    0x0E -- Digital Uphole
+                             #    0x10 -- Waterbreak
+                             #    0x14 -- User Specified #1
+                             #    0x18 -- User Specified #2
+                             #    0x1C -- User Specified #3
+                             #    0x20 -- Unfiltered Pilot
+                             #    0x24 -- Filtered Pilot
+                             #    0x28 -- User Specified #4
+                             #    0x2C -- User Specified #5
+                             #    0x30 -- User Specified #6
+                             #    0x31 -- Vibrator Reference
+                             #    0x32 -- Vibrator Out
+                             #    0x33 -- Vibrator User
+                             #    0x34 -- User Specified #7
+                             #    0x38 -- User Specified #8
+                             #    0x3C -- User Specified #9
+                             #    0x3D -- Aux Channel from iNova Image System
+                             #    0x3E -- GPS Aux / External Data
+                             #    0x3F -- Unused Channel
                              construct.ULInt8("AuxChanID"),  # Aux Channel ID
                              # Shot Point Line in hundredths
                              construct.ULInt32("SPL"),
@@ -1236,107 +1231,107 @@ def inova_header_le():
                              construct.ULInt16("unass02"),  # Unassigned
                              # Sensor Interface Unit Type
                              construct.ULInt8("SenInt"),
-                             #      18 -- VSM
-                             #      21 -- Vectorseis
-                             #      42 -- Geophone Digitizer Unit
-                             #      49 -- iNova Standard Analog Channel GDC
+                             #    18 -- VSM
+                             #    21 -- Vectorseis
+                             #    42 -- Geophone Digitizer Unit
+                             #    49 -- iNova Standard Analog Channel GDC
                              # Vectorseis sensitivity
                              construct.ULInt8("VectSens"),
-                             #      0 = 40nG
-                             #      3 = 160nG
+                             #    0 = 40nG
+                             #    3 = 160nG
                              # Absolute horizontal orientation azimuth of
                              # Vectorseis in
                              construct.ULInt16("HorAz"),
-                             #   0.0001 radians, measured from due-North
+                             # 0.0001 radians, measured from due-North
                              # Absolute vertical orientation angle, in 0.0001
                              # radians.
                              construct.ULInt16("VertAngle"),
-                             #   A vertically planted sensor will
+                             # A vertically planted sensor will
                              # have a value of
                              # 31416 (Pi * 10,000),
                              # while a horizontally planted sensor will have a
                              # value of 15708 (Pi/2 * 10,000)
                              construct.ULInt8("SourceType"),  # Source type:
-                             #      0 -- Built-in test
-                             #      1 -- Dynamite
-                             #      2 -- Vibrator
-                             #      3 -- AirGun
-                             #      4 -- WaterGun
-                             #      5 -- WeightDrop
-                             #      6 -- Other
-                             #      7 -- MixedSources
-                             #      8 -- NoSource or Unknown
-                             #      9 -- TestOsc (For GDC this is an external
+                             #    0 -- Built-in test
+                             #    1 -- Dynamite
+                             #    2 -- Vibrator
+                             #    3 -- AirGun
+                             #    4 -- WaterGun
+                             #    5 -- WeightDrop
+                             #    6 -- Other
+                             #    7 -- MixedSources
+                             #    8 -- NoSource or Unknown
+                             #    9 -- TestOsc (For GDC this is an external
                              # test oscillator)
-                             #      10 -- Impulsive
+                             #    10 -- Impulsive
                              construct.ULInt8("SensorType"),  # Sensor type:
-                             #      0 -- Unknown
-                             #      1 -- Hydrophone
-                             #      2 -- Geo-Vertical Geophone, Marshphone,
+                             #    0 -- Unknown
+                             #    1 -- Hydrophone
+                             #    2 -- Geo-Vertical Geophone, Marshphone,
                              # or Z
-                             #      3 -- Geo-Horiz Inline Geophone -- X
-                             #      4 -- Geo-Horiz Cross-Line Geophone -- Y
-                             #      5 -- Geo-Horiz Other
-                             #      6 -- SVSM Vertical -- Z
-                             #      7 -- SVSM Horizontal Inline -- X
-                             #      8 -- SVSM Horizontal Crossline -- Y
-                             #      9 -- Acc-Horiz Other
+                             #    3 -- Geo-Horiz Inline Geophone -- X
+                             #    4 -- Geo-Horiz Cross-Line Geophone -- Y
+                             #    5 -- Geo-Horiz Other
+                             #    6 -- SVSM Vertical -- Z
+                             #    7 -- SVSM Horizontal Inline -- X
+                             #    8 -- SVSM Horizontal Crossline -- Y
+                             #    9 -- Acc-Horiz Other
                              # Auxillary Channel Set type
                              construct.ULInt8("AuxChanSetType"),
-                             #      0x00 -- Unused channel
-                             #      0x02 -- Timebreak
-                             #      0x03 -- Uphole
-                             #      0x04 -- Waterbreak
-                             #      0x05 -- Time Counter
-                             #      0x06 -- External Data
-                             #      0x07 -- Other
-                             #      0x08 -- Unfiltered Pilot
-                             #      0x09 -- Filtered Pilot
-                             #      0x0A -- Special #1
-                             #      0x0B -- Special #2
-                             #      0x0D -- Special #3
-                             #      0x0E -- Special #4
-                             #      0x0F -- Special #5
-                             #      0xFA -- Reserved (T2 only)
+                             #    0x00 -- Unused channel
+                             #    0x02 -- Timebreak
+                             #    0x03 -- Uphole
+                             #    0x04 -- Waterbreak
+                             #    0x05 -- Time Counter
+                             #    0x06 -- External Data
+                             #    0x07 -- Other
+                             #    0x08 -- Unfiltered Pilot
+                             #    0x09 -- Filtered Pilot
+                             #    0x0A -- Special #1
+                             #    0x0B -- Special #2
+                             #    0x0D -- Special #3
+                             #    0x0E -- Special #4
+                             #    0x0F -- Special #5
+                             #    0xFA -- Reserved (T2 only)
                              # Noise Edit Type:
                              construct.ULInt8("NoiseEditType"),
-                             #      0 -- Raw Data, Vertical Stack
-                             #      2 -- Diversity Stack
+                             #    0 -- Raw Data, Vertical Stack
+                             #    2 -- Diversity Stack
                              # Noise Edit Gate Size:
                              construct.ULInt16("NoiseEditGate"),
-                             #      0 -- Raw Data, Vertical Stack
-                             #      n -- Number of Samples in Gate,
+                             #    0 -- Raw Data, Vertical Stack
+                             #    n -- Number of Samples in Gate,
                              # Diversity Stack
                              # System Device type:
                              construct.ULInt8("SystemDevice"),
-                             #      7 -- MRX
-                             #      9 -- RSR
-                             #      17 -- VRSR
-                             #      20 -- VRSR2
-                             #      23 -- AuxUNIT-1C
-                             #      25 -- DUNIT-3C
-                             #      29 -- Analog-1C
-                             #      37 -- FireFly
-                             #      48 -- Node
+                             #    7 -- MRX
+                             #    9 -- RSR
+                             #    17 -- VRSR
+                             #    20 -- VRSR2
+                             #    23 -- AuxUNIT-1C
+                             #    25 -- DUNIT-3C
+                             #    29 -- Analog-1C
+                             #    37 -- FireFly
+                             #    48 -- Node
                              construct.BitField("FSU", 3),  # FSU Serial Number
                              # Device Channel Number
                              construct.ULInt8("DevChan"),
                              # Source coordinate confidence indicator. Rates
                              # the level
                              construct.ULInt8("SourceCoCo"),
-                             #   of confidence in the accuracy of source x,y,z.
-                             #   0 -- Good
+                             # of confidence in the accuracy of source x,y,z.
+                             # 0 -- Good
                              # Device status bits
                              construct.ULInt8("DevStatusBits"),
-                             #      Bit 0 -- A/D Modulator Over-range
-                             #      Bit 1 -- A/D Decimator Numerical Overflow
-                             #      Bit 2 -- Analog Preamp Overscale or
+                             #    Bit 0 -- A/D Modulator Over-range
+                             #    Bit 1 -- A/D Decimator Numerical Overflow
+                             #    Bit 2 -- Analog Preamp Overscale or
                              # VSMT Data Invalid
-                             #      Bit 3 -- SVSM VLFF error
-                             #      Bit 4 -- Invalid Receiver Line/Station
-                             #      Bit 5 -- Trace was Zero filled (T2 only)
-                             #      Bit 6 -- Battery improperly removed
-                             #      Bit 7 -- SVSM Dynamic Offset Filter mode,
+                             #    Bit 3 -- SVSM VLFF error
+                             #    Bit 4 -- Invalid Receiver Line/Station
+                             #    Bit 5 -- Trace was Zero filled (T2 only)
+                             #    Bit 6 -- Battery improperly removed
+                             #    Bit 7 -- SVSM Dynamic Offset Filter mode,
                              # 0 = static
                              # BIT test type and codes (0 - 28) See FireFly SEG
                              # Y Ver 3.0 Tech Bulletin
@@ -1352,50 +1347,50 @@ def inova_header_le():
                              construct.ULInt16("SourceEffortE"),
                              # Source measurement units
                              construct.ULInt16("SourceUnits"),
-                             #      -1 -- Other
-                             #      0 -- Unknown
-                             #      1 -- Joule
-                             #      2 -- Kilowatt
-                             #      3 -- Pascal
-                             #      4 -- Bar
-                             #      5 -- Bar-meter
-                             #      6 -- Kilograms
-                             #      7 -- Pounds
+                             #    -1 -- Other
+                             #    0 -- Unknown
+                             #    1 -- Joule
+                             #    2 -- Kilowatt
+                             #    3 -- Pascal
+                             #    4 -- Bar
+                             #    5 -- Bar-meter
+                             #    6 -- Kilograms
+                             #    7 -- Pounds
                              construct.ULInt8("EventType"),  # Event type:
-                             #      0x00 -- Zeroed or truncated trace
-                             #      0x40 -- BIT data - Raw Trace
-                             #      0x80 -- Seis data - Normal, Raw
-                             #      0x88 -- Seis data - Normal, Stack
-                             #      0x90 -- Seis data - Normal, Correlated
-                             #      0xA0 -- Seis data - Test, Raw
-                             #      0xA8 -- Seis data - Test, Stack
-                             #      0xB0 -- Seis data - Test, Correlated
+                             #    0x00 -- Zeroed or truncated trace
+                             #    0x40 -- BIT data - Raw Trace
+                             #    0x80 -- Seis data - Normal, Raw
+                             #    0x88 -- Seis data - Normal, Stack
+                             #    0x90 -- Seis data - Normal, Correlated
+                             #    0xA0 -- Seis data - Test, Raw
+                             #    0xA8 -- Seis data - Test, Stack
+                             #    0xB0 -- Seis data - Test, Correlated
                              # Sensor type ID
                              construct.ULInt8("SensorTypeID"),
-                             #      0x00 -- No sensor defined
-                             #      0x01 -- Geophone - 1 component vertical
-                             #      0x02 -- Marshphone
-                             #      0x03 -- Hydrophone
-                             #      0x04 -- Aux
-                             #      0x05 -- Geophone-3c Horizontal,
+                             #    0x00 -- No sensor defined
+                             #    0x01 -- Geophone - 1 component vertical
+                             #    0x02 -- Marshphone
+                             #    0x03 -- Hydrophone
+                             #    0x04 -- Aux
+                             #    0x05 -- Geophone-3c Horizontal,
                              # X -- In-line
-                             #      0x06 -- Geophone-3c Horizontal,
+                             #    0x06 -- Geophone-3c Horizontal,
                              # Y -- Cross-line
-                             #      0x07 -- Geophone-3c Vertical, Z
-                             #      0x08 -- Reserved
-                             #      0x0C -- Accelerometer-3c Horizontal,
+                             #    0x07 -- Geophone-3c Vertical, Z
+                             #    0x08 -- Reserved
+                             #    0x0C -- Accelerometer-3c Horizontal,
                              # X -- In-line
-                             #      0x0C -- Accelerometer-3c Horizontal,
+                             #    0x0C -- Accelerometer-3c Horizontal,
                              # Y -- Cross-line
-                             #      0x0C -- Accelerometer-3c Vertical, Z
+                             #    0x0C -- Accelerometer-3c Vertical, Z
                              # Sensor serial number
                              construct.BitField("SensorSerial", 3),
                              # Sensor version number
                              construct.ULInt8("SensorVersion"),
                              construct.ULInt8("SensorRev"),  # Sensor revision
                              construct.ULInt8("VOR"))  # VOR applied
-    #      0 -- No VOR applied
-    #      2 -- VOR applied
+    #    0 -- No VOR applied
+    #    2 -- VOR applied
     return TRACE
 
 
@@ -1422,7 +1417,7 @@ class iNova (object):
             if k in self.__dict__:
                 self.__dict__[k] = keyval[k]
             else:
-                #   XXX   Needs proper exception handling   XXX
+                # XXX   Needs proper exception handling   XXX
                 raise HeaderError(
                     "Warning: Attempt to set unknown variable\
                     %s in trace header.\n" %
@@ -1451,7 +1446,7 @@ class iNova (object):
 
 class Sioseis (Seg):
     def __init__(self, endian='big'):
-        sys.stderr.write("SioSeis extended header not implemented.\n")
+        LOGGER.info("SioSeis extended header not implemented.")
         Seg.__init__(self, endian)
 
 
@@ -1483,39 +1478,39 @@ def build_int(x):
 
 
 #
-#   MAIN
+# MAIN
 #
 if __name__ == '__main__':
     import math
     #
-    #   Usage example
+    # Usage example
     #
 
-    #   Get an instance of Text
+    # Get an instance of Text
     t = Text()
-    #   Load d with header values we want to set
+    # Load d with header values we want to set
     d = {}
     s = 'C SEG Y REV 1' + " " * 67
     val = ebcdic.AsciiToEbcdic(s)
     d['_39_'] = val
-    #   Now set the instance of this textural header
+    # Now set the instance of this textural header
     t.set(d)
-    #   Get a binary image of the textural header
+    # Get a binary image of the textural header
     to = t.get()
-    #   Open and write header
+    # Open and write header
     fh = open("test.sgy", "w")
     fh.write(to)
-    #   Get an instance of Reel, set and write as above
+    # Get an instance of Reel, set and write as above
     d = {}
     r = Reel()
     d['rev'] = 0x0100  # Rev 1.0
     d['extxt'] = 0
-    #   Write it using SU naming scheme
+    # Write it using SU naming scheme
     d['jobid'] = 99
     r.set(d)
     ro = r.get()
     fh.write(ro)
-    #   Now do the same thing for Trace
+    # Now do the same thing for Trace
     d = {}
     t = Trace()
     d['lineSeq'] = 0x7D00
@@ -1524,10 +1519,9 @@ if __name__ == '__main__':
     to = t.get()
     p = Passcal()
     po = p.get()
-    # print len (to)
     fh.write(to)
     fh.write(po)
-    #   Now write some ibm floats
+    # Now write some ibm floats
     for i in range(3600):
         dval = math.sin(math.radians(i))
         pfloat_s = ibmfloat.pfloat()
@@ -1537,39 +1531,39 @@ if __name__ == '__main__':
         fh.write(ival)
 
     fh.close()
-    #   Write to here
+    # Write to here
     #
     # Now read the file back
     t = None
     t = Text()
     fh = open("test.sgy")
-    #   Read and parse the textural header
+    # Read and parse the textural header
     container = t.parse(fh.read(3200))  # Read textural header
-    #   Print field _39_
+    # Print field _39_
     print ebcdic.EbcdicToAscii(container._39_)
     print dir(container._39_)
 
-    #   Read and parse the reel header
+    # Read and parse the reel header
     r = None
     r = Reel()
     container = r.parse(fh.read(400))  # Read reel header
-    #   See the SEG-Y rev 1 to see how this works ;^)
+    # See the SEG-Y rev 1 to see how this works ;^)
     dec = container.rev >> 8
     flt = container.rev & 0x0F
-    #   Read it using PASSCAL naming scheme
+    # Read it using PASSCAL naming scheme
     job = container.jobid
     print job
     print "%d.%d" % (dec, flt)
 
-    #   Read and parse the trace header
+    # Read and parse the trace header
     t = None
     t = Trace()
     container = t.parse(fh.read(180))  # Read common trace header
     #
     print 1.0 / container.deltaSample / 1000000.0
-    #   Skip over the extended header
+    # Skip over the extended header
     fh.seek(60, 1)
-    #   Now read and convert the trace
+    # Now read and convert the trace
     for i in range(3600):
         v = ibmfloat.ibm2ieee32(fh.read(4))
         v = pfloat_s.parse(v)

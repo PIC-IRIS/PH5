@@ -1,15 +1,8 @@
-# import from python packages
-# import tables
 from PyQt4 import QtGui
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
-VER = 2018057
 
-# import from pn4
-# import kefx, ph5api
-# import tabletokef
-# git:
-
+PROG_VERSION = "2018.057"
 
 PH5TYPE = {'_s': str, '_a': str, '_d': float, '_f': float, '_l': int,
            '_i': int}

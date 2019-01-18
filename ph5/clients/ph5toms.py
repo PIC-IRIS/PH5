@@ -7,21 +7,22 @@ Also allows for creation of preview png images of traces.
 
 import sys
 import os
+import logging
+import copy
+import itertools
+import io
+from obspy.core.inventory.inventory import read_inventory as read_inventory
 from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import SACTrace
-import obspy
-import copy
-import itertools
 from ph5.core import ph5utils
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
-import io
 
-
-PROG_VERSION = "2018.222"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 LENGTH = int(86400)
 
 
@@ -337,7 +338,7 @@ class PH5toMSeed(object):
                                             )
                 with io.BytesIO(response_file_das_a) as buf:
                     buf.seek(0, 0)
-                    dl_resp = obspy.read_inventory(buf, format="RESP")
+                    dl_resp = read_inventory(buf, format="RESP")
                 dl_resp = dl_resp[0][0][0].response
             # parse sensor response if present
             if response_file_sensor_a_name:
@@ -347,7 +348,7 @@ class PH5toMSeed(object):
                                             )
                 with io.BytesIO(response_file_sensor_a) as buf:
                     buf.seek(0, 0)
-                    sensor_resp = obspy.read_inventory(buf, format="RESP")
+                    sensor_resp = read_inventory(buf, format="RESP")
                 sensor_resp = sensor_resp[0][0][0].response
 
             inv_resp = None
@@ -422,13 +423,6 @@ class PH5toMSeed(object):
             for trace in traces:
                 if trace.nsamples == 0:
                     continue
-                # if start time is before requested start time move up 1 sample
-                # and delete first sample of data
-                # if trace.start_time.epoch() < stc.starttime:
-                #    trace.start_time = trace.start_time + \
-                #        (1 / float(stc.sample_rate))
-                #   trace.data = trace.data[1:]
-
                 try:
                     obspy_trace = Trace(data=trace.data)
                     obspy_trace.stats.array = stc.array_code
@@ -994,7 +988,7 @@ def main():
         args.nickname += '.ph5'
 
     if not os.path.exists(ph5file):
-        sys.stderr.write("Error - {0} not found.\n".format(ph5file))
+        LOGGER.error("{0} not found.\n".format(ph5file))
         sys.exit(-1)
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
@@ -1063,7 +1057,7 @@ def main():
                         sac.write(ph5ms.filenamesac_nongen(trace))
 
     except PH5toMSAPIError as err:
-        sys.stderr.write("{0}\n".format(err.message))
+        LOGGER.error("{0}".format(err.message))
         exit(-1)
 
     ph5API_object.close()

@@ -1,67 +1,68 @@
 #!/usr/bin/env pnpython4
 #
-#   Program to create time correction kef files for texan rt-125a's
-#   Read the SOH_a_[n] files under Receivers_g/Das_g_[n] and produce a kef file
-#   to populate Time_t
-#   Writes kef file to stdout
+# Program to create time correction kef files for texan rt-125a's
+# Read the SOH_a_[n] files under Receivers_g/Das_g_[n] and produce a kef file
+# to populate Time_t
+# Writes kef file to stdout
 #
-#   Steve Azevedo, June 2017
+# Steve Azevedo, June 2017
 #
 import re
 import sys
 import time
 import numpy as npy
+import argparse
+import logging
 from ph5.core import ph5api, timedoy
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = "2017.324 Developmental"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
-#   Match lines related to timing in SOH
+# Match lines related to timing in SOH
 timetoRE = re.compile(
-    ".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
+    r".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
     (\d{4}/\d{4})\s+MS")
 timefromRE = re.compile(
-    ".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
+    r".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
     (\d{4}/\d{4})\s+MS")
 
 
 #
-#   Read Command line arguments
+# Read Command line arguments
 #
 
 
 def get_args():
     global ARGS
 
-    import argparse
-    oparser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+                                formatter_class=argparse.RawTextHelpFormatter)
 
-    oparser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix\
+    parser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix\
      [-p path]".format(
         PROG_VERSION)
 
-    oparser.description = "Generates kef file to populate Time_t from SOH_A_."
-    #   -n master.ph5
-    oparser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
-                         help="The ph5 file prefix (experiment nickname).",
-                         metavar="ph5_file_prefix")
-    #   -p /path/to/ph5/family/files
-    oparser.add_argument("-p", "--path", dest="ph5_path",
-                         help="Path to ph5 files Defaults current directory.",
-                         metavar="ph5_path", default='.')
-
-    # oparser.add_argument ("-d", dest = "debug", action = "store_true",
-    # default = False)
-    #
-    oparser.add_argument("-r", "--clock_report", action="store_true",
-                         default=False,
-                         help="Write clock performance log, time-kef-gen.log")
-
-    ARGS = oparser.parse_args()
-
-    if ARGS.ph5_file_prefix is None:
-        sys.stderr.write("Error: Missing required option. Try --help\n")
-        sys.exit(-1)
+    parser.description = ("Generates kef file to populate Time_t from SOH_A_. "
+                          "\n\n"
+                          "Calculate clock drift from texan data previously\n"
+                          "loaded into a family of ph5 files and produce a\n"
+                          "kitchen exchange format (KEF) file containing\n"
+                          "clock correction information. The KEF file can\n"
+                          "then be loaded directly into the family of ph5\n"
+                          "files.")
+    # -n master.ph5
+    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                        help="The ph5 file prefix (experiment nickname).",
+                        metavar="ph5_file_prefix", required=True)
+    # -p /path/to/ph5/family/files
+    parser.add_argument("-p", "--path", dest="ph5_path",
+                        help="Path to ph5 files Defaults current directory.",
+                        metavar="ph5_path", default='.')
+    parser.add_argument("-r", "--clock_report", action="store_true",
+                        default=False,
+                        help="Write clock performance log, time-kef-gen.log")
+    ARGS = parser.parse_args()
 
 
 def read_soh(das_group):
@@ -97,7 +98,7 @@ def parse_soh(soh_buf):
 
         return tdoy
 
-    #   tos, fos hold time changed to/from [epoch, seconds]
+    # tos, fos hold time changed to/from [epoch, seconds]
     tos = []
     fos = []
     for line in soh_buf:
@@ -133,19 +134,14 @@ def parse_tos_froms(tos, fos):
           On any error return None, None, None, None
     '''
     try:
-        #   The first time set to
+        # The first time set to
         start_tdoy = tos[0][0] + tos[0][1]
-        #
         end125_tdoy = fos[0][0] + fos[0][1]
-        #
         endgps_tdoy = tos[1][0] + tos[0][1]
-        #
         offset = end125_tdoy.epoch(fepoch=True) - endgps_tdoy.\
             epoch(fepoch=True)
-        #
         total_secs = endgps_tdoy.epoch(
             fepoch=True) - start_tdoy.epoch(fepoch=True)
-        #
         slope = offset / total_secs
     except IndexError:
         return None, None, None, None
@@ -177,7 +173,7 @@ def print_kef(das, clock):
 def report(stats, no_cor):
     '''   Write clock performance for each DAS to a log file
     '''
-    sys.stderr.write("Writing time-kef-gen.log.\n")
+    LOGGER.info("Writing time-kef-gen.log.")
     with open("time-kef-gen.log", 'w+') as fh:
         fh.write("{0}\n".format(sys.argv))
         for das in no_cor:
@@ -209,8 +205,8 @@ def main():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        sys.stderr.write("Error: Can't open {0} at {1}.".format(
-            ARGS.ph5_file_prefix, ARGS.ph5_path))
+        LOGGER.error("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
+                                                     ARGS.ph5_path))
         sys.exit(-1)
 
     dasGroups = P5.ph5_g_receivers.alldas_g()

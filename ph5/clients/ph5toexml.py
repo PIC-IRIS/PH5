@@ -17,15 +17,15 @@ import collections
 import multiprocessing
 import copy_reg
 import types
-
+import logging
 from ph5.core import ph5api, ph5utils
 
-
-PROG_VERSION = "2018.066"
+PROG_VERSION = '2018.268'
+LOGGER = logging.getLogger(__name__)
 
 
 def exit_with_error(err_msg, error_code):
-    sys.stderr.write(err_msg)
+    LOGGER.error(err_msg)
     exit(error_code)
 
 
