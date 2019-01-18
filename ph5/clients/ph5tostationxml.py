@@ -686,9 +686,8 @@ class PH5toStationXMLParser(object):
                                 obs_station.total_number_of_channels = 0
                             if obs_station.selected_number_of_channels is None:
                                 obs_station.selected_number_of_channels = 0
-                            self.manager.set_obs_station(sta_key, obs_station)
-                            all_stations.append(obs_station)
 
+                        # add channels to station if necessary
                         if self.manager.level.upper() == "RESPONSE" or \
                            self.manager.level.upper() == "CHANNEL" or \
                            sta_xml_obj.location_list != ['*'] or \
@@ -706,14 +705,17 @@ class PH5toStationXMLParser(object):
                                     len(station_list)
                                 obs_station.selected_number_of_channels = \
                                     len(obs_station.channels)
-                                if (obs_station and
-                                        obs_station.selected_number_of_channels
-                                        == 0):
-                                    continue
+                            if (obs_station.selected_number_of_channels == 0):
+                                continue
                         else:
                             obs_station.total_number_of_channels += \
                                 len(station_list)
                             obs_station.selected_number_of_channels = 0
+                        
+                        if not self.manager.get_obs_station(sta_key):
+                            all_stations.append(obs_station)
+                            self.manager.set_obs_station(sta_key, obs_station)
+                        
         return all_stations
 
     def read_channels(self, sta_xml_obj, station_list, deployment,
@@ -827,13 +829,13 @@ class PH5toStationXMLParser(object):
                                                           das_model,
                                                           das_serial)
                     self.manager.set_obs_channel(cha_key, obs_channel)
-                    if (self.manager.level == "RESPONSE" or
-                            self.manager.level == "CHANNEL"):
-                        # read response and add it to obspy channel inventory
-                        self.response_table_n_i = \
-                            station_entry['response_table_n_i']
-                        obs_channel.response = \
-                            self.get_response_inv(obs_channel)
+
+                    # read response and add it to obspy channel inventory
+                    self.response_table_n_i = \
+                        station_entry['response_table_n_i']
+                    obs_channel.response = \
+                        self.get_response_inv(obs_channel)
+
                     all_channels.append(obs_channel)
         return all_channels
 
