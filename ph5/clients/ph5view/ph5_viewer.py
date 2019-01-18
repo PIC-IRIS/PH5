@@ -12,29 +12,23 @@ import time
 import math
 import gc
 import warnings
-
+import logging
 from ph5.core import timedoy
-
-# import ph5_viewer_reader
-# _________ git:
 from ph5.clients.ph5view import ph5_viewer_reader
-
-from copy import deepcopy
-
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QPoint
-from PyQt4.QtGui import QColor
-
 import numpy as np
 from tempfile import mkdtemp
 import os.path as path
 from vispy import gloo, visuals, app
-# from vispy.util.transforms import rotate
-
-# import vispy.mpl_plot as plt
 import matplotlib.pyplot as plt
-
-# ###########################################################
+from copy import deepcopy
+LOGGER = logging.getLogger(__name__)
+try:
+    from PyQt4 import QtGui, QtCore
+    from PyQt4.QtCore import QPoint
+    from PyQt4.QtGui import QColor
+except Exception:
+    LOGGER.error("PyQt4 must be installed for this to run")
+###########################################################
 VER = 201914
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
