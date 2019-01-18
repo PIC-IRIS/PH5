@@ -304,6 +304,166 @@ class PH5toStationXMLParser(object):
             return False
         else:
             return True
+        
+    def read_arrays(self, name):
+        if name is None:
+            for n in self.manager.ph5.Array_t_names:
+                self.manager.ph5.read_array_t(n)
+        else:
+            self.manager.ph5.read_array_t(name)
+        
+    def add_ph5_stationids(self):
+        """
+        For each PH5toStationXML object in self.manager.request_list add the
+        respective ph5 station ids for the requested stations in the object.
+        """
+        self.manager.ph5.read_array_t_names()
+        self.read_arrays(None)
+        self.array_names = self.manager.ph5.Array_t_names
+        self.array_names.sort()
+        for sta_xml_obj in self.manager.request_list:
+            for array_name in self.array_names:
+                arraybyid = self.manager.ph5.Array_t[array_name]['byid']
+                arrayorder = self.manager.ph5.Array_t[array_name]['order']
+                for station in arrayorder:
+                    station_list = arraybyid.get(station)
+                    for deployment in station_list:
+                        station_entry = station_list[deployment][0]
+                        for sta_pattern in sta_xml_obj.station_list:
+                            if not station_entry['seed_station_name_s'] and \
+                                    fnmatch.fnmatch(str(station),
+                                                    str(sta_pattern)):
+                                # no seed station code defined so compare
+                                # against ph5 station-id
+                                sta_xml_obj.ph5_station_id_list.extend(
+                                                                [station]
+                                                            )
+                            elif fnmatch.fnmatch(
+                                        station_entry['seed_station_name_s'],
+                                        sta_pattern):
+                                sta_xml_obj.ph5_station_id_list.extend(
+                                                                    [station]
+                                                                )
+
+            sta_xml_obj.ph5_station_id_list = \
+                sorted(set(sta_xml_obj.ph5_station_id_list))
+        self.total_number_stations = max([len(sta_xml_obj.ph5_station_id_list)
+                                          for sta_xml_obj in
+                                          self.manager.request_list])
+
+    def get_network_date(self):
+        self.read_arrays(None)
+        array_names = self.manager.ph5.Array_t_names
+        array_names.sort()
+        min_start_time = 7289567999
+        max_end_time = 0
+        for array_name in array_names:
+            arraybyid = self.manager.ph5.Array_t[array_name]['byid']
+            arrayorder = self.manager.ph5.Array_t[array_name]['order']
+
+            for station in arrayorder:
+                station_list = arraybyid.get(station)
+                for deployment in station_list:
+                    station_entry = station_list[deployment][0]
+                    start_date = station_entry['deploy_time/epoch_l']
+                    if float(start_date) < float(min_start_time):
+                        min_start_time = float(start_date)
+                    end_date = station_entry['pickup_time/epoch_l']
+                    if float(end_date) > float(max_end_time):
+                        max_end_time = float(end_date)
+        return min_start_time, max_end_time
+
+    def trim_to_level(self, network):
+        if self.manager.level == "NETWORK":
+            network.stations = []
+        elif self.manager.level == "STATION":
+            # for station level show the selected_number_of_channels element
+            for station in network.stations:
+                station.selected_number_of_channels = 0
+                station.channels = []
+        return network
+
+    def get_network(self, path):
+        network = self.read_networks(path)
+        if network:
+            network = self.trim_to_level(network)
+            return network
+        else:
+            return
+        
+    def get_response_inv(self, obs_channel):
+
+        sensor_keys = [obs_channel.sensor.manufacturer,
+                       obs_channel.sensor.model]
+        datalogger_keys = [obs_channel.data_logger.manufacturer,
+                           obs_channel.data_logger.model,
+                           obs_channel.sample_rate]
+        if not self.resp_manager.is_already_requested(sensor_keys,
+                                                      datalogger_keys):
+            self.manager.ph5.read_response_t()
+            Response_t = \
+                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+            response_file_das_a_name = Response_t.get('response_file_das_a',
+                                                      None)
+            response_file_sensor_a_name = Response_t.get(
+                                                    'response_file_sensor_a',
+                                                    None)
+            # parse datalogger response
+            if response_file_das_a_name:
+                response_file_das_a = \
+                    self.manager.ph5.ph5_g_responses.get_response(
+                                                    response_file_das_a_name
+                                            )
+                with io.BytesIO(response_file_das_a) as buf:
+                    buf.seek(0, 0)
+                    dl_resp = obspy.read_inventory(buf, format="RESP")
+                dl_resp = dl_resp[0][0][0].response
+            # parse sensor response if present
+            if response_file_sensor_a_name:
+                response_file_sensor_a = \
+                    self.manager.ph5.ph5_g_responses.get_response(
+                                                response_file_sensor_a_name
+                                            )
+                with io.BytesIO(response_file_sensor_a) as buf:
+                    buf.seek(0, 0)
+                    sensor_resp = obspy.read_inventory(buf, format="RESP")
+                sensor_resp = sensor_resp[0][0][0].response
+
+            inv_resp = None
+            if response_file_das_a_name and response_file_sensor_a_name:
+                # both datalogger and sensor response
+                dl_resp.response_stages.pop(0)
+                dl_resp.response_stages.insert(0,
+                                               sensor_resp.response_stages[0])
+                dl_resp.recalculate_overall_sensitivity()
+                inv_resp = dl_resp
+            elif response_file_das_a_name:
+                # only datalogger response
+                inv_resp = dl_resp
+            elif response_file_sensor_a_name:
+                # only sensor response
+                inv_resp = sensor_resp
+
+            if inv_resp:
+                # update response manager and return response
+                self.resp_manager.add_response(sensor_keys,
+                                               datalogger_keys,
+                                               inv_resp)
+                if self.manager.level == "CHANNEL":
+                    return Response(
+                        instrument_sensitivity=inv_resp.instrument_sensitivity
+                        )
+                else:
+                    return inv_resp
+        else:
+            inv_resp = self.resp_manager.get_response(sensor_keys,
+                                                      datalogger_keys)
+            if self.manager.level == "CHANNEL":
+                    return Response(
+                        instrument_sensitivity=inv_resp.instrument_sensitivity
+                        )
+            else:
+                return inv_resp
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
@@ -426,185 +586,40 @@ class PH5toStationXMLParser(object):
 
         self.manager.set_obs_channel(sta_code, obs_channel)
         return obs_channel
+    
+    def read_networks(self, path):
+        self.manager.ph5.read_experiment_t()
+        self.experiment_t = self.manager.ph5.Experiment_t['rows']
 
-    def get_response_inv(self, obs_channel):
-
-        sensor_keys = [obs_channel.sensor.manufacturer,
-                       obs_channel.sensor.model]
-        datalogger_keys = [obs_channel.data_logger.manufacturer,
-                           obs_channel.data_logger.model,
-                           obs_channel.sample_rate]
-        if not self.resp_manager.is_already_requested(sensor_keys,
-                                                      datalogger_keys):
-            self.manager.ph5.read_response_t()
-            Response_t = \
-                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
-            response_file_das_a_name = Response_t.get('response_file_das_a',
-                                                      None)
-            response_file_sensor_a_name = Response_t.get(
-                                                    'response_file_sensor_a',
-                                                    None)
-            # parse datalogger response
-            if response_file_das_a_name:
-                response_file_das_a = \
-                    self.manager.ph5.ph5_g_responses.get_response(
-                                                    response_file_das_a_name
-                                            )
-                with io.BytesIO(response_file_das_a) as buf:
-                    buf.seek(0, 0)
-                    dl_resp = obspy.read_inventory(buf, format="RESP")
-                dl_resp = dl_resp[0][0][0].response
-            # parse sensor response if present
-            if response_file_sensor_a_name:
-                response_file_sensor_a = \
-                    self.manager.ph5.ph5_g_responses.get_response(
-                                                response_file_sensor_a_name
-                                            )
-                with io.BytesIO(response_file_sensor_a) as buf:
-                    buf.seek(0, 0)
-                    sensor_resp = obspy.read_inventory(buf, format="RESP")
-                sensor_resp = sensor_resp[0][0][0].response
-
-            inv_resp = None
-            if response_file_das_a_name and response_file_sensor_a_name:
-                # both datalogger and sensor response
-                dl_resp.response_stages.pop(0)
-                dl_resp.response_stages.insert(0,
-                                               sensor_resp.response_stages[0])
-                dl_resp.recalculate_overall_sensitivity()
-                inv_resp = dl_resp
-            elif response_file_das_a_name:
-                # only datalogger response
-                inv_resp = dl_resp
-            elif response_file_sensor_a_name:
-                # only sensor response
-                inv_resp = sensor_resp
-
-            if inv_resp:
-                # update response manager and return response
-                self.resp_manager.add_response(sensor_keys,
-                                               datalogger_keys,
-                                               inv_resp)
-                if self.manager.level == "CHANNEL":
-                    return Response(
-                        instrument_sensitivity=inv_resp.instrument_sensitivity
-                        )
-                else:
-                    return inv_resp
-        else:
-            inv_resp = self.resp_manager.get_response(sensor_keys,
-                                                      datalogger_keys)
-            if self.manager.level == "CHANNEL":
-                    return Response(
-                        instrument_sensitivity=inv_resp.instrument_sensitivity
-                        )
-            else:
-                return inv_resp
-
-    def read_channels(self, sta_xml_obj, station_list, deployment,
-                      sta_code, array_name):
-
-        all_channels = []
-        cha_list_patterns = sta_xml_obj.channel_list
-        component_list_patterns = sta_xml_obj.component_list
-        receiver_list_patterns = sta_xml_obj.receiver_list
-        location_patterns = sta_xml_obj.location_list
-        station_entry = station_list[deployment][0]
-        receiver_id = str(station_entry['id_s'])
-        if not ph5utils.does_pattern_exists(receiver_list_patterns,
-                                            receiver_id):
+        # read network codes and compare to network list
+        network_patterns = []
+        for obj in self.manager.request_list:
+            netcode_list = obj.network_list
+            network_patterns.extend(netcode_list)
+        if not ph5utils.does_pattern_exists(
+                                    network_patterns,
+                                    self.experiment_t[0]['net_code_s']):
+            self.manager.ph5.close()
             return
 
-        c_id = str(station_list[deployment][0]['channel_number_i'])
-        if not ph5utils.does_pattern_exists(component_list_patterns, c_id):
+        # read reportnums and compare to reportnum list
+        reportnum_patterns = []
+        for obj in self.manager.request_list:
+            reportnum_list = obj.reportnum_list
+            reportnum_patterns.extend(reportnum_list)
+        if not ph5utils.does_pattern_exists(
+                                    reportnum_list,
+                                    self.experiment_t[0]['experiment_id_s']):
+            self.manager.ph5.close()
             return
 
-        cha_code = \
-            station_entry['seed_band_code_s'] + \
-            station_entry['seed_instrument_code_s'] + \
-            station_entry['seed_orientation_code_s']
+        # update requests list to include ph5 station ids
+        self.add_ph5_stationids()
 
-        for pattern in cha_list_patterns:
-            if fnmatch.fnmatch(cha_code, pattern):
+        obs_network = self.create_obs_network()
 
-                if  station_entry['seed_location_code_s']:
-                    loc_code = station_entry['seed_location_code_s']
-                else:
-                    loc_code = ""
-
-                if not ph5utils.does_pattern_exists(location_patterns,
-                                                    loc_code):
-                    continue
-
-                cha_longitude = station_entry['location/X/value_d']
-                cha_latitude = station_entry['location/Y/value_d']
-                cha_elevation = station_entry['location/Z/value_d']
-
-                if not self.is_lat_lon_match(sta_xml_obj,
-                                             cha_latitude,
-                                             cha_longitude):
-                    continue
-                start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
-                end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
-
-                # compute sample rate
-                sample_rate_multiplier = \
-                            float(station_entry['sample_rate_multiplier_i'])
-                sample_rate_ration = float(station_entry['sample_rate_i'])
-                try:
-                    sample_rate = sample_rate_ration/sample_rate_multiplier
-                except ZeroDivisionError:
-                    raise PH5toStationXMLError(
-                             "Error - Invalid sample_rate_multiplier_i == 0")
-                    
-                receiver_table_n_i = station_entry['receiver_table_n_i']
-                Receiver_t = self.manager.ph5.get_receiver_t_by_n_i(
-                                                            receiver_table_n_i)
-                azimuth = Receiver_t['orientation/azimuth/value_f']
-                dip = Receiver_t['orientation/dip/value_f']
-        
-                sensor_manufacturer = station_entry['sensor/manufacturer_s']
-                sensor_model = station_entry['sensor/model_s']
-                sensor_serial = station_entry['sensor/serial_number_s']
-                das_manufacturer = station_entry['das/manufacturer_s']
-                das_model = station_entry['das/model_s']
-                das_serial = station_entry['das/serial_number_s']
-                cha_component = station_entry['channel_number_i']
-
-                obs_channel = self.create_obs_channel(station_list,
-                                                      deployment,
-                                                      sta_code,
-                                                      loc_code,
-                                                      cha_code,
-                                                      start_date,
-                                                      end_date,
-                                                      cha_longitude,
-                                                      cha_latitude,
-                                                      cha_elevation,
-                                                      cha_component,
-                                                      receiver_id,
-                                                      array_name,
-                                                      sample_rate,
-                                                      sample_rate_ration,
-                                                      azimuth,
-                                                      dip,
-                                                      sensor_manufacturer,
-                                                      sensor_model,
-                                                      sensor_serial,
-                                                      das_manufacturer,
-                                                      das_model,
-                                                      das_serial)
-
-                if (self.manager.level == "RESPONSE" or
-                        self.manager.level == "CHANNEL"):
-                    # read response and add it to obspy channel inventory
-                    self.response_table_n_i = \
-                        station_list[deployment][0]['response_table_n_i']
-                    obs_channel.response = self.get_response_inv(obs_channel)
-
-                if obs_channel not in all_channels:
-                    all_channels.append(obs_channel)
-        return all_channels
+        self.manager.ph5.close()
+        return obs_network
 
     def read_stations(self):
 
@@ -710,130 +725,111 @@ class PH5toStationXMLParser(object):
                             all_stations_keys.append(hash)
                             all_stations.append(obs_station)
         return all_stations
+    
+    def read_channels(self, sta_xml_obj, station_list, deployment,
+                      sta_code, array_name):
 
-    def read_arrays(self, name):
-        if name is None:
-            for n in self.manager.ph5.Array_t_names:
-                self.manager.ph5.read_array_t(n)
-        else:
-            self.manager.ph5.read_array_t(name)
-
-    def add_ph5_stationids(self):
-        """
-        For each PH5toStationXML object in self.manager.request_list add the
-        respective ph5 station ids for the requested stations in the object.
-        """
-        self.manager.ph5.read_array_t_names()
-        self.read_arrays(None)
-        self.array_names = self.manager.ph5.Array_t_names
-        self.array_names.sort()
-        for sta_xml_obj in self.manager.request_list:
-            for array_name in self.array_names:
-                arraybyid = self.manager.ph5.Array_t[array_name]['byid']
-                arrayorder = self.manager.ph5.Array_t[array_name]['order']
-                for station in arrayorder:
-                    station_list = arraybyid.get(station)
-                    for deployment in station_list:
-                        for sta_pattern in sta_xml_obj.station_list:
-                            if not station_list[deployment][0][
-                                                'seed_station_name_s'] and \
-                                    fnmatch.fnmatch(str(station),
-                                                    str(sta_pattern)):
-                                # no seed station code defined so compare
-                                # against ph5 station-id
-                                sta_xml_obj.ph5_station_id_list.extend(
-                                                                [station]
-                                                            )
-                            elif fnmatch.fnmatch((station_list[deployment][0]
-                                                  ['seed_station_name_s']),
-                                                 sta_pattern):
-                                sta_xml_obj.ph5_station_id_list.extend(
-                                                                    [station]
-                                                                )
-
-            sta_xml_obj.ph5_station_id_list = \
-                sorted(set(sta_xml_obj.ph5_station_id_list))
-        self.total_number_stations = max([len(sta_xml_obj.ph5_station_id_list)
-                                          for sta_xml_obj in
-                                          self.manager.request_list])
-
-    def read_networks(self, path):
-        self.manager.ph5.read_experiment_t()
-        self.experiment_t = self.manager.ph5.Experiment_t['rows']
-
-        # read network codes and compare to network list
-        network_patterns = []
-        for obj in self.manager.request_list:
-            netcode_list = obj.network_list
-            network_patterns.extend(netcode_list)
-        if not ph5utils.does_pattern_exists(
-                                    network_patterns,
-                                    self.experiment_t[0]['net_code_s']):
-            self.manager.ph5.close()
+        all_channels = []
+        cha_list_patterns = sta_xml_obj.channel_list
+        component_list_patterns = sta_xml_obj.component_list
+        receiver_list_patterns = sta_xml_obj.receiver_list
+        location_patterns = sta_xml_obj.location_list
+        station_entry = station_list[deployment][0]
+        receiver_id = str(station_entry['id_s'])
+        if not ph5utils.does_pattern_exists(receiver_list_patterns,
+                                            receiver_id):
             return
 
-        # read reportnums and compare to reportnum list
-        reportnum_patterns = []
-        for obj in self.manager.request_list:
-            reportnum_list = obj.reportnum_list
-            reportnum_patterns.extend(reportnum_list)
-        if not ph5utils.does_pattern_exists(
-                                    reportnum_list,
-                                    self.experiment_t[0]['experiment_id_s']):
-            self.manager.ph5.close()
+        c_id = str(station_list[deployment][0]['channel_number_i'])
+        if not ph5utils.does_pattern_exists(component_list_patterns, c_id):
             return
 
-        # update requests list to include ph5 station ids
-        self.add_ph5_stationids()
+        cha_code = \
+            station_entry['seed_band_code_s'] + \
+            station_entry['seed_instrument_code_s'] + \
+            station_entry['seed_orientation_code_s']
 
-        obs_network = self.create_obs_network()
+        for pattern in cha_list_patterns:
+            if fnmatch.fnmatch(cha_code, pattern):
 
-        self.manager.ph5.close()
+                if  station_entry['seed_location_code_s']:
+                    loc_code = station_entry['seed_location_code_s']
+                else:
+                    loc_code = ""
 
-        return obs_network
+                if not ph5utils.does_pattern_exists(location_patterns,
+                                                    loc_code):
+                    continue
 
-    def get_network_date(self):
-        self.read_arrays(None)
-        array_names = self.manager.ph5.Array_t_names
-        array_names.sort()
-        min_start_time = 7289567999
-        max_end_time = 0
-        for array_name in array_names:
-            arraybyid = self.manager.ph5.Array_t[array_name]['byid']
-            arrayorder = self.manager.ph5.Array_t[array_name]['order']
+                cha_longitude = station_entry['location/X/value_d']
+                cha_latitude = station_entry['location/Y/value_d']
+                cha_elevation = station_entry['location/Z/value_d']
 
-            for station in arrayorder:
-                station_list = arraybyid.get(station)
-                for deployment in station_list:
-                    if float(station_list[deployment][0]
-                             ['deploy_time/epoch_l']) < float(min_start_time):
-                        min_start_time = float(station_list[deployment][0]
-                                               ['deploy_time/epoch_l']
-                                               )
+                if not self.is_lat_lon_match(sta_xml_obj,
+                                             cha_latitude,
+                                             cha_longitude):
+                    continue
+                start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
+                end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
 
-                    if float(station_list[deployment][0]
-                             ['pickup_time/epoch_l']) > float(max_end_time):
-                        max_end_time = float(station_list[deployment][0]
-                                             ['pickup_time/epoch_l'])
-        return min_start_time, max_end_time
+                # compute sample rate
+                sample_rate_multiplier = \
+                            float(station_entry['sample_rate_multiplier_i'])
+                sample_rate_ration = float(station_entry['sample_rate_i'])
+                try:
+                    sample_rate = sample_rate_ration/sample_rate_multiplier
+                except ZeroDivisionError:
+                    raise PH5toStationXMLError(
+                             "Error - Invalid sample_rate_multiplier_i == 0")
+                    
+                receiver_table_n_i = station_entry['receiver_table_n_i']
+                Receiver_t = self.manager.ph5.get_receiver_t_by_n_i(
+                                                            receiver_table_n_i)
+                azimuth = Receiver_t['orientation/azimuth/value_f']
+                dip = Receiver_t['orientation/dip/value_f']
+        
+                sensor_manufacturer = station_entry['sensor/manufacturer_s']
+                sensor_model = station_entry['sensor/model_s']
+                sensor_serial = station_entry['sensor/serial_number_s']
+                das_manufacturer = station_entry['das/manufacturer_s']
+                das_model = station_entry['das/model_s']
+                das_serial = station_entry['das/serial_number_s']
+                cha_component = station_entry['channel_number_i']
 
-    def trim_to_level(self, network):
-        if self.manager.level == "NETWORK":
-            network.stations = []
-        elif self.manager.level == "STATION":
-            # for station level show the selected_number_of_channels element
-            for station in network.stations:
-                station.selected_number_of_channels = 0
-                station.channels = []
-        return network
+                obs_channel = self.create_obs_channel(station_list,
+                                                      deployment,
+                                                      sta_code,
+                                                      loc_code,
+                                                      cha_code,
+                                                      start_date,
+                                                      end_date,
+                                                      cha_longitude,
+                                                      cha_latitude,
+                                                      cha_elevation,
+                                                      cha_component,
+                                                      receiver_id,
+                                                      array_name,
+                                                      sample_rate,
+                                                      sample_rate_ration,
+                                                      azimuth,
+                                                      dip,
+                                                      sensor_manufacturer,
+                                                      sensor_model,
+                                                      sensor_serial,
+                                                      das_manufacturer,
+                                                      das_model,
+                                                      das_serial)
 
-    def get_network(self, path):
-        network = self.read_networks(path)
-        if network:
-            network = self.trim_to_level(network)
-            return network
-        else:
-            return
+                if (self.manager.level == "RESPONSE" or
+                        self.manager.level == "CHANNEL"):
+                    # read response and add it to obspy channel inventory
+                    self.response_table_n_i = \
+                        station_list[deployment][0]['response_table_n_i']
+                    obs_channel.response = self.get_response_inv(obs_channel)
+
+                if obs_channel not in all_channels:
+                    all_channels.append(obs_channel)
+        return all_channels
 
 
 def execute(path, args_dict_list, nickname, level, out_format, out_q):
