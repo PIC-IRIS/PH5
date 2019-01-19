@@ -27,7 +27,10 @@ install:
   - source activate ph5
 
 # before scripts
-before_script: "flake8 ph5"
+before_script:
+  - flake8 ph5
+  - pyflakes ph5
+
 
 # command to run tests
 script: python runtests.py
