@@ -500,11 +500,11 @@ class PH5toStationXMLParser(object):
                            sta_latitude, sta_elevation, creation_date,
                            termination_date, site_name):
         obs_station = inventory.Station(sta_code,
-                                                   latitude=sta_latitude,
-                                                   longitude=sta_longitude,
-                                                   start_date=start_date,
-                                                   end_date=end_date,
-                                                   elevation=sta_elevation)
+                                        latitude=sta_latitude,
+                                        longitude=sta_longitude,
+                                        start_date=start_date,
+                                        end_date=end_date,
+                                        elevation=sta_elevation)
         obs_station.site = inventory.Site(name=site_name)
         obs_station.creation_date = creation_date
         obs_station.termination_date = termination_date
@@ -523,12 +523,12 @@ class PH5toStationXMLParser(object):
                            das_serial):
 
         obs_channel = inventory.Channel(
-                                                   code=cha_code,
-                                                   location_code=loc_code,
-                                                   latitude=cha_latitude,
-                                                   longitude=cha_longitude,
-                                                   elevation=cha_elevation,
-                                                   depth=0
+                                        code=cha_code,
+                                        location_code=loc_code,
+                                        latitude=cha_latitude,
+                                        longitude=cha_longitude,
+                                        elevation=cha_elevation,
+                                        depth=0
                                             )
         obs_channel.start_date = start_date
         obs_channel.end_date = end_date
@@ -1003,4 +1003,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
