@@ -508,6 +508,9 @@ class PH5toStationXMLParser(object):
         obs_station.site = obspy.core.inventory.Site(name=site_name)
         obs_station.creation_date = creation_date
         obs_station.termination_date = termination_date
+        obs_station.total_number_of_channels = 0  # initialized to 0
+        obs_station.selected_number_of_channels = 0 # initialized to 0
+
         return obs_station
 
     def create_obs_channel(self, sta_code, loc_code,
@@ -667,6 +670,25 @@ class PH5toStationXMLParser(object):
                         termination_date = end_date
                         site_name = station_entry['location/description_s']
 
+                        obs_channels = []
+                        # run channel filters if necessary. we do this first
+                        # to avoid creating a station that has no channels
+                        if self.manager.level.upper() == "RESPONSE" or \
+                           self.manager.level.upper() == "CHANNEL" or \
+                           sta_xml_obj.location_list != ['*'] or \
+                           sta_xml_obj.channel_list != ['*'] or \
+                           sta_xml_obj.component_list != ['*'] or \
+                           sta_xml_obj.receiver_list != ['*']:
+                            obs_channels = self.read_channels(sta_xml_obj,
+                                                              station_list,
+                                                              deployment,
+                                                              station_code,
+                                                              array_code)
+                            # go to the next station if no channels were
+                            # returned
+                            if len(obs_channels) == 0:
+                                continue
+
                         sta_key = self.manager.get_station_key(station_code,
                                                                start_date,
                                                                end_date,
@@ -690,35 +712,16 @@ class PH5toStationXMLParser(object):
                                                             termination_date,
                                                             site_name)
 
-                            if obs_station.total_number_of_channels is None:
-                                obs_station.total_number_of_channels = 0
-                            if obs_station.selected_number_of_channels is None:
-                                obs_station.selected_number_of_channels = 0
-
-                        # add channels to station if necessary
-                        if self.manager.level.upper() == "RESPONSE" or \
-                           self.manager.level.upper() == "CHANNEL" or \
-                           sta_xml_obj.location_list != ['*'] or \
-                           sta_xml_obj.channel_list != ['*'] or \
-                           sta_xml_obj.component_list != ['*'] or \
-                           sta_xml_obj.receiver_list != ['*']:
-                            obs_channels = self.read_channels(sta_xml_obj,
-                                                              station_list,
-                                                              deployment,
-                                                              station_code,
-                                                              array_code)
-                            if obs_channels:
-                                obs_station.channels.extend(obs_channels)
-                                obs_station.total_number_of_channels += \
-                                    len(station_list)
-                                obs_station.selected_number_of_channels = \
-                                    len(obs_station.channels)
-                            if (obs_station.selected_number_of_channels == 0):
-                                continue
+                        # Add matching channels to station if necessary
+                        if obs_channels:
+                            obs_station.channels.extend(obs_channels)
+                            obs_station.selected_number_of_channels = \
+                                len(obs_station.channels)
                         else:
-                            obs_station.total_number_of_channels += \
-                                len(station_list)
                             obs_station.selected_number_of_channels = 0
+                        
+                        obs_station.total_number_of_channels += \
+                            len(station_list)
 
                         if not self.manager.get_obs_station(sta_key):
                             all_stations.append(obs_station)
