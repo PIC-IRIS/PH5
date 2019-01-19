@@ -509,7 +509,7 @@ class PH5toStationXMLParser(object):
         obs_station.creation_date = creation_date
         obs_station.termination_date = termination_date
         obs_station.total_number_of_channels = 0  # initialized to 0
-        obs_station.selected_number_of_channels = 0 # initialized to 0
+        obs_station.selected_number_of_channels = 0  # initialized to 0
 
         return obs_station
 
@@ -719,7 +719,7 @@ class PH5toStationXMLParser(object):
                                 len(obs_station.channels)
                         else:
                             obs_station.selected_number_of_channels = 0
-                        
+
                         obs_station.total_number_of_channels += \
                             len(station_list)
 
