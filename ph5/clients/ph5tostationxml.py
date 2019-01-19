@@ -151,6 +151,14 @@ class PH5toStationXMLError(Exception):
         self.message = message
 
 
+class NoDataError(Exception):
+    """Exception raised when no data matching request is returned.
+    :param: message -- explanation of the error
+    """
+    def __init__(self, message=""):
+        self.message = message
+
+
 class PH5toStationXMLRequest(object):
 
     def __init__(self, network_list=None, reportnum_list=None,
@@ -614,18 +622,18 @@ class PH5toStationXMLParser(object):
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
-                array = array_name[8:]
-                if not ph5utils.does_pattern_exists(array_patterns, array):
+                array_code = array_name[8:]
+                if not ph5utils.does_pattern_exists(array_patterns,
+                                                    array_code):
                     continue
 
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arraybyid = self.manager.ph5.Array_t[array_name]['byid']
                 arrayorder = self.manager.ph5.Array_t[array_name]['order']
-                for x in arrayorder:
-
-                    station_list = arraybyid.get(x)
+                for sta_id in arrayorder:
+                    station_list = arraybyid.get(sta_id)
                     obs_channels = []
-                    if x not in sta_xml_obj.ph5_station_id_list:
+                    if sta_id not in sta_xml_obj.ph5_station_id_list:
                         continue
                     for deployment in station_list:
                         station_entry = station_list[deployment][0]
@@ -641,7 +649,7 @@ class PH5toStationXMLParser(object):
                         if station_entry['seed_station_name_s']:
                             station_code = station_entry['seed_station_name_s']
                         else:
-                            station_code = x
+                            station_code = sta_id
 
                         start_date = station_entry['deploy_time/epoch_l']
                         start_date = UTCDateTime(start_date)
@@ -698,7 +706,7 @@ class PH5toStationXMLParser(object):
                                                               station_list,
                                                               deployment,
                                                               station_code,
-                                                              array_name)
+                                                              array_code)
                             if obs_channels:
                                 obs_station.channels.extend(obs_channels)
                                 obs_station.total_number_of_channels += \
@@ -719,7 +727,7 @@ class PH5toStationXMLParser(object):
         return all_stations
 
     def read_channels(self, sta_xml_obj, station_list, deployment,
-                      sta_code, array_name):
+                      sta_code, array_code):
 
         all_channels = []
         cha_list_patterns = sta_xml_obj.channel_list
@@ -732,7 +740,7 @@ class PH5toStationXMLParser(object):
                                             receiver_id):
             return
 
-        c_id = str(station_list[deployment][0]['channel_number_i'])
+        c_id = str(station_entry['channel_number_i'])
         if not ph5utils.does_pattern_exists(component_list_patterns, c_id):
             return
 
@@ -743,7 +751,6 @@ class PH5toStationXMLParser(object):
 
         for pattern in cha_list_patterns:
             if fnmatch.fnmatch(cha_code, pattern):
-
                 if station_entry['seed_location_code_s']:
                     loc_code = station_entry['seed_location_code_s']
                 else:
@@ -763,8 +770,6 @@ class PH5toStationXMLParser(object):
                     continue
                 start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
                 end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
-
-                array_code = str(array_name[8:])
 
                 # compute sample rate
                 sample_rate_multiplier = \
@@ -970,6 +975,8 @@ def main():
                                     level,
                                     uri,
                                     args_dict_list)
+        if not inv:
+            raise NoDataError("Request resulted in no data.")
 
         if out_format == "STATIONXML":
             inv.write(args.outfile,
@@ -985,6 +992,8 @@ def main():
             LOGGER.error("Incorrect output format. "
                          "Formats are STATIONXML, KML, SACPZ, and TEXT.")
             sys.exit()
+    except NoDataError as err:
+        LOGGER.info(err.message)
     except Exception as err:
         LOGGER.error(err.message)
 
