@@ -43,7 +43,7 @@ RECEIVER_T = {}
 # (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
 # A list of Das_Groups that refers to Das_g_[sn]'s
-DASS = {}
+DASS = {} # NOQA
 
 os.environ['TZ'] = 'UTM'
 time.tzset()
@@ -603,7 +603,7 @@ def write_des_report():
 
 
 def main():
-    global KEY_GEN, DES_GEN
+    global KEY_GEN, DES_GEN, DASS
 
     get_args()
 
