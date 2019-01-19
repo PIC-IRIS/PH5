@@ -9,8 +9,8 @@ import argparse
 import fnmatch
 import multiprocessing
 import logging
-import obspy
 from datetime import datetime
+from obspy.core import inventory
 from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
@@ -430,7 +430,7 @@ class PH5toStationXMLParser(object):
                                             )
                 with io.BytesIO(response_file_das_a) as buf:
                     buf.seek(0, 0)
-                    dl_resp = obspy.read_inventory(buf, format="RESP")
+                    dl_resp = read_inventory(buf, format="RESP")
                 dl_resp = dl_resp[0][0][0].response
             # parse sensor response if present
             if response_file_sensor_a_name:
@@ -440,7 +440,7 @@ class PH5toStationXMLParser(object):
                                             )
                 with io.BytesIO(response_file_sensor_a) as buf:
                     buf.seek(0, 0)
-                    sensor_resp = obspy.read_inventory(buf, format="RESP")
+                    sensor_resp = read_inventory(buf, format="RESP")
                 sensor_resp = sensor_resp[0][0][0].response
 
             inv_resp = None
@@ -482,7 +482,7 @@ class PH5toStationXMLParser(object):
     def create_obs_network(self):
         obs_stations = self.read_stations()
         if obs_stations:
-            obs_network = obspy.core.inventory.Network(
+            obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
             obs_network.alternate_code = \
                 self.experiment_t[0]['experiment_id_s']
@@ -499,13 +499,13 @@ class PH5toStationXMLParser(object):
     def create_obs_station(self, sta_code, start_date, end_date, sta_longitude,
                            sta_latitude, sta_elevation, creation_date,
                            termination_date, site_name):
-        obs_station = obspy.core.inventory.Station(sta_code,
+        obs_station = inventory.Station(sta_code,
                                                    latitude=sta_latitude,
                                                    longitude=sta_longitude,
                                                    start_date=start_date,
                                                    end_date=end_date,
                                                    elevation=sta_elevation)
-        obs_station.site = obspy.core.inventory.Site(name=site_name)
+        obs_station.site = inventory.Site(name=site_name)
         obs_station.creation_date = creation_date
         obs_station.termination_date = termination_date
         obs_station.total_number_of_channels = 0  # initialized to 0
@@ -522,7 +522,7 @@ class PH5toStationXMLParser(object):
                            sensor_serial, das_manufacturer, das_model,
                            das_serial):
 
-        obs_channel = obspy.core.inventory.Channel(
+        obs_channel = inventory.Channel(
                                                    code=cha_code,
                                                    location_code=loc_code,
                                                    latitude=cha_latitude,
@@ -542,7 +542,7 @@ class PH5toStationXMLParser(object):
                         [x for x in
                          [sensor_manufacturer, sensor_model] if x])
 
-        obs_channel.sensor = obspy.core.inventory.Equipment(
+        obs_channel.sensor = inventory.Equipment(
             type=sensor_type,
             description=("%s %s/%s %s" % (sensor_manufacturer, sensor_model,
                                           das_manufacturer, das_model)),
@@ -554,7 +554,7 @@ class PH5toStationXMLParser(object):
             removal_date=UTCDateTime(end_date))
         das_type = " ".join([x for x in [das_manufacturer, das_model] if x])
         obs_channel.data_logger = \
-            obspy.core.inventory.Equipment(
+            inventory.Equipment(
                 type=das_type,
                 description="",
                 manufacturer=das_manufacturer,
@@ -907,7 +907,7 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
             p.join()
 
         if networks:
-            inv = obspy.core.inventory.Inventory(
+            inv = inventory.Inventory(
                                         networks=networks,
                                         source="PIC-PH5",
                                         sender="IRIS-PASSCAL-DMC-PH5",
@@ -1003,3 +1003,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
