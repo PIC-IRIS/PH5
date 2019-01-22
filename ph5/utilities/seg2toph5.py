@@ -11,7 +11,7 @@ import math
 import json
 from math import modf
 from ph5 import LOGGING_FORMAT
-from ph5.core import experiment, timedoy, RESP
+from ph5.core import experiment, timedoy
 
 from obspy import read as readSEG2
 
@@ -382,13 +382,14 @@ def writeINDEX():
 
 
 def updatePH5(stream):
-    global EXREC, CURRENT_DAS, LAST_SAMPLE_RATE
+    global EXREC, CURRENT_DAS, LAST_SAMPLE_RATE, RESP
 
     def process(hdr, header_type):
         ''''''
         ll = [{'FileType': 'SEG-2', 'HeaderType': header_type}, hdr]
         log_array.append(json.dumps(ll, sort_keys=True, indent=4).split('\n'))
 
+    RESP = Resp(EX.ph5_g_responses)
     size_guess = len(stream[0].data) * len(stream)
     for trace in stream:
         p_das_t = {}
