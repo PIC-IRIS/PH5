@@ -848,7 +848,7 @@ class PH5toStationXMLParser(object):
         return all_channels
 
 
-def execute(path, args_dict_list, nickname, level, out_format, out_q):
+def execute(path, args_dict_list, nickname, level, out_format):
     ph5sxml = [PH5toStationXMLRequest(
                             network_list=args_dict.get('network_list'),
                             reportnum_list=args_dict.get('reportnum_list'),
@@ -879,32 +879,31 @@ def execute(path, args_dict_list, nickname, level, out_format, out_q):
                                                     format=out_format
                                                   )
     ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
-    out_q.put(ph5sxmlparser.get_network(path))
+    return ph5sxmlparser.get_network(path)
+
+
+def execute_unpack(args):
+    return execute(*args)
 
 
 def run_ph5_to_stationxml(paths, nickname, out_format,
-                          level, uri, args_dict_list):
+                          level, uri, args_dict_list,
+                          pool_size=5):
+    results = []
     if paths:
-        processes = []
-        out_q = multiprocessing.Queue()
+        arguments = []
         for path in paths:
-            p = multiprocessing.Process(target=execute,
-                                        args=(path,
-                                              args_dict_list,
-                                              nickname,
-                                              level,
-                                              out_format,
-                                              out_q)
-                                        )
-            processes.append(p)
-            p.start()
+            arguments.append((path,
+                             args_dict_list,
+                             nickname,
+                             level,
+                             out_format))
 
-        results = [out_q.get() for proc in processes]
+        pool = multiprocessing.Pool(processes=pool_size)
+        results = pool.map(execute_unpack, arguments)
+        pool.terminate()
 
         networks = [n for n in results if n is not None]
-
-        for p in processes:
-            p.join()
 
         if networks:
             inv = inventory.Inventory(
