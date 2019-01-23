@@ -19,7 +19,7 @@ from obspy.core.inventory.response import Response
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.23'
 LOGGER = logging.getLogger(__name__)
 
 
