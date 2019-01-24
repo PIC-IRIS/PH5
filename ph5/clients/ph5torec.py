@@ -403,7 +403,7 @@ def gather():
                     # Read receiver and response tables
                     receiver_t = trace.receiver_t
                     if 'response_table_n_i' in array_t[c][t] and\
-                       array_t[c][t]['response_table_n_i'] is not -1:
+                       int(array_t[c][t]['response_table_n_i']) is not -1:
                         response_t = P5.get_response_t_by_n_i(
                             int(array_t[c][t]['response_table_n_i']))
                     else:
