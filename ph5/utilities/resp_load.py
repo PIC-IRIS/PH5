@@ -315,7 +315,7 @@ class n_i_fix(object):
             if line_list[0] == 'Das Model':
                 continue
             else:
-                if str(line_list[5]) is not "":
+                if line_list[5] != "":
                     name = str(
                         line_list[0] +
                         "_" +
