@@ -448,8 +448,8 @@ class PH5Validate(object):
                          "data for this station."
                          .format(str(station_id)))
         try:
-            Das_t = ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'],
-                                        channel_id)
+            ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'],
+                                channel_id)
         except BaseException:
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
@@ -470,10 +470,8 @@ class PH5Validate(object):
         if not station['das/model_s']:
             warning.append("DAS model is missing. "
                            "Is this correct???")
-        das = sorted(Das_t, key=lambda k: k['time/epoch_l'])
-
-        true_deploy = das[0]['time/epoch_l']
-        true_pickup = das[-1]['time/epoch_l']
+        true_deploy, true_pickup = self.ph5.get_extent(das=das_serial,
+                                                       component=channel_id)
         if deploy_time > true_deploy:
             warning.append("Data exists before deploy time")
         if pickup_time < true_pickup:
