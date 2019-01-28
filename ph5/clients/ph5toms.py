@@ -20,6 +20,7 @@ from ph5.core import ph5utils
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
+import time
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
@@ -383,18 +384,15 @@ class PH5toMSeed(object):
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
             new_endtime = stc.endtime + (1 / float(stc.sample_rate))
-
-            self.ph5.read_das_t(stc.das, stc.starttime,
-                                stc.endtime, reread=False)
-
-            if stc.das not in self.ph5.Das_t:
+            das = self.ph5.query_das_t(stc.das, stc.component,
+                                       stc.starttime,
+                                       stc.endtime,
+                                       stc.sample_rate,
+                                       stc.sample_rate_multiplier)
+            if not das:
                 return
-
-            Das_t = ph5api.filter_das_t(self.ph5.Das_t[stc.das]['rows'],
-                                        stc.component)
-
-            Das_t = [x for x in Das_t]
-            Das_tf = next(iter(Das_t or []), None)
+            das = [x for x in das]
+            Das_tf = next(iter(das or []), None)
             if Das_tf is None:
                 return
             else:
@@ -415,7 +413,7 @@ class PH5toMSeed(object):
                                   new_endtime,
                                   chan=stc.component,
                                   sample_rate=actual_sample_rate,
-                                  apply_time_correction=nt, das_t=Das_t)
+                                  apply_time_correction=nt, das_t=das)
 
             if not isinstance(traces, list):
                 return
@@ -466,7 +464,6 @@ class PH5toMSeed(object):
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)
-        self.ph5.Das_t = {}
         if len(obspy_stream.traces) < 1:
             return
 
@@ -669,14 +666,14 @@ class PH5toMSeed(object):
 
             for starttime, endtime in tuple(times_to_cut):
 
-                self.ph5.read_das_t(das,
-                                    starttime,
-                                    endtime,
-                                    reread=False)
+                self.ph5.query_das_t(das,
+                                     component,
+                                     starttime,
+                                     endtime,
+                                     sample_rate,
+                                     sample_rate_multiplier
+                                     )
 
-                if das not in self.ph5.Das_t:
-                    continue
-                self.ph5.Das_t = {}
                 station_x = StationCut(
                     seed_network,
                     experiment_id,
@@ -978,6 +975,7 @@ def get_args():
 
 
 def main():
+    start = time.time()
     global LENGTH
     args = get_args()
 
@@ -1061,6 +1059,8 @@ def main():
         exit(-1)
 
     ph5API_object.close()
+    end = time.time()
+    print(end - start)
 
 
 if __name__ == '__main__':
