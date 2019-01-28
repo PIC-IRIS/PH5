@@ -433,9 +433,7 @@ class PH5Validate(object):
         if deploy_time > pickup_time:
             error.append("Deploy time is after pickup time")
         else:
-            self.ph5.read_das_t(das_serial, pickup_time,
-                                deploy_time, reread=False)
-
+            self.ph5.read_das_t(das_serial, reread=False)
         # CHANNEL SENSOR/DAS
         channel_id = station['channel_number_i']
         if das_serial is None:
@@ -450,7 +448,8 @@ class PH5Validate(object):
                          "data for this station."
                          .format(str(station_id)))
         try:
-            ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'], channel_id)
+            Das_t = ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'],
+                                        channel_id)
         except BaseException:
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
@@ -471,6 +470,14 @@ class PH5Validate(object):
         if not station['das/model_s']:
             warning.append("DAS model is missing. "
                            "Is this correct???")
+        das = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+
+        true_deploy = das[0]['time/epoch_l']
+        true_pickup = das[-1]['time/epoch_l']
+        if deploy_time > true_deploy:
+            warning.append("Data exists before deploy time")
+        if pickup_time < true_pickup:
+            warning.append("Data exists after pickup time")
 
         return info, warning, error
 
