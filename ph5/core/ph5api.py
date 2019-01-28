@@ -1396,6 +1396,11 @@ class PH5(experiment.ExperimentGroup):
         return ret
 
     def get_extent(self, das, start=None, end=None, component=None):
+        '''
+        Takes a das serial number, and option star and end time
+        and returns the time of the earliest and latest samples
+        fot a given channel
+        '''
 
         self.read_das_t(das, start, end, reread=False)
         Das_t = filter_das_t(self.Das_t[das]['rows'], component)
