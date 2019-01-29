@@ -13,7 +13,7 @@ import subprocess
 from ph5.core import ph5api
 
 
-PROG_VERSION = "2018.296"
+PROG_VERSION = "2019.29"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -100,10 +100,10 @@ class PH5Validate(object):
         info = []
         warning = []
         error = []
-        if len(experiment_t) == 0:
+        if not experiment_t:
             error.append("Experiment_t does not exist. "
                          "run experiment_t_gen to create table")
-            return
+            return info, warning, error
         if not experiment_t[0]['net_code_s']:
             error.append("Network code was not found: "
                          "A 2 character network code is required.")
@@ -162,6 +162,9 @@ class PH5Validate(object):
         info = []
         warning = []
         error = []
+
+        if not experiment_t:
+            return info, warning, error
         if (experiment_t[0]['north_west_corner/X/value_d'] == 0.0):
             error.append("A bounding box was not detected: "
                          "A suggested bounding box has been calculated "

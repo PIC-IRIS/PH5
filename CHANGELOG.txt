@@ -12,7 +12,7 @@ ph5.utilities.report_gen
 ph5.utilities.pformagui
  * added North South designation to pforma
  * Displayed current utm zone (issue #234)
-ph5.core.utilities.segdtoph5
+ph5.utilities.segdtoph5
  * Fixed bug causing pforma to finish correctly on node (issue #233)\
  * fixed bug in utmzone processing
 ph5.core.experiment
@@ -21,6 +21,8 @@ ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.clients.ph5tostationxml
  * Limit number of asynchronous processes
+ph5.utilities.ph5validate
+ * add data time checking
 
 v4.1.2:
 ph5.utilities.ph5validate
