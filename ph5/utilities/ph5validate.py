@@ -476,9 +476,13 @@ class PH5Validate(object):
         true_deploy, true_pickup = self.ph5.get_extent(das=das_serial,
                                                        component=channel_id)
         if deploy_time > true_deploy:
-            warning.append("Data exists before deploy time")
+            time = int(deploy_time - true_deploy)
+            warning.append("Data exists before deploy time: "
+                           + str(time) + " seconds ")
         if pickup_time < true_pickup:
-            warning.append("Data exists after pickup time")
+            time = int(true_pickup - pickup_time)
+            warning.append("Data exists after pickup time: "
+                           + str(time) + " seconds ")
 
         return info, warning, error
 
