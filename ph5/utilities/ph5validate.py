@@ -10,16 +10,22 @@ import argparse
 import logging
 import re
 import subprocess
+import sys
 from ph5.core import ph5api
 
-
-PROG_VERSION = "2018.296"
+PROG_VERSION = "2019.29"
 LOGGER = logging.getLogger(__name__)
 
 
 class ValidationBlock(object):
 
-    def __init__(self, heading="", info=[], warning=[], error=[]):
+    def __init__(self, heading="", info=None, warning=None, error=None):
+        if info is None:
+            info = []
+        if warning is None:
+            warning = []
+        if error is None:
+            error = []
         self.heading = heading
         self.info = info
         self.warning = warning
@@ -27,7 +33,7 @@ class ValidationBlock(object):
 
     def write_to_log(self, log_file, level):
         if self.error and (level == "INFO" or level == "WARNING" or
-           level == "ERROR"):
+                           level == "ERROR"):
             log_file.write(self.heading)
             for e in self.error:
                 log_file.write("ERROR: {}\n".format(e))
@@ -41,15 +47,36 @@ class ValidationBlock(object):
                 log_file.write("INFO: {}\n".format(i))
 
 
-class PH5Validate(object):
+class PH5ValidateException(Exception):
+    pass
 
-    def __init__(self, ph5API_object, ph5path):
+
+class PH5Validate(object):
+    def __init__(self, ph5API_object, ph5path,
+                 level, outfile):
         self.ph5 = ph5API_object
         self.path = ph5path
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
+        if level == "ERROR":
+            logging.basicConfig(filename=outfile,
+                                format='%(levelname)s: %(message)s',
+                                filemode='w',
+                                level=logging.ERROR)
+        elif level == "WARNING":
+            logging.basicConfig(filename=outfile,
+                                format='%(levelname)s: %(message)s',
+                                filemode='w',
+                                level=logging.WARNING)
+        elif level == "INFO":
+            logging.basicConfig(filename=outfile,
+                                format='%(levelname)s: %(message)s',
+                                filemode='w',
+                                level=logging.INFO)
+        else:
+            raise PH5ValidateException("Invalid Level %s" % level)
 
     def read_arrays(self, name):
         if name is None:
@@ -100,10 +127,12 @@ class PH5Validate(object):
         info = []
         warning = []
         error = []
-        if len(experiment_t) == 0:
+        if not experiment_t:
             error.append("Experiment_t does not exist. "
                          "run experiment_t_gen to create table")
-            return
+            return info, warning, error
+        if len(experiment_t) > 1:
+            error.append("More than one entry found in experiment_t.")
         if not experiment_t[0]['net_code_s']:
             error.append("Network code was not found: "
                          "A 2 character network code is required.")
@@ -162,6 +191,9 @@ class PH5Validate(object):
         info = []
         warning = []
         error = []
+
+        if not experiment_t:
+            return info, warning, error
         if (experiment_t[0]['north_west_corner/X/value_d'] == 0.0):
             error.append("A bounding box was not detected: "
                          "A suggested bounding box has been calculated "
@@ -433,9 +465,7 @@ class PH5Validate(object):
         if deploy_time > pickup_time:
             error.append("Deploy time is after pickup time")
         else:
-            self.ph5.read_das_t(das_serial, pickup_time,
-                                deploy_time, reread=False)
-
+            self.ph5.read_das_t(das_serial, reread=False)
         # CHANNEL SENSOR/DAS
         channel_id = station['channel_number_i']
         if das_serial is None:
@@ -450,7 +480,19 @@ class PH5Validate(object):
                          "data for this station."
                          .format(str(station_id)))
         try:
-            ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'], channel_id)
+            ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'],
+                                channel_id)
+            true_deploy, true_pickup =\
+                self.ph5.get_extent(das=das_serial,
+                                    component=channel_id)
+            if deploy_time > true_deploy:
+                time = int(deploy_time - true_deploy)
+                warning.append("Data exists before deploy time: "
+                               + str(time) + " seconds ")
+            if pickup_time < true_pickup:
+                time = int(true_pickup - pickup_time)
+                warning.append("Data exists after pickup time: "
+                               + str(time) + " seconds ")
         except BaseException:
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
@@ -662,11 +704,12 @@ class PH5Validate(object):
 def get_args():
     parser = argparse.ArgumentParser(
         description='Runs set of checks on PH5 archvive',
-        usage='Version: {0} ph5validate--nickname="Master_PH5_file" [options]'
-        .format(PROG_VERSION))
+        usage=('Version: %s ph5_validate '
+               '--nickname="Master_PH5_file" [options]'
+               % (PROG_VERSION)))
 
     parser.add_argument(
-        "-n", "--nickname", action="store", required=True,
+        "-n", "--nickname", action="store", default="master.ph5",
         type=str, metavar="nickname")
 
     parser.add_argument(
@@ -674,10 +717,14 @@ def get_args():
         type=str, metavar="ph5_path")
 
     parser.add_argument(
-        "-l", "--level", action="store", default="INFO",
-        help="Logging level. Choose from 'error, 'warning', "
-             "and 'info' (default).",
-        type=str, metavar="level")
+        "-l", "--level", action="store", default="WARNING",
+        type=str, metavar="level",
+        help=("Level of logging detail. Choose from ERROR, WARNING, or INFO"))
+
+    parser.add_argument("-o", "--outfile", action="store",
+                        default="ph5_validate.log", type=str,
+                        metavar="outfile",
+                        )
 
     parser.add_argument(
         "-v", "--verbose", action="store_true",
@@ -700,18 +747,25 @@ def main():
     try:
         args = get_args()
         ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
-        ph5validate = PH5Validate(ph5API_object, args.ph5path)
+        ph5validate = PH5Validate(ph5API_object,
+                                  args.ph5path,
+                                  args.level.upper(),
+                                  args.outfile)
         validation_blocks = []
-        validation_blocks += ph5validate.check_experiment_t()
-        validation_blocks += ph5validate.check_array_t()
-        validation_blocks += ph5validate.check_event_t()
-        with open("ph5_validate.log", "w") as log_file:
+        validation_blocks.extend(ph5validate.check_experiment_t())
+        validation_blocks.extend(ph5validate.check_array_t())
+        validation_blocks.extend(ph5validate.check_event_t())
+        with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
                 vb.write_to_log(log_file,
                                 args.level)
         ph5API_object.close()
-        print("\nWarnings, Errors and suggests written to logfile: "
-              "ph5_validate.log\n")
+        sys.stdout.write("\nWarnings, Errors and suggestions "
+                         "written to logfile: %s\n" % args.outfile)
+    except ph5api.APIError as err:
+        LOGGER.error(err)
+    except PH5ValidateException as err:
+        LOGGER.error(err)
     except Exception as e:
         LOGGER.error(e)
 

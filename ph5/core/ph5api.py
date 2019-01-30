@@ -1386,6 +1386,33 @@ class PH5(experiment.ExperimentGroup):
 
         return ret
 
+    def get_extent(self, das, start=None, end=None, component=None):
+        '''
+        Takes a das serial number, and option star and end time
+        and returns the time of the earliest and latest samples
+        fot a given channel
+        '''
+
+        self.read_das_t(das, start, end, reread=False)
+        Das_t = filter_das_t(self.Das_t[das]['rows'], component)
+        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+
+        earliest_epoch = (float(new_das_t[0]['time/epoch_l']) +
+                          float(new_das_t[0]
+                                ['time/micro_seconds_i'])/1000000)
+
+        latest_epoch_start = (float(new_das_t[-1]['time/epoch_l']) +
+                              float(new_das_t[-1]
+                                    ['time/micro_seconds_i']) / 1000000)
+        true_sample_rate = (float(new_das_t[-1]['sample_rate_i']) /
+                            float(new_das_t[-1]['sample_rate_multiplier_i']))
+
+        latest_epoch = (latest_epoch_start +
+                        (float(new_das_t[-1]['sample_count_i'])
+                         / true_sample_rate))
+
+        return earliest_epoch, latest_epoch
+
 
 #
 # Mix-ins
