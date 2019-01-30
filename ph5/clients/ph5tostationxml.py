@@ -473,9 +473,9 @@ class PH5toStationXMLParser(object):
             inv_resp = self.resp_manager.get_response(sensor_keys,
                                                       datalogger_keys)
             if self.manager.level == "CHANNEL":
-                    return Response(
-                        instrument_sensitivity=inv_resp.instrument_sensitivity
-                        )
+                return Response(
+                    instrument_sensitivity=inv_resp.instrument_sensitivity
+                )
             else:
                 return inv_resp
 
