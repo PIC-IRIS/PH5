@@ -770,14 +770,14 @@ class PH5(experiment.ExperimentGroup):
         sample_rate_i = sample_rate_i
         das = []
         for row in tbl.where(
-                '(channel_number_i == ' + str(chan) + ' ) '
-                                                      '&(epoch_i+micro_seconds_i/1000000>='
+                '(channel_number_i == '
+                + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
                 + str(start_epoch) +
                 '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                '&(epoch_i+micro_seconds_i/1000000<=' + str(stop_epoch) + ')'
-                                                                          '&(sample_rate_i==' + str(sample_rate) + ')'
-                                                                                                                   '&(sample_rate_multiplier_i=='
-                + str(sample_rate_multiplier) + ')'
+                '&(epoch_i+micro_seconds_i/1000000<='
+                + str(stop_epoch) + ')&(sample_rate_i==' + str(sample_rate) +
+                ')&(sample_rate_multiplier_i==' +
+                str(sample_rate_multiplier) + ')'
         ):
 
             row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
