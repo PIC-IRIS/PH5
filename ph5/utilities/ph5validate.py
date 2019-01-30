@@ -131,6 +131,8 @@ class PH5Validate(object):
             error.append("Experiment_t does not exist. "
                          "run experiment_t_gen to create table")
             return info, warning, error
+        if len(experiment_t) > 1:
+            error.append("More than one entry found in experiment_t.")
         if not experiment_t[0]['net_code_s']:
             error.append("Network code was not found: "
                          "A 2 character network code is required.")
@@ -480,6 +482,17 @@ class PH5Validate(object):
         try:
             ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'],
                                 channel_id)
+            true_deploy, true_pickup =\
+                self.ph5.get_extent(das=das_serial,
+                                    component=channel_id)
+            if deploy_time > true_deploy:
+                time = int(deploy_time - true_deploy)
+                warning.append("Data exists before deploy time: "
+                               + str(time) + " seconds ")
+            if pickup_time < true_pickup:
+                time = int(true_pickup - pickup_time)
+                warning.append("Data exists after pickup time: "
+                               + str(time) + " seconds ")
         except BaseException:
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
@@ -500,16 +513,6 @@ class PH5Validate(object):
         if not station['das/model_s']:
             warning.append("DAS model is missing. "
                            "Is this correct???")
-        true_deploy, true_pickup = self.ph5.get_extent(das=das_serial,
-                                                       component=channel_id)
-        if deploy_time > true_deploy:
-            time = int(deploy_time - true_deploy)
-            warning.append("Data exists before deploy time: "
-                           + str(time) + " seconds ")
-        if pickup_time < true_pickup:
-            time = int(true_pickup - pickup_time)
-            warning.append("Data exists after pickup time: "
-                           + str(time) + " seconds ")
 
         return info, warning, error
 
@@ -714,7 +717,7 @@ def get_args():
         type=str, metavar="ph5_path")
 
     parser.add_argument(
-        "-l", "--level", action="store", default="ERROR",
+        "-l", "--level", action="store", default="WARNING",
         type=str, metavar="level",
         help=("Level of logging detail. Choose from ERROR, WARNING, or INFO"))
 
@@ -760,9 +763,9 @@ def main():
         sys.stdout.write("\nWarnings, Errors and suggestions "
                          "written to logfile: %s\n" % args.outfile)
     except ph5api.APIError as err:
-        sys.stdout.write("%s\n" % err)
+        LOGGER.error(err)
     except PH5ValidateException as err:
-        sys.stdout.write("%s\n" % err)
+        LOGGER.error(err)
     except Exception as e:
         LOGGER.error(e)
 
