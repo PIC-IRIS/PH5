@@ -3959,9 +3959,9 @@ class MainControl(QtGui.QMainWindow):
             except Exception:
                 errorMsg = "Offset value must be a number."
             if errorMsg != '':
-                    QtGui.QMessageBox.question(self, 'Error', errorMsg,
-                                               QtGui.QMessageBox.Ok)
-                    self.offsetCtrl.setText("-0")
+                QtGui.QMessageBox.question(self, 'Error', errorMsg,
+                                           QtGui.QMessageBox.Ok)
+                self.offsetCtrl.setText("-0")
         elif object == self.timelenCtrl:
             if event.type() in [QtCore.QEvent.Leave, QtCore.QEvent.FocusOut]:
                 errorMsg = self.onChangeTimeLen()
