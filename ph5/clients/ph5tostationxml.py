@@ -469,6 +469,8 @@ class PH5toStationXMLParser(object):
                         )
                 else:
                     return inv_resp
+            else:
+                return Response()
         else:
             inv_resp = self.resp_manager.get_response(sensor_keys,
                                                       datalogger_keys)
