@@ -34,6 +34,7 @@ PROG_VERSION = '2019.032'
 LOGGER = logging.getLogger(__name__)
 LENGTH = int(86400)
 
+
 class StationCut(object):
 
     def __init__(self, net_code, experiment_id, station, seed_station,
@@ -641,12 +642,13 @@ class PH5toMSeed(object):
             midnight_fepoch, secondLeftInday = \
                 ph5utils.inday_breakup(start_fepoch)
 
-            #if (stop_fepoch - start_fepoch) > 86400:
+            # if (stop_fepoch - start_fepoch) > 86400:
             if (stop_fepoch - start_fepoch) > secondLeftInday:
                 seconds_covered = 0
                 total_seconds = stop_fepoch - start_fepoch
                 times_to_cut = []
-                #stop_time, seconds = ph5utils.doy_breakup(start_fepoch, LENGTH)
+                # stop_time, seconds = ph5utils.doy_breakup(
+                #    start_fepoch, LENGTH)
                 stop_time, seconds = ph5utils.inday_breakup(start_fepoch)
                 seconds_covered = seconds_covered + seconds
                 times_to_cut.append([start_fepoch, stop_time])
