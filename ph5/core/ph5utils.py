@@ -12,7 +12,7 @@ ph5toexml.py.
 import fnmatch
 from datetime import datetime, timedelta
 from obspy.geodetics import locations2degrees
-from ph5.core.timedoy import epoch2passcal, passcal2epoch
+from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY
 import time
 
 
