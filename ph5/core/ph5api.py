@@ -1397,7 +1397,7 @@ class PH5(experiment.ExperimentGroup):
 
     def get_extent(self, das, start=None, end=None, component=None):
         '''
-        Takes a das serial number, and option star and end time
+        Takes a das serial number, and option start and end time
         and returns the time of the earliest and latest samples
         fot a given channel
         '''
@@ -1421,6 +1421,51 @@ class PH5(experiment.ExperimentGroup):
                          / true_sample_rate))
 
         return earliest_epoch, latest_epoch
+
+    def get_availability(self, das, start=None, end=None,
+                         sample_rate=None, component=None):
+        '''
+        Required: das serial and component
+        Optional: Start time, End time
+        :param das: das serial number
+        :param start: start time epoch
+        :param end:  end time epoch
+        :param sample_rate: sample rate
+        :param component: component channel number
+        :return: list of tuples (sample_rate, start, end)
+        '''
+
+        times = []
+        previous = []
+        gaps = 0
+        self.read_das_t(das, start, end, reread=False)
+        Das_t = filter_das_t(self.Das_t[das]['rows'], component)
+        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+        for d in new_das_t:
+            start_time = (float(d['time/epoch_l']) +
+                          float(d['time/micro_seconds_i']) / 1000000)
+            num_samples = d['sample_count_i']
+            true_sample_rate = (float(d['sample_rate_i']) /
+                                float(d['sample_rate_multiplier_i']))
+            end_time = start_time+num_samples/true_sample_rate
+            if sample_rate != true_sample_rate:
+                continue
+            if not previous:
+                previous.append(true_sample_rate)
+                previous.append(start_time)
+                previous.append(end_time)
+            elif previous[2] != start_time:
+                gaps = gaps + 1
+                times.append((previous[0], previous[1], previous[2]))
+            del previous[:]
+            previous.append(true_sample_rate)
+            previous.append(start_time)
+            previous.append(end_time)
+        if gaps == 0:
+            start, stop = self.get_extent(das, start, end, component)
+            times.append((sample_rate, start, stop))
+
+        return times
 
 
 #
