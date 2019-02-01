@@ -4,6 +4,14 @@
 Extracts data from PH5 in miniSEED and SAC formats.
 Also allows for creation of preview png images of traces.
 """
+################################################################
+#
+# modification
+# version: 2019.032
+# author: Lan Dam
+# When multiple days are request, cut on day boundaries instead of
+# every 24 hours
+
 
 import sys
 import os
@@ -22,10 +30,9 @@ from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 import time
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.032'
 LOGGER = logging.getLogger(__name__)
 LENGTH = int(86400)
-
 
 class StationCut(object):
 
@@ -631,18 +638,25 @@ class PH5toMSeed(object):
                 if start_doy not in self.doy:
                     continue
 
-            if (stop_fepoch - start_fepoch) > 86400:
+            midnight_fepoch, secondLeftInday = \
+                ph5utils.inday_breakup(start_fepoch)
+
+            #if (stop_fepoch - start_fepoch) > 86400:
+            if (stop_fepoch - start_fepoch) > secondLeftInday:
                 seconds_covered = 0
                 total_seconds = stop_fepoch - start_fepoch
                 times_to_cut = []
-                stop_time, seconds = ph5utils.doy_breakup(start_fepoch, LENGTH)
+                #stop_time, seconds = ph5utils.doy_breakup(start_fepoch, LENGTH)
+                stop_time, seconds = ph5utils.inday_breakup(start_fepoch)
                 seconds_covered = seconds_covered + seconds
                 times_to_cut.append([start_fepoch, stop_time])
                 start_time = stop_time
 
                 while seconds_covered < total_seconds:
-                    stop_time, seconds = ph5utils.doy_breakup(start_time,
-                                                              LENGTH)
+                    # stop_time, seconds = ph5utils.doy_breakup(
+                    #    start_time,LENGTH)
+                    stop_time, seconds = ph5utils.inday_breakup(start_time)
+
                     seconds_covered += seconds
                     if stop_time > stop_fepoch:
                         times_to_cut.append([start_time, stop_fepoch])
