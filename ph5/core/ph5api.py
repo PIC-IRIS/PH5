@@ -756,19 +756,28 @@ class PH5(experiment.ExperimentGroup):
         das_g = "Das_g_{0}".format(das)
         node = self.ph5_g_receivers.getdas_g(das)
         self.ph5_g_receivers.setcurrent(node)
-        tbl = self.ph5.get_node('/Experiment_g/Receivers_g/'+das_g, 'Das_t')
+        tbl = self.ph5.get_node('/Experiment_g/Receivers_g/' + das_g, 'Das_t')
         epoch_i = tbl.cols.time.epoch_l  # noqa
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
+        sample_count_i = tbl.cols.sample_count_i  # noqa
+        sample_rate_multiplier_i = \
+            tbl.cols.sample_rate_multiplier_i  # noqa
+        sample_rate_i = tbl.cols.sample_rate_i  # noqa
         epoch_i = epoch_i
         micro_seconds_i = micro_seconds_i
+        sample_count_i = sample_count_i
+        sample_rate_multiplier_i = sample_rate_multiplier_i
+        sample_rate_i = sample_rate_i
         das = []
         for row in tbl.where(
-                '(channel_number_i == '+str(chan)+' ) '
-                '&(epoch_i+micro_seconds_i/1000000>='+str(start_epoch)+')'
-                '&(epoch_i+micro_seconds_i/1000000<='+str(stop_epoch)+')'
-                '&(sample_rate_i=='+str(sample_rate)+')'
-                '&(sample_rate_multiplier_i=='
-                + str(sample_rate_multiplier) + ')'
+                '(channel_number_i == '
+                + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                + str(start_epoch) +
+                '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                '&(epoch_i+micro_seconds_i/1000000<='
+                + str(stop_epoch) + ')&(sample_rate_i==' + str(sample_rate) +
+                ')&(sample_rate_multiplier_i==' +
+                str(sample_rate_multiplier) + ')'
         ):
 
             row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
@@ -1385,6 +1394,33 @@ class PH5(experiment.ExperimentGroup):
             ret.insert(0, H)
 
         return ret
+
+    def get_extent(self, das, start=None, end=None, component=None):
+        '''
+        Takes a das serial number, and option star and end time
+        and returns the time of the earliest and latest samples
+        fot a given channel
+        '''
+
+        self.read_das_t(das, start, end, reread=False)
+        Das_t = filter_das_t(self.Das_t[das]['rows'], component)
+        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+
+        earliest_epoch = (float(new_das_t[0]['time/epoch_l']) +
+                          float(new_das_t[0]
+                                ['time/micro_seconds_i'])/1000000)
+
+        latest_epoch_start = (float(new_das_t[-1]['time/epoch_l']) +
+                              float(new_das_t[-1]
+                                    ['time/micro_seconds_i']) / 1000000)
+        true_sample_rate = (float(new_das_t[-1]['sample_rate_i']) /
+                            float(new_das_t[-1]['sample_rate_multiplier_i']))
+
+        latest_epoch = (latest_epoch_start +
+                        (float(new_das_t[-1]['sample_count_i'])
+                         / true_sample_rate))
+
+        return earliest_epoch, latest_epoch
 
 
 #
