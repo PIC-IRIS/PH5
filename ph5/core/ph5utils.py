@@ -2,12 +2,17 @@
 A collection of common methods for ph5toms.py, ph5tostationxml.py and
 ph5toexml.py.
 '''
-
+################################################################
+#
+# modification
+# version: 2019.032
+# author: Lan Dam
+# add inday_breakup() function
 
 import fnmatch
 from datetime import datetime, timedelta
 from obspy.geodetics import locations2degrees
-from ph5.core.timedoy import epoch2passcal, passcal2epoch
+from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 
 
@@ -193,6 +198,38 @@ def doy_breakup(start_fepoch, length=86400):
     stop_fepoch = passcal2epoch(next_passcal_date_str, fepoch=True)
     seconds = stop_fepoch - start_fepoch
     return stop_fepoch, seconds
+
+
+def inday_breakup(start_fepoch):
+    """
+    Given a start time epoch returns the midnight epoch time of that day
+    and the difference in seconds between the start and midnight epoch times.
+    :param: start_fepoch
+    :type: float
+    :returns: midnight_fepoch : midnight epoch :type: float
+              seconds: difference in seconds between the start and end
+              epoch times :type: float
+    """
+    passcal_start = epoch2passcal(float(start_fepoch))
+    start_passcal_list = passcal_start.split(":")
+    try:
+        midnight = TimeDOY(year=int(start_passcal_list[0]),
+                           doy=int(start_passcal_list[1]) + 1,
+                           hour=0,
+                           minute=0,
+                           second=0,
+                           microsecond=0)
+    except TimeError:
+        midnight = TimeDOY(year=int(start_passcal_list[0]) + 1,
+                           doy=1,
+                           hour=0,
+                           minute=0,
+                           second=0,
+                           microsecond=0)
+
+    midnight_fepoch = midnight.epoch()
+    seconds = midnight_fepoch - start_fepoch
+    return midnight_fepoch, seconds
 
 
 def microsecs_to_sec(microsec):
