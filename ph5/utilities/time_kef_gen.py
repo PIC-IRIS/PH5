@@ -7,6 +7,14 @@
 #
 # Steve Azevedo, June 2017
 #
+################################################################
+#
+# modification
+# version: 2019.036
+# author: Lan Dam
+# add option -o to let user indicate which file user want to write the result
+# into. This option is implemented in function print_report
+
 import re
 import sys
 import time
@@ -16,16 +24,16 @@ import logging
 from ph5.core import ph5api, timedoy
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.036'
 LOGGER = logging.getLogger(__name__)
 
 # Match lines related to timing in SOH
 timetoRE = re.compile(
-    r".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
-    (\d{4}/\d{4})\s+MS")
+    r".*TIME\s+CHANGED\s+TO\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+"
+    r"AND\s+(\d{4}/\d{4})\s+MS")
 timefromRE = re.compile(
-    r".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+AND\s+\
-    (\d{4}/\d{4})\s+MS")
+    r".*TIME\s+CHANGED\s+FROM\s+(\d{4}:\d{3}:\d{2}:\d{2}:\d{2}:\d{3})\s+"
+    r"AND\s+(\d{4}/\d{4})\s+MS")
 
 
 #
@@ -34,14 +42,13 @@ timefromRE = re.compile(
 
 
 def get_args():
-    global ARGS
+    global ARGS, OFILE
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix\
-     [-p path]".format(
-        PROG_VERSION)
+    parser.usage = "Version: {0}, time-kef-gen --nickname ph5-file-prefix"\
+        "[-p path]".format(PROG_VERSION)
 
     parser.description = ("Generates kef file to populate Time_t from SOH_A_. "
                           "\n\n"
@@ -62,7 +69,18 @@ def get_args():
     parser.add_argument("-r", "--clock_report", action="store_true",
                         default=False,
                         help="Write clock performance log, time-kef-gen.log")
+
+    parser.add_argument("-o", "--outfile", dest="output_file",
+                        help="The kef output file to be saved at.",
+                        metavar="output_file", default=None)
+
     ARGS = parser.parse_args()
+    # define OFILE to write output
+    o_filename = ARGS.output_file
+    if o_filename is None:
+        OFILE = None
+    else:
+        OFILE = open(o_filename, 'w')
 
 
 def read_soh(das_group):
@@ -120,7 +138,7 @@ def process_soh(soh):
     '''
     tos = []
     fos = []
-    soh_array_names = soh.keys()
+    soh_array_names = list(soh.keys())
     for soh_array_name in soh_array_names:
         soh_buf = soh[soh_array_name]
         tos, fos = parse_soh(soh_buf)
@@ -149,6 +167,17 @@ def parse_tos_froms(tos, fos):
     return start_tdoy, endgps_tdoy, slope, offset
 
 
+#
+# Print out report
+#
+def print_report(text):
+    global OFILE
+    if OFILE is None:
+        print(text)
+    else:
+        OFILE.write(text + '\n')
+
+
 def print_kef(das, clock):
     '''   Print Time_t info for this DAS
     '''
@@ -156,18 +185,19 @@ def print_kef(das, clock):
         return
     tdoy_start = clock[0]
     tdoy_end = clock[1]
-    print "/Experiment_g/Receivers_g/Time_t"
-    print "\tdas/serial_number_s = %s" % das
-    print "\tstart_time/epoch_l = %d" % tdoy_start.epoch()
-    print "\tstart_time/micro_seconds_i = %d" % tdoy_start.microsecond()
-    print "\tstart_time/ascii_s = %s" % time.ctime(tdoy_start.epoch())
-    print "\tstart_time/type_s = BOTH"
-    print "\tend_time/epoch_l = %d" % tdoy_end.epoch()
-    print "\tend_time/micro_seconds_i = %d" % tdoy_end.microsecond()
-    print "\tend_time/ascii_s = %s" % time.ctime(tdoy_end.epoch())
-    print "\tend_time/type_s = BOTH"
-    print "\tslope_d = %g" % clock[2]
-    print "\toffset_d = %g" % clock[3]
+    print_report("/Experiment_g/Receivers_g/Time_t")
+    print_report("\tdas/serial_number_s = %s" % das)
+    print_report("\tstart_time/epoch_l = %d" % tdoy_start.epoch())
+    print_report("\tstart_time/micro_seconds_i = %d"
+                 % tdoy_start.microsecond())
+    print_report("\tstart_time/ascii_s = %s" % time.ctime(tdoy_start.epoch()))
+    print_report("\tstart_time/type_s = BOTH")
+    print_report("\tend_time/epoch_l = %d" % tdoy_end.epoch())
+    print_report("\tend_time/micro_seconds_i = %d" % tdoy_end.microsecond())
+    print_report("\tend_time/ascii_s = %s" % time.ctime(tdoy_end.epoch()))
+    print_report("\tend_time/type_s = BOTH")
+    print_report("\tslope_d = %g" % clock[2])
+    print_report("\toffset_d = %g" % clock[3])
 
 
 def report(stats, no_cor):
@@ -200,7 +230,7 @@ def report(stats, no_cor):
 
 
 def main():
-    global P5
+    global P5, OFILE
     get_args()
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
@@ -214,8 +244,8 @@ def main():
     # DAS, start time, end time, drift slope, offset
     stats = ([], [], [], [], [])
     no_cor = []
-    print "#   Written by time-gef-gen v{0}, PH5 v{1}".format(
-        PROG_VERSION, ph5version)
+    print_report("#   Written by time-gef-gen v{0}, PH5 v{1}".
+                 format(PROG_VERSION, ph5version))
     for d in dass:
         das = d[6:]
         soh = read_soh(dasGroups[d])
@@ -236,6 +266,8 @@ def main():
         report(stats, no_cor)
 
     P5.close()
+    if OFILE is not None:
+        OFILE.close()
 
 
 if __name__ == '__main__':
