@@ -16,7 +16,7 @@ from ph5 import LOGGING_FORMAT
 # This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.036'
 LOGGER = logging.getLogger(__name__)
 
 # Make sure we are all on the same time zone ;^)
@@ -62,7 +62,7 @@ class Das_Groups(object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, SN, AUTO
+    global PH5, PATH, DEBUG, SN, AUTO, OFILE
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -93,6 +93,10 @@ def get_args():
     parser.add_argument("-d", "--debug", dest="debug", action="store_true",
                         default=False)
 
+    parser.add_argument("-o", "--outfile", dest="output_file",
+                        help="The kef output file to be saved at.",
+                        metavar="output_file", default=None)
+
     args = parser.parse_args()
 
     PH5 = args.ph5_file_prefix
@@ -100,6 +104,13 @@ def get_args():
     SN = args.sn
     AUTO = args.auto
     DEBUG = args.debug
+
+    # define OFILE to write output
+    o_filename = args.output_file
+    if o_filename is None:
+        OFILE = None
+    else:
+        OFILE = open(o_filename, 'w')
 
     if DEBUG:
         # change stream handler to write debug level logs
@@ -279,6 +290,14 @@ def first_last(array_t):
     return mmin, mmax
 
 
+def print_report(text):
+    global OFILE
+    if OFILE is None:
+        print(text)
+    else:
+        OFILE.write(text + '\n')
+
+
 def report_gen():
     global DAS_T, EX
 
@@ -293,8 +312,8 @@ def report_gen():
         return
 
     now = time.time()
-    print "#   sort-kef-gen Version: %s ph5 Version: %s" % (
-        PROG_VERSION, PH5_VERSION)
+    print_report("#   sort-kef-gen Version: %s ph5 Version: %s" %
+                 (PROG_VERSION, PH5_VERSION))
     r = 1
     # XXX   This assumes that the arrays were deployed for the same recording
     # windows.   XXX
@@ -314,31 +333,31 @@ def report_gen():
             (float_part, int_part) = math.modf(t1)
             if array_deploy <= d['time/epoch_l'] and array_pickup >= int_part:
                 #
-                print "#   row {0} das {1}\n/Experiment_g/Sorts_g/Sort_t"\
-                    .format(r, d['das'])
-                print "\tarray_name_s = %s" % a[-3:]
-                print "\tarray_t_name_s = %s" % a
-                print "\tdescription_s = Recording window %04d" % d[
-                    'event_number_i']
-                print "\tstart_time/epoch_l = %d" % d['time/epoch_l']
-                print "\tstart_time/micro_seconds_i = %d" % d[
-                    'time/micro_seconds_i']
-                print "\tstart_time/type_s = %s" % d['time/type_s']
-                print "\tstart_time/ascii_s = %s" % d['time/ascii_s']
-                print "\tend_time/epoch_l = %d" % int_part
-                print "\tend_time/micro_seconds_i = %d" % (
-                        float_part * 1000000.0)
-                print "\tend_time/ascii_s = %s" % time.ctime(t1)
-                print "\tend_time/type_s = BOTH"
-                print "\ttime_stamp/epoch_l = %d" % now
-                print "\ttime_stamp/ascii_s = %s" % time.ctime(now)
-                print "\ttime_stamp/micro_seconds_i = 0"
-                print "\ttime_stamp/type_s = BOTH"
+                print_report("#   row {0} das {1}\n/Experiment_g/Sorts_g/"
+                             "Sort_t".format(r, d['das']))
+                print_report("\tarray_name_s = %s" % a[-3:])
+                print_report("\tarray_t_name_s = %s" % a)
+                print_report("\tdescription_s = Recording window %04d" %
+                             d['event_number_i'])
+                print_report("\tstart_time/epoch_l = %d" % d['time/epoch_l'])
+                print_report("\tstart_time/micro_seconds_i = %d" %
+                             d['time/micro_seconds_i'])
+                print_report("\tstart_time/type_s = %s" % d['time/type_s'])
+                print_report("\tstart_time/ascii_s = %s" % d['time/ascii_s'])
+                print_report("\tend_time/epoch_l = %d" % int_part)
+                print_report("\tend_time/micro_seconds_i = %d" %
+                             (float_part * 1000000.0))
+                print_report("\tend_time/ascii_s = %s" % time.ctime(t1))
+                print_report("\tend_time/type_s = BOTH")
+                print_report("\ttime_stamp/epoch_l = %d" % now)
+                print_report("\ttime_stamp/ascii_s = %s" % time.ctime(now))
+                print_report("\ttime_stamp/micro_seconds_i = 0")
+                print_report("\ttime_stamp/type_s = BOTH")
                 r += 1
 
 
 def main():
-    global SN, EX, AUTO
+    global SN, EX, AUTO, OFILE
 
     get_args()
     initialize_ph5()
@@ -354,6 +373,8 @@ def main():
 
     report_gen()
     EX.ph5close()
+    if OFILE is not None:
+        OFILE.close()
 
 
 if __name__ == "__main__":

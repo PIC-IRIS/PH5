@@ -7,7 +7,7 @@ ph5
  * update ph5 to better install c requirements
 ph5.clients.ph5toms
  * added option to change file naming scheme
- * add day colume cuts
+ * add day volume cuts
  * add cut length to ph5toms for webservices
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
@@ -25,6 +25,12 @@ ph5.clients.ph5tostationxml
  * Limit number of asynchronous processes
 ph5.utilities.ph5validate
  * add data time checking
+ph5.utilities.sort_kef_gen.py
+ * add -o option for file output
+ph5.utilities.time_kef_gen.py
+ * add -o option for file output
+ph5.utilities.tabletokef.py
+ * add -o option for file output
 
 v4.1.2:
 ph5.utilities.ph5validate
