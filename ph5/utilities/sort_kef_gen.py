@@ -4,13 +4,6 @@
 #
 # Steve Azevedo, July 2007
 #
-################################################################
-#
-# modification
-# version: 2019.036
-# author: Lan Dam
-# add option -o to let user indicate which file user want to write the result
-# into. This option is implemented in function print_report
 
 import argparse
 import sys

@@ -5,19 +5,7 @@
 #
 # Steve Azevedo, April 2007
 #
-################################################################
-#
-# modification
-# version: 2018.067
-# author: Lan Dam
-# add readPH5() to be used in kefedit
-################################################################
-#
-# modification
-# version: 2019.036
-# author: Lan Dam
-# add option -o to let user indicate which file user want to write the result
-# into. This option is implemented in function print_report
+
 
 import argparse
 import string
