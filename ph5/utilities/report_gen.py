@@ -13,7 +13,7 @@ import time
 
 # This provides the base functionality
 from ph5.core import experiment
-from ph5.core import timedoy
+from ph5.core import timedoy as tdoy
 
 # Timeseries are stored as numpy arrays
 
@@ -43,7 +43,7 @@ RECEIVER_T = {}
 # (keyed on DAS then by SOH_a_[n] name)
 SOH_A = {}
 # A list of Das_Groups that refers to Das_g_[sn]'s
-DASS = {} # NOQA
+DASS = {}  # NOQA
 
 os.environ['TZ'] = 'UTM'
 time.tzset()
@@ -98,7 +98,7 @@ def get_args():
     global PH5, PATH, DEBUG, KEY_GEN, DES_GEN, DAS_SN
 
     parser = argparse.ArgumentParser(
-                                formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.usage = "report_gen --nickname=ph5-file-prefix options"
 
@@ -356,25 +356,25 @@ def strip_array_t():
 
     if STATION_ID is None and DAS_SN is None:
         return
+    if ARRAY_T:
+        keys = ARRAY_T.keys()
+        for k in keys:
+            tmp = []
+            for a in ARRAY_T[k].rows:
+                station_id = a['id_s']
+                das_sn = a['das/serial_number_s']
+                if STATION_ID is not None and DAS_SN is not None:
+                    if station_id == STATION_ID and das_sn == DAS_SN:
+                        tmp.append(a)
+                elif STATION_ID is None:
+                    if das_sn == DAS_SN:
+                        tmp.append(a)
+                elif DAS_SN is None:
+                    if station_id == STATION_ID:
+                        tmp.append(a)
 
-    keys = ARRAY_T.keys()
-    for k in keys:
-        tmp = []
-        for a in ARRAY_T[k].rows:
-            station_id = a['id_s']
-            das_sn = a['das/serial_number_s']
-            if STATION_ID is not None and DAS_SN is not None:
-                if station_id == STATION_ID and das_sn == DAS_SN:
-                    tmp.append(a)
-            elif STATION_ID is None:
-                if das_sn == DAS_SN:
-                    tmp.append(a)
-            elif DAS_SN is None:
-                if station_id == STATION_ID:
-                    tmp.append(a)
-
-        if tmp != []:
-            ARRAY_T[k] = Rows_Keys(tmp, ARRAY_T[k].keys)
+            if tmp != []:
+                ARRAY_T[k] = Rows_Keys(tmp, ARRAY_T[k].keys)
 
 
 def offset_t_sort(a, b):
@@ -428,28 +428,29 @@ def array_start_stop(ar):
 
 
 def get_sample_rate(a, start, stop):
-    Array_t = ARRAY_T[a].rows
-    for array_t in Array_t:
-        das = array_t['das/serial_number_s']
+    if ARRAY_T:
+        Array_t = ARRAY_T[a].rows
+        for array_t in Array_t:
+            das = array_t['das/serial_number_s']
 
-        Das_t = read_das_table(das)
-        if Das_t is None:
-            continue
-        for das_t in Das_t.rows:
-            das_start = das_t['time/epoch_l']
-            das_stop = das_start + das_t['sample_count_i'] / (
-                    das_t['sample_rate_i'] /
-                    float(das_t['sample_rate_multiplier_i']))
+            Das_t = read_das_table(das)
+            if Das_t is None:
+                continue
+            for das_t in Das_t.rows:
+                das_start = das_t['time/epoch_l']
+                das_stop = das_start + das_t['sample_count_i'] / (
+                        das_t['sample_rate_i'] /
+                        float(das_t['sample_rate_multiplier_i']))
 
-            # Start contained
-            if das_start >= start and das_start <= stop:
-                return int(das_t['sample_rate_i'] /
-                           float(das_t['sample_rate_multiplier_i']))
+                # Start contained
+                if das_start >= start and das_start <= stop:
+                    return int(das_t['sample_rate_i'] /
+                               float(das_t['sample_rate_multiplier_i']))
 
-            # Stop contained
-            if das_stop >= start and das_stop <= stop:
-                return int(das_t['sample_rate_i'] /
-                           float(das_t['sample_rate_multiplier_i']))
+                # Stop contained
+                if das_stop >= start and das_stop <= stop:
+                    return int(das_t['sample_rate_i'] /
+                               float(das_t['sample_rate_multiplier_i']))
 
     return 0
 
@@ -464,32 +465,34 @@ def write_key_report():
         return
 
     A = {}
-    for k in ARRAY_T.keys():
-        a = ARRAY_T[k]
-        start, stop = array_start_stop(a)
-        array_i = int(k[-3:])
-        A[array_i] = (start, stop)
+    if ARRAY_T:
+        for k in ARRAY_T.keys():
+            a = ARRAY_T[k]
+            start, stop = array_start_stop(a)
+            array_i = int(k[-3:])
+            A[array_i] = (start, stop)
     fh.write("shot|time|arrays\n")
     array_i_keys = A.keys()
-    for e in EVENT_T.rows:
-        arrays = ''
-        for i in array_i_keys:
-            start, stop = A[i]
-            if start == 0:
-                arrays = arrays + "%d," % i
-            elif int(e['time/epoch_l']) >= start and int(
-                    e['time/epoch_l']) <= stop:
-                arrays = arrays + "%d," % i
+    if EVENT_T:
+        for e in EVENT_T.rows:
+            arrays = ''
+            for i in array_i_keys:
+                start, stop = A[i]
+                if start == 0:
+                    arrays = arrays + "%d," % i
+                elif int(e['time/epoch_l']) >= start and int(
+                        e['time/epoch_l']) <= stop:
+                    arrays = arrays + "%d," % i
 
-        ttuple = time.gmtime(int(e['time/epoch_l']))
-        pictime = "%4d:%03d:%02d:%02d:%02d" % (ttuple[0],
-                                               ttuple[7],
-                                               ttuple[3],
-                                               ttuple[4],
-                                               ttuple[5])
-        fh.write("%s|%s|%s\n" % (e['id_s'],
-                                 pictime,
-                                 arrays[:-1]))
+            ttuple = time.gmtime(int(e['time/epoch_l']))
+            pictime = "%4d:%03d:%02d:%02d:%02d" % (ttuple[0],
+                                                   ttuple[7],
+                                                   ttuple[3],
+                                                   ttuple[4],
+                                                   ttuple[5])
+            fh.write("%s|%s|%s\n" % (e['id_s'],
+                                     pictime,
+                                     arrays[:-1]))
 
     fh.write(
         "request key|start time|length in seconds|array name|description\n")
@@ -516,14 +519,13 @@ def write_key_report():
 def write_des_report():
     global EXPERIMENT_T, ARRAY_T, EVENT_T
 
-    tdoy = timedoy.TimeDOY()
-
     A = {}
-    for k in ARRAY_T.keys():
-        a = ARRAY_T[k]
-        start, stop = array_start_stop(a)
-        array_i = int(k[-3:])
-        A[array_i] = (start, stop)
+    if ARRAY_T:
+        for k in ARRAY_T.keys():
+            a = ARRAY_T[k]
+            start, stop = array_start_stop(a)
+            array_i = int(k[-3:])
+            A[array_i] = (start, stop)
 
     fh = open("data_description.txt", "w+")
 
@@ -545,61 +547,63 @@ def write_des_report():
         "shot id\ttime    lat      lon         elev (m) size (kg) depth (m)\n")
     fh.write("-" * 85)
     fh.write('\n')
-    for e in EVENT_T.rows:
-        ttuple = time.gmtime(int(e['time/epoch_l']))
-        secs = ttuple[5] + (e['time/micro_seconds_i'] / 1000000.)
-        pictime = "%4d:%03d:%02d:%02d:%06.3f" % (ttuple[0],
-                                                 ttuple[7],
-                                                 ttuple[3],
-                                                 ttuple[4],
-                                                 secs)
-        fh.write("%-5s\t%s %12.6f %12.6f %9.3f %9.3f %9.3f\n" %
-                 (e['id_s'],
-                  pictime,
-                  e['location/Y/value_d'],
-                  e['location/X/value_d'],
-                  e['location/Z/value_d'],
-                  e['size/value_d'],
-                  e['depth/value_d']))
+    if EVENT_T:
+        for e in EVENT_T.rows:
+            ttuple = time.gmtime(int(e['time/epoch_l']))
+            secs = ttuple[5] + (e['time/micro_seconds_i'] / 1000000.)
+            pictime = "%4d:%03d:%02d:%02d:%06.3f" % (ttuple[0],
+                                                     ttuple[7],
+                                                     ttuple[3],
+                                                     ttuple[4],
+                                                     secs)
+            fh.write("%-5s\t%s %12.6f %12.6f %9.3f %9.3f %9.3f\n" %
+                     (e['id_s'],
+                      pictime,
+                      e['location/Y/value_d'],
+                      e['location/X/value_d'],
+                      e['location/Z/value_d'],
+                      e['size/value_d'],
+                      e['depth/value_d']))
 
     fh.write("\n\t\t\tArrays\n\n")
 
     arrays = sorted(ARRAY_T.keys())
+    if ARRAY_T:
+        for a in arrays:
+            start, stop = A[int(a[-3:])]
+            fh.write(
+                "***   Please check the following lines and remove this line\
+                before submission to DMC.   ***\n")
+            sample_rate = get_sample_rate(a, start, stop)
 
-    for a in arrays:
-        start, stop = A[int(a[-3:])]
-        fh.write(
-            "***   Please check the following lines and remove this line\
-             before submission to DMC.   ***\n")
-        sample_rate = get_sample_rate(a, start, stop)
+            fh.write("\nArray: %s\n" % a[-3:])
+            # Sample rate:
+            fh.write("\t\tSample Rate: %d sps\n" % sample_rate)
+            # Sensor type
+            # Deployment time
+            fh.write("\t\tDeployment Time: %s\n" %
+                     tdoy.epoch2passcal(start)[:-10])
+            # Pickup time
+            fh.write("\t\tPickup Time:     %s\n" %
+                     tdoy.epoch2passcal(stop)[:-10])
+            fh.write("\t\tComponents: 1 => Z, 2 => N, 3 => E\n\n")
+            fh.write(
+                "station\t"
+                "das      lat        lon        elev (m)    component\n")
+            fh.write('-' * 65)
+            fh.write('\n')
+            for e in ARRAY_T[a].rows:
+                fh.write("%-5s\t%s %12.6f %12.6f %9.3f\t%d\n" %
+                         (e['id_s'],
+                          e['das/serial_number_s'],
+                          float(e['location/Y/value_d']),
+                          float(e['location/X/value_d']),
+                          float(e['location/Z/value_d']),
+                          e['channel_number_i']))
 
-        fh.write("\nArray: %s\n" % a[-3:])
-        # Sample rate:
-        fh.write("\t\tSample Rate: %d sps\n" % sample_rate)
-        # Sensor type
-        # Deployment time
-        fh.write("\t\tDeployment Time: %s\n" %
-                 tdoy.epoch2PasscalTime(start)[:-10])
-        # Pickup time
-        fh.write("\t\tPickup Time:     %s\n" %
-                 tdoy.epoch2PasscalTime(stop)[:-10])
-        fh.write("\t\tComponents: 1 => Z, 2 => N, 3 => E\n\n")
-        fh.write(
-            "station\tdas      lat        lon        elev (m)    component\n")
-        fh.write('-' * 65)
-        fh.write('\n')
-        for e in ARRAY_T[a].rows:
-            fh.write("%-5s\t%s %12.6f %12.6f %9.3f\t%d\n" %
-                     (e['id_s'],
-                      e['das/serial_number_s'],
-                      float(e['location/Y/value_d']),
-                      float(e['location/X/value_d']),
-                      float(e['location/Z/value_d']),
-                      e['channel_number_i']))
+        # Need to write sorts here!
 
-    # Need to write sorts here!
-
-    fh.close()
+        fh.close()
 
 
 def main():
@@ -611,9 +615,12 @@ def main():
 
     initialize_ph5()
 
-    read_sort_arrays()
-    read_event_table()
-    DASS = read_das_groups() # NOQA
+    try:
+        read_sort_arrays()
+        read_event_table()
+        DASS = read_das_groups()  # NOQA)
+    except Exception as err:
+        LOGGER.warning(err)
 
     if KEY_GEN is True:
         LOGGER.info("Writing data key report...")
