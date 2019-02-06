@@ -4,12 +4,7 @@
 #
 # Steve Azevedo, February 2013
 #
-################################################################
-#
-# modification
-# version: 2019.037
-# author: Lan Dam
-# add option --all_arrays to remove all arrays.
+
 
 import argparse
 import os
