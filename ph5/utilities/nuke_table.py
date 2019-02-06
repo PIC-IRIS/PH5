@@ -19,7 +19,7 @@ import time
 from ph5.core import experiment, timedoy
 import tabletokef as T2K
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.037'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
