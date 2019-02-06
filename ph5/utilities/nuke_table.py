@@ -4,6 +4,12 @@
 #
 # Steve Azevedo, February 2013
 #
+################################################################
+#
+# modification
+# version: 2019.037
+# author: Lan Dam
+# add option --all_arrays to remove all arrays.
 
 import argparse
 import os
@@ -13,7 +19,7 @@ import time
 from ph5.core import experiment, timedoy
 import tabletokef as T2K
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.037'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -30,8 +36,8 @@ if float(T2K.PROG_VERSION[0:8]) < 2017.317:
 
 def get_args():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
-        EVENT_TABLE, \
-        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE,\
+        EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
+        RECEIVER_TABLE, TIME_TABLE,\
         INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE, NO_BACKUP
 
     parser = argparse.ArgumentParser(
@@ -81,6 +87,11 @@ def get_args():
     parser.add_argument("-A", "--Array_t_", dest="array_t_", metavar="n",
                         help="Nuke /Experiment_g/Sorts_g/Array_t_[n].",
                         type=int)
+
+    parser.add_argument("--all_arrays", dest='all_arrays', action='store_true',
+                        default=False,
+                        help=("Nuke all /Experiment_g/Sorts_g/Array_t_xxx "
+                              "to a kef file."))
 
     parser.add_argument("-R", "--Response_t", dest="response_t",
                         action="store_true",
@@ -137,6 +148,7 @@ def get_args():
     INDEX_TABLE = args.index_t
     M_INDEX_TABLE = args.m_index_t
     ARRAY_TABLE = args.array_t_
+    ALL_ARRAYS = args.all_arrays
     RESPONSE_TABLE = args.response_t
     REPORT_TABLE = args.report_t
     RECEIVER_TABLE = args.receiver_t
@@ -198,22 +210,28 @@ def exclaim(n):
 
 
 def main():
+    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+        EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
+        RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
     get_args()
     initialize_ph5()
     T2K.init_local()
     T2K.EX = EX
+
     # /Experiment_g/Experiment_t
     if EXPERIMENT_TABLE:
         table_type = 'Experiment_t'
         T2K.read_experiment_table()
         backup(table_type, '/Experiment_g/Experiment_t', T2K.EXPERIMENT_T)
         EX.nuke_experiment_t()
+
     # /Experiment_g/Sorts_g/Sort_t
     if SORT_TABLE:
         table_type = 'Sort_t'
         T2K.read_sort_table()
         backup(table_type, '/Experiment_g/Sorts_g/Sort_t', T2K.SORT_T)
         EX.ph5_g_sorts.nuke_sort_t()
+
     # /Experiment_g/Sorts_g/Offset_t
     if OFFSET_TABLE is not None:
         T2K.OFFSET_TABLE = OFFSET_TABLE
@@ -240,6 +258,7 @@ def main():
                 exclaim(OFFSET_TABLE)
             else:
                 print "{0} Not found.".format(OFFSET_TABLE)
+
     # /Experiment_g/Sorts_g/Event_t
     if EVENT_TABLE is not None:
         T2K.EVENT_TABLE = EVENT_TABLE
@@ -261,19 +280,36 @@ def main():
                 exclaim(EVENT_TABLE)
             else:
                 print "{0} Not found.".format(EVENT_TABLE)
-    # /Experiment_g/Sorts_g/Array_t_xxx
+
+    # /Experiment_g/Sorts_g/Array_t_[n]
     if ARRAY_TABLE:
         T2K.ARRAY_TABLE = ARRAY_TABLE
         T2K.read_sort_arrays()
         table_type = 'Array_t_{0:03d}'.format(ARRAY_TABLE)
         if table_type in T2K.ARRAY_T:
             backup(
-                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                table_type,
+                '/Experiment_g/Sorts_g/{0}'.format(table_type),
                 T2K.ARRAY_T[table_type])
         if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
             exclaim(ARRAY_TABLE)
         else:
             print "{0} Not found.".format(ARRAY_TABLE)
+
+    # /Experiment_g/Sorts_g/Array_t_xxx
+    elif ALL_ARRAYS:
+        T2K.read_sort_arrays()
+
+        for table_type in T2K.ARRAY_T:
+            backup(
+                table_type,
+                '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                T2K.ARRAY_T[table_type])
+            ARRAY_TABLE = int(table_type[-3:])
+            if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
+                exclaim(ARRAY_TABLE)
+            else:
+                print "{0} Not found.".format(ARRAY_TABLE)
 
     # /Experiment_g/Receivers_g/Time_t
     if TIME_TABLE:
@@ -281,12 +317,14 @@ def main():
         T2K.read_time_table()
         backup(table_type, '/Experiment_g/Receivers_g/Time_t', T2K.TIME_T)
         EX.ph5_g_receivers.nuke_time_t()
+
     # /Experiment_g/Receivers_g/Index_t
     if INDEX_TABLE:
         table_type = 'Index_t'
         T2K.read_index_table()
         backup(table_type, '/Experiment_g/Receivers_g/Index_t', T2K.INDEX_T)
         EX.ph5_g_receivers.nuke_index_t()
+
     # /Experiment_g/Maps_g/Index_t
     if M_INDEX_TABLE:
         table_type = 'M_Index_t'
@@ -294,6 +332,7 @@ def main():
         backup(table_type, '/Experiment_g/Maps_g/Index_t', T2K.M_INDEX_T)
         EX.ph5_g_maps.nuke_index_t()
     # /Experiment_g/Receivers_g/Receiver_t
+
     if RECEIVER_TABLE:
         table_type = 'Receiver_t'
         T2K.read_receiver_table()
@@ -302,6 +341,7 @@ def main():
             '/Experiment_g/Receivers_g/Receiver_t',
             T2K.RECEIVER_T)
         EX.ph5_g_receivers.nuke_receiver_t()
+
     # /Experiment_g/Responses_g/Response_t
     if RESPONSE_TABLE:
         table_type = 'Response_t'
@@ -311,6 +351,7 @@ def main():
             '/Experiment_g/Responses_g/Response_t',
             T2K.RESPONSE_T)
         EX.ph5_g_responses.nuke_response_t()
+
     # /Experiment_g/Reports_g/Report_t
     if REPORT_TABLE:
         table_type = 'Report_t'
