@@ -29,7 +29,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.035'
+PROG_VERSION = '2019.037'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -116,6 +116,7 @@ class PH5toMSeed(object):
         self.restricted = restricted
         self.format = format
         self.cut_len = cut_len
+        self.hash_list = []
 
         self.resp_manager = PH5ResponseManager()
 
@@ -716,7 +717,15 @@ class PH5toMSeed(object):
                     receiver_n_i,
                     response_n_i)
 
-                yield station_x
+                station_hash = hash(frozenset([seed_station, das, latitude,
+                                               longitude, sample_rate,
+                                               sample_rate_multiplier,
+                                               starttime, endtime]))
+                if station_hash in self.hash_list:
+                    continue
+                else:
+                    self.hash_list.append(station_hash)
+                    yield station_x
 
     def create_cut_list(self):
         cuts_generator = []
