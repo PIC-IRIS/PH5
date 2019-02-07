@@ -5,6 +5,10 @@ ph5
  * cleanup comments and remove commented out code (issue #216) 
  * replace deprecated optparse with argparse module.
  * update ph5 to better install c requirements
+ph5.utilities.ph5
+ * add helpfile to utilities folder. Have not added pointer in setup.py as yet. 
+ * Typing ph5 shows user the choices for help information.
+ * Usage: ph5 pforma (lists info about pforma)https://github.com/PIC-IRIS/PH5/pull/new/helpfile
 ph5.clients.ph5toms
  * added option to change file naming scheme
  * add day volume cuts

@@ -73,7 +73,7 @@ import os
 import string
 import logging
 
-PH5VERSION = '2017.171'
+PH5VERSION = '4.1.2'
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
