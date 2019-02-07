@@ -1,3 +1,7 @@
+ph5.utilities.ph5
+ * add helpfile to utilities folder. Have not added pointer in setup.py as yet. 
+ * Typing ph5 shows user the choices for help information.
+ * Usage: ph5 pforma (lists info about pforma)https://github.com/PIC-IRIS/PH5/pull/new/helpfile
 Master:
 ph5
  * made pep8 compliant
