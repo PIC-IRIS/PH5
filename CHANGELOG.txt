@@ -9,6 +9,7 @@ ph5.clients.ph5toms
  * added option to change file naming scheme
  * add day volume cuts
  * add cut length to ph5toms for webservices
+ * Fix bug causing duplicate data to be written (issue #264)
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui
