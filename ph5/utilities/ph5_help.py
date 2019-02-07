@@ -1,10 +1,4 @@
-﻿#!/usr/bin/env pnpython4
-#
-# Produce SEG-Y in shot (event) order from PH5 file using API
-#
-# Steve Azevedo, August 2016
-#
-
+﻿from ph5.core.columns import PH5VERSION as ph5version
 import argparse
 
 PROG_VERSION = "2019.37 Developmental"
@@ -26,7 +20,7 @@ def main():
             if len(args.n) == 0:  # no argument provided by user
                 showlist()
         except TypeError:
-                showlist()
+            showlist()
 
         args.n = args.n.lower()
 
@@ -393,6 +387,7 @@ optional arguments:
   -V n, --Event_t n     Nuke /Experiment_g/Sorts_g/
 Event_t_[n]. Use 0 for Event_t
   -A n, --Array_t_ n    Nuke /Experiment_g/Sorts_g/Array_t_[n]
+  --all_arrays          Nuke //Experiment_g/Sorts_g/ all arrays
   -R, --Response_t      Nuke /Experiment_g/Responses_g/Response_t
   -P, --Report_t        Nuke /Experiment_g/Reports_g/Report_t
   -C, --Receiver_t      Nuke /Experiment_g/Receivers_g/Receiver_t
@@ -889,6 +884,7 @@ optional arguments:
   -a, --auto            Attempt to auto detect windows.
                           Windows should start at the same time on all DASs.
   -d, --debug
+  -o  --outfile         File to write kef out to
 
 """
         elif args.n == "sort_array_t":
@@ -944,6 +940,7 @@ optional arguments:
                             to a kef file.
   -T, --Time_t          Dump /Experiment_g/Receivers_g/Time_t
                             to a kef file.
+  -o  --outfile         File to write kef out to
 """
         elif args.n == "time_kef_gen":
             string = """Generates kef file to populate Time_t from SOH_A_.
@@ -1005,6 +1002,7 @@ optional arguments:
   -D das, --Das_t das   Dump /Experiment_g/Receivers_g/Das_g_[das]/Das_t
                             to a kef file.
   -T, --Time_t          Dump /Experiment_g/Receivers_g/Time_t to a kef file.
+  -o  --outfile         File to write kef out to
 
 """
         elif args.n == "unsimpleton":
@@ -1042,19 +1040,21 @@ Enter the name of a subprogram to see details,
 e.g. type '$ ph5 ph5toevt' to see info for ph5toevt.
 Available subprograms:
 
-GUI scripts:  # clients
+GUI scripts:
 ph5view, noven, pforma, kefedit, experiment_t_gen
 
-CONSOLE scripts:"  # utilities
+CONSOLE scripts:
 125atoph5, 130toph5, cross_check_event_array_data, csvtokef,
 geo_kef_gen, graotoph5, index_offset_t, initialize_ph5, keftocsv,
-keftokml, keftoph5, load_das_t, meta_data_gen, nuke_table,
+keftokml, keftoph5, load_das_t, meta_data_gen,
 delete_table, pformacl, ph5toevt, ph5toms, ph5torec,
 ph5tostationxml, ph5toexml, ph5_merge_helper, ph5_total,
 ph5_validate, recreate_external_references, report_gen,
 reporttoph5, resp_load, seg2toph5, segytoph5,
 set_deploy_pickup_times, set_n_i_response, sort_kef_gen,
 sort_array_t, ph5tokef, time_kef_gen, tabletokef, unsimpleton """
+    print "\n"
+    print "PH5 Version: "+ph5version
     print string
     return
 

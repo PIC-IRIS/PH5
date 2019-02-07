@@ -164,6 +164,7 @@ setup(
             'time_kef_gen = ph5.utilities.time_kef_gen:main',
             'tabletokef = ph5.utilities.tabletokef:main',
             'unsimpleton = ph5.utilities.unsimpleton:main',
+            'ph5 = ph5.utilities.ph5_help:main'
         ],
     },
     packages=['ph5',
