@@ -21,6 +21,7 @@ os.environ['TZ'] = 'UTM'
 time.tzset()
 
 PROG_VERSION = '2018.268'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 #
@@ -121,8 +122,7 @@ def get_args():
     PH5 = os.path.join(PATH, PH5)
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        LOGGER.error("{0} does not exist!".format(PH5))
-        sys.exit()
+        raise Exception("{0} does not exist!".format(PH5))
 
 #
 # Initialize ph5 file
@@ -342,7 +342,11 @@ def read_data():
 
 def main():
     # Get program arguments
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
     # Initialize ph5 file
     initialize_ph5()
     # Read tables in Das_g_[sn]

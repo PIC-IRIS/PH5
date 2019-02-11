@@ -13,6 +13,7 @@ import re
 from ph5.core import kefx
 
 PROG_VERSION = '2019.14'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 arrayRE = re.compile(r".*Array_t_*(\d+)*")
@@ -47,8 +48,7 @@ def get_args():
     ARGS = aparser.parse_args()
 
     if not os.path.exists(ARGS.kefile):
-        LOGGER.error("Can not read {0}!".format(ARGS.kefile))
-        sys.exit()
+        raise Exception("Can not read {0}!".format(ARGS.kefile))
 
 
 def read_kef():
@@ -61,8 +61,7 @@ def read_kef():
         KEF.read()
         KEF.rewind()
     except Exception as e:
-        LOGGER.error(e.message)
-        sys.exit()
+        raise Exception(e.message)
 
 
 def parseArray(kv, a):
@@ -128,16 +127,19 @@ def process_kef():
                 a = 1
             parseEvent(kv, a)
         else:
-            LOGGER.error("Can't convert {0}! Exiting.".format(p))
-            sys.exit()
+            raise Exception("Can't convert {0}! Exiting.".format(p))
 
     KML.save(ARGS.title)
 
 
 def main():
-    get_args()
-    read_kef()
-    process_kef()
+    try:
+        get_args()
+        read_kef()
+        process_kef()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
 
 if __name__ == '__main__':

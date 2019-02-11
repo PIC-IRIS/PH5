@@ -18,6 +18,7 @@ from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, columns, segyreader, timedoy
 
 PROG_VERSION = "2018.268"
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * .5  # 1/2GB (1024 X 1024 X 1024 X .5)
@@ -186,8 +187,7 @@ def get_args():
         if SR.FH is None:
             raise IOError()
     except Exception as e:
-        LOGGER.error("Can't open infile (SEG-Y). {0}".format(e))
-        sys.exit()
+        raise Exception("Can't open infile (SEG-Y). {0}".format(e))
 
     # Set extended header type
     if args.ttype is not None:
@@ -996,7 +996,11 @@ def main():
         EVENT_T = {}
 
         MINIPH5 = None
-        get_args()
+        try:
+            get_args()
+        except Exception, err_msg:
+            LOGGER.error(err_msg)
+            return 1
         LOGGER.info("segy2ph5 Version: {0}".format(PROG_VERSION))
         LOGGER.info("Opened: {0}".format(SR.infile))
         LOGGER.info("{0}".format(repr(sys.argv)))

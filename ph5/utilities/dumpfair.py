@@ -125,7 +125,7 @@ def main():
         print "Usage: dumpfair fairfield_seg-d_file.rg16"
         print "To also print traces: set environment variable fairprint.\
         This will run slowly."
-        sys.exit()
+        return 1
 
     general_headers(sd)
     channel_set_descriptors(sd)

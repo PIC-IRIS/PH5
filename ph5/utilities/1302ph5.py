@@ -19,6 +19,7 @@ from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, kef, pn130, timedoy
 
 PROG_VERSION = '2019.14'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 4  # 2GB (1024 X 1024 X 1024 X 4)
@@ -115,10 +116,9 @@ def read_infile(infile):
         fh.read().decode('ascii')
         fh.seek(0)
     except Exception:
-        LOGGER.error(
+        raise Exception(
             "The file containing a list of rt130 file names is not ASCII."
             " Use -r for a single raw file.")
-        sys.exit()
 
     while True:
         line = fh.readline()
@@ -406,18 +406,17 @@ def get_args():
 
     if args.par_file is not None:
         if not read_par_file(args.par_file):
-            LOGGER.error("Failed to read: {0}".format(args.par_file))
-            sys.exit()
+            raise Exception("Failed to read: {0}".format(args.par_file))
+
     else:
         PARAMETERS = {}
 
     if PH5 is None:
-        LOGGER.error("Missing required option. Try --help")
-        sys.exit()
+        raise Exception("Missing required option. Try --help")
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        LOGGER.error("{0} does not exist!".format(PH5))
-        sys.exit()
+        raise Exception("{0} does not exist!".format(PH5))
+
     else:
         # Set up logging
         # Write log to file
@@ -1024,7 +1023,13 @@ def update_external_references():
 def main():
     def prof():
         global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
-        get_args()
+
+        try:
+            get_args()
+        except Exception, err_msg:
+            LOGGER.error(err_msg)
+            return 1
+
         LOGGER.info("Initializing ph5 file...")
         initializeExperiment(PH5)
 

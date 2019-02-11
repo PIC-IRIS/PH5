@@ -19,6 +19,7 @@ from ph5 import LOGGING_FORMAT
 from ph5.core import columns, experiment, kef, pn125, timedoy
 
 PROG_VERSION = '2019.14'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 2  # GB (1024 X 1024 X 1024 X 2)
@@ -238,12 +239,11 @@ def get_args():
         WINDOWS = None
 
     if PH5 is None:
-        LOGGER.error("Missing required option. Try --help\n")
-        sys.exit()
+        raise Exception("Missing required option. Try --help\n")
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        LOGGER.error("{0} not found.".format(PH5))
-        sys.exit()
+        raise Exception("{0} not found.".format(PH5))
+
     else:
         # Set up logging
         # Write log to file
@@ -699,7 +699,11 @@ def main():
     def prof():
         global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
 
+    try:
         get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
         initializeExperiment()
         LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))

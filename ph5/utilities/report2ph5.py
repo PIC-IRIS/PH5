@@ -10,6 +10,7 @@ import time
 from ph5.core import experiment, kef, columns
 
 PROG_VERSION = '2019.14'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 updateRE = re.compile(r"(/.*):Update:(.*)\s*")
@@ -48,14 +49,12 @@ def get_args():
 
     FILE = args.report_file
     if not os.path.exists(FILE):
-        LOGGER.error("{0} does not exist!".format(FILE))
-        sys.exit(-1)
+        raise Exception("{0} does not exist!".format(FILE))
 
     KEF = args.kef_file
     if KEF is not None:
         if not os.path.exists(KEF):
-            LOGGER.error("{0} does not exist!".format(KEF))
-            sys.exit(-2)
+            raise Exception("{0} does not exist!".format(KEF))
 
     PH5 = args.nickname
     PATH = args.path
@@ -111,8 +110,8 @@ def load_report():
     global ARRAY_NAME
 
     if not ARRAY_NAME:
-        LOGGER.error("It appears that 'array_name_a' is not set in kef file.")
-        sys.exit()
+        raise Exception("It appears that 'array_name_a' is not set in "
+                        "kef file.")
 
     fh = open(FILE)
     buf = fh.read()
@@ -170,17 +169,21 @@ def get_kef_info():
 
 def main():
     global FILE, KEF, PATH, PH5, EX
-    get_args()
-    initializeExperiment()
-
-    # If there is no kef file prompt for its contents.
-    if KEF is None:
-        get_kef_info()
-
-    if not update():
-        sys.exit(-1)
-
-    load_report()
+    try:
+        get_args()
+        initializeExperiment()
+    
+        # If there is no kef file prompt for its contents.
+        if KEF is None:
+            get_kef_info()
+    
+        if not update():
+            return 1
+    
+        load_report()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
     # Close ph5
     EX.ph5close()
 

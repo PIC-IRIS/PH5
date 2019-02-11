@@ -16,6 +16,7 @@ from ph5.core import experiment, timedoy
 from obspy import read as readSEG2
 
 PROG_VERSION = "2019.14"
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
@@ -149,12 +150,11 @@ def get_args():
         PH5 = args.outfile
 
     if PH5 is None:
-        LOGGER.error("Missing required option. Try --help")
-        sys.exit()
+        raise Exception("Missing required option. Try --help")
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        LOGGER.error("{0} does not exist!".format(PH5))
-        sys.exit()
+        raise Exception("{0} does not exist!".format(PH5))
+
     else:
         PATH = os.path.dirname(PH5) or '.'
         # Debugging

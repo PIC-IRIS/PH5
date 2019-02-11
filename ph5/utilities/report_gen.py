@@ -18,6 +18,7 @@ from ph5.core import timedoy as tdoy
 # Timeseries are stored as numpy arrays
 
 PROG_VERSION = '2018.268'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 #
@@ -137,12 +138,11 @@ def get_args():
                        "longer needed.")
 
     if KEY_GEN is False and DES_GEN is False:
-        LOGGER.error("Either --key or --description option is required.")
-        sys.exit(-3)
+        raise Exception("Either --key or --description option is required.")
 
     if PH5 is None:
-        LOGGER.error("Error: Missing required option --nickname. Try --help")
-        sys.exit(-1)
+        raise Exception("Error: Missing required option --nickname. Try --help")
+
 
 
 #
@@ -609,7 +609,11 @@ def write_des_report():
 def main():
     global KEY_GEN, DES_GEN, DASS
 
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
     LOGGER.info("Opening...")
 

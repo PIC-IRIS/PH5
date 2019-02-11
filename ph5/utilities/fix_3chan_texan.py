@@ -15,6 +15,7 @@ import time
 from ph5.core import experiment
 
 PROG_VERSION = '2018.268'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 # Valid horizontal channel numbers
@@ -167,7 +168,7 @@ def main():
     except IndexError:
         LOGGER.info("v{1} Usage: {0} file.ph5".format(sys.argv[0],
                                                       PROG_VERSION))
-        sys.exit()
+        return 1
 
     initialize_ph5()
     read_sort_arrays()

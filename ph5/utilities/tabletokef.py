@@ -18,6 +18,7 @@ from ph5.core import experiment
 # Timeseries are stored as numpy arrays
 
 PROG_VERSION = '2019.036'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -218,12 +219,10 @@ def get_args():
     if args.offset_t_ is not None:
         try:
             OFFSET_TABLE = map(int, args.offset_t_.split("_"))
-        except Exception as e:
-            LOGGER.error(
-                "Offset table should be entered as arrayID underscore "
-                "shotLineID, eg. 1_2 or 0_0.")
-            LOGGER.error(e.message)
-            sys.exit()
+        except Exception:
+            err_msg = "Offset table should be entered as arrayID underscore" \
+                      "shotLineID, eg. 1_2 or 0_0."
+            raise Exception(err_msg)
     else:
         OFFSET_TABLE = None
     EVENT_TABLE = args.event_t_
@@ -244,7 +243,7 @@ def get_args():
                   ALL_ARRAYS, ALL_EVENTS, RESPONSE_TABLE, REPORT_TABLE,
                   RECEIVER_TABLE, DAS_TABLE]
     if all(not t for t in table_list):
-        LOGGER.error("No table specified for output. See --help for more "
+        raise Exception("No table specified for output. See --help for more "
                      "details.")
 
     # define OFILE to write output
@@ -353,8 +352,7 @@ def read_event_table():
     try:
         events, event_keys = EX.ph5_g_sorts.read_events(T)
     except Exception:
-        LOGGER.error("Can't read {0}.\nDoes it exist?\n".format(T))
-        sys.exit()
+        raise Exception("Can't read {0}.\nDoes it exist?\n".format(T))
 
     rowskeys = Rows_Keys(events, event_keys)
 
@@ -539,7 +537,10 @@ def readPH5(exp, filename, path, tableType, arg=None):
 
         # read_event_table() will read from global var. EVENT_TABLE to add new
         # item into dict. EVENT_T
-        read_event_table()
+        try:
+            read_event_table()
+        except Exception, e:
+            raise e
         return EVENT_T
 
     if tableType == "All_Event_t":
@@ -549,8 +550,10 @@ def readPH5(exp, filename, path, tableType, arg=None):
                 EVENT_TABLE = 0
             else:
                 EVENT_TABLE = int(n.replace('Event_t_', ''))
-            read_event_table()
-
+            try:
+                read_event_table()
+            except Exception, e:
+                raise e
         return EVENT_T
 
     if tableType == "Index_t":
@@ -606,7 +609,11 @@ def main():
 
     init_local()
 
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
     initialize_ph5()
 
@@ -625,7 +632,11 @@ def main():
             table_print("/Experiment_g/Sorts_g/{0}".format(k), OFFSET_T[k])
 
     if EVENT_TABLE is not None:
-        read_event_table()
+        try:
+            read_event_table()
+        except Exception, err_msg:
+            LOGGER.error(err_msg)
+            return 1
         keys = EVENT_T.keys()
         for k in keys:
             table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])

@@ -12,6 +12,7 @@ from ph5.core import ph5api
 from ph5.core.columns import PH5VERSION as ph5version
 
 PROG_VERSION = '2018.268'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -110,9 +111,9 @@ def main():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        LOGGER.error("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
+        raise Exception("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
                                                      ARGS.ph5_path))
-        sys.exit(-1)
+        return 1
 
     P5.read_array_t_names()
     P5.read_event_t_names()
@@ -120,7 +121,7 @@ def main():
         LOGGER.error("No arrays or no events defined in ph5 file."
                      "Can not continue!")
         P5.close()
-        sys.exit()
+        return 1
     print "# geod2kef v{0}, PH5 v{1}".format(PROG_VERSION, ph5version)
     with open("geod2kef.log", 'w+') as LOG:
         print >> LOG, sys.argv

@@ -15,6 +15,7 @@ from tempfile import mkdtemp
 from copy import deepcopy
 from operator import itemgetter
 from ph5.core import kefutility
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 try:
     from PyQt4 import QtGui, QtCore

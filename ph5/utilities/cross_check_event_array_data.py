@@ -28,6 +28,7 @@ from ph5.core.ph5api import is_in
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
+logging.basicConfig()
 __version__ = PROG_VERSION
 
 

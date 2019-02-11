@@ -18,6 +18,7 @@ import simplekml as kml
 from ph5.core import timedoy
 
 PROG_VERSION = '2019.14'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
@@ -57,8 +58,7 @@ def qc_map(outfile):
         base_path = os.path.dirname(os.path.abspath(__file__))
         base = os.path.join(base_path, 'kmlicons')
     except Exception as e:
-        LOGGER.error(e.message)
-        sys.exit()
+        raise Exception(e.message)
 
     def get_lat_lon(row):
         if 'location/Z/value_d' in row:

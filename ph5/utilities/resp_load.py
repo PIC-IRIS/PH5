@@ -16,6 +16,7 @@ import logging
 
 
 PROG_VERSION = "2018.268"
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -516,7 +517,7 @@ def main():
 
     if not os.path.exists(ph5file):
         LOGGER.warning("{0} not found.\n".format(ph5file))
-        sys.exit(-1)
+        return 1
     else:
         # Set up logging
         # Write log to file

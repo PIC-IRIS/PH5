@@ -15,6 +15,7 @@ from ph5.core import experiment, timedoy
 import tabletokef as T2K
 
 PROG_VERSION = '2019.037'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -134,8 +135,8 @@ def get_args():
             LOGGER.error(
                 "Offset table should be entered as arrayID underscore"
                 "shotLineID, eg. 1_2 or 0_0.")
-            LOGGER.error(e.message)
-            sys.exit()
+            raise Exception(e.message)
+
     else:
         OFFSET_TABLE = None
     EVENT_TABLE = args.event_t_
@@ -182,18 +183,16 @@ def backup(table_type, table_path, table):
     if os.access(os.getcwd(), os.W_OK):
         LOGGER.info("Writing table backup: {0}.".format(os.path.join(outfile)))
     else:
-        LOGGER.error(
+        raise Exception(
             "Can't write: {0}.\nExiting!".format(os.getcwd(), outfile))
-        sys.exit(-3)
+
     try:
         fh = open(outfile, 'w')
         T2K.table_print(table_path, table, fh=fh)
         fh.close()
     except Exception:
-        LOGGER.error(
-            "Failed to save {0}.\ne.message\nExiting!".format(os.getcwd(),
-                                                              outfile))
-        sys.exit(-4)
+        raise Exception("Failed to save {0}.\ne.message\nExiting!"
+                        .format(os.getcwd(), outfile))
 
 
 def exclaim(n):
@@ -208,7 +207,11 @@ def main():
     global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
         EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
     initialize_ph5()
     T2K.init_local()
     T2K.EX = EX
@@ -234,8 +237,12 @@ def main():
         if OFFSET_TABLE[0] == 0:
             table_type = 'Offset_t'
             if table_type in T2K.OFFSET_T:
-                backup(table_type, '/Experiment_g/Sorts_g/Offset_t',
-                       T2K.OFFSET_T[table_type])
+                try:
+                    backup(table_type, '/Experiment_g/Sorts_g/Offset_t',
+                           T2K.OFFSET_T[table_type])
+                except Exception, err_msg:
+                    LOGGER.error(err_msg)
+                    return 1
             if EX.ph5_g_sorts.nuke_offset_t():
                 exclaim(OFFSET_TABLE)
             else:

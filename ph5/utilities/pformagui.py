@@ -120,7 +120,12 @@ class MdiChildDos(QtGui.QProgressDialog):
         self.good = True
         self.setMinimumWidth(400)
 
-        self.fio, self.cmds, self.info = init_fio(None, self.home)
+        try:
+            self.fio, self.cmds, self.info = init_fio(None, self.home)
+        except pforma_io.FormaIOError as e:
+            LOGGER.error(
+                "{0} Message: {1}".format(e.errno, e.message))
+
         if os.path.exists(os.path.join(self.fio.home, 'Sigma')):
             mess = QtGui.QMessageBox()
             mess.setText("Please remove existing directory {0}.".format(
@@ -511,18 +516,17 @@ def init_fio(f, d, utm=None, combine=None):
     try:
         fio.open()
     except pforma_io.FormaIOError as e:
-        LOGGER.error("{0}: {1}".format(e.errno, e.message))
+        raise e
 
     try:
         fio.read()
     except pforma_io.FormaIOError as e:
-        LOGGER.error("{0}: {1}".format(e.errno, e.message))
+        raise e
 
     try:
         fio.readDB()
     except pforma_io.FormaIOError as e:
-        LOGGER.error("{0}: {1}".format(e.errno, e.message))
-        sys.exit(-1)
+        raise e
 
     fio.resolveDB()
     cmds, lsts, i = fio.run(runit=False)

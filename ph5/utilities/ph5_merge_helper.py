@@ -61,8 +61,7 @@ def dump_Index_t():
     command = "ph5tokef -n master.ph5 -I 2>&1 > Index_t.kef"
     ret = call(command, shell=True)
     if ret < 0:
-        LOGGER.error("Failed to read master.ph5, {0}".format(ret))
-        sys.exit()
+        raise Exception("Failed to read master.ph5, {0}".format(ret))
 
 
 def dump_M_Index_t():
@@ -70,8 +69,7 @@ def dump_M_Index_t():
     command = "ph5tokef -n master.ph5 -M 2>&1 > M_Index_t.kef"
     ret = call(command, shell=True)
     if ret < 0:
-        LOGGER.error("Failed to read master.ph5, {0}".format(ret))
-        sys.exit()
+        raise Exception("Failed to read master.ph5, {0}".format(ret))
 
 
 def resequence_Index_t():
@@ -85,9 +83,7 @@ def resequence_Index_t():
         fh = open('Index_t.kef', 'rU')
         of = open('_Index_t.kef', 'w')
     except Exception as e:
-        LOGGER.error(
-            "Failed to open 'Index_t.kef', {0}\n".format(e))
-        sys.exit()
+        raise Exception("Failed to open 'Index_t.kef', {0}\n".format(e))
 
     while True:
         line = fh.readline()
@@ -131,9 +127,7 @@ def resequence_M_Index_t():
         fh = open('M_Index_t.kef', 'rU')
         of = open('_M_Index_t.kef', 'w')
     except Exception as e:
-        LOGGER.error(
-            "Error: Failed to open 'Index_t.kef', {0}".format(e))
-        sys.exit()
+        raise Exception("Error: Failed to open 'Index_t.kef', {0}".format(e))
 
     while True:
         line = fh.readline()
@@ -178,11 +172,15 @@ def rename_miniPH5():
 
 
 def main():
-    get_args()
-    dump_Index_t()
-    resequence_Index_t()
-    dump_M_Index_t()
-    resequence_M_Index_t()
+    try:
+        get_args()
+        dump_Index_t()
+        resequence_Index_t()
+        dump_M_Index_t()
+        resequence_M_Index_t()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
     rename_miniPH5()
 
 

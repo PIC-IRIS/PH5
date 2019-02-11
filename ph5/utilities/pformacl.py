@@ -14,6 +14,7 @@ from multiprocessing import cpu_count
 from ph5.utilities import pforma_io
 
 PROG_VERSION = '2018.268'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -56,14 +57,12 @@ def get_args():
     args = parser.parse_args()
 
     if args.infile and args.merge_minis:
-        LOGGER.error(
-            "Loading and merging must be done as seperate operations. "
-            "Exiting.")
-        sys.exit(1)
+        raise Exception("Loading and merging must be done as seperate "
+                        "operations. Exiting.")
 
     if args.infile is not None and not os.path.exists(args.infile):
-        LOGGER.error("Can not find {0}.".format(args.infile))
-        sys.exit(1)
+        raise Exception("Can not find {0}.".format(args.infile))
+
     else:
         RAW_LST = args.infile
 
@@ -151,7 +150,7 @@ def run(fio):
 def main():
     if not exexists('xterm'):
         LOGGER.error("The external program xterm required. Not found.")
-        sys.exit()
+        return 1
 
     get_args()
     # Inputs list of raw files and project directory
@@ -174,14 +173,14 @@ def main():
         except pforma_io.FormaIOError as e:
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
-            sys.exit(1)
+            return 1
         # Pre-process raw files
         try:
             fio.read()
         except pforma_io.FormaIOError as e:
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
-            sys.exit(1)
+            return 1
         # Adjust the number M and the number of families if needed
         LOGGER.info("Total raw size: {0:7.2f}GB"
                     .format(float(fio.total_raw / 1024. / 1024. / 1024.)))
@@ -193,14 +192,14 @@ def main():
         except pforma_io.FormaIOError as e:
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
-            sys.exit(1)
+            return 1
         # Read JSON db
         try:
             fio.readDB()
         except pforma_io.FormaIOError as e:
             LOGGER.error(
                 "{0} Message: {1}".format(e.errno, e.message))
-            sys.exit(1)
+            return 1
         # Resolve JSON db with list of files we are loading (have they been
         # loaded already)
         fio.resolveDB()

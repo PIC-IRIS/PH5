@@ -11,6 +11,7 @@ import logging
 from ph5.core import experiment
 
 PROG_VERSION = '2018.268'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 EX = None
@@ -63,8 +64,7 @@ def initialize_ph5(editmode=False):
         EX.ph5open(editmode)
         EX.initgroup()
     except Exception:
-        LOGGER.error("Cannot open PH5 file. Use -h argument for help.")
-        sys.exit()
+        raise Exception("Cannot open PH5 file. Use -h argument for help.")
 
 
 def info_print():
@@ -95,8 +95,10 @@ def table_print(t, a):
 
 def main():
     get_args()
-
-    initialize_ph5(True)
+    try:
+        initialize_ph5(True)
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
 
     # index on event_id_s and receiver_id_s
     EX.ph5_g_sorts.index_offset_table(name=NAME)

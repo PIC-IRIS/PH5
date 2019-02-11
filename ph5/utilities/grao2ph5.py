@@ -16,6 +16,7 @@ from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, timedoy
 
 PROG_VERSION = "2019.14"
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 # Max size of each ph5 mini file
@@ -154,8 +155,8 @@ def get_args():
         read_infile(args.infile)
 
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        LOGGER.error("Error: {0} does not exist!".format(PH5))
-        sys.exit()
+        raise Exception("Error: {0} does not exist!".format(PH5))
+
     else:
         # Write log to file
         ch = logging.FileHandler(os.path.join(".", "grao2ph5.log"))
@@ -435,7 +436,12 @@ def get_ds(network, station, location, channel, starttime, length):
 def main():
     global RESP, INDEX_T, CURRENT_DAS, SIZE_GUESS, F
 
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
+
     initializeExperiment()
     LOGGER.info("grao2ph5 {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
