@@ -13,7 +13,7 @@ from os.path import expanduser
 from ph5.utilities import novenqc, novenkef
 
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 try:
@@ -234,7 +234,14 @@ class MyWorker(QtCore.QThread):
                                                 self.sep)
         elif self.command == 'qc_map':
             while self.working:
-                self.working = novenqc.qc_map(self.outfile)
+                try:
+                    self.working = novenqc.qc_map(self.outfile)
+                except Exception, err_msg:
+                    LOGGER.error(err_msg)
+                    mess = QtGui.QMessageBox()
+                    mess.setIcon(QtGui.QMessageBox.Warning)
+                    mess.setText(err_msg)
+                    mess.exec_()
         else:
             print "Fail"
 

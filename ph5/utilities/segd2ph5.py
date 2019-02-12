@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.043"
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

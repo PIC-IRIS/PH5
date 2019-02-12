@@ -8,12 +8,12 @@
 #
 
 import re
-import sys
 import logging
 import argparse
 from subprocess import call
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
+logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")

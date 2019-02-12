@@ -14,7 +14,7 @@ import time
 # This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

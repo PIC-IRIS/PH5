@@ -10,12 +10,11 @@
 # Steve Azevedo, August 2016
 #
 import argparse
-import sys
 import os
 import logging
 from ph5.core import segdreader
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -46,15 +45,13 @@ def get_args():
     ARGS = parser.parse_args()
 
     if not os.path.exists(ARGS.segdfilelist):
-        LOGGER.error("Can not read {0}!".format(ARGS.segdfilelist))
-        sys.exit()
+        raise Exception("Can not read {0}!".format(ARGS.segdfilelist))
 
     if not os.path.exists(ARGS.linkdirectory):
         try:
             os.mkdir(ARGS.linkdirectory)
         except Exception as e:
-            LOGGER.error(e.message)
-            sys.exit()
+            raise Exception(e.message)
 
 
 def print_container(container):
@@ -115,7 +112,12 @@ def trace_headers(sd):
 def main():
     global RH, TH
     TH = []
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
+
     outpath = ARGS.linkdirectory
 
     with open(ARGS.segdfilelist) as fh:
@@ -132,9 +134,8 @@ def main():
             try:
                 sd = segdreader.Reader(infile=filename)
             except BaseException:
-                LOGGER.error(
-                    "Failed to properly read {0}.".format(filename))
-                sys.exit()
+                LOGGER.error("Failed to properly read {0}.".format(filename))
+                return 1
 
             general_headers(sd)
             channel_set_descriptors(sd)
@@ -162,19 +163,17 @@ def main():
                     try:
                         os.link(filename, linkname)
                     except Exception as e:
-                        LOGGER.error(
-                            "Failed to create HARD link:\n{0}"
-                            .format(e.message))
-                        sys.exit()
+                        LOGGER.error("Failed to create HARD link:\n{0}"
+                                     .format(e.message))
+                        return 1
                 else:
                     print filename, 'soft->', linkname
                     try:
                         os.symlink(filename, linkname)
                     except Exception as e:
-                        LOGGER.error(
-                            "Failed to create soft link:\n{0}"
-                            .format(e.message))
-                        sys.exit()
+                        LOGGER.error("Failed to create soft link:\n{0}"
+                                     .format(e.message))
+                        return 1
 
                 lh.write("{0} -> {1}\n".format(filename, linkname))
             except Exception as e:

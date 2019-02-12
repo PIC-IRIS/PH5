@@ -19,7 +19,7 @@ from obspy.core.inventory.response import Response
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 
-PROG_VERSION = '2019.23'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -995,7 +995,7 @@ def main():
         else:
             LOGGER.error("Incorrect output format. "
                          "Formats are STATIONXML, KML, SACPZ, and TEXT.")
-            sys.exit()
+            return 1
     except NoDataError as err:
         LOGGER.info(err.message)
     except Exception as err:

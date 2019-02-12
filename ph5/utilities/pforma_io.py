@@ -14,7 +14,7 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

@@ -4,12 +4,11 @@ import argparse
 import os.path
 import re
 import string
-import sys
 import logging
 import time
 from ph5.core import experiment, kef, columns
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -172,14 +171,14 @@ def main():
     try:
         get_args()
         initializeExperiment()
-    
+
         # If there is no kef file prompt for its contents.
         if KEF is None:
             get_kef_info()
-    
+
         if not update():
             return 1
-    
+
         load_report()
     except Exception, err_msg:
         LOGGER.error(err_msg)

@@ -4,7 +4,7 @@
 #
 # Credit: Lan Dam
 #
-# Updated Feb 2018
+# Updated Feb 2019
 import sys
 import logging
 import os
@@ -23,7 +23,7 @@ except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-PROG_VERSION = 2018.268
+PROG_VERSION = 2019.043
 EXPL = {}
 
 # CLASS ####################
@@ -184,7 +184,6 @@ class KefEdit(QtGui.QMainWindow):
                     return
 
         QtCore.QCoreApplication.instance().quit()
-        sys.exit(application.exec_())
 
     def OnManual(self):
         self.manualWin = ManWindow("manual")
@@ -340,7 +339,6 @@ class KefEdit(QtGui.QMainWindow):
             if self.ph5api is not None:
                 self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
-            sys.exit(application.exec_())
 
             ###############################
 
@@ -466,7 +464,7 @@ class KefEdit(QtGui.QMainWindow):
             if self.ph5api is not None:
                 self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
-            sys.exit(application.exec_())
+
             try:
                 os.unlink(keftmpfile)  # remove keftmpfile
             except BaseException:
@@ -574,7 +572,6 @@ class KefEdit(QtGui.QMainWindow):
             if self.ph5api is not None:
                 self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
-            sys.exit(application.exec_())
 
     # def setData
     # author: Lan Dam
@@ -2055,11 +2052,17 @@ class SelectTableDialog(QtGui.QDialog):
                 p.tableType, errorCtrl)
             QtGui.QMessageBox.warning(self, "Warning", msg)
             return
-
-        p.dataTable, p.labelSets, p.totalLines, p.types =\
-            kefutility.PH5toTableData(
-                p.statusBar, p.ph5api, p.filename,
-                p.path2file, p.tableType, p.arg)
+        try:
+            p.dataTable, p.labelSets, p.totalLines, p.types =\
+                kefutility.PH5toTableData(
+                    p.statusBar, p.ph5api, p.filename,
+                    p.path2file, p.tableType, p.arg)
+        except Exception as errmsg:
+            LOGGER.error(errmsg)
+            mess = QtGui.QMessageBox()
+            mess.setIcon(QtGui.QMessageBox.Warning)
+            mess.setText(errmsg)
+            mess.exec_()
 
         p.setData()
         p.openTableAction.setEnabled(True)

@@ -5,7 +5,6 @@
 # Steve Azevedo, Feb 2015
 #
 
-import sys
 import logging
 import os
 import re
@@ -17,7 +16,7 @@ import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

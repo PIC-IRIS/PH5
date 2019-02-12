@@ -29,7 +29,7 @@ try:
 except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 ###########################################################
-VER = 201914
+VER = 2019043
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
 VER_str = str(VER)
@@ -2705,7 +2705,6 @@ class PlottingPanel(QtGui.QMainWindow):
 
     def closeEvent(self, e):
         QtCore.QCoreApplication.instance().quit()
-        sys.exit(application.exec_())
 
     def paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -2978,7 +2977,6 @@ class PH5Visualizer(QtGui.QMainWindow):
         except Exception:
             pass
         QtCore.QCoreApplication.instance().quit()
-        sys.exit(application.exec_())
 
     def onDevelopeSegy(self):
         segyDir = os.getcwd()

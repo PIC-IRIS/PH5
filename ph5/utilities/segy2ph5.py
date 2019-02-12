@@ -17,7 +17,7 @@ from math import modf
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, columns, segyreader, timedoy
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2019.043"
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

@@ -4,16 +4,8 @@
 Extracts data from PH5 in miniSEED and SAC formats.
 Also allows for creation of preview png images of traces.
 """
-################################################################
-#
-# modification
-# version: 2019.032
-# author: Lan Dam
-# When multiple days are request, cut on day boundaries instead of
-# every 24 hours
 
 
-import sys
 import os
 import logging
 import copy
@@ -29,7 +21,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.037'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -1012,8 +1004,7 @@ def main():
 
     if not os.path.exists(ph5file):
         LOGGER.error("{0} not found.\n".format(ph5file))
-        sys.exit(-1)
-
+        return 1
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
 
     if args.array:

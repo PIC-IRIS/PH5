@@ -11,7 +11,7 @@ import numpy as npy
 from ph5.core import ph5api
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ def main():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        raise Exception("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
+        LOGGER.error("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
                                                      ARGS.ph5_path))
         return 1
 

@@ -6,13 +6,12 @@
 #
 
 import os
-import sys
 import logging
 import simplekml
 import re
 from ph5.core import kefx
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -118,7 +117,10 @@ def process_kef():
         if arrayRE.match(p):
             mo = arrayRE.match(p)
             a = int(mo.groups()[0])
-            parseArray(kv, a)
+            try:
+                parseArray(kv, a)
+            except Exception as e:
+                raise e
         elif eventRE.match(p):
             mo = eventRE.match(p)
             try:

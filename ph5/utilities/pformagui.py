@@ -10,7 +10,7 @@ from psutil import cpu_count, cpu_percent
 from ph5.core import pmonitor
 from ph5.utilities import pforma_io, watchit
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 try:
     from PySide import QtCore, QtGui
@@ -123,8 +123,12 @@ class MdiChildDos(QtGui.QProgressDialog):
         try:
             self.fio, self.cmds, self.info = init_fio(None, self.home)
         except pforma_io.FormaIOError as e:
-            LOGGER.error(
-                "{0} Message: {1}".format(e.errno, e.message))
+            errmsg = "{0} Message: {1}".format(e.errno, e.message)
+            LOGGER.error(errmsg)
+            mess = QtGui.QMessageBox()
+            mess.setIcon(QtGui.QMessageBox.Warning)
+            mess.setText(errmsg)
+            mess.exec_()
 
         if os.path.exists(os.path.join(self.fio.home, 'Sigma')):
             mess = QtGui.QMessageBox()
@@ -465,8 +469,17 @@ class MainWindow(QtGui.QMainWindow):
             return False
         self.statsig.emit(
             "Setting up processing of list {0} at {1}".format(mylst, mydir))
-        self.fio, self.cmds, self.info = init_fio(
-            mylst, mydir, utm=self.UTMZone, combine=self.combine)
+        try:
+            self.fio, self.cmds, self.info = init_fio(
+                mylst, mydir, utm=self.UTMZone, combine=self.combine)
+        except pforma_io.FormaIOError as e:
+            errmsg = "{0} Message: {1}".format(e.errno, e.message)
+            LOGGER.error(errmsg)
+            mess = QtGui.QMessageBox()
+            mess.setIcon(QtGui.QMessageBox.Warning)
+            mess.setText(errmsg)
+            mess.exec_()
+
         fams = self.cmds.keys()
         self.statsig.emit("Processing families {0}".format(" ".join(fams)))
         return True
@@ -516,12 +529,12 @@ def init_fio(f, d, utm=None, combine=None):
     try:
         fio.open()
     except pforma_io.FormaIOError as e:
-        raise e
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
     try:
         fio.read()
     except pforma_io.FormaIOError as e:
-        raise e
+        LOGGER.error("{0}: {1}".format(e.errno, e.message))
 
     try:
         fio.readDB()

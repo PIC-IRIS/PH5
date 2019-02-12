@@ -20,15 +20,14 @@
 #
 
 import os
-import sys
 import logging
 import json
 from ph5.core import timedoy
 from ph5.core.ph5api import is_in
 
-PROG_VERSION = '2018.268'
-LOGGER = logging.getLogger(__name__)
+PROG_VERSION = '2019.043'
 logging.basicConfig()
+LOGGER = logging.getLogger(__name__)
 __version__ = PROG_VERSION
 
 
@@ -94,9 +93,10 @@ def read_json():
         nope.append(ARGS.data_json)
 
     if len(nope) != 0:
+        err = []
         for n in nope:
-            LOGGER.error("{0} not found.".format(n))
-        sys.exit()
+            err.append("{0} not found.".format(n))
+        raise Exception("\n".join(err))
 
     EVENT = _read_json(ARGS.event_json)
     ARRAY = _read_json(ARGS.array_json)
@@ -258,9 +258,13 @@ def process_all():
 
 
 def main():
-    get_args()
-    read_json()
-    process_all()
+    try:
+        get_args()
+        read_json()
+        process_all()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
 
 if __name__ == "__main__":

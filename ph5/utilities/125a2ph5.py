@@ -18,7 +18,7 @@ import time
 from ph5 import LOGGING_FORMAT
 from ph5.core import columns, experiment, kef, pn125, timedoy
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -231,7 +231,7 @@ def get_args():
         ex.initgroup()
         keys(ex)
         ex.ph5close()
-        sys.exit()
+        return 1
 
     if args.windows_file is not None:
         WINDOWS = read_windows_file(args.windows_file)
@@ -699,11 +699,12 @@ def main():
     def prof():
         global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
 
-    try:
-        get_args()
-    except Exception, err_msg:
-        LOGGER.error(err_msg)
-        return 1
+        try:
+            if get_args() == 1:
+                return 1
+        except Exception, err_msg:
+            LOGGER.error(err_msg)
+            return 1
 
         initializeExperiment()
         LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))

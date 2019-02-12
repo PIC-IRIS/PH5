@@ -8,7 +8,7 @@ import sys
 import os
 from ph5.core import segdreader
 
-PROG_VERSION = "2016.268"
+PROG_VERSION = "2019.043"
 
 
 def print_container(container):

@@ -15,7 +15,7 @@ from ph5.core import experiment, timedoy
 
 from obspy import read as readSEG2
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.043"
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -524,7 +524,12 @@ def getLOG(Das):
 
 def main():
     global F
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
+
     initializeExperiment()
     LOGGER.info("seg2toph5 {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))

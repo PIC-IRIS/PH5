@@ -7,7 +7,6 @@
 import argparse
 import os
 import os.path
-import sys
 import logging
 import time
 
@@ -17,7 +16,7 @@ from ph5.core import timedoy as tdoy
 
 # Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -141,8 +140,8 @@ def get_args():
         raise Exception("Either --key or --description option is required.")
 
     if PH5 is None:
-        raise Exception("Error: Missing required option --nickname. Try --help")
-
+        raise Exception(
+            "Error: Missing required option --nickname. Try --help")
 
 
 #

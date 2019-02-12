@@ -14,7 +14,7 @@ import time
 from ph5.core import experiment, timedoy
 import tabletokef as T2K
 
-PROG_VERSION = '2019.037'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -131,11 +131,9 @@ def get_args():
     if args.offset_t_ is not None:
         try:
             OFFSET_TABLE = map(int, args.offset_t_.split("_"))
-        except Exception as e:
-            LOGGER.error(
-                "Offset table should be entered as arrayID underscore"
-                "shotLineID, eg. 1_2 or 0_0.")
-            raise Exception(e.message)
+        except Exception:
+            raise Exception("Offset table should be entered as arrayID "
+                            "underscore shotLineID, eg. 1_2 or 0_0.")
 
     else:
         OFFSET_TABLE = None
@@ -209,171 +207,173 @@ def main():
         RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
     try:
         get_args()
-    except Exception, err_msg:
-        LOGGER.error(err_msg)
-        return 1
-    initialize_ph5()
-    T2K.init_local()
-    T2K.EX = EX
 
-    # /Experiment_g/Experiment_t
-    if EXPERIMENT_TABLE:
-        table_type = 'Experiment_t'
-        T2K.read_experiment_table()
-        backup(table_type, '/Experiment_g/Experiment_t', T2K.EXPERIMENT_T)
-        EX.nuke_experiment_t()
+        initialize_ph5()
+        T2K.init_local()
+        T2K.EX = EX
 
-    # /Experiment_g/Sorts_g/Sort_t
-    if SORT_TABLE:
-        table_type = 'Sort_t'
-        T2K.read_sort_table()
-        backup(table_type, '/Experiment_g/Sorts_g/Sort_t', T2K.SORT_T)
-        EX.ph5_g_sorts.nuke_sort_t()
+        # /Experiment_g/Experiment_t
+        if EXPERIMENT_TABLE:
+            table_type = 'Experiment_t'
+            T2K.read_experiment_table()
+            backup(table_type, '/Experiment_g/Experiment_t', T2K.EXPERIMENT_T)
+            EX.nuke_experiment_t()
 
-    # /Experiment_g/Sorts_g/Offset_t
-    if OFFSET_TABLE is not None:
-        T2K.OFFSET_TABLE = OFFSET_TABLE
-        T2K.read_offset_table()
-        if OFFSET_TABLE[0] == 0:
-            table_type = 'Offset_t'
-            if table_type in T2K.OFFSET_T:
-                try:
+        # /Experiment_g/Sorts_g/Sort_t
+        if SORT_TABLE:
+            table_type = 'Sort_t'
+            T2K.read_sort_table()
+            backup(table_type, '/Experiment_g/Sorts_g/Sort_t', T2K.SORT_T)
+            EX.ph5_g_sorts.nuke_sort_t()
+
+        # /Experiment_g/Sorts_g/Offset_t
+        if OFFSET_TABLE is not None:
+            T2K.OFFSET_TABLE = OFFSET_TABLE
+            T2K.read_offset_table()
+            if OFFSET_TABLE[0] == 0:
+                table_type = 'Offset_t'
+                if table_type in T2K.OFFSET_T:
                     backup(table_type, '/Experiment_g/Sorts_g/Offset_t',
                            T2K.OFFSET_T[table_type])
-                except Exception, err_msg:
-                    LOGGER.error(err_msg)
-                    return 1
-            if EX.ph5_g_sorts.nuke_offset_t():
-                exclaim(OFFSET_TABLE)
+
+                if EX.ph5_g_sorts.nuke_offset_t():
+                    exclaim(OFFSET_TABLE)
+                else:
+                    print "{0} Not found.".format(OFFSET_TABLE)
             else:
-                print "{0} Not found.".format(OFFSET_TABLE)
-        else:
-            table_type = "Offset_t_{0:03d}_{1:03d}".format(
-                OFFSET_TABLE[0], OFFSET_TABLE[1])
-            if table_type in T2K.OFFSET_T:
+                table_type = "Offset_t_{0:03d}_{1:03d}".format(
+                    OFFSET_TABLE[0], OFFSET_TABLE[1])
+                if table_type in T2K.OFFSET_T:
+                    backup(
+                        table_type, '/Experiment_g/Sorts_g/{0}'
+                        .format(table_type),
+                        T2K.OFFSET_T[table_type])
+                if EX.ph5_g_sorts.nuke_offset_t(
+                        "Offset_t_{0:03d}_{1:03d}".format(OFFSET_TABLE[0],
+                                                          OFFSET_TABLE[1])):
+                    exclaim(OFFSET_TABLE)
+                else:
+                    print "{0} Not found.".format(OFFSET_TABLE)
+
+        # /Experiment_g/Sorts_g/Event_t
+        if EVENT_TABLE is not None:
+            T2K.EVENT_TABLE = EVENT_TABLE
+            T2K.read_event_table()
+            if EVENT_TABLE == 0:
+                table_type = 'Event_t'
+                if table_type in T2K.EVENT_T:
+                    backup(table_type, '/Experiment_g/Sorts_g/Event_t',
+                           T2K.EVENT_T[table_type])
+                EX.ph5_g_sorts.nuke_event_t()
+            else:
+                table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
+                if table_type in T2K.EVENT_T:
+                    backup(
+                        table_type, '/Experiment_g/Sorts_g/{0}'.format(
+                            table_type),
+                        T2K.EVENT_T[table_type])
+                if EX.ph5_g_sorts.nuke_event_t(
+                        "Event_t_{0:03d}".format(EVENT_TABLE)):
+                    exclaim(EVENT_TABLE)
+                else:
+                    print "{0} Not found.".format(EVENT_TABLE)
+
+        # /Experiment_g/Sorts_g/Array_t_[n]
+        if ARRAY_TABLE:
+            T2K.ARRAY_TABLE = ARRAY_TABLE
+            T2K.read_sort_arrays()
+            table_type = 'Array_t_{0:03d}'.format(ARRAY_TABLE)
+            if table_type in T2K.ARRAY_T:
                 backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                    T2K.OFFSET_T[table_type])
-            if EX.ph5_g_sorts.nuke_offset_t(
-                    "Offset_t_{0:03d}_{1:03d}".format(OFFSET_TABLE[0],
-                                                      OFFSET_TABLE[1])):
-                exclaim(OFFSET_TABLE)
-            else:
-                print "{0} Not found.".format(OFFSET_TABLE)
-
-    # /Experiment_g/Sorts_g/Event_t
-    if EVENT_TABLE is not None:
-        T2K.EVENT_TABLE = EVENT_TABLE
-        T2K.read_event_table()
-        if EVENT_TABLE == 0:
-            table_type = 'Event_t'
-            if table_type in T2K.EVENT_T:
-                backup(table_type, '/Experiment_g/Sorts_g/Event_t',
-                       T2K.EVENT_T[table_type])
-            EX.ph5_g_sorts.nuke_event_t()
-        else:
-            table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
-            if table_type in T2K.EVENT_T:
-                backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                    T2K.EVENT_T[table_type])
-            if EX.ph5_g_sorts.nuke_event_t(
-                    "Event_t_{0:03d}".format(EVENT_TABLE)):
-                exclaim(EVENT_TABLE)
-            else:
-                print "{0} Not found.".format(EVENT_TABLE)
-
-    # /Experiment_g/Sorts_g/Array_t_[n]
-    if ARRAY_TABLE:
-        T2K.ARRAY_TABLE = ARRAY_TABLE
-        T2K.read_sort_arrays()
-        table_type = 'Array_t_{0:03d}'.format(ARRAY_TABLE)
-        if table_type in T2K.ARRAY_T:
-            backup(
-                table_type,
-                '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                T2K.ARRAY_T[table_type])
-        if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
-            exclaim(ARRAY_TABLE)
-        else:
-            print "{0} Not found.".format(ARRAY_TABLE)
-
-    # /Experiment_g/Sorts_g/Array_t_xxx
-    elif ALL_ARRAYS:
-        T2K.read_sort_arrays()
-
-        for table_type in T2K.ARRAY_T:
-            backup(
-                table_type,
-                '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                T2K.ARRAY_T[table_type])
-            ARRAY_TABLE = int(table_type[-3:])
+                    table_type,
+                    '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                    T2K.ARRAY_T[table_type])
             if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
                 exclaim(ARRAY_TABLE)
             else:
                 print "{0} Not found.".format(ARRAY_TABLE)
 
-    # /Experiment_g/Receivers_g/Time_t
-    if TIME_TABLE:
-        table_type = 'Time_t'
-        T2K.read_time_table()
-        backup(table_type, '/Experiment_g/Receivers_g/Time_t', T2K.TIME_T)
-        EX.ph5_g_receivers.nuke_time_t()
+        # /Experiment_g/Sorts_g/Array_t_xxx
+        elif ALL_ARRAYS:
+            T2K.read_sort_arrays()
 
-    # /Experiment_g/Receivers_g/Index_t
-    if INDEX_TABLE:
-        table_type = 'Index_t'
-        T2K.read_index_table()
-        backup(table_type, '/Experiment_g/Receivers_g/Index_t', T2K.INDEX_T)
-        EX.ph5_g_receivers.nuke_index_t()
+            for table_type in T2K.ARRAY_T:
+                backup(
+                    table_type,
+                    '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                    T2K.ARRAY_T[table_type])
+                ARRAY_TABLE = int(table_type[-3:])
+                if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
+                    exclaim(ARRAY_TABLE)
+                else:
+                    print "{0} Not found.".format(ARRAY_TABLE)
 
-    # /Experiment_g/Maps_g/Index_t
-    if M_INDEX_TABLE:
-        table_type = 'M_Index_t'
-        T2K.read_m_index_table()
-        backup(table_type, '/Experiment_g/Maps_g/Index_t', T2K.M_INDEX_T)
-        EX.ph5_g_maps.nuke_index_t()
-    # /Experiment_g/Receivers_g/Receiver_t
+        # /Experiment_g/Receivers_g/Time_t
+        if TIME_TABLE:
+            table_type = 'Time_t'
+            T2K.read_time_table()
+            backup(table_type, '/Experiment_g/Receivers_g/Time_t', T2K.TIME_T)
+            EX.ph5_g_receivers.nuke_time_t()
 
-    if RECEIVER_TABLE:
-        table_type = 'Receiver_t'
-        T2K.read_receiver_table()
-        backup(
-            table_type,
-            '/Experiment_g/Receivers_g/Receiver_t',
-            T2K.RECEIVER_T)
-        EX.ph5_g_receivers.nuke_receiver_t()
+        # /Experiment_g/Receivers_g/Index_t
+        if INDEX_TABLE:
+            table_type = 'Index_t'
+            T2K.read_index_table()
+            backup(
+                table_type, '/Experiment_g/Receivers_g/Index_t', T2K.INDEX_T)
+            EX.ph5_g_receivers.nuke_index_t()
 
-    # /Experiment_g/Responses_g/Response_t
-    if RESPONSE_TABLE:
-        table_type = 'Response_t'
-        T2K.read_response_table()
-        backup(
-            table_type,
-            '/Experiment_g/Responses_g/Response_t',
-            T2K.RESPONSE_T)
-        EX.ph5_g_responses.nuke_response_t()
+        # /Experiment_g/Maps_g/Index_t
+        if M_INDEX_TABLE:
+            table_type = 'M_Index_t'
+            T2K.read_m_index_table()
+            backup(table_type, '/Experiment_g/Maps_g/Index_t', T2K.M_INDEX_T)
+            EX.ph5_g_maps.nuke_index_t()
+        # /Experiment_g/Receivers_g/Receiver_t
 
-    # /Experiment_g/Reports_g/Report_t
-    if REPORT_TABLE:
-        table_type = 'Report_t'
-        T2K.read_report_table()
-        backup(table_type, '/Experiment_g/Reports_g/Report_t', T2K.REPORT_T)
-        EX.ph5_g_reports.nuke_report_t()
-    if DAS_TABLE:
-        yon = raw_input(
-            "Are you sure you want to delete all data in Das_t for das {0}?"
-            " y/n ".format(DAS_TABLE))
-        if yon == 'y':
-            table_type = 'Das_t_{0}'.format(DAS_TABLE)
-            T2K.DAS_TABLE = DAS_TABLE
-            T2K.read_receivers(DAS_TABLE)
-            if DAS_TABLE in T2K.DAS_T:
-                backup(table_type,
-                       '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
-                           DAS_TABLE), T2K.DAS_T[DAS_TABLE])
-            EX.ph5_g_receivers.nuke_das_t(DAS_TABLE)
-    EX.ph5close()
+        if RECEIVER_TABLE:
+            table_type = 'Receiver_t'
+            T2K.read_receiver_table()
+            backup(
+                table_type,
+                '/Experiment_g/Receivers_g/Receiver_t',
+                T2K.RECEIVER_T)
+            EX.ph5_g_receivers.nuke_receiver_t()
+
+        # /Experiment_g/Responses_g/Response_t
+        if RESPONSE_TABLE:
+            table_type = 'Response_t'
+            T2K.read_response_table()
+            backup(
+                table_type,
+                '/Experiment_g/Responses_g/Response_t',
+                T2K.RESPONSE_T)
+            EX.ph5_g_responses.nuke_response_t()
+
+        # /Experiment_g/Reports_g/Report_t
+        if REPORT_TABLE:
+            table_type = 'Report_t'
+            T2K.read_report_table()
+            backup(
+                table_type, '/Experiment_g/Reports_g/Report_t', T2K.REPORT_T)
+            EX.ph5_g_reports.nuke_report_t()
+        if DAS_TABLE:
+            yon = raw_input(
+                "Are you sure you want to delete all data in Das_t "
+                "for das {0}? y/n ".format(DAS_TABLE))
+            if yon == 'y':
+                table_type = 'Das_t_{0}'.format(DAS_TABLE)
+                T2K.DAS_TABLE = DAS_TABLE
+                T2K.read_receivers(DAS_TABLE)
+                if DAS_TABLE in T2K.DAS_T:
+                    backup(table_type,
+                           '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
+                               DAS_TABLE), T2K.DAS_T[DAS_TABLE])
+                EX.ph5_g_receivers.nuke_das_t(DAS_TABLE)
+        EX.ph5close()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
 
 if __name__ == '__main__':

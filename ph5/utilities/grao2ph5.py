@@ -15,7 +15,7 @@ import obspy
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, timedoy
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.043"
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

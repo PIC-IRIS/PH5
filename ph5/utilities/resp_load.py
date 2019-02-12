@@ -4,7 +4,6 @@ Creates template csv for loading RESPS,
 loads the RESP files and create new array and response kefs
 """
 
-import sys
 import os
 import argparse
 from ph5 import LOGGING_FORMAT
@@ -15,7 +14,7 @@ import subprocess
 import logging
 
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2019.043"
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

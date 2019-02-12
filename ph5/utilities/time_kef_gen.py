@@ -18,7 +18,7 @@ import logging
 from ph5.core import ph5api, timedoy
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = '2019.036'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 # Match lines related to timing in SOH
@@ -231,7 +231,7 @@ def main():
     except Exception:
         LOGGER.error("Can't open {0} at {1}.".format(ARGS.ph5_file_prefix,
                                                      ARGS.ph5_path))
-        sys.exit(-1)
+        return 1
 
     dasGroups = P5.ph5_g_receivers.alldas_g()
     dass = sorted(dasGroups.keys())

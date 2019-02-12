@@ -16,7 +16,7 @@ from ph5 import LOGGING_FORMAT
 # This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2019.036'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 # Make sure we are all on the same time zone ;^)
@@ -122,9 +122,8 @@ def get_args():
         LOGGER.addHandler(ch)
 
     if SN is None and AUTO is False:
-        LOGGER.error("Serial number can not be undefined if auto is "
-                     "set to false.")
-        sys.exit(-1)
+        raise Exception("Serial number can not be undefined if auto is "
+                        "set to false.")
 
 
 #
@@ -358,18 +357,22 @@ def report_gen():
 
 def main():
     global SN, EX, AUTO, OFILE
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
-    get_args()
     initialize_ph5()
 
     if SN is not None:
         if not read_das_table(SN):
             LOGGER.error("Failed to read Das_t for {0}.".format(SN))
-            sys.exit()
+            return 1
     elif AUTO is True:
         if not read_all_das():
             LOGGER.error("Failed to read DAS tables.")
-            sys.exit()
+            return 1
 
     report_gen()
     EX.ph5close()

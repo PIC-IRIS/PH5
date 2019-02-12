@@ -9,7 +9,7 @@ import time
 import re
 from ph5.core import timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -155,7 +155,7 @@ def main():
 
     if not os.path.exists(ARRAY_FILE):
         LOGGER.error("Can't open {0}!".format(ARRAY_FILE))
-        sys.exit()
+        return 1
     else:
         fh = open(ARRAY_FILE)
         mdir = os.path.dirname(ARRAY_FILE)

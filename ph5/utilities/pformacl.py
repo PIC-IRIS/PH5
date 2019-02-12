@@ -7,13 +7,12 @@
 
 import argparse
 import os
-import sys
 import logging
 
 from multiprocessing import cpu_count
 from ph5.utilities import pforma_io
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -151,60 +150,60 @@ def main():
     if not exexists('xterm'):
         LOGGER.error("The external program xterm required. Not found.")
         return 1
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
-    get_args()
     # Inputs list of raw files and project directory
     fio = pforma_io.FormaIO(infile=RAW_LST, outdir=PROJECT)
+
     # Number of families is (default) number of CPU's + 1 or set
     fio.set_nmini(NFAMILY)
+
     # M is the number of mini ph5 files per family, otherwise set in fio.read
     if M:
         fio.set_M(M)
+
     # Set UTM zone for segd2ph5 if needed
     if UTM:
         fio.set_utm(UTM)
     if TSPF:
         fio.set_tspf(TSPF)
+
     # Don't merge just process raw to PH5
     if not MERGE:
-        # Open list of input files
         try:
+            # Open list of input files
             fio.open()
-        except pforma_io.FormaIOError as e:
-            LOGGER.error(
-                "{0} Message: {1}".format(e.errno, e.message))
-            return 1
-        # Pre-process raw files
-        try:
+
+            # Pre-process raw files
             fio.read()
-        except pforma_io.FormaIOError as e:
-            LOGGER.error(
-                "{0} Message: {1}".format(e.errno, e.message))
-            return 1
-        # Adjust the number M and the number of families if needed
-        LOGGER.info("Total raw size: {0:7.2f}GB"
-                    .format(float(fio.total_raw / 1024. / 1024. / 1024.)))
-        adjust(fio)
-        # Set up the processing directory structure, and reset M if mini files
-        # already exist
-        try:
+
+            # Adjust the number M and the number of families if needed
+            LOGGER.info("Total raw size: {0:7.2f}GB"
+                        .format(float(fio.total_raw / 1024. / 1024. / 1024.)))
+
+            adjust(fio)
+
+            # Set up the processing directory structure, and reset M if mini
+            # files already exist
             fio.initialize_ph5()
-        except pforma_io.FormaIOError as e:
-            LOGGER.error(
-                "{0} Message: {1}".format(e.errno, e.message))
-            return 1
-        # Read JSON db
-        try:
+
+            # Read JSON db
             fio.readDB()
         except pforma_io.FormaIOError as e:
-            LOGGER.error(
-                "{0} Message: {1}".format(e.errno, e.message))
+            LOGGER.error("{0} Message: {1}".format(e.errno, e.message))
             return 1
+
         # Resolve JSON db with list of files we are loading (have they been
         # loaded already)
         fio.resolveDB()
+
         # Do the conversions to PH5
         xterms = run(fio)
+
         # Merge loaded raw files with existing JSON db and write new JSON db
         fio.merge(fio.resolved.keys())
 

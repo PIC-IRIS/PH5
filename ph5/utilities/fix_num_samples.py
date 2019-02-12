@@ -7,7 +7,6 @@
 #
 
 import argparse
-import sys
 import logging
 import os
 import os.path
@@ -20,7 +19,7 @@ from ph5.core import experiment
 os.environ['TZ'] = 'UTM'
 time.tzset()
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 

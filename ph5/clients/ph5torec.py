@@ -12,7 +12,7 @@ import logging
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
-PROG_VERSION = "2017.312 Developmental"
+PROG_VERSION = "2019.043 Developmental"
 LOGGER = logging.getLogger(__name__)
 # This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
@@ -158,14 +158,14 @@ def get_args():
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
-        LOGGER.error("Can't open {0} at {1}.".format(
+        raise Exception("Can't open {0} at {1}.".format(
             ARGS.ph5_file_prefix, ARGS.ph5_path))
-        sys.exit(-1)
 
     if ARGS.shot_file:
         if not ARGS.shot_line:
-            LOGGER.error("Shot line required when using external shot file.")
-            sys.exit(-2)
+            raise Exception(
+                "Shot line required when using external shot file.")
+
         external = external_file.External(ARGS.shot_file)
         ARGS.shot_file = external.Event_t
         P5.Event_t_names = ARGS.shot_file.keys()
@@ -448,10 +448,10 @@ def gather():
                             try:
                                 fh = sys.stdout
                             except Exception as e:
-                                LOGGER.error("{0}".format(e.message))
-                                LOGGER.error(
+                                raise Exception(
+                                    "{0}".format(e.message) +
                                     "Failed to open STDOUT. Can not continue.")
-                                sys.exit(-1)
+
                         else:
                             #
                             # Set up file nameing
@@ -479,9 +479,10 @@ def gather():
                                 fh = open(outfilename, 'w+')
                                 LOGGER.info("Opened: {0}".format(outfilename))
                             except Exception as e:
-                                LOGGER.error("Failed to open {0}.\t{1}"
-                                             .format(outfilename, e.message))
-                                sys.exit()
+                                raise Exception(
+                                    "Failed to open {0}.\t{1}"
+                                    .format(outfilename, e.message))
+
                         # Write reel headers and first trace
                         try:
                             logs = segyfactory.write_segy_hdr(
@@ -490,8 +491,8 @@ def gather():
                             for l in logs:
                                 LOGGER.info(l)
                         except segyfactory.SEGYError as e:
-                            LOGGER.error("Header write failure.")
-                            sys.exit()
+                            raise Exception("Header write failure.")
+
                     else:
                         # Write trace
                         try:
@@ -500,8 +501,8 @@ def gather():
                                 LOGGER.info(l)
                             LOGGER.info('=-' * 40)
                         except segyfactory.SEGYError as e:
-                            LOGGER.error("Trace write failure.")
-                            sys.exit()
+                            raise Exception("Trace write failure.")
+
         # Traces found does not match traces expected
         if fh and i != num_traces:
             # Need to update reel_header
@@ -519,7 +520,11 @@ def gather():
 
 
 def main():
-    get_args()
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
     if not ARGS.write_stdout:
         # Write log to file
         ch = logging.FileHandler(os.path.join(ARGS.out_dir, "ph5torec.log"))
@@ -532,7 +537,7 @@ def main():
     if ARGS.shot_line not in P5.Event_t_names:
         LOGGER.error("{0} not found. {1}\n".format(
             ARGS.shot_line, " ".join(P5.Event_t_names)))
-        sys.exit(-1)
+        return 1
     else:
         if not ARGS.shot_file:
             P5.read_event_t(ARGS.shot_line)
@@ -542,7 +547,7 @@ def main():
     if ARGS.station_array not in P5.Array_t_names:
         LOGGER.error("{0} not found.  {1}\n".format(
             ARGS.station_array, " ".join(P5.Array_t_names)))
-        sys.exit(-1)
+        return 1
     else:
         P5.read_array_t(ARGS.station_array)
 
@@ -561,11 +566,16 @@ def main():
             LOGGER.info(
                 "Netcode mis-match: {0}/{1}"
                 .format(P5.Experiment_t['net_code_s'], ARGS.seed_network))
-            sys.exit(-1)
+            return 1
     else:
         LOGGER.warning("No experiment information found. Contact PIC.")
 
-    gather()
+    try:
+        gather()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
+
     LOGGER.info("Done.")
     logging.shutdown()
     P5.close()

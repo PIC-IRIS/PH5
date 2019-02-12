@@ -18,7 +18,7 @@ import re
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, kef, pn130, timedoy
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -402,7 +402,7 @@ def get_args():
         ex.ph5open(True)
         ex.initgroup()
         ex.ph5close()
-        sys.exit()
+        return 1
 
     if args.par_file is not None:
         if not read_par_file(args.par_file):
@@ -1025,7 +1025,8 @@ def main():
         global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
 
         try:
-            get_args()
+            if get_args() == 1:
+                return 1
         except Exception, err_msg:
             LOGGER.error(err_msg)
             return 1

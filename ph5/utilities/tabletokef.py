@@ -9,7 +9,6 @@
 
 import argparse
 import string
-import sys
 import logging
 import time
 # This provides the base functionality
@@ -17,7 +16,7 @@ from ph5.core import experiment
 
 # Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2019.036'
+PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -244,7 +243,7 @@ def get_args():
                   RECEIVER_TABLE, DAS_TABLE]
     if all(not t for t in table_list):
         raise Exception("No table specified for output. See --help for more "
-                     "details.")
+                        "details.")
 
     # define OFILE to write output
     o_filename = args.output_file
