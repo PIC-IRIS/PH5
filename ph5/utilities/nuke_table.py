@@ -18,12 +18,6 @@ PROG_VERSION = '2019.043'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
-if float(T2K.PROG_VERSION[0:8]) < 2017.317:
-    LOGGER.error(
-        "Found old version of tabletokef.py. "
-        "Requires version 2017.317 or newer.")
-    sys.exit(-2)
-
 
 #
 # Read Command line arguments

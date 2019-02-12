@@ -19,11 +19,6 @@ import construct
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
 
-ver = construct.version[0] + construct.version[1] / 10.
-if ver < 2.5:
-    LOGGER.info("Exiting: construct version is {0}\n".format(ver))
-    sys.exit()
-
 
 def __version__():
     print PROG_VERSION
