@@ -21,7 +21,7 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.14'
 LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
@@ -57,7 +57,6 @@ QProgressBar{
     border-radius: 5px;
     text-align: center;
 }
-
 QProgressBar::chunk {
     background-color: lightgreen;
     width: 10px;
@@ -70,7 +69,6 @@ QProgressBar{
     border-radius: 5px;
     text-align: center;
 }
-
 QProgressBar::chunk {
     background-color: lightgreen;
     width: 10px;
@@ -83,7 +81,6 @@ QProgressBar{
     border-radius: 5px;
     text-align: center;
 }
-
 QProgressBar::chunk {
     background-color: orange;
     width: 10px;
@@ -587,7 +584,8 @@ if __name__ == '__main__':
         try:
             fio.readDB()
         except pforma_io.FormaIOError as e:
-            raise Exception("{0}: {1}".format(e.errno, e.message))
+            LOGGER.error("{0}: {1}".format(e.errno, e.message))
+            sys.exit(-1)
 
         fio.resolveDB()
         cmds, lsts, i = fio.run(runit=False)
@@ -595,12 +593,7 @@ if __name__ == '__main__':
 
     f = os.path.join(os.getcwd(), sys.argv[1])
     d = os.path.join(os.getcwd(), sys.argv[2])
-    try:
-        fio, cmds, info = init_fio(f, d)
-    except Exception as e:
-        LOGGER.error(e)
-        sys.exit()
-
+    fio, cmds, info = init_fio(f, d)
     fams = sorted(cmds.keys())
     application = QtGui.QApplication(sys.argv)
     MMM = {}
@@ -614,3 +607,4 @@ if __name__ == '__main__':
             MMM[F] = Monitor(fio, cmds[F], title=F, mmax=blah)
             MMM[F].show()
     application.exec_()
+
