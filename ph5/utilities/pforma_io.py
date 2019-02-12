@@ -40,7 +40,13 @@ class FormaIO():
     '''
     # These are the number of conversions that can be run at once.
     MINIS = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-             'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P')
+             'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+             'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+             'Y', 'Z', 'AA', 'BB', 'CC', 'DD', 'EE', 'FF',
+             'GG', 'HH', 'II', 'JJ', 'KK', 'LL', 'MM', 'NN',
+             'OO', 'PP', 'QQ', 'RR', 'SS', 'TT', 'UU', 'VV',
+             'WW', 'XX', 'YY', 'ZZ', 'AAA', 'BBB', 'CCC', 'DDD',
+             'EEE', 'FFF', 'GGG', 'HHH', 'III', 'JJJ', 'LLL', 'MMM')
 
     def __init__(self, infile=None, outdir=None):
         self.infile = infile  # Input file (list of raw files)
