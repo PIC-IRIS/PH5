@@ -1400,7 +1400,17 @@ class PH5(experiment.ExperimentGroup):
         Takes a das serial number, and option start and end time
         and returns the time of the earliest and latest samples
         fot a given channel
+
+        Required: das serial and component
+        Optional: Start time, End time
+        :param das: das serial number
+        :param start: start time epoch
+        :param end:  end time epoch
+        :param sample_rate: sample rate
+        :param component: component channel number
+        :return: earliest epoch and latest epoch
         '''
+
         if not component:
             raise ValueError("Comonent required for get_extent")
         self.read_das_t(das, start, end, reread=False)
@@ -1430,7 +1440,7 @@ class PH5(experiment.ExperimentGroup):
     def get_availability(self, das, start=None, end=None,
                          sample_rate=None, component=None):
         '''
-        Required: das serial and component
+        Required: das, sample_rate and component
         Optional: Start time, End time
         :param das: das serial number
         :param start: start time epoch
@@ -1441,6 +1451,8 @@ class PH5(experiment.ExperimentGroup):
         '''
         if not component:
             raise ValueError("Comonent required for get_avilability")
+        if not sample_rate:
+            raise ValueError("Sample rate required for get_avilability")
         times = []
         previous = []
         gaps = 0
