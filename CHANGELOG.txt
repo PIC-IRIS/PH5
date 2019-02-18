@@ -40,6 +40,8 @@ ph5.utilities.report_gen
  * fix crash on no event table (issue #219)
 ph5.utilities.dumpfair
  * fix piping bug (issue #270)
+ph5.utilities.seg2toph5
+ * fix bug missing variable
 
 v4.1.2:
 ph5.utilities.ph5validate
