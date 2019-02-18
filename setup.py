@@ -165,6 +165,7 @@ setup(
             'tabletokef = ph5.utilities.tabletokef:main',
             'unsimpleton = ph5.utilities.unsimpleton:main',
             'ph5availability = ph5.clients.ph5availability:main',
+            'ph5 = ph5.utilities.ph5_help:main',
         ],
     },
     packages=['ph5',

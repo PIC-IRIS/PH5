@@ -4,7 +4,8 @@
 # Dump tables in ph5 file to kef format.
 #
 # Steve Azevedo, April 2007
-# readPH5() edited by Lan Dam on 2018067
+#
+
 
 import argparse
 import string
@@ -16,7 +17,7 @@ from ph5.core import experiment
 
 # Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.036'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -100,11 +101,10 @@ class Das_Groups(object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
-        EVENT_TABLE, \
-        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE,\
-        TIME_TABLE, \
-        TABLE_KEY, INDEX_TABLE, M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS
+    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, \
+        EVENT_TABLE, ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, \
+        RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, TABLE_KEY, INDEX_TABLE, \
+        M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS, OFILE
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -204,6 +204,10 @@ def get_args():
                         help=("Dump /Experiment_g/Receivers_g/Time_t "
                               "to a kef file."))
 
+    parser.add_argument("-o", "--outfile", dest="output_file",
+                        help="The kef output file to be saved at.",
+                        metavar="output_file", default=None)
+
     args = parser.parse_args()
 
     PH5 = args.ph5_file_prefix
@@ -243,6 +247,12 @@ def get_args():
         LOGGER.error("No table specified for output. See --help for more "
                      "details.")
 
+    # define OFILE to write output
+    o_filename = args.output_file
+    if o_filename is None:
+        OFILE = None
+    else:
+        OFILE = open(o_filename, 'w')
 
 #
 # Initialize ph5 file
@@ -256,6 +266,17 @@ def initialize_ph5(editmode=False):
     EX = experiment.ExperimentGroup(PATH, PH5)
     EX.ph5open(editmode)
     EX.initgroup()
+
+
+#
+# Print out report
+#
+def print_report(text):
+    global OFILE
+    if OFILE is None:
+        print(text)
+    else:
+        OFILE.write(text + '\n')
 
 
 #
@@ -284,7 +305,7 @@ def table_print(t, a, fh=None):
         for k in a.keys:
             s = s + "\t" + str(k) + "=" + str(r[k]) + "\n"
         if fh is None:
-            print s,
+            print_report(s)
             s = ''
         else:
             fh.write(s)
@@ -665,6 +686,8 @@ def main():
                         d + "/Das_t", DAS_T[d])
 
     EX.ph5close()
+    if OFILE is not None:
+        OFILE.close()
 
 
 if __name__ == '__main__':

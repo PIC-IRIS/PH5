@@ -5,15 +5,22 @@ ph5
  * cleanup comments and remove commented out code (issue #216) 
  * replace deprecated optparse with argparse module.
  * update ph5 to better install c requirements
+ph5.utilities.ph5
+ * add helpfile to utilities folder. Have not added pointer in setup.py as yet. 
+ * Typing ph5 shows user the choices for help information.
+ * Usage: ph5 pforma (lists info about pforma)https://github.com/PIC-IRIS/PH5/pull/new/helpfile
 ph5.clients.ph5toms
  * added option to change file naming scheme
+ * add day volume cuts
+ * add cut length to ph5toms for webservices
+ * Fix bug causing duplicate data to be written (issue #264)
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui
  * added North South designation to pforma
  * Displayed current utm zone (issue #234)
 ph5.utilities.segdtoph5
- * Fixed bug causing pforma to finish correctly on node (issue #233)\
+ * Fixed bug causing pforma to finish correctly on node (issue #233)
  * fixed bug in utmzone processing
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
@@ -23,6 +30,16 @@ ph5.clients.ph5tostationxml
  * Limit number of asynchronous processes
 ph5.utilities.ph5validate
  * add data time checking
+ph5.utilities.sort_kef_gen.py
+ * add -o option for file output
+ph5.utilities.time_kef_gen.py
+ * add -o option for file output
+ph5.utilities.tabletokef.py
+ * add -o option for file output
+ph5.utilities.report_gen
+ * fix crash on no event table (issue #219)
+ph5.utilities.dumpfair
+ * fix piping bug (issue #270)
 
 v4.1.2:
 ph5.utilities.ph5validate
