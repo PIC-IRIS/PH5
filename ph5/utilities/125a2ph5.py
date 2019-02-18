@@ -18,21 +18,15 @@ import time
 from ph5 import LOGGING_FORMAT
 from ph5.core import columns, experiment, kef, pn125, timedoy
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.046'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 2  # GB (1024 X 1024 X 1024 X 2)
-INDEX_T = None
 
 TRDfileRE = re.compile(r".*[Ii](\d\d\d\d)[Rr][Aa][Ww].*")
 TRDfileREpunt = re.compile(r".*(\d\d\d\d).*[Tt][Rr][Dd]$")
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
-
-CURRENT_DAS = None
-DAS_INFO = {}
-# Current raw file processing
-F = None
 
 os.environ['TZ'] = 'GMT'
 time.tzset()
@@ -88,8 +82,7 @@ class Resp (object):
         return len(self.lines)
 
 
-def read_infile(infile):
-    global FILES
+def read_infile(infile, FILES):
     try:
         fh = file(infile)
     except BaseException:
@@ -106,6 +99,7 @@ def read_infile(infile):
         if line[0] == '#':
             continue
         FILES.append(line)
+    return FILES
 
 
 def read_windows_file(f):
@@ -165,7 +159,6 @@ def get_args():
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
     '''
-    global FILES, PH5, SR, WINDOWS, OVERIDE, NUM_MINI, FIRST_MINI
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -217,7 +210,7 @@ def get_args():
     FIRST_MINI = args.first_mini
 
     if args.infile is not None:
-        read_infile(args.infile)
+        FILES = read_infile(args.infile, FILES)
 
     elif args.rawfile is not None:
         FILES.append(args.rawfile)
@@ -253,6 +246,7 @@ def get_args():
         formatter = logging.Formatter(LOGGING_FORMAT)
         ch.setFormatter(formatter)
         LOGGER.addHandler(ch)
+    return FILES, PH5, SR, WINDOWS, OVERIDE, NUM_MINI, FIRST_MINI
 
 
 def print_it(a):
@@ -326,17 +320,15 @@ def keys(ex):
     print_it(response_table)
 
 
-def initializeExperiment():
-    global EX, PH5
-
+def initializeExperiment(PH5):
     EX = experiment.ExperimentGroup(nickname=PH5)
     EDIT = True
     EX.ph5open(EDIT)
     EX.initgroup()
+    return EX
 
 
-def populateExperimentTable():
-    global EX, KEFFILE
+def populateExperimentTable(KEFFILE):
     k = kef.Kef(KEFFILE)
     k.open()
     k.read()
@@ -344,14 +336,12 @@ def populateExperimentTable():
     k.close()
 
 
-def closePH5():
-    global EX
+def closePH5(EX):
     EX.ph5close()
 
 
-def window_contained(e):
+def window_contained(e, WINDOWS):
     '''   Is this event in the data we want to keep?   '''
-    global WINDOWS
 
     # We want to keep all the data
     if WINDOWS is None:
@@ -395,8 +385,7 @@ def window_contained(e):
     return False
 
 
-def update_index_t_info(starttime, samples, sps):
-    global DAS_INFO
+def update_index_t_info(starttime, samples, sps, EXREC, DAS_INFO):
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
         EXREC.ph5_g_receivers.current_g_das._v_name
@@ -412,8 +401,7 @@ def update_index_t_info(starttime, samples, sps):
                         time.ctime(stoptime)))
 
 
-def writeEvent(trace, page):
-    global EX, EXREC, RESP, SR
+def writeEvent(trace, page, EXREC, EX, SR, RESP, DAS_INFO, F):
     p_das_t = {}
     p_response_t = {}
 
@@ -478,12 +466,10 @@ def writeEvent(trace, page):
     update_index_t_info(p_das_t['time/epoch_l'] +
                         (float(p_das_t['time/micro_seconds_i']) / 1000000.),
                         p_das_t['sample_count_i'], p_das_t['sample_rate_i'] /
-                        p_das_t['sample_rate_multiplier_i'])
+                        p_das_t['sample_rate_multiplier_i'], EXREC, DAS_INFO)
 
 
-def writeSOH(soh):
-    global EXREC
-
+def writeSOH(soh, EXREC):
     # Check to see if any data has been written
     if EXREC.ph5_g_receivers.current_g_das is None or\
        EXREC.ph5_g_receivers.current_t_das is None:
@@ -500,10 +486,7 @@ def writeSOH(soh):
         name, data, description="Texan State of Health")
 
 
-def writeET(et):
-    '''   '''
-    global EXREC
-
+def writeET(et, EXREC):
     # Check to see if any data has been written
     if EXREC.ph5_g_receivers.current_g_das is None or\
        EXREC.ph5_g_receivers.current_t_das is None:
@@ -522,13 +505,15 @@ def writeET(et):
 
 def openPH5(filename):
     LOGGER.info("Opening: {0}".format(filename))
-    exrec = experiment.ExperimentGroup(nickname=filename)
-    exrec.ph5open(True)
-    exrec.initgroup()
-    return exrec
+    EXREC = experiment.ExperimentGroup(nickname=filename)
+    EXREC.ph5open(True)
+    EXREC.initgroup()
+    return EXREC
 
 
-def get_current_data_only(size_of_data, das=None):
+def get_current_data_only(size_of_data, NUM_MINI, FIRST_MINI, INDEX_T,
+                          CURRENT_DAS, das=None):
+
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
@@ -583,9 +568,7 @@ def get_current_data_only(size_of_data, das=None):
     return openPH5(newestfile)
 
 
-def writeINDEX():
-    global DAS_INFO, INDEX_T
-
+def writeINDEX(EX, INDEX_T, DAS_INFO):
     dass = sorted(DAS_INFO.keys())
 
     for das in dass:
@@ -624,10 +607,12 @@ def writeINDEX():
     INDEX_T = Rows_Keys(rows, keys)
 
     DAS_INFO = {}
+    return INDEX_T, DAS_INFO
 
 
-def updatePH5(f):
-    global EX, EXREC
+def updatePH5(f, EXREC, EX, SR, WINDOWS, NUM_MINI, FIRST_MINI, RESP,
+              INDEX_T, CURRENT_DAS, DAS_INFO):
+
     LOGGER.info("Processing: %s..." % f)
     size_of_data = os.path.getsize(f) * 1.250
     try:
@@ -635,7 +620,8 @@ def updatePH5(f):
     except BaseException:
         pass
 
-    EXREC = get_current_data_only(size_of_data)
+    EXREC = get_current_data_only(size_of_data, NUM_MINI, FIRST_MINI,
+                                  INDEX_T, CURRENT_DAS)
     pn = pn125.pn125(f)
     while True:
         try:
@@ -648,27 +634,28 @@ def updatePH5(f):
         if points == 0:
             break
 
-        if window_contained(pn.trace):
-            writeEvent(pn.trace, pn.page)
+        if window_contained(pn.trace, WINDOWS):
+            writeEvent(pn.trace, pn.page, EXREC, EX, SR, RESP, DAS_INFO, f)
 
     if DAS_INFO:
-        writeINDEX()
+        INDEX_T, DAS_INFO = writeINDEX(EX, INDEX_T, DAS_INFO)
 
     if len(pn.sohbuf) > 0:
-        writeSOH(pn.sohbuf)
+        writeSOH(pn.sohbuf, EXREC)
 
     if len(pn.eventTable) > 0:
-        writeET(pn.eventTable)
+        writeET(pn.eventTable, EXREC)
     LOGGER.info(":<Finished>: {0}\n".format(f))
 
+    return EXREC, INDEX_T, DAS_INFO
 
-def ph5flush():
-    global EX
+
+def ph5flush(EX):
     EX.ph5flush()
 
 
-def update_external_references():
-    global EX, INDEX_T
+def update_external_references(EX, INDEX_T):
+
     LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T.rows:
@@ -696,51 +683,53 @@ def update_external_references():
 
 
 def main():
-    def prof():
-        global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
-
-        try:
-            if get_args() == 1:
-                return 1
-        except Exception, err_msg:
-            LOGGER.error(err_msg)
+    DAS_INFO = {}
+    EXREC = None
+    try:
+        args = get_args()
+        if args == 1:
             return 1
+        else:
+            FILES, PH5, SR, WINDOWS, OVERIDE, NUM_MINI, FIRST_MINI = args
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
-        initializeExperiment()
-        LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))
-        LOGGER.info("{0}".format(sys.argv))
-        if len(FILES) > 0:
-            RESP = Resp(EX.ph5_g_responses)
-            rows, keys = EX.ph5_g_receivers.read_index()
-            INDEX_T = Rows_Keys(rows, keys)
+    EX = initializeExperiment(PH5)
+    LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
+    if len(FILES) > 0:
+        RESP = Resp(EX.ph5_g_responses)
+        rows, keys = EX.ph5_g_receivers.read_index()
+        INDEX_T = Rows_Keys(rows, keys)
 
-        for f in FILES:
-            F = f
-            ma = TRDfileRE.match(f)
-            if ma or OVERIDE:
-                try:
+    for f in FILES:
+        ma = TRDfileRE.match(f)
+        if ma or OVERIDE:
+            try:
+                if ma:
+                    CURRENT_DAS = int(ma.groups()[0]) + 10000
+                else:
+                    ma = TRDfileREpunt.match(f)
                     if ma:
                         CURRENT_DAS = int(ma.groups()[0]) + 10000
                     else:
-                        ma = TRDfileREpunt.match(f)
-                        if ma:
-                            CURRENT_DAS = int(ma.groups()[0]) + 10000
-                        else:
-                            raise Exception()
-                except BaseException:
-                    CURRENT_DAS = None
+                        raise Exception()
+            except BaseException:
+                CURRENT_DAS = None
 
-                updatePH5(f)
-            else:
-                LOGGER.error(f)
-                LOGGER.warning(
-                    "Warning: Unrecognized raw file name {0}. Skipping!"
-                    .format(f))
+            EXREC, INDEX_T, DAS_INFO = updatePH5(
+                f, EXREC, EX, SR, WINDOWS, NUM_MINI, FIRST_MINI, RESP,
+                INDEX_T, CURRENT_DAS, DAS_INFO)
+        else:
+            LOGGER.error(f)
+            LOGGER.warning(
+                "Warning: Unrecognized raw file name {0}. Skipping!"
+                .format(f))
 
-        update_external_references()
-        closePH5()
-        logging.shutdown()
-    prof()
+    update_external_references(EX, INDEX_T)
+    closePH5(EX)
+    logging.shutdown()
 
 
 if __name__ == '__main__':
