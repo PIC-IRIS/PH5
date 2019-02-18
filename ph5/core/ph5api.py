@@ -14,7 +14,7 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.49'
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
@@ -1401,11 +1401,17 @@ class PH5(experiment.ExperimentGroup):
         and returns the time of the earliest and latest samples
         fot a given channel
         '''
-
+        if not component:
+            raise ValueError("Comonent required for get_extent")
         self.read_das_t(das, start, end, reread=False)
+        if das not in self.Das_t:
+            LOGGER.warning("No Das table found for " + das)
+            return None, None
         Das_t = filter_das_t(self.Das_t[das]['rows'], component)
         new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
-
+        if not new_das_t:
+            LOGGER.warning("No Das table found for " + das)
+            return None, None
         earliest_epoch = (float(new_das_t[0]['time/epoch_l']) +
                           float(new_das_t[0]
                                 ['time/micro_seconds_i'])/1000000)
@@ -1419,7 +1425,6 @@ class PH5(experiment.ExperimentGroup):
         latest_epoch = (latest_epoch_start +
                         (float(new_das_t[-1]['sample_count_i'])
                          / true_sample_rate))
-
         return earliest_epoch, latest_epoch
 
     def get_availability(self, das, start=None, end=None,
@@ -1434,11 +1439,15 @@ class PH5(experiment.ExperimentGroup):
         :param component: component channel number
         :return: list of tuples (sample_rate, start, end)
         '''
-
+        if not component:
+            raise ValueError("Comonent required for get_avilability")
         times = []
         previous = []
         gaps = 0
         self.read_das_t(das, start, end, reread=False)
+        if das not in self.Das_t:
+            LOGGER.warning("No Das table found for "+das)
+            return times
         Das_t = filter_das_t(self.Das_t[das]['rows'], component)
         new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
         for d in new_das_t:
@@ -1804,7 +1813,6 @@ def filter_das_t(Das_t, chan):
 
     ret = []
     Das_t = [das_t for das_t in Das_t if das_t['channel_number_i'] == chan]
-
     for das_t in Das_t:
         if not ret:
             ret.append(das_t)

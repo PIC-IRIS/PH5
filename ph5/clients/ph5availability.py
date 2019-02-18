@@ -10,7 +10,7 @@ import sys
 import logging
 from ph5.core import ph5api
 
-PROG_VERSION = '2019.32'
+PROG_VERSION = '2019.49'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -27,7 +27,31 @@ class PH5Availability(object):
 
     def __init__(self, ph5API_object):
         self.ph5 = ph5API_object
+
+        if not self.ph5.Array_t_names:
+            self.ph5.read_array_t_names()
         return
+
+    def process(self):
+        for n in self.ph5.Array_t_names:
+            self.ph5.read_array_t(n)
+        array_names = self.ph5.Array_t_names
+        array_names.sort()
+        for array_name in array_names:
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order']
+            for station in arrayorder:
+                station_list = arraybyid.get(station)
+                for deployment in station_list:
+                    station_entry = station_list[deployment][0]
+                    avail = self.ph5.get_availability(
+                        station_entry["das/serial_number_s"],
+                        station_entry["deploy_time/epoch_l"],
+                        station_entry["pickup_time/epoch_l"],
+                        station_entry["sample_rate_i"],
+                        station_entry["channel_number_i"]
+                    )
+                    print avail
 
 
 def get_args():
@@ -63,7 +87,9 @@ def main():
         sys.exit(-1)
     try:
         ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
-        PH5Availability(ph5API_object)
+        availability = PH5Availability(ph5API_object)
+        availability.process()
+        ph5API_object.close()
 
     except ph5api.APIError as err:
         LOGGER.error(err)
