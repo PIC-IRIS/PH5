@@ -27,7 +27,7 @@ NUM_STREAMS = pn130.NUM_STREAMS
 
 ZIPfileRE = re.compile(
     r".*\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[TtZz][AaIi][RrPp]")
-RAWfileRE = re.compiler(r".*(\w\w\w\w)\.[Cc][Ff]")
+RAWfileRE = re.compile(r".*(\w\w\w\w)\.[Cc][Ff]")
 REFfileRE = re.compile(r".*(\w\w\w\w)\.[Rr][Ee][Ff]")
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
@@ -903,6 +903,8 @@ def writeINDEX():
 def updatePH5(f):
     global EX, EXREC, VERBOSE, PARAMETERS
     global log_array, soh_array
+    sys.stdout.write(":<Processing>: {0}\n".format(f))
+    sys.stdout.flush()
     LOGGER.info("Processing: %s..." % f)
     size_of_data = os.path.getsize(f) * 1.40
     try:
@@ -988,6 +990,8 @@ def updatePH5(f):
 
     if DAS_INFO:
         writeINDEX()
+    sys.stdout.write(":<Finished>: {0}\n".format(f))
+    sys.stdout.flush()
     LOGGER.info(":<Finished>: {0}".format(f))
 
 

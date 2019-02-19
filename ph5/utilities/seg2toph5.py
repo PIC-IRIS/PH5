@@ -525,6 +525,8 @@ def getLOG(Das):
 def main():
     global F, RESP, INDEX_T_DAS
     get_args()
+    import time
+    then = time.time()
     initializeExperiment()
     LOGGER.info("seg2toph5 {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
@@ -536,6 +538,8 @@ def main():
 
     for f in FILES:
         F = f
+        sys.stdout.write(":<Processing>: {0}\n".format(f))
+        sys.stdout.flush()
         LOGGER.info("Processing: {0}...".format(f))
         try:
             with warnings.catch_warnings():
@@ -560,7 +564,11 @@ def main():
                 "{0}. Can't process {1}".format(e.message, f))
             continue
         update_external_references()
-        LOGGER.info(":<Finished>: {0}\n".format(f))
+        sys.stdout.write(":<Finished>: {0}\n".format(f))
+        sys.stdout.flush()
+    seconds = time.time() - then
+    print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
+    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
 
 
 if __name__ == '__main__':
