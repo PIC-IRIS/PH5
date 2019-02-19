@@ -42,6 +42,13 @@ ph5.utilities.dumpfair
  * fix piping bug (issue #270)
 ph5.utilities.seg2toph5
  * fix bug missing variable
+ * Make compatible for pforma
+ph5.utilities.pforma_io
+ * add seg2 to pforma
+ph5.utilities.125atoph5
+ * fix pforma support after LOGGER change
+ph5.utilities.130toph5
+ * fix pforma support after LOGGER change
 
 v4.1.2:
 ph5.utilities.ph5validate
