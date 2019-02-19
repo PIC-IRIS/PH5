@@ -15,7 +15,7 @@ from ph5.core import experiment, timedoy
 
 from obspy import read as readSEG2
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.42"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
@@ -523,8 +523,10 @@ def getLOG(Das):
 
 
 def main():
-    global F
+    global F, RESP, INDEX_T_DAS
     get_args()
+    import time
+    then = time.time()
     initializeExperiment()
     LOGGER.info("seg2toph5 {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
@@ -532,10 +534,12 @@ def main():
     if len(FILES) > 0:
         Resp(EX.ph5_g_responses)
         rows, keys = EX.ph5_g_receivers.read_index()
-        Rows_Keys(rows, keys)
+        INDEX_T_DAS = Rows_Keys(rows, keys)
 
     for f in FILES:
         F = f
+        sys.stdout.write(":<Processing>: {0}\n".format(f))
+        sys.stdout.flush()
         LOGGER.info("Processing: {0}...".format(f))
         try:
             with warnings.catch_warnings():
@@ -560,7 +564,11 @@ def main():
                 "{0}. Can't process {1}".format(e.message, f))
             continue
         update_external_references()
-        LOGGER.info(":<Finished>: {0}\n".format(f))
+        sys.stdout.write(":<Finished>: {0}\n".format(f))
+        sys.stdout.flush()
+    seconds = time.time() - then
+    print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
+    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
 
 
 if __name__ == '__main__':

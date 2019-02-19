@@ -22,8 +22,10 @@ DOT = os.path.join(HOME, '.pforma')
 JSON_DB = 'pforma.json'
 JSON_CFG = 'pforma.cfg'
 
-PROG2INST = {'125atoph5': 'texan', '130toph5': 'rt-130', 'segdtoph5': 'nodal'}
-INST2PROG = {'texan': '125atoph5', 'rt-130': '130toph5', 'nodal': 'segdtoph5'}
+PROG2INST = {'125atoph5': 'texan', '130toph5': 'rt-130',
+             'segdtoph5': 'nodal', 'seg2toph5': 'seg2'}
+INST2PROG = {'texan': '125atoph5', 'rt-130': '130toph5',
+             'nodal': 'segdtoph5', 'seg2': 'seg2toph5'}
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -283,7 +285,7 @@ class FormaIO():
             ret = {}
             for m in self.nmini:
                 ret[m] = {}
-                for typ in ('texan', 'rt-130', 'nodal'):
+                for typ in ('texan', 'rt-130', 'nodal', 'seg2'):
                     of = None
                     outfile = "{0}_{1}{2}.lst".format(
                         typ, str(int(time.time())), m)
@@ -323,6 +325,8 @@ class FormaIO():
                 lists = []
                 instruments = []
                 lst = lsts[m]
+                if not self.M:
+                    self.M = 1
                 ess = i * self.M + 1
                 if 'texan' in lst:
                     lists.append(lst['texan'])
@@ -339,6 +343,15 @@ class FormaIO():
                     cmd.append(
                         "{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format(
                             lst['rt-130'], self.M, ess, clprog))
+
+                if 'seg2' in lst:
+                    lists.append(lst['seg2'])
+                    instruments.append('seg2')
+                    clprog = INST2PROG['seg2']
+                    cmd.append(
+                        "{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format(
+                            lst['seg2'], self.M, ess, clprog))
+
                 if 'nodal' in lst:
                     lists.append(lst['nodal'])
                     instruments.append('nodal')
@@ -735,6 +748,8 @@ def check_sum(filename):
 
 # For type 'texan'
 texanRE = re.compile(r"[Ii](\d\d\d\d).*[Tt][Rr][Dd]")
+# For type 'seg2'
+seg2RE = re.compile(r"(\d+)\.dat")
 # For type 'rt-130'
 rt130RE = re.compile(r"\d\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[Zz][Ii][Pp]")
 # For type 'nodal'
@@ -768,7 +783,10 @@ def guess_instrument_type(filename):
     mo = simpletonodalRE.match(filename)
     if mo:
         return 'nodal', 'lllsss'
-
+    mo = seg2RE.match(filename)
+    if mo:
+        das = mo.groups()[0]
+        return 'seg2', das
     return 'unknown', None
 
 
