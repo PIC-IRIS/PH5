@@ -18,7 +18,7 @@ import logging
 from ph5.core import ph5api, timedoy
 from ph5.core.columns import PH5VERSION as ph5version
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.050'
 LOGGER = logging.getLogger(__name__)
 
 # Match lines related to timing in SOH
@@ -36,7 +36,7 @@ timefromRE = re.compile(
 
 
 def get_args():
-    global ARGS, OFILE
+    # global ARGS, OFILE
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -72,12 +72,14 @@ def get_args():
     # define OFILE to write output
     o_filename = ARGS.output_file
     if o_filename is None:
-        OFILE = None
+        ofile = None
     else:
-        OFILE = open(o_filename, 'w')
+        ofile = open(o_filename, 'w')
+
+    return ARGS, ofile
 
 
-def read_soh(das_group):
+def read_soh(P5, das_group):
     '''   Read SOH text from SOH_a_[n] into a list
     '''
     P5.ph5_g_receivers.setcurrent(das_group)
@@ -164,34 +166,36 @@ def parse_tos_froms(tos, fos):
 #
 # Print out report
 #
-def print_report(text):
-    global OFILE
-    if OFILE is None:
+def print_report(ofile, text):
+    if ofile is None:
         print(text)
     else:
-        OFILE.write(text + '\n')
+        ofile.write(text + '\n')
 
 
-def print_kef(das, clock):
+def print_kef(ofile, das, clock):
     '''   Print Time_t info for this DAS
     '''
     if clock[0] is None:
         return
     tdoy_start = clock[0]
     tdoy_end = clock[1]
-    print_report("/Experiment_g/Receivers_g/Time_t")
-    print_report("\tdas/serial_number_s = %s" % das)
-    print_report("\tstart_time/epoch_l = %d" % tdoy_start.epoch())
-    print_report("\tstart_time/micro_seconds_i = %d"
+    print_report(ofile, "/Experiment_g/Receivers_g/Time_t")
+    print_report(ofile, "\tdas/serial_number_s = %s" % das)
+    print_report(ofile, "\tstart_time/epoch_l = %d" % tdoy_start.epoch())
+    print_report(ofile, "\tstart_time/micro_seconds_i = %d"
                  % tdoy_start.microsecond())
-    print_report("\tstart_time/ascii_s = %s" % time.ctime(tdoy_start.epoch()))
-    print_report("\tstart_time/type_s = BOTH")
-    print_report("\tend_time/epoch_l = %d" % tdoy_end.epoch())
-    print_report("\tend_time/micro_seconds_i = %d" % tdoy_end.microsecond())
-    print_report("\tend_time/ascii_s = %s" % time.ctime(tdoy_end.epoch()))
-    print_report("\tend_time/type_s = BOTH")
-    print_report("\tslope_d = %g" % clock[2])
-    print_report("\toffset_d = %g" % clock[3])
+    print_report(
+        ofile, "\tstart_time/ascii_s = %s" % time.ctime(tdoy_start.epoch()))
+    print_report(ofile, "\tstart_time/type_s = BOTH")
+    print_report(ofile, "\tend_time/epoch_l = %d" % tdoy_end.epoch())
+    print_report(
+        ofile, "\tend_time/micro_seconds_i = %d" % tdoy_end.microsecond())
+    print_report(
+        ofile, "\tend_time/ascii_s = %s" % time.ctime(tdoy_end.epoch()))
+    print_report(ofile, "\tend_time/type_s = BOTH")
+    print_report(ofile, "\tslope_d = %g" % clock[2])
+    print_report(ofile, "\toffset_d = %g" % clock[3])
 
 
 def report(stats, no_cor):
@@ -224,8 +228,7 @@ def report(stats, no_cor):
 
 
 def main():
-    global P5, OFILE
-    get_args()
+    ARGS, ofile = get_args()
     try:
         P5 = ph5api.PH5(path=ARGS.ph5_path, nickname=ARGS.ph5_file_prefix)
     except Exception:
@@ -238,14 +241,14 @@ def main():
     # DAS, start time, end time, drift slope, offset
     stats = ([], [], [], [], [])
     no_cor = []
-    print_report("#   Written by time-gef-gen v{0}, PH5 v{1}".
+    print_report(ofile, "#   Written by time-gef-gen v{0}, PH5 v{1}".
                  format(PROG_VERSION, ph5version))
     for d in dass:
         das = d[6:]
-        soh = read_soh(dasGroups[d])
+        soh = read_soh(P5, dasGroups[d])
         tos, fos = process_soh(soh)
         clock = parse_tos_froms(tos, fos)
-        print_kef(das, clock)
+        print_kef(ofile, das, clock)
         if clock[0] is None:
             no_cor.append(das)
             continue
@@ -260,8 +263,8 @@ def main():
         report(stats, no_cor)
 
     P5.close()
-    if OFILE is not None:
-        OFILE.close()
+    if ofile is not None:
+        ofile.close()
 
 
 if __name__ == '__main__':

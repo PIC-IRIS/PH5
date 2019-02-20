@@ -11,13 +11,13 @@ import argparse
 import string
 import logging
 import time
+import re
 # This provides the base functionality
 from ph5.core import experiment
 
 # Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2019.043'
-logging.basicConfig()
+PROG_VERSION = '2019.051'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -27,9 +27,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 def init_local():
-    global EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T
-    global ARRAY_T, DAS_T
-    global RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, TABLE_KEY
     # /Experiment_g/Experiment_t
     EXPERIMENT_T = None
     # /Experiment_g/Sorts_g/Event_t
@@ -61,6 +58,10 @@ def init_local():
     TIME_T = None
     #
     TABLE_KEY = None
+
+    return EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T, \
+        ARRAY_T, DAS_T, RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, \
+        TABLE_KEY
 
 
 #
@@ -101,11 +102,7 @@ class Das_Groups(object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, \
-        EVENT_TABLE, ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, \
-        RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, TABLE_KEY, INDEX_TABLE, \
-        M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS, OFILE
-
+    print("get_args")
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
@@ -228,7 +225,6 @@ def get_args():
     TIME_TABLE = args.time_t
     INDEX_TABLE = args.index_t
     M_INDEX_TABLE = args.m_index_t
-    TABLE_KEY = args.update_key
     ARRAY_TABLE = args.array_t_
     ALL_ARRAYS = args.all_arrays
     ALL_EVENTS = args.all_events
@@ -252,25 +248,29 @@ def get_args():
     else:
         OFILE = open(o_filename, 'w')
 
+    return PH5, PATH, OFILE, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, \
+        OFFSET_TABLE, EVENT_TABLE, ALL_EVENTS, ARRAY_TABLE, ALL_ARRAYS, \
+        RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, \
+        INDEX_TABLE, M_INDEX_TABLE
+
 #
 # Initialize ph5 file
 #
 
 
-def initialize_ph5(editmode=False):
+def initialize_ph5(PATH, PH5, editmode=False):
     '''   Initialize the ph5 file   '''
-    global EX, PATH, PH5
 
     EX = experiment.ExperimentGroup(PATH, PH5)
     EX.ph5open(editmode)
     EX.initgroup()
+    return EX
 
 
 #
 # Print out report
 #
-def print_report(text):
-    global OFILE
+def print_report(OFILE, text):
     if OFILE is None:
         print(text)
     else:
@@ -280,10 +280,7 @@ def print_report(text):
 #
 # Print Rows_Keys
 #
-def table_print(t, a, fh=None):
-    global TABLE_KEY
-    global PATH
-    global EX
+def table_print(EX, PATH, TABLE_KEY, OFILE, t, a, fh=None):
     i = 0
     s = ''
     s = s + \
@@ -303,34 +300,31 @@ def table_print(t, a, fh=None):
         for k in a.keys:
             s = s + "\t" + str(k) + "=" + str(r[k]) + "\n"
         if fh is None:
-            print_report(s)
+            print_report(OFILE, s)
             s = ''
         else:
             fh.write(s)
             s = ''
 
 
-def read_time_table():
-    global EX, TIME_T
-
+def read_time_table(EX, TIME_T):
     times, time_keys = EX.ph5_g_receivers.read_time()
 
     TIME_T = Rows_Keys(times, time_keys)
+    return TIME_T
 
 
-def read_report_table():
-    global EX, REPORT_T
-
+def read_report_table(EX, REPORT_T):
     reports, report_keys = EX.ph5_g_reports.read_reports()
 
     rowskeys = Rows_Keys(reports, report_keys)
 
     REPORT_T = rowskeys
+    return REPORT_T
 
 
-def read_experiment_table():
+def read_experiment_table(EX, EXPERIMENT_T):
     '''   Read /Experiment_g/Experiment_t   '''
-    global EX, EXPERIMENT_T
 
     exp, exp_keys = EX.read_experiment()
 
@@ -338,10 +332,11 @@ def read_experiment_table():
 
     EXPERIMENT_T = rowskeys
 
+    return EXPERIMENT_T
 
-def read_event_table():
+
+def read_event_table(EX, EVENT_TABLE, EVENT_T):
     '''   Read /Experiment_g/Sorts_g/Event_t   '''
-    global EX, EVENT_T
 
     if EVENT_TABLE == 0:
         T = "Event_t"
@@ -357,10 +352,10 @@ def read_event_table():
 
     EVENT_T[T] = rowskeys
 
+    return EVENT_T
 
-def read_all_event_table():
-    global EX, EVENT_T
-    import re
+
+def read_all_event_table(EX, EVENT_T):
     EVENT_T_NAME_RE = re.compile("Event_t.*")
 
     names = EX.ph5_g_sorts.namesRE(EVENT_T_NAME_RE)
@@ -373,11 +368,11 @@ def read_all_event_table():
 
         rowskeys = Rows_Keys(events, event_keys)
         EVENT_T[name] = rowskeys
+    return EVENT_T
 
 
-def read_offset_table():
+def read_offset_table(EX, OFFSET_TABLE, OFFSET_T):
     '''   Read /Experinent_t/Sorts_g/Offset_t   '''
-    global EX, OFFSET_T
 
     if OFFSET_TABLE[0] == 0 or OFFSET_TABLE[1] == 0:
         name = "Offset_t"
@@ -391,22 +386,22 @@ def read_offset_table():
         return
 
     OFFSET_T[name] = Rows_Keys(rows, keys)
+    return OFFSET_T
 
 
-def read_sort_table():
+def read_sort_table(EX, SORT_T):
     '''   Read /Experiment_t/Sorts_g/Sort_g   '''
-    global EX, SORT_T
 
     sorts, sorts_keys = EX.ph5_g_sorts.read_sorts()
 
     rowskeys = Rows_Keys(sorts, sorts_keys)
 
     SORT_T = rowskeys
+    return SORT_T
 
 
-def read_sort_arrays():
+def read_sort_arrays(EX, ARRAY_T):
     '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
-    global EX, ARRAY_T
 
     # We get a list of Array_t_[n] names here...
     # (these are also in Sort_t)
@@ -417,45 +412,42 @@ def read_sort_arrays():
         rowskeys = Rows_Keys(arrays, array_keys)
         # We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
+    return ARRAY_T
 
 
-def read_response_table():
+def read_response_table(EX, RESPONSE_T):
     '''   Read /Experiment_g/Respones_g/Response_t   '''
-    global EX, RESPONSE_T
 
     response, response_keys = EX.ph5_g_responses.read_responses()
 
     rowskeys = Rows_Keys(response, response_keys)
 
     RESPONSE_T = rowskeys
+    return RESPONSE_T
 
 
-def read_receiver_table():
-    global EX, RECEIVER_T
-
-    # Read /Experiment_g/Receivers_g/Receiver_t
+def read_receiver_table(EX, RECEIVER_T):
+    """   Read /Experiment_g/Receivers_g/Receiver_t   """
     receiver, receiver_keys = EX.ph5_g_receivers.read_receiver()
     rowskeys = Rows_Keys(receiver, receiver_keys)
     RECEIVER_T = rowskeys
+    return RECEIVER_T
 
 
-def read_index_table():
-    global EX, INDEX_T
-
+def read_index_table(EX, INDEX_T):
     rows, keys = EX.ph5_g_receivers.read_index()
     INDEX_T = Rows_Keys(rows, keys)
+    return INDEX_T
 
 
-def read_m_index_table():
-    global EX, M_INDEX_T
-
+def read_m_index_table(EX, M_INDEX_T):
     rows, keys = EX.ph5_g_maps.read_index()
     M_INDEX_T = Rows_Keys(rows, keys)
+    return M_INDEX_T
 
 
-def read_receivers(das=None):
+def read_receivers(EX, DAS_T, RECEIVER_T, DASS, SOH_A, das=None):
     '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
-    global EX, DAS_T, RECEIVER_T, DASS, SOH_A
 
     dasGroups = EX.ph5_g_receivers.alldas_g()
     if das is None:
@@ -485,6 +477,7 @@ def read_receivers(das=None):
 
         # Read SOH file(s) for this das
         SOH_A[d] = EX.ph5_g_receivers.read_soh()
+    return DAS_T
 
 
 #####################################################
@@ -494,53 +487,42 @@ def read_receivers(das=None):
 # read data from exp(PH5) to use for KefUtility => KefEdit.py
 
 
-def readPH5(exp, filename, path, tableType, arg=None):
-    # print "readPH5"
-    global EX, OFFSET_TABLE, EVENT_TABLE, ARRAY_TABLE, OFFSET_T, EVENT_T,\
-        ARRAY_T
-    global DAS_T, DASS, SOH_A
-    init_local()  # innitiate values and clear cache
+def readPH5(EX, filename, PATH, tableType, arg=None):
 
-    EX = exp
+    EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T, \
+        ARRAY_T, DAS_T, RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, \
+        TABLE_KEY = init_local()  # innitiate values and clear cache
 
     if tableType == "Experiment_t":
-        read_experiment_table()
-        return EXPERIMENT_T
+        return read_experiment_table(EX, EXPERIMENT_T)
 
     if tableType == "Sort_t":
-        read_sort_table()
-        return SORT_T
+        return read_sort_table(EX, SORT_T)
 
     if tableType == "Offset_t":
         if arg == "Offset_t":
             OFFSET_TABLE = [0]
         else:
             OFFSET_TABLE = map(int, arg.split("_"))
-        # read_offset_table() will read from global var. OFFSET_TABLE to add
-        # new item into dict. OFFSET_T
-        read_offset_table()
-        return OFFSET_T
+
+        return read_offset_table(EX, OFFSET_TABLE, OFFSET_T)
 
     if tableType == "All_Offset_t":
         for o in EX.Offset_t_names:
             if o == "Offset_t":
                 OFFSET_TABLE = [0]
-                read_offset_table()
+                OFFSET_T = read_offset_table(EX, OFFSET_TABLE, OFFSET_T)
                 break
             OFFSET_TABLE = map(int, o.replace("Offset_t_", "").split("_"))
-            read_offset_table()
+            OFFSET_T = read_offset_table(EX, OFFSET_TABLE, OFFSET_T)
         return OFFSET_T
 
     if tableType == "Event_t":
         EVENT_TABLE = int(arg)
-
-        # read_event_table() will read from global var. EVENT_TABLE to add new
-        # item into dict. EVENT_T
         try:
-            read_event_table()
+            return read_event_table(EX, EVENT_TABLE, EVENT_T)
         except Exception, e:
             raise e
-        return EVENT_T
 
     if tableType == "All_Event_t":
 
@@ -550,27 +532,24 @@ def readPH5(exp, filename, path, tableType, arg=None):
             else:
                 EVENT_TABLE = int(n.replace('Event_t_', ''))
             try:
-                read_event_table()
+                EVENT_T = read_event_table(EX, EVENT_TABLE, EVENT_T)
             except Exception, e:
                 raise e
         return EVENT_T
 
     if tableType == "Index_t":
-        read_index_table()
-        return INDEX_T
+        return read_index_table(EX, INDEX_T)
 
     if tableType == "Map_Index_t":
-        read_m_index_table()
-        return M_INDEX_T
+        return read_m_index_table(EX, M_INDEX_T)
 
     if tableType == "Time_t":
-        read_time_table()
-        return TIME_T
+        return read_time_table(EX, TIME_T)
 
     if tableType == "Array_t":
         ARRAY_TABLE = arg
-        read_sort_table()
-        read_sort_arrays()
+        read_sort_table(EX, SORT_T)
+        ARRAY_T = read_sort_arrays(EX, ARRAY_T)
         arrays = ARRAY_T.keys()
         for a in arrays:
             n = int(string.split(a, '_')[2])
@@ -578,122 +557,147 @@ def readPH5(exp, filename, path, tableType, arg=None):
                 return ARRAY_T[a]
 
     if tableType == "All_Array_t":
-        read_sort_table()
-        read_sort_arrays()
-        arrays = ARRAY_T.keys()
+        read_sort_table(EX, SORT_T)
+        ARRAY_T = read_sort_arrays(EX, ARRAY_T)
         return ARRAY_T
 
     if tableType == "Response_t":
-        read_response_table()
-        return RESPONSE_T
+        return read_response_table(EX, RESPONSE_T)
 
     if tableType == "Report_t":
-        read_report_table()
-        return REPORT_T
+        return read_report_table(EX, REPORT_T)
 
     if tableType == "Receiver_t":
-        read_receiver_table()
-        return RECEIVER_T
+        return read_receiver_table(EX, RECEIVER_T)
 
     if tableType == "Das_t":
-        read_receivers(arg)
-        return DAS_T
+        return read_receivers(EX, DAS_T, RECEIVER_T, DASS, SOH_A, arg)
 
 
 def main():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
-        EVENT_TABLE, \
-        ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE,\
-        TIME_TABLE, INDEX_TABLE
-
-    init_local()
+    EXPERIMENT_T, EVENT_T, OFFSET_T, SORT_T, RESPONSE_T, REPORT_T, \
+        ARRAY_T, DAS_T, RECEIVER_T, SOH_A, INDEX_T, M_INDEX_T, DASS, TIME_T, \
+        TABLE_KEY = init_local()  # innitiate values and clear cache
 
     try:
-        get_args()
+        PH5, PATH, OFILE, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+            EVENT_TABLE, ALL_EVENTS, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, \
+            REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, INDEX_TABLE, \
+            M_INDEX_TABLE = get_args()
     except Exception, err_msg:
         LOGGER.error(err_msg)
         return 1
 
-    initialize_ph5()
+    EX = initialize_ph5(PATH, PH5)
 
     if EXPERIMENT_TABLE:
-        read_experiment_table()
-        table_print("/Experiment_g/Experiment_t", EXPERIMENT_T)
+        EXPERIMENT_T = read_experiment_table(EX, EXPERIMENT_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Experiment_t", EXPERIMENT_T)
 
     if SORT_TABLE:
-        read_sort_table()
-        table_print("/Experiment_g/Sorts_g/Sort_t", SORT_T)
+        SORT_T = read_sort_table(EX, SORT_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Sorts_g/Sort_t", SORT_T)
 
     if OFFSET_TABLE:
-        read_offset_table()
+        read_offset_table(EX, OFFSET_TABLE, OFFSET_T)
         keys = OFFSET_T.keys()
         for k in keys:
-            table_print("/Experiment_g/Sorts_g/{0}".format(k), OFFSET_T[k])
+            table_print(
+                EX, PATH, TABLE_KEY, OFILE,
+                "/Experiment_g/Sorts_g/{0}".format(k), OFFSET_T[k])
 
     if EVENT_TABLE is not None:
         try:
-            read_event_table()
+            EVENT_T = read_event_table(EX, EVENT_TABLE, EVENT_T)
         except Exception, err_msg:
             LOGGER.error(err_msg)
             return 1
         keys = EVENT_T.keys()
         for k in keys:
-            table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
+            table_print(
+                EX, PATH, TABLE_KEY, OFILE,
+                "/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
+
     elif ALL_EVENTS is not False:
-        read_all_event_table()
+        read_all_event_table(EX, EVENT_T)
         keys = EVENT_T.keys()
         for k in keys:
-            table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
+            table_print(
+                EX, PATH, TABLE_KEY, OFILE,
+                "/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
 
     if INDEX_TABLE:
-        read_index_table()
-        table_print("/Experiment_g/Receivers_g/Index_t", INDEX_T)
+        INDEX_T = read_index_table(EX, INDEX_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Receivers_g/Index_t", INDEX_T)
 
     if M_INDEX_TABLE:
-        read_m_index_table()
-        table_print("/Experiment_g/Maps_g/Index_t", M_INDEX_T)
+        M_INDEX_T = read_m_index_table(EX, M_INDEX_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Maps_g/Index_t", M_INDEX_T)
 
     if TIME_TABLE:
-        read_time_table()
-        table_print("/Experiment_g/Receivers_g/Time_t", TIME_T)
+        TIME_T = read_time_table(EX, TIME_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Receivers_g/Time_t", TIME_T)
 
     if ARRAY_TABLE:
         if not SORT_T:
-            read_sort_table()
+            read_sort_table(EX, SORT_T)
 
-        read_sort_arrays()
+        ARRAY_T = read_sort_arrays(EX, ARRAY_T)
         arrays = ARRAY_T.keys()
         for a in arrays:
             n = int(string.split(a, '_')[2])
             if n == int(ARRAY_TABLE):
-                table_print("/Experiment_g/Sorts_g/" + a, ARRAY_T[a])
-    elif ALL_ARRAYS:
-        if not SORT_T:
-            read_sort_table()
+                table_print(
+                    EX, PATH, TABLE_KEY, OFILE,
+                    "/Experiment_g/Sorts_g/" + a, ARRAY_T[a])
 
-        read_sort_arrays()
+    elif ALL_ARRAYS:
+        print("ALL_ARRAYS:", ALL_ARRAYS)
+        if not SORT_T:
+            read_sort_table(EX, SORT_T)
+
+        ARRAY_T = read_sort_arrays(EX, ARRAY_T)
         arrays = ARRAY_T.keys()
         for a in arrays:
-            table_print("/Experiment_g/Sorts_g/" + a, ARRAY_T[a])
+            table_print(
+                EX, PATH, TABLE_KEY, OFILE,
+                "/Experiment_g/Sorts_g/" + a, ARRAY_T[a])
 
     if RESPONSE_TABLE:
-        read_response_table()
-        table_print("/Experiment_g/Responses_g/Response_t", RESPONSE_T)
+        RESPONSE_T = read_response_table(EX, RESPONSE_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Responses_g/Response_t", RESPONSE_T)
 
     if REPORT_TABLE:
-        read_report_table()
-        table_print("/Experiment_g/Reports_g/Report_t", REPORT_T)
+        REPORT_T = read_report_table(EX, REPORT_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Reports_g/Report_t", REPORT_T)
 
     if RECEIVER_TABLE:
-        read_receiver_table()
-        table_print("/Experiment_g/Receivers_g/Receiver_t", RECEIVER_T)
+        RECEIVER_T = read_receiver_table(EX, RECEIVER_T)
+        table_print(
+            EX, PATH, TABLE_KEY, OFILE,
+            "/Experiment_g/Receivers_g/Receiver_t", RECEIVER_T)
 
     if DAS_TABLE:
-        read_receivers(DAS_TABLE)
+        DAS_T = read_receivers(EX, DAS_T, RECEIVER_T, DASS, SOH_A, DAS_TABLE)
         dass = DAS_T.keys()
         for d in dass:
-            table_print("/Experiment_g/Receivers_g/Das_g_" +
-                        d + "/Das_t", DAS_T[d])
+            table_print(
+                EX, PATH, TABLE_KEY, OFILE,
+                "/Experiment_g/Receivers_g/Das_g_" + d + "/Das_t", DAS_T[d])
 
     EX.ph5close()
     if OFILE is not None:

@@ -32,24 +32,24 @@ class Watchdog:
 if __name__ == '__main__':
     wd = None
     import time
-    import sys
 
-    def goHere():
-        global go
-        go = False
-        print "Done"
-        sys.exit()
+    class Test():
+        def __init__(self):
+            self.go = True
 
-    def loop():
-        global go
-        try:
-            while go:
-                print '.'
-                time.sleep(1)
-        except BaseException:
+        def goHere(self):
+            self.go = False
             print "Done"
 
-    wd = Watchdog(23, userHandler=goHere)
-    go = True
+        def loop(self):
+            try:
+                while self.go:
+                    print "."
+                    time.sleep(1)
+            except BaseException:
+                print "Done"
+
+    t = Test()
+    wd = Watchdog(13, userHandler=t.goHere)
     wd.start()
-    loop()
+    t.loop()

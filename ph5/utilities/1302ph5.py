@@ -18,7 +18,7 @@ import re
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, kef, pn130, timedoy
 
-PROG_VERSION = '2019.049'
+PROG_VERSION = '2019.051'
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 4  # 2GB (1024 X 1024 X 1024 X 4)
@@ -85,7 +85,7 @@ class Resp(object):
         return len(self.lines)
 
 
-def read_infile(infile, files):
+def read_infile(infile, FILES):
     try:
         fh = file(infile)
     except BaseException:
@@ -111,17 +111,17 @@ def read_infile(infile, files):
             LOGGER.warning("File does not exist: {0}".format(line))
             continue
 
-        files.append(line)
+        FILES.append(line)
 
-    return files
+    return FILES
 
 
-def read_windows_file(f):
+def read_windows_file(F):
     '''   Window start time   Window length
           YYYY:JJJ:HH:MM:SS   SSSS   '''
     w = []
     try:
-        fh = open(f)
+        fh = open(F)
     except BaseException:
         return w
 
@@ -207,7 +207,7 @@ def read_par_file(file):
        Read parameter file containing: das;station;netcode;channel;loccode;
        encoding;samplerate;gain
     '''
-    parameters = {}
+    PARAMETERS = {}
     try:
         fh = open(file)
     except BaseException:
@@ -267,9 +267,9 @@ def read_par_file(file):
         if 'gain' in order:
             par.gain = string.strip(flds[order['gain']])
 
-        parameters[id] = par
+        PARAMETERS[id] = par
 
-    return parameters
+    return PARAMETERS
 
 
 def get_args():
@@ -352,12 +352,12 @@ def get_args():
                         default=False)
     args = parser.parse_args()
 
-    files = []
+    FILES = []
     PH5 = None
     SR = args.samplerate
-    num_mini = args.num_mini
-    first_mini = args.first_mini
-    verbose = args.verbose
+    NUM_MINI = args.num_mini
+    FIRST_MINI = args.first_mini
+    VERBOSE = args.verbose
     DEBUG = args.debug
 
     if DEBUG:
@@ -370,35 +370,35 @@ def get_args():
         LOGGER.addHandler(ch)
 
     if args.debug:
-        verbose = 2
+        VERBOSE = 2
 
     if args.infile is not None:
-        files = read_infile(args.infile, files)
+        FILES = read_infile(args.infile, FILES)
 
     elif args.rawfile is not None:
-        files.append(args.rawfile)
+        FILES.append(args.rawfile)
 
     if args.outfile is not None:
         PH5 = args.outfile
 
     if args.windows_file is not None:
-        windows = read_windows_file(args.windows_file)
+        WINDOWS = read_windows_file(args.windows_file)
     else:
-        windows = None
+        WINDOWS = None
 
     if args.doprint is not False:
-        ex = experiment.ExperimentGroup()
-        ex.ph5open(True)
-        ex.initgroup()
-        ex.ph5close()
+        EX = experiment.ExperimentGroup()
+        EX.ph5open(True)
+        EX.initgroup()
+        EX.ph5close()
         return 1
 
     if args.par_file is not None:
-        parameters = read_par_file(args.par_file)
-        if not parameters:
+        PARAMETERS = read_par_file(args.par_file)
+        if not PARAMETERS:
             raise Exception("Failed to read: {0}".format(args.par_file))
     else:
-        parameters = {}
+        PARAMETERS = {}
 
     if PH5 is None:
         raise Exception("Missing required option. Try --help")
@@ -415,16 +415,16 @@ def get_args():
         formatter = logging.Formatter(LOGGING_FORMAT)
         ch.setFormatter(formatter)
         LOGGER.addHandler(ch)
-    return files, PH5, windows, parameters, SR, num_mini, first_mini, \
-        verbose, DEBUG
+    return FILES, PH5, WINDOWS, PARAMETERS, SR, NUM_MINI, FIRST_MINI, \
+        VERBOSE, DEBUG
 
 
 def initializeExperiment(nickname):
-    ex = experiment.ExperimentGroup(nickname=nickname)  # PH5 nickname
+    EX = experiment.ExperimentGroup(nickname=nickname)  # PH5 nickname
     EDIT = True
-    ex.ph5open(EDIT)
-    ex.initgroup()
-    return ex
+    EX.ph5open(EDIT)
+    EX.initgroup()
+    return EX
 
 
 def populateExperimentTable(keffile):
@@ -435,31 +435,31 @@ def populateExperimentTable(keffile):
     k.close()
 
 
-def closePH5(ex, exrec):
+def closePH5(EX, EXREC):
     try:
-        ex.ph5close()
-        exrec.ph5close()
+        EX.ph5close()
+        EXREC.ph5close()
     except BaseException:
         pass
 
 
-def update_index_t_info(exrec, DAS_info, starttime, samples, sps):
-    ph5file = exrec.filename
+def update_index_t_info(EXREC, DAS_INFO, starttime, samples, sps):
+    ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
-              exrec.ph5_g_receivers.current_g_das._v_name
+              EXREC.ph5_g_receivers.current_g_das._v_name
     das = ph5path[32:]
     stoptime = starttime + (float(samples) / float(sps))
     di = Index_t_Info(das, ph5file, ph5path, starttime, stoptime)
-    if das not in DAS_info:
-        DAS_info[das] = []
+    if das not in DAS_INFO:
+        DAS_INFO[das] = []
 
-    DAS_info[das].append(di)
+    DAS_INFO[das].append(di)
     LOGGER.info(
         "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
 
-def gwriteEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
+def gwriteEvent(points, event, F, EX, EXREC, SR, DEBUG, RESP, DAS_INFO):
     '''   Create an event list with all the gaps and overlaps cleansed   '''
 
     def clone(event):
@@ -526,10 +526,10 @@ def gwriteEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
             tdoy1 = tdoy0 + secs
             event[c].trace = []
 
-    writeEvent(points, clean_event, f, ex, exrec, SR, DEBUG, resp, DAS_info)
+    writeEvent(points, clean_event, F, EX, EXREC, SR, DEBUG, RESP, DAS_INFO)
 
 
-def writeEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
+def writeEvent(points, event, F, EX, EXREC, SR, DEBUG, RESP, DAS_INFO):
     p_das_t = {}
     p_response_t = {}
 
@@ -587,28 +587,28 @@ def writeEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
                 p_response_t[
                     'bit_weight/value_d'] = float(event[c].bitWeight[:-2])
 
-                n_i = resp.match(
+                n_i = RESP.match(
                     p_response_t['bit_weight/value_d'],
                     p_response_t['gain/value_i'])
                 if n_i < 0:
-                    resp.update()
-                    n_i = resp.next_i()
+                    RESP.update()
+                    n_i = RESP.next_i()
                     p_response_t['n_i'] = n_i
-                    ex.ph5_g_responses.populateResponse_t(p_response_t)
-                    resp.update()
+                    EX.ph5_g_responses.populateResponse_t(p_response_t)
+                    RESP.update()
             except Exception as e:
                 LOGGER.error(
                     "Bit weight undefined. Can't convert '{1:s}'. "
                     "Exception: {0:s}".format(e, event[c].bitWeight))
 
             # Check to see if group exists for this das, if not build it
-            das_g, das_t, receiver_t, time_t = exrec.ph5_g_receivers.newdas(
+            das_g, das_t, receiver_t, time_t = EXREC.ph5_g_receivers.newdas(
                 das_number)
             # Fill in das_t
-            p_das_t['raw_file_name_s'] = os.path.basename(f)
-            p_das_t['array_name_SOH_a'] = exrec.ph5_g_receivers.nextarray(
+            p_das_t['raw_file_name_s'] = os.path.basename(F)
+            p_das_t['array_name_SOH_a'] = EXREC.ph5_g_receivers.nextarray(
                 'SOH_a_')
-            p_das_t['array_name_log_a'] = exrec.ph5_g_receivers.nextarray(
+            p_das_t['array_name_log_a'] = EXREC.ph5_g_receivers.nextarray(
                 'Log_a_')
             p_das_t['response_table_n_i'] = n_i
             p_das_t['receiver_table_n_i'] = c
@@ -644,13 +644,13 @@ def writeEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
                                               0].milliseconds * 1000
             # XXX   Need to check if array name exists and generate unique
             # name.   XXX
-            p_das_t['array_name_data_a'] = exrec.ph5_g_receivers.nextarray(
+            p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
                 'Data_a_')
             # XXX   Write data   XXX
             t = event[c].trace[ii][0]
             if DEBUG:
                 tcount = len(t.trace)
-            earray = exrec.ph5_g_receivers.newarray(
+            earray = EXREC.ph5_g_receivers.newarray(
                 p_das_t['array_name_data_a'], t.trace, dtype='int32')
             for t in event[c].trace[ii][1:]:
                 if DEBUG:
@@ -670,11 +670,11 @@ def writeEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
                         tcount))
             # XXX   This should be changed to handle exceptions   XXX
             p_das_t['sample_count_i'] = earray.nrows
-            exrec.ph5_g_receivers.populateDas_t(p_das_t)
+            EXREC.ph5_g_receivers.populateDas_t(p_das_t)
             if p_das_t['channel_number_i'] == 1:
                 update_index_t_info(
-                    exrec,
-                    DAS_info,
+                    EXREC,
+                    DAS_INFO,
                     p_das_t['time/epoch_l'] +
                     (float(p_das_t['time/micro_seconds_i']) / 1000000.),
                     p_das_t['sample_count_i'],
@@ -682,53 +682,52 @@ def writeEvent(points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info):
                     / float(p_das_t['sample_rate_multiplier_i']))
 
 
-def writeSOH(soh, ex, exrec):
-
+def writeSOH(soh, EX, EXREC):
     # Check to see if any data has been written
-    if exrec.ph5_g_receivers.current_g_das is None or\
-            ex.ph5_g_receivers.current_t_das is None:
+    if EXREC.ph5_g_receivers.current_g_das is None or\
+            EX.ph5_g_receivers.current_t_das is None:
         return
 
-    name = exrec.ph5_g_receivers.nextarray('SOH_a_')
+    name = EXREC.ph5_g_receivers.nextarray('SOH_a_')
 
-    exrec.ph5_g_receivers.newarray(
+    EXREC.ph5_g_receivers.newarray(
         name, soh, description="RT-130 State of Health")
 
 
-def getSOH(exrec):
+def getSOH(EXREC):
 
     try:
-        name = exrec.ph5_g_receivers.nextarray('SOH_a_')
+        name = EXREC.ph5_g_receivers.nextarray('SOH_a_')
     except TypeError:
         return None
     except AttributeError:
         return None
 
-    soh_array = exrec.ph5_g_receivers.newearray(
+    soh_array = EXREC.ph5_g_receivers.newearray(
         name, description="RT-130 SOH entries", expectedrows=30000)
 
     return soh_array
 
 
-def getLOG(exrec):
+def getLOG(EXREC):
     try:
-        name = exrec.ph5_g_receivers.nextarray('Log_a_')
+        name = EXREC.ph5_g_receivers.nextarray('Log_a_')
     except TypeError:
         return None
     except AttributeError:
         return None
 
-    log_array = exrec.ph5_g_receivers.newearray(
+    log_array = EXREC.ph5_g_receivers.newearray(
         name, description="RT-130 log entries", expectedrows=30000)
 
     return log_array
 
 
-def window_contained(e, windows):
+def window_contained(e, WINDOWS):
     '''   Is this event in the data we want to keep?   '''
 
     # We want to keep all the data
-    if windows is None:
+    if WINDOWS is None:
         return True
 
     if not e:
@@ -752,7 +751,7 @@ def window_contained(e, windows):
          float(sample_rate)) +
         event_start_epoch)
 
-    for w in windows:
+    for w in WINDOWS:
         window_start_epoch = w[0]
         window_stop_epoch = w[1]
 
@@ -774,14 +773,14 @@ def window_contained(e, windows):
 
 def openPH5(filename):
     LOGGER.info("Opening: {0}".format(filename))
-    exrec = experiment.ExperimentGroup(nickname=filename)
-    exrec.ph5open(True)
-    exrec.initgroup()
-    return exrec
+    EXREC = experiment.ExperimentGroup(nickname=filename)
+    EXREC.ph5open(True)
+    EXREC.initgroup()
+    return EXREC
 
 
-def get_current_data_only(size_of_data, num_mini, first_mini,
-                          index_t, current_DAS, das=None):
+def get_current_data_only(size_of_data, NUM_MINI, FIRST_MINI,
+                          INDEX_T, CURRENT_DAS, das=None):
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
@@ -801,12 +800,12 @@ def get_current_data_only(size_of_data, num_mini, first_mini,
 
         return tiny
 
-    das = str(current_DAS)
+    das = str(CURRENT_DAS)
     # newest = 0
     newestfile = ''
     # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
-    for index_t in index_t.rows:
+    for index_t in INDEX_T.rows:
         # This DAS already exists in a ph5 file
         if index_t['serial_number_s'] == das:
             newestfile = sstripp(index_t['external_file_name_s'])
@@ -819,12 +818,12 @@ def get_current_data_only(size_of_data, num_mini, first_mini,
 
     if not newestfile:
         # This is the first file added
-        return openPH5('miniPH5_{0:05d}'.format(first_mini))
+        return openPH5('miniPH5_{0:05d}'.format(FIRST_MINI))
 
     size_of_exrec = os.path.getsize(newestfile + '.ph5')
-    if num_mini is not None:
-        fm = first_mini - 1
-        if (int(newestfile[8:13]) - fm) < num_mini:
+    if NUM_MINI is not None:
+        fm = FIRST_MINI - 1
+        if (int(newestfile[8:13]) - fm) < NUM_MINI:
             newestfile = "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
         else:
             small = sstripp(smallest())
@@ -836,14 +835,14 @@ def get_current_data_only(size_of_data, num_mini, first_mini,
     return openPH5(newestfile)
 
 
-def writeINDEX(ex, index_t, DAS_info):
-    dass = sorted(DAS_info.keys())
+def writeINDEX(EX, INDEX_T, DAS_INFO):
+    dass = sorted(DAS_INFO.keys())
 
     for das in dass:
         i = {}
         start = sys.maxsize
         stop = 0.
-        das_info = DAS_info[das]
+        das_info = DAS_INFO[das]
         for d in das_info:
             i['external_file_name_s'] = d.ph5file
             i['hdf5_path_s'] = d.ph5path
@@ -869,33 +868,32 @@ def writeINDEX(ex, index_t, DAS_info):
         i['end_time/type_s'] = 'BOTH'
         i['end_time/ascii_s'] = time.ctime(stop)
 
-        ex.ph5_g_receivers.populateIndex_t(i)
+        EX.ph5_g_receivers.populateIndex_t(i)
 
-    rows, keys = ex.ph5_g_receivers.read_index()
-    index_t = Rows_Keys(rows, keys)
+    rows, keys = EX.ph5_g_receivers.read_index()
+    INDEX_T = Rows_Keys(rows, keys)
 
-    DAS_info = {}
-    return index_t, DAS_info
+    DAS_INFO = {}
+    return INDEX_T, DAS_INFO
 
 
-def updatePH5(f, ex, exrec, windows, parameters, num_mini, first_mini, verbose,
-              SR, DEBUG, resp, current_DAS, index_t, DAS_info):
-    LOGGER.info("Processing: %s..." % f)
-    size_of_data = os.path.getsize(f) * 1.40
+def updatePH5(F, EX, EXREC, WINDOWS, PARAMETERS, NUM_MINI, FIRST_MINI, VERBOSE,
+              SR, DEBUG, RESP, CURRENT_DAS, INDEX_T, DAS_INFO):
+    LOGGER.info("Processing: %s..." % F)
+    size_of_data = os.path.getsize(F) * 1.40
     try:
-        exrec.ph5close()
+        EXREC.ph5close()
     except BaseException:
         pass
 
-    exrec = get_current_data_only(size_of_data, num_mini, first_mini,
-                                  index_t, current_DAS)
+    EXREC = get_current_data_only(size_of_data, NUM_MINI, FIRST_MINI,
+                                  INDEX_T, CURRENT_DAS)
     log_array = None
     soh_array = None
 
-    def ok_write_stream(stream, points, f, ex, exrec, SR, DEBUG, resp,
-                        DAS_info, log_array, soh_array):
+    def ok_write_stream(stream, points, EX, EXREC, SR, DEBUG, RESP,
+                        DAS_INFO, log_array, soh_array):
         '''   Write all events in this stream   '''
-
         events = pn.get_stream_event(stream)
         streams = events.keys()
         for s in streams:
@@ -911,16 +909,16 @@ def updatePH5(f, ex, exrec, windows, parameters, num_mini, first_mini, verbose,
                     LOGGER.error(e)
                 LOGGER.error("*" * 15 + "   END   " + "*" * 15)
 
-            if window_contained(event[0], windows):
+            if window_contained(event[0], WINDOWS):
                 gwriteEvent(
-                    points, event, f, ex, exrec, SR, DEBUG, resp, DAS_info)
+                    points, event, F, EX, EXREC, SR, DEBUG, RESP, DAS_INFO)
                 if log_array is None:
-                    log_array = getLOG(exrec)
+                    log_array = getLOG(EXREC)
                     if log_array is None:
                         continue
 
                 if soh_array is None:
-                    soh_array = getSOH(exrec)
+                    soh_array = getSOH(EXREC)
                     if soh_array is None:
                         continue
 
@@ -932,32 +930,32 @@ def updatePH5(f, ex, exrec, windows, parameters, num_mini, first_mini, verbose,
             else:
                 break
 
-    def ok_write_stream_all(f, ex, exrec, DEBUG, resp, DAS_info,
+    def ok_write_stream_all(F, EX, EXREC, DEBUG, RESP, DAS_INFO,
                             log_array, soh_array):
         '''   Clean up batter   '''
         for s in range(pn130.NUM_STREAMS):
             if pn.current_event[s] is not None:
                 pn.previous_event[s] = pn.current_event[s]
                 pts = pn.points[s]
-                ok_write_stream(s, pts, f, ex, exrec, SR, DEBUG, resp,
-                                DAS_info, log_array, soh_array)
+                ok_write_stream(s, pts, EX, EXREC, SR, DEBUG, RESP,
+                                DAS_INFO, log_array, soh_array)
 
     try:
-        pn = pn130.PN130(f, verbose=int(verbose), par=parameters)
+        pn = pn130.PN130(F, verbose=int(VERBOSE), par=PARAMETERS)
     except Exception as e:
-        LOGGER.error("Can't open {0}. {1}".format(f, e))
+        LOGGER.error("Can't open {0}. {1}".format(F, e))
         return
     while True:
         try:
             stream, points, end = pn.getEvent()
         except pn130.REFError as e:
             LOGGER.error("REF read error. {0}"
-                         ":<Error>: {1}".format(e, f))
+                         ":<Error>: {1}".format(e, F))
             break
         # End of file
         if end is True:
             if points != 0:
-                ok_write_stream_all(f, ex, exrec, DEBUG, resp, DAS_info,
+                ok_write_stream_all(F, EX, EXREC, DEBUG, RESP, DAS_INFO,
                                     log_array, soh_array)
             break
         # Corrupt packet
@@ -966,37 +964,37 @@ def updatePH5(f, ex, exrec, windows, parameters, num_mini, first_mini, verbose,
         # Empty data packet
         if not points:
             continue
-        ok_write_stream(stream, points, f, ex, exrec, SR, DEBUG, resp,
-                        DAS_info, log_array, soh_array)
+        ok_write_stream(stream, points, EX, EXREC, SR, DEBUG, RESP,
+                        DAS_INFO, log_array, soh_array)
 
-    if DAS_info:
-        index_t, DAS_info = writeINDEX(ex, index_t, DAS_info)
-    LOGGER.info(":<Finished>: {0}".format(f))
+    if DAS_INFO:
+        INDEX_T, DAS_INFO = writeINDEX(EX, INDEX_T, DAS_INFO)
+    LOGGER.info(":<Finished>: {0}".format(F))
 
-    return exrec, index_t, DAS_info
-
-
-def ph5flush(ex):
-    ex.ph5flush()
+    return EXREC, INDEX_T, DAS_INFO
 
 
-def update_external_references(ex, index_t):
+def ph5flush(EX):
+    EX.ph5flush()
+
+
+def update_external_references(EX, INDEX_T):
     LOGGER.info("Updating external references...")
     n = 0
-    for i in index_t.rows:
+    for i in INDEX_T.rows:
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
         # Nuke old node
         try:
-            group_node = ex.ph5.get_node(external_path)
+            group_node = EX.ph5.get_node(external_path)
             group_node.remove()
         except Exception:
             pass
         # Re-create node
         try:
-            ex.ph5.create_external_link(
+            EX.ph5.create_external_link(
                 '/Experiment_g/Receivers_g', external_group, target)
             n += 1
         except Exception:
@@ -1005,62 +1003,63 @@ def update_external_references(ex, index_t):
 
 
 def main():
-    DAS_info = {}
-    exrec = None
+    DAS_INFO = {}
+    EXREC = None
 
     try:
         args = get_args()
         if args == 1:
             return 1
         else:
-            files, PH5, windows, parameters, SR, num_mini, first_mini, \
-                verbose, DEBUG = args
+            FILES, PH5, WINDOWS, PARAMETERS, SR, NUM_MINI, FIRST_MINI, \
+                VERBOSE, DEBUG = args
     except Exception, err_msg:
         LOGGER.error(err_msg)
         return 1
 
     LOGGER.info("Initializing ph5 file...")
-    ex = initializeExperiment(PH5)
+    EX = initializeExperiment(PH5)
 
     LOGGER.info("1302ph5 {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
 
     fileprocessed = False
-    if len(files) > 0:
-        resp = Resp(ex.ph5_g_responses)
-        rows, keys = ex.ph5_g_receivers.read_index()
-        index_t = Rows_Keys(rows, keys)
+    if len(FILES) > 0:
+        RESP = Resp(EX.ph5_g_responses)
+        rows, keys = EX.ph5_g_receivers.read_index()
+        INDEX_T = Rows_Keys(rows, keys)
         LOGGER.info("Processing RAW files...")
-    for f in files:
+
+    for F in FILES:
         for RE in (ZIPfileRE, RAWfileRE, REFfileRE):
-            m = RE.match(f)
+            m = RE.match(F)
             if m:
                 break
 
         if m:
             try:
-                current_DAS = m.groups()[0]
+                CURRENT_DAS = m.groups()[0]
             except BaseException:
-                current_DAS = None
+                CURRENT_DAS = None
 
-            exrec, index_t, DAS_info = updatePH5(
-                f, ex, exrec, windows, parameters, num_mini, first_mini,
-                verbose, SR, DEBUG, resp, current_DAS, index_t, DAS_info)
+            EXREC, INDEX_T, DAS_INFO = updatePH5(
+                F, EX, EXREC, WINDOWS, PARAMETERS, NUM_MINI, FIRST_MINI,
+                VERBOSE, SR, DEBUG, RESP, CURRENT_DAS, INDEX_T, DAS_INFO)
         else:
             LOGGER.warning(
                 "Unrecognized raw file name {0}. Skipping!"
-                .format(f))
+                .format(F))
 
-        closePH5(ex, exrec)
-        ex = initializeExperiment(PH5)
-        resp = Resp(ex.ph5_g_responses)
-        rows, keys = ex.ph5_g_receivers.read_index()
-        index_t = Rows_Keys(rows, keys)
+        closePH5(EX, EXREC)
+        EX = initializeExperiment(PH5)
+        RESP = Resp(EX.ph5_g_responses)
+        rows, keys = EX.ph5_g_receivers.read_index()
+        INDEX_T = Rows_Keys(rows, keys)
         fileprocessed = True
 
     if fileprocessed:
-        update_external_references(ex, index_t)
-    closePH5(ex, exrec)
+        update_external_references(EX, INDEX_T)
+    closePH5(EX, EXREC)
     logging.shutdown()
 
 

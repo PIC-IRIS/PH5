@@ -14,14 +14,13 @@ import os
 import logging
 from ph5.core import segdreader
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.051'
 LOGGER = logging.getLogger(__name__)
 
 
 def get_args():
     '''   Get inputs
     '''
-    global ARGS
 
     parser = argparse.ArgumentParser()
 
@@ -52,6 +51,8 @@ def get_args():
             os.mkdir(ARGS.linkdirectory)
         except Exception as e:
             raise Exception(e.message)
+
+    return ARGS
 
 
 def print_container(container):
@@ -110,10 +111,8 @@ def trace_headers(sd):
 
 
 def main():
-    global RH, TH
-    TH = []
     try:
-        get_args()
+        ARGS = get_args()
     except Exception, err_msg:
         LOGGER.error(err_msg)
         return 1
@@ -130,7 +129,7 @@ def main():
             if not os.path.exists(filename):
                 LOGGER.warning("Can't find: {0}".format(filename))
                 continue
-            RH = segdreader.ReelHeaders()
+            #RH = segdreader.ReelHeaders()
             try:
                 sd = segdreader.Reader(infile=filename)
             except BaseException:
