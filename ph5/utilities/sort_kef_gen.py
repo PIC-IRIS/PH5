@@ -16,7 +16,7 @@ from ph5 import LOGGING_FORMAT
 # This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.051'
 LOGGER = logging.getLogger(__name__)
 
 # Make sure we are all on the same time zone ;^)
@@ -62,7 +62,6 @@ class Das_Groups(object):
 
 
 def get_args():
-    global PH5, PATH, DEBUG, SN, AUTO, OFILE
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -124,28 +123,27 @@ def get_args():
     if SN is None and AUTO is False:
         raise Exception("Serial number can not be undefined if auto is "
                         "set to false.")
-
+    return PH5, PATH, DEBUG, SN, AUTO, OFILE
 
 #
 # Initialize ph5 file
 #
 
 
-def initialize_ph5(editmode=False):
+def initialize_ph5(PATH, PH5, editmode=False):
     '''   Initialize the ph5 file   '''
-    global EX, PATH, PH5
 
     EX = experiment.ExperimentGroup(PATH, PH5)
     EX.ph5open(editmode)
     EX.initgroup()
+    return EX
 
 
 # XXX   Not used
 
 
-def read_sort_table():
+def read_sort_table(EX):
     '''   Read /Experiment_t/Sorts_g/Sort_g   '''
-    global EX, SORT_T
 
     sorts, sorts_keys = EX.ph5_g_sorts.read_sorts()
 
@@ -156,11 +154,10 @@ def read_sort_table():
 
     SORT_T = rowskeys
 
-    return True
+    return SORT_T
 
 
-def get_sample_count(g, a):
-    global EX
+def get_sample_count(EX, g, a):
 
     EX.ph5_g_receivers.setcurrent(g)
 
@@ -174,8 +171,7 @@ def get_sample_count(g, a):
     return node.nrows
 
 
-def read_das_table(das):
-    global EX, DAS_T
+def read_das_table(EX, das):
 
     das_group = EX.ph5_g_receivers.getdas_g(das)
 
@@ -199,14 +195,13 @@ def read_das_table(das):
     k.append('samples')
     DAS_T = Rows_Keys(R, k)
 
-    return True
+    return DAS_T
 
 
-def read_all_das():
+def read_all_das(EX):
     '''   Read all das tables and create a DAS_T that contains all
           of the windows.
     '''
-    global EX, DAS_T
 
     rows = {}
     # Get all of the das groups
@@ -256,14 +251,13 @@ def read_all_das():
     # Set DAS_T
     DAS_T = Rows_Keys(row, k)
 
-    return True
+    return DAS_T
 
 
 # XXX   Not used
 
 
-def get_arrays():
-    global SORT_T
+def get_arrays(SORT_T):
 
     KV = {}
 
@@ -289,16 +283,14 @@ def first_last(array_t):
     return mmin, mmax
 
 
-def print_report(text):
-    global OFILE
+def print_report(OFILE, text):
     if OFILE is None:
         print(text)
     else:
         OFILE.write(text + '\n')
 
 
-def report_gen():
-    global DAS_T, EX
+def report_gen(EX, DAS_T, OFILE):
 
     PH5_VERSION = EX.version()
 
@@ -311,7 +303,7 @@ def report_gen():
         return
 
     now = time.time()
-    print_report("#   sort-kef-gen Version: %s ph5 Version: %s" %
+    print_report(OFILE, "#   sort-kef-gen Version: %s ph5 Version: %s" %
                  (PROG_VERSION, PH5_VERSION))
     r = 1
     # XXX   This assumes that the arrays were deployed for the same recording
@@ -332,49 +324,54 @@ def report_gen():
             (float_part, int_part) = math.modf(t1)
             if array_deploy <= d['time/epoch_l'] and array_pickup >= int_part:
                 #
-                print_report("#   row {0} das {1}\n/Experiment_g/Sorts_g/"
-                             "Sort_t".format(r, d['das']))
-                print_report("\tarray_name_s = %s" % a[-3:])
-                print_report("\tarray_t_name_s = %s" % a)
-                print_report("\tdescription_s = Recording window %04d" %
+                print_report(
+                    OFILE, "#   row {0} das {1}\n/Experiment_g/Sorts_g/"
+                    "Sort_t".format(r, d['das']))
+                print_report(OFILE, "\tarray_name_s = %s" % a[-3:])
+                print_report(OFILE, "\tarray_t_name_s = %s" % a)
+                print_report(OFILE, "\tdescription_s = Recording window %04d" %
                              d['event_number_i'])
-                print_report("\tstart_time/epoch_l = %d" % d['time/epoch_l'])
-                print_report("\tstart_time/micro_seconds_i = %d" %
+                print_report(
+                    OFILE, "\tstart_time/epoch_l = %d" % d['time/epoch_l'])
+                print_report(OFILE, "\tstart_time/micro_seconds_i = %d" %
                              d['time/micro_seconds_i'])
-                print_report("\tstart_time/type_s = %s" % d['time/type_s'])
-                print_report("\tstart_time/ascii_s = %s" % d['time/ascii_s'])
-                print_report("\tend_time/epoch_l = %d" % int_part)
-                print_report("\tend_time/micro_seconds_i = %d" %
+                print_report(
+                    OFILE, "\tstart_time/type_s = %s" % d['time/type_s'])
+                print_report(
+                    OFILE, "\tstart_time/ascii_s = %s" % d['time/ascii_s'])
+                print_report(OFILE, "\tend_time/epoch_l = %d" % int_part)
+                print_report(OFILE, "\tend_time/micro_seconds_i = %d" %
                              (float_part * 1000000.0))
-                print_report("\tend_time/ascii_s = %s" % time.ctime(t1))
-                print_report("\tend_time/type_s = BOTH")
-                print_report("\ttime_stamp/epoch_l = %d" % now)
-                print_report("\ttime_stamp/ascii_s = %s" % time.ctime(now))
-                print_report("\ttime_stamp/micro_seconds_i = 0")
-                print_report("\ttime_stamp/type_s = BOTH")
+                print_report(OFILE, "\tend_time/ascii_s = %s" % time.ctime(t1))
+                print_report(OFILE, "\tend_time/type_s = BOTH")
+                print_report(OFILE, "\ttime_stamp/epoch_l = %d" % now)
+                print_report(
+                    OFILE, "\ttime_stamp/ascii_s = %s" % time.ctime(now))
+                print_report(OFILE, "\ttime_stamp/micro_seconds_i = 0")
+                print_report(OFILE, "\ttime_stamp/type_s = BOTH")
                 r += 1
 
 
 def main():
-    global SN, EX, AUTO, OFILE
     try:
-        get_args()
+        PH5, PATH, DEBUG, SN, AUTO, OFILE = get_args()
     except Exception, err_msg:
         LOGGER.error(err_msg)
         return 1
 
-    initialize_ph5()
+    EX = initialize_ph5(PATH, PH5)
 
     if SN is not None:
         if not read_das_table(SN):
             LOGGER.error("Failed to read Das_t for {0}.".format(SN))
             return 1
     elif AUTO is True:
-        if not read_all_das():
+        DAS_T = read_all_das(EX)
+        if not DAS_T:
             LOGGER.error("Failed to read DAS tables.")
             return 1
 
-    report_gen()
+    report_gen(EX, DAS_T, OFILE)
     EX.ph5close()
     if OFILE is not None:
         OFILE.close()

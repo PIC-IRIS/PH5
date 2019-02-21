@@ -12,7 +12,7 @@ import os
 import re
 from ph5.core import ph5api
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.051'
 LOGGER = logging.getLogger(__name__)
 
 ALL_FAMILIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G',
@@ -20,7 +20,6 @@ ALL_FAMILIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G',
 
 
 def get_args():
-    global ARGS, P5
 
     parser = argparse.ArgumentParser()
     parser.usage = "v{0}: set_n_i_response\
@@ -38,13 +37,14 @@ def get_args():
 
     if ARGS.families_directory is None:
         ARGS.families_directory = os.getcwd()
+    return ARGS
 
 
 def dump_kefs():
     '''   Dump each family Response_t into a single kef file.
           Label start of each Response_t with the family name '## A' as example
     '''
-    global ORIG_RESPS
+
     miniRE = re.compile(r"miniPH5_\d{5}.ph5")
     here = os.getcwd()
     first = True
@@ -72,14 +72,14 @@ def dump_kefs():
                         if not line:
                             break
                         fh.write(line)
-
+    return ORIG_RESPS
 
 #
 # First line at start of family kef: "## A" (as an example)
 #
 
 
-def parse_kef():
+def parse_kef(ARGS, ORIG_RESPS):
     '''   Parse catted response file created by dump_kefs to a map:
           MAP[family][index]['n_i_all':n, 'n_i_family':n,
           [Response_t_dictionary]]
@@ -90,10 +90,10 @@ def parse_kef():
           Response_t, keys are
           column names
     '''
-    global ARGS
     ret = {}
     row = None
     n_i_all = 0
+
     with open(ORIG_RESPS) as fh:
         while True:
             line = fh.readline()
@@ -137,7 +137,7 @@ def parse_kef():
     return ret
 
 
-def print_new_Response_t(n_i_map):
+def print_new_Response_t(n_i_map, ARGS):
     '''   Print the final Response_t.kef
     '''
     CORRECTED_RESPS = os.path.join(
@@ -159,7 +159,7 @@ def print_new_Response_t(n_i_map):
                     fh.write("\t{0}={1}\n".format(k, kv[k]))
 
 
-def print_new_Das_t(P5, n_i_map, family):
+def print_new_Das_t(P5, n_i_map, family, ARGS):
     '''   Print Das_t corrected for Response_t n_i
     '''
     P5.read_das_g_names()
@@ -211,26 +211,26 @@ def print_new_Das_t(P5, n_i_map, family):
 
 
 def main():
-    get_args()
+    ARGS = get_args()
     os.chdir(ARGS.families_directory)
-    dump_kefs()
+    ORIG_RESPS = dump_kefs()
     try:
-        n_i_map = parse_kef()
+        n_i_map = parse_kef(ARGS, ORIG_RESPS)
     except BaseException:
         LOGGER.error("Cannot create n_i map. "
                      "Make sure the directory is correct using -F flag")
-    else:
-        for family in ALL_FAMILIES:
-            ph5 = os.path.join(ARGS.families_directory, family)
-            try:
-                P5 = ph5api.PH5(path=ph5, nickname='master.ph5')
-            except Exception as e:
-                LOGGER.warning(e.msg)
-                continue
 
-            print_new_Das_t(P5, n_i_map, family)
-            P5.close()
-        print_new_Response_t(n_i_map)
+    for family in ALL_FAMILIES:
+        ph5 = os.path.join(ARGS.families_directory, family)
+        try:
+            P5 = ph5api.PH5(path=ph5, nickname='master.ph5')
+        except Exception as e:
+            LOGGER.warning(e.msg)
+            continue
+
+        print_new_Das_t(P5, n_i_map, family, ARGS)
+        P5.close()
+    print_new_Response_t(n_i_map, ARGS)
 
 
 if __name__ == '__main__':

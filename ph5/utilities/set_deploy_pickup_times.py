@@ -9,7 +9,7 @@ import time
 import re
 from ph5.core import timedoy
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.051'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -71,7 +71,6 @@ class PH5_Time(object):
 
 
 def get_args():
-    global ARRAY_FILE, DEPLOY, PICKUP
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -98,6 +97,7 @@ def get_args():
     ARRAY_FILE = args.array_kef
     DEPLOY = args.deploy_time
     PICKUP = args.pickup_time
+    return ARRAY_FILE, DEPLOY, PICKUP
 
 
 def barf(fh, of, dep_time, pu_time):
@@ -149,9 +149,8 @@ def barf(fh, of, dep_time, pu_time):
 
 
 def main():
-    global ARRAY_FILE, DEPLOY, PICKUP
 
-    get_args()
+    ARRAY_FILE, DEPLOY, PICKUP = get_args()
 
     if not os.path.exists(ARRAY_FILE):
         LOGGER.error("Can't open {0}!".format(ARRAY_FILE))
