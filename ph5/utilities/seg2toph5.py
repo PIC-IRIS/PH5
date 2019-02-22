@@ -15,14 +15,11 @@ from ph5.core import experiment, timedoy
 
 from obspy import read as readSEG2
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.052"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
-
-DAS_INFO = {}
-MAP_INFO = {}
 
 SIZE_FACTOR = .4
 
@@ -44,8 +41,7 @@ class Index_t_Info(object):
         self.stopepoch = stopepoch
 
 
-def read_infile(infile):
-    global FILES
+def read_infile(infile, FILES):
     try:
         fh = file(infile)
     except BaseException:
@@ -62,6 +58,7 @@ def read_infile(infile):
         if line[0] == '#':
             continue
         FILES.append(line)
+    return FILES
 
 
 class Resp(object):
@@ -100,6 +97,7 @@ class Rows_Keys(object):
 
 
 def get_args():
+    print "get args"
     ''' Parse input args
            -f   file containing list of raw files
            -n   output file
@@ -107,7 +105,6 @@ def get_args():
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
     '''
-    global FILES, PH5, SR, NUM_MINI, FIRST_MINI, PATH
 
     parser = argparse.ArgumentParser()
     parser.usage = "Version %s seg2toph5 [--help][--raw raw_file |\
@@ -128,7 +125,8 @@ def get_args():
                         help="The index of the first miniPH5_xxxxx.ph5 file.",
                         metavar="first_mini", type=int, default=1)
     parser.add_argument("-s", "--samplerate", dest="samplerate",
-                        help="Extract only data at given sample rate.",
+                        # help="Extract only data at given sample rate.",
+                        help=argparse.SUPPRESS,
                         metavar="samplerate")
     parser.add_argument("-p",
                         help="Do print",
@@ -143,7 +141,7 @@ def get_args():
     FIRST_MINI = args.first_mini
 
     if args.infile is not None:
-        read_infile(args.infile)
+        FILES = read_infile(args.infile, FILES)
 
     if args.outfile is not None:
         PH5 = args.outfile
@@ -167,14 +165,16 @@ def get_args():
         ch.setFormatter(formatter)
         LOGGER.addHandler(ch)
 
+    return FILES, PH5, NUM_MINI, FIRST_MINI
 
-def initializeExperiment():
-    global EX
+
+def initializeExperiment(PH5):
 
     EX = experiment.ExperimentGroup(nickname=PH5)
     EDIT = True
     EX.ph5open(EDIT)
     EX.initgroup()
+    return EX
 
 
 def openPH5(filename):
@@ -185,7 +185,9 @@ def openPH5(filename):
     return exrec
 
 
-def get_current_data_only(size_of_data, das=None):
+def get_current_data_only(size_of_data, NUM_MINI, FIRST_MINI, INDEX_T_DAS,
+                          CURRENT_DAS, das=None):
+    print "get_current_data_only"
     '''   Return opened file handle for data only PH5 file that will be
           less than MAX_PH5_BYTES after raw data is added to it.
     '''
@@ -243,9 +245,8 @@ def get_current_data_only(size_of_data, das=None):
     return openPH5(newestfile)
 
 
-def update_external_references():
-    global EX, INDEX_T_DAS
-
+def update_external_references(EX, INDEX_T_DAS, INDEX_T_MAP):
+    print "update_external_references"
     LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
@@ -294,10 +295,11 @@ def update_external_references():
                 LOGGER.error(e.message)
     LOGGER.info("Done, {0} nodes recreated.\n".format(n))
 
+    return EX
 
-def update_index_t_info(starttime, samples, sps):
-    global DAS_INFO, MAP_INFO
 
+def update_index_t_info(starttime, samples, sps, EXREC, DAS_INFO, MAP_INFO):
+    print "update_index_t_info"
     ph5file = EXREC.filename
     ph5path = '/Experiment_g/Receivers_g/' + \
               EXREC.ph5_g_receivers.current_g_das._v_name
@@ -317,9 +319,8 @@ def update_index_t_info(starttime, samples, sps):
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
 
-def writeINDEX():
-    global DAS_INFO, MAP_INFO, INDEX_T_DAS, INDEX_T_MAP
-
+def writeINDEX(EX, DAS_INFO, MAP_INFO):
+    print "writeINDEX"
     dass = sorted(DAS_INFO.keys())
 
     for das in dass:
@@ -379,11 +380,12 @@ def writeINDEX():
 
     DAS_INFO = {}
     MAP_INFO = {}
+    return EX, DAS_INFO, MAP_INFO, INDEX_T_DAS, INDEX_T_MAP
 
 
-def updatePH5(stream):
-    global EXREC, CURRENT_DAS, LAST_SAMPLE_RATE, RESP
-
+def updatePH5(stream, F, EX, EXREC, NUM_MINI, FIRST_MINI,
+              INDEX_T_DAS, DAS_INFO, MAP_INFO):
+    print("updatePH5")
     def process(hdr, header_type):
         ''''''
         ll = [{'FileType': 'SEG-2', 'HeaderType': header_type}, hdr]
@@ -413,7 +415,8 @@ def updatePH5(stream):
         size_of_data = len(trace.data) * SIZE_FACTOR
         if size_guess < size_of_data:
             size_guess = size_of_data
-        EXREC = get_current_data_only(size_guess)
+        EXREC = get_current_data_only(size_guess, NUM_MINI, FIRST_MINI,
+                                      INDEX_T_DAS, CURRENT_DAS)
         size_guess -= size_of_data
 
         # The gain and bit weight
@@ -461,7 +464,7 @@ def updatePH5(stream):
                         tdd[j] = trace.stats.seg2[k][j]
                     td[k] = tdd
 
-        log_array, name = getLOG(CURRENT_DAS)
+        log_array, name = getLOG(EXREC, CURRENT_DAS)
         process(fd, "File Descriptor Block")
         process(td, "Trace Descriptor Block")
         log_array.close()
@@ -492,22 +495,26 @@ def updatePH5(stream):
         EXREC.ph5_g_receivers.newarray(
             p_das_t['array_name_data_a'], trace.data, dtype='int32',
             description=des)
-        update_index_t_info(p_das_t['time/epoch_l'] + (
-                    float(p_das_t['time/micro_seconds_i']) / 1000000.),
-                            p_das_t['sample_count_i'],
-                            p_das_t['sample_rate_i'] / p_das_t[
-                                'sample_rate_multiplier_i'])
+        update_index_t_info(
+            p_das_t['time/epoch_l'] + (
+            float(p_das_t['time/micro_seconds_i']) / 1000000.),
+            p_das_t['sample_count_i'],
+            p_das_t['sample_rate_i'] / p_das_t['sample_rate_multiplier_i'],
+            EXREC, DAS_INFO, MAP_INFO)
 
     if DAS_INFO:
-        writeINDEX()
+        EX, DAS_INFO, MAP_INFO, INDEX_T_DAS, INDEX_T_MAP = \
+            writeINDEX(EX, DAS_INFO, MAP_INFO)
 
+    return EX, EXREC, DAS_INFO, MAP_INFO, INDEX_T_DAS, INDEX_T_MAP
 
-def getLOG(Das):
+def getLOG(EXREC, Das):
     '''   Create a open a new and unique header file under Maps_g/Das_g_
                                                                  /Sta_g_
                                                                  /Evt_g_
                                                                         /Hdr_a_
     '''
+    print "getLOG"
     current_das = EXREC.ph5_g_receivers.get_das_name()
     g = EXREC.ph5_g_maps.newdas('Das_g_', current_das)
     EXREC.ph5_g_maps.setcurrent(g)
@@ -523,24 +530,28 @@ def getLOG(Das):
 
 
 def main():
-    global F
-    get_args()
-    initializeExperiment()
+    FILES, PH5, NUM_MINI, FIRST_MINI = get_args()
+    DAS_INFO = {}
+    MAP_INFO = {}
+    EXREC = None
+    then = time.time()
+    EX = initializeExperiment(PH5)
     LOGGER.info("seg2toph5 {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
 
     if len(FILES) > 0:
         Resp(EX.ph5_g_responses)
         rows, keys = EX.ph5_g_receivers.read_index()
-        Rows_Keys(rows, keys)
+        INDEX_T_DAS = Rows_Keys(rows, keys)
 
-    for f in FILES:
-        F = f
-        LOGGER.info("Processing: {0}...".format(f))
+    for F in FILES:
+        sys.stdout.write(":<Processing>: {0}\n".format(F))
+        sys.stdout.flush()
+        LOGGER.info("Processing: {0}...".format(F))
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                stream = readSEG2(f, format='SEG2')
+                stream = readSEG2(F, format='SEG2')
 
             if stream is not None:
                 LOGGER.info(
@@ -550,17 +561,24 @@ def main():
                         stream[0].stats.starttime,
                         stream[0].stats.endtime,
                         stream[0].stats.channel))
-                updatePH5(stream)
+                EX, EXREC, DAS_INFO, MAP_INFO, INDEX_T_DAS, INDEX_T_MAP = \
+                    updatePH5(stream, F, EX, EXREC, NUM_MINI, FIRST_MINI,
+                              INDEX_T_DAS, DAS_INFO, MAP_INFO)
             else:
-                LOGGER.info("Failed to read: {0}.".format(f))
-                LOGGER.error("Can't process {0}".format(f))
+                LOGGER.info("Failed to read: {0}.".format(F))
+                LOGGER.error("Can't process {0}".format(F))
                 continue
         except Exception as e:
             LOGGER.error(
-                "{0}. Can't process {1}".format(e.message, f))
+                "{0}. Can't process {1}".format(e.message, F))
             continue
-        update_external_references()
-        LOGGER.info(":<Finished>: {0}\n".format(f))
+        EX = update_external_references(EX, INDEX_T_DAS, INDEX_T_MAP)
+        sys.stdout.write(":<Finished>: {0}\n".format(F))
+        sys.stdout.flush()
+    seconds = time.time() - then
+
+    print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
+    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
 
 
 if __name__ == '__main__':
