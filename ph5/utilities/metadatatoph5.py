@@ -1,58 +1,107 @@
 """
-Reads in dataless SEED or StationXML
+Reads in metadata
 and writes it to PH5
 """
 
 import argparse
 import os
-import sys
-import warnings
 import logging
-import re
-import time
-import math
-import json
-from math import modf
 from ph5 import LOGGING_FORMAT
-from ph5.core import experiment, timedoy
-from ph5.core import ph5api, timedoy
-
-from obspy.io.xseed import Parser
+from ph5.utilities import initialize_ph5
+from ph5.core import timedoy, kefx, experiment, columns
 from obspy.core.inventory.inventory import read_inventory as reader
 from obspy.io.stationxml.core import _is_stationxml
 from obspy.io.xseed.core import _is_seed
 from obspy.io.stationtxt.core import is_fdsn_station_text_file
+from obspy.core.inventory import Inventory, Network
+from obspy import UTCDateTime
+from obspy.core.util import AttribDict
 
-PROG_VERSION = "2019.51"
+PROG_VERSION = "2019.54"
 LOGGER = logging.getLogger(__name__)
+
+
+def is_ph5_array_csv(fh):
+    """
+    :type file_handle
+    :param fh:
+    :return: Boolean
+    """
+    fh.seek(0, 0)
+    line1 = False
+    line2 = False
+    length = kefx.file_len(fh)
+    if length < 2:
+        fh.seek(0, 0)
+        return False
+    head = [next(fh) for x in range(2)]
+    for line in head:
+        if line[0:5] == "table":
+            line1 = True
+        if line[0:30] == "/Experiment_g/Sorts_g/Array_t_":
+            line2 = True
+    if line1 and line2:
+        fh.seek(0, 0)
+        return True
+    fh.seek(0, 0)
+    return False
+
+
+def array_csvtoinventory(fh):
+    """
+    Takes a ph5 array csv file and converts it
+    to an obspy inventory object
+    :type file
+    :param fh
+    :return: :class obspy.core.inventory
+    """
+    net = [Network('XX')]
+    net[0].extra = AttribDict({"channel_num": 1})
+    created = UTCDateTime.now()
+    csv_inventory = Inventory(networks=net, source="",
+                              sender="", created=created,
+                              module="", module_uri="")
+    return csv_inventory
 
 
 class metadatatoph5(object):
 
     def __init__(self, ph5_object):
         """
-        :type ph5_object: class: ph5.core.api
-        :param ph5_object: The open PH5 object
+        :type class: ph5.core.experiment
+        :param ph5API_object:
         """
         self.ph5 = ph5_object
 
     def read_metadata(self, file_handle, file_name):
-
+        """
+        :type file
+        :param file_handle:
+        :type str
+        :param file_name:
+        :return: :class obspy.core.inventory
+        """
         # check if dataless or stationxml
         if _is_stationxml(file_handle):
             inventory = reader(file_handle, format='STATIONXML')
-            LOGGER.info("File "+file_name+" is STATIONXML..."
-                                          "read successful")
+            LOGGER.info("File "+file_name+" is STATIONXML...")
 
         elif _is_seed(file_handle):
             inventory = reader(file_handle, format='SEED')
-            LOGGER.info("File "+file_name+" is dataless SEED..."
-                                          "read successful")
+            LOGGER.info("File "+file_name+" is dataless SEED...")
 
         elif is_fdsn_station_text_file(file_handle):
             inventory = reader(file_handle, format='STATIONTXT')
-            LOGGER.info("File "+file_name+" is FDSN TXT..."
-                                          "read successful")
+            LOGGER.info("File "+file_name+" is FDSN TXT...")
+
+        elif kefx.is_array_kef(file_handle):
+            LOGGER.info("File "+file_name+" is Array KEF...")
+            inventory = []
+
+        elif is_ph5_array_csv(file_handle):
+            inventory = array_csvtoinventory(file_handle)
+            LOGGER.info("File "+file_name+" is Array csv...")
+
         else:
             LOGGER.info("Unknown file type: "+file_name)
             inventory = None
@@ -63,94 +112,167 @@ class metadatatoph5(object):
         """
         :type inventory: class: obspy.core.inventory.inventory.Inventory
         :param inventory:
-        :return:
+        :return: list of dictionaries containing array data to write to PH5
 
-        TODO: channel_number, times epoch only seconds, microsecond
+        TODO: sample rate multiplier
         """
         array_list = []
-        array_channel = {}
-
-        for Network in inventory:
-            for Station in Network:
-                array_channel = {}
-                if Station.creation_date:
-                    array_channel['deploy_time/ascii_s'] = (
-                        Station.creation_date.isoformat())
-                    array_channel['deploy_time/epoch_l'] = (
+        for network in inventory:
+            for station in network:
+                array_station = {}
+                if station.creation_date:
+                    array_station['deploy_time/ascii_s'] = (
+                        station.creation_date.isoformat())
+                    array_station['deploy_time/epoch_l'] = (
                         timedoy.fdsn2epoch(
-                            Station.creation_date.isoformat()))
+                            station.creation_date.isoformat(),
+                            fepoch=True))
                 else:
-                    array_channel['deploy_time/ascii_s'] = ""
-                    array_channel['deploy_time/epoch_l'] = ""
-                array_channel['deploy_time/type_s'] = "BOTH"
-                if Station.termination_date:
-                    array_channel['pickup_time/ascii_s'] = (
-                        Station.termination_date.isoformat())
-                    array_channel['pickup_time/epoch_l'] = (
+                    array_station['deploy_time/ascii_s'] = ""
+                    array_station['deploy_time/epoch_l'] = ""
+                array_station['deploy_time/type_s'] = "BOTH"
+                if station.termination_date:
+                    array_station['pickup_time/ascii_s'] = (
+                        station.termination_date.isoformat())
+                    array_station['pickup_time/epoch_l'] = (
                         timedoy.fdsn2epoch(
-                            Station.termination_date.isoformat()))
+                            station.termination_date.isoformat(),
+                            fepoch=True))
                 else:
-                    array_channel['pickup_time/ascii_s'] = ""
-                    array_channel['pickup_time/epoch_l'] = ""
-                array_channel['pickup_time/type_s'] = "BOTH"
-                array_channel['id_s'] = Station.code.encode('ascii',
+                    array_station['pickup_time/ascii_s'] = ""
+                    array_station['pickup_time/epoch_l'] = ""
+                array_station['pickup_time/type_s'] = "BOTH"
+                array_station['id_s'] = station.code.encode('ascii',
                                                             'ignore')
 
-                array_channel['seed_station_name_s'] = Station.code.encode(
+                array_station['seed_station_name_s'] = station.code.encode(
                     'ascii', 'ignore')
-                channel_num = 0
-                for Channel in Station:
-                    channel_list = list(Channel.code)
+                for channel in station:
+                    array_channel = {}
+                    channel_list = list(channel.code)
                     array_channel['seed_band_code_s'] = (
                         channel_list[0].encode('ascii', 'ignore'))
                     array_channel['seed_instrument_code_s'] = (
                         channel_list[1].encode('ascii', 'ignore'))
                     array_channel['seed_orientation_code_s'] = (
                         channel_list[2].encode('ascii', 'ignore'))
+
+                    if array_channel['seed_orientation_code_s'] in (
+                            {'3', 'Z', 'z'}):
+                        array_channel['channel_number_i'] = 3
+                    elif array_channel['seed_orientation_code_s'] in (
+                            {'2', 'E', 'e'}):
+                        array_channel['channel_number_i'] = 2
+                    elif array_channel['seed_orientation_code_s'] in (
+                            {'1', 'N', 'n'}):
+                        array_channel['channel_number_i'] = 1
+                    elif array_channel['seed_orientation_code_s'].isdigit():
+                        array_channel['channel_number_i'] = array_channel
+                        ['seed_orientation_code_s']
+                    elif channel.code == 'LOG':
+                        array_channel['channel_number_i'] = -2
+
                     array_channel['seed_location_code_s'] = (
-                        Channel.location_code)
-                    array_channel['sample_rate_i'] = Channel.sample_rate
+                        channel.location_code)
+
+                    # calculate sample rate and multiplier here
+
+                    array_channel['sample_rate_i'] = channel.sample_rate
                     array_channel['sample_rate_multiplier_i'] = 1
-                    array_channel['location/X/value_d'] = Channel.longitude
+                    array_channel['location/X/value_d'] = channel.longitude
                     array_channel['location/X/units_s'] = "degrees"
-                    array_channel['location/Y/value_d'] = Channel.latitude
+                    array_channel['location/Y/value_d'] = channel.latitude
                     array_channel['location/Y/units_s'] = "degrees"
-                    array_channel['location/Z/value_d'] = Channel.elevation
+                    array_channel['location/Z/value_d'] = channel.elevation
                     array_channel['location/Z/units_s'] = "m"
-                    if Channel.sensor:
+                    if channel.sensor:
                         array_channel['sensor/model_s'] = str(
-                            Channel.sensor.type)
+                            channel.sensor.type)
                         array_channel['sensor/manufacturer_s'] = str((
-                            Channel.sensor.manufacturer))
+                            channel.sensor.manufacturer))
                         array_channel['sensor/serial_number_s'] = str((
-                            Channel.sensor.serial_number))
-                        array_channel['sensor/notes_s '] = str((
-                            Channel.sensor.description))
+                            channel.sensor.serial_number))
+                        array_channel['sensor/notes_s'] = str((
+                            channel.sensor.description))
                     else:
                         array_channel['sensor/model_s'] = ""
                         array_channel['sensor/manufacturer_s'] = ""
                         array_channel['sensor/serial_number_s'] = ""
-                        array_channel['sensor/notes_s '] = ""
+                        array_channel['sensor/notes_s'] = ""
 
-                    if Channel.data_logger:
+                    if channel.data_logger:
                         array_channel['das/model_s'] = str(
-                            Channel.data_logger.type)
+                            channel.data_logger.type)
                         array_channel['das/manufacturer_s'] = str((
-                            Channel.data_logger.manufacturer))
+                            channel.data_logger.manufacturer))
                         array_channel['das/serial_number_s'] = str((
-                            Channel.data_logger.serial_number))
+                            channel.data_logger.serial_number))
+                        if not channel.data_logger.serial_number:
+                            LOGGER.error(
+                                "Datalogger serial required for Station {0} "
+                                "before data "
+                                "can be loaded".format(
+                                    array_station['seed_station_name_s']))
                         array_channel['das/notes_s'] = str((
-                            Channel.data_logger.description))
+                            channel.data_logger.description))
                     else:
                         array_channel['das/model_s'] = ""
                         array_channel['das/manufacturer_s'] = ""
                         array_channel['das/serial_number_s'] = ""
                         array_channel['das/notes_s'] = ""
+                        LOGGER.error(
+                            "Datalogger serial required for Station {0} "
+                            "Channel {1} before data can be loaded".format(
+                                array_station['seed_station_name_s'],
+                                channel.code))
 
-                    print array_channel
+                    array_dict = array_station.copy()
+                    array_dict.update(array_channel)
+
+                    array_list.append(array_dict)
+
+        return array_list
+
+    def toph5(self, parsed_array):
+        """
+        takes a list of dictionaries containing station metadata
+        and loads them in to PH5
+        :type list of dictionaries
+        :param parsed_array
+        :return:
+
+        TODO: Check if data exists in array
+        """
+        sample_rates = []
+        for entry in parsed_array:
+            if entry['sample_rate_i'] not in sample_rates:
+                sample_rates.append(entry['sample_rate_i'])
+        array_count = 1
+        # create arrays for each sample rate and assign sample_rate to array
+        arrays = {}
+
+        for sample_rate in sample_rates:
+            array_name = self.ph5.ph5_g_sorts.nextName()
+            self.ph5.ph5_g_sorts.newArraySort(array_name)
+            arrays[sample_rate] = array_name
+            array_count = array_count + 1
+
+        # iterate through parsed_array and add each entry to the correct
+        # array based on it's sample rate
+        for entry in parsed_array:
+            if entry['sample_rate_i'] in arrays:
+                array_name = "/Experiment_g/Sorts_g/"+arrays[
+                    entry['sample_rate_i']]
+            ref = columns.TABLES[array_name]
+            columns.populate(ref, entry, None)
+
+        return True
 
 
 def get_args():
+    """
+    :return: class: argparse
+    """
 
     parser = argparse.ArgumentParser(
         description='Load metdata in to PH5.',
@@ -185,21 +307,46 @@ def main():
         ph5file = os.path.join(args.ph5path, args.nickname + '.ph5')
         args.nickname += '.ph5'
 
+    PATH = os.path.dirname(args.ph5path) or '.'
+    # Debugging
+    os.chdir(PATH)
+    # Write log to file
+    ch = logging.FileHandler(os.path.join(".", "metadatatoph5.log"))
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
+
     if not os.path.exists(ph5file):
-        LOGGER.error("{0} not found.\n".format(ph5file))
-        sys.exit(-1)
+        LOGGER.warning("{0} not found. Creating...".format(ph5file))
+        # Create ph5 file
+        ex = experiment.ExperimentGroup(nickname=ph5file)
+        ex.ph5open(True)  # Open ph5 file for editing
+        ex.initgroup()
+        # Update /Experiment_g/Receivers_g/Receiver_t
+        default_receiver_t = initialize_ph5.create_default_receiver_t()
+        initialize_ph5.set_receiver_t(default_receiver_t)
+        LOGGER.info("Removing temporary {0} kef file."
+                    .format(default_receiver_t))
+        os.remove(default_receiver_t)
+        ex.ph5close()
+        LOGGER.info("Done... Created new PH5 file {0}."
+                    .format(ph5file))
 
-    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
-
-    metadata = metadatatoph5(ph5API_object)
-
+    ph5_object = experiment.ExperimentGroup(nickname=args.nickname,
+                                            currentpath=args.ph5path)
+    ph5_object.ph5open(True)
+    ph5_object.initgroup()
+    metadata = metadatatoph5(ph5_object)
     path, file_name = os.path.split(args.infile)
     f = open(args.infile, "r")
     inventory = metadata.read_metadata(f, file_name)
     if inventory:
-        metadata.parse_inventory(inventory)
+        parsed_array = metadata.parse_inventory(inventory)
+        metadata.toph5(parsed_array)
 
-    ph5API_object.close()
+    ph5_object.ph5close()
 
 
 if __name__ == '__main__':
