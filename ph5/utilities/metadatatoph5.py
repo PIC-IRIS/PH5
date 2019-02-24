@@ -64,7 +64,7 @@ def array_csvtoinventory(fh):
     return csv_inventory
 
 
-class metadatatoph5(object):
+class MetadatatoPH5(object):
 
     def __init__(self, ph5_object):
         """
@@ -113,8 +113,6 @@ class metadatatoph5(object):
         :type inventory: class: obspy.core.inventory.inventory.Inventory
         :param inventory:
         :return: list of dictionaries containing array data to write to PH5
-
-        TODO: sample rate multiplier
         """
         array_list = []
         for network in inventory:
@@ -175,10 +173,14 @@ class metadatatoph5(object):
                     array_channel['seed_location_code_s'] = (
                         channel.location_code)
 
-                    # calculate sample rate and multiplier here
+                    if channel.sample_rate >= 1 or channel.sample_rate == 0:
+                        array_channel['sample_rate_i'] = channel.sample_rate
+                        array_channel['sample_rate_multiplier_i'] = 1
+                    else:
+                        array_channel['sample_rate_i'] = 1
+                        array_channel['sample_rate_multiplier_i'] = (
+                                1/channel.sample_rate)
 
-                    array_channel['sample_rate_i'] = channel.sample_rate
-                    array_channel['sample_rate_multiplier_i'] = 1
                     array_channel['location/X/value_d'] = channel.longitude
                     array_channel['location/X/units_s'] = "degrees"
                     array_channel['location/Y/value_d'] = channel.latitude
@@ -250,7 +252,6 @@ class metadatatoph5(object):
         array_count = 1
         # create arrays for each sample rate and assign sample_rate to array
         arrays = {}
-
         for sample_rate in sample_rates:
             array_name = self.ph5.ph5_g_sorts.nextName()
             self.ph5.ph5_g_sorts.newArraySort(array_name)
@@ -333,12 +334,11 @@ def main():
         ex.ph5close()
         LOGGER.info("Done... Created new PH5 file {0}."
                     .format(ph5file))
-
     ph5_object = experiment.ExperimentGroup(nickname=args.nickname,
                                             currentpath=args.ph5path)
     ph5_object.ph5open(True)
     ph5_object.initgroup()
-    metadata = metadatatoph5(ph5_object)
+    metadata = MetadatatoPH5(ph5_object)
     path, file_name = os.path.split(args.infile)
     f = open(args.infile, "r")
     inventory = metadata.read_metadata(f, file_name)
