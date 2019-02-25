@@ -881,6 +881,9 @@ class PH5(experiment.ExperimentGroup):
     def forget_das_t(self, das):
         if das in self.Das_t:
             del self.Das_t[das]
+        node = self.ph5_g_receivers.getdas_g(das)
+        node.umount()
+        self.ph5_g_receivers.current_g_das.umount()
 
     def read_t(self, table, n=None):
         '''   Read table and return kef
@@ -1195,7 +1198,7 @@ class PH5(experiment.ExperimentGroup):
             for t in ret:
                 print '-=' * 40
                 print t
-
+        self.forget_das_t(das)
         return ret
 
     def _Cut(self, das, start_time, stop_time, chan, sr=None, msg=None):
@@ -1395,7 +1398,7 @@ class PH5(experiment.ExperimentGroup):
 
         return ret
 
-    def get_extent(self, das, start=None, end=None, component=None):
+    def get_extent(self, das, component, start=None, end=None):
         '''
         Takes a das serial number, and option start and end time
         and returns the time of the earliest and latest samples
@@ -1435,10 +1438,12 @@ class PH5(experiment.ExperimentGroup):
         latest_epoch = (latest_epoch_start +
                         (float(new_das_t[-1]['sample_count_i'])
                          / true_sample_rate))
+        self.forget_das_t(das)
         return earliest_epoch, latest_epoch
 
-    def get_availability(self, das, start=None, end=None,
-                         sample_rate=None, component=None):
+    def get_availability(self, das,
+                         sample_rate, component,
+                         start=None, end=None):
         '''
         Required: das, sample_rate and component
         Optional: Start time, End time
@@ -1483,9 +1488,9 @@ class PH5(experiment.ExperimentGroup):
             previous.append(start_time)
             previous.append(end_time)
         if gaps == 0:
-            start, stop = self.get_extent(das, start, end, component)
+            start, stop = self.get_extent(das, component, start, end)
             times.append((sample_rate, start, stop))
-
+        self.forget_das_t(das)
         return times
 
 
