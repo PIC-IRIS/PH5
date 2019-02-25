@@ -1415,7 +1415,7 @@ class PH5(experiment.ExperimentGroup):
         '''
 
         if not component:
-            raise ValueError("Comonent required for get_extent")
+            raise ValueError("Component required for get_extent")
         self.read_das_t(das, start, end, reread=False)
         if das not in self.Das_t:
             LOGGER.warning("No Das table found for " + das)
