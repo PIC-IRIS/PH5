@@ -7,11 +7,14 @@ Derick Hess
 import logging
 import argparse
 import os
+import re
 from ph5 import LOGGING_FORMAT
 from ph5.utilities import initialize_ph5
-from ph5.core import experiment
+from ph5.core import experiment, timedoy
 from obspy.io.mseed.core import _is_mseed
+from obspy.io.mseed.util import get_flags
 from obspy import read as reader
+from numpy import array
 
 PROG_VERSION = '2019.053'
 LOGGER = logging.getLogger(__name__)
@@ -28,30 +31,232 @@ class ObspytoPH5Error(Exception):
 
 class ObspytoPH5(object):
 
-    def __init__(self, ph5_object):
+    def __init__(self, ph5_object,
+                 ph5_path,
+                 num_mini=None,
+                 first_mini=None):
         """
         :type class: ph5.core.experiment
         :param ph5_object:
         """
         self.ph5 = ph5_object
+        self.ph5_path = ph5_path
+        self.num_mini = num_mini
+        self.first_mini = first_mini
+        self.mini_size_max = 26843545600
+
+    def openmini(self, mini_num):
+        """
+        Open PH5 file, miniPH5_xxxxx.ph5
+        :type: str
+        :param mini_num: name of mini file to open
+        :return class: ph5.core.experiment
+        """
+
+        mini_num = str(mini_num).zfill(5)
+        filename = "miniPH5_{0}.ph5".format(mini_num)
+        exrec = experiment.ExperimentGroup(nickname=filename)
+        exrec.ph5open(True)
+        exrec.initgroup()
+        LOGGER.info("Opened {0} for editing".format(filename))
+        return exrec
+
+    def streamtoph5(self, obspy_stream, stats_name=None):
+        """
+        takes an obspy stream and optional name
+        of special stats and loads into PH5
+        :type class: obspy.core.stream.Stream'
+        :param obspy_stream:
+        :type str
+        :param stats_name:
+        :return:
+        """
+
+        return
+
+    def get_minis(self, dir):
+        """
+        takes a directory and returns a list of all mini files
+        in the current directory
+
+        :type str
+        :param dir
+        :return: list of mini files
+        """
+        miniPH5RE = re.compile(r".*miniPH5_(\d+)\.ph5")
+        minis = list()
+        for entry in os.listdir(dir):
+            # Create full path
+            fullPath = os.path.join(dir, entry)
+            if miniPH5RE.match(entry):
+                minis.append(fullPath)
+        return minis
+
+    def get_size_mini(self, mini_num):
+        """
+        :param mini_num: str
+        :return: size of mini file in bytes
+        """
+        mini_num = str(mini_num).zfill(5)
+        filename = "miniPH5_{0}.ph5".format(mini_num)
+        return os.path.getsize(filename)
+
+    def get_das_station_map(self):
+        """
+        Checks if array tables exist
+        returns None
+        otherwise returns a list of dictionaries
+        containing das serial numbers and stations
+        :return: list
+        """
+        array_names = self.ph5.ph5_g_sorts.namesArray_t()
+        if not array_names:
+            return None
+        tmp = list()
+        # use tables where to search array tables and find matches
+        for _array in array_names:
+            tbl = self.ph5.ph5.get_node('/Experiment_g/Sorts_g/{0}'.format(
+                _array))
+            data = tbl.read()
+            for row in data:
+                tmp.append({'serial': row[4][0], 'station': row[13]})
+        das_station_map = list()
+        for i in tmp:
+            if i not in das_station_map:
+                das_station_map.append(i)
+        tbl = None
+
+        return das_station_map
+
+    def mini_map(self, existing_minis):
+        """
+        :type list
+        :param existing_minis: A list of mini_files with path
+        :return:  list of tuples containing
+        what mini file contains what serial #s
+        """
+        mini_map = list()
+        for mini in existing_minis:
+            mini_num = int(mini.split('.')[-2].split('_')[-1])
+            exrec = experiment.ExperimentGroup(nickname=mini)
+            exrec.ph5open(True)
+            exrec.initgroup()
+            all_das = exrec.ph5_g_receivers.alldas_g()
+            das_list = list()
+            for g in all_das:
+                name = g.split('_')[-1]
+                das_list.append(name)
+            mini_map.append((mini_num, das_list))
+            exrec.ph5close()
+        return mini_map
 
     def toph5(self, file_tuple):
         """
         Takes a tuple (file_name, type)
-        and loads it into ph5+object
-        :type typle
-        :param file_tuple:
+        and loads it into ph5_object
+        :type class: obspy.core.stream.Stream
+        :param obspy_stream to be used instead of file_tupple
         :return:
         """
-        st = reader(file_tuple[0], format=file_tuple[1])
-        # figure out what das to assign data to
-        array_names = self.ph5.ph5_g_sorts.namesArray_t()
-        if not array_names:
-            err = "Array metadata must exist before loading miniSEED"
+        das_station_map = self.get_das_station_map()
+        existing_minis = self.get_minis(self.ph5_path)
+        if not das_station_map:
+            err = "Array metadata must exist before loading data"
             LOGGER.error(err)
             return "stop"
+        # gets mapping of whats dases each minifile contains
+        minis = self.mini_map(existing_minis)
+        if file_tuple[1] == 'MSEED':
+            mseed_flags = get_flags(file_tuple[0]) # noqa
 
-        # figure out what mini file it should go in
+        st = reader(file_tuple[0], format=file_tuple[1])
+
+        current_mini = None
+        # figure out what first mini file should be
+        if not existing_minis:
+            current_mini = self.first_mini
+        else:
+            for entry in das_station_map:
+                if not existing_minis:
+                    current_mini = self.first_mini
+                else:
+                    current_mini = None
+                    for x in minis:
+                        if entry['serial'] in x[1]:
+                            current_mini = x[0]
+                    if not current_mini:
+                        largest = 0
+                        for x in minis:
+                            if x[0] >= largest:
+                                largest = x[0]
+                        if self.get_size_mini(largest) < self.mini_size_max:
+                            current_mini = largest
+                        else:
+                            current_mini = largest + 1
+
+        # Loop through data and load it in to PH5
+        for trace in st:
+            for entry in das_station_map:
+                das = {}
+                if trace.stats.station == entry['station']:
+                    mini_handle = self.openmini(current_mini)
+                    d = mini_handle.ph5_g_receivers.getdas_g(entry['serial'])
+                    if not d:
+                        d, t, r, ti = mini_handle.ph5_g_receivers.newdas(
+                            entry['serial'])
+                    if trace.stats._format == "MSEED":
+                        LOGGER.info(
+                            "Processing Station {0} {1} from miniSEED".format(
+                                trace.stats.station, trace.stats.channel))
+                        das['time/ascii_s'] = trace.stats.starttime
+                        time = timedoy.fdsn2epoch(
+                            trace.stats.starttime.isoformat(), fepoch=True)
+                        microsecond = (time % 1) * 1000000
+                        das['time/epoch_l'] = (int(time))
+                        das['time/micro_seconds_i'] = microsecond
+                        das['time/type_s'] = 'BOTH'
+                        if (trace.stats.sampling_rate >= 1 or
+                                trace.stats.sampling_rate == 0):
+                            das['sample_rate_i'] = trace.stats.sampling_rate
+                            das['sample_rate_multiplier_i'] = 1
+                        else:
+                            das['sample_rate_i'] = 1
+                            das['sample_rate_multiplier_i'] = (
+                                    1 /
+                                    trace.stats.sampling_rate)
+                        channel_list = list(trace.stats.channel)
+                        if channel_list[2] in ({'3', 'Z', 'z'}):
+                            das['channel_number_i'] = 3
+                        elif channel_list[2] in (
+                                {'2', 'E', 'e'}):
+                            das['channel_number_i'] = 2
+                        elif channel_list[2] in (
+                                {'1', 'N', 'n'}):
+                            das['channel_number_i'] = 1
+                        elif channel_list[2].isdigit():
+                            das['channel_number_i'] = channel_list[2]
+                        elif trace.stats.channel == 'LOG':
+                            das['channel_number_i'] = -2
+                        das['raw_file_name_s'] = file_tuple[0]
+                        das['sample_count_i'] = trace.stats.npts
+                        count = 1
+                        while True:
+                            next = str(count).zfill(5)
+                            das['array_name_data_a'] = "Data_a_{0}".format(
+                                next)
+                            node = mini_handle.ph5_g_receivers.find_trace_ref(
+                                das['array_name_data_a'])
+                            if not node:
+                                break
+                            count = count + 1
+                            continue
+                        mini_handle.ph5_g_receivers.setcurrent(d)
+                        data = array(trace.data)
+                        mini_handle.ph5_g_receivers.newarray(
+                            das['array_name_data_a'], data, dtype='int32',
+                            description=None)
+                        mini_handle.ph5_g_receivers.populateDas_t(das)
+                    mini_handle.ph5close()
         return
 
 
@@ -202,13 +407,20 @@ def main():
                                             currentpath=args.ph5path)
     ph5_object.ph5open(True)
     ph5_object.initgroup()
-    obs = ObspytoPH5(ph5_object)
+    obs = ObspytoPH5(ph5_object, args.ph5path,
+                     args.num_mini, args.first_mini)
+    obs.get_minis(args.ph5path)
+    if args.num_mini:
+        total = 0
+        for entry in valid_files:
+            total = total + os.path.getsize(entry)
+        obs.mini_size_max = (total*.60)/args.num_mini
+
     for entry in valid_files:
         message = obs.toph5(entry)
         if message == "stop":
             LOGGER.error("Stopping program...")
             break
-
     ph5_object.ph5close()
 
 

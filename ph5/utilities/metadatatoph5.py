@@ -121,24 +121,30 @@ class MetadatatoPH5(object):
                 if station.creation_date:
                     array_station['deploy_time/ascii_s'] = (
                         station.creation_date.isoformat())
-                    array_station['deploy_time/epoch_l'] = (
-                        timedoy.fdsn2epoch(
-                            station.creation_date.isoformat(),
-                            fepoch=True))
+                    time = timedoy.fdsn2epoch(
+                        station.creation_date.isoformat(), fepoch=True)
+                    microsecond = (time % 1) * 1000000
+                    array_station['deploy_time/epoch_l'] = (int(time))
+                    array_station['deploy_time/micro_seconds_i'] = (
+                        microsecond)
                 else:
                     array_station['deploy_time/ascii_s'] = ""
                     array_station['deploy_time/epoch_l'] = ""
+                    array_station['deploy_time/micro_seconds_i'] = ""
                 array_station['deploy_time/type_s'] = "BOTH"
                 if station.termination_date:
                     array_station['pickup_time/ascii_s'] = (
                         station.termination_date.isoformat())
-                    array_station['pickup_time/epoch_l'] = (
-                        timedoy.fdsn2epoch(
-                            station.termination_date.isoformat(),
-                            fepoch=True))
+                    time = timedoy.fdsn2epoch(
+                        station.creation_date.isoformat(), fepoch=True)
+                    microsecond = (time % 1) * 1000000
+                    array_station['pickup_time/epoch_l'] = (int(time))
+                    array_station['pickup_time/micro_seconds_i'] = (
+                        microsecond)
                 else:
                     array_station['pickup_time/ascii_s'] = ""
                     array_station['pickup_time/epoch_l'] = ""
+                    array_station['pickup_time/micro_seconds_i'] = ""
                 array_station['pickup_time/type_s'] = "BOTH"
                 array_station['id_s'] = station.code.encode('ascii',
                                                             'ignore')
