@@ -14,14 +14,16 @@ from ph5.core import experiment, timedoy
 from obspy.io.mseed.core import _is_mseed
 from obspy.io.mseed.util import get_flags
 from obspy import read as reader
+from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.053'
+PROG_VERSION = '2019.056'
 LOGGER = logging.getLogger(__name__)
 
 
 class ObspytoPH5Error(Exception):
-    """Exception raised when there is a problem with the request.
+    """
+    Exception raised when there is a problem with the request.
     :param: message -- explanation of the error
     """
 
@@ -50,7 +52,7 @@ class ObspytoPH5(object):
         Open PH5 file, miniPH5_xxxxx.ph5
         :type: str
         :param mini_num: name of mini file to open
-        :return class: ph5.core.experiment
+        :return class: ph5.core.experiment, str: name
         """
 
         mini_num = str(mini_num).zfill(5)
@@ -59,20 +61,7 @@ class ObspytoPH5(object):
         exrec.ph5open(True)
         exrec.initgroup()
         LOGGER.info("Opened {0} for editing".format(filename))
-        return exrec
-
-    def streamtoph5(self, obspy_stream, stats_name=None):
-        """
-        takes an obspy stream and optional name
-        of special stats and loads into PH5
-        :type class: obspy.core.stream.Stream'
-        :param obspy_stream:
-        :type str
-        :param stats_name:
-        :return:
-        """
-
-        return
+        return exrec, filename
 
     def get_minis(self, dir):
         """
@@ -152,26 +141,43 @@ class ObspytoPH5(object):
 
     def toph5(self, file_tuple):
         """
-        Takes a tuple (file_name, type)
+        Takes a tuple (file_name or obspy stream, type)
         and loads it into ph5_object
-        :type class: obspy.core.stream.Stream
-        :param obspy_stream to be used instead of file_tupple
+        :type tuple
+        :param file_tuple containing
+        file_handle or obspy stream and file type as str
         :return:
         """
+        index_t = list()
+        current_mini = None
+        in_type = None
         das_station_map = self.get_das_station_map()
         existing_minis = self.get_minis(self.ph5_path)
+
         if not das_station_map:
             err = "Array metadata must exist before loading data"
             LOGGER.error(err)
-            return "stop"
+            return "stop", index_t
+
         # gets mapping of whats dases each minifile contains
         minis = self.mini_map(existing_minis)
         if file_tuple[1] == 'MSEED':
-            mseed_flags = get_flags(file_tuple[0]) # noqa
+            mseed_flags = get_flags(file_tuple[0])  # noqa
+            mseed_flags = mseed_flags  # noqa
 
-        st = reader(file_tuple[0], format=file_tuple[1])
+        # check if we are opening a file or have an obspy stream
+        if isinstance(file_tuple[0], str):
+            st = reader(file_tuple[0], format=file_tuple[1])
+            in_type = "file"
+        # is this an obspy stream?
+        elif isinstance(file_tuple[0], Stream):
+            st = file_tuple[0]
+            in_type = 'stream'
+        # is this an obspy trace?
+        elif isinstance(file_tuple[0], Trace):
+            st = Stream(traces=[file_tuple[0]])
+            in_type = 'trace'
 
-        current_mini = None
         # figure out what first mini file should be
         if not existing_minis:
             current_mini = self.first_mini
@@ -196,67 +202,157 @@ class ObspytoPH5(object):
 
         # Loop through data and load it in to PH5
         for trace in st:
+            # iterate through das_station_map
             for entry in das_station_map:
                 das = {}
+                index_t_entry = {}
+                # only load data if it matches
                 if trace.stats.station == entry['station']:
-                    mini_handle = self.openmini(current_mini)
+
+                    # open mini file
+                    mini_handle, mini_name = self.openmini(current_mini)
+
+                    # get node reference or create new node
                     d = mini_handle.ph5_g_receivers.getdas_g(entry['serial'])
                     if not d:
                         d, t, r, ti = mini_handle.ph5_g_receivers.newdas(
                             entry['serial'])
+
+                    # miniSEED
                     if trace.stats._format == "MSEED":
                         LOGGER.info(
                             "Processing Station {0} {1} from miniSEED".format(
                                 trace.stats.station, trace.stats.channel))
-                        das['time/ascii_s'] = trace.stats.starttime
-                        time = timedoy.fdsn2epoch(
-                            trace.stats.starttime.isoformat(), fepoch=True)
-                        microsecond = (time % 1) * 1000000
-                        das['time/epoch_l'] = (int(time))
-                        das['time/micro_seconds_i'] = microsecond
-                        das['time/type_s'] = 'BOTH'
-                        if (trace.stats.sampling_rate >= 1 or
-                                trace.stats.sampling_rate == 0):
-                            das['sample_rate_i'] = trace.stats.sampling_rate
-                            das['sample_rate_multiplier_i'] = 1
-                        else:
-                            das['sample_rate_i'] = 1
-                            das['sample_rate_multiplier_i'] = (
-                                    1 /
-                                    trace.stats.sampling_rate)
-                        channel_list = list(trace.stats.channel)
-                        if channel_list[2] in ({'3', 'Z', 'z'}):
-                            das['channel_number_i'] = 3
-                        elif channel_list[2] in (
-                                {'2', 'E', 'e'}):
-                            das['channel_number_i'] = 2
-                        elif channel_list[2] in (
-                                {'1', 'N', 'n'}):
-                            das['channel_number_i'] = 1
-                        elif channel_list[2].isdigit():
-                            das['channel_number_i'] = channel_list[2]
-                        elif trace.stats.channel == 'LOG':
-                            das['channel_number_i'] = -2
+
+                    # start populating das table and data arrays
+                    das['time/ascii_s'] = trace.stats.starttime
+                    index_t_entry['start_time/ascii_s'] = (
+                        trace.stats.starttime.isoformat())
+                    time = timedoy.fdsn2epoch(
+                        trace.stats.starttime.isoformat(), fepoch=True)
+                    microsecond = (time % 1) * 1000000
+                    das['time/epoch_l'] = (int(time))
+                    das['time/micro_seconds_i'] = microsecond
+                    das['time/type_s'] = 'BOTH'
+                    index_t_entry['start_time/epoch_l'] = (int(time))
+                    index_t_entry['start_time/micro_seconds_i'] = (
+                        microsecond)
+                    index_t_entry['start_time/type_s'] = 'BOTH'
+                    time = timedoy.fdsn2epoch(
+                        trace.stats.endtime.isoformat(), fepoch=True)
+                    microsecond = (time % 1) * 1000000
+                    index_t_entry['end_time/ascii_s'] = (
+                        trace.stats.starttime.isoformat())
+                    index_t_entry['end_time/epoch_l'] = (int(time))
+                    index_t_entry['end_time/micro_seconds_i'] = (
+                        microsecond)
+                    index_t_entry['end_time/type_s'] = 'BOTH'
+                    now = UTCDateTime.now()
+                    index_t_entry['time_stamp/ascii_s'] = (
+                        now.isoformat())
+                    time = timedoy.fdsn2epoch(
+                        now.isoformat(), fepoch=True)
+                    microsecond = (time % 1) * 1000000
+                    index_t_entry['time_stamp/epoch_l'] = (int(time))
+                    index_t_entry['time_stamp/micro_seconds_i'] = (
+                        int(microsecond))
+                    index_t_entry['time_stamp/type_s'] = 'BOTH'
+                    if (trace.stats.sampling_rate >= 1 or
+                            trace.stats.sampling_rate == 0):
+                        das['sample_rate_i'] = trace.stats.sampling_rate
+                        das['sample_rate_multiplier_i'] = 1
+                    else:
+                        das['sample_rate_i'] = 1
+                        das['sample_rate_multiplier_i'] = (
+                                1 /
+                                trace.stats.sampling_rate)
+                    channel_list = list(trace.stats.channel)
+                    if channel_list[2] in ({'3', 'Z', 'z'}):
+                        das['channel_number_i'] = 3
+                    elif channel_list[2] in (
+                            {'2', 'E', 'e'}):
+                        das['channel_number_i'] = 2
+                    elif channel_list[2] in (
+                            {'1', 'N', 'n'}):
+                        das['channel_number_i'] = 1
+                    elif channel_list[2].isdigit():
+                        das['channel_number_i'] = channel_list[2]
+                    elif trace.stats.channel == 'LOG':
+                        das['channel_number_i'] = -2
+                    if in_type == 'file':
                         das['raw_file_name_s'] = file_tuple[0]
-                        das['sample_count_i'] = trace.stats.npts
-                        count = 1
-                        while True:
-                            next = str(count).zfill(5)
-                            das['array_name_data_a'] = "Data_a_{0}".format(
-                                next)
-                            node = mini_handle.ph5_g_receivers.find_trace_ref(
-                                das['array_name_data_a'])
-                            if not node:
-                                break
-                            count = count + 1
-                            continue
-                        mini_handle.ph5_g_receivers.setcurrent(d)
-                        data = array(trace.data)
-                        mini_handle.ph5_g_receivers.newarray(
-                            das['array_name_data_a'], data, dtype='int32',
-                            description=None)
-                        mini_handle.ph5_g_receivers.populateDas_t(das)
+                    else:
+                        das['raw_file_name_s'] = 'obspy_stream'
+                    das['sample_count_i'] = trace.stats.npts
+                    count = 1
+
+                    # Make sure we aren't overwriting a data array
+                    while True:
+                        next_ = str(count).zfill(5)
+                        das['array_name_data_a'] = "Data_a_{0}".format(
+                            next_)
+                        node = mini_handle.ph5_g_receivers.find_trace_ref(
+                            das['array_name_data_a'])
+                        if not node:
+                            break
+                        count = count + 1
+                        continue
+
+                    mini_handle.ph5_g_receivers.setcurrent(d)
+                    data = array(trace.data)
+                    mini_handle.ph5_g_receivers.newarray(
+                        das['array_name_data_a'], data, dtype='int32',
+                        description=None)
+                    mini_handle.ph5_g_receivers.populateDas_t(das)
+
+                    index_t_entry['external_file_name_s'] = "./{}".format(
+                        mini_name)
+                    das_path = "/Experiment_g/Receivers_g/" \
+                               "Das_g_{0}".format(entry['serial'])
+                    index_t_entry['hdf5_path_s'] = das_path
+                    index_t_entry['serial_number_s'] = entry['serial']
+
+                    index_t.append(index_t_entry)
+                    # Don't forget to close minifile
                     mini_handle.ph5close()
+
+        # last thing is to return the index table so far.
+        # index_t will be populated in main() after all
+        # files are loaded
+        return "done", index_t
+
+    def update_external_references(self, index_t):
+        """
+        looks through index_t and updates master.ph5
+        with external references to das group in mini files
+        :type list
+        :param index_t:
+        :return:
+        """
+        n = 0
+        LOGGER.info("updating external references")
+        for i in index_t:
+            external_file = i['external_file_name_s'][2:]
+            external_path = i['hdf5_path_s']
+            target = external_file + ':' + external_path
+            external_group = external_path.split('/')[3]
+
+            try:
+                group_node = self.ph5.ph5.get_node(external_path)
+                group_node.remove()
+
+            except Exception as e:
+                pass
+
+            #   Re-create node
+            try:
+                self.ph5.ph5.create_external_link(
+                    '/Experiment_g/Receivers_g', external_group, target)
+                n += 1
+            except Exception as e:
+                # pass
+                LOGGER.error(e.message)
+
         return
 
 
@@ -415,12 +511,21 @@ def main():
         for entry in valid_files:
             total = total + os.path.getsize(entry)
         obs.mini_size_max = (total*.60)/args.num_mini
+    index_t_full = list()
 
     for entry in valid_files:
-        message = obs.toph5(entry)
+        message, index_t = obs.toph5(entry)
+        for e in index_t:
+            index_t_full.append(e)
         if message == "stop":
             LOGGER.error("Stopping program...")
             break
+
+    LOGGER.info("Populating Index table")
+    for entry in index_t_full:
+        ph5_object.ph5_g_receivers.populateIndex_t(entry)
+
+    obs.update_external_references(index_t_full)
     ph5_object.ph5close()
 
 
