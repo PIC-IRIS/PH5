@@ -10,7 +10,7 @@ import logging
 import time
 from ph5.core import experiment
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.057'
 LOGGER = logging.getLogger(__name__)
 
 INDEX_T = {}
@@ -41,125 +41,111 @@ class Rows_Keys(object):
             self.keys = keys
 
 
-def read_index_table():
-    global EX, INDEX_T
+class RecreateExRef():
+    #
+    # Read Command line arguments
+    #
+    def get_args(self):
+        parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawTextHelpFormatter)
 
-    rows, keys = EX.ph5_g_receivers.read_index()
-    INDEX_T = Rows_Keys(rows, keys)
+        parser.usage = "recreate_external_references " + \
+            "--nickname=ph5-file-prefix"
 
+        parser.description = ("Version: {0} Rebuild external references under "
+                              "Receivers_g from info in Index_t."
+                              .format(PROG_VERSION))
 
-def read_m_index_table():
-    global EX, M_INDEX_T
+        parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
+                            help="The ph5 file prefix (experiment nickname).",
+                            metavar="ph5_file_prefix", required=True)
 
-    rows, keys = EX.ph5_g_maps.read_index()
-    M_INDEX_T = Rows_Keys(rows, keys)
+        parser.add_argument("-p", "--path", dest="ph5_path",
+                            help=("Path to ph5 files. Default to current "
+                                  "directory."),
+                            metavar="ph5_path", default=".")
 
+        args = parser.parse_args()
 
-def update_external_references():
-    global EX, INDEX_T
+        self.PH5 = args.ph5_file_prefix
+        self.PATH = args.ph5_path
 
-    LOGGER.info("Updating external references...")
-    n = 0
-    for i in INDEX_T.rows:
-        external_file = i['external_file_name_s']
-        external_path = i['hdf5_path_s']
-        das = i['serial_number_s']
-        target = external_file + ':' + external_path
-        external_group = external_path.split('/')[3]
+    #
+    # Initialize ph5 file
+    #
+    def initialize_ph5(self, editmode=False):
+        '''   Initialize the ph5 file   '''
+        self.EX = experiment.ExperimentGroup(self.PATH, self.PH5)
+        self.EX.ph5open(True)
+        self.EX.initgroup()
 
-        # Nuke old node
-        try:
-            group_node = EX.ph5.get_node(external_path)
-            group_node.remove()
-        except Exception as e:
-            LOGGER.error("E1 {0}".format(e.message))
-        # Re-create node
-        try:
-            EX.ph5.create_external_link(
-                '/Experiment_g/Receivers_g', external_group, target)
-            n += 1
-        except Exception as e:
-            LOGGER.error("E2 {0}".format(e.message))
+    def read_index_table(self):
+        rows, keys = self.EX.ph5_g_receivers.read_index()
+        self.INDEX_T = Rows_Keys(rows, keys)
 
-    m = 0
-    for i in M_INDEX_T.rows:
-        external_file = i['external_file_name_s']
-        external_path = i['hdf5_path_s']
-        das = i['serial_number_s']
-        target = external_file + ':' + external_path
-        external_group = external_path.split('/')[3]
-        print external_file, external_path, das, target, external_group
+    def read_m_index_table(self):
+        rows, keys = self.EX.ph5_g_maps.read_index()
+        self.M_INDEX_T = Rows_Keys(rows, keys)
 
-        # Nuke old node
-        try:
-            group_node = EX.ph5.get_node(external_path)
-            group_node.remove()
-        except Exception as e:
-            LOGGER.error("E3: {0}".format(e.message))
+    def update_external_references(self):
+        LOGGER.info("Updating external references...")
+        n = 0
+        for i in self.INDEX_T.rows:
+            external_file = i['external_file_name_s']
+            external_path = i['hdf5_path_s']
+            das = i['serial_number_s']
+            target = external_file + ':' + external_path
+            external_group = external_path.split('/')[3]
 
-        # Re-create node
-        try:
-            EX.ph5.create_external_link(
-                '/Experiment_g/Maps_g', external_group, target)
-            m += 1
-        except Exception as e:
-            LOGGER.error("E4: {0}".format(e.message))
-            LOGGER.error("Done, Index_t {0} nodes recreated. "
-                         "M_Index_t {1} nodes recreated.\n"
-                         .format(n, m))
+            # Nuke old node
+            try:
+                group_node = self.EX.ph5.get_node(external_path)
+                group_node.remove()
+            except Exception as e:
+                LOGGER.error("E1 {0}".format(e.message))
+            # Re-create node
+            try:
+                self.EX.ph5.create_external_link(
+                    '/Experiment_g/Receivers_g', external_group, target)
+                n += 1
+            except Exception as e:
+                LOGGER.error("E2 {0}".format(e.message))
 
+        m = 0
+        for i in self.M_INDEX_T.rows:
+            external_file = i['external_file_name_s']
+            external_path = i['hdf5_path_s']
+            das = i['serial_number_s']
+            target = external_file + ':' + external_path
+            external_group = external_path.split('/')[3]
+            print external_file, external_path, das, target, external_group
 
-#
-# Initialize ph5 file
-#
+            # Nuke old node
+            try:
+                group_node = self.EX.ph5.get_node(external_path)
+                group_node.remove()
+            except Exception as e:
+                LOGGER.error("E3: {0}".format(e.message))
 
-
-def initialize_ph5(editmode=False):
-    '''   Initialize the ph5 file   '''
-    global EX, PATH, PH5
-
-    EX = experiment.ExperimentGroup(PATH, PH5)
-    EX.ph5open(True)
-    EX.initgroup()
-
-
-#
-# Read Command line arguments
-#
-
-
-def get_args():
-    global PH5, PATH
-
-    parser = argparse.ArgumentParser(
-                                formatter_class=argparse.RawTextHelpFormatter)
-    parser.usage = "recreate_external_references --nickname=ph5-file-prefix"
-
-    parser.description = ("Version: {0} Rebuild external references under "
-                          "Receivers_g from info in Index_t."
-                          .format(PROG_VERSION))
-
-    parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
-                        help="The ph5 file prefix (experiment nickname).",
-                        metavar="ph5_file_prefix", required=True)
-
-    parser.add_argument("-p", "--path", dest="ph5_path",
-                        help=("Path to ph5 files. Default to current "
-                              "directory."),
-                        metavar="ph5_path", default=".")
-
-    args = parser.parse_args()
-
-    PH5 = args.ph5_file_prefix
-    PATH = args.ph5_path
+            # Re-create node
+            try:
+                self.EX.ph5.create_external_link(
+                    '/Experiment_g/Maps_g', external_group, target)
+                m += 1
+            except Exception as e:
+                LOGGER.error("E4: {0}".format(e.message))
+                LOGGER.error("Done, Index_t {0} nodes recreated. "
+                             "M_Index_t {1} nodes recreated.\n"
+                             .format(n, m))
 
 
 def main():
-    get_args()
-    initialize_ph5()
-    read_index_table()
-    read_m_index_table()
-    update_external_references()
+    recrExRef = RecreateExRef()
+    recrExRef.get_args()
+    recrExRef.initialize_ph5()
+    recrExRef.read_index_table()
+    recrExRef.read_m_index_table()
+    recrExRef.update_external_references()
 
 
 if __name__ == '__main__':
