@@ -12,12 +12,11 @@ from ph5 import LOGGING_FORMAT
 from ph5.utilities import initialize_ph5
 from ph5.core import experiment, timedoy
 from obspy.io.mseed.core import _is_mseed
-from obspy.io.mseed.util import get_flags
 from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.056'
+PROG_VERSION = '2019.057'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -60,7 +59,6 @@ class ObspytoPH5(object):
         exrec = experiment.ExperimentGroup(nickname=filename)
         exrec.ph5open(True)
         exrec.initgroup()
-        LOGGER.info("Opened {0} for editing".format(filename))
         return exrec, filename
 
     def get_minis(self, dir):
@@ -161,9 +159,6 @@ class ObspytoPH5(object):
 
         # gets mapping of whats dases each minifile contains
         minis = self.mini_map(existing_minis)
-        if file_tuple[1] == 'MSEED':
-            mseed_flags = get_flags(file_tuple[0])  # noqa
-            mseed_flags = mseed_flags  # noqa
 
         # check if we are opening a file or have an obspy stream
         if isinstance(file_tuple[0], str):
@@ -201,6 +196,8 @@ class ObspytoPH5(object):
                             current_mini = largest + 1
 
         # Loop through data and load it in to PH5
+        LOGGER.info('Processing {0} traces in stream for {1}'.format(
+            len(st), file_tuple[0]))
         for trace in st:
             # iterate through das_station_map
             for entry in das_station_map:
@@ -217,12 +214,6 @@ class ObspytoPH5(object):
                     if not d:
                         d, t, r, ti = mini_handle.ph5_g_receivers.newdas(
                             entry['serial'])
-
-                    # miniSEED
-                    if trace.stats._format == "MSEED":
-                        LOGGER.info(
-                            "Processing Station {0} {1} from miniSEED".format(
-                                trace.stats.station, trace.stats.channel))
 
                     # start populating das table and data arrays
                     das['time/ascii_s'] = trace.stats.starttime
@@ -300,9 +291,14 @@ class ObspytoPH5(object):
 
                     mini_handle.ph5_g_receivers.setcurrent(d)
                     data = array(trace.data)
-                    mini_handle.ph5_g_receivers.newarray(
-                        das['array_name_data_a'], data, dtype='int32',
-                        description=None)
+                    if trace.stats.channel == 'LOG':
+                        mini_handle.ph5_g_receivers.newarray(
+                            das['array_name_data_a'], data, dtype='|S1',
+                            description=None)
+                    else:
+                        mini_handle.ph5_g_receivers.newarray(
+                            das['array_name_data_a'], data, dtype='int32',
+                            description=None)
                     mini_handle.ph5_g_receivers.populateDas_t(das)
 
                     index_t_entry['external_file_name_s'] = "./{}".format(
@@ -315,6 +311,7 @@ class ObspytoPH5(object):
                     index_t.append(index_t_entry)
                     # Don't forget to close minifile
                     mini_handle.ph5close()
+        LOGGER.info('Finished processing {0}'.format(file_tuple[0]))
 
         # last thing is to return the index table so far.
         # index_t will be populated in main() after all

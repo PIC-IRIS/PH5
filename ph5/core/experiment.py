@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.57'
 LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 
@@ -1014,7 +1014,8 @@ class ReceiversGroup:
             if dtype is None:
                 dtype = 'i'
 
-            data = numpy.fromiter(data, dtype=dtype)
+            if type(data) != numpy.ndarray:
+                data = numpy.fromiter(data, dtype=dtype)
 
         if self.current_g_das is not None:
             try:
