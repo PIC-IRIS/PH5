@@ -277,10 +277,10 @@ class ObspytoPH5(object):
                     if trace.stats.channel == 'LOG':
                         startmicro = (
                                 index_t_entry['start_time/epoch_l']*1000000
-                                +index_t_entry['start_time/micro_seconds_i'])
+                                + index_t_entry['start_time/micro_seconds_i'])
                         endmicro = (
                                 index_t_entry['end_time/epoch_l']*1000000
-                                +index_t_entry['end_time/micro_seconds_i'])
+                                + index_t_entry['end_time/micro_seconds_i'])
 
                         das['sample_count_i'] = endmicro - startmicro
                     else:
