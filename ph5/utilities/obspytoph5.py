@@ -274,7 +274,17 @@ class ObspytoPH5(object):
                         das['raw_file_name_s'] = file_tuple[0]
                     else:
                         das['raw_file_name_s'] = 'obspy_stream'
-                    das['sample_count_i'] = trace.stats.npts
+                    if trace.stats.channel == 'LOG':
+                        startmicro = (
+                                index_t_entry['start_time/epoch_l']*1000000
+                                +index_t_entry['start_time/micro_seconds_i'])
+                        endmicro = (
+                                index_t_entry['end_time/epoch_l']*1000000
+                                +index_t_entry['end_time/micro_seconds_i'])
+
+                        das['sample_count_i'] = endmicro - startmicro
+                    else:
+                        das['sample_count_i'] = trace.stats.npts
                     count = 1
 
                     # Make sure we aren't overwriting a data array
