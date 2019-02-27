@@ -173,32 +173,35 @@ class ObspytoPH5(object):
             st = Stream(traces=[file_tuple[0]])
             in_type = 'trace'
 
-        # figure out what first mini file should be
-        if not existing_minis:
-            current_mini = self.first_mini
-        else:
-            for entry in das_station_map:
-                if not existing_minis:
-                    current_mini = self.first_mini
-                else:
-                    current_mini = None
-                    for x in minis:
-                        if entry['serial'] in x[1]:
-                            current_mini = x[0]
+        # Loop through data and load it in to PH5
+        LOGGER.info('Processing {0} traces in stream for {1}'.format(
+            len(st), file_tuple[0]))
+        count = 1
+        for trace in st:
+            if not trace.stats.channel == 'LOG':
+                if not trace.data.any():
+                    LOGGER.info("No data for trace {0}...skipping".format(
+                        trace.stats.channel))
+                    continue
+            if not existing_minis:
+                current_mini = self.first_mini
+            else:
+                current_mini = None
+                for mini in minis:
+                    for entry in das_station_map:
+                        if (entry['serial'] in mini[1] and
+                                entry['station'] == trace.stats.station):
+                            current_mini = mini[0]
                     if not current_mini:
                         largest = 0
                         for x in minis:
                             if x[0] >= largest:
                                 largest = x[0]
-                        if self.get_size_mini(largest) < self.mini_size_max:
+                        if (self.get_size_mini(largest) <
+                                self.mini_size_max):
                             current_mini = largest
                         else:
                             current_mini = largest + 1
-
-        # Loop through data and load it in to PH5
-        LOGGER.info('Processing {0} traces in stream for {1}'.format(
-            len(st), file_tuple[0]))
-        for trace in st:
             # iterate through das_station_map
             for entry in das_station_map:
                 das = {}
@@ -208,7 +211,6 @@ class ObspytoPH5(object):
 
                     # open mini file
                     mini_handle, mini_name = self.openmini(current_mini)
-
                     # get node reference or create new node
                     d = mini_handle.ph5_g_receivers.getdas_g(entry['serial'])
                     if not d:
@@ -233,7 +235,7 @@ class ObspytoPH5(object):
                         trace.stats.endtime.isoformat(), fepoch=True)
                     microsecond = (time % 1) * 1000000
                     index_t_entry['end_time/ascii_s'] = (
-                        trace.stats.starttime.isoformat())
+                        trace.stats.endtime.isoformat())
                     index_t_entry['end_time/epoch_l'] = (int(time))
                     index_t_entry['end_time/micro_seconds_i'] = (
                         microsecond)
@@ -270,22 +272,16 @@ class ObspytoPH5(object):
                         das['channel_number_i'] = channel_list[2]
                     elif trace.stats.channel == 'LOG':
                         das['channel_number_i'] = -2
+                    else:
+                        das['channel_number_i'] = -5
                     if in_type == 'file':
                         das['raw_file_name_s'] = file_tuple[0]
                     else:
                         das['raw_file_name_s'] = 'obspy_stream'
                     if trace.stats.channel == 'LOG':
-                        startmicro = (
-                                index_t_entry['start_time/epoch_l']*1000000
-                                + index_t_entry['start_time/micro_seconds_i'])
-                        endmicro = (
-                                index_t_entry['end_time/epoch_l']*1000000
-                                + index_t_entry['end_time/micro_seconds_i'])
-
-                        das['sample_count_i'] = endmicro - startmicro
+                        das['sample_count_i'] = 0
                     else:
                         das['sample_count_i'] = trace.stats.npts
-                    count = 1
 
                     # Make sure we aren't overwriting a data array
                     while True:
@@ -497,6 +493,7 @@ def main():
         LOGGER.info("Scanning directory {0} and sub directories...".format(
             args.indir))
         found_files = getListOfFiles(args.indir)
+        found_files.sort()
         for f in found_files:
             if _is_mseed(f):
                 LOGGER.info("{0} is a valid miniSEED file. "
@@ -516,7 +513,7 @@ def main():
     if args.num_mini:
         total = 0
         for entry in valid_files:
-            total = total + os.path.getsize(entry)
+            total = total + os.path.getsize(entry[0])
         obs.mini_size_max = (total*.60)/args.num_mini
     index_t_full = list()
 

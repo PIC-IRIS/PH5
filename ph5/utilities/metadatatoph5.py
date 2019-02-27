@@ -175,6 +175,8 @@ class MetadatatoPH5(object):
                         ['seed_orientation_code_s']
                     elif channel.code == 'LOG':
                         array_channel['channel_number_i'] = -2
+                    else:
+                        array_channel['channel_number_i'] = -5
 
                     array_channel['seed_location_code_s'] = (
                         channel.location_code)
