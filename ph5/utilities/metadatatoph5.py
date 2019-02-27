@@ -118,41 +118,42 @@ class MetadatatoPH5(object):
         for network in inventory:
             for station in network:
                 array_station = {}
-                if station.creation_date:
-                    array_station['deploy_time/ascii_s'] = (
-                        station.creation_date.isoformat())
-                    time = timedoy.fdsn2epoch(
-                        station.creation_date.isoformat(), fepoch=True)
-                    microsecond = (time % 1) * 1000000
-                    array_station['deploy_time/epoch_l'] = (int(time))
-                    array_station['deploy_time/micro_seconds_i'] = (
-                        microsecond)
-                else:
-                    array_station['deploy_time/ascii_s'] = ""
-                    array_station['deploy_time/epoch_l'] = ""
-                    array_station['deploy_time/micro_seconds_i'] = ""
-                array_station['deploy_time/type_s'] = "BOTH"
-                if station.termination_date:
-                    array_station['pickup_time/ascii_s'] = (
-                        station.termination_date.isoformat())
-                    time = timedoy.fdsn2epoch(
-                        station.creation_date.isoformat(), fepoch=True)
-                    microsecond = (time % 1) * 1000000
-                    array_station['pickup_time/epoch_l'] = (int(time))
-                    array_station['pickup_time/micro_seconds_i'] = (
-                        microsecond)
-                else:
-                    array_station['pickup_time/ascii_s'] = ""
-                    array_station['pickup_time/epoch_l'] = ""
-                    array_station['pickup_time/micro_seconds_i'] = ""
-                array_station['pickup_time/type_s'] = "BOTH"
-                array_station['id_s'] = station.code.encode('ascii',
-                                                            'ignore')
-
                 array_station['seed_station_name_s'] = station.code.encode(
                     'ascii', 'ignore')
+                array_station['id_s'] = station.code.encode('ascii',
+                                                            'ignore')
                 for channel in station:
                     array_channel = {}
+                    if channel.start_date:
+                        array_channel['deploy_time/ascii_s'] = (
+                            channel.start_date.isoformat())
+                        time = timedoy.fdsn2epoch(
+                            channel.start_date.isoformat(), fepoch=True)
+                        microsecond = (time % 1) * 1000000
+                        array_channel['deploy_time/epoch_l'] = (int(time))
+                        array_channel['deploy_time/micro_seconds_i'] = (
+                            microsecond)
+                    else:
+                        array_channel['deploy_time/ascii_s'] = ""
+                        array_channel['deploy_time/epoch_l'] = ""
+                        array_channel['deploy_time/micro_seconds_i'] = ""
+                    array_channel['deploy_time/type_s'] = "BOTH"
+
+                    if channel.end_date:
+                        array_channel['pickup_time/ascii_s'] = (
+                            channel.end_date.isoformat())
+                        time = timedoy.fdsn2epoch(
+                            channel.end_date.isoformat(), fepoch=True)
+                        microsecond = (time % 1) * 1000000
+                        array_channel['pickup_time/epoch_l'] = (int(time))
+                        array_channel['pickup_time/micro_seconds_i'] = (
+                            microsecond)
+                    else:
+                        array_channel['pickup_time/ascii_s'] = ""
+                        array_channel['pickup_time/epoch_l'] = ""
+                        array_channel['pickup_time/micro_seconds_i'] = ""
+                    array_channel['pickup_time/type_s'] = "BOTH"
+
                     channel_list = list(channel.code)
                     array_channel['seed_band_code_s'] = (
                         channel_list[0].encode('ascii', 'ignore'))
