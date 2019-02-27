@@ -17,7 +17,7 @@ from obspy.core.inventory import Inventory, Network
 from obspy import UTCDateTime
 from obspy.core.util import AttribDict
 
-PROG_VERSION = "2019.54"
+PROG_VERSION = "2019.58"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -300,7 +300,7 @@ def get_args():
     parser.add_argument(
         "-f", "--file", dest="infile",
         help="Input file containing metadata...stationxml, SEED, Stationtxt",
-        metavar="file_list_file")
+        metavar="file")
 
     the_args = parser.parse_args()
 

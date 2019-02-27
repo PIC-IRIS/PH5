@@ -16,7 +16,7 @@ from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.057'
+PROG_VERSION = '2019.57'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -45,6 +45,7 @@ class ObspytoPH5(object):
         self.num_mini = num_mini
         self.first_mini = first_mini
         self.mini_size_max = 26843545600
+        self.verbose = False
 
     def openmini(self, mini_num):
         """
@@ -178,6 +179,9 @@ class ObspytoPH5(object):
             len(st), file_tuple[0]))
         count = 1
         for trace in st:
+            if self.verbose:
+                LOGGER.info('Processing trace {0} in {1}'.format(
+                    trace.stats.channel, trace.stats.station))
             if not trace.stats.channel == 'LOG':
                 if not trace.data.any():
                     LOGGER.info("No data for trace {0}...skipping".format(
@@ -422,6 +426,11 @@ def get_args():
         help="The index of the first miniPH5_xxxxx.ph5 file.",
         metavar="first_mini", type=int, default=1)
 
+    parser.add_argument(
+        "-V", "--verbose", dest="verbose",
+        help="Verbose logging ",
+        action='store_true')
+
     args = parser.parse_args()
     return args
 
@@ -509,6 +518,8 @@ def main():
     ph5_object.initgroup()
     obs = ObspytoPH5(ph5_object, args.ph5path,
                      args.num_mini, args.first_mini)
+    if args.verbose:
+        obs.verbose = True
     obs.get_minis(args.ph5path)
     if args.num_mini:
         total = 0
