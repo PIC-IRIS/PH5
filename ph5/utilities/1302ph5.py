@@ -180,10 +180,9 @@ class Conv130toPH5():
             fh.read().decode('ascii')
             fh.seek(0)
         except Exception:
-            LOGGER.error(
+            raise Exception(
                 "The file containing a list of rt130 file names is not ASCII."
                 " Use -r for a single raw file.")
-            sys.exit()
 
         while True:
             line = fh.readline()
@@ -376,7 +375,10 @@ class Conv130toPH5():
             LOGGER.addHandler(ch)
 
         if args.infile is not None:
-            self.read_infile(args.infile)
+            try:
+                self.read_infile(args.infile)
+            except Exception, e:
+                raise e
 
         elif args.rawfile is not None:
             self.FILES.append(args.rawfile)
@@ -983,7 +985,14 @@ class Conv130toPH5():
 
 def main():
     conv = Conv130toPH5()
-    conv.get_args()
+    try:
+        args = conv.get_args()
+        if args == 1:
+            return 1
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
+
     LOGGER.info("Initializing ph5 file...")
     conv.initialize_ph5(conv.PH5)
 
