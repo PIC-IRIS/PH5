@@ -13,7 +13,7 @@ from os.path import expanduser
 from ph5.utilities import novenqc, novenkef
 
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.058'
 LOGGER = logging.getLogger(__name__)
 
 try:
@@ -208,7 +208,7 @@ SEPMAP = {'tab': None, 'comma': ',',
 
 
 class MyWorker(QtCore.QThread):
-    def __init__(self, command, table=None, names=None,
+    def __init__(self, command, novqc, table=None, names=None,
                  cols=None, sep=None, outfile=None):
         super(MyWorker, self).__init__()
         self.command = command
@@ -218,30 +218,24 @@ class MyWorker(QtCore.QThread):
         self.sep = sep
         self.outfile = outfile
         self.working = True
+        self.novqc = novqc
 
     def run(self):
         if self.command == 'qc_receivers':
             while self.working:
-                self.working = novenqc.qc_receivers(self.table,
-                                                    self.names,
-                                                    self.cols,
-                                                    self.sep)
+                self.working = self.novqc.qc_receivers(self.table,
+                                                       self.names,
+                                                       self.cols,
+                                                       self.sep)
         elif self.command == 'qc_shots':
             while self.working:
-                self.working = novenqc.qc_shots(self.table,
-                                                self.names,
-                                                self.cols,
-                                                self.sep)
+                self.working = self.novqc.qc_shots(self.table,
+                                                   self.names,
+                                                   self.cols,
+                                                   self.sep)
         elif self.command == 'qc_map':
             while self.working:
-                try:
-                    self.working = novenqc.qc_map(self.outfile)
-                except Exception, err_msg:
-                    LOGGER.error(err_msg)
-                    mess = QtGui.QMessageBox()
-                    mess.setIcon(QtGui.QMessageBox.Warning)
-                    mess.setText(err_msg)
-                    mess.exec_()
+                self.working = self.novqc.qc_map(self.outfile)
         else:
             print "Fail"
 
@@ -427,9 +421,12 @@ class Novitiate(QtGui.QMainWindow):
        Program parent
     '''
 
-    def __init__(self, parent=None):
+    def __init__(self, RECEIVER_CFG, EVENT_CFG, novqc, parent=None):
         super(Novitiate, self).__init__(parent)
 
+        self.novqc = novqc
+        self.RECEIVER_CFG = RECEIVER_CFG
+        self.EVENT_CFG = EVENT_CFG
         self.settings = dict(inFormat='receiver', outFormat='kef',
                              colSep='comma', linesSkip=0, linesView=3)
         self.setWindowTitle('Noven Version: ' + PROG_VERSION)
@@ -441,7 +438,6 @@ class Novitiate(QtGui.QMainWindow):
 
         self.TOP = {}
 
-        main()
         #
         # Setup menus
         #
@@ -482,6 +478,9 @@ class Novitiate(QtGui.QMainWindow):
         self.connect(help, QtCore.SIGNAL('triggered()'), self.cbhelp)
 
         menubar = self.menuBar()
+        # some menu entries don't show up in MacOSX when docking
+        # the following line force the menu stay with the form
+        menubar.setNativeMenuBar(False)
         file = menubar.addMenu('&File')
         file.addAction(openin)
         file.addAction(checkin)
@@ -546,9 +545,9 @@ class Novitiate(QtGui.QMainWindow):
 
         except AttributeError:
             if self.settings['inFormat'] == 'receiver':
-                cvalues = RECEIVER_CFG.keys()
+                cvalues = self.RECEIVER_CFG.keys()
             else:
-                cvalues = EVENT_CFG.keys()
+                cvalues = self.EVENT_CFG.keys()
 
             cvalues.sort()
             cvalues.insert(0, u'Ignore')
@@ -605,9 +604,9 @@ class Novitiate(QtGui.QMainWindow):
             return
         x -= 1
         if self.settings['inFormat'] == 'receiver':
-            cols = RECEIVER_CFG
+            cols = self.RECEIVER_CFG
         else:
-            cols = EVENT_CFG
+            cols = self.EVENT_CFG
 
         keys = cols.keys()
         keys = sorted(map(str, keys))
@@ -616,9 +615,9 @@ class Novitiate(QtGui.QMainWindow):
 
     def cbhelp(self):
         if self.settings['inFormat'] == 'receiver':
-            cols = RECEIVER_CFG
+            cols = self.RECEIVER_CFG
         else:
-            cols = EVENT_CFG
+            cols = self.EVENT_CFG
 
         help = "{0:<25}{1}".format("Ignore:", "Ignore this entire column.\n\n")
         keys = sorted(cols.keys())
@@ -636,14 +635,14 @@ class Novitiate(QtGui.QMainWindow):
 
     def qcDone(self):
         self.status.showMessage("Done")
-        if novenqc.ERR is not None and len(novenqc.ERR) != 0:
-            self.errorsDialog = ErrorsDialog(novenqc.ERR, self)
+        if self.novqc.ERR is not None and len(self.novqc.ERR) != 0:
+            self.errorsDialog = ErrorsDialog(self.novqc.ERR, self)
             self.errorsDialog.show()
         else:
             QtGui.QMessageBox.information(
                 self, "Information", "Nothing funky found!")
 
-        self.TOP = novenqc.TOP
+        self.TOP = self.novqc.TOP
 
     def openInfile(self):
         filters = 'CSV files: (*.csv);; Text files: (*.txt);; All: (*)'
@@ -672,7 +671,7 @@ class Novitiate(QtGui.QMainWindow):
                 outFileName += '.kml'
 
             self.status.showMessage("Working on kml...")
-            worker = MyWorker('qc_map', outfile=outFileName)
+            worker = MyWorker('qc_map', self.novqc, outfile=outFileName)
             worker.start()
             worker.wait()
 
@@ -694,16 +693,16 @@ class Novitiate(QtGui.QMainWindow):
                 tmp.append(n)
 
         if self.settings['inFormat'] == 'receiver':
-            worker = MyWorker('qc_receivers',
+            worker = MyWorker('qc_receivers', self.novqc,
                               self.readFileLines[self.settings['linesSkip']:],
                               names,
-                              RECEIVER_CFG,
+                              self.RECEIVER_CFG,
                               sep=SEPMAP[self.settings['colSep']])
         elif self.settings['inFormat'] == 'event':
-            worker = MyWorker('qc_shots',
+            worker = MyWorker('qc_shots', self.novqc,
                               self.readFileLines[self.settings['linesSkip']:],
                               names,
-                              EVENT_CFG,
+                              self.EVENT_CFG,
                               sep=SEPMAP[self.settings['colSep']])
         self.status.showMessage("Working on QC...")
         worker.finished.connect(self.qcDone)
@@ -725,8 +724,6 @@ class Novitiate(QtGui.QMainWindow):
 #
 # Mix-ins
 #
-
-
 def read_cfg(filename):
     fh = open(filename)
     ret = json.load(fh)
@@ -735,12 +732,7 @@ def read_cfg(filename):
     return ret
 
 
-def main():
-    return
-
-
 def startapp():
-    global RECEIVER_CFG, EVENT_CFG
     home = expanduser("~")
     if not os.path.isfile(
             os.path.join(home, '.PH5', 'Receiver.cfg')) or not os.path.isfile(
@@ -765,8 +757,9 @@ def startapp():
         RECEIVER_CFG = read_cfg(os.path.join(home, '.PH5', 'Receiver.cfg'))
         EVENT_CFG = read_cfg(os.path.join(home, '.PH5', 'Event.cfg'))
 
+    novqc = novenqc.Novenqc()
     app = QtGui.QApplication(sys.argv)
-    form = Novitiate()
+    form = Novitiate(RECEIVER_CFG, EVENT_CFG, novqc)
     form.show()
     app.exec_()
 
