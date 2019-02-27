@@ -303,6 +303,9 @@ class ErrorsDialog(QtGui.QMainWindow):
         closeAction.triggered.connect(self.close)
 
         menubar = self.menuBar()
+        # some menu entries don't show up in MacOSX when docking
+        # the following line force the menu stay with the form
+        menubar.setNativeMenuBar(False)
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(saveAction)
         fileMenu.addAction(closeAction)
