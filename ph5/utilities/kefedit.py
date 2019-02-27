@@ -4,7 +4,7 @@
 #
 # Credit: Lan Dam
 #
-# Updated Feb 2019
+# Updated Feb 2018
 import sys
 import logging
 import os
@@ -15,7 +15,6 @@ from tempfile import mkdtemp
 from copy import deepcopy
 from operator import itemgetter
 from ph5.core import kefutility
-logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 try:
     from PyQt4 import QtGui, QtCore
@@ -23,7 +22,7 @@ except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-PROG_VERSION = 2019.043
+PROG_VERSION = 2019.058
 EXPL = {}
 
 # CLASS ####################
@@ -132,10 +131,13 @@ class KefEdit(QtGui.QMainWindow):
         # ---------------- exit ----------------
         exitAction = QtGui.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.closeEvent)
+        exitAction.triggered.connect(self.close)
 
         # ADDING MENU #####################
-        menubar = QtGui.QMenuBar()
+        menubar = self.menuBar()
+        # some menu entries don't show up in MacOSX when docking
+        # the following line force the menu stay with the form
+        menubar.setNativeMenuBar(False)
         self.setMenuBar(menubar)
 
         fileMenu = menubar.addMenu('&File')
@@ -168,13 +170,11 @@ class KefEdit(QtGui.QMainWindow):
     def closeEvent(self, evt=None):
         for tab in self.path_tabs:
             if self.notsave is True and \
-                    (
-                        tab.updateList != [] or tab.deleteList != [] or
-                        tab.addDataList != []):
-                msg = "There are still things you have worked on but haven't" \
-                      "saved." + \
-                      "\nClick on Cancel to cancel closing. " + \
-                      "\nClick on Close to close KefEdit."
+               (tab.updateList != [] or tab.deleteList != [] or
+                tab.addDataList != []):
+                msg = "There are still things haven't been saved."\
+                    "\nClick on Cancel to cancel closing. "\
+                    "\nClick on Close to close KefEdit."
                 result = QtGui.QMessageBox.question(self, "Are you sure?", msg,
                                                     QtGui.QMessageBox.Cancel,
                                                     QtGui.QMessageBox.Close)
@@ -182,8 +182,7 @@ class KefEdit(QtGui.QMainWindow):
                     if evt.__class__.__name__ != 'bool':
                         evt.ignore()
                     return
-
-        QtCore.QCoreApplication.instance().quit()
+        evt.accept()
 
     def OnManual(self):
         self.manualWin = ManWindow("manual")
@@ -284,6 +283,7 @@ class KefEdit(QtGui.QMainWindow):
     # * call _saveKeffile() to save kef format into the filename
     # * inform when successfully save and ask to close KefEdit
     def OnSaveKef(self):
+        print "OnSaveKef"
         # print "onSaveKef"
         if not self._checkAddTableView():
             return
@@ -338,7 +338,7 @@ class KefEdit(QtGui.QMainWindow):
         if result == QtGui.QMessageBox.Yes:
             if self.ph5api is not None:
                 self.ph5api.close()
-            QtCore.QCoreApplication.instance().quit()
+            self.close()
 
             ###############################
 
@@ -463,8 +463,7 @@ class KefEdit(QtGui.QMainWindow):
         if doclose:
             if self.ph5api is not None:
                 self.ph5api.close()
-            QtCore.QCoreApplication.instance().quit()
-
+            self.close()
             try:
                 os.unlink(keftmpfile)  # remove keftmpfile
             except BaseException:
@@ -571,7 +570,7 @@ class KefEdit(QtGui.QMainWindow):
         if doclose:
             if self.ph5api is not None:
                 self.ph5api.close()
-            QtCore.QCoreApplication.instance().quit()
+            self.close()
 
     # def setData
     # author: Lan Dam
@@ -2052,17 +2051,11 @@ class SelectTableDialog(QtGui.QDialog):
                 p.tableType, errorCtrl)
             QtGui.QMessageBox.warning(self, "Warning", msg)
             return
-        try:
-            p.dataTable, p.labelSets, p.totalLines, p.types =\
-                kefutility.PH5toTableData(
-                    p.statusBar, p.ph5api, p.filename,
-                    p.path2file, p.tableType, p.arg)
-        except Exception as errmsg:
-            LOGGER.error(errmsg)
-            mess = QtGui.QMessageBox()
-            mess.setIcon(QtGui.QMessageBox.Warning)
-            mess.setText(errmsg)
-            mess.exec_()
+
+        p.dataTable, p.labelSets, p.totalLines, p.types =\
+            kefutility.PH5toTableData(
+                p.statusBar, p.ph5api, p.filename,
+                p.path2file, p.tableType, p.arg)
 
         p.setData()
         p.openTableAction.setEnabled(True)
