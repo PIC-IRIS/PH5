@@ -8,7 +8,7 @@ import sys
 import os
 from ph5.core import segdreader
 
-PROG_VERSION = "2019.043"
+PROG_VERSION = "2019.059"
 
 
 def print_container(container):
@@ -115,10 +115,7 @@ def trace_headers(sd):
 
 
 def main():
-    global RH, TH
-    TH = []
-
-    RH = segdreader.ReelHeaders()
+    segdreader.ReelHeaders()
     try:
         sd = segdreader.Reader(infile=sys.argv[1])
     except BaseException:

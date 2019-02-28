@@ -57,7 +57,6 @@ e2aG = [
 def AsciiToEbcdic(str):
     '''Return the ASCII string str in EBCDIC form.
     '''
-    global a2eG
 
     if not isinstance(str, types.StringType):
         raise "Bad data", "Expected a string argument"
@@ -73,8 +72,7 @@ def AsciiToEbcdic(str):
 
 
 def EbcdicToAscii(str):
-    global e2aG
-
+    print "EbcdicToAscii:",
     if not isinstance(str, types.StringType):
         raise "Bad data", "Expected a string argument"
 

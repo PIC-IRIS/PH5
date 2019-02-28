@@ -170,8 +170,8 @@ class KefEdit(QtGui.QMainWindow):
     def closeEvent(self, evt=None):
         for tab in self.path_tabs:
             if self.notsave is True and \
-               (tab.updateList != [] or tab.deleteList != [] or
-                tab.addDataList != []):
+              (tab.updateList != [] or tab.deleteList != [] or
+               tab.addDataList != []):
                 msg = "There are still things haven't been saved."\
                     "\nClick on Cancel to cancel closing. "\
                     "\nClick on Close to close KefEdit."

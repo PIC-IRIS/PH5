@@ -12,7 +12,7 @@ import os
 from ph5.core import segy_h, ibmfloat, ebcdic
 import construct
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
 
 SAMPLE_LENGTH = {1: 4, 2: 4, 3: 2, 4: 4, 5: 4, 8: 1}
@@ -79,294 +79,277 @@ SIZEOF = {"lineSeq": 32, "reelSeq": 32, "event_number": 32,
           "SensorVersion": 8, "SensorRev": 8, "VOR": 8, }
 
 
-def get_args():
-    global FH, TYPE, PRINT, L, T, F, ENDIAN, EBCDIC
+class DumpSGY():
+    def get_args(self):
 
-    FH = None
-    TYPE = None
-    PRINT = False
-    L = None
-    T = None
-    F = None
+        parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawTextHelpFormatter)
 
-    parser = argparse.ArgumentParser(
-                                formatter_class=argparse.RawTextHelpFormatter)
+        parser.usage = "Version: {0} Usage: dumpsgy [options]".format(
+            PROG_VERSION)
 
-    parser.usage = "Version: {0} Usage: dumpsgy [options]".format(
-        PROG_VERSION)
+        parser.add_argument(
+            "-f", action="store", dest="infile", type=str, required=True)
 
-    parser.add_argument("-f", action="store", dest="infile", type=str,
-                        required=True)
+        parser.add_argument(
+            "-t", action="store", dest="ttype", default='S',
+            choices=['U', 'P', 'S', 'N', 'I'],
+            help=("Extended trace header style. U => USGS Menlo, "
+                  "P => PASSCAL, S => SEG, I => SIOSEIS, N => iNova FireFly"))
 
-    parser.add_argument("-t", action="store", dest="ttype",
-                        choices=['U', 'P', 'S', 'N', 'I'],
-                        help=("Extended trace header style. U => USGS Menlo, "
-                              "P => PASSCAL, S => SEG, I => SIOSEIS, "
-                              "N => iNova FireFly"), default='S')
+        parser.add_argument(
+            "-p", action="store_true", dest="print_true", default=False)
 
-    parser.add_argument("-p", action="store_true",
-                        dest="print_true", default=False)
+        parser.add_argument(
+            "-L", action="store", dest="bytes_per_trace", type=int)
 
-    parser.add_argument("-L", action="store",
-                        dest="bytes_per_trace", type=int)
+        parser.add_argument(
+            "-T", action="store", dest="traces_per_ensemble", type=int)
 
-    parser.add_argument("-T", action="store",
-                        dest="traces_per_ensemble", type=int)
+        parser.add_argument(
+            "-F", action="store", dest="trace_format", type=int,
+            help=("1 = IBM - 4 bytes, 2 = INT - 4 bytes, 3 = INT - 2 bytes,"
+                  "5 = IEEE - 4 bytes, 8 = INT - 1 byte"))
 
-    parser.add_argument("-F", action="store", dest="trace_format", type=int,
-                        help=("1 = IBM - 4 bytes, 2 = INT - 4 bytes, "
-                              "3 = INT - 2 bytes, 5 = IEEE - 4 bytes, "
-                              "8 = INT - 1 byte"))
+        parser.add_argument(
+            "-e", action="store", dest="endian", type=str, default='big',
+            help="Endianess: 'big' or 'little'. Default = 'big'")
 
-    parser.add_argument("-e", action="store", dest="endian",
-                        type=str, default='big',
-                        help="Endianess: 'big' or 'little'. Default = 'big'")
+        parser.add_argument(
+            "-i", action="store_false", dest="ebcdic", default=True,
+            help="EBCDIC textural header.")
 
-    parser.add_argument("-i", action="store_false", dest="ebcdic",
-                        default=True, help="EBCDIC textural header.")
+        args = parser.parse_args()
 
-    args = parser.parse_args()
+        self.FH = open(args.infile, 'rb')
+        self.TYPE = args.ttype
+        self.PRINT = args.print_true
+        self.L = args.bytes_per_trace
+        self.T = args.traces_per_ensemble
+        self.F = args.trace_format
+        self.ENDIAN = args.endian
+        self.EBCDIC = args.ebcdic
 
-    FH = open(args.infile, 'rb')
-    TYPE = args.ttype
-    PRINT = args.print_true
-    L = args.bytes_per_trace
-    T = args.traces_per_ensemble
-    F = args.trace_format
-    ENDIAN = args.endian
-    EBCDIC = args.ebcdic
+    def read_text_header(self):
+        buf = self.FH.read(3200)
+        t = segy_h.Text()
 
+        return t.parse(buf)
 
-def read_text_header():
-    buf = FH.read(3200)
-    t = segy_h.Text()
+    def last_extended_header(self, container):
+        '''   Return True if this contains an EndText stanza?   '''
+        import re
+        lastRE = re.compile(
+            r".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
+        keys = segy_h.Text().__keys__
+        for k in keys:
+            what = "container.{0}".format(k)
+            if self.EBCDIC:
+                t = ebcdic.EbcdicToAscii(eval(what))
+            else:
+                t = eval(what)
 
-    return t.parse(buf)
+            if lastRE.match(t):
+                return True
 
-
-def last_extended_header(container):
-    '''   Return True if this contains an EndText stanza?   '''
-    import re
-    lastRE = re.compile(r".*\(\(.*SEG\:.*[Ee][Nn][Dd][Tt][Ee][Xx][Tt].*\)\).*")
-    keys = segy_h.Text().__keys__
-    for k in keys:
-        what = "container.{0}".format(k)
-        if EBCDIC:
-            t = ebcdic.EbcdicToAscii(eval(what))
-        else:
-            t = eval(what)
-
-        if lastRE.match(t):
-            return True
-
-    return False
-
-
-def print_text_header(container):
-    global TYPE
-    keys = segy_h.Text().__keys__
-    print "--------------- Textural Header ---------------"
-    for k in keys:
-        what = "container.{0}".format(k)
-        if EBCDIC:
-            print "{0}\t-\t{1:s}".format(k, ebcdic.EbcdicToAscii(eval(what)))
-        else:
-            print "{0}\t-\t{1:s}".format(k, eval(what))
-
-        if TYPE is None:
-            if k == '_38_':
-                try:
-                    if EBCDIC:
-                        s = ebcdic.EbcdicToAscii(eval(what))
-                    else:
-                        s = eval(what)
-
-                    try:
-                        flds = s.split()
-                        if flds[1] == 'MENLO':
-                            TYPE = 'U'
-                        elif flds[1] == 'PASSCAL':
-                            TYPE = 'P'
-                        elif flds[1] == 'SEG':
-                            TYPE = 'S'
-                        elif flds[1] == 'SIOSEIS':
-                            TYPE = 'I'
-                        else:
-                            TYPE = 'S'
-                    except BaseException:
-                        pass
-                except BaseException:
-                    TYPE = 'P'
-
-
-def read_binary_header():
-    buf = FH.read(400)
-    b = segy_h.Reel(ENDIAN)
-
-    ret = None
-    try:
-        ret = b.parse(buf)
-    except Exception as e:
-        LOGGER.error(e)
-
-    return ret
-
-
-def print_binary_header(container):
-    if not container:
-        return
-    keys = segy_h.Reel().__keys__
-    print "---------- Binary Header ----------"
-    for k in keys:
-        what = "container.{0}".format(k)
-        print "{0:<20}\t---\t{1}".format(k, eval(what))
-
-
-def read_trace_header():
-    buf = FH.read(180)
-    t = segy_h.Trace(ENDIAN)
-
-    return t.parse(buf)
-
-
-def print_trace_header(container):
-    keys = segy_h.Trace().__keys__
-    tt = 0
-    print "---------- Trace Header ----------"
-    for k in keys:
-        what = "container.{0}".format(k)
-        try:
-            if tt == 9999:
-                raise
-            s = SIZEOF[k] / 8
-            foffset = "{0:<3} - {1:>3}".format(tt, tt + s - 1)
-            tt += s
-        except BaseException:
-            tt = 9999
-            foffset = "{0:<3} - {1:>3}".format('_', '_')
-
-        print "{2} {0:<20}\t---\t{1}".format(k, eval(what), foffset)
-
-
-def read_extended_header():
-    buf = FH.read(60)
-
-    if TYPE == 'U':
-        e = segy_h.Menlo(ENDIAN)
-    elif TYPE == 'S':
-        e = segy_h.Seg(ENDIAN)
-    elif TYPE == 'P':
-        e = segy_h.Passcal(ENDIAN)
-    elif TYPE == 'I':
-        e = segy_h.Sioseis(ENDIAN)
-    elif TYPE == 'N':
-        e = segy_h.iNova(ENDIAN)
-    else:
-        return None
-
-    return e.parse(buf)
-
-
-def print_extended_header(container):
-    if TYPE == 'U':
-        keys = segy_h.Menlo().__keys__
-    elif TYPE == 'S':
-        keys = segy_h.Seg().__keys__
-    elif TYPE == 'P':
-        keys = segy_h.Passcal().__keys__
-    elif TYPE == 'I':
-        keys = segy_h.Sioseis().__keys__
-    elif TYPE == 'N':
-        keys = segy_h.iNova().__keys__
-    else:
-        return None
-
-    tt = 180
-    print "---------- Extended Header ----------"
-    for k in keys:
-        what = "container.{0}".format(k)
-
-        try:
-            if tt == 9999:
-                raise
-            s = SIZEOF[k] / 8
-            if s < 1:
-                raise
-            foffset = "{0:<3} - {1:>3}".format(tt, tt + s - 1)
-            tt += s
-        except BaseException:
-            tt = 9999
-            foffset = "{0:<3} - {1:>3}".format('_', '_')
-
-        print "{2} {0:<20}\t---\t{1}".format(k, eval(what), foffset)
-
-
-def read_trace(n, l, f=5):
-    ret = []
-    if PRINT is True:
-        for i in range(n):
-            buf = FH.read(l)
-            # IBM floats - 4 byte - Must be big endian
-            if f == 1:
-                ret.append(construct.BFloat32(
-                    "x").parse(ibmfloat.ibm2ieee32(buf)))
-            # INT - 4 byte or 2 byte
-            elif f == 2:
-                if ENDIAN == 'little':
-                    # Swap 4 byte
-                    b = construct.SLInt32("x").parse(buf)
-                else:
-                    b = construct.SBInt32("x").parse(buf)
-
-                ret.append(b)
-            elif f == 3:
-                if ENDIAN == 'little':
-                    # Swap 2 byte
-                    b = construct.SLInt16("x").parse(buf)
-                else:
-                    b = construct.SBInt16("x").parse(buf)
-
-                ret.append(b)
-            # IEEE floats - 4 byte
-            elif f == 5:
-                if ENDIAN == 'little':
-                    # Swap 4 byte
-                    b = construct.LFloat32("x").parse(buf)
-                else:
-                    b = construct.BFloat32("x").parse(buf)
-
-                ret.append(b)
-            # INT - 1 byte
-            elif f == 8:
-                ret.append(construct.SBInt8("x").parse(buf))
-
-    else:
-        FH.read(n * l)
-
-    return ret
-
-
-def isEOF():
-    try:
-        n = FH.read(240)
-        if n != 240:
-            raise EOFError
-        FH.seek(-240, os.SEEK_CUR)
         return False
-    except EOFError:
-        return True
+
+    def print_text_header(self, container):
+        keys = segy_h.Text().__keys__
+        print "--------------- Textural Header ---------------"
+        for k in keys:
+            what = "container.{0}".format(k)
+            if self.EBCDIC:
+                print "{0}\t-\t{1:s}".format(
+                    k, ebcdic.EbcdicToAscii(eval(what)))
+            else:
+                print "{0}\t-\t{1:s}".format(k, eval(what))
+
+            if self.TYPE is None:
+                if k == '_38_':
+                    try:
+                        if self.EBCDIC:
+                            s = ebcdic.EbcdicToAscii(eval(what))
+                        else:
+                            s = eval(what)
+
+                        try:
+                            flds = s.split()
+                            if flds[1] == 'MENLO':
+                                self.TYPE = 'U'
+                            elif flds[1] == 'PASSCAL':
+                                self.TYPE = 'P'
+                            elif flds[1] == 'SEG':
+                                self.TYPE = 'S'
+                            elif flds[1] == 'SIOSEIS':
+                                self.TYPE = 'I'
+                            else:
+                                self.TYPE = 'S'
+                        except BaseException:
+                            pass
+                    except BaseException:
+                        self.TYPE = 'P'
+
+    def read_binary_header(self):
+        buf = self.FH.read(400)
+        b = segy_h.Reel(self.ENDIAN)
+
+        ret = None
+        try:
+            ret = b.parse(buf)
+        except Exception as e:
+            LOGGER.error(e)
+
+        return ret
+
+    def print_binary_header(self, container):
+        if not container:
+            return
+        keys = segy_h.Reel().__keys__
+        print "---------- Binary Header ----------"
+        for k in keys:
+            what = "container.{0}".format(k)
+            print "{0:<20}\t---\t{1}".format(k, eval(what))
+
+    def read_trace_header(self):
+        buf = self.FH.read(180)
+        t = segy_h.Trace(self.ENDIAN)
+
+        return t.parse(buf)
+
+    def print_trace_header(self, container):
+        keys = segy_h.Trace().__keys__
+        tt = 0
+        print "---------- Trace Header ----------"
+        for k in keys:
+            what = "container.{0}".format(k)
+            try:
+                if tt == 9999:
+                    raise
+                s = SIZEOF[k] / 8
+                foffset = "{0:<3} - {1:>3}".format(tt, tt + s - 1)
+                tt += s
+            except BaseException:
+                tt = 9999
+                foffset = "{0:<3} - {1:>3}".format('_', '_')
+
+            print "{2} {0:<20}\t---\t{1}".format(k, eval(what), foffset)
+
+    def read_extended_header(self):
+        buf = self.FH.read(60)
+
+        if self.TYPE == 'U':
+            e = segy_h.Menlo(self.ENDIAN)
+        elif self.TYPE == 'S':
+            e = segy_h.Seg(self.ENDIAN)
+        elif self.TYPE == 'P':
+            e = segy_h.Passcal(self.ENDIAN)
+        elif self.TYPE == 'I':
+            e = segy_h.Sioseis(self.ENDIAN)
+        elif self.TYPE == 'N':
+            e = segy_h.iNova(self.ENDIAN)
+        else:
+            return None
+
+        return e.parse(buf)
+
+    def print_extended_header(self, container):
+        if self.TYPE == 'U':
+            keys = segy_h.Menlo().__keys__
+        elif self.TYPE == 'S':
+            keys = segy_h.Seg().__keys__
+        elif self.TYPE == 'P':
+            keys = segy_h.Passcal().__keys__
+        elif self.TYPE == 'I':
+            keys = segy_h.Sioseis().__keys__
+        elif self.TYPE == 'N':
+            keys = segy_h.iNova().__keys__
+        else:
+            return None
+
+        tt = 180
+        print "---------- Extended Header ----------"
+        for k in keys:
+            what = "container.{0}".format(k)
+
+            try:
+                if tt == 9999:
+                    raise
+                s = SIZEOF[k] / 8
+                if s < 1:
+                    raise
+                foffset = "{0:<3} - {1:>3}".format(tt, tt + s - 1)
+                tt += s
+            except BaseException:
+                tt = 9999
+                foffset = "{0:<3} - {1:>3}".format('_', '_')
+
+            print "{2} {0:<20}\t---\t{1}".format(k, eval(what), foffset)
+
+    def read_trace(self, n, l, f=5):
+        ret = []
+        if self.PRINT is True:
+            for i in range(n):
+                buf = self.FH.read(l)
+                # IBM floats - 4 byte - Must be big endian
+                if f == 1:
+                    ret.append(construct.BFloat32(
+                        "x").parse(ibmfloat.ibm2ieee32(buf)))
+                # INT - 4 byte or 2 byte
+                elif f == 2:
+                    if self.ENDIAN == 'little':
+                        # Swap 4 byte
+                        b = construct.SLInt32("x").parse(buf)
+                    else:
+                        b = construct.SBInt32("x").parse(buf)
+
+                    ret.append(b)
+                elif f == 3:
+                    if self.ENDIAN == 'little':
+                        # Swap 2 byte
+                        b = construct.SLInt16("x").parse(buf)
+                    else:
+                        b = construct.SBInt16("x").parse(buf)
+
+                    ret.append(b)
+                # IEEE floats - 4 byte
+                elif f == 5:
+                    if self.ENDIAN == 'little':
+                        # Swap 4 byte
+                        b = construct.LFloat32("x").parse(buf)
+                    else:
+                        b = construct.BFloat32("x").parse(buf)
+
+                    ret.append(b)
+                # INT - 1 byte
+                elif f == 8:
+                    ret.append(construct.SBInt8("x").parse(buf))
+
+        else:
+            self.FH.read(n * l)
+
+        return ret
+
+    def isEOF(self):
+        try:
+            n = self.FH.read(240)
+            if n != 240:
+                raise EOFError
+            self.FH.seek(-240, os.SEEK_CUR)
+            return False
+        except EOFError:
+            return True
 
 
 def main():
-    global L, F, T
+    dump = DumpSGY()
+    dump.get_args()
 
-    get_args()
+    text_container = dump.read_text_header()
+    dump.print_text_header(text_container)
 
-    text_container = read_text_header()
-    print_text_header(text_container)
-
-    binary_container = read_binary_header()
-    print_binary_header(binary_container)
+    binary_container = dump.read_binary_header()
+    dump.print_binary_header(binary_container)
 
     if binary_container:
         # Number of Extended Textural Headers
@@ -374,8 +357,8 @@ def main():
         # Samples per trace
         n = binary_container.hns
         # Trace sample format
-        if F is None:
-            F = binary_container.format
+        if dump.F is None:
+            dump.F = binary_container.format
         # Bytes per sample
         try:
             ll = SAMPLE_LENGTH[binary_container.format]
@@ -383,44 +366,44 @@ def main():
             ll = 4
 
         # Bytes per trace
-        if L is None:
-            L = ll * n
+        if dump.L is None:
+            dump.L = ll * n
         else:
-            n = int(L) / ll
+            n = int(dump.L) / ll
 
         # Traces per record
-        if T is None:
-            T = binary_container.ntrpr
+        if dump.T is None:
+            dump.T = binary_container.ntrpr
     else:
-        T = 1
-        n = ll = F = 0
+        dump.T = 1
+        n = ll = dump.F = 0
 
     # Print Extended Textural Headers
     if nt > 0:
         for x in range(nt):
-            text_container = read_text_header()
-            print_text_header(text_container)
+            text_container = dump.read_text_header()
+            dump.print_text_header(text_container)
     elif nt == -1:
         while True:
-            text_container = read_text_header()
-            print_text_header(text_container)
-            if last_extended_header(text_container):
+            text_container = dump.read_text_header()
+            dump.print_text_header(text_container)
+            if dump.last_extended_header(text_container):
                 break
 
     while True:
-        for t in range(T):
-            trace_container = read_trace_header()
-            extended_header = read_extended_header()
+        for t in range(dump.T):
+            trace_container = dump.read_trace_header()
+            extended_header = dump.read_extended_header()
             # print t,
-            print_trace_header(trace_container)
-            print_extended_header(extended_header)
-            trace = read_trace(n, ll, F)
+            dump.print_trace_header(trace_container)
+            dump.print_extended_header(extended_header)
+            trace = dump.read_trace(n, ll, dump.F)
             if trace:
                 print '------------------------'
             for t in trace:
                 print t
 
-        if isEOF():
+        if dump.isEOF():
             break
 
 

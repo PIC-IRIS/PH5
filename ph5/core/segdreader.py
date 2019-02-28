@@ -13,7 +13,7 @@ import exceptions
 import numpy as np
 from ph5.core import segd_h
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -549,8 +549,6 @@ def swap_16(buf):
 
 
 if __name__ == '__main__':
-    global RH, TH
-    TH = []
 
     def print_container(container):
         keys = container.keys()
@@ -559,7 +557,7 @@ if __name__ == '__main__':
 
         print '-' * 80
 
-    RH = ReelHeaders()
+    ReelHeaders()
     sd = Reader(infile=sys.argv[1])
     sd.process_general_headers()
     print '*' * 80

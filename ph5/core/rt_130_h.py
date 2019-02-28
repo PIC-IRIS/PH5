@@ -7,7 +7,6 @@
 # Steve Azevedo, July 2008
 #
 
-import sys
 import logging
 import exceptions
 import os
@@ -16,7 +15,7 @@ import string
 import rt_130_py
 import construct
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -25,44 +24,28 @@ def __version__():
 
 
 def pfloat():
-    PFLOAT = construct.Struct("PFLOAT",
-                              construct.BFloat32("x"))
-    return PFLOAT
+    return construct.Struct("PFLOAT", construct.BFloat32("x"))
 
 
 def puint():
-    PINT = construct.Struct("PINT",
-                            construct.UBInt32("x"))
-    return PINT
+    return construct.Struct("PINT", construct.UBInt32("x"))
 
 
 def psint():
-    PINT = construct.Struct("PINT",
-                            construct.SBInt32("x"))
-    return PINT
+    return construct.Struct("PINT", construct.SBInt32("x"))
 
 
 def psshort():
-    PSHORT = construct.Struct("PSHORT",
-                              construct.SBInt16("x"))
-    return PSHORT
-
-
-pint_s = psint()
+    return construct.Struct("PSHORT", construct.SBInt16("x"))
 
 
 def build_int(x):
-    global pint_s
-
+    pint_s = psint()
     return pint_s.build(construct.Container(x=x))
 
 
-pshort_s = psshort()
-
-
 def build_short(x):
-    global pshort_s
-
+    pshort_s = psshort()
     return pshort_s.build(construct.Container(x=x))
 
 

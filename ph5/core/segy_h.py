@@ -14,7 +14,7 @@ import logging
 import construct
 from ph5.core import ibmfloat, ebcdic
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -1453,26 +1453,20 @@ class Sioseis (Seg):
 #
 # Mixins
 #
-pfloat_s = ibmfloat.pfloat()
 
 
 def build_ieee(x):
-    global pfloat_s
+    pfloat_s = ibmfloat.pfloat()
 
     return pfloat_s.build(construct.Container(x=float(x)))
 
 
 def build_ibm(x):
-    global pfloat_s
-
     return ibmfloat.ieee2ibm32(build_ieee(float(x)))
 
 
-pint_s = ibmfloat.psint()
-
-
 def build_int(x):
-    global pint_s
+    pint_s = ibmfloat.psint()
 
     return pint_s.build(construct.Container(x=x))
 

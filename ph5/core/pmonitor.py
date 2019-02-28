@@ -21,7 +21,7 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
@@ -584,8 +584,7 @@ if __name__ == '__main__':
         try:
             fio.readDB()
         except pforma_io.FormaIOError as e:
-            LOGGER.error("{0}: {1}".format(e.errno, e.message))
-            sys.exit(-1)
+            raise Exception("{0}: {1}".format(e.errno, e.message))
 
         fio.resolveDB()
         cmds, lsts, i = fio.run(runit=False)
@@ -593,18 +592,21 @@ if __name__ == '__main__':
 
     f = os.path.join(os.getcwd(), sys.argv[1])
     d = os.path.join(os.getcwd(), sys.argv[2])
-    fio, cmds, info = init_fio(f, d)
-    fams = sorted(cmds.keys())
-    application = QtGui.QApplication(sys.argv)
-    MMM = {}
-    for F in fams:
-        bl = info[F]['lists']
-        blah = 0
-        for b in bl:
-            blah += get_len(b)
-        if True:
-            LOGGER.info("Files in {0} {1}".format(F, blah))
-            MMM[F] = Monitor(fio, cmds[F], title=F, mmax=blah)
-            MMM[F].show()
-    application.exec_()
+    try:
+        fio, cmds, info = init_fio(f, d)
+        fams = sorted(cmds.keys())
+        application = QtGui.QApplication(sys.argv)
+        MMM = {}
+        for F in fams:
+            bl = info[F]['lists']
+            blah = 0
+            for b in bl:
+                blah += get_len(b)
+            if True:
+                LOGGER.info("Files in {0} {1}".format(F, blah))
+                MMM[F] = Monitor(fio, cmds[F], title=F, mmax=blah)
+                MMM[F].show()
+        application.exec_()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
 

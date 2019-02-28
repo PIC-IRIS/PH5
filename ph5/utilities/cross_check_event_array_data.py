@@ -22,19 +22,16 @@
 import os
 import logging
 import json
+import argparse
 from ph5.core import timedoy
 from ph5.core.ph5api import is_in
 
-PROG_VERSION = '2019.043'
-logging.basicConfig()
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
 __version__ = PROG_VERSION
 
 
 def get_args():
-    global ARGS
-
-    import argparse
 
     parser = argparse.ArgumentParser()
 
@@ -55,7 +52,7 @@ def get_args():
     parser.add_argument("--epoch", action="store_true", dest="epoch",
                         help="Times as epoch.")
 
-    ARGS = parser.parse_args()
+    return parser.parse_args()
 
 
 def _read_json(what):
@@ -70,7 +67,7 @@ def _read_json(what):
     return ret
 
 
-def read_json():
+def read_json(ARGS):
     '''
        Read all 3 json files.
           Inputs:
@@ -82,7 +79,6 @@ def read_json():
              EVENT - A global object containing the contents of ARGS.event_json
              DATA - A global object containing the contents of ARGS.data_json
     '''
-    global EVENT, ARRAY, DATA
 
     nope = []
     if not os.path.exists(ARGS.event_json):
@@ -123,9 +119,10 @@ def read_json():
         Data['window_start'] = window_start
         Data['window_stop'] = window_stop
         DATA[Data['das']].append(Data)
+    return EVENT, ARRAY, DATA
 
 
-def _is_in(das, shot_time, length, si):
+def _is_in(das, shot_time, length, si, DATA):
     '''
        Test to see if data is available for a given das
        starting at shot_time for length.
@@ -184,7 +181,7 @@ def _is_in(das, shot_time, length, si):
         return fs, ls, gaps
 
 
-def process_all():
+def process_all(ARGS, EVENT, ARRAY, DATA):
     '''
        Process through each shot line, shot, array, station,
        component (channel) and print matches to stdout
@@ -215,7 +212,7 @@ def process_all():
                     station_id = station['id']
                     seed_id = station['seed_station_name']
                     fs, ls, gaps = _is_in(
-                        das, shot_time, length, 1. / sample_rate)
+                        das, shot_time, length, 1. / sample_rate, DATA)
                     if fs is None:
                         fs = 'NA'
                     if ls is None:
@@ -259,9 +256,9 @@ def process_all():
 
 def main():
     try:
-        get_args()
-        read_json()
-        process_all()
+        ARGS = get_args()
+        EVENT, ARRAY, DATA = read_json(ARGS)
+        process_all(ARGS, EVENT, ARRAY, DATA)
     except Exception, err_msg:
         LOGGER.error(err_msg)
         return 1

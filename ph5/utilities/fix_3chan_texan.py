@@ -14,24 +14,8 @@ import time
 # This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2019.043'
-logging.basicConfig()
+PROG_VERSION = '2019.058'
 LOGGER = logging.getLogger(__name__)
-
-# Valid horizontal channel numbers
-HORIZ = [2, 3, 5, 6]
-# Array_t_xxxx keyed on xxxx
-ARRAY_T = {}
-# Das_t keyed on DAS SN
-DAS_T = {}
-
-DASGROUPS = None
-# Reference to Experiment_g
-EX = None
-# PH5 file name
-PH5 = None
-# Path to PH5
-PATH = '.'
 
 
 class Rows_Keys (object):
@@ -59,128 +43,136 @@ class Das_Groups (object):
         self.das = das
         self.node = node
 
-#
-# Initialize ph5 file
-#
 
+class Fix3Chan():
+    def __init__(self):
+        # Valid horizontal channel numbers
+        self.HORIZ = [2, 3, 5, 6]
+        # Array_t_xxxx keyed on xxxx
+        self.ARRAY_T = {}
+        # Das_t keyed on DAS SN
+        self.DAS_T = {}
 
-def initialize_ph5(editmode=False):
-    '''   Initialize the ph5 file   '''
-    global EX, PATH, PH5
+        self.DASGROUPS = None
+        # Reference to Experiment_g
+        self.EX = None
+        # PH5 file name
+        self.PH5 = None
+        # Path to PH5
+        self.PATH = '.'
 
-    EX = experiment.ExperimentGroup(PATH, PH5)
-    EX.ph5open(editmode)
-    EX.initgroup()
+    #
+    # Initialize ph5 file
+    #
+    def initialize_ph5(self, editmode=False):
+        '''   Initialize the ph5 file   '''
+        self.EX = experiment.ExperimentGroup(self.PATH, self.PH5)
+        self.EX.ph5open(editmode)
+        self.EX.initgroup()
 
+    def info_print(self):
+        '''   Print time of run, PH5 file organization version,
+              this programs verion   '''
 
-def info_print():
-    '''   Print time of run, PH5 file organization version,
-          this programs verion   '''
-    global EX, FH
+        if self.FH is not None:
+            self.FH.write(
+                "#\n#\t%s\tph5 version: %s\tv%s\n#\n" %
+                (time.ctime(time.time()), self.EX.version(), PROG_VERSION))
+        else:
+            print ("#\n#\t%s\tph5 version: %s\tv%s\n#\n" %
+                   (time.ctime(time.time()), self.EX.version(), PROG_VERSION))
 
-    if FH is not None:
-        FH.write("#\n#\t%s\tph5 version: %s\tv%s\n#\n" %
-                 (time.ctime(time.time()), EX.version(), PROG_VERSION))
-    else:
-        print ("#\n#\t%s\tph5 version: %s\tv%s\n#\n" %
-               (time.ctime(time.time()), EX.version(), PROG_VERSION)),
+    def save_orig(self, das, Das_t):
+        '''   Save a version of the original Das_t.kef   '''
+        of = open("Das_t_{0}orig.kef".format(das), 'w+')
+        of.write("#\n#\t%s\tph5 version: %s\n#" %
+                 (time.ctime(time.time()), self.EX.version()))
+        for das_t in Das_t.rows:
+            of.write("/Experiment_g/Receivers_g/Das_g_{0}/Das_t\n".format(das))
+            for k in Das_t.keys:
+                of.write("\t{0} = {1}\n".format(k, das_t[k]))
 
+        of.close()
 
-def save_orig(das, Das_t):
-    '''   Save a version of the original Das_t.kef   '''
-    of = open("Das_t_{0}orig.kef".format(das), 'w+')
-    of.write("#\n#\t%s\tph5 version: %s\n#" %
-             (time.ctime(time.time()), EX.version()))
-    for das_t in Das_t.rows:
-        of.write("/Experiment_g/Receivers_g/Das_g_{0}/Das_t\n".format(das))
-        for k in Das_t.keys:
-            of.write("\t{0} = {1}\n".format(k, das_t[k]))
+    #
+    # Print Rows_Keys
+    #
+    def table_print(self, t, d, a, key):
+        # Print table name
+        if key in a:
+            self.FH.write("{0}:Update:{1}\n".format(t, key))
+        else:
+            self.FH.write(t + '\n')
 
-    of.close()
+        # Loop through each row column and print
+        for k in a:
+            self.FH.write("\t{0} = {1}\n".format(k, d[k]))
 
-#
-# Print Rows_Keys
-#
+    def read_sort_arrays(self):
+        '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
 
+        # We get a list of Array_t_[n] names here...
+        # (these are also in Sort_t)
+        names = self.EX.ph5_g_sorts.names()
+        for n in names:
 
-def table_print(t, d, a, key):
-    # Print table name
-    if key in a:
-        FH.write("{0}:Update:{1}\n".format(t, key))
-    else:
-        FH.write(t + '\n')
+            arrays, array_keys = self.EX.ph5_g_sorts.read_arrays(n)
 
-    # Loop through each row column and print
-    for k in a:
-        FH.write("\t{0} = {1}\n".format(k, d[k]))
+            rowskeys = Rows_Keys(arrays, array_keys)
+            # We key this on the name since there can be multiple arrays
+            self.ARRAY_T[n] = rowskeys
 
+    def read_receivers(self, das=None):
+        '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
 
-def read_sort_arrays():
-    '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
-    global EX, ARRAY_T
+        if das is None:
+            # Get references for all das groups keyed on das
+            dass = sorted(self.DASGROUPS.keys())
+            # Sort by das sn
+        else:
+            dass = [das]
 
-    # We get a list of Array_t_[n] names here...
-    # (these are also in Sort_t)
-    names = EX.ph5_g_sorts.names()
-    for n in names:
+        for d in dass:
+            d = "Das_g_{0}".format(str(d))
+            # Get node reference
+            if d not in self.DASGROUPS:
+                LOGGER.warning("#No key '{0}'\n".format(d))
+                continue
 
-        arrays, array_keys = EX.ph5_g_sorts.read_arrays(n)
+            g = self.DASGROUPS[d]
+            # Set the current das group
+            self.EX.ph5_g_receivers.setcurrent(g)
 
-        rowskeys = Rows_Keys(arrays, array_keys)
-        # We key this on the name since there can be multiple arrays
-        ARRAY_T[n] = rowskeys
+            # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
+            das, das_keys = self.EX.ph5_g_receivers.read_das()
+            rowskeys = Rows_Keys(das, das_keys)
+            return rowskeys
 
-
-def read_receivers(das=None):
-    '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
-    global EX
-
-    if das is None:
-        # Get references for all das groups keyed on das
-        dass = sorted(DASGROUPS.keys())
-        # Sort by das sn
-    else:
-        dass = [das]
-
-    for d in dass:
-        d = "Das_g_{0}".format(str(d))
-        # Get node reference
-        if d not in DASGROUPS:
-            LOGGER.warning("#No key '{0}'\n".format(d))
-            continue
-
-        g = DASGROUPS[d]
-        # Set the current das group
-        EX.ph5_g_receivers.setcurrent(g)
-
-        # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
-        das, das_keys = EX.ph5_g_receivers.read_das()
-        rowskeys = Rows_Keys(das, das_keys)
-        return rowskeys
-
-    return Rows_Keys()
+        return Rows_Keys()
 
 
 def main():
-    global FH, PH5, DASGROUPS
+    fix = Fix3Chan()
+
     try:
-        PH5 = sys.argv[1]
-    except IndexError:
+        fix.PH5 = sys.argv[1]
+    except IndexError as e:
+        print e
         LOGGER.info("v{1} Usage: {0} file.ph5".format(sys.argv[0],
                                                       PROG_VERSION))
-        return 1
+        sys.exit()
 
-    initialize_ph5()
-    read_sort_arrays()
-    DASGROUPS = EX.ph5_g_receivers.alldas_g()
+    fix.initialize_ph5()
+    fix.read_sort_arrays()
+    fix.DASGROUPS = fix.EX.ph5_g_receivers.alldas_g()
 
-    arrays = ARRAY_T.keys()
+    arrays = fix.ARRAY_T.keys()
 
     for a in arrays:
-        array_t = ARRAY_T[a]
+        array_t = fix.ARRAY_T[a]
         for r in array_t.rows:
             chan = r['channel_number_i']
-            if chan not in HORIZ:
+            if chan not in fix.HORIZ:
                 continue
 
             das = r['das/serial_number_s'].strip()
@@ -197,11 +189,11 @@ def main():
 
             start_epoch = r['deploy_time/epoch_l']
             stop_epoch = r['pickup_time/epoch_l']
-            Das_t = read_receivers(das)
-            save_orig(das, Das_t)
-            FH = open("Das_t_{0}.kef".format(das), 'w')
-            info_print()
-            FH.write('#\n#\t{0} {1} {2} {3}\n'.format(
+            Das_t = fix.read_receivers(das)
+            fix.save_orig(das, Das_t)
+            fix.FH = open("Das_t_{0}.kef".format(das), 'w')
+            fix.info_print()
+            fix.FH.write('#\n#\t{0} {1} {2} {3}\n'.format(
                 das, chan, start_epoch, stop_epoch))
             for d in Das_t.rows:
                 start = d['time/epoch_l']
@@ -209,11 +201,11 @@ def main():
                     t = '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das)
                     d['channel_number_i'] = chan
                     d['receiver_table_n_i'] = chan - 1
-                    table_print(t, d, Das_t.keys, 'time/epoch_l')
+                    fix.table_print(t, d, Das_t.keys, 'time/epoch_l')
 
-            FH.close()
+            fix.FH.close()
 
-    EX.ph5close()
+    fix.EX.ph5close()
 
 
 if __name__ == '__main__':
