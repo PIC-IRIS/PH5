@@ -117,12 +117,16 @@ class MetadatatoPH5(object):
         array_list = []
         for network in inventory:
             for station in network:
+
                 array_station = {}
                 array_station['seed_station_name_s'] = station.code.encode(
                     'ascii', 'ignore')
                 array_station['id_s'] = station.code.encode('ascii',
                                                             'ignore')
+                LOGGER.info('*****************'.format(station.code))
+                LOGGER.info('Found station {0}'.format(station.code))
                 for channel in station:
+                    LOGGER.info('Found channel {0}'.format(channel.code))
                     array_channel = {}
                     if channel.start_date:
                         array_channel['deploy_time/ascii_s'] = (
@@ -236,11 +240,18 @@ class MetadatatoPH5(object):
                             "Channel {1} before data can be loaded".format(
                                 array_station['seed_station_name_s'],
                                 channel.code))
+                    if hasattr(channel, 'response'):
+                        LOGGER.info('Response found for station {0} '
+                                    'channel {1}'.format(station.code,
+                                                         channel.code))
 
                     array_dict = array_station.copy()
                     array_dict.update(array_channel)
 
                     array_list.append(array_dict)
+                    LOGGER.info("Loaded channel {0}".format(channel.code))
+                LOGGER.info("Loaded Station {0}".format(station.code))
+                LOGGER.info("******************\n".format(station.code))
 
         return array_list
 
