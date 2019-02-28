@@ -2,7 +2,7 @@ from PyQt4 import QtGui
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
-PROG_VERSION = "2019.043"
+PROG_VERSION = "2019.057"
 
 PH5TYPE = {'_s': str, '_a': str, '_d': float, '_f': float, '_l': int,
            '_i': int}
@@ -145,10 +145,9 @@ def NukeTable(parent, PH5file, path2file, tablepath):
 # then convert to table data {path1:[2_way_data],...} and ketSets
 # {path1:[labels], ...}
 def PH5toTableData(statusbar, ph5, filename, path2file, tableType, arg=None):
-    try:
-        ph5data = tabletokef.readPH5(ph5, filename, path2file, tableType, arg)
-    except Exception as e:
-        raise e
+    T2K = tabletokef.Tabletokef()
+    T2K.set_EX(ph5)
+    ph5data = T2K.read_tables(tableType, arg, fromKefU=True)
     tables = {}
     keySets = {}
     types = {}
