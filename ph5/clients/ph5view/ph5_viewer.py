@@ -4,7 +4,7 @@
 #
 #   Lan Dam
 #
-#   Updated April 2018
+#   Updated March 2019
 
 import sys
 import os
@@ -29,7 +29,7 @@ try:
 except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 ###########################################################
-VER = 2019043
+VER = 2019060
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
 VER_str = str(VER)
@@ -234,13 +234,10 @@ class ScrollDialog(QtGui.QDialog):
             label.setText(txt)
 
         closeBtn = QtGui.QPushButton('OK', self)
-        closeBtn.clicked.connect(self.onClose)
+        closeBtn.clicked.connect(self.close)
         vbox.addWidget(closeBtn)
 
         self.show()
-
-    def onClose(self, evt):
-        self.close()
 
 
 """
@@ -2703,9 +2700,6 @@ class PlottingPanel(QtGui.QMainWindow):
 
         return False
 
-    def closeEvent(self, e):
-        QtCore.QCoreApplication.instance().quit()
-
     def paintEvent(self, e):
         qp = QtGui.QPainter()
 
@@ -2867,7 +2861,7 @@ class PH5Visualizer(QtGui.QMainWindow):
         # ____________________ exit ________________________
         self.exitAction = QtGui.QAction('&Exit', self)
         self.exitAction.setShortcut('Ctrl+Q')
-        self.exitAction.triggered.connect(self.closeEvent)
+        self.exitAction.triggered.connect(self.close)
 
         # ____________________ SAVE MENU ____________________
         self.saveMAction = QtGui.QAction(
@@ -2970,13 +2964,14 @@ class PH5Visualizer(QtGui.QMainWindow):
 
         self.show()
 
-    def closeEvent(self, evt=None):
+    def closeEvent(self, event):
         try:
             for f in PH5VALFILES:
                 os.unlink(f)            # remove tmp file
         except Exception:
             pass
-        QtCore.QCoreApplication.instance().quit()
+        self.close()
+        self.mainControl.close()
 
     def onDevelopeSegy(self):
         segyDir = os.getcwd()
@@ -3066,9 +3061,9 @@ class PH5Visualizer(QtGui.QMainWindow):
             else:
                 options['timeCorrect'] = '-N'
 
-            cmdStr = "ph5toevt % (shotLine)s % (array)s % (event)s % " + \
-                "(chan)s % (length)s % (offset)s % (stations)s % (redVel)s" + \
-                " % (timeCorrect)s % (ph5Path)s % (nickname)s % (outputDir)s"
+            cmdStr = "ph5toevt %(shotLine)s %(array)s %(event)s "\
+                "%(chan)s %(length)s %(offset)s %(stations)s %(redVel)s"\
+                " %(timeCorrect)s %(ph5Path)s %(nickname)s %(outputDir)s"
 
         elif self.submitGui == 'EVENT':
             print "receiver gather"
@@ -3082,7 +3077,8 @@ class PH5Visualizer(QtGui.QMainWindow):
                 "%(offset)s %(ph5Path)s %(nickname)s %(outputDir)s"
 
         from subprocess import Popen, PIPE, STDOUT
-
+        print "cmdStr:", cmdStr
+        print "options:", options
         p = Popen(cmdStr % options, shell=True, stdin=PIPE, stdout=PIPE,
                   stderr=STDOUT, close_fds=True)
         output = p.stdout.read()
@@ -3313,13 +3309,11 @@ class MainControl(QtGui.QMainWindow):
         self.gather = ""
         # self.dfltTimeLen = .6    ### TESTING .6
 
-        self.mainPlot = \
-            PlottingPanel(self, "Main Window", 270, 0, 1200, 1100,
-                          isMainPlot=True)
+        self.mainPlot = PlottingPanel(
+            self, "Main Window", 270, 0, 1200, 1100, isMainPlot=True)
         self.mainCanvas = self.mainPlot.canvas
-        self.supportPlot = \
-            PlottingPanel(self, "Support Window", 290, 0, 1200, 1100,
-                          isMainPlot=False)
+        self.supportPlot = PlottingPanel(
+            self, "Support Window", 290, 0, 1200, 1100, isMainPlot=False)
         self.supportCanvas = self.supportPlot.canvas
         self.mainCanvas.setOtherCanvas(self.supportCanvas)
         self.supportCanvas.setOtherCanvas(self.mainCanvas)
@@ -3327,6 +3321,11 @@ class MainControl(QtGui.QMainWindow):
         global processInfo
         processInfo = WARNINGMSG
         self.statusLbl.setText(processInfo)
+
+    def closeEvent(self, event):
+        self.mainPlot.close()
+        self.supportPlot.close()
+        event.accept()
 
     def reset(self):
         self.PH5Info = None
@@ -5459,7 +5458,7 @@ class ES_Gui(QtGui.QWidget):
             botLayout.insertSpacing(-1, 15)
 
             self.cancelBtn = QtGui.QPushButton('Cancel')
-            self.cancelBtn.clicked.connect(self.onCancel)
+            self.cancelBtn.clicked.connect(self.close)
             self.cancelBtn.resize(25, 75)
             botLayout.addWidget(self.cancelBtn)
 
@@ -5483,9 +5482,6 @@ class ES_Gui(QtGui.QWidget):
             cursor = QtGui.QCursor(QtCore.Qt.ArrowCursor)
 
         self.setCursor(cursor)
-
-    def onCancel(self, evt):
-        self.close()
 
     ###################################
     # Author: Lan
@@ -6017,20 +6013,18 @@ def changedFocusSlot(old, now):
 
 
 def startapp():
-    global application  # , pointerWidget
-
     application = QtGui.QApplication(sys.argv)
     QtCore.QObject.connect(
         application,
         QtCore.SIGNAL("focusChanged(QWidget *, QWidget *)"),
         changedFocusSlot)
+    # The following lines is intended to show selection area while dragging
+    # mouse, but its speed is too slow if the data is huge
+    # => comment out to improve the performance
     # pointerWidget = SelectedStation(None, showPos=True);
     # pointerWidget.hide()
     PH5Visualizer()
-    #  ex = PH5Visualizer(order='shot')
-    #  win = OptionPanel(None)
-    app.run()
-    app.deleteLater()
+
     sys.exit(application.exec_())
 
 
