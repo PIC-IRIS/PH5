@@ -5,7 +5,6 @@ Extracts data from PH5 in miniSEED and SAC formats.
 Also allows for creation of preview png images of traces.
 """
 
-
 import os
 import logging
 import copy
@@ -20,9 +19,11 @@ from ph5.core import ph5utils
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
+import time
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.059'
 LOGGER = logging.getLogger(__name__)
+LENGTH = int(86400)
 
 
 class StationCut(object):
@@ -80,7 +81,7 @@ class PH5toMSeed(object):
                  das_sn=None, use_deploy_pickup=False, decimation=None,
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  reduction_velocity=-1., notimecorrect=False,
-                 restricted=[], format='MSEED', cut_len=86400):
+                 restricted=[], format='MSEED'):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.reqtype = reqtype.upper()
@@ -107,8 +108,6 @@ class PH5toMSeed(object):
         self.ph5 = ph5API_object
         self.restricted = restricted
         self.format = format
-        self.cut_len = cut_len
-        self.hash_list = []
 
         self.resp_manager = PH5ResponseManager()
 
@@ -495,6 +494,7 @@ class PH5toMSeed(object):
     def create_cut(self, seed_network, ph5_station, seed_station,
                    start_times, station_list, deployment, st_num,
                    array_code, experiment_id):
+
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
         deploy_micro = station_list[deployment][
             st_num]['deploy_time/micro_seconds_i']
@@ -630,30 +630,18 @@ class PH5toMSeed(object):
                 if start_doy not in self.doy:
                     continue
 
-            midnight_fepoch, secondLeftInday = \
-                ph5utils.inday_breakup(start_fepoch)
-
-            # if (stop_fepoch - start_fepoch) > 86400:
-            if (stop_fepoch - start_fepoch) > secondLeftInday:
+            if (stop_fepoch - start_fepoch) > 86400:
                 seconds_covered = 0
                 total_seconds = stop_fepoch - start_fepoch
                 times_to_cut = []
-                if self.cut_len != 86400:
-                    stop_time, seconds = ph5utils.doy_breakup(
-                        start_fepoch, self.cut_len)
-                else:
-                    stop_time, seconds = ph5utils.inday_breakup(start_fepoch)
+                stop_time, seconds = ph5utils.doy_breakup(start_fepoch, LENGTH)
                 seconds_covered = seconds_covered + seconds
                 times_to_cut.append([start_fepoch, stop_time])
                 start_time = stop_time
 
                 while seconds_covered < total_seconds:
-                    if self.cut_len != 86400:
-                        stop_time, seconds = ph5utils.doy_breakup(
-                            start_time, self.cut_len)
-                    else:
-                        stop_time, seconds = ph5utils.inday_breakup(start_time)
-
+                    stop_time, seconds = \
+                        ph5utils.doy_breakup(start_time, LENGTH)
                     seconds_covered += seconds
                     if stop_time > stop_fepoch:
                         times_to_cut.append([start_time, stop_fepoch])
@@ -709,15 +697,7 @@ class PH5toMSeed(object):
                     receiver_n_i,
                     response_n_i)
 
-                station_hash = hash(frozenset([seed_station, das, latitude,
-                                               longitude, sample_rate,
-                                               sample_rate_multiplier,
-                                               starttime, endtime]))
-                if station_hash in self.hash_list:
-                    continue
-                else:
-                    self.hash_list.append(station_hash)
-                    yield station_x
+                yield station_x
 
     def create_cut_list(self):
         cuts_generator = []
@@ -994,6 +974,8 @@ def get_args():
 
 
 def main():
+    start = time.time()
+
     args = get_args()
 
     if args.nickname[-3:] == 'ph5':
@@ -1005,6 +987,7 @@ def main():
     if not os.path.exists(ph5file):
         LOGGER.error("{0} not found.\n".format(ph5file))
         return 1
+
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
 
     if args.array:
@@ -1075,6 +1058,8 @@ def main():
         exit(-1)
 
     ph5API_object.close()
+    end = time.time()
+    print(end - start)
 
 
 if __name__ == '__main__':
