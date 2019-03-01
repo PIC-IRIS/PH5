@@ -22,7 +22,7 @@ except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-PROG_VERSION = 2019.058
+PROG_VERSION = 2019.060
 EXPL = {}
 
 # CLASS ####################
@@ -2110,7 +2110,6 @@ class ManWindow(QtGui.QWidget):
 
 
 def startapp():
-    global application
     application = QtGui.QApplication(sys.argv)
 
     win = KefEdit()
