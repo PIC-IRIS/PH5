@@ -129,7 +129,7 @@ def main():
             if not os.path.exists(filename):
                 LOGGER.warning("Can't find: {0}".format(filename))
                 continue
-            #RH = segdreader.ReelHeaders()
+            segdreader.ReelHeaders()
             try:
                 sd = segdreader.Reader(infile=filename)
             except BaseException:
