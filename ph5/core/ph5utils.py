@@ -15,6 +15,8 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 
+PROG_VERSION = "2019.63"
+
 
 class PH5Response(object):
     def __init__(self, sensor_keys, datalogger_keys, response):
@@ -39,11 +41,19 @@ class PH5ResponseManager(object):
                set(datalogger_keys) == set(ph5_resp.datalogger_keys):
                 return ph5_resp.response
 
-    def is_already_requested(self, sensor_keys, datalogger_keys):
+    def is_already_requested(self, sensor_keys, datalogger_keys,
+                             inresponse=None):
         for response in self.responses:
-            if set(sensor_keys) == set(response.sensor_keys) and \
-               set(datalogger_keys) == set(response.datalogger_keys):
-                return True
+            if inresponse:
+                if set(sensor_keys) == set(response.sensor_keys) and \
+                   set(datalogger_keys) == set(response.datalogger_keys) and \
+                        inresponse == response.response:
+                    return True
+            else:
+                if set(sensor_keys) == set(response.sensor_keys) and \
+                   set(datalogger_keys) == set(response.datalogger_keys):
+                    return True
+
         return False
 
 

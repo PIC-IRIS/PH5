@@ -9,6 +9,7 @@ import logging
 from ph5 import LOGGING_FORMAT
 from ph5.utilities import initialize_ph5
 from ph5.core import timedoy, kefx, experiment, columns
+from ph5.core.ph5utils import PH5ResponseManager
 from obspy.core.inventory.inventory import read_inventory as reader
 from obspy.io.stationxml.core import _is_stationxml
 from obspy.io.xseed.core import _is_seed
@@ -16,8 +17,9 @@ from obspy.io.stationtxt.core import is_fdsn_station_text_file
 from obspy.core.inventory import Inventory, Network
 from obspy import UTCDateTime
 from obspy.core.util import AttribDict
+import pickle
 
-PROG_VERSION = "2019.58"
+PROG_VERSION = "2019.63"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -64,6 +66,15 @@ def array_csvtoinventory(fh):
     return csv_inventory
 
 
+class MetadatatoPH5Error(Exception):
+    """Exception raised when there is a problem with the request.
+    :param: message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
 class MetadatatoPH5(object):
 
     def __init__(self, ph5_object):
@@ -72,6 +83,7 @@ class MetadatatoPH5(object):
         :param ph5API_object:
         """
         self.ph5 = ph5_object
+        self.resp_manager = PH5ResponseManager()
 
     def read_metadata(self, file_handle, file_name):
         """
@@ -244,6 +256,8 @@ class MetadatatoPH5(object):
                         LOGGER.info('Response found for station {0} '
                                     'channel {1}'.format(station.code,
                                                          channel.code))
+                        self.load_response(array_channel,
+                                           channel, station.code)
 
                     array_dict = array_station.copy()
                     array_dict.update(array_channel)
@@ -254,6 +268,47 @@ class MetadatatoPH5(object):
                 LOGGER.info("******************\n".format(station.code))
 
         return array_list
+
+    def load_response(self, array_channel, channel, station_code):
+
+        sensor_keys = [array_channel['sensor/manufacturer_s'],
+                       array_channel['sensor/model_s']]
+        datalogger_keys = [array_channel['das/manufacturer_s'],
+                           array_channel['das/model_s'],
+                           channel.sample_rate]
+
+        # Only load if not in response manager
+        if not self.resp_manager.is_already_requested(sensor_keys,
+                                                      datalogger_keys,
+                                                      channel.response):
+
+            LOGGER.info("Loading response for "
+                        ""
+                        "{0} {1}".format(station_code, channel.code))
+            if channel.data_logger.serial_number:
+                try:
+                    name = array_channel['das/model_s'] + "_" + \
+                           array_channel['sensor/model_s']+"_"+str(
+                        channel.sample_rate)
+
+                    self.ph5.ph5.create_array(
+                        self.ph5.ph5.root.Experiment_g.Responses_g,
+                        name.replace(" ", "").encode('ascii', 'ignore'),
+                        pickle.dumps(channel.response))
+
+                    self.resp_manager.add_response(sensor_keys,
+                                                   datalogger_keys,
+                                                   channel.response)
+                    LOGGER.info("Response loaded")
+                except MetadatatoPH5Error:
+                    Exception("Could not load response into PH5")
+
+            else:
+                LOGGER.error("Datalogger serial required")
+        else:
+            LOGGER.info("Response already in PH5")
+
+        return
 
     def toph5(self, parsed_array):
         """
