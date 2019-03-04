@@ -14,7 +14,7 @@ import time
 # This provides the base functionality
 from ph5.core import experiment
 
-PROG_VERSION = '2019.058'
+PROG_VERSION = '2019.063'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -160,7 +160,7 @@ def main():
         print e
         LOGGER.info("v{1} Usage: {0} file.ph5".format(sys.argv[0],
                                                       PROG_VERSION))
-        sys.exit()
+        return 1
 
     fix.initialize_ph5()
     fix.read_sort_arrays()
