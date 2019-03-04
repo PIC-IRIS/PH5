@@ -29,7 +29,7 @@ try:
 except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 ###########################################################
-VER = 2019060
+VER = 2019063
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
 VER_str = str(VER)
@@ -80,15 +80,9 @@ void main() {
 }
 """
 
-LSIZE = 30
-totalSteps = 5
-statusBar = None
-statusMsg = ""
-processInfo = ""
-phase = ""
 
-START = None
-END = None
+totalSteps = 5
+
 
 WARNINGMSG = """
 WARNING: In some special case, the system may get crashed\n
@@ -103,10 +97,9 @@ WARNINGMSG += "*"*45
 # Author: Lan
 # def: showStatus():201409
 # to show info on status bar
-def showStatus(curMsg, nextMsg):
-    global statusMsg
-    statusMsg = "%s %s" % (curMsg, nextMsg)
-    statusBar.showMessage(statusMsg)
+def showStatus(curMsg, nextMsg, statusMsg, statusBar):
+    statusMsg[0] = "%s %s" % (curMsg, nextMsg)
+    statusBar.showMessage(statusMsg[0])
 
 
 ###################################
@@ -536,10 +529,15 @@ CLASS: Canvas - to show the graph
 
 
 class Canvas(app.Canvas):
-    def __init__(self, parent, control):
+    def __init__(self, parent, control, processInfo,
+                 statusMsg, statusBar, START):
         app.Canvas.__init__(self, keys='interactive')
         self.zoomWidget = Selector(QtGui.QRubberBand.Rectangle, parent)
 
+        self.START = START
+        self.processInfo = processInfo
+        self.statusMsg = statusMsg
+        self.statusBar = statusBar
         self.parent = parent
         self.control = control
         self.PH5View = control.PH5View
@@ -591,8 +589,6 @@ class Canvas(app.Canvas):
     #  => re-position labels: resiteLabels()
     #  => update to redraw canvas
     def initData(self, t=[], val=None, deepRemoving=False):
-        global START, END, processInfo, countDRAW
-
         start = time.time()
         direct = -1 if self.control.upRbtn.isChecked() else 1
         self.currDir = 'up' if self.control.upRbtn.isChecked() else 'down'
@@ -736,13 +732,15 @@ class Canvas(app.Canvas):
         END = time.time()
 
         stt = 'Finish Plotting in %s seconds. Total processing time %s seconds'
-        print stt % (END-start, END-START)
-        processInfo += "\nPlotting: %s seconds" % (END-start)
-        processInfo += "\n=> Total processing time %s seconds" % (END-START)
-        processInfo += "\n" + "*"*45
-        self.control.statusLbl.setText(processInfo)
+        print stt % (END-start, END-self.START[0])
+        self.processInfo[0] += "\nPlotting: %s seconds" % (END-start)
+        self.processInfo[0] += \
+            "\n=> Total processing time %s seconds" % (END-self.START[0])
+        self.processInfo[0] += "\n" + "*"*45
+        self.control.statusLbl.setText(self.processInfo[0])
         stt = 'Finish Plotting in %s seconds. Total processing time %s seconds'
-        showStatus('',  stt % (END-start, END-START))
+        showStatus('',  stt % (END-start, END-self.START[0]),
+                   self.statusMsg, self.statusBar)
         self.defineViewWindow(0, 0, self.width, self.height)
 
         self.parent.distance.setText("%.3f" % (self.control.totalSize/20000.))
@@ -755,8 +753,6 @@ class Canvas(app.Canvas):
     #  in MainWindow is called
     def initSupportData(self, mainCanvas, LT, RB):
         self.reset(needUpdate=False)
-        global countDRAW
-        countDRAW = 0
 
         start = time.time()
         # direct = -1 if self.control.upRbtn.isChecked() else 1
@@ -2109,7 +2105,6 @@ class Canvas(app.Canvas):
     # load "temp.png" on to pixmap then paint it to printer
     # remove "temp.png" when done
     def pr(self):
-        global phase
         paperRect = self.printer.paperRect(QtGui.QPrinter.Inch)
         # call dialog to change the size of the image
         vals = PrintSaveParaDialog.print_save(
@@ -2119,9 +2114,9 @@ class Canvas(app.Canvas):
             return
         w, h, legend, printType = vals[0], vals[1], vals[2], vals[3]
         start = time.time()
-        phase = "Printing"
-        showStatus(phase, '')
-        statusBar.showMessage(statusMsg)
+
+        showStatus("Printing", '', self.statusMsg, self.statusBar)
+        self.statusBar.showMessage(self.statusMsg[0])
 
         # clear the old figure
         plt.clf()
@@ -2147,7 +2142,8 @@ class Canvas(app.Canvas):
         qp.end()
 
         end = time.time()
-        showStatus("", "Done Printing in %s seconds" % (end-start))
+        showStatus("", "Done Printing in %s seconds" % (end-start),
+                   self.statusMsg, self.statusBar)
         # delete the file test.png that has been used as the media
         # to send image from plt to printer
         try:
@@ -2190,7 +2186,7 @@ class Canvas(app.Canvas):
             fname = fname + "." + fileformat
         print "Image will be saved to:", fname
 
-        showStatus("Preparing", "")
+        showStatus("Preparing", "", self.statusMsg, self.statusBar)
         start = time.time()
 
         # clear the old figure
@@ -2217,7 +2213,8 @@ class Canvas(app.Canvas):
 
         end = time.time()
 
-        showStatus("", "Done Saving in %s seconds" % (end-start))
+        showStatus("", "Done Saving in %s seconds" % (end-start),
+                   self.statusMsg, self.statusBar)
 
     ###################################
     # Author: Lan
@@ -2291,7 +2288,8 @@ class Canvas(app.Canvas):
 
             for i in range(startId, endId+1):
                 if i % 10 == 0:
-                    showStatus("Plotting: ", "%s/%s" % (i, endId-startId+1))
+                    showStatus("Plotting: ", "%s/%s" % (i, endId-startId+1),
+                               self.statusMsg, self.statusBar)
 
                 statId = i + self.startStatId
 
@@ -2311,7 +2309,7 @@ class Canvas(app.Canvas):
         minX = min(minXList)
         maxX = max(maxXList)
 
-        showStatus("Gridding", "")
+        showStatus("Gridding", "", self.statusMsg, self.statusBar)
 
         thick = conf['gridThick'] if 'gridThick' in conf else 1
 
@@ -2429,7 +2427,8 @@ CLASS: PlottingPanel
 
 
 class PlottingPanel(QtGui.QMainWindow):
-    def __init__(self, control, title, x, y, w, h, isMainPlot=True):
+    def __init__(self, control, processInfo, statusMsg, statusBar, START,
+                 title, x, y, w, h, isMainPlot=True):
         self.isMainPlot = isMainPlot
         self.parent = control
         QtGui.QMainWindow.__init__(self)
@@ -2444,7 +2443,8 @@ class PlottingPanel(QtGui.QMainWindow):
         if not isMainPlot:
             self.setWindowFlags(QtCore.Qt.Window |
                                 QtCore.Qt.WindowMinMaxButtonsHint)
-        self.canvas = Canvas(self, control)
+        self.canvas = Canvas(self, control, processInfo,
+                             statusMsg, statusBar, START)
 
         self.mainFrame = mainFrame = QtGui.QFrame(self)
         self.setCentralWidget(mainFrame)
@@ -3308,19 +3308,24 @@ class MainControl(QtGui.QMainWindow):
         self.dfltTimeLen = 60
         self.gather = ""
         # self.dfltTimeLen = .6    ### TESTING .6
+        self.processInfo = [WARNINGMSG]
+        self.statusMsg = ['']
+        self.statusBar = self.statusBar()
+        self.START = [time.time()]
 
         self.mainPlot = PlottingPanel(
-            self, "Main Window", 270, 0, 1200, 1100, isMainPlot=True)
+            self, self.processInfo, self.statusMsg, self.statusBar, self.START,
+            "Main Window", 270, 0, 1200, 1100, isMainPlot=True)
         self.mainCanvas = self.mainPlot.canvas
         self.supportPlot = PlottingPanel(
-            self, "Support Window", 290, 0, 1200, 1100, isMainPlot=False)
+            self, self.processInfo, self.statusMsg, self.statusBar, self.START,
+            "Support Window", 290, 0, 1200, 1100, isMainPlot=False)
         self.supportCanvas = self.supportPlot.canvas
         self.mainCanvas.setOtherCanvas(self.supportCanvas)
         self.supportCanvas.setOtherCanvas(self.mainCanvas)
         self.createInfoPanel()
-        global processInfo
-        processInfo = WARNINGMSG
-        self.statusLbl.setText(processInfo)
+        
+        self.statusLbl.setText(self.processInfo[0])
 
     def closeEvent(self, event):
         self.mainPlot.close()
@@ -3923,8 +3928,6 @@ class MainControl(QtGui.QMainWindow):
         scrollBox.addWidget(self.statusLbl)
 
         scrollBox.addStretch(1)
-        global statusBar
-        statusBar = self.statusBar()
         self.setWidgetsEnabled(False)
         self.setAllReplotBtnsEnabled(False, resetCanvas=False)
 
@@ -4192,12 +4195,14 @@ class MainControl(QtGui.QMainWindow):
             return
 
         self.reset()
-        global START, processInfo
-        START = time.time()
-        showStatus('', 'Starting - set status of menu')
 
-        processInfo = WARNINGMSG
-        self.statusLbl.setText(processInfo)
+        self.START[0] = time.time()
+
+        showStatus('', 'Starting - set status of menu',
+                   self.statusMsg, self.statusBar)
+
+        self.processInfo[0] = WARNINGMSG
+        self.statusLbl.setText(self.processInfo[0])
 
         val = self.createVal()
         if not val:
@@ -4230,8 +4235,7 @@ class MainControl(QtGui.QMainWindow):
     # no need to do anything with time and data
     # call initData() to apply new properties to the graphic
     def onApplyPropperty_RePlot(self):
-        global START
-        START = time.time()
+        self.START[0] = time.time()
         self.mainCanvas.initData()
         self.mainPlot.activateWindow()
         self.supportCanvas.reset()
@@ -4242,8 +4246,7 @@ class MainControl(QtGui.QMainWindow):
     # simplify affect keepList
     #   -> recalc both val and time, but don't need to reread PH5data
     def onApplySimplify_RePlot(self, event):
-        global START
-        START = time.time()
+        self.START[0] = time.time()
 
         val = self.createVal(createFromBeg=False, appNewSimpFactor=True)
         if not val:
@@ -4259,8 +4262,7 @@ class MainControl(QtGui.QMainWindow):
     # def: onApplyOverlap_RePlot(): updated 201509
     # overlap affect val only => don't need to reread PH5 data or recalc time
     def onApplyOverlapNormalize_RePlot(self, event):
-        global START
-        START = time.time()
+        self.START[0] = time.time()
         self.downRbtn.setEnabled(True)
         self.upRbtn.setEnabled(True)
 
@@ -4281,7 +4283,6 @@ class MainControl(QtGui.QMainWindow):
     #  => scale to range (-1,1)
     #  => only keep the time index in the self.keepList
     def createTime(self, val):
-        global processInfo
         start = time.time()
         samNo = self.PH5Info['numOfSamples']
 
@@ -4302,9 +4303,10 @@ class MainControl(QtGui.QMainWindow):
 
         end = time.time()
         showStatus('Step 4 took %s seconds. Next: 5/%s' %
-                   (end-start, totalSteps), "Plotting")
-        processInfo += "\nCreate Time value: %s seconds" % (end-start)
-        self.statusLbl.setText(processInfo)
+                   (end-start, totalSteps),
+                   "Plotting", self.statusMsg, self.statusBar)
+        self.processInfo[0] += "\nCreate Time value: %s seconds" % (end-start)
+        self.statusLbl.setText(self.processInfo[0])
 
         return t
 
@@ -4403,17 +4405,20 @@ class MainControl(QtGui.QMainWindow):
                 self.PH5Info = PH5Object.readData_shotGather(
                     orgStartT, offset, timeLen, staSpc,
                     self.correctionCkb.isChecked(),
-                    self.vel, self.PH5View, statusBar, statusMsg)
+                    self.vel, self.PH5View,
+                    self.statusBar, self.statusMsg[0])
             elif self.gather == 'receiver':
                 self.PH5Info = PH5Object.readData_receiverGather(
                     orgStartT, offset, timeLen, staSpc,
                     self.correctionCkb.isChecked(),
-                    self.vel, self.PH5View, statusBar, statusMsg)
+                    self.vel, self.PH5View,
+                    self.statusBar, self.statusMsg[0])
             elif self.gather == 'event_loi':
                 self.PH5Info = PH5Object.readData_loiEvent(
                     orgStartT, offset, timeLen, staSpc,
                     self.correctionCkb.isChecked(),
-                    self.vel, self.PH5View, statusBar, statusMsg)
+                    self.vel, self.PH5View,
+                    self.statusBar, self.statusMsg[0])
         except TypeError:
             msg = "There is no data in the time window selected." + \
                   "\nPlease check Start time, Length and Offset entered."
@@ -4433,14 +4438,16 @@ class MainControl(QtGui.QMainWindow):
             return False
         """
 
-        showStatus("1/5:Getting PH5Data - ", "copy metadata")
+        showStatus("1/5:Getting PH5Data - ", "copy metadata",
+                   self.statusMsg, self.statusBar)
         self.metadata = deepcopy(PH5Object.metadata)
         # convert list to numpy array => check to see
         # if can create numpy array from creating section ??????????????
         y = PH5Object.data
 
         showStatus("1/5:Getting PH5Data - ",
-                   "save PH5 data to file to use in replotting")
+                   "save PH5 data to file to use in replotting",
+                   self.statusMsg, self.statusBar)
 
         self.PH5Info['LEN']
         for chId in range(len(self.channels)):
@@ -4469,7 +4476,8 @@ class MainControl(QtGui.QMainWindow):
         # close all files opened for PH5Object
         PH5Object.ph5close()
         showStatus("1/5:Getting PH5Data - ",
-                   "delete PH5Object to save resources")
+                   "delete PH5Object to save resources",
+                   self.statusMsg, self.statusBar)
         # delete PH5Object to save memory
         del PH5Object
         gc.collect()
@@ -4486,9 +4494,9 @@ class MainControl(QtGui.QMainWindow):
 #  + include the overlaping in calculating center
     def createVal(self, createFromBeg=True, appNewSimpFactor=False):
 
-        global processInfo
         start = time.time()
-        showStatus('1/%s' % totalSteps, 'Getting PH5Data ')
+        showStatus('1/%s' % totalSteps, 'Getting PH5Data ',
+                   self.statusMsg, self.statusBar)
         if self.timelenCtrl.text() == '':
             QtGui.QMessageBox.question(
                 self, 'Error',
@@ -4550,10 +4558,11 @@ class MainControl(QtGui.QMainWindow):
         self.processData()
 
         end = time.time()
-        processInfo += "\nGetting PH5Data: %s seconds" % (end-start)
-        self.statusLbl.setText(processInfo)
+        self.processInfo[0] += "\nGetting PH5Data: %s seconds" % (end-start)
+        self.statusLbl.setText(self.processInfo[0])
         showStatus('Step 1 took %s seconds. Next: 2/%s - Getting keep list'
-                   % (end-start, totalSteps), "Calculating ")
+                   % (end-start, totalSteps),
+                   "Calculating ", self.statusMsg, self.statusBar)
 
         start = time.time()
         if appNewSimpFactor or createFromBeg:
@@ -4561,10 +4570,11 @@ class MainControl(QtGui.QMainWindow):
             self.keepList = self.getKeepList(val, simplFactor)
 
         end = time.time()
-        processInfo += "\nGetting keep list: %s seconds" % (end-start)
-        self.statusLbl.setText(processInfo)
+        self.processInfo[0] += "\nGetting keep list: %s seconds" % (end-start)
+        self.statusLbl.setText(self.processInfo[0])
         showStatus('Step 2 took %s seconds. Next: 3/%s - Prepare drawing data'
-                   % (end-start, totalSteps), "Calculating ")
+                   % (end-start, totalSteps),
+                   "Calculating ", self.statusMsg, self.statusBar)
 
         start = time.time()
         # self.ph5val = []    # for double-check
@@ -4667,14 +4677,17 @@ class MainControl(QtGui.QMainWindow):
 
                 if i % 10 == 0:
                     showStatus("Step3: Prepare drawing data",
-                               "%s/%s" % (i, len(val[ch])))
+                               "%s/%s" % (i, len(val[ch])),
+                               self.statusMsg, self.statusBar)
                 PH5Val[ch][i] = PH5Val[ch][i]*self.scaleVList[i] + zeroList[i]
 
         end = time.time()
         showStatus('Step 3 took %s seconds. Next: 4/%s' %
-                   (end-start, totalSteps), "Create Time value")
-        processInfo += "\nPrepare drawing data: %s seconds" % (end-start)
-        self.statusLbl.setText(processInfo)
+                   (end-start, totalSteps),
+                   "Create Time value", self.statusMsg, self.statusBar)
+        self.processInfo[0] += \
+            "\nPrepare drawing data: %s seconds" % (end-start)
+        self.statusLbl.setText(self.processInfo[0])
         return PH5Val
 
     ###################################
@@ -4683,8 +4696,6 @@ class MainControl(QtGui.QMainWindow):
     # set info get from data onto the GUI
     # inform user the maximum of time for this time range
     def processData(self):
-        global processInfo
-
         self.sampleNoLbl.setText("%s" % self.PH5Info['numOfSamples'])
         self.intervalLbl.setText("%s" % self.PH5Info['interval'])
         realRange = self.PH5Info['numOfSamples']*self.PH5Info['interval']/1000
@@ -4694,20 +4705,20 @@ class MainControl(QtGui.QMainWindow):
                 "\nfor this time range is %s" % realRange
 
             self.timelenCtrl.setText(str(realRange))
-            processInfo += msg
-            print processInfo
+            self.processInfo[0] += msg
+            print self.processInfo[0]
             self.statusLbl.setText(msg)
 
 ###################################
 # Author: Lan
 # def: deepRemoveStations():201410
     def deepRemoveStations(self):
-        global START, processInfo
-        START = time.time()
-        showStatus('', 'Starting - set status of menu')
+        self.START[0] = time.time()
+        showStatus('', 'Starting - set status of menu',
+                   self.statusMsg, self.statusBar)
 
-        processInfo = WARNINGMSG
-        self.statusLbl.setText(processInfo)
+        self.processInfo[0] = WARNINGMSG
+        self.statusLbl.setText(self.processInfo[0])
 
         val = self.createVal(createFromBeg=False, appNewSimpFactor=False)
         if not val:
