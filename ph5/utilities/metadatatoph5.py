@@ -5,6 +5,7 @@ and writes it to PH5
 
 import argparse
 import os
+import re
 import logging
 from ph5 import LOGGING_FORMAT
 from ph5.utilities import initialize_ph5
@@ -84,6 +85,7 @@ class MetadatatoPH5(object):
         """
         self.ph5 = ph5_object
         self.resp_manager = PH5ResponseManager()
+        self.response_t = list()
 
     def read_metadata(self, file_handle, file_name):
         """
@@ -277,6 +279,17 @@ class MetadatatoPH5(object):
                            array_channel['das/model_s'],
                            channel.sample_rate]
 
+        # check for response table and any entries already in it
+        response_t = {}
+        response_are = re.compile(r"\W*")
+        responses, blah = self.ph5.ph5_g_responses.read_responses()
+
+        n_i = -1
+        for response in responses:
+            if response['n_i'] >= n_i:
+                n_i = response['n_i']
+        n_i = n_i + 1
+
         # Only load if not in response manager
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys,
@@ -287,19 +300,37 @@ class MetadatatoPH5(object):
                         "{0} {1}".format(station_code, channel.code))
             if channel.data_logger.serial_number:
                 try:
-                    name = array_channel['das/model_s'] + "_" + \
-                           array_channel['sensor/model_s']+"_"+str(
-                        channel.sample_rate)
+                    name = (array_channel['das/model_s'] + "_" +
+                            array_channel['sensor/model_s']+"_"+str(int(
+                                channel.sample_rate))).replace(
+                        " ", "").encode('ascii', 'ignore')
 
-                    self.ph5.ph5.create_array(
-                        self.ph5.ph5.root.Experiment_g.Responses_g,
-                        name.replace(" ", "").encode('ascii', 'ignore'),
-                        pickle.dumps(channel.response))
+                    nodes = experiment.get_nodes_by_name(
+                        self.ph5.ph5,
+                        '/Experiment_g/Responses_g',
+                        response_are, None)
 
-                    self.resp_manager.add_response(sensor_keys,
-                                                   datalogger_keys,
-                                                   channel.response)
-                    LOGGER.info("Response loaded")
+                    if name not in nodes.keys():
+                        # doesn't exist, so create and load data
+                        self.ph5.ph5.create_array(
+                                self.ph5.ph5.root.Experiment_g.Responses_g,
+                                name,
+                                pickle.dumps(channel.response))
+                        self.resp_manager.add_response(sensor_keys,
+                                                       datalogger_keys,
+                                                       channel.response)
+                        # now we need to create the response_t entry
+                        response_t['n_i'] = n_i
+                        stage_2 = channel.response.response_stages[1].__dict__
+                        # response_t['bit_weight/value_d']
+                        # response_t['bit_weight/units_s']
+                        # response_t['gain/units_s']
+                        response_t['gain/value_i'] = stage_2['stage_gain']
+                        response_t['response_file_das_a'] = (
+                                '/Experiment_g/Responses_g' + name)
+                        self.response_t.append(response_t)
+
+                        LOGGER.info("Response loaded")
                 except MetadatatoPH5Error:
                     Exception("Could not load response into PH5")
 
@@ -340,6 +371,10 @@ class MetadatatoPH5(object):
                 array_name = "/Experiment_g/Sorts_g/"+arrays[
                     entry['sample_rate_i']]
             ref = columns.TABLES[array_name]
+            columns.populate(ref, entry, None)
+
+        for entry in self.response_t:
+            ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
 
         return True
