@@ -9,7 +9,7 @@ import time
 import re
 from ph5.core import timedoy
 
-PROG_VERSION = '2019.051'
+PROG_VERSION = '2019.064'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -65,109 +65,105 @@ class PH5_Time(object):
         self.type_s = 'BOTH'
 
 
-#
-# Read Command line arguments
-#
+class DeployPickup():
+    #
+    # Read Command line arguments
+    #
+    def get_args(self):
+        parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawTextHelpFormatter)
+        parser.usage = (" set_deploy_pickup_times -a Array_t_xxx.kef "
+                        "-d ASCII_deploy_time -p ASCII_pickup_time")
 
+        parser.description = "Version: %s: Set deploy and pickup times in an\
+         Array_t_xxx.kef file." % PROG_VERSION
 
-def get_args():
+        parser.add_argument("-a", "--array-kef", dest="array_kef",
+                            help="The Array_t_xxx.kef file to modify.",
+                            metavar="array_kef", required=True)
 
-    parser = argparse.ArgumentParser(
-                                formatter_class=argparse.RawTextHelpFormatter)
-    parser.usage = (" set_deploy_pickup_times -a Array_t_xxx.kef "
-                    "-d ASCII_deploy_time -p ASCII_pickup_time")
+        parser.add_argument("-d", "--deploy-time", dest="deploy_time",
+                            help="Array deployment time: YYYY:JJJ:HH:MM:SS",
+                            metavar="deploy_time", required=True)
 
-    parser.description = "Version: %s: Set deploy and pickup times in an\
-     Array_t_xxx.kef file." % PROG_VERSION
+        parser.add_argument("-p", "--pickup-time", dest="pickup_time",
+                            help="Array pickup time: YYYY:JJJ:HH:MM:SS",
+                            metavar="pickup_time", required=True)
 
-    parser.add_argument("-a", "--array-kef", dest="array_kef",
-                        help="The Array_t_xxx.kef file to modify.",
-                        metavar="array_kef", required=True)
+        args = parser.parse_args()
 
-    parser.add_argument("-d", "--deploy-time", dest="deploy_time",
-                        help="Array deployment time: YYYY:JJJ:HH:MM:SS",
-                        metavar="deploy_time", required=True)
+        self.ARRAY_FILE = args.array_kef
+        self.DEPLOY = args.deploy_time
+        self.PICKUP = args.pickup_time
 
-    parser.add_argument("-p", "--pickup-time", dest="pickup_time",
-                        help="Array pickup time: YYYY:JJJ:HH:MM:SS",
-                        metavar="pickup_time", required=True)
+    def barf(self, fh, of, dep_time, pu_time):
+        of.write("#  %s v%s %s\n" %
+                 (sys.argv[0], PROG_VERSION, time.ctime(time.time())))
+        while True:
+            line = fh.readline()
+            if not line:
+                break
+            line = line.strip()
+            if not line:
+                continue
+            if line[0] == '#':
+                of.write(line + '\n')
+                continue
 
-    args = parser.parse_args()
+            if line[0] == '/':
+                of.write("%s:Update:id_s\n" % line)
+                continue
 
-    ARRAY_FILE = args.array_kef
-    DEPLOY = args.deploy_time
-    PICKUP = args.pickup_time
-    return ARRAY_FILE, DEPLOY, PICKUP
-
-
-def barf(fh, of, dep_time, pu_time):
-    of.write("#  %s v%s %s\n" %
-             (sys.argv[0], PROG_VERSION, time.ctime(time.time())))
-    while True:
-        line = fh.readline()
-        if not line:
-            break
-        line = line.strip()
-        if not line:
-            continue
-        if line[0] == '#':
-            of.write(line + '\n')
-            continue
-
-        if line[0] == '/':
-            of.write("%s:Update:id_s\n" % line)
-            continue
-
-        if deployRE.match(line):
-            key, val = line.split('=')
-            pre, post = key.split('/')
-            post = post.strip()
-            if post == 'epoch_l':
-                of.write("\tdeploy_time/epoch_l = %d\n" % dep_time.epoch_l)
-            elif post == 'micro_seconds_i':
-                of.write("\tdeploy_time/micro_seconds_i = %d\n" %
-                         dep_time.micro_seconds_i)
-            elif post == 'type_s':
-                of.write("\tdeploy_time/type_s = %s\n" % dep_time.type_s)
-            elif post == 'ascii_s':
-                of.write("\tdeploy_time/ascii_s = %s\n" % dep_time.ascii_s)
-        elif pickupRE.match(line):
-            key, val = line.split('=')
-            pre, post = key.split('/')
-            post = post.strip()
-            if post == 'epoch_l':
-                of.write("\tpickup_time/epoch_l = %d\n" % pu_time.epoch_l)
-            elif post == 'micro_seconds_i':
-                of.write("\tpickup_time/micro_seconds_i = %d\n" %
-                         pu_time.micro_seconds_i)
-            elif post == 'type_s':
-                of.write("\tpickup_time/type_s = %s\n" % pu_time.type_s)
-            elif post == 'ascii_s':
-                of.write("\tpickup_time/ascii_s = %s\n" % pu_time.ascii_s)
-        else:
-            of.write("\t%s\n" % line)
+            if deployRE.match(line):
+                key, val = line.split('=')
+                pre, post = key.split('/')
+                post = post.strip()
+                if post == 'epoch_l':
+                    of.write("\tdeploy_time/epoch_l = %d\n" % dep_time.epoch_l)
+                elif post == 'micro_seconds_i':
+                    of.write("\tdeploy_time/micro_seconds_i = %d\n" %
+                             dep_time.micro_seconds_i)
+                elif post == 'type_s':
+                    of.write("\tdeploy_time/type_s = %s\n" % dep_time.type_s)
+                elif post == 'ascii_s':
+                    of.write("\tdeploy_time/ascii_s = %s\n" % dep_time.ascii_s)
+            elif pickupRE.match(line):
+                key, val = line.split('=')
+                pre, post = key.split('/')
+                post = post.strip()
+                if post == 'epoch_l':
+                    of.write("\tpickup_time/epoch_l = %d\n" % pu_time.epoch_l)
+                elif post == 'micro_seconds_i':
+                    of.write("\tpickup_time/micro_seconds_i = %d\n" %
+                             pu_time.micro_seconds_i)
+                elif post == 'type_s':
+                    of.write("\tpickup_time/type_s = %s\n" % pu_time.type_s)
+                elif post == 'ascii_s':
+                    of.write("\tpickup_time/ascii_s = %s\n" % pu_time.ascii_s)
+            else:
+                of.write("\t%s\n" % line)
 
 
 def main():
+    settime = DeployPickup()
+    settime.get_args()
 
-    ARRAY_FILE, DEPLOY, PICKUP = get_args()
-
-    if not os.path.exists(ARRAY_FILE):
-        LOGGER.error("Can't open {0}!".format(ARRAY_FILE))
+    if not os.path.exists(settime.ARRAY_FILE):
+        LOGGER.error("Can't open {0}!".format(settime.ARRAY_FILE))
         return 1
     else:
-        fh = open(ARRAY_FILE)
-        mdir = os.path.dirname(ARRAY_FILE)
-        base = os.path.basename(ARRAY_FILE)
+        fh = open(settime.ARRAY_FILE)
+        mdir = os.path.dirname(settime.ARRAY_FILE)
+        base = os.path.basename(settime.ARRAY_FILE)
         base = '_' + base
         of = open(os.path.join(mdir, base), 'w+')
         LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
 
-    dep_time = PH5_Time(passcal_s=DEPLOY)
+    dep_time = PH5_Time(passcal_s=settime.DEPLOY)
 
-    pu_time = PH5_Time(passcal_s=PICKUP)
+    pu_time = PH5_Time(passcal_s=settime.PICKUP)
 
-    barf(fh, of, dep_time, pu_time)
+    settime.barf(fh, of, dep_time, pu_time)
 
     of.close()
     fh.close()
