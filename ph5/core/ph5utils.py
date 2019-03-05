@@ -19,10 +19,12 @@ PROG_VERSION = "2019.63"
 
 
 class PH5Response(object):
-    def __init__(self, sensor_keys, datalogger_keys, response):
+    def __init__(self, sensor_keys, datalogger_keys,
+                 response, n_i=None):
         self.sensor_keys = sensor_keys
         self.datalogger_keys = datalogger_keys
         self.response = response
+        self.n_i = n_i
 
 
 class PH5ResponseManager(object):
@@ -30,9 +32,11 @@ class PH5ResponseManager(object):
     def __init__(self):
         self.responses = []
 
-    def add_response(self, sensor_keys, datalogger_keys, response):
+    def add_response(self, sensor_keys, datalogger_keys,
+                     response, n_i=None):
         self.responses.append(
-                        PH5Response(sensor_keys, datalogger_keys, response)
+                        PH5Response(sensor_keys, datalogger_keys,
+                                    response, n_i)
                     )
 
     def get_response(self, sensor_keys, datalogger_keys):
@@ -55,6 +59,12 @@ class PH5ResponseManager(object):
                     return True
 
         return False
+
+    def get_n_i(self, sensor_keys, datalogger_keys):
+        for ph5_resp in self.responses:
+            if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
+               set(datalogger_keys) == set(ph5_resp.datalogger_keys):
+                return ph5_resp.n_i
 
 
 def does_pattern_exists(patterns_list, value):
