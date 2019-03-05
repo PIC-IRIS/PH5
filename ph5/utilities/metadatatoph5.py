@@ -329,7 +329,7 @@ class MetadatatoPH5(object):
 
                     nodes = experiment.get_nodes_by_name(
                         self.ph5.ph5,
-                        '/Experiment_g/Responses_g',
+                        '/Experiment_g/Responses_g/',
                         response_are, None)
 
                     if name not in nodes.keys():
