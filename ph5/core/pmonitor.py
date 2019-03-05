@@ -609,4 +609,3 @@ if __name__ == '__main__':
         application.exec_()
     except Exception, err_msg:
         LOGGER.error(err_msg)
-

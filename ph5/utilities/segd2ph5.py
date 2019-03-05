@@ -231,7 +231,7 @@ class SEGD2PH5():
             # Add formatter
             formatter = logging.Formatter(LOGGING_FORMAT)
             ch.setFormatter(formatter)
-            LOGGER.addHandler(ch)            
+            LOGGER.addHandler(ch)
         else:
             raise Exception("Error: No outfile (PH5) given.\n")
 

@@ -188,7 +188,7 @@ class Set_n_i_Response():
                             format(das_g))
                         for k in keys:
                             fh.write("\t{0}={1}\n".format(k, das_t[k]))
-                    except IndexError, e:
+                    except IndexError:
                         sr = ph5api.fepoch(
                             das_t['sample_rate_i'],
                             das_t['sample_rate_multiplier_i'])

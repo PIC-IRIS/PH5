@@ -12,7 +12,7 @@ import logging
 import argparse
 from subprocess import call
 
-PROG_VERSION = '2019.057'
+PROG_VERSION = '2019.064'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ OLD_NEW = None
 
 
 class PH5MergeHelp():
-#
+    #
     # Read Command line arguments
     #
     def get_args(self):
@@ -35,18 +35,20 @@ class PH5MergeHelp():
         '''
 
         parser = argparse.ArgumentParser(
-                                    formatter_class=argparse.RawTextHelpFormatter)
+            formatter_class=argparse.RawTextHelpFormatter)
         parser.usage = "ph5_merge_helper [-s miniPH5_start_index]"
 
         parser.description = ("Modify Index_t.kef and miniPH5_xxxxx.ph5 file "
                               "names so they can be merged.")
 
-        parser.add_argument("-s", dest="mini_ph5_index",
-                            help=("For the first miniPH5_xxxxx.ph5, xxxxx should "
-                                  "equal the given value."),
-                            metavar="mini_ph5_index", action='store', type=int)
+        parser.add_argument(
+            "-s", dest="mini_ph5_index",
+            help=("For the first miniPH5_xxxxx.ph5, xxxxx should "
+                  "equal the given value."),
+            metavar="mini_ph5_index", action='store', type=int)
 
-        parser.add_argument("-d", dest="debug", action="store_true", default=False)
+        parser.add_argument(
+            "-d", dest="debug", action="store_true", default=False)
 
         args = parser.parse_args()
 
@@ -99,7 +101,8 @@ class PH5MergeHelp():
                 n = int(m.groups()[0])
                 n = n + self.FIRST_MINI_INDEX - 1
                 OLD_NEW[value] = "miniPH5_{0:05d}.ph5".format(n)
-                of.write("\texternal_file_name_s=./{0}\n".format(OLD_NEW[value]))
+                of.write(
+                    "\texternal_file_name_s=./{0}\n".format(OLD_NEW[value]))
 
         fh.close()
         of.close()
@@ -108,8 +111,7 @@ class PH5MergeHelp():
         ret = call(command, shell=True)
         if ret < 0:
             LOGGER.error("Index_t.kef may not be correct.")
-    
-    
+
     def resequence_M_Index_t(self):
         '''   Set the value of external_file_name_s based on FIRST_MINI_INDEX in
               M_Index_t.kef   '''
@@ -120,7 +122,8 @@ class PH5MergeHelp():
             fh = open('M_Index_t.kef', 'rU')
             of = open('_M_Index_t.kef', 'w')
         except Exception as e:
-            raise Exception("Error: Failed to open 'Index_t.kef', {0}".format(e))
+            raise Exception(
+                "Error: Failed to open 'Index_t.kef', {0}".format(e))
 
         while True:
             line = fh.readline()
@@ -162,6 +165,7 @@ class PH5MergeHelp():
             ret = call(command, shell=True)
             if ret < 0:
                 LOGGER.error("File rename may have failed.")
+
 
 def main():
     try:

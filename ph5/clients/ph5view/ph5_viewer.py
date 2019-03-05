@@ -3324,7 +3324,7 @@ class MainControl(QtGui.QMainWindow):
         self.mainCanvas.setOtherCanvas(self.supportCanvas)
         self.supportCanvas.setOtherCanvas(self.mainCanvas)
         self.createInfoPanel()
-        
+
         self.statusLbl.setText(self.processInfo[0])
 
     def closeEvent(self, event):
