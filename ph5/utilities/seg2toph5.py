@@ -14,8 +14,8 @@ from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, timedoy
 from obspy import read as readSEG2
 
-
 PROG_VERSION = "2019.063"
+
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
@@ -560,7 +560,7 @@ def main():
             LOGGER.error(
                 "{0}. Can't process {1}".format(e.message, f))
             continue
-        conv.update_external_references()
+        update_external_references()
         sys.stdout.write(":<Finished>: {0}\n".format(f))
         sys.stdout.flush()
     seconds = time.time() - then

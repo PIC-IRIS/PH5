@@ -7,6 +7,8 @@
 import sys
 import os
 from ph5.core import segdreader
+from signal import signal, SIGPIPE, SIG_DFL
+signal(SIGPIPE, SIG_DFL)
 
 PROG_VERSION = "2019.059"
 
@@ -118,18 +120,16 @@ def main():
     segdreader.ReelHeaders()
     try:
         sd = segdreader.Reader(infile=sys.argv[1])
+        general_headers(sd)
+        channel_set_descriptors(sd)
+        extended_headers(sd)
+        external_header(sd)
+        trace_headers(sd)
+        print "{0} bytes read.".format(sd.bytes_read)
     except BaseException:
         print "Usage: dumpfair fairfield_seg-d_file.rg16"
-        print "To also print traces: set environment variable fairprint.\
-        This will run slowly."
         return 1
 
-    general_headers(sd)
-    channel_set_descriptors(sd)
-    extended_headers(sd)
-    external_header(sd)
-    trace_headers(sd)
-    print "{0} bytes read.".format(sd.bytes_read)
 
 
 if __name__ == '__main__':
