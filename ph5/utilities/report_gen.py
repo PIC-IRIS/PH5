@@ -562,7 +562,7 @@ def main():
     try:
         reportGen.read_sort_arrays()
         reportGen.read_event_table()
-        reportGen.DASS = read_das_groups()  # NOQA)
+        reportGen.DASS = reportGen.read_das_groups()
     except Exception as err:
         LOGGER.warning(err)
 
