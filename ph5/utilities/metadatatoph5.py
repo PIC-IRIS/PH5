@@ -258,8 +258,27 @@ class MetadatatoPH5(object):
                         LOGGER.info('Response found for station {0} '
                                     'channel {1}'.format(station.code,
                                                          channel.code))
-                        self.load_response(array_channel,
-                                           channel, station.code)
+                        array_channel['response_table_n_i'] = (
+                            self.load_response(array_channel,
+                                               channel, station.code))
+
+                    # Select receiver table n_i
+                    if channel.azimuth == 0.0 and channel.dip == 90.0:
+                        array_channel['receiver_table_n_i'] = 0
+
+                    elif channel.azimuth == 0.0 and channel.dip == 0:
+                        array_channel['receiver_table_n_i'] = 1
+
+                    elif channel.azimuth == 90.0 and channel.dip == 0:
+                        array_channel['receiver_table_n_i'] = 2
+
+                    elif channel.azimuth == 0.0 and channel.dip == -90.0:
+                        array_channel['receiver_table_n_i'] = 3
+                    elif channel.code == 'LOG':
+                        # new receiver table entry
+                        array_channel['receiver_table_n_i'] = 1
+                    else:
+                        array_channel['receiver_table_n_i'] = -1
 
                     array_dict = array_station.copy()
                     array_dict.update(array_channel)
@@ -284,6 +303,7 @@ class MetadatatoPH5(object):
         response_are = re.compile(r"\W*")
         responses, blah = self.ph5.ph5_g_responses.read_responses()
 
+        # check response table already in PH5
         n_i = -1
         for response in responses:
             if response['n_i'] >= n_i:
@@ -298,12 +318,14 @@ class MetadatatoPH5(object):
             LOGGER.info("Loading response for "
                         ""
                         "{0} {1}".format(station_code, channel.code))
-            if channel.data_logger.serial_number:
+            if channel.data_logger:
                 try:
                     name = (array_channel['das/model_s'] + "_" +
                             array_channel['sensor/model_s']+"_"+str(int(
                                 channel.sample_rate))).replace(
                         " ", "").encode('ascii', 'ignore')
+
+                    name = name.translate(None, ',/-=.')
 
                     nodes = experiment.get_nodes_by_name(
                         self.ph5.ph5,
@@ -311,6 +333,12 @@ class MetadatatoPH5(object):
                         response_are, None)
 
                     if name not in nodes.keys():
+                        for response in self.response_t:
+                            if response['n_i'] >= n_i:
+                                n_i = response['n_i']
+                        n_i = n_i + 1
+                        response_t['n_i'] = n_i
+
                         # doesn't exist, so create and load data
                         self.ph5.ph5.create_array(
                                 self.ph5.ph5.root.Experiment_g.Responses_g,
@@ -318,28 +346,34 @@ class MetadatatoPH5(object):
                                 pickle.dumps(channel.response))
                         self.resp_manager.add_response(sensor_keys,
                                                        datalogger_keys,
-                                                       channel.response)
-                        # now we need to create the response_t entry
-                        response_t['n_i'] = n_i
-                        stage_2 = channel.response.response_stages[1].__dict__
+                                                       channel.response,
+                                                       n_i)
+
+                        if hasattr(channel.response, 'response_stages'):
+                            if len(channel.response.response_stages) > 1:
+                                s2 = channel.response.response_stages[1].\
+                                    __dict__
+                                response_t['gain/value_i'] = \
+                                    s2['stage_gain']
+
                         # response_t['bit_weight/value_d']
                         # response_t['bit_weight/units_s']
                         # response_t['gain/units_s']
-                        response_t['gain/value_i'] = stage_2['stage_gain']
                         response_t['response_file_das_a'] = (
                                 '/Experiment_g/Responses_g' + name)
                         self.response_t.append(response_t)
-
                         LOGGER.info("Response loaded")
+                        return n_i
                 except MetadatatoPH5Error:
                     Exception("Could not load response into PH5")
 
             else:
-                LOGGER.error("Datalogger serial required")
+                LOGGER.error("Datalogger required to load response")
         else:
+            # response is in PH5, so send that n_i
             LOGGER.info("Response already in PH5")
-
-        return
+            print self.resp_manager.get_n_i(sensor_keys, datalogger_keys)
+            return self.resp_manager.get_n_i(sensor_keys, datalogger_keys)
 
     def toph5(self, parsed_array):
         """
