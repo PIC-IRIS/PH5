@@ -16,7 +16,7 @@ from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.57'
+PROG_VERSION = '2019.64'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -46,6 +46,12 @@ class ObspytoPH5(object):
         self.first_mini = first_mini
         self.mini_size_max = 26843545600
         self.verbose = False
+        self.array_names = self.ph5.ph5_g_sorts.names()
+        self.arrays = list()
+        for name in self.array_names:
+            array_, blah = self.ph5.ph5_g_sorts.read_arrays(name)
+            for entry in array_:
+                self.arrays.append(entry)
 
     def openmini(self, mini_num):
         """
@@ -286,6 +292,18 @@ class ObspytoPH5(object):
                         das['sample_count_i'] = 0
                     else:
                         das['sample_count_i'] = trace.stats.npts
+
+                    # figure out receiver and response n_i
+                    for array_entry in self.arrays:
+                        if (array_entry['sample_rate_i'] ==
+                                trace.stats.sampling_rate and
+                                array_entry['channel_number_i'] ==
+                                das['channel_number_i'] and
+                                array_entry['id_s'] == trace.stats.station):
+                            das['receiver_table_n_i'] =\
+                                array_entry['receiver_table_n_i']
+                            das['response_table_n_i'] =\
+                                array_entry['response_table_n_i']
 
                     # Make sure we aren't overwriting a data array
                     while True:
