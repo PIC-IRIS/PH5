@@ -14,7 +14,7 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.64'
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
@@ -753,6 +753,7 @@ class PH5(experiment.ExperimentGroup):
                     sample_rate=None,
                     sample_rate_multiplier=None):
         ''' Uses queries to get data from specific das table'''
+
         das_g = "Das_g_{0}".format(das)
         node = self.ph5_g_receivers.getdas_g(das)
         self.ph5_g_receivers.setcurrent(node)
@@ -769,38 +770,73 @@ class PH5(experiment.ExperimentGroup):
         sample_rate_multiplier_i = sample_rate_multiplier_i
         sample_rate_i = sample_rate_i
         das = []
-        for row in tbl.where(
-                '(channel_number_i == '
-                + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
-                + str(start_epoch) +
-                '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                '&(epoch_i+micro_seconds_i/1000000<='
-                + str(stop_epoch) + ')&(sample_rate_i==' + str(sample_rate) +
-                ')&(sample_rate_multiplier_i==' +
-                str(sample_rate_multiplier) + ')'
-        ):
+        if sample_rate == 0 and chan == -2:
+            for row in tbl.where(
+                    '(channel_number_i == '
+                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                    + str(start_epoch) +
+                    ')&(epoch_i+micro_seconds_i/1000000<='
+                    + str(stop_epoch) + ')'
+            ):
 
-            row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
-                        'array_name_data_a': row['array_name_data_a'],
-                        'array_name_event_a': row['array_name_event_a'],
-                        'array_name_log_a': row['array_name_log_a'],
-                        'channel_number_i': row['channel_number_i'],
-                        'event_number_i': row['event_number_i'],
-                        'raw_file_name_s': row['raw_file_name_s'],
-                        'receiver_table_n_i': row['receiver_table_n_i'],
-                        'response_table_n_i': row['response_table_n_i'],
-                        'sample_count_i': row['sample_count_i'],
-                        'sample_rate_i': row['sample_rate_i'],
-                        'sample_rate_multiplier_i':
-                            row['sample_rate_multiplier_i'],
-                        'stream_number_i': row['stream_number_i'],
-                        'time/ascii_s': row['time/ascii_s'],
-                        'time/epoch_l': row['time/epoch_l'],
-                        'time/micro_seconds_i': row['time/micro_seconds_i'],
-                        'time/type_s': row['time/type_s'],
-                        'time_table_n_i': row['time_table_n_i']
-                        }
-            das.append(row_dict)
+                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
+                            'array_name_data_a': row['array_name_data_a'],
+                            'array_name_event_a': row['array_name_event_a'],
+                            'array_name_log_a': row['array_name_log_a'],
+                            'channel_number_i': row['channel_number_i'],
+                            'event_number_i': row['event_number_i'],
+                            'raw_file_name_s': row['raw_file_name_s'],
+                            'receiver_table_n_i': row['receiver_table_n_i'],
+                            'response_table_n_i': row['response_table_n_i'],
+                            'sample_count_i': row['sample_count_i'],
+                            'sample_rate_i': row['sample_rate_i'],
+                            'sample_rate_multiplier_i':
+                                row['sample_rate_multiplier_i'],
+                            'stream_number_i': row['stream_number_i'],
+                            'time/ascii_s': row['time/ascii_s'],
+                            'time/epoch_l': row['time/epoch_l'],
+                            'time/micro_seconds_i':
+                                row['time/micro_seconds_i'],
+                            'time/type_s': row['time/type_s'],
+                            'time_table_n_i': row['time_table_n_i']
+                            }
+                das.append(row_dict)
+
+        else:
+            for row in tbl.where(
+                    '(channel_number_i == '
+                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                    + str(start_epoch) +
+                    '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                    '&(epoch_i+micro_seconds_i/1000000<='
+                    + str(stop_epoch) + ')&(sample_rate_i==' +
+                    str(sample_rate) +
+                    ')&(sample_rate_multiplier_i==' +
+                    str(sample_rate_multiplier) + ')'
+            ):
+
+                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
+                            'array_name_data_a': row['array_name_data_a'],
+                            'array_name_event_a': row['array_name_event_a'],
+                            'array_name_log_a': row['array_name_log_a'],
+                            'channel_number_i': row['channel_number_i'],
+                            'event_number_i': row['event_number_i'],
+                            'raw_file_name_s': row['raw_file_name_s'],
+                            'receiver_table_n_i': row['receiver_table_n_i'],
+                            'response_table_n_i': row['response_table_n_i'],
+                            'sample_count_i': row['sample_count_i'],
+                            'sample_rate_i': row['sample_rate_i'],
+                            'sample_rate_multiplier_i':
+                                row['sample_rate_multiplier_i'],
+                            'stream_number_i': row['stream_number_i'],
+                            'time/ascii_s': row['time/ascii_s'],
+                            'time/epoch_l': row['time/epoch_l'],
+                            'time/micro_seconds_i':
+                                row['time/micro_seconds_i'],
+                            'time/type_s': row['time/type_s'],
+                            'time_table_n_i': row['time_table_n_i']
+                            }
+                das.append(row_dict)
 
         return das
 
@@ -981,6 +1017,50 @@ class PH5(experiment.ExperimentGroup):
         else:
             return None
 
+    def textural_cut(self, das,
+                     start_fepoch, stop_fepoch,
+                     chan,
+                     das_t):
+        """
+        Cuts a text based trace such as LOG file
+        :param das:
+        :param start_fepoch:
+        :param stop_fepoch:
+        :param chan:
+        :param das_t:
+        :return:
+        """
+        if not das_t:
+            self.read_das_t(das, start_epoch=start_fepoch,
+                            stop_epoch=stop_fepoch, reread=False)
+            if das not in self.Das_t:
+                return [Trace(np.array([]), start_fepoch, 0., 0,
+                              0, None, None, [], None, None)]
+            Das_t = filter_das_t(self.Das_t[das]['rows'], chan)
+        else:
+            Das_t = das_t
+        traces = list()
+        for entry in Das_t:
+            ref = self.ph5_g_receivers.find_trace_ref(
+                entry['array_name_data_a'].strip())
+            stime = (entry['time/epoch_l'] +
+                     entry['time/micro_seconds_i']/1000000)
+
+            data = self.ph5_g_receivers.read_trace(ref)
+            trace = Trace(data,
+                          stime,
+                          0,  # time_correction
+                          len(data),  # samples_read
+                          0,
+                          None,
+                          None,
+                          Das_t,
+                          None,  # receiver_t
+                          None,  # response_t
+                          clock=None)
+            traces.append(trace)
+        return traces
+
     def cut(self, das, start_fepoch, stop_fepoch, chan=1,
             sample_rate=None, apply_time_correction=True, das_t=None):
         '''   Cut trace data and return a Trace object
@@ -1006,6 +1086,12 @@ class PH5(experiment.ExperimentGroup):
             Das_t = filter_das_t(self.Das_t[das]['rows'], chan)
         else:
             Das_t = das_t
+
+        if sample_rate == 0 or chan == -2:
+            LOGGER.info("calling textural_cut")
+            self.textural_cut()
+            return []
+
         #
         # We shift the samples to match the requested start
         # time to apply the time correction

@@ -322,7 +322,7 @@ class MetadatatoPH5(object):
                 try:
                     name = (array_channel['das/model_s'] + "_" +
                             array_channel['sensor/model_s']+"_"+str(int(
-                                channel.sample_rate))).replace(
+                                channel.sample_rate))+channel.code).replace(
                         " ", "").encode('ascii', 'ignore')
 
                     name = name.translate(None, ',/-=.')
