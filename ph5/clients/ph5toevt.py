@@ -12,7 +12,7 @@ import logging
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
-PROG_VERSION = "2019.059 Developmental"
+PROG_VERSION = "2019.064 Developmental"
 LOGGER = logging.getLogger(__name__)
 # This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
@@ -545,10 +545,10 @@ class PH5toEvent():
                                 try:
                                     fh = sys.stdout
                                 except Exception as e:
-                                    LOGGER.error("{0}".format(e.message))
-                                    LOGGER.error("Failed to open STDOUT. "
-                                                 "Can not continue.")
-                                    sys.exit(-1)
+                                    err_msg = "{0}".format(e.message) + \
+                                        "\nFailed to open STDOUT. "\
+                                        "Can not continue."
+                                    raise Exception(err_msg)
                             else:
                                 #
                                 # Set up file naming
