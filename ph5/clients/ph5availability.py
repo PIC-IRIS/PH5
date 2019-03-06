@@ -43,7 +43,7 @@ class PH5Availability(object):
             self.ph5.read_array_t_names()
         return
 
-    def get_nslc(self, station=None, location=None,
+    def get_slc(self, station=None, location=None,
                  channel=None, starttime=None, endtime=None):
         """
         Get a list of tuples [(sta, loc, cha),...] containing information
