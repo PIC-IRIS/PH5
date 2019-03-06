@@ -46,7 +46,7 @@ class PH5Availability(object):
     def get_nslc(self, station=None, location=None,
                  channel=None, starttime=None, endtime=None):
         """
-        Get a list of tuples [(net, sta, loc, cha),...] containing information
+        Get a list of tuples [(sta, loc, cha),...] containing information
         on what streams are included in PH5.
         :type station: str
         :param station: Station code of requested data (e.g. "ANMO").
@@ -62,7 +62,7 @@ class PH5Availability(object):
         :type endtime: float
         :param endtime: End of requested time window as epoch in seconds
         :rtype: list(tuple(str, str, str, str))
-        :returns: A list of tuples [(network, station, location, channel)...]
+        :returns: A list of tuples [(station, location, channel)...]
             containing information on what streams are included in PH5 archive.
         """
         nslc = []
@@ -72,7 +72,7 @@ class PH5Availability(object):
     def get_availability_extent(self, station=None, location=None,
                                 channel=None, starttime=None, endtime=None):
         """
-        Get a list of tuples [(network, station, location, channel,
+        Get a list of tuples [(station, location, channel,
         earliest, latest)] containing data extent info for time series
         included in PH5.
         :type station: str
@@ -89,7 +89,7 @@ class PH5Availability(object):
         :type endtime: float
         :param endtime: End of requested time window as epoch in seconds
         :rtype: list(tuple(str, str, str, str, float, float))
-        :returns: A list of tuples [(network, station, location, channel,
+        :returns: A list of tuples [(station, location, channel,
             earliest, latest)...] containing data extent info for time series
             included in PH5 archive
 
@@ -106,11 +106,11 @@ class PH5Availability(object):
                          channel=None, starttime=None, endtime=None,
                          include_sample_rate=False):
         """
-        Get a list of tuples [(network, station, location, channel,
+        Get a list of tuples [(station, location, channel,
         starttime, endtime),...] containing data availability info for
-        time series included in the tsindex database.
+        time series included in the ph5.
         If ``include_sample_rate=True``, then a tuple containing the sample
-        rate [(net, sta, loc, cha, start, end, sample_rate),...] is returned.
+        rate [(sta, loc, cha, start, end, sample_rate),...] is returned.
         :type station: str
         :param station: Station code of requested data (e.g. "ANMO").
             Wildcards '*' and '?' are supported.
@@ -127,10 +127,10 @@ class PH5Availability(object):
         :param endtime: End of requested time window as epoch in seconds
         :type include_sample_rate: bool
         :param include_sample_rate: If ``include_sample_rate=True``, then
-            a tuple containing the sample rate [(net, sta, loc, cha,
+            a tuple containing the sample rate [(sta, loc, cha,
             start, end, sample_rate),...] is returned.
-        :rtype: list(tuple(str, str, str, str, str, str))
-        :returns: A list of tuples [(network, station, location, channel,
+        :rtype: list(tuple(str, str, str, str, str))
+        :returns: A list of tuples [( station, location, channel,
             earliest, latest)...] representing contiguous time spans for
             selected channels and time ranges.
 
