@@ -360,7 +360,7 @@ class MetadatatoPH5(object):
                         # response_t['bit_weight/units_s']
                         # response_t['gain/units_s']
                         response_t['response_file_das_a'] = (
-                                '/Experiment_g/Responses_g' + name)
+                                '/Experiment_g/Responses_g/' + name)
                         self.response_t.append(response_t)
                         LOGGER.info("Response loaded")
                         return n_i
