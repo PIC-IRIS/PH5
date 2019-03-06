@@ -560,7 +560,7 @@ def main():
             LOGGER.error(
                 "{0}. Can't process {1}".format(e.message, f))
             continue
-        update_external_references()
+        conv.update_external_references()
         sys.stdout.write(":<Finished>: {0}\n".format(f))
         sys.stdout.flush()
     seconds = time.time() - then
