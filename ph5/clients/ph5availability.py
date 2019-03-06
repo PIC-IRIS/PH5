@@ -44,7 +44,7 @@ class PH5Availability(object):
         return
 
     def get_slc(self, station=None, location=None,
-                 channel=None, starttime=None, endtime=None):
+                channel=None, starttime=None, endtime=None):
         """
         Get a list of tuples [(sta, loc, cha),...] containing information
         on what streams are included in PH5.
