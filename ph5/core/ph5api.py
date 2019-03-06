@@ -14,7 +14,7 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2019.64'
+PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
@@ -1801,13 +1801,14 @@ def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
 
     time_t = None
     for t in Time_t:
-        data_start = fepoch(t['start_time/epoch_l'],
-                            t['start_time/micro_seconds_i'])
-        data_stop = fepoch(t['end_time/epoch_l'],
-                           t['end_time/micro_seconds_i'])
-        if is_in(data_start, data_stop, start_fepoch, stop_fepoch):
-            time_t = t
-            break
+        if t['corrected_i'] != 1:
+            data_start = fepoch(t['start_time/epoch_l'],
+                                t['start_time/micro_seconds_i'])
+            data_stop = fepoch(t['end_time/epoch_l'],
+                               t['end_time/micro_seconds_i'])
+            if is_in(data_start, data_stop, start_fepoch, stop_fepoch):
+                time_t = t
+                break
 
     if time_t is None:
         clock.comment.append("No clock drift information available.")

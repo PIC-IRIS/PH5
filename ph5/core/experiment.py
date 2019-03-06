@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2019.57'
+PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 
@@ -1057,6 +1057,14 @@ class ReceiversGroup:
                          'end_time/epoch_l', 'offset_l', 'slope_d']
 
         populate_table(self.current_t_time, p, key, required_keys)
+
+        self.ph5.flush()
+
+    def populateTime_t_(self, p, key=None):
+        required_keys = ['das/serial_number_s', 'start_time/epoch_l',
+                         'end_time/epoch_l', 'offset_d', 'slope_d']
+
+        populate_table(self.ph5_t_time, p, key, required_keys)
 
         self.ph5.flush()
 

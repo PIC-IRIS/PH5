@@ -17,7 +17,7 @@ from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.64'
+PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -179,7 +179,7 @@ class ObspytoPH5(object):
                 try:
                     flags = get_flags(file_tuple[0])
                     if flags['activity_flags_counts'][
-                             'time_correction_applied'] == 1:
+                             'time_correction_applied'] > 0:
                         LOGGER.info("Timing correction has been applied")
                         time_corrected = True
                     if flags["timing_correction"] != 0.0:
@@ -280,7 +280,14 @@ class ObspytoPH5(object):
                     index_t_entry['time_stamp/type_s'] = 'BOTH'
 
                     if correction or time_corrected:
-                        time['das/serial_number_s'] = entry['serial']
+                        time_t['das/serial_number_s'] = entry['serial']
+
+                        if in_type == 'file':
+                            time_t['description_s'] = file_tuple[0]
+                        else:
+                            time_t['description_s'] = (
+                                    str(trace.stats.station) +
+                                    str(trace.stats.channel))
                         # SEED time correction
                         # units are 0.0001 seconds per unit
                         time_t['offset_d'] = \
@@ -601,7 +608,7 @@ def main():
     if len(obs.time_t) > 0:
         LOGGER.info('Populating Time table')
         for entry in obs.time_t:
-            ph5_object.ph5_g_receivers.populateTime_t()
+            ph5_object.ph5_g_receivers.populateTime_t_(entry)
     LOGGER.info("Populating Index table")
     for entry in index_t_full:
         ph5_object.ph5_g_receivers.populateIndex_t(entry)

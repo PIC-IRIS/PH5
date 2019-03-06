@@ -22,7 +22,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.64'
+PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -976,8 +976,8 @@ def get_args():
 
     parser.add_argument(
         "--notimecorrect",
-        action="store_true",
-        default=False)
+        action="store_false",
+        default=True)
 
     parser.add_argument(
         "--use_deploy_pickup", action="store_true", default=True,
