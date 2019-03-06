@@ -315,7 +315,7 @@ class MetadatatoPH5(object):
         for response in responses:
             if response['n_i'] >= n_i:
                 n_i = response['n_i']
-        n_i = n_i + 1
+        n_i = n_i
 
         # Only load if not in response manager
         if not self.resp_manager.is_already_requested(sensor_keys,
@@ -379,7 +379,6 @@ class MetadatatoPH5(object):
         else:
             # response is in PH5, so send that n_i
             LOGGER.info("Response already in PH5")
-            print self.resp_manager.get_n_i(sensor_keys, datalogger_keys)
             return self.resp_manager.get_n_i(sensor_keys, datalogger_keys)
 
     def toph5(self, parsed_array):

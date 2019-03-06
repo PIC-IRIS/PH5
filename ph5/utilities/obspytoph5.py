@@ -12,6 +12,7 @@ from ph5 import LOGGING_FORMAT
 from ph5.utilities import initialize_ph5
 from ph5.core import experiment, timedoy
 from obspy.io.mseed.core import _is_mseed
+from obspy.io.mseed.util import get_flags
 from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
@@ -52,6 +53,7 @@ class ObspytoPH5(object):
             array_, blah = self.ph5.ph5_g_sorts.read_arrays(name)
             for entry in array_:
                 self.arrays.append(entry)
+        self.time_t = list()
 
     def openmini(self, mini_num):
         """
@@ -154,6 +156,8 @@ class ObspytoPH5(object):
         :return:
         """
         index_t = list()
+        time_corrected = False
+        correction = False
         current_mini = None
         in_type = None
         das_station_map = self.get_das_station_map()
@@ -171,6 +175,19 @@ class ObspytoPH5(object):
         if isinstance(file_tuple[0], str):
             st = reader(file_tuple[0], format=file_tuple[1])
             in_type = "file"
+            if file_tuple[1] == 'MSEED':
+                try:
+                    flags = get_flags(file_tuple[0])
+                    if flags['activity_flags_counts'][
+                             'time_correction_applied'] == 1:
+                        LOGGER.info("Timing correction has been applied")
+                        time_corrected = True
+                    if flags["timing_correction"] != 0.0:
+                        LOGGER.info('Timing Correction found')
+                        correction = True
+
+                except BaseException:
+                    pass
         # is this an obspy stream?
         elif isinstance(file_tuple[0], Stream):
             st = file_tuple[0]
@@ -214,6 +231,7 @@ class ObspytoPH5(object):
                             current_mini = largest + 1
             # iterate through das_station_map
             for entry in das_station_map:
+                time_t = {}
                 das = {}
                 index_t_entry = {}
                 # only load data if it matches
@@ -260,6 +278,33 @@ class ObspytoPH5(object):
                     index_t_entry['time_stamp/micro_seconds_i'] = (
                         int(microsecond))
                     index_t_entry['time_stamp/type_s'] = 'BOTH'
+
+                    if correction or time_corrected:
+                        time['das/serial_number_s'] = entry['serial']
+                        # SEED time correction
+                        # units are 0.0001 seconds per unit
+                        time_t['offset_d'] = \
+                            flags["timing_correction"] * 0.0001
+                        time_t['start_time/epoch_l'] =\
+                            index_t_entry['start_time/epoch_l']
+                        time_t['start_time/micro_seconds_i'] =\
+                            index_t_entry['start_time/micro_seconds_i']
+                        time_t['end_time/epoch_l'] =\
+                            index_t_entry['end_time/epoch_l']
+                        time_t['end_time/micro_seconds_i'] =\
+                            index_t_entry['end_time/micro_seconds_i']
+                        length = trace.stats.npts * trace.stats.delta
+                        if length != 0:
+                            time_t['slope_d'] = time_t['offset_d'] / length
+                        else:
+                            time_t['slope_d'] = 0
+
+                    if time_corrected:
+                        time_t['corrected_i'] = 1
+
+                    if time_t:
+                        self.time_t.append(time_t)
+
                     if (trace.stats.sampling_rate >= 1 or
                             trace.stats.sampling_rate == 0):
                         das['sample_rate_i'] = trace.stats.sampling_rate
@@ -553,7 +598,10 @@ def main():
         if message == "stop":
             LOGGER.error("Stopping program...")
             break
-
+    if len(obs.time_t) > 0:
+        LOGGER.info('Populating Time table')
+        for entry in obs.time_t:
+            ph5_object.ph5_g_receivers.populateTime_t()
     LOGGER.info("Populating Index table")
     for entry in index_t_full:
         ph5_object.ph5_g_receivers.populateIndex_t(entry)
