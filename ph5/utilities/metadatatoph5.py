@@ -207,13 +207,20 @@ class MetadatatoPH5(object):
                         array_channel['sample_rate_i'] = 1
                         array_channel['sample_rate_multiplier_i'] = (
                                 1/channel.sample_rate)
-
-                    array_channel['location/X/value_d'] = channel.longitude
-                    array_channel['location/X/units_s'] = "degrees"
-                    array_channel['location/Y/value_d'] = channel.latitude
-                    array_channel['location/Y/units_s'] = "degrees"
-                    array_channel['location/Z/value_d'] = channel.elevation
-                    array_channel['location/Z/units_s'] = "m"
+                    if channel.longitude != 0.0:
+                        array_channel['location/X/value_d'] = channel.longitude
+                        array_channel['location/X/units_s'] = "degrees"
+                        array_channel['location/Y/value_d'] = channel.latitude
+                        array_channel['location/Y/units_s'] = "degrees"
+                        array_channel['location/Z/value_d'] = channel.elevation
+                        array_channel['location/Z/units_s'] = "m"
+                    else:
+                        array_channel['location/X/value_d'] = station.longitude
+                        array_channel['location/X/units_s'] = "degrees"
+                        array_channel['location/Y/value_d'] = station.latitude
+                        array_channel['location/Y/units_s'] = "degrees"
+                        array_channel['location/Z/value_d'] = station.elevation
+                        array_channel['location/Z/units_s'] = "m"
                     if channel.sensor:
                         array_channel['sensor/model_s'] = str(
                             channel.sensor.type)
