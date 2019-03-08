@@ -1,0 +1,459 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns:iris="http://www.fdsn.org/xml/station/1/iris" xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.0">
+  <Source>PIC-PH5</Source>
+  <Sender>IRIS-PASSCAL-DMC-PH5</Sender>
+  <Module>PH5 WEB SERVICE: metadata | version: 1</Module>
+  <ModuleURI></ModuleURI>
+  <Created>2019-03-08T16:48:51.266889</Created>
+  <Network alternateCode="19-999" code="XX" endDate="2019-01-14T18:12:05" startDate="2018-12-17T22:20:30">
+    <Description>test</Description>
+    <TotalNumberStations>1</TotalNumberStations>
+    <Station code="0407" endDate="2019-01-14T18:12:04" startDate="2018-12-17T22:20:30">
+      <Latitude unit="DEGREES">73.77777</Latitude>
+      <Longitude unit="DEGREES">94.88888</Longitude>
+      <Elevation unit="METERS">90.0</Elevation>
+      <Site>
+        <Name></Name>
+      </Site>
+      <CreationDate>2018-12-17T22:20:30</CreationDate>
+      <TerminationDate>2019-01-14T18:12:04</TerminationDate>
+      <TotalNumberChannels>6</TotalNumberChannels>
+      <SelectedNumberChannels>2</SelectedNumberChannels>
+      <Channel code="HHN" endDate="2019-01-14T18:12:04" locationCode="" startDate="2018-12-17T22:20:30" iris:PH5ReceiverId="0407" iris:PH5Component="1" iris:PH5Array="001">
+        <Latitude unit="DEGREES">73.77777</Latitude>
+        <Longitude unit="DEGREES">94.88888</Longitude>
+        <Elevation unit="METERS">90.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate>200.0</SampleRate>
+        <StorageFormat>PH5</StorageFormat>
+        <Sensor>
+          <Type>None CMG-3T</Type>
+          <Description>None CMG-3T/None Q330</Description>
+          <Manufacturer>None</Manufacturer>
+          <Vendor></Vendor>
+          <Model>CMG-3T</Model>
+          <SerialNumber>None</SerialNumber>
+          <InstallationDate>2018-12-17T22:20:30</InstallationDate>
+          <RemovalDate>2019-01-14T18:12:04</RemovalDate>
+        </Sensor>
+        <DataLogger>
+          <Type>None Q330</Type>
+          <Description></Description>
+          <Manufacturer>None</Manufacturer>
+          <Vendor></Vendor>
+          <Model>Q330</Model>
+          <SerialNumber>5553</SerialNumber>
+          <InstallationDate>2018-12-17T22:20:30</InstallationDate>
+          <RemovalDate>2019-01-14T18:12:04</RemovalDate>
+        </DataLogger>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>629466929.966</Value>
+            <Frequency>1.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>Velocity in Meters per Second</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>Digital Counts</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros>
+              <InputUnits>
+                <Name>M/S</Name>
+                <Description>Velocity in Meters per Second</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+                <Description>Volts</Description>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>571508000.0</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">1.0</NormalizationFrequency>
+              <Zero number="0">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Zero number="1">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real minusError="-0.037008" plusError="-0.037008">-0.037008</Real>
+                <Imaginary minusError="0.037008" plusError="0.037008">0.037008</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real minusError="-0.037008" plusError="-0.037008">-0.037008</Real>
+                <Imaginary minusError="-0.037008" plusError="-0.037008">-0.037008</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real minusError="-502.65" plusError="-502.65">-502.65</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real minusError="-1005.0" plusError="-1005.0">-1005.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Pole>
+              <Pole number="4">
+                <Real minusError="-1131.0" plusError="-1131.0">-1131.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>1500.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.05</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+                <Description>Volts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>1.0</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>419430.0</Value>
+              <Frequency>0.05</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="4">
+            <Coefficients>
+              <InputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>1.75091e-09</Numerator>
+              <Numerator>0.000192664</Numerator>
+              <Numerator>0.00182911</Numerator>
+              <Numerator>-0.00019043</Numerator>
+              <Numerator>-0.00520612</Numerator>
+              <Numerator>0.0034918</Numerator>
+              <Numerator>-0.00400027</Numerator>
+              <Numerator>-0.00126164</Numerator>
+              <Numerator>0.00762364</Numerator>
+              <Numerator>-0.0162003</Numerator>
+              <Numerator>0.021477</Numerator>
+              <Numerator>-0.0203537</Numerator>
+              <Numerator>0.008034</Numerator>
+              <Numerator>0.0169339</Numerator>
+              <Numerator>-0.0540392</Numerator>
+              <Numerator>0.0993621</Numerator>
+              <Numerator>-0.148949</Numerator>
+              <Numerator>0.209459</Numerator>
+              <Numerator>0.835881</Numerator>
+              <Numerator>0.113934</Numerator>
+              <Numerator>-0.119634</Numerator>
+              <Numerator>0.095821</Numerator>
+              <Numerator>-0.0623287</Numerator>
+              <Numerator>0.0289866</Numerator>
+              <Numerator>-0.00281723</Numerator>
+              <Numerator>-0.0132018</Numerator>
+              <Numerator>0.0184771</Numerator>
+              <Numerator>-0.0164801</Numerator>
+              <Numerator>0.00964629</Numerator>
+              <Numerator>-0.0036507</Numerator>
+              <Numerator>-0.00226389</Numerator>
+              <Numerator>0.00261454</Numerator>
+              <Numerator>-0.0052992</Numerator>
+              <Numerator>0.000480609</Numerator>
+              <Numerator>0.00163137</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.09</Delay>
+              <Correction>0.09</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.05</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+      <Channel code="LHN" endDate="2019-01-14T18:12:04" locationCode="" startDate="2018-12-17T22:20:30" iris:PH5ReceiverId="0407" iris:PH5Component="1" iris:PH5Array="002">
+        <Latitude unit="DEGREES">73.77777</Latitude>
+        <Longitude unit="DEGREES">94.88888</Longitude>
+        <Elevation unit="METERS">90.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate>100.0</SampleRate>
+        <StorageFormat>PH5</StorageFormat>
+        <Sensor>
+          <Type>None CMG-3T</Type>
+          <Description>None CMG-3T/None Q330</Description>
+          <Manufacturer>None</Manufacturer>
+          <Vendor></Vendor>
+          <Model>CMG-3T</Model>
+          <SerialNumber>None</SerialNumber>
+          <InstallationDate>2018-12-17T22:20:30</InstallationDate>
+          <RemovalDate>2019-01-14T18:12:04</RemovalDate>
+        </Sensor>
+        <DataLogger>
+          <Type>None Q330</Type>
+          <Description></Description>
+          <Manufacturer>None</Manufacturer>
+          <Vendor></Vendor>
+          <Model>Q330</Model>
+          <SerialNumber>5553</SerialNumber>
+          <InstallationDate>2018-12-17T22:20:30</InstallationDate>
+          <RemovalDate>2019-01-14T18:12:04</RemovalDate>
+        </DataLogger>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>629870782.78</Value>
+            <Frequency>1.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>Velocity in Meters per Second</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>Digital Counts</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros>
+              <InputUnits>
+                <Name>M/S</Name>
+                <Description>Velocity in Meters per Second</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+                <Description>Volts</Description>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>571508000.0</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">1.0</NormalizationFrequency>
+              <Zero number="0">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Zero number="1">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real minusError="-0.037008" plusError="-0.037008">-0.037008</Real>
+                <Imaginary minusError="0.037008" plusError="0.037008">0.037008</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real minusError="-0.037008" plusError="-0.037008">-0.037008</Real>
+                <Imaginary minusError="-0.037008" plusError="-0.037008">-0.037008</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real minusError="-502.65" plusError="-502.65">-502.65</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real minusError="-1005.0" plusError="-1005.0">-1005.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Pole>
+              <Pole number="4">
+                <Real minusError="-1131.0" plusError="-1131.0">-1131.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>1500.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.05</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+                <Description>Volts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>1.0</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">100.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>419430.0</Value>
+              <Frequency>0.05</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="4">
+            <Coefficients>
+              <InputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>6.43711e-14</Numerator>
+              <Numerator>6.58258e-08</Numerator>
+              <Numerator>-7.53118e-07</Numerator>
+              <Numerator>6.26743e-07</Numerator>
+              <Numerator>2.47069e-06</Numerator>
+              <Numerator>-3.15256e-06</Numerator>
+              <Numerator>5.4824e-06</Numerator>
+              <Numerator>-7.78113e-06</Numerator>
+              <Numerator>5.10559e-06</Numerator>
+              <Numerator>3.31568e-05</Numerator>
+              <Numerator>-0.000268238</Numerator>
+              <Numerator>-0.000353056</Numerator>
+              <Numerator>0.000622489</Numerator>
+              <Numerator>-0.00101006</Numerator>
+              <Numerator>0.00127276</Numerator>
+              <Numerator>-0.00118431</Numerator>
+              <Numerator>0.000512697</Numerator>
+              <Numerator>0.000910091</Numerator>
+              <Numerator>-0.00309045</Numerator>
+              <Numerator>0.00581107</Numerator>
+              <Numerator>-0.00857787</Numerator>
+              <Numerator>0.0106344</Numerator>
+              <Numerator>-0.0110399</Numerator>
+              <Numerator>0.00881308</Numerator>
+              <Numerator>-0.00307778</Numerator>
+              <Numerator>-0.00464808</Numerator>
+              <Numerator>0.016017</Numerator>
+              <Numerator>-0.0372088</Numerator>
+              <Numerator>0.0536013</Numerator>
+              <Numerator>-0.0726163</Numerator>
+              <Numerator>0.0878551</Numerator>
+              <Numerator>-0.0979276</Numerator>
+              <Numerator>0.0946782</Numerator>
+              <Numerator>0.888891</Numerator>
+              <Numerator>0.138422</Numerator>
+              <Numerator>-0.115331</Numerator>
+              <Numerator>0.0951158</Numerator>
+              <Numerator>-0.0743198</Numerator>
+              <Numerator>0.0521264</Numerator>
+              <Numerator>-0.0339684</Numerator>
+              <Numerator>0.0122831</Numerator>
+              <Numerator>-0.00140239</Numerator>
+              <Numerator>-0.00585837</Numerator>
+              <Numerator>0.0107618</Numerator>
+              <Numerator>-0.0121488</Numerator>
+              <Numerator>0.0110276</Numerator>
+              <Numerator>-0.00845663</Numerator>
+              <Numerator>0.00539437</Numerator>
+              <Numerator>-0.00257072</Numerator>
+              <Numerator>0.000426728</Numerator>
+              <Numerator>0.000881093</Numerator>
+              <Numerator>-0.00141391</Numerator>
+              <Numerator>0.00137928</Numerator>
+              <Numerator>-0.00102993</Numerator>
+              <Numerator>0.000596299</Numerator>
+              <Numerator>-0.000303778</Numerator>
+              <Numerator>-0.000298773</Numerator>
+              <Numerator>3.41094e-05</Numerator>
+              <Numerator>5.26981e-06</Numerator>
+              <Numerator>-8.09269e-06</Numerator>
+              <Numerator>5.56459e-06</Numerator>
+              <Numerator>-2.95383e-06</Numerator>
+              <Numerator>2.26184e-06</Numerator>
+              <Numerator>7.69085e-07</Numerator>
+              <Numerator>-7.49759e-07</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">100.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.33</Delay>
+              <Correction>0.33</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.05</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+    <Station code="0407" endDate="2019-01-14T18:12:05" startDate="2018-12-17T23:10:03">
+      <Latitude unit="DEGREES">73.77777</Latitude>
+      <Longitude unit="DEGREES">94.88888</Longitude>
+      <Elevation unit="METERS">90.0</Elevation>
+      <Site>
+        <Name></Name>
+      </Site>
+      <CreationDate>2018-12-17T23:10:03</CreationDate>
+      <TerminationDate>2019-01-14T18:12:05</TerminationDate>
+      <TotalNumberChannels>3</TotalNumberChannels>
+      <SelectedNumberChannels>1</SelectedNumberChannels>
+      <Channel code="LOG" endDate="2019-01-14T18:12:05" locationCode="" startDate="2018-12-17T23:10:03" iris:PH5ReceiverId="0407" iris:PH5Component="-2" iris:PH5Array="005">
+        <Latitude unit="DEGREES">73.77777</Latitude>
+        <Longitude unit="DEGREES">94.88888</Longitude>
+        <Elevation unit="METERS">90.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate>0.0</SampleRate>
+        <StorageFormat>PH5</StorageFormat>
+        <Sensor>
+          <Type>None CMG-3T</Type>
+          <Description>None CMG-3T/None Q330</Description>
+          <Manufacturer>None</Manufacturer>
+          <Vendor></Vendor>
+          <Model>CMG-3T</Model>
+          <SerialNumber>None</SerialNumber>
+          <InstallationDate>2018-12-17T23:10:03</InstallationDate>
+          <RemovalDate>2019-01-14T18:12:05</RemovalDate>
+        </Sensor>
+        <DataLogger>
+          <Type>None Q330</Type>
+          <Description></Description>
+          <Manufacturer>None</Manufacturer>
+          <Vendor></Vendor>
+          <Model>Q330</Model>
+          <SerialNumber>5553</SerialNumber>
+          <InstallationDate>2018-12-17T23:10:03</InstallationDate>
+          <RemovalDate>2019-01-14T18:12:05</RemovalDate>
+        </DataLogger>
+        <Response/>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

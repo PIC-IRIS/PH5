@@ -1231,7 +1231,9 @@ class ResponsesGroup:
         self.ph5_t_response = None
 
     def populateResponse_t(self, p, pkey=None):
-        populate_table(self.ph5_t_response, p, pkey)
+        required_keys = []
+        populate_table(self.ph5_t_response, p, pkey, required_keys)
+        self.ph5.flush()
 
     def read_responses(self):
         ret, keys = read_table(self.ph5_t_response)

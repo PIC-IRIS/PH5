@@ -1801,7 +1801,16 @@ def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
 
     time_t = None
     for t in Time_t:
-        if t['corrected_i'] != 1:
+        if hasattr(t, 'corrected_i'):
+            if t['corrected_i'] != 1:
+                data_start = fepoch(t['start_time/epoch_l'],
+                                    t['start_time/micro_seconds_i'])
+                data_stop = fepoch(t['end_time/epoch_l'],
+                                   t['end_time/micro_seconds_i'])
+                if is_in(data_start, data_stop, start_fepoch, stop_fepoch):
+                    time_t = t
+                    break
+        else:
             data_start = fepoch(t['start_time/epoch_l'],
                                 t['start_time/micro_seconds_i'])
             data_stop = fepoch(t['end_time/epoch_l'],

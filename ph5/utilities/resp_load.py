@@ -8,8 +8,7 @@ import sys
 import os
 import argparse
 from ph5 import LOGGING_FORMAT
-from ph5.core import ph5utils
-from ph5.core import ph5api
+from ph5.core import ph5utils, ph5api, experiment, columns
 import tables
 import subprocess
 import logging
@@ -329,6 +328,9 @@ class n_i_fix(object):
                             das_data = f.readlines()
                         f.close()
                         try:
+                            name = name.replace(
+                                    " ", "")
+                            name = name.translate(None, ',-=.')
                             ph5.create_array(
                                 ph5.root.Experiment_g.Responses_g,
                                 name.replace(
@@ -349,44 +351,29 @@ class n_i_fix(object):
                             sensor_data = f.readlines()
                         f.close()
                         try:
+                            name = line_list[1].replace(
+                                " ", "")
+                            name = name.translate(None, ',-=.')
                             ph5.create_array(
                                 ph5.root.Experiment_g.Responses_g,
-                                line_list[1].replace(
+                                name.replace(
                                     " ", ""), sensor_data)
                             loaded_sensor.append(line_list[1])
                             LOGGER.info(
                                 "Loaded {0}"
-                                .format(line_list[1].replace(" ", "")))
+                                .format(name.replace(" ", "")))
                         except BaseException:
                             LOGGER.warning(
                                 "Could not load {0}"
-                                .format(line_list[1].replace(" ", "")))
+                                .format(name.replace(" ", "")))
         ph5.close()
 
-        process = subprocess.Popen(
-            "ph5tokef -n {0} -p {1} -R  > response_t.kef"
-            .format(nickname, path),
-            shell=True,
-            stdout=subprocess.PIPE)
-        process.wait()
-        process = subprocess.Popen(
-            "nuke_table -n {0} -p {1} -R"
-            .format(nickname, path),
-            shell=True,
-            stdout=subprocess.PIPE)
-        process.wait()
-        process = subprocess.Popen(
-            "keftoph5 -n {0} -p {1} -k response_t.kef"
-            .format(nickname, path),
-            shell=True,
-            stdout=subprocess.PIPE)
-        process.wait()
-        process = subprocess.Popen(
-            "ph5tokef --n {0} -p {1} -k response_t.kef"
-            .format(nickname, path),
-            shell=True,
-            stdout=subprocess.PIPE)
-        process.wait()
+        ph5_object = experiment.ExperimentGroup(nickname=nickname,
+                                                currentpath=path)
+        ph5_object.ph5open(True)
+        ph5_object.initgroup()
+
+        ret, blah = ph5_object.ph5_g_responses.read_responses()
 
         data_list = []
         data_update = []
@@ -400,53 +387,71 @@ class n_i_fix(object):
                               str(station.bit_weight_units),
                               str(station.gain_units)])
         unique_list = [list(x) for x in set(tuple(x) for x in data_list)]
-        new_kef = []
+
+        # get highest n_i
         n_i = 0
+        for entry in ret:
+            if entry['n_i'] >= n_i:
+                n_i = entry['n_i']
+
+        n_i = n_i + 1
+
+        no_resp = list()
+        for entry in ret:
+            if (not entry['response_file_das_a']
+                    and not entry['response_file_sensor_a']):
+                no_resp.append(entry)
+
+        has_resp = list()
+        for entry in ret:
+            if entry['response_file_das_a'] or entry['response_file_sensor_a']:
+                has_resp.append(entry)
+
+        final_ret = list()
+        final_ret.extend(has_resp)
+
         for x in unique_list:
-            true_sr = float(x[2]) / float(x[3])
-            if true_sr >= float(1.0):
-                new_kef.append('#   Table Row ' + str(n_i) + '\n')
-                new_kef.append('/Experiment_g/Responses_g/Response_t\n')
-                new_kef.append('        n_i=' + str(n_i) + '\n')
-                new_kef.append('        bit_weight/value_d=' +
-                               str(x[5]) + '\n')
-                new_kef.append('        bit_weight/units_s=' +
-                               str(x[6]) + '\n')
-                new_kef.append('        gain/units_s=' + str(x[7]) + '\n')
-                new_kef.append('        gain/value_i=' + str(x[4]) + '\n')
-                new_kef.append('        response_file_a=' + '\n')
-                if x[0]:
-                    name = str(x[0]) + "_" + str(x[2]) + "_" + \
-                           str(x[3]) + "_" + str(x[4])
-                    new_kef.append(
-                        '        response_file_das_a=/Experiment_g/' +
-                        'Responses_g/' +
-                        name.replace(
-                            " ",
-                            "") +
-                        '\n')
-                else:
-                    new_kef.append('        response_file_das_a=\n')
-                if x[1]:
-                    new_kef.append(
-                        '        response_file_sensor_a=/Experiment_g/' +
-                        'Responses_g/' + x[1] + '\n')
-                else:
-                    new_kef.append('        response_file_sensor_a=\n')
+            response_entry = {}
+            if x[0]:
+                name = str(x[0]) + "_" + str(x[2]) + "_" + \
+                    str(x[3]) + "_" + str(x[4])
+                name_full = '/Experiment_g/' +\
+                            'Responses_g/' + name.replace(" ", "")
+                name_full = name_full.translate(None, ',-=.')
 
-                data_update.append([x[0], x[1], x[2], x[3], x[4], n_i])
-                n_i = n_i + 1
+                response_entry['response_file_das_a'] = name_full
 
-        outfile = open("response_t.kef", 'w')
-        for line in new_kef:
-            outfile.write("%s" % line)
+            if x[1]:
 
-        command = "nuke_table -n master.ph5 -p {0} -R".format(path)
-        subprocess.call(command, shell=True)
+                sens = x[1]
+                sens = sens.translate(None, ',-=.')
+                name = '/Experiment_g/' +\
+                       'Responses_g/' + sens
+                response_entry['response_file_sensor_a'] = name
+            response_entry['bit_weight/value_d'] = x[5]
+            response_entry['bit_weight/units_s'] = x[6]
+            response_entry['gain/value_i'] = x[4]
+            response_entry['gain/units_s'] = x[7]
 
-        command = "keftoph5 -n master.ph5 -p {0} -k response_t.kef".format(
-            path)
-        subprocess.Popen(command, shell=True)
+            for resp in no_resp:
+                if (str(resp['bit_weight/value_d']) ==
+                        str(response_entry['bit_weight/value_d']) and
+                        str(resp['gain/value_i']) ==
+                        str(response_entry['gain/value_i'])):
+
+                    response_entry['n_i'] = resp['n_i']
+
+            final_ret.append(response_entry)
+
+            data_update.append([x[0], x[1], x[2], x[3], x[4], n_i])
+
+        ph5_object.ph5_g_responses.nuke_response_t()
+        final_ret.sort()
+        for entry in final_ret:
+            ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
+            columns.populate(ref, entry, None)
+
+        ph5_object.ph5close()
 
         LOGGER.info(
             "response_t.kef written into PH5")
