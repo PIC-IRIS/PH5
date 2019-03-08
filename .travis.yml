@@ -33,4 +33,6 @@ before_script:
 
 
 # command to run tests
-script: python runtests.py
+script:
+  - bash create_ph5.sh 
+  - python runtests.py
