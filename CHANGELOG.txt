@@ -49,6 +49,10 @@ ph5.utilities.125atoph5
  * fix pforma support after LOGGER change
 ph5.utilities.130toph5
  * fix pforma support after LOGGER change
+ph5.clients.ph5torec
+ * fix info level logging and remove global variables
+ph5.clients.ph5toevt
+ * fix info level logging and removev global variables
 
 v4.1.2:
 ph5.utilities.ph5validate
