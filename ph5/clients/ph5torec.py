@@ -190,6 +190,7 @@ def get_args():
         os.chmod(args.out_dir, 0o777)
     return args, p5
 
+
 def create_channel_map():
     pass
 
