@@ -15,6 +15,11 @@ keftoph5 -n master.ph5 -k ../metadata/experiment.kef
 resp_load -n master.ph5 -a 1,8,9 -i ../metadata/input.csv
 time_kef_gen -n master.ph5 -o ../metadata/time.kef
 keftoph5 -n master.ph5 -k ../metadata/time.kef
+keftoph5 -n master -k ../metadata/event_t.kef
+sort_kef_gen -n master.ph5 -a > ../metadata/sort_t.kef
+keftoph5 -n master -k ../metadata/sort_t.kef
+geo_kef_gen -n master.ph5 > ../metadata/offset_t.kef
+keftoph5 -n master -k ../metadata/offset_t.kef
 echo "Finished creating test PH5"
 
 

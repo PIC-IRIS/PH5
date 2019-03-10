@@ -1,0 +1,24 @@
+#
+#	Sat Mar  9 03:48:54 2019	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Sorts_g/Event_t_001
+	id_s=7001
+	location/X/value_d=-106.912169
+	location/X/units_s=degrees
+	location/Y/value_d=34.123673
+	location/Y/units_s=degrees
+	location/Z/value_d=1403.0
+	location/Z/units_s=m
+	location/coordinate_system_s=
+	location/projection_s=
+	location/ellipsoid_s=
+	location/description_s=
+	time/ascii_s=2019:53:15:41:00.00
+	time/epoch_l=1550850060
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	size/value_d=1
+	size/units_s=lb
+	depth/value_d=0
+	depth/units_s=m
