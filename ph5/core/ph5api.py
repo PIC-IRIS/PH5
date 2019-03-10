@@ -186,8 +186,12 @@ class Trace(object):
         self.response_t = response_t
 
     def __repr__(self):
-        end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
-            fepoch=True) + (float(self.nsamples) / self.sample_rate)))
+        if self.sample_rate > 0:
+            end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
+                fepoch=True) + (float(self.nsamples) / self.sample_rate)))
+        else:
+            end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
+                fepoch=True)))
         return "start_time: {0}\nend_time: {7}\nnsamples: {1}/{6}\nsample_rate:\
         {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}" \
             .format(self.start_time,
@@ -751,11 +755,13 @@ class PH5(experiment.ExperimentGroup):
                     start_epoch=None,
                     stop_epoch=None,
                     sample_rate=None,
-                    sample_rate_multiplier=None):
+                    sample_rate_multiplier=1):
         ''' Uses queries to get data from specific das table'''
 
         das_g = "Das_g_{0}".format(das)
         node = self.ph5_g_receivers.getdas_g(das)
+        if not node:
+            return []
         self.ph5_g_receivers.setcurrent(node)
         tbl = self.ph5.get_node('/Experiment_g/Receivers_g/' + das_g, 'Das_t')
         epoch_i = tbl.cols.time.epoch_l  # noqa
@@ -770,7 +776,12 @@ class PH5(experiment.ExperimentGroup):
         sample_rate_multiplier_i = sample_rate_multiplier_i
         sample_rate_i = sample_rate_i
         das = []
-        if sample_rate == 0 and chan == -2:
+        if not start_epoch:
+            start_epoch = 0
+        if not stop_epoch:
+            stop_epoch = 32509613590
+
+        if sample_rate == 0:
             for row in tbl.where(
                     '(channel_number_i == '
                     + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
@@ -864,7 +875,6 @@ class PH5(experiment.ExperimentGroup):
             if das in self.Das_t_full:
                 self.Das_t[das] = self.Das_t_full[das]
                 return das
-
         if self.Das_g_names == []:
             self.read_das_g_names()
         node = None
@@ -872,7 +882,6 @@ class PH5(experiment.ExperimentGroup):
         if das_g in self.Das_g_names:
             node = self.ph5_g_receivers.getdas_g(das)
             self.ph5_g_receivers.setcurrent(node)
-
         if node is None:
             return None
         rows_keep = []
@@ -887,11 +896,18 @@ class PH5(experiment.ExperimentGroup):
                 # Start and stop for this das event window
                 start = float(r['time/epoch_l']) + \
                         float(r['time/micro_seconds_i']) / 1000000.
-                stop = start + (float(r['sample_count_i']) / (
-                        float(r['sample_rate_i']) /
-                        float(r['sample_rate_multiplier_i'])))
-                sr = float(r['sample_rate_i']) / \
-                    float(r['sample_rate_multiplier_i'])
+
+                if r['sample_rate_i'] > 0:
+                    stop = start + (float(r['sample_count_i']) / (
+                            float(r['sample_rate_i']) /
+                            float(r['sample_rate_multiplier_i'])))
+                else:
+                    stop = start
+                if r['sample_rate_i'] > 0:
+                    sr = float(r['sample_rate_i']) / \
+                        float(r['sample_rate_multiplier_i'])
+                else:
+                    sr = 0
                 # We need to keep this
                 if is_in(start, stop, start_epoch, stop_epoch):
                     if sr not in rk:
@@ -1020,7 +1036,7 @@ class PH5(experiment.ExperimentGroup):
     def textural_cut(self, das,
                      start_fepoch, stop_fepoch,
                      chan,
-                     das_t):
+                     das_t=None):
         """
         Cuts a text based trace such as LOG file
         :param das:
@@ -1034,13 +1050,15 @@ class PH5(experiment.ExperimentGroup):
             self.read_das_t(das, start_epoch=start_fepoch,
                             stop_epoch=stop_fepoch, reread=False)
             if das not in self.Das_t:
-                return [Trace(np.array([]), start_fepoch, 0., 0,
-                              0, None, None, [], None, None)]
+                return []
             Das_t = filter_das_t(self.Das_t[das]['rows'], chan)
         else:
             Das_t = das_t
+
         traces = list()
         for entry in Das_t:
+            if entry['sample_rate_i'] > 0:
+                continue
             ref = self.ph5_g_receivers.find_trace_ref(
                 entry['array_name_data_a'].strip())
             stime = (entry['time/epoch_l'] +
@@ -1052,7 +1070,7 @@ class PH5(experiment.ExperimentGroup):
                           0,  # time_correction
                           len(data),  # samples_read
                           0,
-                          None,
+                          '|S1',
                           None,
                           Das_t,
                           None,  # receiver_t
@@ -1284,230 +1302,212 @@ class PH5(experiment.ExperimentGroup):
 
         return ret
 
-    def _Cut(self, das, start_time, stop_time, chan, sr=None, msg=None):
-        '''   Find out if data exists for a given DAS, start,
-            stop, channel, sample rate
-              Inputs:
-              das -> The data logger serial number as in the Das_t
-              in the ph5 file
-              start_time -> The cut start time as a float epoch seconds
-              stop_time -> The stop time as a float epoch seconds
-              chan -> The channel number as given in the Das_t
-              sr -> The sample rate as a float. If not given will use the
-              first sample rate
-              found from the Das_t
-              msg -> Error or warning message
-              Returns:
-              C -> A Cut object
+    def get_extent(self, das, component, sample_rate, start=None, end=None):
         '''
-        self.forget_das_t(das)
-        self.read_das_t(das, start_time, stop_time)
-        C = Cut(das, start_time, stop_time, sr, msg=msg, das_t_times=[])
-        if msg is not None:
-            return C
-        if das not in self.Das_t or len(self.Das_t[das]['rows']) == 0:
-            C.msg.append("No data found for time period.")
-            return C
-        for das_t in self.Das_t[das]['rows']:
-            # Filter on channel
-            if chan != das_t['channel_number_i']:
-                continue
-            das_sr = float(das_t['sample_rate_i']) / \
-                float(das_t['sample_rate_multiplier_i'])
-            # Filter on sample rate
-            if sr is not None and sr != das_sr:
-                continue
-            window_start_fepoch = fepoch(
-                das_t['time/epoch_l'], das_t['time/micro_seconds_i'])
-            window_stop_fepoch = window_start_fepoch + \
-                (float(das_t['sample_count_i']) / das_sr)
-            if is_in(window_start_fepoch, window_stop_fepoch,
-                     start_time, stop_time):
-                if C.sample_rate is None:
-                    C.sample_rate = das_sr
-                if C.das_t_times == []:
-                    C.das_t_times.append(
-                        (window_start_fepoch, window_stop_fepoch))
-                else:
-                    i = len(C.das_t_times)
-                    last_start, last_stop = C.das_t_times[i - 1]
-                    new_start = last_stop + 1. / das_sr
-                    delta = abs(new_start - window_start_fepoch)
-                    # Allow 1/2 sample overlap or gap
-                    if delta < ((1. / das_sr) * 1.5):
-                        C.das_t_times[i - 1][1] = window_stop_fepoch
-                    else:
-                        C.msg.append("Timegap or overlap {1} seconds at {0}"
-                                     .format(
-                                         timedoy.
-                                         epoch2passcal(window_start_fepoch),
-                                         delta))
-                        C.das_t_times.append(
-                            (window_start_fepoch, window_stop_fepoch))
-                C.channels[chan] = True
-
-        return C
-
-    def shot_cut(self, array_t_name, start_time, length):
-        '''    Return a generator of Cut objects, ret, in shot order
-               (Used to find what data exists without cutting it)
-
-               array_t_name -> The Array_t name
-               start_time -> The cut start time epoch as a float
-               length -> The length of the cut in seconds as a float
-        '''
-        ret = []
-        # Make sure array exists
-        if array_t_name in self.Array_t:
-            Array_t = self.Array_t[array_t_name]['byid']
-            order = self.Array_t[array_t_name]['order']
-        else:
-            return ret
-        # Header
-        H = CutHeader(array=array_t_name[8:], order=[])
-        # Loop through each station in Array
-        stations_found = {}
-        for o in order:
-            # Loop through each channel for this station
-            chans = Array_t[o].keys()
-            for c in chans:
-                # Loop through each entry for this station / channel
-                # combination
-                for array_t in Array_t[o][c]:
-                    # Use Array sample rate if it is available
-                    if 'sample_rate_i' in array_t:
-                        sr = array_t['sample_rate_i']
-                    else:
-                        sr = None
-                    das = array_t['das/serial_number_s']
-                    chan = array_t['channel_number_i']
-                    deploy_fepoch = fepoch(
-                        array_t['deploy_time/epoch_l'],
-                        array_t['deploy_time/micro_seconds_i'])
-                    pickup_fepoch = fepoch(
-                        array_t['pickup_time/epoch_l'],
-                        array_t['pickup_time/micro_seconds_i'])
-                    stop_time = start_time + length
-                    # Filter on deploy and pickup times
-                    if not is_in(deploy_fepoch, pickup_fepoch,
-                                 start_time, stop_time):
-                        msg = "Start: {0} and Stop: {1} outside of deploy\
-                        and pickup time.".format(timedoy.
-                                                 epoch2passcal(start_time),
-                                                 timedoy.
-                                                 epoch2passcal(stop_time))
-                    else:
-                        msg = None
-                    # Get Cut object for time span, channel, and sample rate if
-                    # available
-                    C = self._Cut(das, start_time, stop_time,
-                                  chan, sr=sr, msg=msg)
-                    C.id_s = array_t['id_s']
-                    if C.das_t_times != []:
-                        if array_t['id_s'] not in stations_found:
-                            H.order.append(o)
-                            if H.length == 0:
-                                H.length = length * sr
-                            if H.si_us == 0:
-                                H.si_us = int((1.0 / float(sr)) * 1000000.)
-                        stations_found[array_t['id_s']] = True
-                    ret.append(C)
-
-        if H.order != []:
-            ret.insert(0, H)
-        return ret
-
-    def receiver_cut(self, event_t_name, array_t, length):
-        '''    Return a generator of Cut objects in receiver order
-               (Used to find what data exists without cutting it)
-
-               event _t_name -> The name of Event_t
-               array_t -> An Array_t dictionary for one station (not a list)
-               length -> The length of the cut in seconds as a float
-        '''
-        ret = []
-        # Get sample rate if available
-        sr = None
-        if 'sample_rate_i' in array_t:
-            sr = float(array_t['sample_rate_i']) / \
-                 float(array_t['sample_rate_multiplier_i'])
-        chan = array_t['channel_number_i']
-        Event_t = self.Event_t[event_t_name]['byid']
-        order = self.Event_t[event_t_name]['order']
-        if len(event_t_name) == 7:
-            shot_line = '0'
-        else:
-            shot_line = event_t_name[8:]
-        H = CutHeader(shot_line=shot_line, order=[])
-        # Loop through each event ID
-        events_found = {}
-        for o in order:
-            event_t = Event_t[o]
-            start_time = fepoch(
-                event_t['time/epoch_l'], event_t['time/micro_seconds_i'])
-            stop_time = start_time + length
-            das = array_t['das/serial_number_s']
-            deploy_fepoch = fepoch(
-                array_t['deploy_time/epoch_l'],
-                array_t['deploy_time/micro_seconds_i'])
-            pickup_fepoch = fepoch(
-                array_t['pickup_time/epoch_l'],
-                array_t['pickup_time/micro_seconds_i'])
-            # Filter on deploy and pickup time
-            if not is_in(deploy_fepoch, pickup_fepoch, start_time, stop_time):
-                msg = "Start: {0} and Stop: {1} outside of deploy\
-                and pickup time.".format(
-                    timedoy.epoch2passcal(start_time),
-                    timedoy.epoch2passcal(stop_time))
-            else:
-                msg = None
-            # Get a Cut object for this time span, channel and sample rate if
-            # available
-            C = self._Cut(das, start_time, stop_time, chan, sr=sr, msg=msg)
-            C.id_s = event_t['id_s']
-            if C.das_t_times != []:
-                if event_t['id_s'] not in events_found:
-                    H.order.append(o)
-                    if H.length == 0:
-                        H.length = length * sr
-                    if H.si_us == 0:
-                        H.si_us = int((1.0 / float(sr)) * 1000000.)
-
-                events_found[o] = True
-            ret.append(C)
-
-        if H.order != []:
-            ret.insert(0, H)
-
-        return ret
-
-    def get_extent(self, das, start=None, end=None, component=None):
-        '''
-        Takes a das serial number, and option star and end time
+        Takes a das serial number, and option start and end time
         and returns the time of the earliest and latest samples
         fot a given channel
+        Required: das serial and component
+        Optional: Start time, End time
+        :param das: das serial number
+        :param start: start time epoch
+        :param end:  end time epoch
+        :param sample_rate: sample rate
+        :param component: component channel number
+        :return: earliest epoch and latest epoch
         '''
+        das_t_t = None
+        if not component:
+            raise ValueError("Component required for get_extent")
+        if start or end:
+            if not (start and end):
+                raise ValueError("if start or end, both are required")
+        self.read_das_t(das, start, end, reread=True)
 
-        self.read_das_t(das, start, end, reread=False)
-        Das_t = filter_das_t(self.Das_t[das]['rows'], component)
+        if das not in self.Das_t:
+            das_t_t = self.query_das_t(
+                das,
+                chan=component,
+                start_epoch=start,
+                stop_epoch=end,
+                sample_rate=sample_rate)
+            if not das_t_t:
+                LOGGER.warning("No Das table found for " + das)
+                return None, None
+
+        if not das_t_t:
+            Das_t = filter_das_t(self.Das_t[das]['rows'], component)
+        else:
+            Das_t = filter_das_t(das_t_t, component)
         new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
 
+        if not new_das_t:
+            LOGGER.warning("No Das table found for " + das)
+            return None, None
         earliest_epoch = (float(new_das_t[0]['time/epoch_l']) +
                           float(new_das_t[0]
-                                ['time/micro_seconds_i'])/1000000)
+                                ['time/micro_seconds_i']) / 1000000)
 
         latest_epoch_start = (float(new_das_t[-1]['time/epoch_l']) +
                               float(new_das_t[-1]
                                     ['time/micro_seconds_i']) / 1000000)
-        true_sample_rate = (float(new_das_t[-1]['sample_rate_i']) /
-                            float(new_das_t[-1]['sample_rate_multiplier_i']))
+        if new_das_t[-1]['sample_rate_i'] > 0:
+            true_sample_rate = (float(new_das_t[-1]['sample_rate_i']) /
+                                float(new_das_t[-1]
+                                      ['sample_rate_multiplier_i']))
+            latest_epoch = (latest_epoch_start +
+                            (float(new_das_t[-1]['sample_count_i'])
+                             / true_sample_rate))
+        else:
+            latest_epoch = earliest_epoch
 
-        latest_epoch = (latest_epoch_start +
-                        (float(new_das_t[-1]['sample_count_i'])
-                         / true_sample_rate))
-
+        self.forget_das_t(das)
         return earliest_epoch, latest_epoch
 
+    def get_availability(self, das,
+                         sample_rate, component,
+                         start=None, end=None):
+
+        das_t_t = None
+        gaps = 0
+        if not component:
+            raise ValueError("Component required for get_availability")
+        if not sample_rate:
+            raise ValueError("Sample rate required for get_availability")
+
+        self.read_das_t(das, start, end, reread=True)
+
+        if das not in self.Das_t:
+            das_t_t = self.query_das_t(
+                das,
+                chan=component,
+                start_epoch=start,
+                stop_epoch=end,
+                sample_rate=sample_rate)
+            if not das_t_t:
+                LOGGER.warning("No Das table found for " + das)
+                return None
+        if not das_t_t:
+            Das_t = filter_das_t(self.Das_t[das]['rows'], component)
+        else:
+            Das_t = filter_das_t(das_t_t, component)
+        if sample_rate > 0:
+            Das_t = [das_t for das_t in Das_t if
+                     das_t['sample_rate_i'] /
+                     das_t['sample_rate_multiplier_i'] == sample_rate]
+        else:
+            Das_t = [das_t for das_t in Das_t if
+                     das_t['sample_rate_i'] == sample_rate]
+
+        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+
+        if not new_das_t:
+            LOGGER.warning("No Das table found for " + das)
+            return None
+        previous = {}
+
+        times = list()
+
+        for entry in new_das_t:
+            if not previous:
+                previous['start'] = (
+                        float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000)
+                start_time = previous['start']
+                if entry['sample_rate_i'] > 0:
+                    previous['length'] = (
+                            float(entry['sample_count_i']) /
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                    previous['sample_rate'] = (
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                else:
+                    previous['length'] = 0
+                    previous['sample_rate'] = 0
+
+                previous['end'] = previous['start'] + previous['length']
+                continue
+            else:
+                if (float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000) != previous['start']+previous['length']:
+                    gaps = gaps + 1
+                    times.append((previous['sample_rate'],
+                                 previous['start'],
+                                 previous['end']))
+                    previous['start'] = (
+                            float(entry['time/epoch_l']) +
+                            float(entry['time/micro_seconds_i']) /
+                            1000000)
+                    start_time = previous['start']
+                    if entry['sample_rate_i'] > 0:
+                        previous['length'] = (
+                                float(entry['sample_count_i']) /
+                                float(entry['sample_rate_i']) /
+                                float(entry['sample_rate_multiplier_i']))
+                        previous['sample_rate'] = (
+                                float(entry['sample_rate_i']) /
+                                float(entry['sample_rate_multiplier_i']))
+                    else:
+                        previous['length'] = 0
+                        previous['sample_rate'] = 0
+
+                    previous['end'] = previous['start'] + previous['length']
+        if gaps > 0:
+            start_ = (
+                    float(new_das_t[-1]['time/epoch_l']) +
+                    float(new_das_t[-1]['time/micro_seconds_i']) /
+                    1000000)
+            if new_das_t[-1]['sample_rate_i'] > 0:
+                length_ = (
+                        float(new_das_t[-1]['sample_count_i']) /
+                        float(new_das_t[-1]['sample_rate_i']) /
+                        float(new_das_t[-1]['sample_rate_multiplier_i']))
+                sample_rate_ = (
+                        float(new_das_t[-1]['sample_rate_i']) /
+                        float(new_das_t[-1]['sample_rate_multiplier_i']))
+            else:
+                length_ = 0
+                sample_rate_ = 0
+            end_ = start_ + length_
+            times.append((sample_rate_, start_, end_))
+
+        if gaps == 0:
+            start_time = (
+                    float(new_das_t[0]['time/epoch_l']) +
+                    float(new_das_t[0]['time/micro_seconds_i']) /
+                    1000000)
+            if new_das_t[0]['sample_rate_i'] > 0:
+                sample_rate_ = (
+                        float(new_das_t[0]['sample_rate_i']) /
+                        float(new_das_t[0]['sample_rate_multiplier_i']))
+            else:
+                sample_rate_ = 0
+
+            start_ = (
+                    float(new_das_t[-1]['time/epoch_l']) +
+                    float(new_das_t[-1]['time/micro_seconds_i']) /
+                    1000000)
+            if new_das_t[-1]['sample_rate_i'] > 0:
+                length_ = (
+                        float(new_das_t[-1]['sample_count_i']) /
+                        float(new_das_t[-1]['sample_rate_i']) /
+                        float(new_das_t[-1]['sample_rate_multiplier_i']))
+                sample_rate_ = (
+                        float(new_das_t[-1]['sample_rate_i']) /
+                        float(new_das_t[-1]['sample_rate_multiplier_i']))
+            else:
+                length_ = 0
+                sample_rate_ = 0
+            end_ = start_ + length_
+
+            times.append((sample_rate_, start_time, end_))
+
+        self.forget_das_t(das)
+
+        return times
 
 #
 # Mix-ins

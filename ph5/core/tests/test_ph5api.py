@@ -316,6 +316,7 @@ class TestPH5API(unittest.TestCase):
                                                sample_rate=500,
                                                sample_rate_multiplier=1)
         self.assertFalse(table)
+        self.ph5API_object.forget_das_t('3X500')
 
         # should return anything
         table = self.ph5API_object.query_das_t('3X500',
@@ -324,10 +325,12 @@ class TestPH5API(unittest.TestCase):
                                                stop_epoch=1502309218,
                                                sample_rate=500,
                                                sample_rate_multiplier=1)
+
         self.assertTrue(table)
         self.assertEqual(1, len(table))
         # we should get the 2nd recording window
         self.assertEqual(2, table[0]['event_number_i'])
+        self.ph5API_object.forget_das_t('3X500')
 
         # test query LOG channel
         table = self.ph5API_object.query_das_t('5553',
@@ -340,8 +343,556 @@ class TestPH5API(unittest.TestCase):
         self.assertEqual(1, len(table))
         # no samples in a textural LOG
         self.assertEqual(0, table[0]['sample_count_i'])
+        self.ph5API_object.forget_das_t('5553')
 
         # check read_das_t now
+        # read entire rt125a das table
+        self.ph5API_object.read_das_t('12183')
+        # we expect 9 rows
+        self.assertTrue(9, len(self.ph5API_object.Das_t['12183']['rows']))
+        # check that all the keys are there
+        keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
+                'array_name_log_a', 'channel_number_i', 'event_number_i',
+                'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
+                'sample_count_i', 'sample_rate_i', 'sample_rate_multiplier_i',
+                'stream_number_i', 'time/ascii_s', 'time/epoch_l',
+                'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
+        self.assertEqual(keys, self.ph5API_object.Das_t['12183']['keys'])
+        # check an entry to make sure it is what we expect
+        self.assertEqual(1550850153,
+                         self.ph5API_object.Das_t['12183']['rows']
+                         [7]['time/epoch_l'])
+
+        # forget 12183 and read time range
+        self.ph5API_object.forget_das_t('12183')
+        self.assertFalse(hasattr(self.ph5API_object.Das_t, '12183'))
+        self.ph5API_object.read_das_t('12183', start_epoch=1550850093,
+                                      stop_epoch=1550850152)
+        # we should get 2 rows
+        self.assertTrue(2, len(self.ph5API_object.Das_t['12183']['rows']))
+
+        # rows should be for data array 6 and 7
+        self.assertEqual('Data_a_0006',
+                         self.ph5API_object.Das_t['12183']['rows']
+                         [0]['array_name_data_a'])
+
+        self.assertEqual('Data_a_0007',
+                         self.ph5API_object.Das_t['12183']['rows']
+                         [1]['array_name_data_a'])
+        self.ph5API_object.forget_das_t('12183')
+        # read das with multiple channels
+        self.ph5API_object.read_das_t('9EEF')
+        # we expect 3 rows and expect row 0 to be ch 1, 1 to be ch 2
+        # and 2, to be ch 3
+        self.assertTrue(3, len(self.ph5API_object.Das_t['9EEF']['rows']))
+        self.assertEqual(1,
+                         self.ph5API_object.Das_t['9EEF']['rows']
+                         [0]['channel_number_i'])
+        self.assertEqual(2,
+                         self.ph5API_object.Das_t['9EEF']['rows']
+                         [1]['channel_number_i'])
+        self.assertEqual(3,
+                         self.ph5API_object.Das_t['9EEF']['rows']
+                         [2]['channel_number_i'])
+
+        self.ph5API_object.forget_das_t('9EEF')
+
+    def test_time_t(self):
+        """
+        tests reading of time_t
+        """
+        self.assertFalse(self.ph5API_object.Time_t)
+        self.ph5API_object.read_time_t()
+        self.assertTrue(self.ph5API_object.Time_t)
+
+        keys = ['corrected_i', 'das/serial_number_s', 'das/model_s',
+                'das/manufacturer_s', 'das/notes_s', 'description_s',
+                'end_time/ascii_s', 'end_time/epoch_l',
+                'end_time/micro_seconds_i', 'end_time/type_s', 'offset_d',
+                'slope_d', 'start_time/ascii_s', 'start_time/epoch_l',
+                'start_time/micro_seconds_i', 'start_time/type_s']
+        self.assertEqual(keys, self.ph5API_object.Time_t['keys'])
+
+        # check an entry to make sure it is what we expect
+        self.assertEqual(-8.10623e-06,
+                         self.ph5API_object.Time_t['rows'][0]['offset_d'])
+        self.assertEqual(-1.66452e-09,
+                         self.ph5API_object.Time_t['rows'][0]['slope_d'])
+
+        # get a time_t for a specific das
+        # first try one that doesn't exist
+        table = self.ph5API_object.get_time_t('12345')
+        self.assertFalse(table)
+        # now get a real one
+        table = self.ph5API_object.get_time_t('12183')
+        self.assertTrue(table)
+        self.assertEqual('12183',
+                         table[0]['das/serial_number_s'])
+        self.assertEqual(-8.10623e-06,
+                         table[0]['offset_d'])
+        self.assertEqual(-1.66452e-09,
+                         table[0]['slope_d'])
+
+    def test_response_t(self):
+        """
+        test reading of response table
+        """
+        self.assertFalse(self.ph5API_object.Response_t)
+        self.ph5API_object.read_response_t()
+        self.assertTrue(self.ph5API_object.Response_t)
+
+        keys = ['n_i', 'bit_weight/value_d', 'bit_weight/units_s',
+                'gain/units_s', 'gain/value_i', 'response_file_a',
+
+                'response_file_das_a', 'response_file_sensor_a']
+        self.assertEqual(keys, self.ph5API_object.Response_t['keys'])
+
+        # check an entry to make sure it is what we expect
+        self.assertEqual(1.85966491699e-05,
+                         self.ph5API_object.Response_t['rows'][0]
+                         ['bit_weight/value_d'])
+        self.assertEqual('/Experiment_g/Responses_g/ZLAND3C_500_1_24',
+                         self.ph5API_object.Response_t['rows'][0]
+                         ['response_file_das_a'])
+        self.assertEqual('',
+                         self.ph5API_object.Response_t['rows'][0]
+                         ['response_file_sensor_a'])
+
+        self.assertEqual(1.584,
+                         self.ph5API_object.Response_t['rows'][1]
+                         ['bit_weight/value_d'])
+        self.assertEqual('/Experiment_g/Responses_g/rt130_100_1_1',
+                         self.ph5API_object.Response_t['rows'][1]
+                         ['response_file_das_a'])
+        self.assertEqual('/Experiment_g/Responses_g/cmg3t',
+                         self.ph5API_object.Response_t['rows'][1]
+                         ['response_file_sensor_a'])
+
+        self.assertEqual(0.0,
+                         self.ph5API_object.Response_t['rows'][5]
+                         ['bit_weight/value_d'])
+        self.assertEqual('/Experiment_g/Responses_g/NoneQ330_NoneCMG3T_0LOG',
+                         self.ph5API_object.Response_t['rows'][5]
+                         ['response_file_das_a'])
+        self.assertEqual('',
+                         self.ph5API_object.Response_t['rows'][5]
+                         ['response_file_sensor_a'])
+
+        self.assertEqual(5.96046447754e-08,
+                         self.ph5API_object.Response_t['rows'][4]
+                         ['bit_weight/value_d'])
+        self.assertEqual('/Experiment_g/Responses_g/rt125a_500_1_32',
+                         self.ph5API_object.Response_t['rows'][4]
+                         ['response_file_das_a'])
+        self.assertEqual('/Experiment_g/Responses_g/gs11v',
+                         self.ph5API_object.Response_t['rows'][4]
+                         ['response_file_sensor_a'])
+
+        # response table for specific das
+        self.ph5API_object.read_das_t('12183')
+        # should fail giving it rows and keys
+        table = self.ph5API_object.get_response_t(
+            self.ph5API_object.Das_t['12183'])
+        self.assertFalse(table)
+        # should read given only rows
+        table = self.ph5API_object.get_response_t(
+            self.ph5API_object.Das_t['12183']['rows'])
+        self.assertTrue(table)
+        # table values are as expected
+        self.assertEqual(4, table['n_i'])
+        self.assertEqual(5.96046447754e-08, table['bit_weight/value_d'])
+        self.assertEqual('/Experiment_g/Responses_g/rt125a_500_1_32',
+                         table['response_file_das_a'])
+        self.assertEqual('/Experiment_g/Responses_g/gs11v',
+                         table['response_file_sensor_a'])
+
+        # response table by n_i
+        # shouldn't exist
+        table = self.ph5API_object.get_response_t_by_n_i(99)
+        self.assertFalse(table)
+        # get a good entry by n_i
+        table = self.ph5API_object.get_response_t_by_n_i(6)
+        self.assertTrue(table)
+        self.assertEqual(6, table['n_i'])
+        self.assertEqual(0.0, table['bit_weight/value_d'])
+        self.assertEqual(
+            '/Experiment_g/Responses_g/NoneQ330_NoneCMG3T_100LHN',
+            table['response_file_das_a'])
+        self.assertEqual('',
+                         table['response_file_sensor_a'])
+
+    def test_read_t(self):
+        """
+        tests reading of table and outputting kef
+        """
+        # experiment table
+        table = self.ph5API_object.read_t("Experiment_t")
+        self.assertIn('/Experiment_g/Experiment_t', table)
+        self.assertIn('experiment_id_s = 99-999', table)
+        self.assertIn('net_code_s = AA', table)
+
+        # Array tables
+        table = self.ph5API_object.read_t("Array_t", 1)
+        self.assertIn('\'id_s\': \'500\'', table)
+        table = self.ph5API_object.read_t("Array_t", 8)
+        self.assertIn('\'seed_station_name_s\': \'8001\'', table)
+
+        # Response table
+        table = self.ph5API_object.read_t("Response_t")
+        self.assertIn('/Experiment_g/Responses_g/Response_t', table)
+        self.assertIn('/Experiment_g/Responses_g/cmg3t', table)
+        self.assertIn('/Experiment_g/Responses_g/NoneQ330_NoneCMG3T_0LOG',
+                      table)
+        # Receiver table
+        table = self.ph5API_object.read_t("Receiver_t")
+        self.assertIn('/Experiment_g/Receivers_g/Receiver_t', table)
+        self.assertIn('orientation/azimuth/value_f', table)
+
+        # Index table
+        table = self.ph5API_object.read_t("Index_t")
+        self.assertIn('/Experiment_g/Receivers_g/Index_t', table)
+        self.assertIn('./miniPH5_00001.ph5', table)
+
+        # Das table
+        table = self.ph5API_object.read_t("Das_t", '12183')
+        self.assertIn('/Experiment_g/Receivers_g/Das_t_12183/Das_t', table)
+        self.assertNotIn('/Experiment_g/Receivers_g/Das_g_9EEF/Das_t', table)
+        self.assertIn('raw_file_name_s = I2183RAW.TRD', table)
+        # a key error should be raised because there is no das XXX
+        self.assertRaises(KeyError, self.ph5API_object.read_t, "Das_t", "XXX")
+
+        # Time table
+        table = self.ph5API_object.read_t("Time_t")
+        self.assertIn('/Experiment_g/Receivers_g/Time_t', table)
+        self.assertIn('das/serial_number_s = 12183', table)
+
+        # table that doesnt exist
+        table = self.ph5API_object.read_t("Random_t")
+        self.assertFalse(table)
+
+    def test_textural_cut(self):
+        """
+        tests cutting of text data from arrays
+        using textural_cut method
+        """
+        # try  das that doesn't exist
+        traces = self.ph5API_object.textural_cut('0407',
+                                                 1545088203,
+                                                 1547489525,
+                                                 -2,
+                                                 None)
+        self.assertFalse(traces)
+
+        # no das_t
+        traces = self.ph5API_object.textural_cut('5553',
+                                                 1545088203,
+                                                 1547489525,
+                                                 -2,
+                                                 None)
+        # traces exist
+        self.assertTrue(traces)
+        # 1 trace
+        self.assertEqual(1, len(traces))
+        # 0 sample rate
+        self.assertEqual(0, traces[0].sample_rate)
+        # ttype is '|S1' (one character per sample)
+        self.assertEqual('|S1', traces[0].ttype)
+        # turn data into string to more easily read it
+        str1 = ''.join(traces[0].data)
+        self.assertIn('TIME JUMP OF  3.000400 SECONDS', str1)
+
+        # with das_t
+        self.ph5API_object.read_das_t('5553')
+        das_t = self.ph5API_object.Das_t['5553']['rows']
+        traces = self.ph5API_object.textural_cut('5553',
+                                                 1545088203,
+                                                 1547489525,
+                                                 -2,
+                                                 das_t)
+        # traces exist
+        self.assertTrue(traces)
+        # 1 trace
+        self.assertEqual(1, len(traces))
+        # 0 sample rate
+        self.assertEqual(0, traces[0].sample_rate)
+        # ttype is '|S1' (one character per sample)
+        self.assertEqual('|S1', traces[0].ttype)
+        # turn data into string to more easily read it
+        str1 = ''.join(traces[0].data)
+        self.assertIn('TIME JUMP OF  3.000400 SECONDS', str1)
+
+        # try channel with data instead of text
+        traces = self.ph5API_object.textural_cut('5553',
+                                                 0,
+                                                 9547489525,
+                                                 1,
+                                                 None)
+        self.assertFalse(traces)
+
+    def test_cut(self):
+        """
+        test regular cut method
+        """
+
+        # try cutting das that doesn't exist
+        # should return a single trace object with no data
+        traces = self.ph5API_object.cut('9999',
+                                        0,
+                                        1599999999,
+                                        1,
+                                        250,
+                                        True,
+                                        das_t=None)
+        self.assertTrue(1, len(traces))
+        self.assertFalse(traces[0].data)
+
+        # read actual data no time correction
+        traces = self.ph5API_object.cut('12183',
+                                        1550849943,
+                                        1550850189,
+                                        1,
+                                        500,
+                                        False,
+                                        das_t=None)
+
+        # 9 traces with NO time corrections
+        # all same sample rate and ttype
+        self.assertTrue(9, len(traces))
+        for trace in traces:
+            self.assertEqual(0.0, trace.time_correction_ms)
+            self.assertEqual(500, trace.sample_rate)
+            self.assertEqual('int', trace.ttype)
+        # check start times match
+        self.assertEqual(1550849943.00,
+                         traces[0].start_time.epoch(fepoch=True))
+        # check a few samples
+        self.assertEqual(-1412641,
+                         traces[0].data[0])
+        self.assertEqual(-1180944,
+                         traces[0].data[872])
+        self.assertEqual(-1371008,
+                         traces[0].data[-1])
+        self.assertEqual(1550850123.00,
+                         traces[6].start_time.epoch(fepoch=True))
+        self.assertEqual(-1407159,
+                         traces[6].data[0])
+        self.assertEqual(-1185688,
+                         traces[6].data[872])
+        self.assertEqual(-1366398,
+                         traces[6].data[-1])
+
+        # read actual data no time correction
+        # give das_t this time
+        self.ph5API_object.read_das_t('12183')
+        das_t = self.ph5API_object.Das_t['12183']['rows']
+        traces = self.ph5API_object.cut('12183',
+                                        1550849943,
+                                        1550850189,
+                                        1,
+                                        500,
+                                        False,
+                                        das_t=das_t)
+
+        # 9 traces with NO time corrections
+        # all same sample rate and ttype
+        self.assertTrue(9, len(traces))
+        for trace in traces:
+            self.assertEqual(0.0, trace.time_correction_ms)
+            self.assertEqual(500, trace.sample_rate)
+            self.assertEqual('int', trace.ttype)
+
+        # check nodes since they don't star on even seconds\
+        # read actual data no time correction
+        traces = self.ph5API_object.cut('3X500',
+                                        1502294405.38,
+                                        1502294410.38,
+                                        3,
+                                        500,
+                                        False,
+                                        das_t=None)
+        self.assertEqual(1502294405.38,
+                         traces[0].start_time.epoch(fepoch=True))
+        # 1 traces with NO time corrections
+        # all same sample rate and ttype
+        self.assertTrue(1, len(traces))
+        for trace in traces:
+            self.assertEqual(0.0, trace.time_correction_ms)
+            self.assertEqual(500, trace.sample_rate)
+            self.assertEqual('int', trace.ttype)
+
+        # 2500 samples
+        self.assertEqual(2500, traces[0].nsamples)
+
+        # should start half way thorugh data array
+        # check a few samples
+        # should match sample 2500 in array 005
+        self.assertEqual(1331852800,
+                         traces[0].data[0])
+        # should match sample 4999 in array 005
+        self.assertEqual(-123947064,
+                         traces[0].data[-1])
+
+    def test_get_extent(self):
+        """
+        test get extent functionality
+        """
+        # test das that exists
+        earliest, latest = self.ph5API_object.get_extent(
+            '9EEF',
+            1,
+            100,
+            start=None,
+            end=None)
+
+        self.assertEqual(1463568480, earliest)
+        self.assertEqual(1463568517.88, latest)
+
+        # test das that doesn't exist
+        earliest, latest = self.ph5API_object.get_extent(
+            'xxxx',
+            1,
+            900,
+            start=None,
+            end=None)
+        self.assertFalse(earliest)
+        self.assertFalse(latest)
+
+        # test with multiple das table entries
+        earliest, latest = self.ph5API_object.get_extent(
+            '3X500',
+            2,
+            500,
+            start=None,
+            end=None)
+
+        self.assertEqual(1502294400.38, earliest)
+        self.assertEqual(1502294460.38, latest)
+
+        # test giving start time and end time
+        earliest, latest = self.ph5API_object.get_extent(
+            '3X500',
+            1,
+            500,
+            start=1502294405.38,
+            end=1502294459.00)
+
+        self.assertEqual(1502294400.38, earliest)
+        self.assertEqual(1502294460.38, latest)
+
+        # test giving start time only
+        self.assertRaises(ValueError,
+                          self.ph5API_object.get_extent,
+                          '3X500',
+                          1,
+                          500,
+                          start=1502294405.38,
+                          end=None)
+        # test giving end time only
+        self.assertRaises(ValueError,
+                          self.ph5API_object.get_extent,
+                          '3X500',
+                          1,
+                          500,
+                          start=None,
+                          end=1502294460.38)
+
+        # test LOG
+        earliest, latest = self.ph5API_object.get_extent(
+            '5553',
+            -2,
+            0,
+            start=1545088205,
+            end=1545088205)
+
+        self.assertEqual(1545088205, earliest)
+        self.assertEqual(1545088205, latest)
+
+        # test LOG no times
+        earliest, latest = self.ph5API_object.get_extent(
+            '5553',
+            -2,
+            0,
+            start=None,
+            end=None)
+
+        self.assertEqual(1545088205, earliest)
+        self.assertEqual(1545088205, latest)
+
+        # test das with same chan # and various sample rates
+        earliest, latest = self.ph5API_object.get_extent(
+            '5553',
+            1,
+            100,
+            start=None,
+            end=None)
+
+        self.assertEqual(1545085230.681998, earliest)
+        self.assertEqual(1545085240.691998, latest)
+        earliest, latest = self.ph5API_object.get_extent(
+            '5553',
+            1,
+            200,
+            start=None,
+            end=None)
+
+        self.assertEqual(1545085230.917, earliest)
+        self.assertAlmostEqual(1545085240.922, latest, 5)
+
+    def test_get_availability(self):
+        """
+        test get_availability functionality
+        """
+        # test das that doesn't exist
+        times = self.ph5API_object.get_availability(
+            '12345',
+            10000,
+            99)
+        self.assertFalse(times)
+
+        # simple with gaps
+        times = self.ph5API_object.get_availability(
+            '12183',
+            500,
+            1)
+        self.assertEqual(9, len(times))
+        self.assertEqual((500, 1550849943, 1550849949), times[0])
+        self.assertEqual((500, 1550850033, 1550850034), times[3])
+        self.assertEqual((500, 1550850183, 1550850189), times[8])
+
+        # no gaps single sample rate per ch
+        # multiple windows
+        times = self.ph5API_object.get_availability(
+            '3X500',
+            500,
+            3)
+        self.assertEqual(1, len(times))
+        self.assertEqual((500, 1502294400.38, 1502294460.38), times[0])
+
+        # no gaps single sample rate per ch
+        # single window
+        times = self.ph5API_object.get_availability(
+            '9EEF',
+            100,
+            2)
+        self.assertEqual(1, len(times))
+        self.assertEqual((100, 1463568480, 1463568517.88), times[0])
+
+        # no gaps multiple sample rate per ch
+        # single window
+        times = self.ph5API_object.get_availability(
+            '5553',
+            200,
+            1)
+        self.assertEqual(1, len(times))
+        self.assertEqual((200.0, 1545085230.917, 1545085240.9220002),
+                         times[0])
+        times = self.ph5API_object.get_availability(
+            '5553',
+            100,
+            1)
+        self.assertEqual(1, len(times))
+        self.assertEqual((100.0, 1545085230.681998, 1545085240.691998),
+                         times[0])
 
     def test_close_ph5(self):
         """

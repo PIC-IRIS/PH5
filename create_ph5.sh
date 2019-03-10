@@ -13,6 +13,8 @@ keftoph5 -n master.ph5 -k ../metadata/array_8_130.kef
 keftoph5 -n master.ph5 -k ../metadata/array_9_rt125a.kef
 keftoph5 -n master.ph5 -k ../metadata/experiment.kef
 resp_load -n master.ph5 -a 1,8,9 -i ../metadata/input.csv
+time_kef_gen -n master.ph5 -o ../metadata/time.kef
+keftoph5 -n master.ph5 -k ../metadata/time.kef
 echo "Finished creating test PH5"
 
 

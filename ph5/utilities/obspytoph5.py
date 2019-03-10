@@ -317,7 +317,7 @@ class ObspytoPH5(object):
                         das['sample_rate_i'] = trace.stats.sampling_rate
                         das['sample_rate_multiplier_i'] = 1
                     else:
-                        das['sample_rate_i'] = 1
+                        das['sample_rate_i'] = 0
                         das['sample_rate_multiplier_i'] = (
                                 1 /
                                 trace.stats.sampling_rate)
@@ -334,6 +334,8 @@ class ObspytoPH5(object):
                         das['channel_number_i'] = channel_list[2]
                     elif trace.stats.channel == 'LOG':
                         das['channel_number_i'] = -2
+                        das['sample_rate_i'] = 0
+                        das['sample_rate_multiplier_i'] = 1
                     else:
                         das['channel_number_i'] = -5
                     if in_type == 'file':
