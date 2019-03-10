@@ -933,6 +933,8 @@ class PH5(experiment.ExperimentGroup):
     def forget_das_t(self, das):
         if das in self.Das_t:
             del self.Das_t[das]
+            node = self.ph5_g_receivers.getdas_g(das)
+            node.umount()
 
     def read_t(self, table, n=None):
         '''   Read table and return kef
