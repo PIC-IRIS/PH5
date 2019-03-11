@@ -354,19 +354,13 @@ class SortsGroup:
         ret = {}
         query = "(event_id_s == b'{0}') & (receiver_id_s == b'{1}')".format(
             shot, station)
-        result = [[row['offset/value_d'],
-                   row['offset/units_s'],
-                   row['azimuth/value_f'],
-                   row['azimuth/units_s']]
-                  for row in self.ph5_t_offset[name].where(query)]
-
-        if result:
-            ret['offset/value_d'],
-            ret['offset/units_s'],
-            ret['azimuth/value_f'],
-            ret['azimuth/units_s'] = result[0],
-            ret['event_id_s'] = str(shot),
-            ret['receiver_id_s'] = str(station),
+        for row in self.ph5_t_offset[name].where(query):
+            ret['offset/value_d'] = row['offset/value_d']
+            ret['offset/units_s'] = row['offset/units_s']
+            ret['azimuth/value_f'] = row['azimuth/value_f']
+            ret['azimuth/units_s'] = row['azimuth/units_s']
+            ret['event_id_s'] = str(shot)
+            ret['receiver_id_s'] = str(station)
 
         return ret
 
