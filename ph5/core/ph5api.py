@@ -262,6 +262,7 @@ class PH5(experiment.ExperimentGroup):
               returns a list of channels for this station
         '''
         try:
+            self.read_array_t(array)
             chans = sorted(self.Array_t[array]['byid'][station].keys())
             return chans
         except Exception:
@@ -314,7 +315,11 @@ class PH5(experiment.ExperimentGroup):
         baz = 0.0
         dist = 0.0
         chans = self.channels(sta_line, sta_id)
-        c = chans[0]
+        if chans:
+            c = chans[0]
+        else:
+            LOGGER.warning("Couldn't get offset.")
+            return {}
         try:
             if sta_line in self.Array_t and evt_line in self.Event_t:
                 array_t = self.Array_t[sta_line]['byid'][sta_id][c]
@@ -326,6 +331,7 @@ class PH5(experiment.ExperimentGroup):
                 az, baz, dist = run_geod(lat0, lon0, lat1, lon1)
         except Exception as e:
             LOGGER.warning("Couldn't get offset. {0}".format(repr(e)))
+            return {}
 
         return {'event_id_s': evt_id, 'receiver_id_s': sta_id,
                 'azimuth/value_f': az, 'azimuth/units_s': 'degrees',
@@ -577,7 +583,6 @@ class PH5(experiment.ExperimentGroup):
                 (sort_t['end_time/micro_seconds_i'] / 1000000.)
             if not start_epoch <= stop:
                 continue
-
             ret.append(sort_t)
 
         return ret
@@ -1626,18 +1631,6 @@ def run_geod(lat0, lon0, lat1, lon1):
 
     # Return list containing azimuth, back azimuth, distance
     return az, baz, dist
-
-
-def deg2dms(dgs):
-    f, d = math.modf(dgs)
-    f = abs(f)
-    m = 60.0 * f
-    f, m = math.modf(m)
-    # print math.frexp (f), math.frexp (m)
-    s = 60.0 * f
-    dms = "%dd%02d'%09.6f\"" % (d, m, s)
-    # print dms
-    return dms
 
 
 def rect(r, w, deg=0):

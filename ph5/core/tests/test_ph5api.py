@@ -521,11 +521,198 @@ class TestPH5API(unittest.TestCase):
         self.assertEqual('',
                          table['response_file_sensor_a'])
 
+    def test_offset_t(self):
+        """
+        test methods related to reading offset table
+        """
+
+        # get list of offset_t names
+        self.assertFalse(self.ph5API_object.Offset_t_names)
+        self.ph5API_object.read_offset_t_names()
+        self.assertTrue(self.ph5API_object.Offset_t_names)
+        self.assertEqual(['Offset_t_001_001',
+                          'Offset_t_008_001',
+                          'Offset_t_002_001',
+                          'Offset_t_004_001',
+                          'Offset_t_009_001',
+                          'Offset_t_003_001'],
+                         self.ph5API_object.Offset_t_names)
+
+        # read an offset_t
+        self.assertFalse(hasattr(self.ph5API_object.Offset_t,
+                                 'Offset_t_001_001'))
+        self.ph5API_object.read_offset_t(
+            'Offset_t_001_001',
+            id_order='event_id_s')
+        self.assertTrue(self.ph5API_object.Offset_t['Offset_t_001_001'])
+        keys = ['azimuth/value_f', 'azimuth/units_s', 'event_id_s',
+                'offset/value_d', 'offset/units_s', 'receiver_id_s']
+        self.assertEqual(keys,
+                         self.ph5API_object.Offset_t
+                         ['Offset_t_001_001']['keys'])
+        # doesn't exist
+        # read an offset_t
+        self.assertFalse(hasattr(self.ph5API_object.Offset_t,
+                                 'Offset_t_099_123'))
+        self.ph5API_object.read_offset_t(
+            'Offset_t_099_123',
+            id_order='event_id_s')
+        self.assertFalse(hasattr(self.ph5API_object.Offset_t,
+                                 'Offset_t_099_123'))
+
+        # read an offset_t
+        self.assertFalse(hasattr(self.ph5API_object.Offset_t,
+                                 'Offset_t_008_001'))
+        self.ph5API_object.read_offset_t(
+            'Offset_t_008_001',
+            id_order='receiver_id_s')
+        self.assertTrue(self.ph5API_object.Offset_t['Offset_t_008_001'])
+
+        # shot order offsets
+        # should exist offset_t
+        offset_t = self.ph5API_object.read_offsets_shot_order(
+            'Array_t_009',
+            '7001',
+            'Event_t_001')
+        # check metadata is correct
+        self.assertEqual('7001', offset_t['9001']['event_id_s'])
+        self.assertEqual(-7673.76009838, offset_t['9001']['offset/value_d'])
+        self.assertEqual(
+            -4.136306285858154, offset_t['9001']['azimuth/value_f'])
+        self.assertEqual('9001', offset_t['9001']['receiver_id_s'])
+        # should not exist offset_t
+        offset_t = self.ph5API_object.read_offsets_shot_order(
+            'Array_t_009',
+            '7002',
+            'Event_t_001')
+        self.assertFalse(offset_t['9001'])
+
+        # receiver order offsets
+        # should exist
+        offset_t = self.ph5API_object.read_offsets_receiver_order(
+            'Array_t_009',
+            '9001',
+            'Event_t_001')
+        # check metadata is correct
+        self.assertEqual('7001', offset_t['7001']['event_id_s'])
+        self.assertEqual(-7673.76009838, offset_t['7001']['offset/value_d'])
+        self.assertEqual(
+            -4.136306285858154, offset_t['7001']['azimuth/value_f'])
+        self.assertEqual('9001', offset_t['7001']['receiver_id_s'])
+        # should not exist offset_t
+        offset_t = self.ph5API_object.read_offsets_receiver_order(
+            'Array_t_009',
+            '9002',
+            'Event_t_001')
+        self.assertFalse(offset_t['7001'])
+
+        # test calculating offsets
+        offset_t = self.ph5API_object.calc_offsets(
+            'Array_t_009',
+            '7001',
+            'Event_t_001')
+        keys = ['event_id_s', 'offset/value_d', 'azimuth/units_s',
+                'offset/units_s', 'receiver_id_s', 'azimuth/value_f']
+        self.assertEqual(keys, offset_t['keys'])
+        self.assertEqual('7001', offset_t['byid']['9001']['event_id_s'])
+        self.assertAlmostEqual(-7673.76009838,
+                               offset_t['byid']['9001']['offset/value_d'], 6)
+        self.assertAlmostEqual(-4.136306285858154,
+                               offset_t['byid']['9001']['azimuth/value_f'], 6)
+        self.assertEqual('9001', offset_t['byid']['9001']['receiver_id_s'])
+
+        # get offset
+        offset_t = self.ph5API_object.get_offset(
+            'Array_t_009',
+            '9001',
+            'Event_t_001',
+            '7001')
+        self.assertEqual('7001', offset_t['event_id_s'])
+        self.assertEqual('9001', offset_t['receiver_id_s'])
+        self.assertAlmostEqual(abs(-7673.76009838),
+                               offset_t['offset/value_d'], 6)
+        self.assertAlmostEqual(-4.136306285858154,
+                               offset_t['azimuth/value_f'], 6)
+        # get offset doesn't exist
+        offset_t = self.ph5API_object.get_offset(
+            'Array_t_009',
+            '9002',
+            'Event_t_001',
+            '7001')
+        self.assertFalse(offset_t)
+
+    def test_event_t(self):
+        """
+        test methodfs related to event tables
+        """
+        # test reading event table names
+        self.assertFalse(self.ph5API_object.Event_t_names)
+        self.ph5API_object.read_event_t_names()
+        self.assertTrue(self.ph5API_object.Event_t_names)
+        self.assertEqual(1, len(self.ph5API_object.Event_t_names))
+        self.assertEqual('Event_t_001', self.ph5API_object.Event_t_names[0])
+
+        # read event_t
+        self.assertFalse(hasattr(self.ph5API_object.Event_t, 'Event_t_001'))
+        self.ph5API_object.read_event_t('Event_t_001')
+        self.assertTrue(self.ph5API_object.Event_t['Event_t_001'])
+        keys = ['id_s', 'location/X/value_d', 'location/X/units_s',
+                'location/Y/value_d', 'location/Y/units_s',
+                'location/Z/value_d', 'location/Z/units_s',
+                'location/coordinate_system_s', 'location/projection_s',
+                'location/ellipsoid_s', 'location/description_s',
+                'time/ascii_s', 'time/epoch_l', 'time/micro_seconds_i',
+                'time/type_s', 'size/value_d', 'size/units_s',
+                'depth/value_d', 'depth/units_s', 'description_s']
+
+        self.assertEqual(keys,
+                         self.ph5API_object.Event_t['Event_t_001']['keys'])
+        self.assertEqual(1550850060,
+                         self.ph5API_object.Event_t['Event_t_001']['byid']
+                         ['7001']['time/epoch_l'])
+
+    def test_sort_t(self):
+        """
+        test methods related to sort_t
+        """
+
+        # read the sort_t
+        self.assertFalse(self.ph5API_object.Sort_t)
+        self.ph5API_object.read_sort_t()
+        self.assertTrue(self.ph5API_object.Sort_t)
+        self.assertTrue('Array_t_001' in self.ph5API_object.Sort_t)
+        self.assertTrue('Array_t_002' in self.ph5API_object.Sort_t)
+        self.assertTrue('Array_t_003' in self.ph5API_object.Sort_t)
+        self.assertTrue('Array_t_008' in self.ph5API_object.Sort_t)
+        self.assertTrue('Array_t_009' in self.ph5API_object.Sort_t)
+        # shouldn't exist
+        self.assertFalse('Array_t_006' in self.ph5API_object.Sort_t)
+        # array 4 is real but log channels shouldn't be in sort
+        self.assertFalse('Array_t_004' in self.ph5API_object.Sort_t)
+
+        # get table entry on start time and array
+        sort_t = self.ph5API_object.get_sort_t(
+            1550849943,
+            'Array_t_009')
+        self.assertTrue(sort_t)
+        self.assertEqual(1, len(sort_t))
+
+        # entry doesn't exist
+        sort_t = self.ph5API_object.get_sort_t(
+            99999,
+            'Array_t_009')
+        self.assertFalse(sort_t)
+
+        sort_t = self.ph5API_object.get_sort_t(
+            99999,
+            'Array_t_999')
+        self.assertFalse(sort_t)
+
     def test_read_t(self):
         """
         tests reading of table and outputting kef
         """
-        # experiment table
+        # experiment tableF
         table = self.ph5API_object.read_t("Experiment_t")
         self.assertIn('/Experiment_g/Experiment_t', table)
         self.assertIn('experiment_id_s = 99-999', table)
@@ -565,6 +752,18 @@ class TestPH5API(unittest.TestCase):
         table = self.ph5API_object.read_t("Time_t")
         self.assertIn('/Experiment_g/Receivers_g/Time_t', table)
         self.assertIn('das/serial_number_s = 12183', table)
+
+        # Sort table
+        table = self.ph5API_object.read_t("Sort_t")
+        self.assertIn('/Experiment_t/Sorts_g/Sort_t', table)
+
+        # Event table
+        table = self.ph5API_object.read_t("Event_t")
+        self.assertIn('/Experiment_g/Sorts_g/Event_t_001', table)
+
+        # Offset table
+        table = self.ph5API_object.read_t("Offset_t")
+        self.assertIn('Experiment_g/Sorts_g/Offset_t_001_001', table)
 
         # table that doesnt exist
         table = self.ph5API_object.read_t("Random_t")
@@ -894,11 +1093,113 @@ class TestPH5API(unittest.TestCase):
         self.assertEqual((100.0, 1545085230.681998, 1545085240.691998),
                          times[0])
 
+    def test_channels(self):
+        """
+        rest channels method
+        """
+        # should give 3 channels
+        chans = self.ph5API_object.channels(
+            'Array_t_001',
+            '500')
+        self.assertEqual(3, len(chans))
+        self.assertEqual([1, 2, 3], chans)
+
+        # should give 1 channels
+        chans = self.ph5API_object.channels(
+            'Array_t_004',
+            '0407')
+        self.assertEqual(1, len(chans))
+        self.assertEqual([-2], chans)
+
+        # should give 0 channels
+        chans = self.ph5API_object.channels(
+            'Array_t_099',
+            '1234')
+        self.assertEqual(0, len(chans))
+        self.assertFalse(chans)
+
+    def test_trace_padding(self):
+        """
+        test padding of traces
+        """
+        # get all traces from station 9001
+        # pad them to be the same length
+
+        traces = self.ph5API_object.cut(
+            '12183',
+            1550849840,
+            1550851189,
+            chan=1,
+            sample_rate=500,
+            apply_time_correction=True,
+            das_t=None)
+        self.assertEqual(9, len(traces))
+        # check that trace lengths vary
+        sample_total = 0
+        for x in traces:
+            sample_total = sample_total + len(x.data)
+
+        start_time = traces[0].start_time
+        end_time = traces[-1].start_time + (
+                traces[-1].nsamples/traces[-1].sample_rate)
+        # now we should have a single trace with gaps padded
+        # with the mean
+        traces = ph5api.pad_traces(traces)
+        self.assertTrue(traces)
+        self.assertTrue(sample_total, len(traces.data))
+        self.assertTrue(start_time, traces.start_time)
+        self.assertTrue(end_time, traces.start_time+(
+                traces.nsamples/traces.sample_rate))
+        self.assertTrue(-119984, traces.padding)
+
+    def test_mix_ins(self):
+        """
+        test the added mjix in at end of ph5api that
+        aren't used within api itself
+        """
+        # true case
+        result = ph5api.is_in(
+            0,
+            10000,
+            5,
+            1000)
+        self.assertTrue(result)
+
+        # false
+        result = ph5api.is_in(
+            99999,
+            10000,
+            5,
+            1000)
+        self.assertFalse(result)
+
+        # get float epoch
+        fepoch = ph5api.fepoch(1000000, 9555)
+        self.assertEqual(1000000.009555, fepoch)
+        fepoch = ph5api.fepoch(1978346, 100000000)
+        self.assertEqual(1978446, fepoch)
+
+        # filter a das
+        self.ph5API_object.read_das_t('5553')
+        das_t = ph5api.filter_das_t(
+            self.ph5API_object.Das_t['5553']['rows'],
+            1)
+        self.assertEqual(2, len(das_t))
+        das_t = ph5api.filter_das_t(
+            self.ph5API_object.Das_t['5553']['rows'],
+            -2)
+        self.assertEqual(1, len(das_t))
+        das_t = ph5api.filter_das_t(
+            self.ph5API_object.Das_t['5553']['rows'],
+            -9)
+        self.assertEqual(0, len(das_t))
+
     def test_close_ph5(self):
         """
         close ph5 object
 
         """
+        self.ph5API_object.clear()
         self.ph5API_object.close()
         self.assertIsNone(self.ph5API_object.ph5)
 
