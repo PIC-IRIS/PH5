@@ -1192,7 +1192,7 @@ class TestPH5API(unittest.TestCase):
         das_t = ph5api.filter_das_t(
             self.ph5API_object.Das_t['5553']['rows'],
             -9)
-        self.assertEqual(0, len(das_t))
+        self.assertEqual(1, len(das_t))
 
     def test_close_ph5(self):
         """
