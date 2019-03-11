@@ -9,7 +9,6 @@ import logging
 import os
 import time
 import re
-import math
 import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
