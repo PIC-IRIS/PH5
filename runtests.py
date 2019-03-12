@@ -9,6 +9,7 @@ from ph5.clients.tests.test_ph5toms import TestPH5toMSeed
 from ph5.core.tests.test_ph5utils import TestPH5Utils
 from ph5.core.tests.test_ph5api import TestPH5API
 from ph5.utilities.tests.test_metadatatoph5 import TestMetadatatoPH5
+from ph5.utilities.tests.test_obspytoph5 import TestObspytoPH5
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -30,7 +31,7 @@ def run_test(class_name):
 if __name__ == '__main__':
     args = parse_arguments()
     tests = [TestPH5toMSeed, TestPH5Utils, TestPH5API,
-             TestMetadatatoPH5]
+             TestMetadatatoPH5, TestObspytoPH5]
     passed = True
     for test_class in tests:
         test_result = run_test(test_class)

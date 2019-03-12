@@ -65,7 +65,9 @@ class ObspytoPH5(object):
 
         mini_num = str(mini_num).zfill(5)
         filename = "miniPH5_{0}.ph5".format(mini_num)
-        exrec = experiment.ExperimentGroup(nickname=filename)
+        exrec = experiment.ExperimentGroup(
+            nickname=filename,
+            currentpath=self.ph5_path)
         exrec.ph5open(True)
         exrec.initgroup()
         return exrec, filename

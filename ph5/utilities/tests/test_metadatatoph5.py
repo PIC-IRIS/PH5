@@ -233,6 +233,34 @@ class TestMetadatatoPH5(unittest.TestCase):
         parsed_array = self.metadata.parse_inventory(inventory_)
         # return true if successful
         self.assertTrue(self.metadata.toph5(parsed_array))
+        self.metadata.ph5.initgroup()
+        array_names = self.metadata.ph5.ph5_g_sorts.names()
+        self.assertEqual(
+            ['Array_t_001', 'Array_t_002', 'Array_t_003'], array_names)
+        ret, keys = self.metadata.ph5.ph5_g_sorts.read_arrays('Array_t_001')
+        key = ['id_s', 'location/X/value_d', 'location/X/units_s',
+               'location/Y/value_d', 'location/Y/units_s',
+               'location/Z/value_d', 'location/Z/units_s',
+               'location/coordinate_system_s', 'location/projection_s',
+               'location/ellipsoid_s', 'location/description_s',
+               'deploy_time/ascii_s', 'deploy_time/epoch_l',
+               'deploy_time/micro_seconds_i', 'deploy_time/type_s',
+               'pickup_time/ascii_s', 'pickup_time/epoch_l',
+               'pickup_time/micro_seconds_i', 'pickup_time/type_s',
+               'das/serial_number_s', 'das/model_s', 'das/manufacturer_s',
+               'das/notes_s', 'sensor/serial_number_s', 'sensor/model_s',
+               'sensor/manufacturer_s', 'sensor/notes_s', 'description_s',
+               'seed_band_code_s', 'sample_rate_i',
+               'sample_rate_multiplier_i',
+               'seed_instrument_code_s', 'seed_orientation_code_s',
+               'seed_location_code_s', 'seed_station_name_s',
+               'channel_number_i', 'receiver_table_n_i', 'response_table_n_i']
+        self.assertEqual(key, keys)
+        self.assertEqual(1, len(ret))
+        self.assertEqual('5553', ret[0]['das/serial_number_s'])
+        self.assertEqual('H', ret[0]['seed_instrument_code_s'])
+        self.assertEqual('H', ret[0]['seed_band_code_s'])
+        self.assertEqual('N', ret[0]['seed_orientation_code_s'])
 
     def tearDown(self):
         self.ph5_object.ph5close()
