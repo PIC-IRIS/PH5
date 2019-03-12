@@ -95,6 +95,11 @@ class MetadatatoPH5(object):
         :param file_name:
         :return: :class obspy.core.inventory
         """
+
+        if file_handle.closed:
+            LOGGER.error("File handle is closed")
+            return None
+
         # check if dataless or stationxml
         if _is_stationxml(file_handle):
             inventory = reader(file_handle, format='STATIONXML')
@@ -472,7 +477,8 @@ def main():
     if not os.path.exists(ph5file):
         LOGGER.warning("{0} not found. Creating...".format(ph5file))
         # Create ph5 file
-        ex = experiment.ExperimentGroup(nickname=ph5file)
+        ex = experiment.ExperimentGroup(nickname=ph5file,
+                                        currentpath=args.ph5path)
         ex.ph5open(True)  # Open ph5 file for editing
         ex.initgroup()
         # Update /Experiment_g/Receivers_g/Receiver_t
