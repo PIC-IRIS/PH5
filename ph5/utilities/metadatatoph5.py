@@ -267,12 +267,26 @@ class MetadatatoPH5(object):
                                 array_station['seed_station_name_s'],
                                 channel.code))
                     if hasattr(channel, 'response'):
-                        LOGGER.info('Response found for station {0} '
-                                    'channel {1}'.format(station.code,
-                                                         channel.code))
-                        array_channel['response_table_n_i'] = (
-                            self.load_response(array_channel,
-                                               channel, station.code))
+                        if hasattr(channel.response, 'response_stages'):
+                            if len(channel.response.response_stages) > 0:
+
+                                LOGGER.info('Response found for station {0} '
+                                            'channel {1}'.format(station.code,
+                                                                 channel.code)
+                                            )
+                                array_channel['response_table_n_i'] = (
+                                    self.load_response(array_channel,
+                                                       channel, station.code))
+                            else:
+                                array_channel['response_table_n_i'] = -1
+                                response_t = {}
+                                response_t['n_i'] = -1
+                                self.response_t.append(response_t)
+                    else:
+                        array_channel['response_table_n_i'] = -1
+                        response_t = {}
+                        response_t['n_i'] = -1
+                        self.response_t.append(response_t)
 
                     # Select receiver table n_i
                     if channel.azimuth == 0.0 and channel.dip == 90.0:
