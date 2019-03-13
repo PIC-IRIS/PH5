@@ -12,7 +12,7 @@ import logging
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
-PROG_VERSION = "2019.064 Developmental"
+PROG_VERSION = "2019.66"
 LOGGER = logging.getLogger(__name__)
 # This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
@@ -425,8 +425,7 @@ class PH5toEvent():
                         # Set cut start and stop times
                         cut_start_fepoch = start_fepoch
                         cut_stop_fepoch = stop_fepoch
-                        if self.ARGS.red_vel > 0.:
-
+                        if self.ARGS.red_vel and self.ARGS.red_vel > 0.:
                             try:
                                 secs, errs = segyfactory.calc_red_vel_secs(
                                     offset_t, self.ARGS.red_vel)
@@ -621,15 +620,14 @@ def main():
         LOGGER.error(err_msg)
         return 1
 
-    if not conv.ARGS.write_stdout:
-        # Write log to file
-        ch = logging.FileHandler(os.path.join(
-            conv.ARGS.out_dir, "ph5toevt.log"))
-        ch.setLevel(logging.INFO)
-        # Add formatter
-        formatter = logging.Formatter(LOGGING_FORMAT)
-        ch.setFormatter(formatter)
-        LOGGER.addHandler(ch)
+    # Write log to file
+    ch = logging.FileHandler(os.path.join(
+        conv.ARGS.out_dir, "ph5toevt.log"))
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
     LOGGER.info("{0}: {1}".format(PROG_VERSION, sys.argv))
     if not conv.ARGS.start_time:
         if conv.ARGS.shot_line not in conv.P5.Event_t_names:

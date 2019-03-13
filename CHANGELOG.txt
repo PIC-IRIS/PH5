@@ -24,6 +24,7 @@ ph5.utilities.segdtoph5
  * fixed bug in utmzone processing
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
+ * fix fast offset_table reading (issue #280)
 ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.clients.ph5tostationxml
@@ -49,6 +50,10 @@ ph5.utilities.125atoph5
  * fix pforma support after LOGGER change
 ph5.utilities.130toph5
  * fix pforma support after LOGGER change
+ph5.clients.ph5torec
+ * fix info level logging and remove global variables
+ph5.clients.ph5toevt
+ * fix info level logging and removev global variables
 
 v4.1.2:
 ph5.utilities.ph5validate

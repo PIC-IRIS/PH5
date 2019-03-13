@@ -12,7 +12,7 @@ import logging
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
-PROG_VERSION = "2019.059 Developmental"
+PROG_VERSION = "2019.66"
 LOGGER = logging.getLogger(__name__)
 # This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
@@ -539,15 +539,14 @@ def main():
     except Exception, err_msg:
         LOGGER.error(err_msg)
         return 1
-    if not conv.ARGS.write_stdout:
-        # Write log to file
-        ch = logging.FileHandler(os.path.join(
-            conv.ARGS.out_dir, "ph5torec.log"))
-        ch.setLevel(logging.INFO)
-        # Add formatter
-        formatter = logging.Formatter(LOGGING_FORMAT)
-        ch.setFormatter(formatter)
-        LOGGER.addHandler(ch)
+    # Write log to file
+    ch = logging.FileHandler(os.path.join(
+        conv.ARGS.out_dir, "ph5torec.log"))
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
     LOGGER.info("{0}: {1}".format(PROG_VERSION, sys.argv))
     if conv.ARGS.shot_line not in conv.P5.Event_t_names:
         LOGGER.error("{0} not found. {1}\n".format(
@@ -576,6 +575,7 @@ def main():
             experiment_t['longname_s'].strip()))
         LOGGER.info("Summary: {0}".format(
             experiment_t['summary_paragraph_s'].strip()))
+
         if conv.ARGS.seed_network and\
            conv.P5.Experiment_t['net_code_s'] != conv.ARGS.seed_network:
             LOGGER.info(
