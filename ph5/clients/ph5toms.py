@@ -423,6 +423,14 @@ class PH5toMSeed(object):
             elif response_file_sensor_a_name:
                 # only sensor response
                 inv_resp = sensor_resp
+            
+            # Add addtional information that is in Response_t
+            inv_resp.stats = AttribDict()
+            inv_resp.stats.gain_value = Response_t["gain/value_i"]
+            inv_resp.stats.gain_units = Response_t["gain/units_s"]
+            inv_resp.stats.bitweight_value = Response_t["bit_weight/value_d"]
+            inv_resp.stats.bitweight_units = Response_t["bit_weight/units_s"]
+            
 
             if inv_resp:
                 # update response manager and return response
@@ -482,6 +490,10 @@ class PH5toMSeed(object):
                                                stc.endtime,
                                                chan=stc.component,
                                                das_t=das)
+            
+            if self.format.upper() == "SEGY":
+                # pad gaps using mean value when request type is SEG-Y
+                traces = [ph5api.pad_traces(traces)]
 
             if not isinstance(traces, list):
                 return
@@ -491,7 +503,6 @@ class PH5toMSeed(object):
                     continue
                 try:
                     obspy_trace = Trace(data=trace.data)
-                    obspy_trace.stats.array = stc.array_code
                 except ValueError:
                     continue
                 if self.format == "SAC":
@@ -530,6 +541,14 @@ class PH5toMSeed(object):
                 obspy_trace.stats.channel = stc.seed_channel
                 obspy_trace.stats.network = stc.net_code
                 obspy_trace.stats.starttime = trace.start_time.getFdsnTime()
+                # for writing SEG-Y
+                obspy_trace.stats.receiver_id = stc.receiver_n_i
+                obspy_trace.stats.ttype = trace.ttype
+                obspy_trace.stats.byteorder = trace.byteorder
+                obspy_trace.stats.elevation = float(stc.elev)
+                obspy_trace.stats.component = stc.component
+                obspy_trace.stats.response = self.get_response_obj(stc)
+                obspy_trace.stats.array = stc.array_code
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)

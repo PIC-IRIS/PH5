@@ -1200,6 +1200,9 @@ class PH5(experiment.ExperimentGroup):
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
+            
+            if trace_reference is None:
+                continue
 
             if not trace_reference:
                 continue
