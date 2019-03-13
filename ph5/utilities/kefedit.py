@@ -361,15 +361,14 @@ class KefEdit(QtGui.QMainWindow):
         msg = "File %s has been updated successfully." \
               "\nDo you want to close KEF Editor?" % savefilename
         result = QtGui.QMessageBox.question(self, "Successfully Save File",
-                                   msg, QtGui.QMessageBox.Yes,
-                                   QtGui.QMessageBox.No)
+                                            msg, QtGui.QMessageBox.Yes,
+                                            QtGui.QMessageBox.No)
 
         self.notsave = False  # after saving, reset notsave
         if result == QtGui.QMessageBox.Yes:
             if self.ph5api is not None:
                 self.ph5api.close()
             self.close()
-        
 
     # def OnSavePH5
     # author: Lan Dam
