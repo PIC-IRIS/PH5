@@ -34,7 +34,8 @@ def run_test(class_name):
 if __name__ == '__main__':
     args = parse_arguments()
     tests = [TestPH5toMSeed, TestPH5Utils, TestPH5API,
-             TestMetadatatoPH5, TestObspytoPH5]
+             TestMetadatatoPH5, TestObspytoPH5,
+             TestPH5Availability]
     passed = True
     for test_class in tests:
         test_result = run_test(test_class)
