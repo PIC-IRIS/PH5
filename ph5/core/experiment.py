@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 
@@ -354,19 +354,13 @@ class SortsGroup:
         ret = {}
         query = "(event_id_s == b'{0}') & (receiver_id_s == b'{1}')".format(
             shot, station)
-        result = [[row['offset/value_d'],
-                   row['offset/units_s'],
-                   row['azimuth/value_f'],
-                   row['azimuth/units_s']]
-                  for row in self.ph5_t_offset[name].where(query)]
-
-        if result:
-            ret['offset/value_d'],
-            ret['offset/units_s'],
-            ret['azimuth/value_f'],
-            ret['azimuth/units_s'] = result[0],
-            ret['event_id_s'] = str(shot),
-            ret['receiver_id_s'] = str(station),
+        for row in self.ph5_t_offset[name].where(query):
+            ret['offset/value_d'] = row['offset/value_d']
+            ret['offset/units_s'] = row['offset/units_s']
+            ret['azimuth/value_f'] = row['azimuth/value_f']
+            ret['azimuth/units_s'] = row['azimuth/units_s']
+            ret['event_id_s'] = str(shot)
+            ret['receiver_id_s'] = str(station)
 
         return ret
 
@@ -811,11 +805,7 @@ class ReceiversGroup:
         try:
             node = self.ph5.get_node(
                 self.current_g_das, name=name, classname='Array')
-        except Exception as e:
-            LOGGER.warning("DAS group: {0} Name: {1} Error: {2}"
-                           .format(self.current_g_das,
-                                   name,
-                                   e.message))
+        except Exception:
             node = None
 
         return node
@@ -905,8 +895,8 @@ class ReceiversGroup:
         try:
             g = self.ph5.get_node(self.ph5_g_receivers, name=sn)
             self.current_g_das = g
-        except Exception as e:
-            raise HDF5InteractionError(0, e.message)
+        except Exception:
+            return None
 
         return self.current_g_das
 
@@ -1018,7 +1008,8 @@ class ReceiversGroup:
             if dtype is None:
                 dtype = 'i'
 
-            data = numpy.fromiter(data, dtype=dtype)
+            if type(data) != numpy.ndarray:
+                data = numpy.fromiter(data, dtype=dtype)
 
         if self.current_g_das is not None:
             try:
@@ -1060,6 +1051,14 @@ class ReceiversGroup:
                          'end_time/epoch_l', 'offset_l', 'slope_d']
 
         populate_table(self.current_t_time, p, key, required_keys)
+
+        self.ph5.flush()
+
+    def populateTime_t_(self, p, key=None):
+        required_keys = ['das/serial_number_s', 'start_time/epoch_l',
+                         'end_time/epoch_l', 'offset_d', 'slope_d']
+
+        populate_table(self.ph5_t_time, p, key, required_keys)
 
         self.ph5.flush()
 
@@ -1226,7 +1225,9 @@ class ResponsesGroup:
         self.ph5_t_response = None
 
     def populateResponse_t(self, p, pkey=None):
-        populate_table(self.ph5_t_response, p, pkey)
+        required_keys = []
+        populate_table(self.ph5_t_response, p, pkey, required_keys)
+        self.ph5.flush()
 
     def read_responses(self):
         ret, keys = read_table(self.ph5_t_response)

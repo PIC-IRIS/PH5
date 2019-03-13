@@ -4,13 +4,6 @@
 Extracts data from PH5 in miniSEED and SAC formats.
 Also allows for creation of preview png images of traces.
 """
-################################################################
-#
-# modification
-# version: 2019.032
-# author: Lan Dam
-# When multiple days are request, cut on day boundaries instead of
-# every 24 hours
 
 
 import sys
@@ -29,7 +22,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.037'
+PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -386,19 +379,23 @@ class PH5toMSeed(object):
                                                   datalogger_keys)
 
     def create_trace(self, station_to_cut, mp=False):
-
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments(
             [station_to_cut], self.restricted)
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
-            new_endtime = stc.endtime + (1 / float(stc.sample_rate))
+            if stc.sample_rate != 0:
+                new_endtime = stc.endtime + (1 / float(stc.sample_rate))
+            else:
+                new_endtime = stc.endtime
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
                                        stc.endtime,
                                        stc.sample_rate,
                                        stc.sample_rate_multiplier)
+
             if not das:
                 return
+
             das = [x for x in das]
             Das_tf = next(iter(das or []), None)
             if Das_tf is None:
@@ -414,14 +411,25 @@ class PH5toMSeed(object):
                 start_time = stc.starttime
 
             nt = stc.notimecorrect
-            actual_sample_rate = float(
-                stc.sample_rate) / float(stc.sample_rate_multiplier)
 
-            traces = self.ph5.cut(stc.das, start_time,
-                                  new_endtime,
-                                  chan=stc.component,
-                                  sample_rate=actual_sample_rate,
-                                  apply_time_correction=nt, das_t=das)
+            if stc.sample_rate > 0:
+                actual_sample_rate = float(
+                    stc.sample_rate) / float(stc.sample_rate_multiplier)
+            else:
+                actual_sample_rate = 0
+
+            if stc.sample_rate != 0:
+                traces = self.ph5.cut(stc.das, start_time,
+                                      new_endtime,
+                                      chan=stc.component,
+                                      sample_rate=actual_sample_rate,
+                                      apply_time_correction=nt, das_t=das)
+            else:
+                traces = self.ph5.textural_cut(stc.das,
+                                               start_time,
+                                               new_endtime,
+                                               chan=stc.component,
+                                               das_t=das)
 
             if not isinstance(traces, list):
                 return
@@ -460,7 +468,8 @@ class PH5toMSeed(object):
                     obspy_trace.stats.experiment_id = stc.experiment_id
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
-                obspy_trace.stats.sampling_rate = actual_sample_rate
+                if actual_sample_rate > 0:
+                    obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
                 obspy_trace.stats.coordinates = AttribDict()
@@ -621,11 +630,10 @@ class PH5toMSeed(object):
                     stop_fepoch = ph5api.fepoch(pickup, pickup_micro)
 
             if (self.use_deploy_pickup is True and not
-                    ((start_fepoch >= deploy and
-                      stop_fepoch <= pickup))):
-                # das not deployed within deploy/pickup time
+                    ((int(start_fepoch) >= deploy and
+                      int(stop_fepoch) <= pickup))):
+                print "das not deployed within deploy/pickup time"
                 continue
-
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
             start_doy = start_passcal_list[1]
@@ -968,8 +976,8 @@ def get_args():
 
     parser.add_argument(
         "--notimecorrect",
-        action="store_true",
-        default=False)
+        action="store_false",
+        default=True)
 
     parser.add_argument(
         "--use_deploy_pickup", action="store_true", default=True,
