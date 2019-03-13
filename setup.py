@@ -166,8 +166,8 @@ setup(
             'unsimpleton = ph5.utilities.unsimpleton:main',
             'ph5 = ph5.utilities.ph5_help:main',
             'metadatatoph5 = ph5.utilities.metadatatoph5:main',
-            'mstoph5 = ph5.utilities.obspytoph5:main'
-            'ph5availability = ph5.utilities.ph5availability:main'
+            'mstoph5 = ph5.utilities.obspytoph5:main',
+            'ph5availability = ph5.clients.ph5availability:main'
         ],
     },
     packages=['ph5',
@@ -203,4 +203,3 @@ setup(
                            include_dirs=[numpy.get_include()])]
 )
 
->>>>>>> miniseed
