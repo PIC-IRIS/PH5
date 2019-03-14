@@ -18,7 +18,7 @@ from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import SACTrace
-from ph5.core import ph5utils
+from ph5.core import ph5utils, experiment
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
@@ -674,18 +674,6 @@ class PH5toMSeed(object):
                     else:
                         sct = StationCutTime(deploy)
                         station_cut_times.append(sct)
-
-                else:
-                    check_start_time = ph5utils.datestring_to_epoch(
-                        self.start_time)
-                    if float(check_start_time) > float(deploy):
-                        sct = StationCutTime(
-                            ph5utils.fdsntime_to_epoch(self.start_time)
-                        )
-                        station_cut_times.append(sct)
-                    else:
-                        sct = StationCutTime(deploy)
-                        station_cut_times.append(sct)
                 if float(check_start_time) > float(pickup):
                     return
             else:
@@ -796,14 +784,16 @@ class PH5toMSeed(object):
                 st_num]['location/Z/value_d']
 
             for starttime, endtime in tuple(times_to_cut):
-
-                self.ph5.query_das_t(das,
-                                     component,
-                                     starttime,
-                                     endtime,
-                                     sample_rate,
-                                     sample_rate_multiplier
-                                     )
+                try:
+                    self.ph5.query_das_t(das,
+                                         component,
+                                         starttime,
+                                         endtime,
+                                         sample_rate,
+                                         sample_rate_multiplier
+                                         )
+                except experiment.HDF5InteractionError:
+                    continue
 
                 station_x = StationCut(
                     seed_network,
