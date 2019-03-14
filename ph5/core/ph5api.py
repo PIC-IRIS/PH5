@@ -1113,8 +1113,13 @@ class PH5(experiment.ExperimentGroup):
 
         if sample_rate == 0 or chan == -2:
             LOGGER.info("calling textural_cut")
-            self.textural_cut()
-            return []
+            cuts = self.textural_cut(
+                das,
+                start_fepoch,
+                stop_fepoch,
+                chan,
+                Das_t)
+            return cuts
 
         #
         # We shift the samples to match the requested start
