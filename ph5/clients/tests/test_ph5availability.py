@@ -39,7 +39,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('0407', '', 'LHN') in ret)
         self.assertTrue(('0407', '', 'LOG') in ret)
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
         self.assertTrue(('9001', '', 'DPZ') in ret)
 
@@ -50,7 +50,7 @@ class TestPH5Availability(unittest.TestCase):
         # there should be 3 entries
         self.assertEqual(3, len(ret))
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
 
         # Should return only station 500
@@ -99,7 +99,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('0407', '', 'LHN') in ret)
         self.assertTrue(('0407', '', 'LOG') in ret)
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
         self.assertTrue(('9001', '', 'DPZ') in ret)
 
@@ -118,7 +118,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('0407', '', 'LHN') in ret)
         self.assertTrue(('0407', '', 'LOG') in ret)
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
         self.assertTrue(('9001', '', 'DPZ') in ret)
 
@@ -137,7 +137,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('0407', '', 'LHN') in ret)
         self.assertTrue(('0407', '', 'LOG') in ret)
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
         self.assertTrue(('9001', '', 'DPZ') in ret)
 
@@ -157,7 +157,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('0407', '', 'LHN') in ret)
         self.assertTrue(('0407', '', 'LOG') in ret)
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
         self.assertTrue(('9001', '', 'DPZ') in ret)
 
@@ -212,7 +212,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('0407', '', 'LHN') in ret)
         self.assertTrue(('0407', '', 'LOG') in ret)
         self.assertTrue(('8001', '', 'HL1') in ret)
-        self.assertTrue(('8001', '', 'Hl2') in ret)
+        self.assertTrue(('8001', '', 'HL2') in ret)
         self.assertTrue(('8001', '', 'HLZ') in ret)
         self.assertTrue(('9001', '', 'DPZ') in ret)
 
@@ -289,9 +289,9 @@ class TestPH5Availability(unittest.TestCase):
 
         # should return 97.13% and 2 gaps
         ret = self.availability.get_availability_percentage(
-            '9001',
+            '8001',
             '',
-            'DPZ',
+            'HLZ',
             1463568479,
             1463568518)
         self.assertTrue(isinstance(ret, tuple))
@@ -491,7 +491,7 @@ class TestPH5Availability(unittest.TestCase):
                 endtime=1741883104))
 
         # should return false
-        self.assertTrue(
+        self.assertFalse(
             self.availability.has_data(
                 station='500',
                 location='',
