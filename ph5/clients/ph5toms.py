@@ -22,7 +22,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.65'
+PROG_VERSION = '2019.74'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -150,7 +150,7 @@ class PH5toMSeed(object):
         s = stream.traces[0].stats
         ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -159,7 +159,7 @@ class PH5toMSeed(object):
         s = trace.stats
         ret = "{0}.{1}.{2}.{3}.{4}.sac".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -168,7 +168,7 @@ class PH5toMSeed(object):
         s = trace.stats
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -177,7 +177,7 @@ class PH5toMSeed(object):
         s = stream.traces[0].stats
         ret = "{0}.{1}.{2}.{3}.ms".format(
             s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+            s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -186,7 +186,7 @@ class PH5toMSeed(object):
         s = trace.stats
         ret = "{0}.{1}.{2}.{3}.sac".format(
             s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H%M%S.%f"))
+            s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
