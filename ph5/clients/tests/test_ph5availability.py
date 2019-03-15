@@ -293,7 +293,6 @@ class TestPH5Availability(unittest.TestCase):
             starttime=1,
             endtime=2530985583,
             include_sample_rate=True)
-
         # expect 1 entry because only 1 channel
         # within time range was requested
         self.assertEqual(1, len(ret))
@@ -302,10 +301,231 @@ class TestPH5Availability(unittest.TestCase):
                          1550849943, 1550850189,
                          250.0) in ret)
 
+        # Check LOG channel
+        ret = self.availability.get_availability_extent(
+            station='0407',
+            channel='LOG',
+            location='',
+            starttime=1545088205,
+            endtime=1545088205)
+        # expect 1 entry because only 1 channel
+        # within time range was requested
+        self.assertEqual(1, len(ret))
+        self.assertTrue(('0407', '', 'LOG',
+                         1545088205, 1545088205) in ret)
+
+        # Check LOG channel with sample rate
+        ret = self.availability.get_availability_extent(
+            station='0407',
+            channel='LOG',
+            location='',
+            starttime=1545088205,
+            endtime=1545088205,
+            include_sample_rate=True)
+        # expect 1 entry because only 1 channel
+        # within time range was requested
+        self.assertEqual(1, len(ret))
+        self.assertTrue(('0407', '', 'LOG',
+                         1545088205, 1545088205, 0.0) in ret)
+
+        # get all DPZ channels
+        ret = self.availability.get_availability_extent(
+            station='*',
+            channel='DPZ',
+            location='',
+            starttime=1,
+            endtime=2530985583)
+        # there are 2 DPZ channels in the time range
+        self.assertEqual(2, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550850189) in ret)
+        self.assertTrue(('500', '', 'DPZ',
+                         1502294400.38, 1502294460.38) in ret)
+
+        # get matching all locations ''
+        # expected to return all extent information
+        ret = self.availability.get_availability_extent(
+            station='*',
+            channel='*',
+            location='',
+            starttime=1,
+            endtime=2530985583
+        )
+        # There are 10 channels all with data
+        # so expect 10 entries
+        self.assertEqual(10, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550850189) in ret)
+        self.assertTrue(('8001', '', 'HL1',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('8001', '', 'HL2',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('8001', '', 'HLZ',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('0407', '', 'HHN',
+                         1545085230.917, 1545085240.92) in ret)
+        self.assertTrue(('0407', '', 'LHN',
+                         1545085230.681998, 1545085240.69) in ret)
+        self.assertTrue(('0407', '', 'LOG',
+                         1545088205, 1545088205) in ret)
+        self.assertTrue(('500', '', 'DP1',
+                         1502294400.38, 1502294460.38) in ret)
+        self.assertTrue(('500', '', 'DP2',
+                         1502294400.38, 1502294460.38) in ret)
+        self.assertTrue(('500', '', 'DPZ',
+                         1502294400.38, 1502294460.38) in ret)
+
+        # get matching all locations '01'
+        # expected to return none
+        ret = self.availability.get_availability_extent(
+            station='*',
+            channel='*',
+            location='01',
+            starttime=1,
+            endtime=2530985583
+        )
+        # There are 0 channels with data
+        # so expect 0 entries
+        self.assertFalse(ret)
+
+        # expected to return none
+        ret = self.availability.get_availability_extent(
+            station='12345',
+            channel='*',
+            location='*',
+            starttime=1,
+            endtime=2530985583
+        )
+        # There are 0 channels with data
+        # so expect 0 entries
+        self.assertFalse(ret)
+
+        # expected to return none
+        ret = self.availability.get_availability_extent(
+            station='8001',
+            channel='*',
+            location='*',
+            starttime=1502294400.38,
+            endtime=1502294460.38
+        )
+        # There are 0 channels with data
+        # so expect 0 entries
+        self.assertFalse(ret)
+
     def test_get_availability(self):
         """
         test get_availability method
         """
+
+        # expected to return all availability information
+        ret = self.availability.get_availability()
+        # There are 10 channels all with data
+        # but 9001 has 8 gaps so expect 18 entries
+        self.assertEqual(18, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550849949) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849973, 1550849974) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850003, 1550850009) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850033, 1550850034) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850060, 1550850068) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850093, 1550850094) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850123, 1550850129) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850153, 1550850154) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850183, 1550850189) in ret)
+        self.assertTrue(('8001', '', 'HL1',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('8001', '', 'HL2',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('8001', '', 'HLZ',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('0407', '', 'HHN',
+                         1545085230.917, 1545085240.92) in ret)
+        self.assertTrue(('0407', '', 'LHN',
+                         1545085230.681998, 1545085240.69) in ret)
+        self.assertTrue(('0407', '', 'LOG',
+                         1545088205, 1545088205) in ret)
+        self.assertTrue(('500', '', 'DP1',
+                         1502294400.38, 1502294460.38) in ret)
+        self.assertTrue(('500', '', 'DP2',
+                         1502294400.38, 1502294460.38) in ret)
+        self.assertTrue(('500', '', 'DPZ',
+                         1502294400.38, 1502294460.38) in ret)
+
+        # expected to return all availability information
+        # for 9001
+        ret = self.availability.get_availability(
+            station='9001', channel='DPZ',
+            location='', starttime=1550849943,
+            endtime=1550850189)
+        # 9001 has 8 gaps so expect 9 entries
+        self.assertEqual(9, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550849949) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849973, 1550849974) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850003, 1550850009) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850033, 1550850034) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850060, 1550850068) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850093, 1550850094) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850123, 1550850129) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850153, 1550850154) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850183, 1550850189) in ret)
+
+        # expected to return partial information
+        # for 9001 based on times requested
+        ret = self.availability.get_availability(
+            station='9001', channel='DPZ',
+            location='', starttime=1550849973,
+            endtime=1550850005)
+        # 9001 for this time range has 1 gap
+        self.assertEqual(2, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849973, 1550849974) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850003, 1550850005) in ret)
+
+        # expected to return partial information
+        # for 9001 based on times requested
+        ret = self.availability.get_availability(
+            station='9001', channel='DPZ',
+            location='', starttime=1550850060,
+            endtime=1550850154)
+        # 9001 for this time range has 3 gaps
+        self.assertEqual(4, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850060, 1550850068) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850093, 1550850094) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850123, 1550850129) in ret)
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550850153, 1550850154) in ret)
+
+        # expected to return no gaps
+        # for 500 all data in channel DPZ
+        ret = self.availability.get_availability(
+            station='500', channel='DPZ',
+            location='', starttime=1502294400.38,
+            endtime=1502294460.38)
+        # 500 DPZ has 2 windows but no gaps
+        self.assertEqual(1, len(ret))
+        self.assertTrue(('500', '', 'DPZ',
+                         1502294400.38, 1502294460.38) in ret)
 
     def test_get_availability_percentage(self):
         """
