@@ -21,3 +21,4 @@ dependencies:
    - tables==3.4.2
    - flake8
    - pyflakes
+   - coverage
