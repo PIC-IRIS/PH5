@@ -243,6 +243,64 @@ class TestPH5Availability(unittest.TestCase):
         """
         test get_availability_extent method
         """
+        # expected to return all extent information
+        ret = self.availability.get_availability_extent()
+
+        # There are 10 channels all with data
+        # so expect 10 entries
+        self.assertEqual(10, len(ret))
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550850189) in ret)
+        self.assertTrue(('8001', '', 'HL1',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('8001', '', 'HL2',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('8001', '', 'HLZ',
+                         1463568480, 1463568517.88) in ret)
+        self.assertTrue(('0407', '', 'HHN',
+                         1545085230.917, 1545085240.92) in ret)
+        self.assertTrue(('0407', '', 'LHN',
+                         1545085230.681998, 1545085240.69) in ret)
+        self.assertTrue(('0407', '', 'LOG',
+                         1545088205, 1545088205) in ret)
+        self.assertTrue(('500', '', 'DP1',
+                         1502294400.38, 1502294460.38) in ret)
+        self.assertTrue(('500', '', 'DP2',
+                         1502294400.38, 1502294460.38) in ret)
+        self.assertTrue(('500', '', 'DPZ',
+                         1502294400.38, 1502294460.38) in ret)
+
+        # get extent for 9001. A station with gaps
+        # large time range encompassing trace
+        ret = self.availability.get_availability_extent(
+            station='9001',
+            channel='DPZ',
+            location='',
+            starttime=1,
+            endtime=2530985583)
+        # expect 1 entry because only 1 channel
+        # within time range was requested
+        self.assertEqual(1, len(ret))
+        # expected entry
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550850189) in ret)
+
+        # same request but with sample rate included
+        ret = self.availability.get_availability_extent(
+            station='9001',
+            channel='DPZ',
+            location='',
+            starttime=1,
+            endtime=2530985583,
+            include_sample_rate=True)
+
+        # expect 1 entry because only 1 channel
+        # within time range was requested
+        self.assertEqual(1, len(ret))
+        # expected entry with sample_rate included
+        self.assertTrue(('9001', '', 'DPZ',
+                         1550849943, 1550850189,
+                         250.0) in ret)
 
     def test_get_availability(self):
         """
@@ -296,7 +354,7 @@ class TestPH5Availability(unittest.TestCase):
             1463568518)
         self.assertTrue(isinstance(ret, tuple))
         self.assertAlmostEquals(0.9713, ret[0], 4)
-        self.assertEqual(8, ret[1])
+        self.assertEqual(2, ret[1])
 
         # should return 0% and 0 gaps
         ret = self.availability.get_availability_percentage(
