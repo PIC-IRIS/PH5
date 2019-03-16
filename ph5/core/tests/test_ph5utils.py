@@ -1,6 +1,6 @@
-'''
+"""
 Tests for ph5utils
-'''
+"""
 import unittest
 from ph5.core import ph5utils
 import datetime
@@ -46,7 +46,6 @@ class TestPH5Utils(unittest.TestCase):
         self.assertFalse(ph5utils.is_rect_intersection(34.0, 36.0,
                                                        -105.9, -100.0,
                                                        latitude, longitude))
-
         # all outside range
         self.assertFalse(ph5utils.is_rect_intersection(0, 0,
                                                        0, 0,
@@ -292,6 +291,102 @@ class TestPH5Utils(unittest.TestCase):
         """
         tests PH5ResponseManager class and methods
         """
+        resp_manager = ph5utils.PH5ResponseManager()
+        self.assertTrue(
+            type(resp_manager) is ph5utils.PH5ResponseManager)
+
+        # no N_i
+        sensor_keys = ['Guralp', 'CMG-3T']
+        datalogger_keys = ['reftek',
+                           'RT130',
+                           100]
+        response = "doesn't matter"
+
+        resp_manager.add_response(
+            sensor_keys,
+            datalogger_keys,
+            response)
+        self.assertEqual(len(resp_manager.responses), 1)
+
+        # with n_i
+        response = "some stuff"
+        sensor_keys = ['Guralp', 'CMG-3T']
+        datalogger_keys = ['reftek',
+                           'RT130',
+                           200]
+        resp_manager.add_response(
+            sensor_keys,
+            datalogger_keys,
+            response,
+            n_i=1)
+        self.assertEqual(len(resp_manager.responses), 2)
+
+        # test getting response
+        ret = resp_manager.get_response(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             100])
+        self.assertTrue(ret)
+        self.assertEqual(ret, "doesn't matter")
+
+        ret = resp_manager.get_response(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             200])
+        self.assertTrue(ret)
+        self.assertEqual(ret, "some stuff")
+
+        # return nothing
+        ret = resp_manager.get_response(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             500])
+        self.assertFalse(ret)
+
+        # test already there no response
+        ret = resp_manager.is_already_requested(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             200])
+        self.assertTrue(ret)
+
+        # test already there with response
+        ret = resp_manager.is_already_requested(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             100],
+            inresponse="doesn't matter")
+        self.assertTrue(ret)
+
+        # test not there with response
+        ret = resp_manager.is_already_requested(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             100],
+            inresponse="Not real")
+        self.assertFalse(ret)
+
+        # test get n_i..no n_i
+        ret = resp_manager.get_n_i(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             100])
+        self.assertFalse(ret)
+
+        # test get n_i with n_i
+        ret = resp_manager.get_n_i(
+            ['Guralp', 'CMG-3T'],
+            ['reftek',
+             'RT130',
+             200])
+        self.assertTrue(ret)
 
 
 if __name__ == "__main__":
