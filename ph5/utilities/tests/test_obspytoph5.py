@@ -7,6 +7,8 @@ from ph5.core import experiment
 from ph5.utilities import initialize_ph5
 import os
 from ph5.utilities import metadatatoph5
+import sys
+from mock import patch
 
 
 class TestObspytoPH5(unittest.TestCase):
@@ -37,6 +39,139 @@ class TestObspytoPH5(unittest.TestCase):
         self.obs.verbose = True
         ph5_object.ph5flush()
         ph5_object.ph5_g_sorts.update_local_table_nodes()
+
+    def test_get_args(self):
+        """
+        test get_args
+        """
+        with self.assertRaises(SystemExit):
+            obspytoph5.get_args([])
+
+        ret = obspytoph5.get_args(['-n', 'master.ph5', '-f', 'test.ms',
+                                   '-V'])
+        self.assertEqual(ret.nickname, 'master.ph5')
+        self.assertEqual(ret.infile, 'test.ms')
+        self.assertEqual(ret.ph5path, '.')
+        self.assertTrue(ret.verbose)
+
+    def test_main(self):
+        """
+        test main
+        """
+        # first need to run metadatatoph5
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    'ph5/test_data/metadata/station.xml']
+        with patch.object(sys, 'argv', testargs):
+            metadatatoph5.main()
+
+        # first need to run obspytoph5
+        testargs = ['obspytoph5', '-n', 'master.ph5', '-d',
+                    'ph5/test_data/miniseed/']
+        with patch.object(sys, 'argv', testargs):
+            obspytoph5.main()
+        self.assertTrue(os.path.isfile('master.ph5'))
+        self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
+        ph5_object = experiment.ExperimentGroup(
+            nickname='master.ph5')
+        ph5_object.ph5open(True)
+        ph5_object.initgroup()
+        node = ph5_object.ph5_g_receivers.getdas_g('5553')
+        ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
+        keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
+                'array_name_log_a', 'channel_number_i', 'event_number_i',
+                'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
+                'sample_count_i', 'sample_rate_i', 'sample_rate_multiplier_i',
+                'stream_number_i', 'time/ascii_s', 'time/epoch_l',
+                'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
+        self.assertEqual(keys, das_keys)
+        self.assertEqual(
+            'ph5/test_data/miniseed/0407HHN.m',
+            ret[0]['raw_file_name_s'])
+        self.assertEqual(
+            'ph5/test_data/miniseed/0407LHN.m',
+            ret[1]['raw_file_name_s'])
+        ph5_object.ph5close()
+        os.remove('master.ph5')
+        os.remove('miniPH5_00001.ph5')
+        os.remove('metadatatoph5.log')
+        os.remove('datatoph5.log')
+
+        # first need to run metadatatoph5
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    'ph5/test_data/metadata/station.xml']
+        with patch.object(sys, 'argv', testargs):
+            metadatatoph5.main()
+        # first need to run obspytoph5
+        testargs = ['obspytoph5', '-n', 'master.ph5', '-f',
+                    'ph5/test_data/miniseed/0407HHN.ms']
+        with patch.object(sys, 'argv', testargs):
+            obspytoph5.main()
+        self.assertTrue(os.path.isfile('master.ph5'))
+        self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
+        ph5_object = experiment.ExperimentGroup(
+            nickname='master.ph5')
+        ph5_object.ph5open(True)
+        ph5_object.initgroup()
+        node = ph5_object.ph5_g_receivers.getdas_g('5553')
+        ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
+        keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
+                'array_name_log_a', 'channel_number_i', 'event_number_i',
+                'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
+                'sample_count_i', 'sample_rate_i', 'sample_rate_multiplier_i',
+                'stream_number_i', 'time/ascii_s', 'time/epoch_l',
+                'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
+        self.assertEqual(keys, das_keys)
+        self.assertEqual(
+            'ph5/test_data/miniseed/0407HHN.m',
+            ret[0]['raw_file_name_s'])
+        ph5_object.ph5close()
+        os.remove('master.ph5')
+        os.remove('miniPH5_00001.ph5')
+        os.remove('metadatatoph5.log')
+        os.remove('datatoph5.log')
+
+        # first need to run metadatatoph5
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    'ph5/test_data/metadata/station.xml']
+        with patch.object(sys, 'argv', testargs):
+            metadatatoph5.main()
+
+        # now make a list for obspytoph5
+        f = open("test_list", "w")
+        f.write("ph5/test_data/miniseed/0407HHN.ms")
+        f.close()
+        # first need to run obspytoph5
+        testargs = ['obspytoph5', '-n', 'master.ph5', '-l',
+                    'test_list']
+        with patch.object(sys, 'argv', testargs):
+            obspytoph5.main()
+        self.assertTrue(os.path.isfile('master.ph5'))
+        self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
+        ph5_object = experiment.ExperimentGroup(
+            nickname='master.ph5')
+        ph5_object.ph5open(True)
+        ph5_object.initgroup()
+        node = ph5_object.ph5_g_receivers.getdas_g('5553')
+        ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
+        keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
+                'array_name_log_a', 'channel_number_i', 'event_number_i',
+                'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
+                'sample_count_i', 'sample_rate_i', 'sample_rate_multiplier_i',
+                'stream_number_i', 'time/ascii_s', 'time/epoch_l',
+                'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
+        self.assertEqual(keys, das_keys)
+        self.assertEqual(
+            'ph5/test_data/miniseed/0407HHN.m',
+            ret[0]['raw_file_name_s'])
+        ph5_object.ph5close()
+        os.remove('master.ph5')
+        os.remove('miniPH5_00001.ph5')
+        os.remove('metadatatoph5.log')
+        os.remove('datatoph5.log')
+        os.remove('test_list')
 
     def test_to_ph5(self):
         """

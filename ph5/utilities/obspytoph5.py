@@ -7,6 +7,7 @@ Derick Hess
 import logging
 import argparse
 import os
+import sys
 import re
 from ph5 import LOGGING_FORMAT
 from ph5.utilities import initialize_ph5
@@ -455,7 +456,7 @@ def getListOfFiles(dirName):
     return allFiles
 
 
-def get_args():
+def get_args(args):
     """
     :return: class: argparse
     """
@@ -466,7 +467,7 @@ def get_args():
             )
     parser.add_argument(
         "-n", "--nickname", action="store",
-        type=str, metavar="nickname", default="master.ph5")
+        type=str, metavar="nickname", default="master.ph5", required=True)
 
     parser.add_argument(
         "-p", "--ph5path", action="store", default=".",
@@ -505,12 +506,11 @@ def get_args():
         help="Verbose logging ",
         action='store_true')
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args(args)
 
 
 def main():
-    args = get_args()
+    args = get_args(sys.argv[1:])
 
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)
