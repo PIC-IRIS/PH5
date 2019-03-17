@@ -15,6 +15,8 @@ from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 from obspy.core.inventory.response import Response
+from obspy.io.xseed.core import _is_resp
+import pickle
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
@@ -417,21 +419,29 @@ class PH5toStationXMLParser(object):
             self.manager.ph5.read_response_t()
             Response_t = \
                 self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
-            response_file_das_a_name = Response_t.get('response_file_das_a',
-                                                      None)
-            response_file_sensor_a_name = Response_t.get(
-                                                    'response_file_sensor_a',
-                                                    None)
+            if Response_t:
+                response_file_das_a_name = Response_t.get(
+                    'response_file_das_a', None)
+                response_file_sensor_a_name = Response_t.get(
+                    'response_file_sensor_a', None)
+            else:
+                LOGGER.error('Response table not found')
+                return Response()
             # parse datalogger response
             if response_file_das_a_name:
                 response_file_das_a = \
                     self.manager.ph5.ph5_g_responses.get_response(
                                                     response_file_das_a_name
                                             )
+
                 with io.BytesIO(response_file_das_a) as buf:
                     buf.seek(0, 0)
-                    dl_resp = read_inventory(buf, format="RESP")
-                dl_resp = dl_resp[0][0][0].response
+                    if _is_resp(buf):
+                        dl_resp = read_inventory(buf, format="RESP")
+                        dl_resp = dl_resp[0][0][0].response
+                    else:
+                        dl_resp = pickle.loads(response_file_das_a)
+
             # parse sensor response if present
             if response_file_sensor_a_name:
                 response_file_sensor_a = \
@@ -440,8 +450,12 @@ class PH5toStationXMLParser(object):
                                             )
                 with io.BytesIO(response_file_sensor_a) as buf:
                     buf.seek(0, 0)
-                    sensor_resp = read_inventory(buf, format="RESP")
-                sensor_resp = sensor_resp[0][0][0].response
+
+                    if _is_resp(buf):
+                        sensor_resp = read_inventory(buf, format="RESP")
+                        sensor_resp = sensor_resp[0][0][0].response
+                    else:
+                        sensor_resp = pickle.loads(response_file_sensor_a)
 
             inv_resp = None
             if response_file_das_a_name and response_file_sensor_a_name:

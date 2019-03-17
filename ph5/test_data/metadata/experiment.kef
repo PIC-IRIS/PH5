@@ -1,0 +1,36 @@
+#
+#Fri Mar  8 09:54:05 2019	4.1.2
+#
+#   Table row 1
+/Experiment_g/Experiment_t
+	nickname_s = PH5 Test
+	longname_s = PH5 TEST SET
+	net_code_s = AA
+	PIs_s = Derick Hess
+	institutions_s = PASSCAL
+	north_west_corner/X/value_d = 
+	north_west_corner/X/units_s = 
+	north_west_corner/Y/value_d = 
+	north_west_corner/Y/units_s = 
+	north_west_corner/Z/value_d = 
+	north_west_corner/Z/units_s = 
+	north_west_corner/coordinate_system_s = 
+	north_west_corner/projection_s = 
+	north_west_corner/ellipsoid_s = 
+	north_west_corner/description_s = 
+	south_east_corner/X/value_d = 
+	south_east_corner/X/units_s = 
+	south_east_corner/Y/value_d = 
+	south_east_corner/Y/units_s = 
+	south_east_corner/Z/value_d = 
+	south_east_corner/Z/units_s = 
+	south_east_corner/coordinate_system_s = 
+	south_east_corner/projection_s = 
+	south_east_corner/ellipsoid_s = 
+	south_east_corner/description_s = 
+	summary_paragraph_s = 
+	experiment_id_s = 99-999
+	time_stamp/ascii_s = Fri Mar  8 09:53:16 2019
+	time_stamp/epoch_l = 1552063996
+	time_stamp/micro_seconds_i = 0
+	time_stamp/type_s = BOTH

@@ -25,6 +25,7 @@ install:
   - conda config --add channels conda-forge
   - conda env update --name ph5 --file environment.yml
   - source activate ph5
+  - python setup.py develop
 
 # before scripts
 before_script:
@@ -33,4 +34,6 @@ before_script:
 
 
 # command to run tests
-script: python runtests.py
+script:
+  - bash create_ph5.sh 
+  - python runtests.py

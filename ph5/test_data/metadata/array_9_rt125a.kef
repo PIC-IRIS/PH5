@@ -1,0 +1,30 @@
+# Written by novenkef v2018.268 at 2019:066:18:03:51.951
+#   1
+/Experiment_g/Sorts_g/Array_t_009
+	sensor/model_s = gs11v
+	seed_station_name_s = 9001
+	sample_rate_i = 500
+	sample_rate_multiplier_i = 1
+	das/serial_number_s = 12183
+	pickup_time/ascii_s = Fri Feb 22 15:44:00 2019
+	pickup_time/epoch_l = 1550850240
+	pickup_time/micro_seconds_i = 0
+	pickup_time/type_s = BOTH
+	location/X/value_d = -106.906169
+	location/X/units_s = degrees
+	das/manufacturer_s = reftek
+	das/model_s = rt125a
+	location/Y/value_d = 34.054673
+	location/Y/units_s = degrees
+	id_s = 9001
+	location/Z/value_d = 1403
+	location/Z/units_s = m
+	deploy_time/ascii_s = Fri Feb 22 15:39:00 2019
+	deploy_time/epoch_l = 1550849940
+	deploy_time/micro_seconds_i = 0
+	deploy_time/type_s = BOTH
+	sensor/manufacturer_s = geospace
+	channel_number_i = 1
+	seed_band_code_s = D
+	seed_instrument_code_s = P
+	seed_orientation_code_s = Z
