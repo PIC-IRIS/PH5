@@ -1,0 +1,4 @@
+Das Model, Sensor Model, Sample Rate, sample rate multiplier,Gain, Das RESP path, Sensor RESP path
+rt125a,gs11v,500,1,32,../metadata/RESP/125a500_32_RESP,../metadata/RESP/gs11RESP
+ZLAND3C,,500,1,24,../metadata/RESP/NODE_3C_RESP,
+rt130,cmg-3t,100,1,1,../metadata/RESP/rt130100_1_RESP,../metadata/RESP/cmg3t_RESP

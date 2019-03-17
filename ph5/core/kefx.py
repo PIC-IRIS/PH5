@@ -12,7 +12,7 @@ import re
 from ph5.core import columns
 from StringIO import StringIO
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.53'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -32,6 +32,45 @@ class KefError (Exception):
 
 class KefWarning (Exception):
     pass
+
+
+def file_len(fh):
+    """
+    returns the number of lines in a file
+    :type file
+    :param fh:
+    :return: :int number of lines in file
+    """
+    fh.seek(0, 0)
+    for i, l in enumerate(fh):
+        pass
+    fh.seek(0, 0)
+    return i + 1
+
+
+def is_array_kef(fh):
+    """
+    Opens a file handle. Returns boolean value.
+    True if file handle is a valid kef file
+    :type file
+    :param fh:
+    :return: boolean
+    """
+    fh.seek(0, 0)
+    length = file_len(fh)
+    if length < 5:
+        fh.seek(0, 0)
+        return False
+
+    arrayRE = re.compile(r"/Experiment_g/Sorts_g/Array_t_(\d+)(\W*)")
+    head = [next(fh) for x in range(5)]
+    for line in head:
+        mo = arrayRE.match(line)
+        if mo:
+            fh.seek(0, 0)
+            return True
+    fh.seek(0, 0)
+    return False
 
 
 class Kef:

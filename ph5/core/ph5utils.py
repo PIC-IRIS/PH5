@@ -15,12 +15,16 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 
+PROG_VERSION = "2019.63"
+
 
 class PH5Response(object):
-    def __init__(self, sensor_keys, datalogger_keys, response):
+    def __init__(self, sensor_keys, datalogger_keys,
+                 response, n_i=None):
         self.sensor_keys = sensor_keys
         self.datalogger_keys = datalogger_keys
         self.response = response
+        self.n_i = n_i
 
 
 class PH5ResponseManager(object):
@@ -28,9 +32,11 @@ class PH5ResponseManager(object):
     def __init__(self):
         self.responses = []
 
-    def add_response(self, sensor_keys, datalogger_keys, response):
+    def add_response(self, sensor_keys, datalogger_keys,
+                     response, n_i=None):
         self.responses.append(
-                        PH5Response(sensor_keys, datalogger_keys, response)
+                        PH5Response(sensor_keys, datalogger_keys,
+                                    response, n_i)
                     )
 
     def get_response(self, sensor_keys, datalogger_keys):
@@ -39,12 +45,26 @@ class PH5ResponseManager(object):
                set(datalogger_keys) == set(ph5_resp.datalogger_keys):
                 return ph5_resp.response
 
-    def is_already_requested(self, sensor_keys, datalogger_keys):
+    def is_already_requested(self, sensor_keys, datalogger_keys,
+                             inresponse=None):
         for response in self.responses:
-            if set(sensor_keys) == set(response.sensor_keys) and \
-               set(datalogger_keys) == set(response.datalogger_keys):
-                return True
+            if inresponse:
+                if set(sensor_keys) == set(response.sensor_keys) and \
+                   set(datalogger_keys) == set(response.datalogger_keys) and \
+                        inresponse == response.response:
+                    return True
+            else:
+                if set(sensor_keys) == set(response.sensor_keys) and \
+                   set(datalogger_keys) == set(response.datalogger_keys):
+                    return True
+
         return False
+
+    def get_n_i(self, sensor_keys, datalogger_keys):
+        for ph5_resp in self.responses:
+            if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
+               set(datalogger_keys) == set(ph5_resp.datalogger_keys):
+                return ph5_resp.n_i
 
 
 def does_pattern_exists(patterns_list, value):
@@ -164,8 +184,18 @@ def fdsntime_to_epoch(fdsn_time):
     :returns: epoch seconds
     :type: float
     """
+    from decimal import Decimal
     pattern = "%Y-%m-%dT%H:%M:%S.%f"
-    epoch = float(time.mktime(time.strptime(fdsn_time, pattern)))
+    mseconds = fdsn_time[fdsn_time.index(".") + len("."):]
+    length = len(mseconds)
+    divisor = float(Decimal(1).shift(length))
+    epoch = float(
+        time.mktime(
+            time.strptime(
+                fdsn_time, pattern)))+(float(mseconds)/divisor)
+    if not epoch:
+        raise ValueError("could not convert")
+        return None
     return epoch
 
 
@@ -179,6 +209,14 @@ def doy_breakup(start_fepoch, length=86400):
               seconds: difference in seconds between the start and end
               epoch times :type: float
     """
+    if type(start_fepoch) is not float:
+        if type(start_fepoch) is not int:
+            raise ValueError('start_fepoch must be float or int')
+
+    if type(length) is not float:
+        if type(length) is not int:
+            raise ValueError('length must be float or int')
+
     passcal_start = epoch2passcal(float(start_fepoch))
     start_passcal_list = passcal_start.split(":")
     start_year = start_passcal_list[0]
@@ -239,4 +277,6 @@ def microsecs_to_sec(microsec):
     :type: integer
     :returns: seconds :type: integer
     """
-    return microsec / 1000000
+    if type(microsec) is not int:
+        raise ValueError("microsec must be integer")
+    return float(microsec) / 1000000

@@ -306,6 +306,7 @@ class Time (tables.IsDescription):
     slope_d = tables.Float64Col()  # Slope
     offset_d = tables.Float64Col()  # Offset at end time
     description_s = tables.StringCol(1024)
+    corrected_i = tables.Int16Col()
 
 
 class Receiver (tables.IsDescription):
