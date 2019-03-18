@@ -6,7 +6,6 @@ Also allows for creation of preview png images of traces.
 """
 
 
-import sys
 import os
 import logging
 import copy
