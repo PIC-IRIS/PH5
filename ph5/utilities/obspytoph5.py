@@ -455,6 +455,7 @@ def getListOfFiles(dirName):
 
     return allFiles
 
+
 def get_args(args):
     """
     :return: class: argparse
@@ -506,6 +507,7 @@ def get_args(args):
         action='store_true')
 
     return parser.parse_args(args)
+
 
 def main():
     args = get_args(sys.argv[1:])
