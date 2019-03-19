@@ -1,4 +1,3 @@
-=======
 """A setuptools module for PH5.
 See:
 https://packaging.python.org/en/latest/distributing.html
