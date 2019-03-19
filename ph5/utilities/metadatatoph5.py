@@ -439,7 +439,7 @@ class MetadatatoPH5(object):
 
         return True
 
-    
+
 def get_args(args):
     """
     :return: class: argparse
