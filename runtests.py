@@ -7,7 +7,6 @@ import unittest
 import argparse
 from ph5.clients.tests.test_ph5toms import TestPH5toMSeed
 from ph5.core.tests.test_ph5utils import TestPH5Utils
-
 from ph5.clients.tests.test_ph5availability import TestPH5Availability
 from ph5.core.tests.test_ph5api import TestPH5API
 from ph5.utilities.tests.test_metadatatoph5 import TestMetadatatoPH5

@@ -9,6 +9,8 @@ from ph5.utilities import initialize_ph5
 from obspy.core import inventory
 from obspy import UTCDateTime
 import os
+import sys
+from mock import patch
 
 
 class TestMetadatatoPH5(unittest.TestCase):
@@ -32,6 +34,65 @@ class TestMetadatatoPH5(unittest.TestCase):
         os.remove(default_receiver_t)
         self.metadata = metadatatoph5.MetadatatoPH5(
             self.ph5_object)
+
+    def test_get_args(self):
+        """
+        test get_args
+        """
+        with self.assertRaises(SystemExit):
+            metadatatoph5.get_args([])
+        with self.assertRaises(SystemExit):
+            metadatatoph5.get_args(['-n', 'master.ph5'])
+        with self.assertRaises(SystemExit):
+            metadatatoph5.get_args(['-f', 'test.xml'])
+        ret = metadatatoph5.get_args(['-n', 'master.ph5', '-f', 'test.xml'])
+        self.assertEqual(ret.nickname, 'master.ph5')
+        self.assertEqual(ret.infile, 'test.xml')
+        self.assertEqual(ret.ph5path, '.')
+
+    def test_main(self):
+        """
+        test main function
+        """
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    'ph5/test_data/metadata/station.xml']
+        with patch.object(sys, 'argv', testargs):
+            metadatatoph5.main()
+        self.assertTrue(os.path.isfile('master.ph5'))
+        ph5_object = experiment.ExperimentGroup(
+            nickname='master.ph5')
+        ph5_object.ph5open(True)
+        ph5_object.initgroup()
+        array_names = ph5_object.ph5_g_sorts.names()
+        self.assertEqual(
+            ['Array_t_001', 'Array_t_002', 'Array_t_003'], array_names)
+        ret, keys = ph5_object.ph5_g_sorts.read_arrays('Array_t_001')
+        key = ['id_s', 'location/X/value_d', 'location/X/units_s',
+               'location/Y/value_d', 'location/Y/units_s',
+               'location/Z/value_d', 'location/Z/units_s',
+               'location/coordinate_system_s', 'location/projection_s',
+               'location/ellipsoid_s', 'location/description_s',
+               'deploy_time/ascii_s', 'deploy_time/epoch_l',
+               'deploy_time/micro_seconds_i', 'deploy_time/type_s',
+               'pickup_time/ascii_s', 'pickup_time/epoch_l',
+               'pickup_time/micro_seconds_i', 'pickup_time/type_s',
+               'das/serial_number_s', 'das/model_s', 'das/manufacturer_s',
+               'das/notes_s', 'sensor/serial_number_s', 'sensor/model_s',
+               'sensor/manufacturer_s', 'sensor/notes_s', 'description_s',
+               'seed_band_code_s', 'sample_rate_i',
+               'sample_rate_multiplier_i',
+               'seed_instrument_code_s', 'seed_orientation_code_s',
+               'seed_location_code_s', 'seed_station_name_s',
+               'channel_number_i', 'receiver_table_n_i', 'response_table_n_i']
+        self.assertEqual(key, keys)
+        self.assertEqual(1, len(ret))
+        self.assertEqual('5553', ret[0]['das/serial_number_s'])
+        self.assertEqual('H', ret[0]['seed_instrument_code_s'])
+        self.assertEqual('H', ret[0]['seed_band_code_s'])
+        self.assertEqual('N', ret[0]['seed_orientation_code_s'])
+        ph5_object.ph5close()
+        os.remove('master.ph5')
+        os.remove('metadatatoph5.log')
 
     def test_init(self):
         """

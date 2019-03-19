@@ -1,3 +1,4 @@
+=======
 """A setuptools module for PH5.
 See:
 https://packaging.python.org/en/latest/distributing.html
@@ -202,4 +203,3 @@ setup(
                  Extension(*surt_130_py.get_extension_options(),
                            include_dirs=[numpy.get_include()])]
 )
-
