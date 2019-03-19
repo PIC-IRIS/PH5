@@ -12,6 +12,7 @@ import re
 import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
+from tables.exceptions import NoSuchNodeError
 
 PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
@@ -767,7 +768,11 @@ class PH5(experiment.ExperimentGroup):
         if not node:
             return []
         self.ph5_g_receivers.setcurrent(node)
-        tbl = self.ph5.get_node('/Experiment_g/Receivers_g/' + das_g, 'Das_t')
+        try:
+            tbl = self.ph5.get_node('/Experiment_g/Receivers_g/' + das_g,
+                                    'Das_t')
+        except NoSuchNodeError:
+            return []
         epoch_i = tbl.cols.time.epoch_l  # noqa
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
         sample_count_i = tbl.cols.sample_count_i  # noqa
@@ -935,10 +940,10 @@ class PH5(experiment.ExperimentGroup):
         return das
 
     def forget_das_t(self, das):
+        node = self.ph5_g_receivers.getdas_g(das)
+        node.umount()
         if das in self.Das_t:
             del self.Das_t[das]
-            node = self.ph5_g_receivers.getdas_g(das)
-            node.umount()
 
     def read_t(self, table, n=None):
         '''   Read table and return kef
@@ -1321,14 +1326,14 @@ class PH5(experiment.ExperimentGroup):
         Required: das serial and component
         Optional: Start time, End time
         :param das: das serial number
+        :param component: component channel number
         :param start: start time epoch
         :param end:  end time epoch
         :param sample_rate: sample rate
-        :param component: component channel number
         :return: earliest epoch and latest epoch
         '''
         das_t_t = None
-        if not component:
+        if component is None:
             raise ValueError("Component required for get_extent")
         if start or end:
             if not (start and end):
@@ -1373,17 +1378,26 @@ class PH5(experiment.ExperimentGroup):
             latest_epoch = earliest_epoch
 
         self.forget_das_t(das)
+
         return earliest_epoch, latest_epoch
 
-    def get_availability(self, das,
-                         sample_rate, component,
+    def get_availability(self, das, sample_rate, component,
                          start=None, end=None):
-
+        '''
+        Required: das, sample_rate and component
+        Optional: Start time, End time
+        :param das: das serial number
+        :param sample_rate: sample rate
+        :param component: component channel number
+        :param start: start time epoch
+        :param end:  end time epoch
+        :return: list of tuples (sample_rate, start, end)
+        '''
         das_t_t = None
         gaps = 0
-        if not component:
+        if component is None:
             raise ValueError("Component required for get_availability")
-        if not sample_rate:
+        if sample_rate is None:
             raise ValueError("Sample rate required for get_availability")
 
         self.read_das_t(das, start, end, reread=True)
