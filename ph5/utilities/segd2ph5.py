@@ -16,18 +16,16 @@ import json
 import re
 from math import modf
 from ph5.core import experiment, columns, segdreader
-from pyproj import Proj, transform
 from ph5 import LOGGING_FORMAT
+from pyproj import Proj, transform
 
-PROG_VERSION = "2019.063"
+PROG_VERSION = "2019.78"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
 os.environ['TZ'] = 'GMT'
 time.tzset()
-
-APPEND = 1  # Number of SEG-D events to append to make 1 ph5 event.
 
 #   RE for mini files
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
@@ -49,8 +47,6 @@ OTHER = 0
 #
 #   To hold table rows and keys
 #
-
-
 class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
@@ -106,14 +102,14 @@ class Trace(object):
         self.headers = headers
 
 
-class SEGD2PH5():
+class SEGD2PH5:
     def __init__(self):
         self.DAS_INFO = {}
         self.MAP_INFO = {}
         #   Current raw file processing
         self.F = None
-        self.MINIPH5 = None
         self.ARRAY_T = {}
+        self.APPEND = 1  # Number of SEG-D events to append to make 1 ph5 event
 
     def read_infile(self, infile):
         '''   Read list of input SEG-D files from a file   '''
@@ -143,6 +139,8 @@ class SEGD2PH5():
 
     def get_args(self):
 
+        self.TSP = False
+
         from optparse import OptionParser
         oparser = OptionParser()
 
@@ -158,14 +156,15 @@ class SEGD2PH5():
             help="File containing list of Fairfield SEG-D v1.6 file names.")
 
         oparser.add_option(
-            "-n", "--nickname", dest="outfile", metavar="output_file_prefix",
-            help="The ph5 file prefix (experiment nick name).")
+            "-n", "--nickname", dest="outfile",
+            help="The ph5 file prefix (experiment nick name).",
+            metavar="output_file_prefix")
 
         oparser.add_option(
-            "-U", "--UTM", dest="utm_zone", type='str', default=0,
-            metavar="utm_zone",
+            "-U", "--UTM", dest="utm_zone",
             help="Locations in SEG-D file are UTM, --UTM=utmzone.\
-             Zone number and N or S designation eg 13N")
+            Zone number and N or S designation eg 13N",
+            type='str', default=0, metavar="utm_zone")
 
         oparser.add_option(
             "-T", "--TSPF", dest="texas_spc",
@@ -185,16 +184,17 @@ class SEGD2PH5():
         oparser.add_option(
             "-c", "--combine", dest="combine",
             help="Combine this number if SEG-D traces to one PH5 trace.",
-            metavar="combine", type='int', default=APPEND)
+            metavar="combine", type='int', default=self.APPEND)
 
         oparser.add_option(
-            "-E", "--allevents", action="store_true",
-            dest="all_events", default=False, metavar="all_events")
+            "-E", "--allevents", action="store_true", dest="all_events",
+            default=False, metavar="all_events")
 
         oparser.add_option(
             "--manufacturers_code", dest="manufacturers_code",
             help="Manufacturers code. Defaults to 20 for Fairfield.\
-            Most likely will not work for SEG-D written by other data loggers",
+            Most likely will not work for SEG-D written by other data\
+            loggers.",
             type='int', default=FAIRFIELD)
 
         options, args = oparser.parse_args()
@@ -206,7 +206,7 @@ class SEGD2PH5():
         self.NUM_MINI = options.num_mini
         self.FIRST_MINI = options.first_mini
         self.UTM = options.utm_zone
-        self.TSPF = options.texas_spc
+        self.TSP = options.texas_spc
         self.APPEND = options.combine
         self.MANUFACTURERS_CODE = options.manufacturers_code
 
@@ -217,28 +217,28 @@ class SEGD2PH5():
             self.FILES.append(options.rawfile)
 
         if len(self.FILES) == 0:
-            raise Exception("Error: No input file given.\n")
+            sys.stderr.write("Error: No input file given.\n")
+            sys.exit()
 
         #   Set output file
         if options.outfile is not None:
             self.PH5 = options.outfile
-            self.PATH = os.path.dirname(self.PH5) or '.'
-            # Debugging
-            os.chdir(self.PATH)
-            # Write log to file
-            ch = logging.FileHandler(os.path.join(".", "segdtoph5.log"))
-            ch.setLevel(logging.INFO)
-            # Add formatter
-            formatter = logging.Formatter(LOGGING_FORMAT)
-            ch.setFormatter(formatter)
-            LOGGER.addHandler(ch)
         else:
-            raise Exception("Error: No outfile (PH5) given.\n")
+            sys.stderr.write("Error: No outfile (PH5) given.\n")
+            sys.exit()
+
+        # Write log to file
+        ch = logging.FileHandler(os.path.join('.', "segd2ph5.log"))
+        ch.setLevel(logging.INFO)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
 
         #   Need to process in order: R309_674.1.0.rg16, 309 == line,
         #   674 = receiver point, 1 = first file
         #   Sorted where the file list is read...
-        # FILES.sort ()
+        # self.FILES.sort ()
 
     def initialize_ph5(self):
         self.EX = experiment.ExperimentGroup(nickname=self.PH5)
@@ -267,7 +267,7 @@ class SEGD2PH5():
 
         ph5file = self.EXREC.filename
         ph5path = '/Experiment_g/Receivers_g/' + \
-            self.EXREC.ph5_g_receivers.current_g_das._v_name
+                  self.EXREC.ph5_g_receivers.current_g_das._v_name
         ph5map = '/Experiment_g/Maps_g/' + \
             self.EXREC.ph5_g_maps.current_g_das._v_name
         das = ph5path[32:]
@@ -307,7 +307,6 @@ class SEGD2PH5():
             except Exception as e:
                 pass
                 # print "DAS nuke ", e.message
-
             #   Re-create node
             try:
                 self.EX.ph5.create_external_link(
@@ -315,7 +314,10 @@ class SEGD2PH5():
                 n += 1
             except Exception as e:
                 # pass
-                LOGGER.error("{0}\n".format(e.message))
+                sys.stderr.write("{0}\n".format(e.message))
+
+            # sys.exit ()
+        # sys.stderr.write ("done, {0} das nodes recreated.\n".format (n))
 
         LOGGER.info("done, {0} das nodes recreated.\n".format(n))
 
@@ -349,8 +351,10 @@ class SEGD2PH5():
                 n += 1
             except Exception as e:
                 # pass
-                LOGGER.error("{0}\n".format(e.message))
+                sys.stderr.write("{0}\n".format(e.message))
 
+            # sys.exit ()
+        # sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
         LOGGER.info("done, {0} map nodes recreated.\n".format(n))
 
     def get_current_data_only(self, size_of_data, das=None):
@@ -399,8 +403,8 @@ class SEGD2PH5():
         if self.NUM_MINI is not None:
             fm = self.FIRST_MINI - 1
             if (int(newestfile[8:13]) - fm) < self.NUM_MINI:
-                newestfile = \
-                    "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
+                newestfile = "miniPH5_{0:05d}".format(
+                    int(newestfile[8:13]) + 1)
             else:
                 small = sstripp(smallest())
                 return self.openPH5(small)
@@ -430,6 +434,413 @@ class SEGD2PH5():
 
         return log_array, name
 
+    def get_true_channel(self, rh, th):
+        #   Find channel by mapping to streamer_cable_number
+
+        if rh.channel_set_to_streamer_cable_map[th.trace_header.channel_set]\
+           == 0:
+            true_channel = th.trace_header.channel_set
+        else:
+            true_channel = rh.channel_set_to_streamer_cable_map[
+                th.trace_header.channel_set]
+        return true_channel
+
+    def process_das(self, rh, th, tr):
+        '''
+        '''
+        p_das_t = {}
+        '''  Das_t
+                        receiver_table_n_i
+                        response_table_n_i
+                        time_table_n_i
+                        time/
+                            type_s
+                            epoch_l
+                            ascii_s
+                            micro_seconds_i
+                        event_number_i
+                        channel_number_i
+                        sample_rate_i
+                        sample_rate_multiplier_i
+                        sample_count_i
+                        stream_number_i
+                        raw_file_name_s
+                        array_name_data_a
+                        array_name_SOH_a
+                        array_name_event_a
+                        array_name_log_a
+                '''
+
+        #   Check to see if group exists for this das, if not build it
+        das_g, das_t, receiver_t, time_t = self.EXREC.ph5_g_receivers.newdas(
+            str(self.Das))
+        #   Build maps group (XXX)
+        self.EXREC.ph5_g_maps.newdas('Das_g_', str(self.Das))
+        if rh.general_header_block_1.chan_sets_per_scan == 1:
+            #   Single channel
+            p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
+        elif rh.general_header_block_1.chan_sets_per_scan >= 3:
+            # 1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5), 3 (Z Node) -> 0
+            # (Z PH5)
+            M = {1: 1, 2: 2, 3: 0}
+            p_das_t['receiver_table_n_i'] = M[self.get_true_channel(rh, th)]
+        else:
+            p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
+            LOGGER.warning(
+                "Header channel set: {0}. Check Receiver_t entries!".format(
+                    th.trace_header.channel_set))
+
+        p_das_t['response_table_n_i'] = None
+        p_das_t['time_table_n_i'] = 0
+        p_das_t['time/type_s'] = 'BOTH'
+        # trace_epoch = th.trace_header_N[2].gps_tim1 * 4294967296 +\
+        #  th.trace_header_N[2].gps_tim2
+        try:
+            trace_epoch = th.trace_header_N[2].shot_epoch
+        except Exception as e:
+            LOGGER.warning("Failed to read shot epoch: {0}.".format(e.message))
+            trace_epoch = 0.
+
+        f, i = modf(trace_epoch / 1000000.)
+        p_das_t['time/epoch_l'] = int(i)
+        p_das_t['time/ascii_s'] = time.ctime(p_das_t['time/epoch_l'])
+        p_das_t['time/micro_seconds_i'] = int(f * 1000000.)
+        p_das_t['event_number_i'] = th.trace_header_N[1].shot_point
+        p_das_t['channel_number_i'] = self.get_true_channel(rh, th)
+        p_das_t['sample_rate_i'] = self.SD.sample_rate
+        p_das_t['sample_rate_multiplier_i'] = 1
+        p_das_t['sample_count_i'] = len(tr)
+        p_das_t['stream_number_i'] = 1
+        p_das_t['raw_file_name_s'] = os.path.basename(self.SD.name())
+        p_das_t['array_name_data_a'] = self.EXREC.ph5_g_receivers.nextarray(
+            'Data_a_')
+        # p_das_t['array_name_SOH_a'] = None
+        # p_das_t['array_name_event_a'] = None
+        # p_das_t['array_name_log_a'] = None
+        p_response_t = {}
+        '''
+                    n_i
+                    gain/
+                        units_s
+                        value_i
+                    bit_weight/
+                        units_s
+                        value_d
+                    response_file_a
+                '''
+        try:
+            self.LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
+            n_i = self.RESP.match(
+                self.LSB, th.trace_header_N[3].preamp_gain_db)
+        except Exception as e:
+            n_i = 0
+        p_response_t['gain/units_s'] = 'dB'
+        try:
+            p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read trace pre amp gain: {0}.".format(e.message))
+            p_response_t['gain/value_i'] = 0.
+            p_response_t['gain/units_s'] = 'Unknown'
+
+        p_response_t['bit_weight/units_s'] = 'mV/count'
+        p_response_t['bit_weight/value_d'] = self.LSB
+        if n_i < 0:
+            n_i = self.RESP.next_i()
+            p_response_t['n_i'] = n_i
+            self.EX.ph5_g_responses.populateResponse_t(p_response_t)
+            self.RESP.update()
+        p_das_t['response_table_n_i'] = n_i
+        self.EXREC.ph5_g_receivers.populateDas_t(p_das_t)
+        des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
+            " Channel: " + str(p_das_t['channel_number_i'])
+        #   Write trace data here
+        try:
+            #   Convert to counts
+            # print tr.max (), tr.min ()
+            tr_counts = tr / self.LSB
+            self.EXREC.ph5_g_receivers.newarray(
+                p_das_t['array_name_data_a'], tr_counts, dtype='int32',
+                description=des)
+        except Exception as e:
+            #   Failed, leave as float
+            # for x in tr : print x/self.LSB
+            # print e.message
+            sys.stderr.write(
+                "Warning: Could not convert trace to counts. max: {1},\
+                         min {2}\n{0}".format(
+                                          e.message, tr.max(), tr.min()))
+            p_response_t['bit_weight/value_d'] = 1.
+            self.EXREC.ph5_g_receivers.newarray(
+                p_das_t['array_name_data_a'], tr, dtype='float32',
+                description=des)
+        #
+        self.update_index_t_info(p_das_t['time/epoch_l'] + (
+            float(p_das_t['time/micro_seconds_i']) / 1000000.),
+                                 p_das_t['sample_count_i'],
+                                 p_das_t['sample_rate_i'] / p_das_t[
+                                     'sample_rate_multiplier_i'])
+
+    def process_array(self, rh, th):
+        p_array_t = {}
+
+        def seen_sta():
+            if line not in self.ARRAY_T:
+                return False
+            elif self.Das not in self.ARRAY_T[line]:
+                return False
+            elif chan_set in self.ARRAY_T[line][self.Das]:
+                if not self.ARRAY_T[line][self.Das][chan_set]:
+                    return False
+                else:
+                    return True
+
+        '''
+            deploy_time/
+                type_s
+                epoch_l
+                ascii_s
+                micro_seconds_i
+            pickup_time/
+                type_s
+                epoch_l
+                ascii_s
+                micro_seconds_i
+            id_s
+            das/
+                manufacturer_s
+                model_s
+                serial_number_s
+                notes_s
+            sensor/
+                manufacturer_s
+                model_s
+                serial_number_s
+                notes_s
+            location/
+                coordinate_system_s
+                projection_s
+                ellipsoid_s
+                X/
+                    units_s
+                    value_d
+                Y/
+                    units_s
+                    value_d
+                Z/
+                    units_s
+                    value_d
+                description_s
+            channel_number_i
+            description_s
+            sample_rate_i
+            sample_rate_multiplier_i
+        '''
+        '''
+        Band Code:
+           1000 <= G < 5000
+           250  <= D < 1000
+           80   <= E < 250
+           10   <= S < 80
+        '''
+        if self.SD.sample_rate >= 1000:
+            band_code = 'G'
+        elif self.SD.sample_rate >= 250 and self.SD.sample_rate < 1000:
+            band_code = 'D'
+        elif self.SD.sample_rate >= 80 and self.SD.sample_rate < 250:
+            band_code = 'E'
+        elif self.SD.sample_rate >= 10 and self.SD.sample_rate < 80:
+            band_code = 'S'
+        else:
+            band_code = 'X'
+        '''
+        Instrument Code:
+           Changed from H to P at request from Akram
+        '''
+        instrument_code = 'P'
+        '''
+        Orientation Code:
+           chan 1 -> N Changed to '1'
+           chan 2 -> E Changed to '2'
+           chan 3 -> Z
+        or
+           chan 1 -> Z
+        '''
+        if self.SD.chan_sets_per_scan >= 3:
+            # true_chan = get_true_channel ()
+            OM = {1: '1', 2: '2', 3: 'Z'}
+        elif self.SD.chan_sets_per_scan == 1:
+            OM = {1: 'Z'}
+        else:
+            OM = None
+        if OM is None:
+            orientation_code = self.get_true_channel(rh, th)
+        else:
+            orientation_code = OM[self.get_true_channel(rh, th)]
+        # for cs in range (self.SD.chan_sets_per_scan) :
+        p_array_t['seed_band_code_s'] = band_code
+        p_array_t['seed_instrument_code_s'] = instrument_code
+        p_array_t['seed_orientation_code_s'] = orientation_code
+        p_array_t['seed_station_name_s'] = self.Das.split('X')[1]
+        p_array_t['sample_rate_i'] = self.SD.sample_rate
+        p_array_t['sample_rate_multiplier_i'] = 1
+        p_array_t['deploy_time/type_s'] = 'BOTH'
+        try:
+            f, i = modf(rh.extended_header_1.epoch_deploy / 1000000.)
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read extended header 1 deploy epoch: {0}.".format(
+                    e.message))
+            f = i = 0.
+        p_array_t['deploy_time/epoch_l'] = int(i)
+        p_array_t['deploy_time/ascii_s'] = time.ctime(int(i))
+        p_array_t['deploy_time/micro_seconds_i'] = int(f * 1000000.)
+        p_array_t['pickup_time/type_s'] = 'BOTH'
+        try:
+            f, i = modf(rh.extended_header_1.epoch_pickup / 1000000.)
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read extended header 1 pickup epoch: {0}.".format(
+                    e.message))
+            f = i = 0.
+        p_array_t['pickup_time/epoch_l'] = int(i)
+        p_array_t['pickup_time/ascii_s'] = time.ctime(int(i))
+        p_array_t['pickup_time/micro_seconds_i'] = int(f * 1000000.)
+        p_array_t['id_s'] = self.Das.split('X')[1]
+        p_array_t['das/manufacturer_s'] = 'FairfieldNodal'
+        DM = {1: 'ZLAND 1C', 3: "ZLAND 3C"}
+        try:
+            # p_array_t['das/model_s'] = DM[self.SD.chan_sets_per_scan]
+            if self.SD.chan_sets_per_scan >= 3:
+                p_array_t['das/model_s'] = DM[3]
+            else:
+                p_array_t['das/model_s'] = DM[1]
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read channel sets per scan: {0}.".format(e.message))
+            p_array_t['das/model_s'] = 'zland-[13]C'
+        p_array_t['das/serial_number_s'] = self.Das
+        p_array_t[
+            'das/notes_s'] = "manufacturer and model not read from data file."
+        p_array_t['sensor/manufacturer_s'] = 'Geo Space'
+        p_array_t['sensor/model_s'] = 'GS-30CT'
+        p_array_t[
+            'sensor/notes_s'] = "manufacturer and model not read from file."
+        if self.TSP:
+            p_array_t[
+                'location/description_s'] = "Converted from Texas State Plane\
+                 FIPS zone 4202"
+        elif self.UTM:
+            p_array_t[
+                'location/description_s'] = "Converted from UTM Zone {0}"\
+                .format(
+                self.UTM)
+        else:
+            p_array_t['location/description_s'] = "Read from SEG-D as is."
+
+        p_array_t['location/coordinate_system_s'] = 'geographic'
+        p_array_t['location/projection_s'] = 'WGS84'
+        p_array_t['location/X/units_s'] = 'degrees'
+        p_array_t['location/X/value_d'] = self.LON
+        p_array_t['location/Y/units_s'] = 'degrees'
+        p_array_t['location/Y/value_d'] = self.LAT
+        p_array_t['location/Z/units_s'] = 'unknown'
+        try:
+            p_array_t['location/Z/value_d'] =\
+                th.trace_header_N[4].receiver_point_depth_final / 10.
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read receiver point depth: {0}.".format(e.message))
+            p_array_t['location/Z/value_d'] = 0.
+
+        p_array_t['channel_number_i'] = self.get_true_channel(rh, th)
+        # p_array_t['description_s'] = str (th.trace_header_N[4].line_number)
+        try:
+            p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
+                self.Das, rh.extended_header_1.id_number)
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read extended header 1 ID number: {0}.".format(
+                    e.message))
+
+        try:
+            line = th.trace_header_N[4].line_number
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to read line number: {0}.".format(e.message))
+            line = 0
+
+        chan_set = self.get_true_channel(rh, th)
+        if line not in self.ARRAY_T:
+            self.ARRAY_T[line] = {}
+        if self.Das not in self.ARRAY_T[line]:
+            self.ARRAY_T[line][self.Das] = {}
+        if chan_set not in self.ARRAY_T[line][self.Das]:
+            self.ARRAY_T[line][self.Das][chan_set] = []
+
+        if not seen_sta():
+            self.ARRAY_T[line][self.Das][chan_set].append(p_array_t)
+            # if rh.general_header_block_1.chan_sets_per_scan ==\
+            #  len (self.ARRAY_T[line].keys ()) :
+            # DN = True
+
+    def process_reel_headers(self, rh):
+        '''   Save receiver record header information in\
+              Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+
+        def process(hdr, header_type):
+            ll = [{'FileType': 'SEG-D', 'HeaderType': header_type}, hdr]
+            log_array.append(json.dumps(
+                ll, sort_keys=True, indent=4).split('\n'))
+
+        log_array, log_name = self.getLOG()
+        #   General header 1
+        process(rh.general_header_block_1, 'General 1')
+        #   General header 1
+        process(rh.general_header_block_2, 'General 2')
+        #   General header N
+        for i in range(len(rh.general_header_block_N)):
+            ht = "General {0}".format(i + 3)
+            process(rh.general_header_block_N[i], ht)
+        #   Channel set descriptors
+        for i in range(len(rh.channel_set_descriptor)):
+            ht = "Channel Set {0}".format(i + 1)
+            process(rh.channel_set_descriptor, ht)
+        #   Extended header 1
+        process(rh.extended_header_1, "Extended 1")
+        #   Extended header 2
+        process(rh.extended_header_2, "Extended 2")
+        #   Extended header 3
+        process(rh.extended_header_3, "Extended 3")
+        #   Extended header 4 - n
+        for i in range(len(rh.extended_header_4)):
+            ht = "Extended 4 ({0})".format(i + 1)
+            process(rh.extended_header_4[i], ht)
+        #   External header
+        process(rh.external_header, "External Header")
+        #   External header shot
+        for i in range(len(rh.external_header_shot)):
+            ht = "External Shot {0}".format(i + 1)
+            process(rh.external_header_shot[i], ht)
+        self.RH = True
+
+    def process_trace_header(self, th):
+        '''   Save trace header information in\
+              Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
+
+        def process(hdr, header_type):
+            ll = [{'FileType': 'SEG-D', 'HeaderType': 'trace',
+                  'HeaderSubType': header_type}, hdr]
+            self.TRACE_JSON.append(json.dumps(
+                ll, sort_keys=True, indent=4).split('\n'))
+
+        # log_array, log_name = self.getLOG ()
+
+        process(th.trace_header, "Trace Header")
+        for i in range(len(th.trace_header_N)):
+            ht = "Header N-{0}".format(i + 1)
+            process(th.trace_header_N[i], ht)
+
     def process_traces(self, rh, th, tr):
         '''
             Inputs:
@@ -438,429 +849,17 @@ class SEGD2PH5():
                tr -> trace data
         '''
 
-        def get_true_channel():
-            #   Find channel by mapping to streamer_cable_number
-
-            if rh.channel_set_to_streamer_cable_map[
-                    th.trace_header.channel_set] == 0:
-                true_channel = th.trace_header.channel_set
-            else:
-                true_channel = rh.channel_set_to_streamer_cable_map[
-                    th.trace_header.channel_set]
-            return true_channel
-
-        def process_das(self):
-            '''
-            '''
-            p_das_t = {}
-            '''  Das_t
-                    receiver_table_n_i
-                    response_table_n_i
-                    time_table_n_i
-                    time/
-                        type_s
-                        epoch_l
-                        ascii_s
-                        micro_seconds_i
-                    event_number_i
-                    channel_number_i
-                    sample_rate_i
-                    sample_rate_multiplier_i
-                    sample_count_i
-                    stream_number_i
-                    raw_file_name_s
-                    array_name_data_a
-                    array_name_SOH_a
-                    array_name_event_a
-                    array_name_log_a
-            '''
-
-            #   Check to see if group exists for this das, if not build it
-            das_g, das_t, receiver_t, time_t = \
-                self.EXREC.ph5_g_receivers.newdas(str(self.Das))
-            #   Build maps group (XXX)
-            self.EXREC.ph5_g_maps.newdas('Das_g_', str(self.Das))
-            if rh.general_header_block_1.chan_sets_per_scan == 1:
-                #   Single channel
-                p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
-            elif rh.general_header_block_1.chan_sets_per_scan >= 3:
-                # 1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5),
-                # 3 (Z Node) -> 0 (Z PH5)
-                M = {1: 1, 2: 2, 3: 0}
-                p_das_t['receiver_table_n_i'] = M[get_true_channel()]
-            else:
-                p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
-                LOGGER.warning(
-                    "Header channel set: {0}. Check Receiver_t entries!".
-                    format(th.trace_header.channel_set))
-
-            p_das_t['response_table_n_i'] = None
-            p_das_t['time_table_n_i'] = 0
-            p_das_t['time/type_s'] = 'BOTH'
-            # trace_epoch = th.trace_header_N[2].gps_tim1 * 4294967296 +\
-            #  th.trace_header_N[2].gps_tim2
-            try:
-                trace_epoch = th.trace_header_N[2].shot_epoch
-            except Exception as e:
-                LOGGER.warning("Failed to read shot epoch: {0}.".
-                               format(e.message))
-                trace_epoch = 0.
-
-            f, i = modf(trace_epoch / 1000000.)
-            p_das_t['time/epoch_l'] = int(i)
-            p_das_t['time/ascii_s'] = time.ctime(p_das_t['time/epoch_l'])
-            p_das_t['time/micro_seconds_i'] = int(f * 1000000.)
-            p_das_t['event_number_i'] = th.trace_header_N[1].shot_point
-            p_das_t['channel_number_i'] = get_true_channel()
-            p_das_t['sample_rate_i'] = self.SD.sample_rate
-            p_das_t['sample_rate_multiplier_i'] = 1
-            p_das_t['sample_count_i'] = len(tr)
-            p_das_t['stream_number_i'] = 1
-            p_das_t['raw_file_name_s'] = os.path.basename(self.SD.name())
-            p_das_t['array_name_data_a'] = \
-                self.EXREC.ph5_g_receivers.nextarray('Data_a_')
-            # p_das_t['array_name_SOH_a'] = None
-            # p_das_t['array_name_event_a'] = None
-            # p_das_t['array_name_log_a'] = None
-            p_response_t = {}
-            '''
-                n_i
-                gain/
-                    units_s
-                    value_i
-                bit_weight/
-                    units_s
-                    value_d
-                response_file_a
-            '''
-            try:
-                self.LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
-                n_i = self.RESP.match(
-                    self.LSB, th.trace_header_N[3].preamp_gain_db)
-            except Exception as e:
-                n_i = 0
-            p_response_t['gain/units_s'] = 'dB'
-            try:
-                p_response_t['gain/value_i'] = \
-                    th.trace_header_N[3].preamp_gain_db
-            except Exception as e:
-                LOGGER.warning(
-                    "Failed to read trace pre amp gain: {0}.".
-                    format(e.message))
-                p_response_t['gain/value_i'] = 0.
-                p_response_t['gain/units_s'] = 'Unknown'
-
-            p_response_t['bit_weight/units_s'] = 'mV/count'
-            p_response_t['bit_weight/value_d'] = self.LSB
-            if n_i < 0:
-                n_i = self.RESP.next_i()
-                p_response_t['n_i'] = n_i
-                self.EX.ph5_g_responses.populateResponse_t(p_response_t)
-                self.RESP.update()
-            p_das_t['response_table_n_i'] = n_i
-            self.EXREC.ph5_g_receivers.populateDas_t(p_das_t)
-            des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
-                  " Channel: " + str(p_das_t['channel_number_i'])
-            #   Write trace data here
-            try:
-                #   Convert to counts
-                # print tr.max (), tr.min ()
-                tr_counts = tr / LSB
-                self.EXREC.ph5_g_receivers.newarray(
-                    p_das_t['array_name_data_a'], tr_counts, dtype='int32',
-                    description=des)
-            except Exception as e:
-                #   Failed, leave as float
-                # for x in tr : print x/LSB
-                # print e.message
-                LOGGER.error(
-                    "Warning: Could not convert trace to counts. max: {1},\
-                     min {2}\n{0}".format(e.message, tr.max(), tr.min()))
-                p_response_t['bit_weight/value_d'] = 1.
-                self.EXREC.ph5_g_receivers.newarray(
-                    p_das_t['array_name_data_a'], tr, dtype='float32',
-                    description=des)
-
-            self.update_index_t_info(p_das_t['time/epoch_l'] + (
-                        float(p_das_t['time/micro_seconds_i']) / 1000000.),
-                                p_das_t['sample_count_i'],
-                                p_das_t['sample_rate_i'] / p_das_t[
-                                    'sample_rate_multiplier_i'])
-
-        def process_array(self):
-            p_array_t = {}
-
-            def seen_sta():
-                if line not in self.ARRAY_T:
-                    return False
-                elif self.Das not in self.ARRAY_T[line]:
-                    return False
-                elif chan_set in self.ARRAY_T[line][self.Das]:
-                    # chans = ARRAY_T[line][Das].keys()  # All channels seen
-                    if not self.ARRAY_T[line][self.Das][chan_set]:
-                        return False
-                    else:
-                        return True
-
-            '''
-                deploy_time/
-                    type_s
-                    epoch_l
-                    ascii_s
-                    micro_seconds_i
-                pickup_time/
-                    type_s
-                    epoch_l
-                    ascii_s
-                    micro_seconds_i
-                id_s
-                das/
-                    manufacturer_s
-                    model_s
-                    serial_number_s
-                    notes_s
-                sensor/
-                    manufacturer_s
-                    model_s
-                    serial_number_s
-                    notes_s
-                location/
-                    coordinate_system_s
-                    projection_s
-                    ellipsoid_s
-                    X/
-                        units_s
-                        value_d
-                    Y/
-                        units_s
-                        value_d
-                    Z/
-                        units_s
-                        value_d
-                    description_s
-                channel_number_i
-                description_s
-                sample_rate_i
-                sample_rate_multiplier_i
-            '''
-            '''
-            Band Code:
-               1000 <= G < 5000
-               250  <= D < 1000
-               80   <= E < 250
-               10   <= S < 80
-            '''
-            if self.SD.sample_rate >= 1000:
-                band_code = 'G'
-            elif self.SD.sample_rate >= 250 and self.SD.sample_rate < 1000:
-                band_code = 'D'
-            elif self.SD.sample_rate >= 80 and self.SD.sample_rate < 250:
-                band_code = 'E'
-            elif self.SD.sample_rate >= 10 and self.SD.sample_rate < 80:
-                band_code = 'S'
-            else:
-                band_code = 'X'
-            '''
-            Instrument Code:
-               Changed from H to P at request from Akram
-            '''
-            instrument_code = 'P'
-            '''
-            Orientation Code:
-               chan 1 -> N Changed to '1'
-               chan 2 -> E Changed to '2'
-               chan 3 -> Z
-            or
-               chan 1 -> Z
-            '''
-            if self.SD.chan_sets_per_scan >= 3:
-                # true_chan = get_true_channel ()
-                OM = {1: '1', 2: '2', 3: 'Z'}
-            elif self.SD.chan_sets_per_scan == 1:
-                OM = {1: 'Z'}
-            else:
-                OM = None
-            if OM is None:
-                orientation_code = get_true_channel()
-            else:
-                orientation_code = OM[get_true_channel()]
-            # for cs in range (SD.chan_sets_per_scan) :
-            p_array_t['seed_band_code_s'] = band_code
-            p_array_t['seed_instrument_code_s'] = instrument_code
-            p_array_t['seed_orientation_code_s'] = orientation_code
-            p_array_t['seed_station_name_s'] = self.Das.split('X')[1]
-            p_array_t['sample_rate_i'] = self.SD.sample_rate
-            p_array_t['sample_rate_multiplier_i'] = 1
-            p_array_t['deploy_time/type_s'] = 'BOTH'
-            try:
-                f, i = modf(rh.extended_header_1.epoch_deploy / 1000000.)
-            except Exception as e:
-                LOGGER.warning(
-                    "Failed to read extended header 1 deploy epoch: {0}.".
-                    format(e.message))
-                f = i = 0.
-            p_array_t['deploy_time/epoch_l'] = int(i)
-            p_array_t['deploy_time/ascii_s'] = time.ctime(int(i))
-            p_array_t['deploy_time/micro_seconds_i'] = int(f * 1000000.)
-            p_array_t['pickup_time/type_s'] = 'BOTH'
-            try:
-                f, i = modf(rh.extended_header_1.epoch_pickup / 1000000.)
-            except Exception as e:
-                LOGGER.warning(
-                    "Failed to read extended header 1 pickup epoch: {0}.".
-                    format(e.message))
-                f = i = 0.
-            p_array_t['pickup_time/epoch_l'] = int(i)
-            p_array_t['pickup_time/ascii_s'] = time.ctime(int(i))
-            p_array_t['pickup_time/micro_seconds_i'] = int(f * 1000000.)
-            p_array_t['id_s'] = self.Das.split('X')[1]
-            p_array_t['das/manufacturer_s'] = 'FairfieldNodal'
-            DM = {1: 'ZLAND 1C', 3: "ZLAND 3C"}
-            try:
-                # p_array_t['das/model_s'] = DM[SD.chan_sets_per_scan]
-                if self.SD.chan_sets_per_scan >= 3:
-                    p_array_t['das/model_s'] = DM[3]
-                else:
-                    p_array_t['das/model_s'] = DM[1]
-            except Exception as e:
-                LOGGER.warning(
-                    "Failed to read channel sets per scan: {0}.".
-                    format(e.message))
-                p_array_t['das/model_s'] = 'zland-[13]C'
-            p_array_t['das/serial_number_s'] = self.Das
-            p_array_t[
-                'das/notes_s'] = \
-                "manufacturer and model not read from data file."
-            p_array_t['sensor/manufacturer_s'] = 'Geo Space'
-            p_array_t['sensor/model_s'] = 'GS-30CT'
-            p_array_t[
-                'sensor/notes_s'] = \
-                "manufacturer and model not read from file."
-            if self.TSPF:
-                p_array_t['location/description_s'] = \
-                    "Converted from Texas State Plane FIPS zone 4202"
-            elif self.UTM:
-                p_array_t['location/description_s'] = \
-                    "Converted from UTM Zone {0}".format(self.UTM)
-            else:
-                p_array_t['location/description_s'] = "Read from SEG-D as is."
-
-            p_array_t['location/coordinate_system_s'] = 'geographic'
-            p_array_t['location/projection_s'] = 'WGS84'
-            p_array_t['location/X/units_s'] = 'degrees'
-            p_array_t['location/X/value_d'] = self.LON
-            p_array_t['location/Y/units_s'] = 'degrees'
-            p_array_t['location/Y/value_d'] = self.LAT
-            p_array_t['location/Z/units_s'] = 'unknown'
-            try:
-                p_array_t['location/Z/value_d'] =\
-                    th.trace_header_N[4].receiver_point_depth_final / 10.
-            except Exception as e:
-                LOGGER.warning(
-                    "Failed to read receiver point depth: {0}.".
-                    format(e.message))
-                p_array_t['location/Z/value_d'] = 0.
-
-            p_array_t['channel_number_i'] = get_true_channel()
-
-            try:
-                p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
-                    self.Das, rh.extended_header_1.id_number)
-            except Exception as e:
-                LOGGER.warning(
-                    "Failed to read extended header 1 ID number: {0}.".format(
-                        e.message))
-
-            try:
-                line = th.trace_header_N[4].line_number
-            except Exception as e:
-                LOGGER.warning("Failed to read line number: {0}.".format(
-                    e.message))
-                line = 0
-
-            chan_set = get_true_channel()
-            if line not in self.ARRAY_T:
-                self.ARRAY_T[line] = {}
-            if self.Das not in self.ARRAY_T[line]:
-                self.ARRAY_T[line][self.Das] = {}
-            if chan_set not in self.ARRAY_T[line][self.Das]:
-                self.ARRAY_T[line][self.Das][chan_set] = []
-
-            if not seen_sta():
-                self.ARRAY_T[line][self.Das][chan_set].append(p_array_t)
-                # if rh.general_header_block_1.chan_sets_per_scan ==\
-                #  len (ARRAY_T[line].keys ()) :
-                # DN = True
-
-        def process_reel_headers(self):
-            '''   Save receiver record header information in\
-                  Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
-
-            def process(hdr, header_type):
-                ll = [{'FileType': 'SEG-D', 'HeaderType': header_type}, hdr]
-                log_array.append(json.dumps(
-                    ll, sort_keys=True, indent=4).split('\n'))
-
-            log_array, log_name = self.getLOG()
-            #   General header 1
-            process(rh.general_header_block_1, 'General 1')
-            #   General header 1
-            process(rh.general_header_block_2, 'General 2')
-            #   General header N
-            for i in range(len(rh.general_header_block_N)):
-                ht = "General {0}".format(i + 3)
-                process(rh.general_header_block_N[i], ht)
-            #   Channel set descriptors
-            for i in range(len(rh.channel_set_descriptor)):
-                ht = "Channel Set {0}".format(i + 1)
-                process(rh.channel_set_descriptor, ht)
-            #   Extended header 1
-            process(rh.extended_header_1, "Extended 1")
-            #   Extended header 2
-            process(rh.extended_header_2, "Extended 2")
-            #   Extended header 3
-            process(rh.extended_header_3, "Extended 3")
-            #   Extended header 4 - n
-            for i in range(len(rh.extended_header_4)):
-                ht = "Extended 4 ({0})".format(i + 1)
-                process(rh.extended_header_4[i], ht)
-            #   External header
-            process(rh.external_header, "External Header")
-            #   External header shot
-            for i in range(len(rh.external_header_shot)):
-                ht = "External Shot {0}".format(i + 1)
-                process(rh.external_header_shot[i], ht)
-            self.RH = True
-
-        def process_trace_header(self):
-            '''   Save trace header information in\
-                  Maps_g/Das_g_xxxxxxx/Hdr_a_xxxx file   '''
-
-            def process(self, hdr, header_type):
-                ll = [{'FileType': 'SEG-D', 'HeaderType': 'trace',
-                      'HeaderSubType': header_type}, hdr]
-                self.TRACE_JSON.append(json.dumps(
-                    ll, sort_keys=True, indent=4).split('\n'))
-
-            process(self, th.trace_header, "Trace Header")
-            for i in range(len(th.trace_header_N)):
-                ht = "Header N-{0}".format(i + 1)
-                process(self, th.trace_header_N[i], ht)
-
-        #
-        #
-        #
         # print "\tprocess das"
         # for cs in range (rh.chan_sets_per_scan) :
-        process_das(self)
+        self.process_das(rh, th, tr)
         # if not DN :
         # print "\tprocess array"
-        process_array(self)
+        self.process_array(rh, th)
         # print "\tprocess headers"
         if not self.RH:
-            process_reel_headers(self)
+            self.process_reel_headers(rh)
         # print "\tprocess trace header"
-        process_trace_header(self)
+        self.process_trace_header(th)
 
     def write_arrays(self, Array_t):
         '''   Write /Experiment_g/Sorts_g/Array_t_xxx   '''
@@ -871,7 +870,7 @@ class SEGD2PH5():
         lines = sorted(Array_t.keys())
         #   Loop through arrays/lines
         for line in lines:
-            # name = EX.ph5_g_sorts.nextName ()
+            # name = self.EX.ph5_g_sorts.nextName ()
             name = "Array_t_{0:03d}".format(int(line))
             a = self.EX.ph5_g_sorts.newArraySort(name)
             stations = sorted(Array_t[line].keys())
@@ -950,53 +949,49 @@ class SEGD2PH5():
         self.DAS_INFO = {}
         self.MAP_INFO = {}
 
-    def txncsptolatlon(self, northing, easting):
-        '''
-           Sweetwater
-           Convert texas state plane coordinates in feet to
-           geographic coordinates, WGS84.
-        '''
-        #   Texas NC state plane feet Zone 4202
-        sp = Proj(init='epsg:32038')
-        #   WGS84, geographic
-        wgs = Proj(init='epsg:4326', proj='latlong')
-        #   Texas SP coordinates: survey foot is 1200/3937 meters
-        lon, lat = transform(sp, wgs, easting * 0.30480060960121924,
-                             northing * 0.30480060960121924)
 
-        return lat, lon
+def txncsptolatlon(northing, easting):
+    '''
+       Sweetwater
+       Convert texas state plane coordinates in feet to
+       geographic coordinates, WGS84.
+    '''
+    #   Texas NC state plane feet Zone 4202
+    sp = Proj(init='epsg:32038')
+    #   WGS84, geographic
+    wgs = Proj(init='epsg:4326', proj='latlong')
+    #   Texas SP coordinates: survey foot is 1200/3937 meters
+    lon, lat = transform(sp, wgs, easting * 0.30480060960121924,
+                         northing * 0.30480060960121924)
 
-    def utmcsptolatlon(self, northing, easting):
-        '''
-           Mount Saint Helens
-           Convert UTM to
-           geographic coordinates, WGS84.
-        '''
-        #   UTM
-        new_UTM = re.split(r'(\d+)', self.UTM)
-        utmzone = str(new_UTM[1])
+    return lat, lon
 
-        if str(new_UTM[2]).upper() == 'N':
-            NS = 'north'
-        elif str(new_UTM[2]).upper() == 'S':
-            NS = 'south'
-        else:
-            NS = 'north'
 
-        utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
-        print
-        #   WGS84, geographic
-        wgs = Proj(init='epsg:4326', proj='latlong')
-        #
-        lon, lat = transform(utmc, wgs, easting, northing)
+def utmcsptolatlon(UTM, northing, easting):
+    '''
+       Mount Saint Helens
+       Convert UTM to
+       geographic coordinates, WGS84.
+    '''
+    #   UTM
+    new_UTM = re.split(r'(\d+)', UTM)
+    utmzone = str(new_UTM[1])
 
-        return lat, lon
+    if str(new_UTM[2]).upper() == 'N':
+        NS = 'north'
+    elif str(new_UTM[2]).upper() == 'S':
+        NS = 'south'
+    else:
+        NS = 'north'
 
-    def correct_append_number(self):
-        # from math import modf
-        traces = self.SD.reel_headers.extended_header_2['number_records']
-        x = traces % self.APPEND
-        self.APPEND - x
+    utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
+    print
+    #   WGS84, geographic
+    wgs = Proj(init='epsg:4326', proj='latlong')
+    #
+    lon, lat = transform(utmc, wgs, easting, northing)
+
+    return lat, lon
 
 
 def main():
@@ -1004,266 +999,276 @@ def main():
     then = time.time()
     from numpy import append as npappend
 
-    def get_das(sd):
-        #   Return line_station or das#[-9:]
-        try:
-            das = "{0}X{1}".format(
-                sd.reel_headers.extended_header_3.line_number,
-                sd.reel_headers.extended_header_3.receiver_point)
-        except Exception:
+    def prof():
+
+        MINIPH5 = None
+
+        def get_das(sd):
+            #   Return line_station or das#[-9:]
             try:
                 das = "{0}X{1}".format(
-                    sd.reel_headers.external_header.receiver_line,
-                    sd.reel_headers.external_header.receiver_point)
+                    sd.reel_headers.extended_header_3.line_number,
+                    sd.reel_headers.extended_header_3.receiver_point)
             except Exception:
-                das = "sn" + \
-                      str(sd.reel_headers.general_header_block_1.
-                          manufactures_sn)
-                if das == 0:
-                    das = "id" + \
-                          str(sd.reel_headers
-                              .extended_header_1.id_number)[-9:]
+                try:
+                    das = "{0}X{1}".format(
+                        sd.reel_headers.external_header.receiver_line,
+                        sd.reel_headers.external_header.receiver_point)
+                except Exception:
+                    das = "sn" + \
+                          str(sd.reel_headers.general_header_block_1.
+                              manufactures_sn)
+                    if das == 0:
+                        das = "id" + \
+                              str(sd.reel_headers
+                                  .extended_header_1.id_number)[-9:]
 
-        return das
+            return das
 
-    def get_node(sd):
-        #   Return node part number, node id, and number of channels
-        pn = None  # Part Number
-        id = None  # Node ID
-        nc = None  # Number of channel sets
-        try:
-            nc = sd.reel_headers.general_header_block_1[
-                'chan_sets_per_scan']
-            pn = sd.reel_headers.extended_header_1['part_number']
-            id = sd.reel_headers.extended_header_1['id_number']
-        except Exception:
-            pass
+        def get_node(sd):
+            #   Return node part number, node id, and number of channels
+            pn = None  # Part Number
+            id = None  # Node ID
+            nc = None  # Number of channel sets
+            try:
+                nc = sd.reel_headers.general_header_block_1[
+                    'chan_sets_per_scan']
+                pn = sd.reel_headers.extended_header_1['part_number']
+                id = sd.reel_headers.extended_header_1['id_number']
+            except Exception:
+                pass
 
-        return pn, id, nc
+            return pn, id, nc
 
-    def print_container(container):
-        keys = container.keys()
-        for k in keys:
-            print k, container[k]
+        def print_container(container):
+            keys = container.keys()
+            for k in keys:
+                print k, container[k]
 
-        print '-' * 80
+            print '-' * 80
+        conv = SEGD2PH5()
 
-    conv = SEGD2PH5()
-    try:
         conv.get_args()
-    except Exception, err_msg:
-        LOGGER.error(err_msg)
-        return 1
-    conv.initialize_ph5()
-    LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
-    LOGGER.info("{0}".format(sys.argv))
-    if len(conv.FILES) > 0:
-        conv.RESP = Resp(conv.EX.ph5_g_responses)
-        rows, keys = conv.EX.ph5_g_receivers.read_index()
-        conv.INDEX_T_DAS = Rows_Keys(rows, keys)
-        rows, keys = conv.EX.ph5_g_maps.read_index()
-        conv.INDEX_T_MAP = Rows_Keys(rows, keys)
 
-    for f in conv.FILES:
-        conv.F = f
-        traces = []
-        conv.TRACE_JSON = []
-        try:
-            conv.SIZE = os.path.getsize(f)
-        except Exception as e:
-            sys.stderr.write("Error: failed to read {0}, {1}.\
-             Skipping...\n".format(f, str(e.message)))
-            LOGGER.error("Error: failed to read {0}, {1}.\
-             Skipping...\n".format(f, str(e.message)))
-            continue
+        conv.initialize_ph5()
+        LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
+        LOGGER.info("{0}".format(sys.argv))
+        if len(conv.FILES) > 0:
+            conv.RESP = Resp(conv.EX.ph5_g_responses)
+            rows, keys = conv.EX.ph5_g_receivers.read_index()
+            conv.INDEX_T_DAS = Rows_Keys(rows, keys)
+            rows, keys = conv.EX.ph5_g_maps.read_index()
+            conv.INDEX_T_MAP = Rows_Keys(rows, keys)
 
-        conv.SD = segdreader.Reader(infile=f)
-        conv.LAT = None
-        conv.LON = None
-        # DN = False;
-        conv.RH = False
-        # print "isSEGD"
-        if not conv.SD.isSEGD(
-                expected_manufactures_code=conv.MANUFACTURERS_CODE):
-            LOGGER.error("{0}\n".format(conv.SD.name()))
+        for f in conv.FILES:
+            conv.F = f
+            traces = []
+            conv.TRACE_JSON = []
+            try:
+                SIZE = os.path.getsize(f)
+            except Exception as e:
+                sys.stderr.write("Error: failed to read {0}, {1}.\
+                 Skipping...\n".format(f, str(e.message)))
+                LOGGER.error("Error: failed to read {0}, {1}.\
+                 Skipping...\n".format(f, str(e.message)))
+                continue
 
-            LOGGER.info("{0} is not a Fairfield SEG-D file. Skipping.".format(
-                    conv.SD.name()))
-            continue
+            conv.SD = segdreader.Reader(infile=f)
+            conv.LAT = None
+            conv.LON = None
+            # DN = False;
+            conv.RH = False
+            # print "isSEGD"
+            if not conv.SD.isSEGD(
+               expected_manufactures_code=conv.MANUFACTURERS_CODE):
+                sys.stdout.write(":<Error>: {0}\n".format(conv.SD.name()))
+                sys.stdout.flush()
+                LOGGER.info(
+                    "{0} is not a Fairfield SEG-D file. Skipping.".format(
+                        conv.SD.name()))
+                continue
 
-        try:
-            # print "general headers"
-            conv.SD.process_general_headers()
-            # print "channel sets"
-            conv.SD.process_channel_set_descriptors()
-            # print "extended headers"
-            conv.SD.process_extended_headers()
-            # print "external headers"
-            conv.SD.process_external_headers()
-        except segdreader.InputsError as e:
-            LOGGER.error("{0}\n".format("".join(e.message)))
+            try:
+                # print "general headers"
+                conv.SD.process_general_headers()
+                # print "channel sets"
+                conv.SD.process_channel_set_descriptors()
+                # print "extended headers"
+                conv.SD.process_extended_headers()
+                # print "external headers"
+                conv.SD.process_external_headers()
+            except segdreader.InputsError as e:
+                sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
+                sys.stdout.flush()
+                LOGGER.info(
+                    "Error: Possible bad SEG-D file -- {0}".format(
+                        "".join(e.message)))
+                continue
 
+            nleft = conv.APPEND
+            conv.Das = get_das(conv.SD)
+            part_number, node_id, number_of_channels = get_node(conv.SD)
+
+            conv.EXREC = conv.get_current_data_only(SIZE, conv.Das)
+
+            sys.stdout.write(":<Processing>: {0}\n".format(conv.SD.name()))
+            sys.stdout.flush()
             LOGGER.info(
-                "Error: Possible bad SEG-D file -- {0}".format(
-                    "".join(e.message)))
-            continue
+                "Processing: {0}... Size: {1}\n".format(conv.SD.name(), SIZE))
+            if conv.EXREC.filename != MINIPH5:
+                LOGGER.info("Opened: {0}...\n".format(conv.EXREC.filename))
+                LOGGER.info(
+                    "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
+                        conv.Das, node_id, part_number, number_of_channels))
+                MINIPH5 = conv.EXREC.filename
 
-        # Das = (SD.reel_headers.extended_header_3.line_number * 1000) +\
-        #  SD.reel_headers.extended_header_3.receiver_point
-        # APPEND = correct_append_number ()
-        nleft = conv.APPEND
-        conv.Das = get_das(conv.SD)
-        part_number, node_id, number_of_channels = get_node(conv.SD)
+            n = 0
+            trace_headers_list = []
+            # lat = None
+            # lon = None
+            while True:
+                #
+                if conv.SD.isEOF():
+                    if n != 0:
+                        thl = []
+                        chan_set = None
+                        t = None
+                        new_traces = []
+                        for T in traces:
+                            thl.append(T.headers)
+                            if chan_set is None:
+                                chan_set = T.headers.trace_header.channel_set
+                            if chan_set == T.headers.trace_header.channel_set:
+                                if isinstance(t, type(None)):
+                                    t = T.trace
+                                else:
+                                    t = npappend(t, T.trace)
+                            else:
+                                new_traces.append(T)
 
-        conv.EXREC = conv.get_current_data_only(conv.SIZE, conv.Das)
+                        traces = new_traces
+                        conv.process_traces(conv.SD.reel_headers, thl[0], t)
 
-        LOGGER.info(
-            "Processing: {0}... Size: {1}\n".format(conv.SD.name(), conv.SIZE))
-        if conv.EXREC.filename != conv.MINIPH5:
-            # sys.stderr.write ("Opened: {0}...\n".format (EXREC.filename))
-            LOGGER.info("Opened: {0}...\n".format(conv.EXREC.filename))
-            LOGGER.info(
-                "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
-                    conv.Das, node_id, part_number, number_of_channels))
-            conv.MINIPH5 = conv.EXREC.filename
+                        if conv.DAS_INFO:
+                            conv.writeINDEX()
+                    break
 
-        n = 0
-        trace_headers_list = []
-        # lat = None
-        # lon = None
-        while True:
-            #
-            if conv.SD.isEOF():
-                if n != 0:
+                try:
+                    trace, cs = conv.SD.process_trace()
+                except segdreader.InputsError as e:
+                    # sys.stderr.write ("Error 2: Possible bad SEG-D file \
+                    # -- {0}".format ("".join (e)))
+                    sys.stdout.write(":<Error:> {0}\n".format(conv.F))
+                    sys.stdout.flush()
+                    LOGGER.info(
+                        "Error: Possible bad SEG-D file -- {0}".format(
+                            "".join(e.message)))
+                    break
+
+                if not conv.LAT and not conv.LON:
+                    try:
+                        if conv.UTM:
+                            #   UTM
+                            conv.LAT, conv.LON = utmcsptolatlon(
+                                conv.UTM,
+                                conv.SD.trace_headers.trace_header_N[
+                                    4].receiver_point_Y_final / 10.,
+                                conv.SD.trace_headers.trace_header_N[
+                                    4].receiver_point_X_final / 10.)
+                        elif conv.TSP:
+                            #   Texas State Plane coordinates
+                            conv.LAT, conv.LON = txncsptolatlon(
+                                conv.SD.trace_headers.trace_header_N[
+                                    4].receiver_point_Y_final / 10.,
+                                conv.SD.trace_headers.trace_header_N[
+                                    4].receiver_point_X_final / 10.)
+                        else:
+                            conv.LAT = conv.SD.trace_headers.trace_header_N[
+                                      4].receiver_point_Y_final / 10.
+                            conv.LON = conv.SD.trace_headers.trace_header_N[
+                                      4].receiver_point_X_final / 10.
+                    except Exception as e:
+                        LOGGER.warning(
+                            "Failed to convert location: {0}.\n".format(
+                                e.message))
+
+                trace_headers_list.append(conv.SD.trace_headers)
+                # for cs in range (conv.SD.chan_sets_per_scan) :
+                if n == 0:
+                    traces.append(Trace(trace, conv.SD.trace_headers))
+                    n = 1
+                    #   Node kludge
+                    # conv.Das = (conv.SD.trace_headers.trace_header_N[0]\
+                    # .receiver_line * 1000) + conv.SD.trace_headers.\
+                    # trace_header_N[0].receiver_point
+                    conv.Das = get_das(conv.SD)
+                else:
+                    traces.append(Trace(trace, conv.SD.trace_headers))
+                    # traces = npappend (traces, trace)
+
+                if n >= nleft or conv.EVERY is True:
                     thl = []
                     chan_set = None
+                    chan_set_next = None
                     t = None
                     new_traces = []
+                    # Need to check for gaps here!
                     for T in traces:
                         thl.append(T.headers)
                         if chan_set is None:
                             chan_set = T.headers.trace_header.channel_set
                         if chan_set == T.headers.trace_header.channel_set:
+                            # print type (t)
                             if isinstance(t, type(None)):
                                 t = T.trace
                             else:
                                 t = npappend(t, T.trace)
+                            # print len (t), t.min (), t.max ()
                         else:
                             new_traces.append(T)
+                            if chan_set_next is None:
+                                chan_set_next =\
+                                    T.headers.trace_header.channel_set
 
                     traces = new_traces
                     conv.process_traces(conv.SD.reel_headers, thl[0], t)
-                    # process_traces (SD.reel_headers,\
-                    # trace_headers_list[0], trace)
+                    if new_traces:
+                        nleft = conv.APPEND - len(new_traces)
+                    else:
+                        nleft = conv.APPEND
+                    chan_set = chan_set_next
+                    chan_set_next = None
                     if conv.DAS_INFO:
                         conv.writeINDEX()
-                break
+                    n = 0
+                    trace_headers_list = []
+                    continue
 
-            try:
-                trace, cs = conv.SD.process_trace()
-            except segdreader.InputsError as e:
-                LOGGER.error(" {0}\n".format(conv.F))
-                LOGGER.info("Error: Possible bad SEG-D file -- {0}".format(
-                    "".join(e.message)))
-                break
+                n += 1
 
-            if not conv.LAT and not conv.LON:
-                try:
-                    if conv.UTM:
-                        #   UTM
-                        conv.LAT, conv.LON = conv.utmcsptolatlon(
-                            conv.SD.trace_headers.trace_header_N[
-                                4].receiver_point_Y_final / 10.,
-                            conv.SD.trace_headers.trace_header_N[
-                                4].receiver_point_X_final / 10.)
-                    elif conv.TSPF:
-                        #   Texas State Plane coordinates
-                        conv.LAT, conv.LON = conv.txncsptolatlon(
-                            conv.SD.trace_headers.trace_header_N[
-                                4].receiver_point_Y_final / 10.,
-                            conv.SD.trace_headers.trace_header_N[
-                                4].receiver_point_X_final / 10.)
-                    else:
-                        conv.LAT = conv.SD.trace_headers.trace_header_N[
-                                  4].receiver_point_Y_final / 10.
-                        conv.LON = conv.SD.trace_headers.trace_header_N[
-                                  4].receiver_point_X_final / 10.
-                except Exception as e:
-                    LOGGER.warning("Failed to convert location: {0}.\n".format(
-                        e.message))
+            conv.update_external_references()
+            if conv.TRACE_JSON:
+                log_array, name = conv.getLOG()
+                for line in conv.TRACE_JSON:
+                    log_array.append(line)
 
-            trace_headers_list.append(conv.SD.trace_headers)
-            # for cs in range (SD.chan_sets_per_scan) :
-            if n == 0:
-                traces.append(Trace(trace, conv.SD.trace_headers))
-                n = 1
-                #   Node kludge
-                # Das = (SD.trace_headers.trace_header_N[0]\
-                # .receiver_line * 1000) + SD.trace_headers.\
-                # trace_header_N[0].receiver_point
-                conv.Das = get_das(conv.SD)
-            else:
-                traces.append(Trace(trace, conv.SD.trace_headers))
-                # traces = npappend (traces, trace)
+            sys.stdout.write(":<Finished>: {0}\n".format(conv.F))
+            sys.stdout.flush()
 
-            if n >= nleft or conv.EVERY is True:
-                thl = []
-                chan_set = None
-                chan_set_next = None
-                t = None
-                new_traces = []
-                # Need to check for gaps here!
-                for T in traces:
-                    thl.append(T.headers)
-                    if chan_set is None:
-                        chan_set = T.headers.trace_header.channel_set
-                    if chan_set == T.headers.trace_header.channel_set:
-                        # print type (t)
-                        if isinstance(t, type(None)):
-                            t = T.trace
-                        else:
-                            t = npappend(t, T.trace)
-                        # print len (t), t.min (), t.max ()
-                    else:
-                        new_traces.append(T)
-                        if chan_set_next is None:
-                            chan_set_next =\
-                               conv. T.headers.trace_header.channel_set
+        conv.write_arrays(conv.ARRAY_T)
+        seconds = time.time() - then
 
-                traces = new_traces
-                conv.process_traces(conv.SD.reel_headers, thl[0], t)
-                if new_traces:
-                    nleft = conv.APPEND - len(new_traces)
-                else:
-                    nleft = conv.APPEND
-                chan_set = chan_set_next
-                chan_set_next = None
-                if conv.DAS_INFO:
-                    conv.writeINDEX()
-                n = 0
-                trace_headers_list = []
-                continue
+        try:
+            conv.EX.ph5close()
+            conv.EXREC.ph5close()
+        except Exception as e:
+            sys.stderr.write("Warning: {0}\n".format("".join(e.message)))
 
-            n += 1
+        print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
+        LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
+        logging.shutdown()
 
-        conv.update_external_references()
-        if conv.TRACE_JSON:
-            log_array, name = conv.getLOG()
-            for line in conv.TRACE_JSON:
-                log_array.append(line)
-
-        LOGGER.info(":<Finished>: {0}\n".format(conv.F))
-
-    conv.write_arrays(conv.ARRAY_T)
-    seconds = time.time() - then
-
-    try:
-        conv.EX.ph5close()
-        conv.EXREC.ph5close()
-    except Exception as e:
-        sys.stderr.write("Warning: {0}\n".format("".join(e.message)))
-
-    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))  # Minutes X 10
+    prof()
 
 
 if __name__ == '__main__':
