@@ -12,6 +12,7 @@ import logging
 import copy
 import itertools
 import io
+import datetime
 from obspy.core.inventory.inventory import read_inventory as read_inventory
 from obspy import Trace
 from obspy import Stream
@@ -22,7 +23,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.74'
+PROG_VERSION = '2019.81'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -148,45 +149,100 @@ class PH5toMSeed(object):
     def filenamemseed_gen(self, stream):
 
         s = stream.traces[0].stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            s.channel, rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamesac_gen(self, trace):
         s = trace.stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.{4}.sac".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            s.channel, rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamegeocsv_gen(self, trace):
         s = trace.stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            s.channel, rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamemseed_nongen(self, stream):
         s = stream.traces[0].stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.ms".format(
             s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamesac_nongen(self, trace):
         s = trace.stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.sac".format(
             s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret

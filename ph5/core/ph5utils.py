@@ -15,7 +15,7 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 
-PROG_VERSION = "2019.63"
+PROG_VERSION = "2019.81"
 
 
 class PH5Response(object):
@@ -280,3 +280,12 @@ def microsecs_to_sec(microsec):
     if type(microsec) is not int:
         raise ValueError("microsec must be integer")
     return float(microsec) / 1000000
+
+
+def roundSeconds(dateTimeObject):
+    newDateTime = dateTimeObject
+
+    if newDateTime.microsecond >= 500000:
+        newDateTime = newDateTime + timedelta(seconds=1)
+
+    return newDateTime.replace(microsecond=0)
