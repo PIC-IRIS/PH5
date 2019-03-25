@@ -437,9 +437,11 @@ class PH5toStationXMLParser(object):
                 with io.BytesIO(response_file_das_a) as buf:
                     buf.seek(0, 0)
                     if _is_resp(buf):
+                        buf.seek(0, 0)
                         dl_resp = read_inventory(buf, format="RESP")
                         dl_resp = dl_resp[0][0][0].response
                     else:
+                        buf.seek(0, 0)
                         dl_resp = pickle.loads(response_file_das_a)
 
             # parse sensor response if present
@@ -448,13 +450,15 @@ class PH5toStationXMLParser(object):
                     self.manager.ph5.ph5_g_responses.get_response(
                                                 response_file_sensor_a_name
                                             )
+
                 with io.BytesIO(response_file_sensor_a) as buf:
                     buf.seek(0, 0)
-
                     if _is_resp(buf):
+                        buf.seek(0, 0)
                         sensor_resp = read_inventory(buf, format="RESP")
                         sensor_resp = sensor_resp[0][0][0].response
                     else:
+                        buf.seek(0, 0)
                         sensor_resp = pickle.loads(response_file_sensor_a)
 
             inv_resp = None
