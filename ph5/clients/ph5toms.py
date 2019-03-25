@@ -23,7 +23,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.81'
+PROG_VERSION = '2019.84'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -439,10 +439,6 @@ class PH5toMSeed(object):
             [station_to_cut], self.restricted)
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
-            if stc.sample_rate != 0:
-                new_endtime = stc.endtime + (1 / float(stc.sample_rate))
-            else:
-                new_endtime = stc.endtime
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
                                        stc.endtime,
@@ -476,14 +472,14 @@ class PH5toMSeed(object):
 
             if stc.sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
-                                      new_endtime,
+                                      stc.endtime,
                                       chan=stc.component,
                                       sample_rate=actual_sample_rate,
                                       apply_time_correction=nt, das_t=das)
             else:
                 traces = self.ph5.textural_cut(stc.das,
                                                start_time,
-                                               new_endtime,
+                                               stc.endtime,
                                                chan=stc.component,
                                                das_t=das)
 
