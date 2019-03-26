@@ -9,6 +9,7 @@ import os
 import sys
 import logging
 import argparse
+from copy import deepcopy
 from argparse import RawTextHelpFormatter
 from ph5.core import ph5api, ph5utils, timedoy
 
@@ -93,7 +94,8 @@ class PH5Availability(object):
 
         return seed_cha_code
 
-    def get_slc_info(self, st_data, station, location, channel):
+    def get_slc_info(self, st_data, station, location, channel,
+                     support_wildcard=True):
         ph5_seed_station = ''
         ph5_loc = ''
         ph5_channel = ''
@@ -128,19 +130,37 @@ class PH5Availability(object):
         arrayorder = self.ph5.Array_t[array_name]['order']
         return arrayorder, arraybyid
 
-    def get_time(self, st, starttime, endtime):
-        if endtime is not None \
-           and endtime < st['deploy_time/epoch_l']:
+    def get_time_das_t(self, das, start, end, component=None):
+        s = 0 if start is None else start
+        e = 32509613590 if end is None else end
+        self.ph5.read_das_t(das, s, e, reread=False)
+        if das not in self.ph5.Das_t:
+            if (start is not None) and (end is not None):
+                LOGGER.warning("No Das table found for %s in range %s - %s"
+                               % (das, start, end))
             return -1
-        if starttime is not None \
-           and starttime > st['pickup_time/epoch_l']:
+        if component is None:
+            Das_t = deepcopy(self.ph5.Das_t[das]['rows'])
+        else:
+            Das_t = ph5api.filter_das_t(self.ph5.Das_t[das]['rows'], component)
+        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+
+        if not new_das_t:
+            LOGGER.war
+
+        earliest_epoch = self.get_start(new_das_t[0])
+
+        latest_epoch_start = self.get_start(new_das_t[-1])
+        true_sample_rate = self.get_sample_rate(new_das_t[-1])
+        latest_epoch = self.get_end(new_das_t[-1], latest_epoch_start,
+                                    true_sample_rate)
+        if end is not None and end < earliest_epoch:
+            return -1
+        if start is not None and start > latest_epoch:
             return -1
 
-        ph5_starttime = starttime \
-            if starttime is not None else st['deploy_time/epoch_l']
-        ph5_endtime = endtime \
-            if endtime is not None else st['pickup_time/epoch_l']
-        return ph5_starttime, ph5_endtime
+        self.ph5.forget_das_t(das)
+        return earliest_epoch, latest_epoch, true_sample_rate, new_das_t
 
     def get_slc(self, station='*', location='*', channel='*',
                 starttime=None, endtime=None, include_sample_rate=False):
@@ -183,8 +203,11 @@ class PH5Availability(object):
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
+                        ph5_das = st['das/serial_number_s']
+                        ph5_channum = st['channel_number_i']
 
-                        ret = self.get_time(st, starttime, endtime)
+                        ret = self.get_time_das_t(
+                            ph5_das, starttime, endtime, ph5_channum)
                         if ret == -1:
                             continue
                         tup = (ph5_seed_station,
@@ -225,6 +248,9 @@ class PH5Availability(object):
 
         """
         availability_extents = []
+        if starttime or endtime:
+            if not (starttime and endtime):
+                raise ValueError("if start or end, both are required")
 
         array_names = sorted(self.ph5.Array_t_names)
 
@@ -247,19 +273,60 @@ class PH5Availability(object):
 
                         ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
-
-                        ret = self.get_time(st, starttime, endtime)
-                        if ret == -1:
-                            continue
-                        ph5_starttime, ph5_endtime = ret
+                        ph5_sample_rate = self.get_sample_rate(st)
 
                         earliest, latest = self.ph5.get_extent(
-                            ph5_das, ph5_channum, ph5_starttime, ph5_endtime)
-                        tup = (ph5_seed_station,
-                               ph5_loc, ph5_channel, earliest, latest)
+                            ph5_das, ph5_channum, ph5_sample_rate,
+                            starttime, endtime)
+                        if earliest is None:
+                            continue
+                        latest = round(latest, 6)
+                        if not include_sample_rate:
+                            tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                   earliest, latest)
+                        else:
+                            tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                   earliest, latest, ph5_sample_rate)
                         availability_extents.append(tup)
 
         return availability_extents
+
+    def get_das_avail(self, das_t, samplerate, earliest, latest, start, end):
+        if start is None:
+            start = earliest
+        if end is None:
+            end = latest
+        times = {}
+        for i in range(len(das_t)):
+            true_sample_rate = self.get_sample_rate(das_t[i])
+            if samplerate != true_sample_rate:
+                continue
+            start_time = self.get_start(das_t[i])
+            if start_time > end:
+                break
+
+            if true_sample_rate == 0:
+                ref = self.ph5.ph5_g_receivers.find_trace_ref(
+                   das_t[i]['array_name_data_a'].strip())
+                data = self.ph5.ph5_g_receivers.read_trace(ref)
+                if len(data) > 0:
+                    times[0] = [[start_time, start_time]]
+                continue
+            end_time = self.get_end(das_t[i], start_time, true_sample_rate)
+
+            if end_time < start:
+                continue
+            if start_time < start < end_time:
+                start_time = start
+            if start_time < end < end_time:
+                end_time = end
+
+            if true_sample_rate in times:
+                times[true_sample_rate].append([start_time, end_time])
+            else:
+                times[true_sample_rate] = [[start_time, end_time]]
+
+        return times
 
     def get_availability(self, station='*', location='*',
                          channel='*', starttime=None, endtime=None,
@@ -300,6 +367,7 @@ class PH5Availability(object):
 
         array_names = sorted(self.ph5.Array_t_names)
 
+        tracking = []
         for array_name in array_names:
             arrayorder, arraybyid = self.get_array_order_id(array_name)
 
@@ -311,95 +379,97 @@ class PH5Availability(object):
                     station_len = len(station_list[deployment])
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
-
                         ret = self.get_slc_info(st, station, location, channel)
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
-
                         ph5_das = st['das/serial_number_s']
-                        ph5_sample_rate = st['sample_rate_i']
                         ph5_channum = st['channel_number_i']
-                        ret = self.get_time(st, starttime, endtime)
+                        ph5_sample_rate = self.get_sample_rate(st)
+                        ret = self.get_time_das_t(
+                            ph5_das, starttime, endtime, ph5_channum)
                         if ret == -1:
                             continue
-                        ph5_starttime, ph5_endtime = ret
+                        ph5_earliest, ph5_latest, sample_rate, das_t = ret
+                        if (ph5_das, ph5_channel, ph5_earliest, ph5_latest) \
+                           in tracking:
+                            continue
+                        times = self.get_das_avail(
+                            das_t, ph5_sample_rate, ph5_earliest, ph5_latest,
+                            starttime, endtime)
 
-                        times = self.ph5.get_availability(
-                            ph5_das, ph5_sample_rate, ph5_channum,
-                            ph5_starttime, ph5_endtime)
-
-                        if include_sample_rate:
-                            for sample_rate, start, stop in times:
-                                tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                       start, stop, sample_rate)
+                        tracking.append(
+                            (ph5_das, ph5_channel, ph5_earliest, ph5_latest))
+                        for sample_rate in times:
+                            T = times[sample_rate]
+                            for i in range(len(T)):
+                                if i > 0:
+                                    if T[i][0] <= availability[-1][4]:
+                                        availability[-1][4] = T[i][1]
+                                        continue
+                                tup = [ph5_seed_station, ph5_loc,
+                                       ph5_channel, T[i][0], T[i][1]]
+                                if include_sample_rate:
+                                    tup.append(sample_rate)
                                 availability.append(tup)
 
-                        else:
-                            START = None
-                            STOP = None
-                            for sample_rate, start, stop in times:
-                                if START is None or START > start:
-                                    START = start
-                                if STOP is None or STOP < stop:
-                                    STOP = stop
-                            tup = (ph5_seed_station,
-                                   ph5_loc, ph5_channel, START, STOP)
-                            availability.append(tup)
-
-        return availability
+        return [tuple(a) for a in availability]
 
     def get_start(self, das_t):
         return float(das_t['time/epoch_l']) + \
             float(das_t['time/micro_seconds_i'])/1000000
 
     def get_end(self, das_t, start, samplerate):
-        return (start + (float(das_t['sample_count_i']) / samplerate))
+        if samplerate != 0:
+            duration = float(das_t['sample_count_i']) / samplerate
+        else:
+            duration = 0
+        return round(start + duration, 6)
 
-    def get_sampleNos_gapOverlap(self, das, component, start=None, end=None):
-        self.ph5.read_das_t(das, start, end, reread=False)
-        if das not in self.ph5.Das_t:
-            LOGGER.warning("No Das table found for " + das)
-            return -1
-        Das_t = ph5api.filter_das_t(self.ph5.Das_t[das]['rows'], component)
-        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
-        if not new_das_t:
-            LOGGER.warning("No Das table found for " + das)
-            return -1
+    def get_sample_rate(self, st):
+        if st['sample_rate_i'] == 0:
+            return 0
+        return float(st['sample_rate_i']) / \
+            float(st['sample_rate_multiplier_i'])
 
+    def get_sampleNos_gapOverlap(self, das_t, earliest, latest, start, end,
+                                 sample_rate, st):
+
+        if start is None:
+            start = st['deploy_time/epoch_l']
+        if end is None:
+            end = st['pickup_time/epoch_l']
         # calculate expected_sampleNo
-        true_sample_rate = (float(new_das_t[-1]['sample_rate_i']) /
-                            float(new_das_t[-1]['sample_rate_multiplier_i']))
-
-        latest_epoch_start = self.get_start(new_das_t[-1])
-        latest_epoch = self.get_end(new_das_t[-1], latest_epoch_start,
-                                    true_sample_rate)
-
-        if latest_epoch > end:
-            latest_epoch = end
-
-        expected_sampleNo = (end - start) * true_sample_rate
-
         gapOverlap = 0
+        if start < earliest:
+            gapOverlap += 1
+        if latest < end:
+            gapOverlap += 1
+        else:
+            latest = end
+
+        expected_sampleNo = (end - start) * sample_rate
+
         sampleNo = 0
         i = -1
-        for i in range(len(new_das_t) - 1):
-            sampleNo += new_das_t[i]['sample_count_i']
-            start_time = self.get_start(new_das_t[i])
-            end_time = self.get_end(new_das_t[i], start_time, true_sample_rate)
-            next_start_time = self.get_start(new_das_t[i+1])
+        for i in range(len(das_t) - 1):
+            sampleNo += das_t[i]['sample_count_i']
+            start_time = self.get_start(das_t[i])
+            true_sample_rate = self.get_sample_rate(das_t[i])
+            end_time = self.get_end(das_t[i], start_time, true_sample_rate)
+            next_start_time = self.get_start(das_t[i+1])
             if end_time != next_start_time:
                 gapOverlap += 1
 
         i += 1
         try:
             # the last trace may not be the whole trace
-            start_time = self.get_start(new_das_t[i])
-            if start_time < latest_epoch:
-                sampleNo += true_sample_rate * (latest_epoch - start_time)
+            start_time = self.get_start(das_t[i])
+            if start_time < latest:
+                sampleNo += sample_rate * (latest - start_time)
         except IndexError:
             pass
-        self.ph5.forget_das_t(das)
+
         return expected_sampleNo, sampleNo, gapOverlap
 
     def get_availability_percentage(self, station,
@@ -422,6 +492,11 @@ class PH5Availability(object):
         :returns: Tuple of percentage of available data (``0.0`` to ``1.0``)
             and number of gaps/overlaps.
         """
+        allp = station + channel + location
+        if '*' in allp or '?' in allp:
+            LOGGER.error(
+                "get_availability_percentage does not support wildcard.")
+            return
         sampleNo = 0
         expected_sampleNo = 0
         gapOverlap = 0
@@ -443,14 +518,17 @@ class PH5Availability(object):
                             continue
 
                         ph5_das = st['das/serial_number_s']
+
                         ph5_channum = st['channel_number_i']
-                        ret = self.get_time(st, starttime, endtime)
+                        ret = self.get_time_das_t(
+                            ph5_das, starttime, endtime, ph5_channum)
                         if ret == -1:
                             continue
-                        ph5_starttime, ph5_endtime = ret
+                        ph5_earliest, ph5_latest, sample_rate, das_t = ret
 
                         ret = self.get_sampleNos_gapOverlap(
-                            ph5_das, ph5_channum, ph5_starttime, ph5_endtime)
+                            das_t, ph5_earliest, ph5_latest,
+                            starttime, endtime, sample_rate, st)
                         if ret == -1:
                             continue
                         expected_sampleNo += ret[0]
@@ -504,28 +582,32 @@ class PH5Availability(object):
 
                         ph5_das = st['das/serial_number_s']
 
-                        ret = self.get_time(st, starttime, endtime)
+                        ret = self.get_time_das_t(
+                            ph5_das, starttime, endtime)
                         if ret == -1:
                             continue
-                        ph5_starttime, ph5_endtime = ret
-                        self.ph5.read_das_t(ph5_das, ph5_starttime,
-                                            ph5_endtime, reread=False)
-                        if ph5_das not in self.ph5.Das_t:
-                            LOGGER.warning(
-                                "No Das table found for %s in "
-                                "time range (%s - %s)"
-                                % (ph5_das, ph5_starttime, ph5_endtime))
-                            return -1
-                        for d in self.ph5.Das_t[ph5_das]['rows']:
+                        ph5_earliest, ph5_latest, sample_rate, das_t = ret
+
+                        for d in das_t:
                             if d['sample_count_i'] > 0:
                                 self.ph5.forget_das_t(ph5_das)
                                 return True
+                            else:
+                                if d['sample_rate_i'] == 0:
+                                    ref = self.ph5.ph5_g_receivers.\
+                                        find_trace_ref(
+                                            d['array_name_data_a'].strip())
+                                    data = self.ph5.ph5_g_receivers.read_trace(
+                                        ref)
+                                    if len(data) > 0:
+                                        self.ph5.forget_das_t(ph5_das)
+                                        return True
                         self.ph5.forget_das_t(ph5_das)
 
         return False
 
     def process_all(self):
-        AVAIL = {0: self.has_data, 1: self.get_nslc,
+        AVAIL = {0: self.has_data, 1: self.get_slc,
                  2: self.get_availability, 3: self.get_availability_extent,
                  4: self.get_availability_percentage}
         stations = self.station_ids if self.station_ids != [] \
@@ -604,7 +686,7 @@ def get_args():
     parser.add_argument(
         "-a", "--avail", action="store",
         type=int, dest="avail",
-        help="Availability of data:\n  0: has_data, 1: nslc, 2: availability,\
+        help="Availability of data:\n  0: has_data, 1: slc, 2: availability,\
 \n  3: availability_extent, 4: availability_percentage",
         metavar="avail", default=0, required=True)
 

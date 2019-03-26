@@ -245,7 +245,6 @@ class TestPH5Availability(unittest.TestCase):
         """
         # expected to return all extent information
         ret = self.availability.get_availability_extent()
-
         # There are 10 channels all with data
         # so expect 10 entries
         self.assertEqual(10, len(ret))
@@ -258,9 +257,11 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(('0407', '', 'HHN',
-                         1545085230.917, 1545085240.92) in ret)
+                         1545085230.917, 1545085240.922) in ret)
+        #                 1545085230.917, 1545085240.92) in ret)
         self.assertTrue(('0407', '', 'LHN',
-                         1545085230.681998, 1545085240.69) in ret)
+                         1545085230.681998, 1545085240.691998) in ret)
+        #                 1545085230.681998, 1545085240.69) in ret)
         self.assertTrue(('0407', '', 'LOG',
                          1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
@@ -299,7 +300,8 @@ class TestPH5Availability(unittest.TestCase):
         # expected entry with sample_rate included
         self.assertTrue(('9001', '', 'DPZ',
                          1550849943, 1550850189,
-                         250.0) in ret)
+                         500.0) in ret)
+        #                 250.0) in ret)
 
         # Check LOG channel
         ret = self.availability.get_availability_extent(
@@ -363,9 +365,11 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(('0407', '', 'HHN',
-                         1545085230.917, 1545085240.92) in ret)
+                         1545085230.917, 1545085240.922) in ret)
+        #                 1545085230.917, 1545085240.92) in ret)
         self.assertTrue(('0407', '', 'LHN',
-                         1545085230.681998, 1545085240.69) in ret)
+                         1545085230.681998, 1545085240.691998) in ret)
+        #                 1545085230.681998, 1545085240.69) in ret)
         self.assertTrue(('0407', '', 'LOG',
                          1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
@@ -416,7 +420,6 @@ class TestPH5Availability(unittest.TestCase):
         """
         test get_availability method
         """
-
         # expected to return all availability information
         ret = self.availability.get_availability()
         # There are 10 channels all with data
@@ -447,9 +450,11 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(('0407', '', 'HHN',
-                         1545085230.917, 1545085240.92) in ret)
+                         1545085230.917, 1545085240.922) in ret)
+        #                 1545085230.917, 1545085240.92) in ret)
         self.assertTrue(('0407', '', 'LHN',
-                         1545085230.681998, 1545085240.69) in ret)
+                         1545085230.681998, 1545085240.691998) in ret)
+        #                 1545085230.681998, 1545085240.69) in ret)
         self.assertTrue(('0407', '', 'LOG',
                          1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
