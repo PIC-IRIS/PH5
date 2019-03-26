@@ -94,8 +94,7 @@ class PH5Availability(object):
 
         return seed_cha_code
 
-    def get_slc_info(self, st_data, station, location, channel,
-                     support_wildcard=True):
+    def get_slc_info(self, st_data, station, location, channel):
         ph5_seed_station = ''
         ph5_loc = ''
         ph5_channel = ''
