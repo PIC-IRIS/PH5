@@ -7,6 +7,32 @@ from ph5.clients import ph5availability
 from ph5.core import ph5api
 
 
+def checkTupleAlmostEqualIn(tup, tupList, place):
+    """
+    check if a tuple in a list of tuples in which float items only
+    need to be almost equal
+    :type tup: tuple
+    :param tup: tuple to be checked
+    :type tupList: list of tuples
+    :para tupList: list of tuples that tup need to be check with
+    :place: decimal places to round the values to compare
+    """
+    for T in tupList:
+        length = len(tup)
+        if length != len(T):
+            continue
+        for i in range(length):
+            if type(tup[i]) is float:
+                if round(tup[i], place) != round(T[i], place):
+                    break
+            else:
+                if tup[i] != T[i]:
+                    break
+            if i == length - 1:
+                return True
+    return False
+
+
 class TestPH5Availability(unittest.TestCase):
 
     def setUp(self):
@@ -256,12 +282,10 @@ class TestPH5Availability(unittest.TestCase):
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
-        self.assertTrue(('0407', '', 'HHN',
-                         1545085230.917, 1545085240.922) in ret)
-        #                 1545085230.917, 1545085240.92) in ret)
-        self.assertTrue(('0407', '', 'LHN',
-                         1545085230.681998, 1545085240.691998) in ret)
-        #                 1545085230.681998, 1545085240.69) in ret)
+        self.assertTrue(checkTupleAlmostEqualIn(
+            ('0407', '', 'HHN', 1545085230.917, 1545085240.92), ret, 2))
+        self.assertTrue(checkTupleAlmostEqualIn(
+            ('0407', '', 'LHN', 1545085230.681998, 1545085240.69), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
                          1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
@@ -364,12 +388,10 @@ class TestPH5Availability(unittest.TestCase):
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
-        self.assertTrue(('0407', '', 'HHN',
-                         1545085230.917, 1545085240.922) in ret)
-        #                 1545085230.917, 1545085240.92) in ret)
-        self.assertTrue(('0407', '', 'LHN',
-                         1545085230.681998, 1545085240.691998) in ret)
-        #                 1545085230.681998, 1545085240.69) in ret)
+        self.assertTrue(checkTupleAlmostEqualIn(
+            ('0407', '', 'HHN', 1545085230.917, 1545085240.92), ret, 2))
+        self.assertTrue(checkTupleAlmostEqualIn(
+            ('0407', '', 'LHN', 1545085230.681998, 1545085240.69), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
                          1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
@@ -449,12 +471,10 @@ class TestPH5Availability(unittest.TestCase):
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
-        self.assertTrue(('0407', '', 'HHN',
-                         1545085230.917, 1545085240.922) in ret)
-        #                 1545085230.917, 1545085240.92) in ret)
-        self.assertTrue(('0407', '', 'LHN',
-                         1545085230.681998, 1545085240.691998) in ret)
-        #                 1545085230.681998, 1545085240.69) in ret)
+        self.assertTrue(checkTupleAlmostEqualIn(
+            ('0407', '', 'HHN', 1545085230.917, 1545085240.92), ret, 2))
+        self.assertTrue(checkTupleAlmostEqualIn(
+            ('0407', '', 'LHN', 1545085230.681998, 1545085240.69), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
                          1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',

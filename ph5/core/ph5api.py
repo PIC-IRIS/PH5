@@ -1338,7 +1338,7 @@ class PH5(experiment.ExperimentGroup):
         if start or end:
             if not (start and end):
                 raise ValueError("if start or end, both are required")
-        self.read_das_t(das, start, end, reread=True)
+        # self.read_das_t(das, start, end, reread=True)
 
         if das not in self.Das_t:
             das_t_t = self.query_das_t(
