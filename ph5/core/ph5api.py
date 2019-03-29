@@ -1467,37 +1467,24 @@ class PH5(experiment.ExperimentGroup):
                             float(entry['time/micro_seconds_i']) /
                             1000000)
                     start_time = previous['start']
-                    if entry['sample_rate_i'] > 0:
-                        previous['length'] = (
-                                float(entry['sample_count_i']) /
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                        previous['sample_rate'] = (
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                    else:
-                        previous['length'] = 0
-                        previous['sample_rate'] = 0
 
-                    previous['end'] = previous['start'] + previous['length']
+                previous['start'] = (
+                        float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000)
+                if entry['sample_rate_i'] > 0:
+                    previous['length'] = (
+                            float(entry['sample_count_i']) /
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                    previous['sample_rate'] = (
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
                 else:
-                    previous['start'] = (
-                            float(entry['time/epoch_l']) +
-                            float(entry['time/micro_seconds_i']) /
-                            1000000)
-                    if entry['sample_rate_i'] > 0:
-                        previous['length'] = (
-                                float(entry['sample_count_i']) /
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                        previous['sample_rate'] = (
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                    else:
-                        previous['length'] = 0
-                        previous['sample_rate'] = 0
+                    previous['length'] = 0
+                    previous['sample_rate'] = 0
 
-                    previous['end'] = previous['start'] + previous['length']
+                previous['end'] = previous['start'] + previous['length']
         if gaps > 0:
             start_ = (
                     float(new_das_t[-1]['time/epoch_l']) +
