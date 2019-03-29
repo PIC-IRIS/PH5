@@ -9,11 +9,10 @@ import os
 import sys
 import logging
 import argparse
-from copy import deepcopy
 from argparse import RawTextHelpFormatter
 from ph5.core import ph5api, ph5utils, timedoy
 
-PROG_VERSION = '2019.086'
+PROG_VERSION = '2019.88'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -160,14 +159,14 @@ class PH5Availability(object):
                     LOGGER.warning("No Das table found for %s in range %s - %s"
                                    % (das, start, end))
                 return -1
-            Das_t = deepcopy(self.ph5.Das_t[das]['rows'])
-            self.ph5.forget_das_t(das)
+            Das_t = self.ph5.Das_t[das]['rows']
             if component is not None:
                 Das_t = ph5api.filter_das_t(Das_t, component)
         new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
 
         if not new_das_t:
             LOGGER.warning("No Das table found for " + das)
+            self.ph5.forget_das_t(das)
             return -1
 
         earliest_epoch = self.get_start(new_das_t[0])
@@ -177,10 +176,12 @@ class PH5Availability(object):
         latest_epoch = self.get_end(new_das_t[-1], latest_epoch_start,
                                     true_sample_rate)
         if end is not None and end < earliest_epoch:
+            self.ph5.forget_das_t(das)
             return -1
         if start is not None and start > latest_epoch:
+            self.ph5.forget_das_t(das)
             return -1
-
+        self.ph5.forget_das_t(das)
         return earliest_epoch, latest_epoch, true_sample_rate, new_das_t
 
     def get_slc(self, station='*', location='*', channel='*',
@@ -603,7 +604,7 @@ class PH5Availability(object):
                         self.starttime, self.endtime, self.SR_included)
 
 
-def get_args():
+def get_args(args):
     """
     Parses command line arguments and returns arg_parse object
     :rtype: :class argparse
@@ -676,15 +677,14 @@ def get_args():
         help="text, sync, geocsv, json",
         metavar="format", type=str, default="text")
 
-    the_args = parser.parse_args()
-    return the_args
+    return parser.parse_args(args)
 
 
 def main():
     """
     Main method for use for command line program
     """
-    args = get_args()
+    args = get_args(sys.argv[1:])
 
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)
@@ -702,6 +702,7 @@ def main():
         availability.analyze_args(args)
         # stuff here
         availability.process_all()
+
         ph5API_object.close()
     except ph5api.APIError as err:
         LOGGER.error(err)
