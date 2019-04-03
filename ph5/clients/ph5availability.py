@@ -9,8 +9,10 @@ import os
 import sys
 import logging
 import argparse
+from uuid import uuid4
+from datetime import datetime
 from argparse import RawTextHelpFormatter
-from ph5.core import ph5api, ph5utils, timedoy
+from ph5.core import ph5api, ph5utils
 
 PROG_VERSION = '2019.88'
 LOGGER = logging.getLogger(__name__)
@@ -48,29 +50,27 @@ class PH5Availability(object):
 
     def analyze_args(self, args):
 
-        self.station_ids = args.sta_id_list.split(',') \
-            if args.sta_id_list else []
-
-        self.stations = args.sta_list.split(',') \
-            if args.sta_list else []
-
-        self.locations = args.location.split(',')\
-            if args.location else ['*']
-
-        self.channels = args.channel.split(',') \
-            if args.channel else ['*']
-
-        try:
-            self.starttime = float(args.start_time)
-        except Exception:
-            self.starttime = timedoy.passcal2epoch(args.start_time) \
-                if args.start_time else None
-
-        try:
-            self.endtime = float(args.stop_time)
-        except Exception:
-            self.endtime = timedoy.passcal2epoch(args.stop_time) \
-                if args.stop_time else None
+        self.station_ids = ph5utils.parse_ph5_componentid(args.sta_id_list)
+        if self.station_ids:
+            self.stations = self.station_ids
+        else:
+            self.stations = ph5utils.parse_seed_station(args.sta_list)
+        if not self.stations:
+            self.stations = ["*"]
+        self.locations = ph5utils.parse_seed_location(args.location)
+        if not self.locations:
+            self.locations = ["*"]
+        self.channels = ph5utils.parse_seed_channel(args.channel)
+        if not self.channels:
+            self.channels = ["*"]
+        self.starttime = ph5utils.parse_date(args.start_time)
+        if self.starttime:
+            self.starttime = (self.starttime -
+                              datetime.fromtimestamp(0)).total_seconds()
+        self.endtime = ph5utils.parse_date(args.stop_time)
+        if self.endtime:
+            self.endtime = (self.endtime -
+                            datetime.fromtimestamp(0)).total_seconds()
 
         self.avail = args.avail
 
@@ -470,7 +470,7 @@ class PH5Availability(object):
         :returns: Tuple of percentage of available data (``0.0`` to ``1.0``)
             and number of gaps/overlaps.
         """
-        allp = station + channel + location
+        allp = station + location + channel
         if '*' in allp or '?' in allp:
             LOGGER.error(
                 "get_availability_percentage does not support wildcard.")
@@ -592,27 +592,43 @@ class PH5Availability(object):
         AVAIL = {0: self.has_data, 1: self.get_slc,
                  2: self.get_availability, 3: self.get_availability_extent,
                  4: self.get_availability_percentage}
-        stations = self.station_ids if self.station_ids != [] \
-            else self.stations
-        if stations == []:
-            stations = ['*']
-        for st in stations:
+        for st in self.stations:
             for ch in self.channels:
                 for loc in self.locations:
-                    print AVAIL[self.avail](
-                        st, loc, ch,
-                        self.starttime, self.endtime, self.SR_included)
+                    avail = AVAIL[self.avail](st, loc, ch, self.starttime,
+                                              self.endtime, self.SR_included)
+                    if avail:
+                        print(avail)
 
 
-def get_args(args):
+def get_args():
     """
     Parses command line arguments and returns arg_parse object
     :rtype: :class argparse
     :returns: Returns arge parse class object
-
-    TODO: ADD ALL COMMAND LINE ARGUMENTS NEEDED
-
     """
+
+    sentinel_dict = {}
+
+    def _preprocess_sysargv(argv):
+        inputs = []
+        for arg in argv[1:]:
+            # handles case where values contain --, otherwise they will
+            # be interpreted as arguments.
+            if '--,' in arg or ',--' in arg or arg == '--':
+                sentinel = uuid4().hex
+                key = '%s' % sentinel
+                sentinel_dict[key] = arg
+                inputs.append(sentinel)
+            else:
+                inputs.append(arg)
+        return inputs
+
+    def _postprocess_sysargv(v):
+        if v in sentinel_dict:
+            return sentinel_dict.get(v)
+        else:
+            return v
 
     parser = argparse.ArgumentParser(
         description='Get data availability form PH5',
@@ -628,12 +644,12 @@ def get_args(args):
         type=str, metavar="ph5_path")
 
     parser.add_argument(
-        "-s", "--starttime", action="store",
+        "-s", "--start_time", action="store",
         type=str, dest="start_time", metavar="start_time", default=None,
         help="Time formats are YYYY:DOY:HH:MM:SS.ss or epoch time")
 
     parser.add_argument(
-        "-t", "--stoptime", action="store",
+        "-t", "--stop_time", action="store",
         type=str, dest="stop_time", metavar="stop_time", default=None,
         help="Time formats are YYYY:DOY:HH:MM:SS.ss or epoch time")
 
@@ -647,17 +663,17 @@ def get_args(args):
         help="Comma separated list of PH5 station id's",
         metavar="sta_id_list", type=str, default=[])
 
+    parser.add_argument('--location', '--loc',
+                        help="Select one or more SEED location identifier. "
+                        "Use -- for 'Blank' location IDs (ID's containing 2 "
+                        "spaces). Accepts wildcards and lists.",
+                        type=_postprocess_sysargv)
+
     parser.add_argument(
         "--channel", action="store",
         type=str, dest="channel",
         help="Comma separated list of SEED channels to extract",
         metavar="channel", default=[])
-
-    parser.add_argument(
-        "-l", "--location", action="store",
-        type=str, dest="location",
-        help="Comma separated list of SEED locations to extract",
-        metavar="location", default=[])
 
     parser.add_argument(
         "-S", "--srate", action="store_true",
@@ -668,8 +684,8 @@ def get_args(args):
     parser.add_argument(
         "-a", "--avail", action="store",
         type=int, dest="avail",
-        help="Availability of data:\n  0: has_data, 1: slc, 2: availability,\
-\n  3: availability_extent, 4: availability_percentage",
+        help=("Availability of data: 0: has_data, 1: slc, 2: availability, "
+              "3: availability_extent, 4: availability_percentage"),
         metavar="avail", default=0, required=True)
 
     parser.add_argument(
@@ -677,14 +693,14 @@ def get_args(args):
         help="text, sync, geocsv, json",
         metavar="format", type=str, default="text")
 
-    return parser.parse_args(args)
+    return parser.parse_args(_preprocess_sysargv(sys.argv))
 
 
 def main():
     """
     Main method for use for command line program
     """
-    args = get_args(sys.argv[1:])
+    args = get_args()
 
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)
@@ -708,8 +724,8 @@ def main():
         LOGGER.error(err)
     except PH5AvailabilityError as err:
         LOGGER.error(err)
-    except Exception as e:
-        LOGGER.error(e)
+    except Exception as err:
+        LOGGER.error(err)
 
 
 if __name__ == '__main__':
