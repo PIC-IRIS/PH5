@@ -9,12 +9,15 @@ import os
 import sys
 import logging
 import argparse
-from copy import deepcopy
+import datetime
 from argparse import RawTextHelpFormatter
 from ph5.core import ph5api, ph5utils, timedoy
 
 PROG_VERSION = '2019.086'
 LOGGER = logging.getLogger(__name__)
+
+f_id = {'stat': 0, 'loc': 1, 'chan': 2,
+        'earliest': 3, 'latest': 4, 'sRate': 5}
 
 
 class PH5AvailabilityError(Exception):
@@ -39,12 +42,15 @@ class PH5Availability(object):
         TODO: ADD ALL PARAMATERS NEEDED
 
         """
-
         self.ph5 = ph5API_object
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
+            self.netcode = self.ph5.Experiment_t['rows'][0]['net_code_s']
+        self.array = None
+        self.sta_len = 1
+        self.tim_len = 27
         return
 
     def analyze_args(self, args):
@@ -61,26 +67,50 @@ class PH5Availability(object):
         self.channels = args.channel.split(',') \
             if args.channel else ['*']
 
-        try:
-            self.starttime = float(args.start_time)
-        except Exception:
-            self.starttime = timedoy.passcal2epoch(args.start_time) \
-                if args.start_time else None
+        self.starttime = self.get_time(args.start_time)
+        self.endtime = self.get_time(args.end_time)
+        if -1 in [self.starttime, self.endtime]:
+            return False
 
-        try:
-            self.endtime = float(args.stop_time)
-        except Exception:
-            self.endtime = timedoy.passcal2epoch(args.stop_time) \
-                if args.stop_time else None
-
+        self.array = args.array_t_
+        if args.avail not in [0, 1, 2, 3, 4]:
+            LOGGER.error("There is no avail option '%s'. Please run "
+                         "ph5availability -h for more information.")
         self.avail = args.avail
 
         self.SR_included = False
         if args.samplerate:
-            self.SR_included = True
+            if self.avail in [2, 3]:
+                self.SR_included = True
 
         if args.format:
             self.format = args.format
+
+        # define OFILE to write output
+        o_filename = args.output_file
+        if o_filename is None:
+            self.OFILE = None
+        else:
+            self.OFILE = open(o_filename, 'w')
+        return True
+
+    def get_time(self, time):
+        if time is None:
+            return None
+        try:
+            epoch_time = float(time)
+        except Exception:
+            try:
+                if "T" not in time:
+                    epoch_time = timedoy.passcal2epoch(time)
+                else:
+                    epoch_time = ph5utils.fdsntime_to_epoch(time)
+            except Exception as e:
+                print("error:", e)
+                LOGGER.error("The input time %s is not in the right format."
+                             % time)
+                return - 1
+        return epoch_time
 
     def get_channel(self, st_data):
         if 'seed_band_code_s' in st_data:
@@ -108,6 +138,8 @@ class PH5Availability(object):
             ph5_seed_station = st_data['seed_station_name_s']
         else:
             ph5_seed_station = st_data['id_s']
+        if len(ph5_seed_station) > self.sta_len:
+            self.stat_len = len(ph5_seed_station)
 
         if not ph5utils.does_pattern_exists(
            [station], ph5_seed_station):
@@ -160,7 +192,7 @@ class PH5Availability(object):
                     LOGGER.warning("No Das table found for %s in range %s - %s"
                                    % (das, start, end))
                 return -1
-            Das_t = deepcopy(self.ph5.Das_t[das]['rows'])
+            Das_t = self.ph5.Das_t[das]['rows']
             self.ph5.forget_das_t(das)
             if component is not None:
                 Das_t = ph5api.filter_das_t(Das_t, component)
@@ -209,6 +241,10 @@ class PH5Availability(object):
 
         array_names = sorted(self.ph5.Array_t_names)
         for array_name in array_names:
+            if self.array is not None:
+                a_n = int(array_name.split('_')[2])
+                if self.array != a_n:
+                    continue
             arrayorder, arraybyid = self.get_array_order_id(array_name)
 
             for ph5_station in arrayorder:
@@ -276,6 +312,10 @@ class PH5Availability(object):
         array_names = sorted(self.ph5.Array_t_names)
 
         for array_name in array_names:
+            if self.array is not None:
+                a_n = int(array_name.split('_')[2])
+                if self.array != a_n:
+                    continue
             arrayorder, arraybyid = self.get_array_order_id(array_name)
 
             for ph5_station in arrayorder:
@@ -353,6 +393,10 @@ class PH5Availability(object):
         array_names = sorted(self.ph5.Array_t_names)
 
         for array_name in array_names:
+            if self.array is not None:
+                a_n = int(array_name.split('_')[2])
+                if self.array != a_n:
+                    continue
             arrayorder, arraybyid = self.get_array_order_id(array_name)
 
             for ph5_station in arrayorder:
@@ -376,6 +420,8 @@ class PH5Availability(object):
                         times = self.ph5.get_availability(
                             ph5_das, ph5_sample_rate, ph5_channum,
                             starttime, endtime)
+                        if times is None:
+                            continue
                         for T in times:
                             start = T[1] if T[1] > starttime \
                                 or starttime is None else starttime
@@ -469,10 +515,11 @@ class PH5Availability(object):
         :returns: Tuple of percentage of available data (``0.0`` to ``1.0``)
             and number of gaps/overlaps.
         """
-        allp = station + channel + location
+        allp = station + channel
         if '*' in allp or '?' in allp:
             LOGGER.error(
-                "get_availability_percentage does not support wildcard.")
+                "get_availability_percentage requires providing exact "
+                "station/channel.")
             return
         sampleNo = 0
         expected_sampleNo = 0
@@ -480,6 +527,10 @@ class PH5Availability(object):
         array_names = sorted(self.ph5.Array_t_names)
 
         for array_name in array_names:
+            if self.array is not None:
+                a_n = int(array_name.split('_')[2])
+                if self.array != a_n:
+                    continue
             arrayorder, arraybyid = self.get_array_order_id(array_name)
 
             for ph5_station in arrayorder:
@@ -545,6 +596,10 @@ class PH5Availability(object):
         array_names = sorted(self.ph5.Array_t_names)
 
         for array_name in array_names:
+            if self.array is not None:
+                a_n = int(array_name.split('_')[2])
+                if self.array != a_n:
+                    continue
             arrayorder, arraybyid = self.get_array_order_id(array_name)
 
             for ph5_station in arrayorder:
@@ -587,6 +642,203 @@ class PH5Availability(object):
 
         return False
 
+    def print_report(self, text):
+        if self.OFILE is None:
+            print(text)
+        else:
+            self.OFILE.write(text + '\n')
+
+    def get_report(self, result, format):
+        # print("print_info:", result)
+        if self.avail != 2:
+            LOGGER.warning("Report feature only apply for avail=2.")
+            return result
+
+        if format == 's':
+            return self.get_sync_report(result)
+        elif format == 'g':
+            return self.get_geoCSV_report(result)
+        elif format == 't':
+            return self.get_text_report(result)
+        elif format == 'j':
+            return self.get_json_report(result)
+        else:
+            LOGGER.warning("The entered format %s is not supported." % format)
+            return result
+
+    def get_sync_report(self, result):
+        """
+        Link for Format:
+        http://www.iris.washington.edu/bud_stuff/goat/syncformat.html
+        """
+
+        # header line
+        today = datetime.datetime.now()
+        year = today.year
+        day_of_year = (today - datetime.datetime(today.year, 1, 1)).days + 1
+        date = "%s,%s" % (year, day_of_year)
+        s = "%s|%s" % ('PIC', date)
+
+        # Time Span Lines
+        template = [self.netcode] + [''] * 15
+        for r in result:
+            template[1] = r[f_id['stat']]
+            template[2] = r[f_id['loc']]
+            template[3] = r[f_id['chan']]
+            t = timedoy.epoch2passcal(r[f_id['earliest']])
+            template[4] = t[:-4].replace(":", ",", 2)
+            t = timedoy.epoch2passcal(r[f_id['latest']])
+            template[5] = t[:-4].replace(":", ",", 2)
+            template[7] = str(r[f_id['sRate']])
+            # template[13] = 'primary'
+
+            s += "\n" + "|".join(template)
+        return s
+
+    def get_geoCSV_report(self, result):
+        """
+        Link for Format:
+        http://geows.ds.iris.edu/documents/GeoCSV.pdf
+        Example: Minimal IRIS Station Example
+        """
+
+        dataset = "#dataset: GeoCSV 2.0"
+        delim = "#delimiter: |"
+        field_unit = "#field_unit: unitless|unitless|unitless|unitless" + \
+            "|unitless|unitless"
+        field_type = "#field_type: string|string|string|string"
+        header = "network|station|location|channel|repository|quality"
+
+        if self.SR_included:
+            field_unit += "|hertz"
+            field_type += "|float"
+            header += "|samplerate"
+
+            field_unit += "|ISO_8601|ISO_8601"
+            field_type += "|datetime|datetime"
+            header += "|starttime|endtime"
+
+        s = ""
+        for r in result:
+            r = list(r)
+            r = self.convert_time(r)
+            row = [self.netcode, r[f_id['stat']], r[f_id['loc']],
+                   r[f_id['chan']], '', '', str(r[f_id['sRate']]),
+                   r[f_id['earliest']], r[f_id['latest']]]
+
+            s += "\n" + "|".join(row)
+
+        ret = dataset + "\n" + delim + "\n" + field_unit + "\n" \
+            + field_type + "\n" + header + s
+
+        return ret
+
+    def get_text_report(self, result):
+        s = ""
+        for r in result:
+            r = list(r)
+            r = self.convert_time(r)
+            s += "\n" + self.netcode + " "
+
+            s += r[f_id['stat']] + " "
+
+            loc = r[f_id['loc']] if r[f_id['loc']] != '' else '--'
+            s += loc + " "
+
+            s += r[f_id['chan']] + " "
+
+            s += "- "
+            if self.SR_included:
+                s += str(r[f_id['sRate']]).rjust(len('sample-rate')) + " "
+
+            s += r[f_id['earliest']] + " "
+            s += r[f_id['latest']]
+
+        header = "#n " + "s".ljust(self.stat_len) + " l  c   q " + \
+            "sample-rate " + "earliest".rjust(self.tim_len) + " " + \
+            "latest".rjust(self.tim_len)
+
+        ret = header + s
+        return ret
+
+    def get_json_report(self, result):
+        header = '"created":"%s",'\
+            '"repository":[{"repository_name":"","channels":' \
+            % self.get_today_FdsnTime()
+        rows = []
+        tspan = []
+        for i in range(len(result)):
+            r = list(result[i])
+            # get current spantime
+            r = self.convert_time(r)
+            tspan.append('["%s","%s"]' %
+                         (r[f_id['earliest']], r[f_id['latest']]))
+
+            if i != 0 and result[i-1][:3] != result[i][:3]:
+                # add row for previous stat, loc, chan when channel changed
+                r = result[i-1]
+                row = '"net":"%(net)s",'\
+                    '"sta":"%(stat)s",'\
+                    '"loc":"%(loc)s",'\
+                    '"cha":"%(chan)s",'\
+                    '"quality":"",'
+                v = {"net": self.netcode, "stat": r[f_id['stat']],
+                     "loc": r[f_id['loc']], "chan": r[f_id['chan']]}
+                if self.SR_included:
+                    row += '"sample_rate":%(sRate)s,'
+                    v['sRate'] = r[f_id['sRate']]
+                v['tspan'] = tspan
+                row += '"timespans":[%(tspan)s]'
+                rows.append("{%s}" % row % v)
+                tspan = []
+
+        if tspan != []:
+            r = result[-1]
+            row = '"net":"%(net)s",'\
+                '"sta":"%(stat)s",'\
+                '"loc":"%(loc)s",'\
+                '"cha":"%(chan)s",'\
+                '"quality":"",'
+            v = {"net": self.netcode, "stat": r[f_id['stat']],
+                 "loc": r[f_id['loc']], "chan": r[f_id['chan']]}
+            if self.SR_included:
+                row += '"sample_rate":%(sRate)s,'
+                v['sRate'] = r[f_id['sRate']]
+            v['tspan'] = tspan
+            row += '"timespans":[%(tspan)s]'
+
+            rows.append("{%s}" % row % v)
+
+        ret = '{%s\n[%s]}]}"' % (header, ',\n'.join(rows))
+
+        return ret
+
+    def get_today_FdsnTime(self):
+        today = datetime.datetime.now()
+        tdoy = timedoy.TimeDOY(
+            year=today.year,
+            hour=today.hour,
+            minute=today.minute,
+            second=today.second,
+            doy=(today - datetime.datetime(today.year, 1, 1)).days + 1)
+        return tdoy.getFdsnTime()
+
+    def convert_time(self, r):
+        """
+        given a row in the result, if have earliest and latest,
+        convert them to datetime
+        """
+        if self.avail not in [2, 3]:
+            return r
+
+        # availability/availability_extent
+        earliest = timedoy.TimeDOY(epoch=r[f_id['earliest']])
+        r[f_id['earliest']] = earliest.getFdsnTime() + "Z"
+        latest = timedoy.TimeDOY(epoch=r[f_id['latest']])
+        r[f_id['latest']] = latest.getFdsnTime() + "Z"
+
+        return r
+
     def process_all(self):
         AVAIL = {0: self.has_data, 1: self.get_slc,
                  2: self.get_availability, 3: self.get_availability_extent,
@@ -598,9 +850,16 @@ class PH5Availability(object):
         for st in stations:
             for ch in self.channels:
                 for loc in self.locations:
-                    print AVAIL[self.avail](
-                        st, loc, ch,
-                        self.starttime, self.endtime, self.SR_included)
+                    report = self.get_report(
+                        AVAIL[self.avail](st, loc, ch, self.starttime,
+                                          self.endtime, self.SR_included),
+                        format=self.format)
+
+                    if report is not None:
+                        if type(report) != 'str':
+                            print(report)
+                        else:
+                            print(self.print_report(report))
 
 
 def get_args():
@@ -632,8 +891,8 @@ def get_args():
         help="Time formats are YYYY:DOY:HH:MM:SS.ss or epoch time")
 
     parser.add_argument(
-        "-t", "--stoptime", action="store",
-        type=str, dest="stop_time", metavar="stop_time", default=None,
+        "-e", "--endtime", action="store",
+        type=str, dest="end_time", metavar="end_time", default=None,
         help="Time formats are YYYY:DOY:HH:MM:SS.ss or epoch time")
 
     parser.add_argument(
@@ -665,7 +924,12 @@ def get_args():
         default=False)
 
     parser.add_argument(
-        "-a", "--avail", action="store",
+        "-A", "--Array_t_", dest="array_t_", metavar="n", type=int,
+        help=("Dump /Experiment_g/Sorts_g/Array_t_[n] to a kef file."),
+        default=None)
+
+    parser.add_argument(
+        "--avail", action="store",
         type=int, dest="avail",
         help="Availability of data:\n  0: has_data, 1: slc, 2: availability,\
 \n  3: availability_extent, 4: availability_percentage",
@@ -673,8 +937,13 @@ def get_args():
 
     parser.add_argument(
         "-F", "-f", "--format", action="store", dest="format",
-        help="text, sync, geocsv, json",
-        metavar="format", type=str, default="text")
+        help="Format for availability's report:\n  t: text, s: sync, \
+g: geocsv, j: json",
+        metavar="format", type=str, default="t")
+
+    parser.add_argument("-o", "--outfile", dest="output_file",
+                        help="The kef output file to be saved at.",
+                        metavar="output_file", default=None)
 
     the_args = parser.parse_args()
     return the_args
@@ -699,7 +968,9 @@ def main():
         ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
         availability = PH5Availability(ph5API_object)
 
-        availability.analyze_args(args)
+        ret = availability.analyze_args(args)
+        if not ret:
+            return 1
         # stuff here
         availability.process_all()
         ph5API_object.close()
