@@ -883,7 +883,8 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        with open('ph5/test_data/metadata/extent_full.txt', 'r') as content_file:
+        with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
+                content_file:
             content = content_file.read()
         self.assertEqual(output, content)
 
