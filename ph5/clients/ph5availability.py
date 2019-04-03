@@ -14,7 +14,7 @@ from datetime import datetime
 from argparse import RawTextHelpFormatter
 from ph5.core import ph5api, ph5utils
 
-PROG_VERSION = '2019.88'
+PROG_VERSION = '2019.93'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -601,7 +601,7 @@ class PH5Availability(object):
                         print(avail)
 
 
-def get_args():
+def get_args(args):
     """
     Parses command line arguments and returns arg_parse object
     :rtype: :class argparse
@@ -612,7 +612,7 @@ def get_args():
 
     def _preprocess_sysargv(argv):
         inputs = []
-        for arg in argv[1:]:
+        for arg in argv:
             # handles case where values contain --, otherwise they will
             # be interpreted as arguments.
             if '--,' in arg or ',--' in arg or arg == '--':
@@ -693,14 +693,14 @@ def get_args():
         help="text, sync, geocsv, json",
         metavar="format", type=str, default="text")
 
-    return parser.parse_args(_preprocess_sysargv(sys.argv))
+    return parser.parse_args(_preprocess_sysargv(args))
 
 
 def main():
     """
     Main method for use for command line program
     """
-    args = get_args()
+    args = get_args(sys.argv[1:])
 
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)

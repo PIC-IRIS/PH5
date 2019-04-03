@@ -5,6 +5,8 @@ unit tests for ph5availability
 import unittest
 from ph5.clients import ph5availability
 from ph5.core import ph5api
+import sys
+from mock import patch
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -801,6 +803,25 @@ class TestPH5Availability(unittest.TestCase):
                 channel='LOG',
                 starttime=605809504,
                 endtime=1741883104))
+
+    def test_get_args(self):
+        """
+        test get_args
+        """
+        # NOTE needs much more
+        with self.assertRaises(SystemExit):
+            ph5availability.get_args([])
+        with self.assertRaises(SystemExit):
+            ph5availability.get_args(['-n', 'master.ph5'])
+
+    def test_main(self):
+        """
+        test main function
+        """
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '0']
+        with patch.object(sys, 'argv', testargs):
+            ph5availability.main()
 
     def tearDown(self):
         """
