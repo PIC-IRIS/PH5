@@ -7,6 +7,19 @@ from ph5.clients import ph5availability
 from ph5.core import ph5api
 import sys
 from mock import patch
+from contextlib import contextmanager
+from StringIO import StringIO
+
+
+@contextmanager
+def captured_output():
+    new_out, new_err = StringIO(), StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -818,10 +831,76 @@ class TestPH5Availability(unittest.TestCase):
         """
         test main function
         """
+
+        # test has_data station with data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0']
+                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    '500', '--channel', 'DP1']
         with patch.object(sys, 'argv', testargs):
-            ph5availability.main()
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        self.assertEqual(output, 'True')
+
+        # test has_data station with data all channels
+        # expect to return True 3 times, once for each channel
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    '500', '--channel', '*']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        self.assertEqual(output, 'True\nTrue\nTrue')
+
+        # test has_data station with no data
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    '9576', '--channel', '*']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        self.assertEqual(output, 'False')
+
+        # test has_data station list data,no data,
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    '9001,91234', '--channel', '*']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        self.assertEqual(output, 'True\nFalse')
+
+        # test extent and text format
+        # should return 10 channels
+        # should match slc_full.txt from test data
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '3',
+                    '-F', 'text']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        with open('ph5/test_data/metadata/extent_full.txt', 'r') as content_file:
+            content = content_file.read()
+        self.assertEqual(output, content)
+
+        # test extent and geocsv format
+        # should return 10 channels
+        # should match slc_full_geocsv.csv from test data
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '3',
+                    '-F', 'geocsv']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        with open('ph5/test_data/metadata/extent_full.csv', 'r') as \
+                content_file:
+            content = content_file.read()
+        self.assertEqual(output, content)
 
     def tearDown(self):
         """
