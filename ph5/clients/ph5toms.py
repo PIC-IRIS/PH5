@@ -23,7 +23,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.84'
+PROG_VERSION = '2019.93'
 LOGGER = logging.getLogger(__name__)
 
 

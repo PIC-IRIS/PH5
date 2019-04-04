@@ -13,7 +13,7 @@ import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 
-PROG_VERSION = '2019.65'
+PROG_VERSION = '2019.93'
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
