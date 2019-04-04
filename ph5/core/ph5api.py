@@ -14,7 +14,7 @@ from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2019.65'
+PROG_VERSION = '2019.88'
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
@@ -1432,7 +1432,6 @@ class PH5(experiment.ExperimentGroup):
         previous = {}
 
         times = list()
-
         for entry in new_das_t:
             if not previous:
                 previous['start'] = (
@@ -1455,31 +1454,37 @@ class PH5(experiment.ExperimentGroup):
                 previous['end'] = previous['start'] + previous['length']
                 continue
             else:
+
                 if (float(entry['time/epoch_l']) +
                         float(entry['time/micro_seconds_i']) /
                         1000000) != previous['start']+previous['length']:
                     gaps = gaps + 1
                     times.append((previous['sample_rate'],
-                                 previous['start'],
+                                 start_time,
                                  previous['end']))
                     previous['start'] = (
                             float(entry['time/epoch_l']) +
                             float(entry['time/micro_seconds_i']) /
                             1000000)
                     start_time = previous['start']
-                    if entry['sample_rate_i'] > 0:
-                        previous['length'] = (
-                                float(entry['sample_count_i']) /
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                        previous['sample_rate'] = (
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                    else:
-                        previous['length'] = 0
-                        previous['sample_rate'] = 0
 
-                    previous['end'] = previous['start'] + previous['length']
+                previous['start'] = (
+                        float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000)
+                if entry['sample_rate_i'] > 0:
+                    previous['length'] = (
+                            float(entry['sample_count_i']) /
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                    previous['sample_rate'] = (
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                else:
+                    previous['length'] = 0
+                    previous['sample_rate'] = 0
+
+                previous['end'] = previous['start'] + previous['length']
         if gaps > 0:
             start_ = (
                     float(new_das_t[-1]['time/epoch_l']) +

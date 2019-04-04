@@ -388,6 +388,56 @@ class TestPH5Utils(unittest.TestCase):
              200])
         self.assertTrue(ret)
 
+    def test_RoundSeconds(self):
+        """
+        test RoundSeconds from datetime
+        """
+        # date only
+        date_only = datetime.datetime(2020, 5, 17)
+        rounded = ph5utils.roundSeconds(date_only)
+        # Should be the equal
+        self.assertEqual(date_only, rounded)
+
+        # time no microseconds
+        time_no_micro = datetime.datetime(2019, 1, 10, 5, 15, 10)
+        rounded = ph5utils.roundSeconds(time_no_micro)
+        self.assertEqual(time_no_micro, rounded)
+
+        # time microseconds round down
+        time_micro_down = datetime.datetime(2019, 1, 10, 5, 15, 10, 490000)
+        rounded = ph5utils.roundSeconds(time_micro_down)
+        self.assertEqual(
+            datetime.datetime(2019, 1, 10, 5, 15, 10),
+            rounded)
+
+        # round up second only
+        time_micro_up = datetime.datetime(2019, 1, 10, 5, 15, 10, 500000)
+        rounded = ph5utils.roundSeconds(time_micro_up)
+        self.assertEqual(
+            datetime.datetime(2019, 1, 10, 5, 15, 11),
+            rounded)
+
+        # round up seconds rollover
+        time_micro_up = datetime.datetime(2019, 1, 10, 5, 15, 59, 500000)
+        rounded = ph5utils.roundSeconds(time_micro_up)
+        self.assertEqual(
+            datetime.datetime(2019, 1, 10, 5, 16, 00),
+            rounded)
+
+        # round up minutes rollover
+        time_micro_up = datetime.datetime(2019, 1, 10, 5, 59, 59, 500000)
+        rounded = ph5utils.roundSeconds(time_micro_up)
+        self.assertEqual(
+            datetime.datetime(2019, 1, 10, 6, 0, 0),
+            rounded)
+
+        # round up hour rollover
+        time_micro_up = datetime.datetime(2019, 1, 10, 23, 59, 59, 500000)
+        rounded = ph5utils.roundSeconds(time_micro_up)
+        self.assertEqual(
+            datetime.datetime(2019, 1, 11, 0, 0, 0),
+            rounded)
+
 
 if __name__ == "__main__":
     unittest.main()
