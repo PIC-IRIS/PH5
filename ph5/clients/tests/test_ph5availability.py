@@ -878,14 +878,14 @@ class TestPH5Availability(unittest.TestCase):
         # should match slc_full.txt from test data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3',
-                    '-F', 'text']
+                    '-F', 't', '-S']
         with patch.object(sys, 'argv', testargs):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
         with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
                 content_file:
-            content = content_file.read()
+            content = content_file.read().strip()
         self.assertEqual(output, content)
 
         # test extent and geocsv format
@@ -893,14 +893,14 @@ class TestPH5Availability(unittest.TestCase):
         # should match slc_full_geocsv.csv from test data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3',
-                    '-F', 'geocsv']
+                    '-F', 'g', '-S']
         with patch.object(sys, 'argv', testargs):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
         with open('ph5/test_data/metadata/extent_full.csv', 'r') as \
                 content_file:
-            content = content_file.read()
+            content = content_file.read().strip()
         self.assertEqual(output, content)
 
     def tearDown(self):
