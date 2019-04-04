@@ -23,7 +23,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.84'
+PROG_VERSION = '2019.93'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -629,11 +629,11 @@ class PH5toMSeed(object):
                         start_times.append(deploy)
 
                 else:
-                    check_start_time = ph5utils.fdsntime_to_epoch(
+                    check_start_time = ph5utils.datestring_to_epoch(
                         self.start_time)
                     if float(check_start_time) > float(deploy):
                         start_times.append(
-                            ph5utils.fdsntime_to_epoch(
+                            ph5utils.datestring_to_epoch(
                                 self.start_time))
                     else:
                         start_times.append(deploy)
@@ -666,10 +666,10 @@ class PH5toMSeed(object):
                             stop_fepoch = pickup
 
                     else:
-                        check_end_time = ph5utils.fdsntime_to_epoch(
+                        check_end_time = ph5utils.datestring_to_epoch(
                             self.end_time)
                         if float(check_end_time) < float(pickup):
-                            stop_fepoch = ph5utils.fdsntime_to_epoch(
+                            stop_fepoch = ph5utils.datestring_to_epoch(
                                 self.end_time)
                         else:
                             stop_fepoch = pickup
