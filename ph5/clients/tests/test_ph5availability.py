@@ -1607,7 +1607,7 @@ class TestPH5Availability(unittest.TestCase):
             self.availability.print_report("this is a text line")
         output = out.getvalue().strip()
         self.assertEqual(output, "this is a text line")
-        
+
         self.availability.OFILE = open("test", 'w')
         with captured_output() as (out, err):
             self.availability.print_report("this is a text line")
