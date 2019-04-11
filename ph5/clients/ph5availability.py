@@ -10,11 +10,12 @@ import sys
 import logging
 import argparse
 import datetime as dt
+import time
 from uuid import uuid4
 from argparse import RawTextHelpFormatter
 from ph5.core import ph5api, ph5utils, timedoy
 
-PROG_VERSION = '2019.93'
+PROG_VERSION = '2019.101'
 LOGGER = logging.getLogger(__name__)
 
 f_id = {'stat': 0, 'loc': 1, 'chan': 2,
@@ -52,36 +53,43 @@ class PH5Availability(object):
         self.array = None
         self.sta_len = 1
         self.tim_len = 27
+        self.avail = 2
         return
 
     def analyze_args(self, args):
-        self.station_ids = ph5utils.parse_ph5_componentid(args.sta_id_list)
-        if self.station_ids:
-            self.stations = self.station_ids
-        else:
-            self.stations = ph5utils.parse_seed_station(args.sta_list)
-        if not self.stations:
-            self.stations = ["*"]
-        self.locations = ph5utils.parse_seed_location(args.location)
-        if not self.locations:
-            self.locations = ["*"]
-        self.channels = ph5utils.parse_seed_channel(args.channel)
-        if not self.channels:
-            self.channels = ["*"]
+        try:
+            self.station_ids = ph5utils.parse_ph5_componentid(args.sta_id_list)
+            if self.station_ids:
+                self.stations = self.station_ids
+            else:
+                self.stations = ph5utils.parse_seed_station(args.sta_list)
+            if not self.stations:
+                self.stations = ["*"]
+            self.locations = ph5utils.parse_seed_location(args.location)
+            if not self.locations:
+                self.locations = ["*"]
+            self.channels = ph5utils.parse_seed_channel(args.channel)
+            if not self.channels:
+                self.channels = ["*"]
 
-        self.starttime = ph5utils.parse_date(args.start_time)
+            self.starttime = ph5utils.parse_date(args.start_time)
+            self.endtime = ph5utils.parse_date(args.end_time)
+        except ValueError, e:
+            LOGGER.error(e)
+            return False
         if self.starttime:
             self.starttime = (self.starttime -
                               dt.datetime.fromtimestamp(0)).total_seconds()
-        self.endtime = ph5utils.parse_date(args.end_time)
+
         if self.endtime:
             self.endtime = (self.endtime -
                             dt.datetime.fromtimestamp(0)).total_seconds()
-        
+
         self.array = args.array_t_
         if args.avail not in [0, 1, 2, 3, 4]:
             LOGGER.error("There is no avail option '%s'. Please run "
                          "ph5availability -h for more information.")
+            return False
         self.avail = args.avail
 
         self.SR_included = False
@@ -90,13 +98,20 @@ class PH5Availability(object):
                 self.SR_included = True
 
         self.format = args.format
+        if self.avail not in [2, 3]:
+            LOGGER.warning("Format only apply for aval 2 or 3.")
 
         # define OFILE to write output
         o_filename = args.output_file
         if o_filename is None:
             self.OFILE = None
         else:
+            if self.avail not in [2, 3]:
+                LOGGER.warning("Print to file only apply for aval 2 or 3.")
+            elif self.format is None:
+                LOGGER.warning("No format given.")
             self.OFILE = open(o_filename, 'w')
+
         return True
 
     def get_channel(self, st_data):
@@ -141,6 +156,7 @@ class PH5Availability(object):
         if not ph5utils.does_pattern_exists(
            [location], ph5_loc):
             return -1
+
         return ph5_seed_station, ph5_loc, ph5_channel
 
     def get_array_order_id(self, array_name):
@@ -149,16 +165,47 @@ class PH5Availability(object):
                 self.ph5.read_array_t(n)
         else:
             self.ph5.read_array_t(array_name)
-
-        arraybyid = self.ph5.Array_t[array_name]['byid']
-        arrayorder = self.ph5.Array_t[array_name]['order']
+        try:
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order']
+        except KeyError:
+            LOGGER.error("There is no array table '%s'." % array_name)
+            return -1
         return arrayorder, arraybyid
 
     def get_time_das_t(self, das, start, end,
                        component=None, sample_rate=None):
+        """
+        para das: name of das
+        para start: start time, can be none
+        para end: end time, can be none
+        component: channel number, default none
+        sample_rate: default none
+        return
+           + earliest_epoch, latest epoch: time range for channel
+           + new_das_t: list of data for das in the given time range(start-end)
+                (all channel or only the channel required)
+        if component and sample_rate=None, doesn't care about channel,
+        this function only for checking if the start and end time given is
+        in the time range of this das or not. Useful only when channel is *
+        for has data so don't need to check each channel.
+        """
         s = 0 if start is None else start
         e = 32509613590 if end is None else end
+        if start is None and end is None:
+            rangestr = ""
+        elif start is None:
+            rangestr = " before %s " % end
+        elif end is None:
+            rangestr = " after %s " % start
+        else:
+            rangestr = " in range %s - %s " % (start, end)
+
         if sample_rate is not None:
+            if component is None:
+                LOGGER.error("get_time_das_t requires component when "
+                             "sample_rate is given")
+                return -1
             Das_t = self.ph5.query_das_t(
                 das,
                 chan=component,
@@ -166,27 +213,27 @@ class PH5Availability(object):
                 stop_epoch=e,
                 sample_rate=sample_rate)
             if not Das_t:
-                if (start is not None) and (end is not None):
-                    LOGGER.warning(
-                        "No Das table found for %s in range %s - %s for "
-                        "component: %s, samplerate:%s"
-                        % (das, start, end, component, sample_rate))
+                LOGGER.warning(
+                    "No Das table found for %s %s for "
+                    "component: %s, samplerate:%s"
+                    % (das, rangestr, component, sample_rate))
                 return -1
         else:
+            # include all channelnum and sample_rate
             self.ph5.read_das_t(das, s, e, reread=False)
             if das not in self.ph5.Das_t:
-                if (start is not None) and (end is not None):
-                    LOGGER.warning("No Das table found for %s in range %s - %s"
-                                   % (das, start, end))
+                LOGGER.warning("No Das table found for %s %s"
+                               % (das, rangestr))
                 return -1
             Das_t = self.ph5.Das_t[das]['rows']
 
             if component is not None:
+                # include all sample_rate
                 Das_t = ph5api.filter_das_t(Das_t, component)
         new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
 
         if not new_das_t:
-            LOGGER.warning("No Das table found for " + das)
+            LOGGER.warning("No Das table found for %s %s" % (das, rangestr))
             self.ph5.forget_das_t(das)
             return -1
 
@@ -203,7 +250,7 @@ class PH5Availability(object):
             self.ph5.forget_das_t(das)
             return -1
         self.ph5.forget_das_t(das)
-        return earliest_epoch, latest_epoch, true_sample_rate, new_das_t
+        return earliest_epoch, latest_epoch, new_das_t
 
     def get_slc(self, station='*', location='*', channel='*',
                 starttime=None, endtime=None, include_sample_rate=False):
@@ -235,7 +282,10 @@ class PH5Availability(object):
                 a_n = int(array_name.split('_')[2])
                 if self.array != a_n:
                     continue
-            arrayorder, arraybyid = self.get_array_order_id(array_name)
+            ret = self.get_array_order_id(array_name)
+            if ret == -1:
+                continue
+            arrayorder, arraybyid = ret
 
             for ph5_station in arrayorder:
 
@@ -295,6 +345,7 @@ class PH5Availability(object):
 
         """
         availability_extents = []
+        self.SR_included = include_sample_rate
         if starttime or endtime:
             if not (starttime and endtime):
                 raise ValueError("if start or end, both are required")
@@ -306,7 +357,10 @@ class PH5Availability(object):
                 a_n = int(array_name.split('_')[2])
                 if self.array != a_n:
                     continue
-            arrayorder, arraybyid = self.get_array_order_id(array_name)
+            ret = self.get_array_order_id(array_name)
+            if ret == -1:
+                continue
+            arrayorder, arraybyid = ret
 
             for ph5_station in arrayorder:
 
@@ -331,7 +385,10 @@ class PH5Availability(object):
                             starttime, endtime)
                         if earliest is None:
                             continue
-
+                        if starttime is not None and earliest < starttime:
+                            earliest = starttime
+                        if endtime is not None and endtime < latest:
+                            latest = endtime
                         if not include_sample_rate:
                             tup = (ph5_seed_station, ph5_loc, ph5_channel,
                                    earliest, latest)
@@ -379,7 +436,7 @@ class PH5Availability(object):
         method that works on the channel level. Leverage this
         """
         availability = []
-
+        self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
 
         for array_name in array_names:
@@ -387,7 +444,10 @@ class PH5Availability(object):
                 a_n = int(array_name.split('_')[2])
                 if self.array != a_n:
                     continue
-            arrayorder, arraybyid = self.get_array_order_id(array_name)
+            ret = self.get_array_order_id(array_name)
+            if ret == -1:
+                continue
+            arrayorder, arraybyid = ret
 
             for ph5_station in arrayorder:
 
@@ -447,11 +507,27 @@ class PH5Availability(object):
 
     def get_sampleNos_gapOverlap(self, das_t, earliest, latest, start, end,
                                  sample_rate, st):
+        """
+        time range: (start, end); use use (earliest, latest) if not given
+        das_t: only have the traces in the time range
+        earliest: earliest time of traces in das_t
+        latest: latest time of traces in das_t
+        all the parameters are already processed before sending to
+        get_sampleNos_gapOverlap() => no need to check or calc. again
 
+        return:
+           + expected_sampleNo: number of samples expected for the time range
+           + sampleNo: number of samples recorded for the time range
+           + gapOverlap: total gaps and overlaps in the time range
+               gap: end time of one trace < start time of next trace
+                    start < start time of first trace
+                    end > end time of last trace
+               overlap: end time of one trace > start time of next trace
+        """
         if start is None:
-            start = st['deploy_time/epoch_l']
+            start = earliest
         if end is None:
-            end = st['pickup_time/epoch_l']
+            end = latest
         # calculate expected_sampleNo
         gapOverlap = 0
         if start < earliest:
@@ -468,8 +544,7 @@ class PH5Availability(object):
         for i in range(len(das_t) - 1):
             sampleNo += das_t[i]['sample_count_i']
             start_time = self.get_start(das_t[i])
-            true_sample_rate = self.get_sample_rate(das_t[i])
-            end_time = self.get_end(das_t[i], start_time, true_sample_rate)
+            end_time = self.get_end(das_t[i], start_time, sample_rate)
             next_start_time = self.get_start(das_t[i+1])
             if end_time != next_start_time:
                 gapOverlap += 1
@@ -479,7 +554,11 @@ class PH5Availability(object):
             # the last trace may not be the whole trace
             start_time = self.get_start(das_t[i])
             if start_time < latest:
-                sampleNo += sample_rate * (latest - start_time)
+                end_time = self.get_end(das_t[i], start_time, sample_rate)
+                if latest < end_time:
+                    end_time = latest
+                sampleNo += sample_rate * (end_time - start_time)
+
         except IndexError:
             pass
 
@@ -512,7 +591,7 @@ class PH5Availability(object):
             LOGGER.error(
                 "get_availability_percentage requires providing exact "
                 "station/channel.")
-            return
+            return -1
         sampleNo = 0
         expected_sampleNo = 0
         gapOverlap = 0
@@ -523,7 +602,10 @@ class PH5Availability(object):
                 a_n = int(array_name.split('_')[2])
                 if self.array != a_n:
                     continue
-            arrayorder, arraybyid = self.get_array_order_id(array_name)
+            ret = self.get_array_order_id(array_name)
+            if ret == -1:
+                continue
+            arrayorder, arraybyid = ret
 
             for ph5_station in arrayorder:
                 station_list = arraybyid.get(ph5_station)
@@ -546,11 +628,11 @@ class PH5Availability(object):
                             ph5_channum, ph5_sample_rate)
                         if ret == -1:
                             continue
-                        ph5_earliest, ph5_latest, sample_rate, das_t = ret
+                        ph5_earliest, ph5_latest, das_t = ret
 
                         ret = self.get_sampleNos_gapOverlap(
                             das_t, ph5_earliest, ph5_latest,
-                            starttime, endtime, sample_rate, st)
+                            starttime, endtime, ph5_sample_rate, st)
                         if ret == -1:
                             continue
                         expected_sampleNo += ret[0]
@@ -592,7 +674,10 @@ class PH5Availability(object):
                 a_n = int(array_name.split('_')[2])
                 if self.array != a_n:
                     continue
-            arrayorder, arraybyid = self.get_array_order_id(array_name)
+            ret = self.get_array_order_id(array_name)
+            if ret == -1:
+                continue
+            arrayorder, arraybyid = ret
 
             for ph5_station in arrayorder:
 
@@ -608,10 +693,12 @@ class PH5Availability(object):
 
                         ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
+
                         if channel == "*":
                             ret = self.get_time_das_t(
                                 ph5_das, starttime, endtime)
                         else:
+                            ph5_sample_rate = self.get_sample_rate(st)
                             ph5_sample_rate = self.get_sample_rate(st)
                             ret = self.get_time_das_t(
                                 ph5_das, starttime, endtime,
@@ -619,7 +706,7 @@ class PH5Availability(object):
                                 sample_rate=ph5_sample_rate)
                         if ret == -1:
                             continue
-                        ph5_earliest, ph5_latest, sample_rate, das_t = ret
+                        ph5_earliest, ph5_latest, das_t = ret
 
                         for d in das_t:
                             if d['sample_count_i'] > 0:
@@ -639,9 +726,9 @@ class PH5Availability(object):
             print(text)
         else:
             self.OFILE.write(text + "\n")
+            self.OFILE.close()
 
     def get_report(self, result, format):
-
         if format == 's':
             return self.get_sync_report(result)
         elif format == 'g':
@@ -659,7 +746,6 @@ class PH5Availability(object):
         Link for Format:
         http://www.iris.washington.edu/bud_stuff/goat/syncformat.html
         """
-
         # header line
         today = dt.datetime.now()
         year = today.year
@@ -677,7 +763,11 @@ class PH5Availability(object):
             template[4] = t[:-4].replace(":", ",", 2)
             t = timedoy.epoch2passcal(r[f_id['latest']])
             template[5] = t[:-4].replace(":", ",", 2)
-            template[7] = str(r[f_id['sRate']])
+            if self.SR_included:
+                if r[f_id['sRate']] == 0:
+                    template[7] = "000.0"
+                else:
+                    template[7] = str(r[f_id['sRate']])
             # template[13] = 'primary'
 
             s += "\n" + "|".join(template)
@@ -689,7 +779,6 @@ class PH5Availability(object):
         http://geows.ds.iris.edu/documents/GeoCSV.pdf
         Example: Minimal IRIS Station Example
         """
-
         dataset = "#dataset: GeoCSV 2.0"
         delim = "#delimiter: |"
         field_unit = "#field_unit: unitless | unitless | unitless | "\
@@ -711,13 +800,17 @@ class PH5Availability(object):
         for r in result:
             r = list(r)
             r = self.convert_time(r)
+            if r == -1:
+                return -1
             try:
                 stat = str(int(str(r[f_id['stat']])))
-            except:
+            except Exception:
                 stat = f_id['stat']
             row = [self.netcode, stat, r[f_id['loc']],
-                   r[f_id['chan']], '', str(int(r[f_id['sRate']])),
-                   r[f_id['earliest']], r[f_id['latest']]]
+                   r[f_id['chan']], '']
+            if self.SR_included:
+                row += [str(int(r[f_id['sRate']]))]
+            row += [r[f_id['earliest']], r[f_id['latest']]]
 
             s += "\n" + "|".join(row)
 
@@ -731,6 +824,8 @@ class PH5Availability(object):
         for r in result:
             r = list(r)
             r = self.convert_time(r)
+            if r == -1:
+                return -1
             s += "\n" + self.netcode + " "
 
             s += r[f_id['stat']].ljust(self.stat_len) + "  "
@@ -759,80 +854,87 @@ class PH5Availability(object):
         return ret
 
     def get_json_report(self, result):
-        header = '"created":"%s",'\
-            '"repository":[{"repository_name":"","channels":' \
-            % self.get_today_FdsnTime()
+        today = dt.datetime.now()
+        now_tdoy = timedoy.TimeDOY(epoch=time.mktime(today.timetuple()))
+        header = '"created":"%s","datasources":' \
+            % now_tdoy.getFdsnTime()
+
+        arow = '"net":"%(net)s","sta":"%(stat)s","loc":"%(loc)s",'\
+            '"cha":"%(chan)s","quality":"",'
+        if self.SR_included:
+            arow += '"sample_rate":%(sRate)s,'
+        arow += '"timespans":[%(tspan)s]'
         rows = []
         tspan = []
-        for i in range(len(result)):
-            r = list(result[i])
-            # get current spantime
-            r = self.convert_time(r)
-            tspan.append('["%s","%s"]' %
-                         (r[f_id['earliest']], r[f_id['latest']]))
+        try:
+            for i in range(len(result)):
+                if i != 0 and result[i-1][:3] != result[i][:3]:
+                    # add row for previous stat, loc, chan when channel changed
+                    r = result[i-1]
+                    v = {"net": self.netcode, "stat": r[f_id['stat']],
+                         "loc": r[f_id['loc']], "chan": r[f_id['chan']],
+                         "tspan": ','.join(tspan)}
+                    if self.SR_included:
+                        v['sRate'] = r[f_id['sRate']]
 
-            if i != 0 and result[i-1][:3] != result[i][:3]:
-                # add row for previous stat, loc, chan when channel changed
-                r = result[i-1]
-                row = '"net":"%(net)s",'\
-                    '"sta":"%(stat)s",'\
-                    '"loc":"%(loc)s",'\
-                    '"cha":"%(chan)s",'\
-                    '"quality":"",'
-                v = {"net": self.netcode, "stat": r[f_id['stat']],
-                     "loc": r[f_id['loc']], "chan": r[f_id['chan']]}
-                if self.SR_included:
-                    row += '"sample_rate":%(sRate)s,'
-                    v['sRate'] = r[f_id['sRate']]
-                v['tspan'] = tspan
-                row += '"timespans":[%(tspan)s]'
-                rows.append("{%s}" % row % v)
-                tspan = []
+                    rows.append("{%s}" % (arow % v))
+
+                    tspan = []
+                # add timespan for current processed row
+                r = list(result[i])
+                r = self.convert_time(r)
+                if r == -1:
+                    return -1
+                tspan.append('["%s","%s"]' %
+                             (r[f_id['earliest']], r[f_id['latest']]))
+        except Exception:
+            LOGGER.error("Wrong format parameter sent to report creator.")
+            return -1
 
         if tspan != []:
             r = result[-1]
-            row = '"net":"%(net)s",'\
-                '"sta":"%(stat)s",'\
-                '"loc":"%(loc)s",'\
-                '"cha":"%(chan)s",'\
-                '"quality":"",'
             v = {"net": self.netcode, "stat": r[f_id['stat']],
-                 "loc": r[f_id['loc']], "chan": r[f_id['chan']]}
+                 "loc": r[f_id['loc']], "chan": r[f_id['chan']],
+                 "tspan": ','.join(tspan)}
             if self.SR_included:
-                row += '"sample_rate":%(sRate)s,'
                 v['sRate'] = r[f_id['sRate']]
-            v['tspan'] = tspan
-            row += '"timespans":[%(tspan)s]'
 
-            rows.append("{%s}" % row % v)
+            rows.append("{%s}" % arow % v)
 
-        ret = '{%s\n[%s]}]}"' % (header, ',\n'.join(rows))
+        ret = '{%s[\n%s\n]}' % (header, ',\n'.join(rows))
 
         return ret
 
-    def get_today_FdsnTime(self):
-        today = dt.datetime.now()
-        tdoy = timedoy.TimeDOY(
-            year=today.year,
-            hour=today.hour,
-            minute=today.minute,
-            second=today.second,
-            doy=(today - dt.datetime(today.year, 1, 1)).days + 1)
-        return tdoy.getFdsnTime()
-
     def convert_time(self, r):
         """
-        given a row in the result, if have earliest and latest,
-        convert them to datetime
+        given a row in the result,
+         if have epoch times on 2,3: convert them to Fdsn
+         if have Fdsn times on 2,3: return row as it is
+         otherwise return -1
         """
-        if self.avail not in [2, 3]:
+        fmt = ("%Y-%m-%dT%H:%M:%S.%fZ")
+        try:
+            earliest = dt.datetime.strptime(r[f_id['earliest']], fmt)
+            latest = dt.datetime.strptime(r[f_id['latest']], fmt)
             return r
-
-        # availability/availability_extent
-        earliest = timedoy.TimeDOY(epoch=r[f_id['earliest']])
-        r[f_id['earliest']] = earliest.getFdsnTime() + "Z"
-        latest = timedoy.TimeDOY(epoch=r[f_id['latest']])
-        r[f_id['latest']] = latest.getFdsnTime() + "Z"
+        except TypeError:
+            pass
+        try:
+            # availability/availability_extent
+            earliest = timedoy.TimeDOY(epoch=r[f_id['earliest']])
+            earliest = earliest.getFdsnTime() + "Z"
+            latest = timedoy.TimeDOY(epoch=r[f_id['latest']])
+            latest = latest.getFdsnTime() + "Z"
+            r[f_id['earliest']] = earliest
+            r[f_id['latest']] = latest
+        except TypeError:
+            LOGGER.error("convert_time receives list as parameter.")
+            return -1
+        except Exception:
+            errmsg = "The list sent to convert_time does not have epoch " + \
+                "times at %s and %s" % (f_id['earliest'], f_id['latest'])
+            LOGGER.error(errmsg)
+            return -1
 
         return r
 
@@ -844,21 +946,26 @@ class PH5Availability(object):
         for st in self.stations:
             for ch in self.channels:
                 for loc in self.locations:
-                    result =  AVAIL[self.avail](
+                    result = AVAIL[self.avail](
                         st, loc, ch, self.starttime, self.endtime,
                         self.SR_included)
-
+                    if result == -1:
+                        return
                     if isinstance(result, bool):
                         print(result)
                     else:
                         results += result
 
+        if self.avail == 0:
+            return
         if self.avail not in [2, 3]:
             if self.format is not None:
                 LOGGER.warning(
                     "Report feature only apply for avail=2.")
+            print(result)
             return
         if self.format is None:
+            print(result)
             return
 
         report = self.get_report(result, format=self.format)
@@ -866,7 +973,7 @@ class PH5Availability(object):
         if isinstance(report, str):
             self.print_report(report)
         else:
-            print(report)
+            print(result)
 
 
 def get_args(args):
@@ -931,14 +1038,14 @@ def get_args(args):
         help="Comma separated list of PH5 station id's",
         metavar="sta_id_list", type=str, default=[])
 
-    parser.add_argument('--location', '--loc',
-                        help="Select one or more SEED location identifier. "
-                        "Use -- for 'Blank' location IDs (ID's containing 2 "
-                        "spaces). Accepts wildcards and lists.",
-                        type=_postprocess_sysargv)
+    parser.add_argument(
+        '-l', '--location', type=_postprocess_sysargv,
+        help="Select one or more SEED location identifier. "
+        "Use -- for 'Blank' location IDs (ID's containing 2 spaces). "
+        "Accepts wildcards and lists.")
 
     parser.add_argument(
-        "--channel", action="store",
+        '-c', "--channel", action="store",
         type=str, dest="channel",
         help="Comma separated list of SEED channels to extract",
         metavar="channel", default=[])
@@ -967,9 +1074,9 @@ def get_args(args):
 g: geocsv, j: json",
         metavar="format", type=str, default=None)
 
-    parser.add_argument("-o", "--outfile", dest="output_file",
-                        help="The kef output file to be saved at.",
-                        metavar="output_file", default=None)
+    parser.add_argument(
+        "-o", "--outfile", dest="output_file", metavar="output_file",
+        help="The kef output file to be saved at.", default=None)
 
     return parser.parse_args(_preprocess_sysargv(args))
 
@@ -991,13 +1098,12 @@ def main():
     try:
         ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
         availability = PH5Availability(ph5API_object)
-    
         ret = availability.analyze_args(args)
         if not ret:
             return 1
         # stuff here
         availability.process_all()
-    
+
         ph5API_object.close()
     except ph5api.APIError as err:
         LOGGER.error(err)
