@@ -11,6 +11,7 @@ import logging
 import copy
 import itertools
 import io
+import datetime
 from obspy.core.inventory.inventory import read_inventory as read_inventory
 from obspy import Trace
 from obspy import Stream
@@ -21,7 +22,7 @@ from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 
-PROG_VERSION = '2019.77'
+PROG_VERSION = '2019.93'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -147,45 +148,100 @@ class PH5toMSeed(object):
     def filenamemseed_gen(self, stream):
 
         s = stream.traces[0].stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.{4}.ms".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            s.channel, rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamesac_gen(self, trace):
         s = trace.stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.{4}.sac".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            s.channel, rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamegeocsv_gen(self, trace):
         s = trace.stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.{4}.csv".format(
             s.network, s.station, s.location,
-            s.channel, s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            s.channel, rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamemseed_nongen(self, stream):
         s = stream.traces[0].stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.ms".format(
             s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
 
     def filenamesac_nongen(self, trace):
         s = trace.stats
+        new_start = s.starttime.isoformat()
+        try:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S.%f"))
+        except BaseException:
+            rounded = ph5utils.roundSeconds(
+                datetime.datetime.strptime(
+                    new_start,
+                    "%Y-%m-%dT%H:%M:%S"))
         ret = "{0}.{1}.{2}.{3}.sac".format(
             s.array, s.station, s.channel,
-            s.starttime.strftime("%Y-%m-%dT%H.%M.%S"))
+            rounded.strftime("%Y-%m-%dT%H.%M.%S"))
         if not self.stream:
             ret = os.path.join(self.out_dir, ret)
         return ret
@@ -382,10 +438,6 @@ class PH5toMSeed(object):
             [station_to_cut], self.restricted)
         obspy_stream = Stream()
         for stc in station_to_cut_segments:
-            if stc.sample_rate != 0:
-                new_endtime = stc.endtime + (1 / float(stc.sample_rate))
-            else:
-                new_endtime = stc.endtime
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
                                        stc.endtime,
@@ -419,14 +471,14 @@ class PH5toMSeed(object):
 
             if stc.sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
-                                      new_endtime,
+                                      stc.endtime,
                                       chan=stc.component,
                                       sample_rate=actual_sample_rate,
                                       apply_time_correction=nt, das_t=das)
             else:
                 traces = self.ph5.textural_cut(stc.das,
                                                start_time,
-                                               new_endtime,
+                                               stc.endtime,
                                                chan=stc.component,
                                                das_t=das)
 
@@ -576,11 +628,11 @@ class PH5toMSeed(object):
                         start_times.append(deploy)
 
                 else:
-                    check_start_time = ph5utils.fdsntime_to_epoch(
+                    check_start_time = ph5utils.datestring_to_epoch(
                         self.start_time)
                     if float(check_start_time) > float(deploy):
                         start_times.append(
-                            ph5utils.fdsntime_to_epoch(
+                            ph5utils.datestring_to_epoch(
                                 self.start_time))
                     else:
                         start_times.append(deploy)
@@ -613,10 +665,10 @@ class PH5toMSeed(object):
                             stop_fepoch = pickup
 
                     else:
-                        check_end_time = ph5utils.fdsntime_to_epoch(
+                        check_end_time = ph5utils.datestring_to_epoch(
                             self.end_time)
                         if float(check_end_time) < float(pickup):
-                            stop_fepoch = ph5utils.fdsntime_to_epoch(
+                            stop_fepoch = ph5utils.datestring_to_epoch(
                                 self.end_time)
                         else:
                             stop_fepoch = pickup
