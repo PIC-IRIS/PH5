@@ -101,7 +101,7 @@ class TestPH5Availability(unittest.TestCase):
                             (str1[:i], str2[:i])
                     errmsg += "Different at:\n\tstr1: '%s'\n\tstr2: '%s'\n"\
                         "AFTER:\n\tstr1: '%s'\n\tstr2: '%s'" % \
-                        (str1[i], str2[i], str1[i:], str2[i:])
+                        (str1[i], str2[i], str1[i+1:], str2[i+1:])
                     raise AssertionError(errmsg)
 
     def test_get_slc(self):
@@ -496,6 +496,12 @@ class TestPH5Availability(unittest.TestCase):
         # There are 0 channels with data
         # so expect 0 entries
         self.assertFalse(ret)
+
+        # expected to raise error
+        self.assertRaises(
+            ValueError,
+            self.availability.get_availability_extent,
+            '*', '*', '*', None, 1502294460.38)
 
     def test_get_availability(self):
         """
@@ -914,29 +920,51 @@ class TestPH5Availability(unittest.TestCase):
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
              '-c', '1 2 3'])
-        ret = A.analyze_args(args)
-        self.assertEqual(ret, False)
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format location: len > 2
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
              '-l', 'Oaa'])
-        ret = A.analyze_args(args)
-        self.assertEqual(ret, False)
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format location: invalid character
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
              '-l', 'O^'])
-        ret = A.analyze_args(args)
-        self.assertEqual(ret, False)
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format station
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
              '--station', 'o-g'])
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError, A.analyze_args, args)
+
+        # test wrong avail:5
+        args = ph5availability.get_args(
+            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '5'])
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError, A.analyze_args, args)
+
+        # given -o but avail not 2 or 3
+        args = ph5availability.get_args(
+            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+             '-a', '0', '-o', 'test'])
         ret = A.analyze_args(args)
-        self.assertEqual(ret, False)
+        self.assertEqual(ret, True)
+        self.assertEqual(A.OFILE, None)
+
+        # given -o, avail=2 but no format given
+        args = ph5availability.get_args(
+            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+             '-a', '2', '-o', 'test'])
+        ret = A.analyze_args(args)
+        self.assertEqual(ret, True)
+        self.assertEqual(A.OFILE, None)
 
         # test default args
         args = ph5availability.get_args(
@@ -966,14 +994,15 @@ class TestPH5Availability(unittest.TestCase):
         # test wildcard station, location, channel
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
-             '--station', '?001', '-l', '??', '-c', 'DP?'])
+             '--station_id', '?001', '-l', '??', '-c', 'DP?'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
         self.assertEqual(A.stations, ['?001'])
         self.assertEqual(A.locations, ['??'])
         self.assertEqual(A.channels, ['DP?'])
 
-        # test args are assigned correctly
+        # test args are assigned correctly,
+        # a=0, check if SR_included=False, OFILE=None
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
              '-s', '2017-08-09T16:00:00.380000',
@@ -991,24 +1020,28 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual(A.avail, 0)
         # SR_included only True when avail =2 or 3
         self.assertEqual(A.SR_included, False)
-        self.assertIsInstance(A.OFILE, file)
-        self.assertEqual(A.OFILE.name, 'extent.txt')
-        self.assertEqual(A.OFILE.closed, False)
+        self.assertEqual(A.OFILE, None)
 
         # same args, with avail=2, check if SR_included=True
         args = ph5availability.get_args(
             ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '2',
-             '-s', '2017-08-09T16:00:00.380000',
-             '-e', '2017-08-09T16:01:00.380000', '--station', '500,0407',
-             '-l', '00', '-c', 'DP1', '-S',
-             '-A', '1', '-F', 't', '-o', 'extent.txt'])
+             '-S', '-F', 't', '-o', 'extent.txt'])
         ret = A.analyze_args(args)
         self.assertEqual(A.SR_included, True)
+        self.assertIsInstance(A.OFILE, file)
+        self.assertEqual(A.OFILE.name, 'extent.txt')
+        self.assertEqual(A.OFILE.closed, False)
 
     def test_main(self):
         """
         test main function
         """
+        # wrong path entered
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                            'ph5/test_data/ph', '-a', '0']
+        with patch.object(sys, 'argv', testargs):
+            with self.assertRaises(SystemExit):
+                ph5availability.main()
 
         # test has_data station with data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1017,12 +1050,11 @@ class TestPH5Availability(unittest.TestCase):
         with patch.object(sys, 'argv', testargs):
             with captured_output() as (out, err):
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
 
         # test has_data station with data all channels
         # expect to return True 3 times, once for each channel
-        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+        # master_PH5_file without extension
+        testargs = ['ph5availability', '-n', 'master', '-p',
                     'ph5/test_data/ph5', '-a', '0', '--station',
                     '500', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
@@ -1093,6 +1125,15 @@ class TestPH5Availability(unittest.TestCase):
         output = out.getvalue().strip()
         self.assertEqual(output, 'False')
 
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '0', '-A', '2']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        self.assertEqual(output, 'True')
+
+        # ------------------------------------------------------------ #
         # test get_slc with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '1', '--station', '0407']
@@ -1126,6 +1167,17 @@ class TestPH5Availability(unittest.TestCase):
         expect = "[('9001', '', 'DPZ')]"
         self.assertEqual(output, expect)
 
+        # test get_slc with array
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '1', '-A', '2']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        expect = "[('0407', '', 'HHN')]"
+        self.assertEqual(output, expect)
+
+        # ------------------------------------------------------------ #
         # test get_availability with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '2', '--station', '0407']
@@ -1161,6 +1213,16 @@ class TestPH5Availability(unittest.TestCase):
             "('9001', '', 'DPZ', 1550849943.0, 1550849943.1)]"
         self.assertStrEqual(output, expect)
 
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '2', '-A', '4']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0)]"
+        self.assertEqual(output, expect)
+
+        # ------------------------------------------------------------ #
         # test get_availability_extent with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3', '--station', '9001']
@@ -1172,8 +1234,10 @@ class TestPH5Availability(unittest.TestCase):
         self.assertStrEqual(output, expect)
 
         # test get_availability_extent with channel
+        # if wrong format is stated, still print out tuple result with
+        # a warning
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3', '-c', 'DP2']
+                    'ph5/test_data/ph5', '-a', '3', '-c', 'DP2', '-F', 'k']
         with patch.object(sys, 'argv', testargs):
             with captured_output() as (out, err):
                 ph5availability.main()
@@ -1184,15 +1248,14 @@ class TestPH5Availability(unittest.TestCase):
         # test get_availability_extent with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3', '-S',
-                    '-s', '2018-12-17T23:10:05.0',
-                    '-e', '2019-02-22T15:39:03.1']
+                    '-s', '2019-02-22T15:39:04.1',
+                    '-e', '2019-02-22T15:39:07.1']
         with patch.object(sys, 'argv', testargs):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0, 0), "\
-            "('9001', '', 'DPZ', 1550849943.0, 1550849943.1, 500.0)]"
-        self.assertStrEqual(output, expect)
+        expect = "[('9001', '', 'DPZ', 1550849944.1, 1550849947.1, 500.0)]"
+        self.assertEqual(output, expect)
 
         # test get_availability_extent with wildcard station, location, channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1205,6 +1268,16 @@ class TestPH5Availability(unittest.TestCase):
         expect = "[('9001', '', 'DPZ', 1550849943.0, 1550850189.0)]"
         self.assertEqual(output, expect)
 
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '3', '-A', '4']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0)]"
+        self.assertEqual(output, expect)
+
+        # ------------------------------------------------------------ #
         # test get_availability_percentage with station, no channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '4', '--station', '9001']
@@ -1255,7 +1328,18 @@ class TestPH5Availability(unittest.TestCase):
         ret = output.split(',')
         self.assertAlmostEquals(0.1167, float(ret[0]), 3)
         self.assertEqual(2, int(ret[1]))
+        # test get_availability_percentage with station, channel, time, and
+        # array not match with other parameters
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p',
+                    'ph5/test_data/ph5', '-a', '4', '-A', '3',
+                    '--station', '0407', '-c', 'HHN']
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                ph5availability.main()
+        output = out.getvalue().strip()
+        self.assertEqual(output, '(0.0, 0)')
 
+        # ------------------------------------------------------------ #
         # test extent and text format
         # should return 10 channels
         # should match slc_full.txt from test data
@@ -1347,9 +1431,16 @@ class TestPH5Availability(unittest.TestCase):
                           '2017-08-09T16:01:00.380000Z'], ret)
 
         # convert list with epoch times at 2,3: wrong format
-        ret = self.availability.convert_time(
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError,
+            self.availability.convert_time,
             ['500', 'DP2', 1502294400.38, 1502294460.38])
-        self.assertEqual(-1, ret)
+
+        # send tuple instead of list to convert time
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError,
+            self.availability.convert_time,
+            ('500', '', 'DP2', 1502294400.38, 1502294460.38))
 
     def test_get_channel(self):
         """
@@ -1391,6 +1482,17 @@ class TestPH5Availability(unittest.TestCase):
         # location 00 not in st
         ret = self.availability.get_slc_info(st, '*', '00', '*')
         self.assertEqual(-1, ret)
+
+        # st without 'seed_station_name_s'
+        st = {'id_s': '500'}
+        ret = self.availability.get_slc_info(st, '500', '*', '*')
+        self.assertEqual(('500', '', 'DPX'), ret)
+
+        # st without station info
+        st = {}
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError,
+            self.availability.get_slc_info, st, '500', '*', '*')
 
     def test_get_start(self):
         """
@@ -1487,9 +1589,19 @@ class TestPH5Availability(unittest.TestCase):
             ['array_name_data_a'],
             [('Data_a_00002', )],
             ret[2]))
-        # start=None, end=None; no component, have sample_rate
+        # start > latest
         ret = self.availability.get_time_das_t(
-            '5553', None, None, sample_rate=100)
+                    '5553', 1545085241.0, None, 1, 100)
+        self.assertEqual(-1, ret)
+        # end < earliest
+        ret = self.availability.get_time_das_t(
+                    '5553', None, 1545085230.0, 1, 100)
+        self.assertEqual(-1, ret)
+        # start=None, end=None; no component, have sample_rate
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError,
+            self.availability.get_time_das_t,
+            '5553', None, None, None, 100)
         self.assertEqual(-1, ret)
         # start=None, end=None; have component, have false sample_rate
         ret = self.availability.get_time_das_t(
@@ -1537,7 +1649,8 @@ class TestPH5Availability(unittest.TestCase):
             das_t, 1550849943.0, 1550850034.0, 1550849942, 1550850035, 500, st)
         self.assertEqual((46500, 7000, 3), ret)
 
-        # 1 overlap bw traces 2 & 3; 1 gap bw 3 & 4; 1 at beginning
+        # 1 overlap bw traces 2 & 3; 1 gap bw 3 & 4;
+        # 1 at beginning, 1 at the end
         das_t = [{'time/micro_seconds_i': 0, 'sample_rate_i': 500,
                   'sample_count_i': 3000, 'sample_rate_multiplier_i': 1,
                   'time/epoch_l': 1550849943},  # end: 1550849949
@@ -1551,8 +1664,8 @@ class TestPH5Availability(unittest.TestCase):
                   'sample_count_i': 500, 'sample_rate_multiplier_i': 1,
                   'time/epoch_l': 1550850033}]  # end: 1550850034
         ret = self.availability.get_sampleNos_gapOverlap(
-            das_t, 1550849943.0, 1550850034.0, 1550849942, 1550850032, 500, st)
-        self.assertEqual((45000, 6500, 3), ret)
+            das_t, 1550849943.0, 1550850034.0, 1550849942, 1550850035, 500, st)
+        self.assertEqual((46500, 7000.0, 4), ret)
 
     def test_get_array_order_id(self):
         """
@@ -1563,14 +1676,11 @@ class TestPH5Availability(unittest.TestCase):
         self.assertTrue(1, len(ret[1]))
         self.assertTrue('9001' in ret[1].keys())
 
-        ret = self.availability.get_array_order_id('Array_t_008')
-        self.assertEqual(['8001'], ret[0])
-        self.assertTrue(1, len(ret[1]))
-        self.assertTrue('8001' in ret[1].keys())
-
         # array_name not exist
-        ret = self.availability.get_array_order_id('Array_t_010')
-        self.assertEqual(-1, ret)
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError,
+            self.availability.get_array_order_id,
+            'Array_t_010')
 
     def test_get_text_report(self):
         """
@@ -1717,6 +1827,13 @@ class TestPH5Availability(unittest.TestCase):
             content = content_file.read().strip()
         i2 = content.find('"datasources"')
         self.assertStrEqual(ret[i1:], content[i2:])
+
+        # wrong format result
+        result =  [('0407', 'LOG', 1545088205.0, 1545088205.0)]
+        self.assertRaises(
+            ph5availability.PH5AvailabilityError,
+            self.availability.get_json_report,
+            result)
 
     def test_get_report(self):
         """
