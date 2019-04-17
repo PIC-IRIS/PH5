@@ -684,7 +684,7 @@ class PH5toMSeed(object):
             if (self.use_deploy_pickup is True and not
                     ((int(start_fepoch) >= deploy and
                       int(stop_fepoch) <= pickup))):
-                print "das not deployed within deploy/pickup time"
+                LOGGER.warning("das not deployed within deploy/pickup time")
                 continue
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
