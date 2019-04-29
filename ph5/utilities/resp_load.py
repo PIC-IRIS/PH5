@@ -233,12 +233,12 @@ class n_i_fix(object):
                                 int(station.array):
                             if station.response_n_i:
                                 new_kef.append(
-                                    "        response_table_n_i=" +
+                                    "\tresponse_table_n_i=" +
                                     str(station.response_n_i) + '\n')
                                 break
                             else:
                                 new_kef.append(
-                                    "        response_table_n_i=0\n")
+                                    "\tresponse_table_n_i=0\n")
                                 break
                 elif "receiver_table_n_i=" in line:
 
@@ -250,12 +250,12 @@ class n_i_fix(object):
                                 int(station.array):
                             if station.receiver_n_i:
                                 new_kef.append(
-                                    "        receiver_table_n_i=" +
+                                    "\treceiver_table_n_i=" +
                                     str(station.receiver_n_i) + '\n')
                                 break
                             else:
                                 new_kef.append(
-                                    "        receiver_table_n_i=0\n")
+                                    "\treceiver_table_n_i=0\n")
                                 break
                 else:
                     new_kef.append(line)
