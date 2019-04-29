@@ -9,7 +9,7 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 
-PROG_VERSION = "2019.63"
+PROG_VERSION = "2019.81"
 
 
 class PH5Response(object):
@@ -140,6 +140,17 @@ def is_rect_intersection(minlat, maxlat, minlon, maxlon, latitude, longitude):
         return True
 
 
+def datestring_to_epoch(date_str):
+    if isinstance(date_str, (str, unicode)):
+        dt = datestring_to_datetime(date_str)
+        return (dt - datetime.fromtimestamp(0)).total_seconds()
+    elif isinstance(date_str, (float, int)):
+        return date_str  # already a date
+    else:
+        raise ValueError("Got {0} expected str or unicode.".format(
+            type(date_str)))
+
+
 def datestring_to_datetime(date_str):
     """
     Converts a FDSN or PASSCAL date string to a datetime.datetime object
@@ -149,8 +160,8 @@ def datestring_to_datetime(date_str):
     :type: datetime
     """
     if isinstance(date_str, (str, unicode)):
-        fmts = ("%Y:%j:%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S.%f",
-                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d")
+        fmts = ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y:%j:%H:%M:%S.%f",
+                "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d")
         for fmt in fmts:
             try:
                 dt = datetime.strptime(date_str, fmt)
@@ -274,3 +285,12 @@ def microsecs_to_sec(microsec):
     if type(microsec) is not int:
         raise ValueError("microsec must be integer")
     return float(microsec) / 1000000
+
+
+def roundSeconds(dateTimeObject):
+    newDateTime = dateTimeObject
+
+    if newDateTime.microsecond >= 500000:
+        newDateTime = newDateTime + timedelta(seconds=1)
+
+    return newDateTime.replace(microsecond=0)
