@@ -3,83 +3,13 @@ unit tests for ph5availability
 """
 
 import unittest
-from ph5.core import ph5api
 from ph5.utilities import nuke_table
 import sys
 import os
 import stat
 from shutil import copyfile
 from mock import patch
-from contextlib import contextmanager
 from StringIO import StringIO
-
-
-@contextmanager
-def captured_output():
-    new_out, new_err = StringIO(), StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
-
-
-def checkTupleAlmostEqualIn(tup, tupList, place):
-    """
-    check if a tuple in a list of tuples in which float items only
-    need to be almost equal
-    :type tup: tuple
-    :param tup: tuple to be checked
-    :type tupList: list of tuples
-    :para tupList: list of tuples that tup need to be check with
-    :place: decimal places to round the values to compare
-    """
-    for T in tupList:
-        length = len(tup)
-        if length != len(T):
-            continue
-        for i in range(length):
-            if type(tup[i]) is float:
-                if round(tup[i], place) != round(T[i], place):
-                    break
-            else:
-                if tup[i] != T[i]:
-                    break
-            if i == length - 1:
-                return True
-    return False
-
-
-def checkFieldsMatch(fieldNames, fieldsList, dictList):
-    """
-    check if given fieldslist match the dict dictList at field fieldNames
-    :type fieldsName: list of str
-    :param fieldsName: list of field names that their values are to be compared
-       with items in dictList
-    :type fieldsList: list of tuple
-    :para fieldsList: list of tuple of fields' values
-    :type dictList: list of dictionary
-    :para dictList: list of dictionary to be compared with
-    """
-    if len(fieldsList) != len(dictList):
-        return False
-    for d in dictList:
-        arow = ()
-        for i in range(len(fieldNames)):
-            arow += (d[fieldNames[i]], )
-        if arow not in fieldsList:
-            return False
-        fieldsList.remove(arow)
-    return True
-
-
-class Status:
-    """
-    fake status bar for testing
-    """
-    def showMessage(self, message):
-        self.message = message
 
 
 class TestNukeTable(unittest.TestCase):
@@ -89,26 +19,6 @@ class TestNukeTable(unittest.TestCase):
         setup for tests
         """
         self.nukeT = nuke_table.NukeTable()
-
-    def assertStrEqual(self, str1, str2):
-        """
-        return True if 2 strings are the same, othewise
-        raise AssertionError of which message has
-        the index of the first difference between 2 strings
-        """
-        if str1 == str2:
-            return True
-        else:
-            for i in range(len(str1)):
-                if str1[i] != str2[i]:
-                    errmsg = "The strings are different from %s.\n" % i
-                    if i > 0:
-                        errmsg += "BEFORE:\n\tstr1: '%s'\n\tstr2: '%s'\n" % \
-                            (str1[:i], str2[:i])
-                    errmsg += "Different at:\n\tstr1: '%s'\n\tstr2: '%s'\n"\
-                        "AFTER:\n\tstr1: '%s'\n\tstr2: '%s'" % \
-                        (str1[i], str2[i], str1[i+1:], str2[i+1:])
-                    raise AssertionError(errmsg)
 
     def assertInListItem(self, txt, strlist):
         """
