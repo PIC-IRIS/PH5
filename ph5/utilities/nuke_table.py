@@ -18,11 +18,37 @@ logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
 
+class NukeTableError(Exception):
+    '''   Exception gets raised in NukeTable   '''
+
+    def __init__(self, message=''):
+        super(NukeTableError, self).__init__(message)
+        self.message = message
+
 #
 # Read Command line arguments
 #
 
 class NukeTable():
+    def __init__(self):
+        self.ph5 = None
+        self.PATH = None
+        self.DEBUG = False
+        self.EXPERIMENT_TABLE = False
+        self.SORT_TABLE = False
+        self.OFFSET_TABLE = None
+        self.EVENT_TABLE = None
+        self.TIME_TABLE = False
+        self.INDEX_TABLE = False
+        self.M_INDEX_TABLE = False
+        self.ARRAY_TABLE = False
+        self.ALL_ARRAYS = False
+        self.RESPONSE_TABLE = False
+        self.REPORT_TABLE = False
+        self.RECEIVER_TABLE = False
+        self.DAS_TABLE = None
+        self.NO_BACKUP = False
+
     def get_args(self):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter)
@@ -121,12 +147,13 @@ class NukeTable():
         if args.offset_t_ is not None:
             try:
                 self.OFFSET_TABLE = map(int, args.offset_t_.split("_"))
+                if len(self.OFFSET_TABLE) != 2:
+                    raise NukeTableError()
             except Exception:
-                raise Exception("Offset table should be entered as arrayID "
-                                "underscore shotLineID, eg. 1_2 or 0_0.")
+                raise NukeTableError(
+                    "Offset table should be entered as arrayID "
+                    "underscore shotLineID, eg. 1_2 or 0_0.")
 
-        else:
-            self.OFFSET_TABLE = None
         self.EVENT_TABLE = args.event_t_
         self.TIME_TABLE = args.time_t
         self.INDEX_TABLE = args.index_t
@@ -169,7 +196,7 @@ class NukeTable():
             LOGGER.info("Writing table backup: {0}.".
                         format(os.path.join(outfile)))
         else:
-            raise Exception(
+            raise NukeTableError(
                 "Can't write: {0}/{1}.\nExiting!".format(os.getcwd(), outfile))
 
         try:
@@ -177,8 +204,9 @@ class NukeTable():
             self.T2K.table_print(table_path, table, fh)
             fh.close()
         except Exception, e:
-            raise Exception("Failed to save {0}/{1}.\n{2}\nExiting!"
-                            .format(os.getcwd(), outfile, e.message))
+            raise NukeTableError("Failed to save {0}/{1}.\n{2}\nExiting!"
+                                 .format(os.getcwd(), outfile, e.message))
+        return outfile
 
     def exclaim(self, n):
         if (int(time.time()) % 235) == 0:
@@ -215,7 +243,8 @@ class NukeTable():
                     if self.EX.ph5_g_sorts.nuke_offset_t():
                         self.exclaim(self.OFFSET_TABLE)
                     else:
-                        print "{0} Not found.".format(self.OFFSET_TABLE)
+                        raise NukeTableError("{0} Not found."
+                                             .format(self.OFFSET_TABLE))
                 else:
                     table_type = "Offset_t_{0:03d}_{1:03d}".format(
                         self.OFFSET_TABLE[0], self.OFFSET_TABLE[1])
@@ -229,7 +258,8 @@ class NukeTable():
                             self.OFFSET_TABLE[0], self.OFFSET_TABLE[1])):
                         self.exclaim(self.OFFSET_TABLE)
                     else:
-                        print "{0} Not found.".format(self.OFFSET_TABLE)
+                        raise NukeTableError("{0} Not found."
+                                             .format(self.OFFSET_TABLE))
 
             # /Experiment_g/Sorts_g/Event_t
             if self.EVENT_TABLE is not None:
@@ -252,7 +282,8 @@ class NukeTable():
                             "Event_t_{0:03d}".format(self.EVENT_TABLE)):
                         self.exclaim(self.EVENT_TABLE)
                     else:
-                        print "{0} Not found.".format(self.EVENT_TABLE)
+                        raise NukeTableError("{0} Not found."
+                                             .format(self.EVENT_TABLE))
 
             # /Experiment_g/Sorts_g/Array_t_[n]
             if self.ARRAY_TABLE:
@@ -266,7 +297,8 @@ class NukeTable():
                 if self.EX.ph5_g_sorts.nuke_array_t(self.ARRAY_TABLE):
                     self.exclaim(self.ARRAY_TABLE)
                 else:
-                    print "{0} Not found.".format(self.ARRAY_TABLE)
+                    raise NukeTableError("{0} Not found."
+                                         .format(self.ARRAY_TABLE))
 
             # /Experiment_g/Sorts_g/Array_t_xxx
             elif self.ALL_ARRAYS:
@@ -280,7 +312,8 @@ class NukeTable():
                     if self.EX.ph5_g_sorts.nuke_array_t(self.ARRAY_TABLE):
                         self.exclaim(self.ARRAY_TABLE)
                     else:
-                        print "{0} Not found.".format(self.ARRAY_TABLE)
+                        raise NukeTableError("{0} Not found."
+                                             .format(self.ARRAY_TABLE))
 
             # /Experiment_g/Receivers_g/Time_t
             if self.TIME_TABLE:
@@ -329,6 +362,7 @@ class NukeTable():
                     'Report_t', '/Experiment_g/Reports_g/Report_t',
                     self.T2K.REPORT_T)
                 self.EX.ph5_g_reports.nuke_report_t()
+
             if self.DAS_TABLE:
                 yon = raw_input(
                     "Are you sure you want to delete all data in Das_t "
@@ -338,24 +372,28 @@ class NukeTable():
                     self.T2K.read_receivers(self.DAS_TABLE)
                     if self.DAS_TABLE in self.T2K.DAS_T:
                         self.backup(
-                            self.table_type,
+                            table_type,
                             '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.
                             format(self.DAS_TABLE),
                             self.T2K.DAS_T[self.DAS_TABLE])
                     self.EX.ph5_g_receivers.nuke_das_t(self.DAS_TABLE)
 
         except Exception, err_msg:
-            LOGGER.error(err_msg)
-            return 1
+            raise NukeTableError(err_msg)
 
 
 def main():
-    nukeT = NukeTable()
-    nukeT.get_args()
+    try:
+        nukeT = NukeTable()
+        nukeT.get_args()
 
-    nukeT.initialize_ph5()
-    nukeT.doNuke()
-    nukeT.EX.ph5close()
+        nukeT.initialize_ph5()
+        nukeT.doNuke()
+        nukeT.EX.ph5close()
+        nukeT.T2K.close()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
 
 
 if __name__ == '__main__':
