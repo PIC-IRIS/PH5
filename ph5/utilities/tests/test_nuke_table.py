@@ -47,19 +47,19 @@ class TestNukeTable(unittest.TestCase):
             self.assertRaises(nuke_table.NukeTableError, self.nukeT.get_args)
 
         # test param
-        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-d', '-N',
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-N',
                     '-E', '-S', '-O', '1_2', '-V', '7001', '-A', '1', '-R',
                     '-P', '-C', '-I', '-M', '-D', '5553', '-T']
         with patch.object(sys, 'argv', testargs):
             self.nukeT.get_args()
         self.assertEqual('master.ph5', self.nukeT.PH5)
         self.assertEqual('ph5', self.nukeT.PATH)
-        self.assertTrue(self.nukeT.DEBUG)
         self.assertTrue(self.nukeT.NO_BACKUP)
-        self.assertTrue(self.nukeT.EVENT_TABLE)
+        self.assertTrue(self.nukeT.EXPERIMENT_TABLE)
         self.assertTrue(self.nukeT.SORT_TABLE)
         self.assertEqual([1, 2], self.nukeT.OFFSET_TABLE)
         self.assertEqual(7001, self.nukeT.EVENT_TABLE)
+        self.assertEqual(1, self.nukeT.ARRAY_TABLE)
         self.assertTrue(self.nukeT.RESPONSE_TABLE)
         self.assertTrue(self.nukeT.REPORT_TABLE)
         self.assertTrue(self.nukeT.RECEIVER_TABLE)
@@ -76,7 +76,7 @@ class TestNukeTable(unittest.TestCase):
         self.assertTrue(self.nukeT.ALL_ARRAYS)
         self.assertFalse(self.nukeT.DEBUG)
         self.assertFalse(self.nukeT.NO_BACKUP)
-        self.assertFalse(self.nukeT.EVENT_TABLE)
+        self.assertFalse(self.nukeT.EXPERIMENT_TABLE)
         self.assertFalse(self.nukeT.SORT_TABLE)
         self.assertFalse(self.nukeT.RESPONSE_TABLE)
         self.assertFalse(self.nukeT.REPORT_TABLE)
