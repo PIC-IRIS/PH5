@@ -14,7 +14,8 @@ from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2019.88'
+PROG_VERSION = '2019.93'
+
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
@@ -1199,6 +1200,9 @@ class PH5(experiment.ExperimentGroup):
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
+
+            if not trace_reference:
+                continue
 
             data_tmp = self.ph5_g_receivers.read_trace(
                 trace_reference,
