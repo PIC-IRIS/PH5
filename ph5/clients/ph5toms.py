@@ -513,7 +513,8 @@ class PH5toMSeed(object):
                                                chan=stc.component,
                                                das_t=das)
             
-            if self.format.upper() == "SEGY":
+            if self.format.upper() == "SEGY1" or \
+              self.format.upper() == "SEGY2":
                 # pad gaps using mean value when request type is SEG-Y
                 traces = [ph5api.pad_traces(traces)]
 
@@ -553,7 +554,8 @@ class PH5toMSeed(object):
                     obspy_trace.stats.experiment_id = stc.experiment_id
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
-                elif self.format == "SEGY":
+                elif self.format.upper() == "SEGY1" or \
+                  self.format.upper() == "SEGY2":
                     # These values are used to create the SEG-Y headers
                     obspy_trace.stats.receiver_id = stc.receiver_n_i
                     obspy_trace.stats.ttype = trace.ttype
