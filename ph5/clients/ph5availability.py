@@ -173,7 +173,8 @@ class PH5Availability(object):
             arraybyid = self.ph5.Array_t[array_name]['byid']
             arrayorder = self.ph5.Array_t[array_name]['order']
         except KeyError:
-            raise PH5AvailabilityError("There is no array table '%s'." % array_name)
+            raise PH5AvailabilityError(
+                "There is no array table '%s'." % array_name)
 
         return arrayorder, arraybyid
 
@@ -207,8 +208,9 @@ class PH5Availability(object):
 
         if sample_rate is not None:
             if component is None:
-                raise PH5AvailabilityError("get_time_das_t requires component when "
-                             "sample_rate is given")
+                raise PH5AvailabilityError(
+                    "get_time_das_t requires component when "
+                    "sample_rate is given")
 
             Das_t = self.ph5.query_das_t(
                 das,
@@ -236,10 +238,10 @@ class PH5Availability(object):
                 Das_t = ph5api.filter_das_t(Das_t, component)
         new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
 
-        #if not new_das_t:
-            #LOGGER.warning("No Das table found for %s %s" % (das, rangestr))
-            #self.ph5.forget_das_t(das)
-            #return -1
+        # if not new_das_t:
+        #    LOGGER.warning("No Das table found for %s %s" % (das, rangestr))
+        #    self.ph5.forget_das_t(das)
+        #    return -1
 
         earliest_epoch = self.get_start(new_das_t[0])
 
@@ -251,11 +253,11 @@ class PH5Availability(object):
         # don't need to compare start with latest_epoch (following lines)
         # because this case has been filtered out with read_das_t()
         # and query_das_t => comment out to exclude from testing
-        #if start is not None and start > latest_epoch:
-            #self.ph5.forget_das_t(das)
-            #return -1
-        # for the case end = time/epoch_l if there is time/micro_seconds_i,
-        # this seem to not be considered correctly in ph5
+        # if start is not None and start > latest_epoch:
+        #    self.ph5.forget_das_t(das)
+        #    return -1
+        #  for the case end = time/epoch_l if there is time/micro_seconds_i,
+        #  this seem to not be considered correctly in ph5
         if end is not None and end < earliest_epoch:
             self.ph5.forget_das_t(das)
             return -1
@@ -897,7 +899,7 @@ class PH5Availability(object):
 
                 tspan.append('["%s","%s"]' %
                              (r[f_id['earliest']], r[f_id['latest']]))
-        except Exception as e:
+        except Exception:
             raise PH5AvailabilityError(
                 "Wrong format result sent to get_json_report.")
 
@@ -1100,7 +1102,7 @@ def main():
     try:
         ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
         availability = PH5Availability(ph5API_object)
-        ret = availability.analyze_args(args)
+        availability.analyze_args(args)
 
         availability.process_all()
 
@@ -1123,4 +1125,3 @@ if __name__ == '__main__':
     print("RESULT:", result)
     availability.get_json_report(result)
     """
-

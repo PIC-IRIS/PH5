@@ -1038,7 +1038,7 @@ class TestPH5Availability(unittest.TestCase):
         """
         # wrong path entered
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                            'ph5/test_data/ph', '-a', '0']
+                    'ph5/test_data/ph', '-a', '0']
         with patch.object(sys, 'argv', testargs):
             with self.assertRaises(SystemExit):
                 ph5availability.main()
@@ -1829,7 +1829,7 @@ class TestPH5Availability(unittest.TestCase):
         self.assertStrEqual(ret[i1:], content[i2:])
 
         # wrong format result
-        result =  [('0407', 'LOG', 1545088205.0, 1545088205.0)]
+        result = [('0407', 'LOG', 1545088205.0, 1545088205.0)]
         self.assertRaises(
             ph5availability.PH5AvailabilityError,
             self.availability.get_json_report,
