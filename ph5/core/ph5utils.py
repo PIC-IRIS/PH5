@@ -11,11 +11,10 @@ ph5toexml.py.
 
 import fnmatch
 from datetime import datetime, timedelta
-from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 
-PROG_VERSION = "2019.81"
+PROG_VERSION = "2019.137"
 
 
 class PH5Response(object):
@@ -95,6 +94,7 @@ def is_radial_intersection(point_lat, point_lon,
     :param: latitude : the latitude of the point to check :type: float
     :param: longitude : the longitude of the point to check :type: float
     """
+    from obspy.geodetics import locations2degrees
     if minradius is not None or maxradius is not None or \
        point_lat is not None or point_lon is not None:
         # min radius default to 0.0

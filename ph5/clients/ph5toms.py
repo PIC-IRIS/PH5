@@ -13,17 +13,20 @@ import copy
 import itertools
 import io
 import datetime
-from obspy.core.inventory.inventory import read_inventory as read_inventory
-from obspy import Trace
-from obspy import Stream
-from obspy.core.util import AttribDict
-from obspy.io.sac import SACTrace
-from ph5.core import ph5utils
+from ph5.core.ph5utils import roundSeconds, does_pattern_exists,\
+    datestring_to_epoch, inday_breakup, doy_breakup
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
+from ctypes import *
+try:
+    lib1 = cdll.LoadLibrary('ph5/lib/libmseed.so.2')
+except:
+    lib1 = cdll.LoadLibrary('ph5/lib/libmseed.a')
 
-PROG_VERSION = '2019.93'
+import mseed_py
+
+PROG_VERSION = '2019.137'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -82,7 +85,7 @@ class PH5toMSeed(object):
                  das_sn=None, use_deploy_pickup=False, decimation=None,
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  reduction_velocity=-1., notimecorrect=False,
-                 restricted=[], format='MSEED', cut_len=86400):
+                 restricted=[], format='MSEED', cut_len=3600):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.reqtype = reqtype.upper()
@@ -151,12 +154,12 @@ class PH5toMSeed(object):
         s = stream.traces[0].stats
         new_start = s.starttime.isoformat()
         try:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S.%f"))
         except BaseException:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S"))
@@ -171,12 +174,12 @@ class PH5toMSeed(object):
         s = trace.stats
         new_start = s.starttime.isoformat()
         try:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S.%f"))
         except BaseException:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S"))
@@ -191,12 +194,12 @@ class PH5toMSeed(object):
         s = trace.stats
         new_start = s.starttime.isoformat()
         try:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S.%f"))
         except BaseException:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S"))
@@ -211,12 +214,12 @@ class PH5toMSeed(object):
         s = stream.traces[0].stats
         new_start = s.starttime.isoformat()
         try:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S.%f"))
         except BaseException:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S"))
@@ -231,12 +234,12 @@ class PH5toMSeed(object):
         s = trace.stats
         new_start = s.starttime.isoformat()
         try:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S.%f"))
         except BaseException:
-            rounded = ph5utils.roundSeconds(
+            rounded = roundSeconds(
                 datetime.datetime.strptime(
                     new_start,
                     "%Y-%m-%dT%H:%M:%S"))
@@ -596,7 +599,7 @@ class PH5toMSeed(object):
 
         if self.sample_rate_list:
             sample_list = self.sample_rate_list
-            if not ph5utils.does_pattern_exists(sample_list, sample_rate):
+            if not does_pattern_exists(sample_list, sample_rate):
                 return
 
         seed_channel, component = self.get_channel_and_component(
@@ -604,11 +607,11 @@ class PH5toMSeed(object):
 
         if self.component:
             component_list = self.component
-            if not ph5utils.does_pattern_exists(component_list, component):
+            if not does_pattern_exists(component_list, component):
                 return
         if self.channel:
             cha_patterns = self.channel
-            if not ph5utils.does_pattern_exists(cha_patterns, seed_channel):
+            if not does_pattern_exists(cha_patterns, seed_channel):
                 return
         if self.das_sn and self.das_sn != das:
             return
@@ -629,11 +632,11 @@ class PH5toMSeed(object):
                         start_times.append(deploy)
 
                 else:
-                    check_start_time = ph5utils.datestring_to_epoch(
+                    check_start_time = datestring_to_epoch(
                         self.start_time)
                     if float(check_start_time) > float(deploy):
                         start_times.append(
-                            ph5utils.datestring_to_epoch(
+                            datestring_to_epoch(
                                 self.start_time))
                     else:
                         start_times.append(deploy)
@@ -666,10 +669,10 @@ class PH5toMSeed(object):
                             stop_fepoch = pickup
 
                     else:
-                        check_end_time = ph5utils.datestring_to_epoch(
+                        check_end_time = datestring_to_epoch(
                             self.end_time)
                         if float(check_end_time) < float(pickup):
-                            stop_fepoch = ph5utils.datestring_to_epoch(
+                            stop_fepoch = datestring_to_epoch(
                                 self.end_time)
                         else:
                             stop_fepoch = pickup
@@ -699,7 +702,7 @@ class PH5toMSeed(object):
                     continue
 
             midnight_fepoch, secondLeftInday = \
-                ph5utils.inday_breakup(start_fepoch)
+                inday_breakup(start_fepoch)
 
             # if (stop_fepoch - start_fepoch) > 86400:
             if (stop_fepoch - start_fepoch) > secondLeftInday:
@@ -707,20 +710,20 @@ class PH5toMSeed(object):
                 total_seconds = stop_fepoch - start_fepoch
                 times_to_cut = []
                 if self.cut_len != 86400:
-                    stop_time, seconds = ph5utils.doy_breakup(
+                    stop_time, seconds = doy_breakup(
                         start_fepoch, self.cut_len)
                 else:
-                    stop_time, seconds = ph5utils.inday_breakup(start_fepoch)
+                    stop_time, seconds = inday_breakup(start_fepoch)
                 seconds_covered = seconds_covered + seconds
                 times_to_cut.append([start_fepoch, stop_time])
                 start_time = stop_time
 
                 while seconds_covered < total_seconds:
                     if self.cut_len != 86400:
-                        stop_time, seconds = ph5utils.doy_breakup(
+                        stop_time, seconds = doy_breakup(
                             start_time, self.cut_len)
                     else:
-                        stop_time, seconds = ph5utils.inday_breakup(start_time)
+                        stop_time, seconds = inday_breakup(start_time)
 
                     seconds_covered += seconds
                     if stop_time > stop_fepoch:
@@ -817,14 +820,14 @@ class PH5toMSeed(object):
             matched_shot_lines = []
             matched_shots = []
             for shot_line in shot_lines:
-                if not self.shotline or ph5utils.does_pattern_exists(
+                if not self.shotline or does_pattern_exists(
                         self.shotline, shot_line[-3:]):
                     matched_shot_lines.append(shot_line)
                 else:
                     continue
                 event_t = self.ph5.Event_t[shot_line]['byid']
                 for shot_id, _ in event_t.iteritems():
-                    if not self.eventnumbers or ph5utils.does_pattern_exists(
+                    if not self.eventnumbers or does_pattern_exists(
                             self.eventnumbers, shot_id):
                         matched_shots.append(shot_id)
                     else:
@@ -840,7 +843,7 @@ class PH5toMSeed(object):
             array_code = array_name[8:]  # get 3 digit array code
             if self.array:
                 array_patterns = self.array
-                if not ph5utils.does_pattern_exists(
+                if not does_pattern_exists(
                         array_patterns, str(array_code)):
                     continue
 
@@ -852,7 +855,7 @@ class PH5toMSeed(object):
             for ph5_station in arrayorder:
                 if self.station_id:
                     sta_list = self.station_id
-                    if not ph5utils.does_pattern_exists(sta_list, ph5_station):
+                    if not does_pattern_exists(sta_list, ph5_station):
                         continue
 
                 station_list = arraybyid.get(ph5_station)
@@ -873,7 +876,7 @@ class PH5toMSeed(object):
 
                         if self.station:
                             sta_patterns = self.station
-                            if not ph5utils.does_pattern_exists(sta_patterns,
+                            if not does_pattern_exists(sta_patterns,
                                                                 seed_station):
                                 continue
 

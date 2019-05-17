@@ -12,12 +12,17 @@ from ph5.core.c_dependencies import sufirfilt_py
 from ph5.core.c_dependencies import suibm2ieee_py
 from ph5.core.c_dependencies import surt_125a_py
 from ph5.core.c_dependencies import surt_130_py
+from ph5.core.c_dependencies import sumseed_py
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages, Extension
 from setuptools.command.install import install
 from setuptools.command.develop import develop
+from distutils.command.build import build
 from distutils import log
+from subprocess import call
+from sys import platform
+import os
 
 # Importing setuptools monkeypatches some of distutils commands so things like
 # 'python setup.py develop' work. Wrap in try/except so it is not an actual
@@ -56,6 +61,61 @@ except ImportError:
     msg = ("No module named numpy. "
            "Please install numpy first, it is needed before installing PH5.")
     raise ImportError(msg)
+
+
+class Build(build):
+    """Customized build"""
+    def run(self):
+
+        if platform == 'darwin':
+            command = ["make", "-C", "ph5/core/c_dependencies/libmseed"]
+        else:
+            command = ["make", "shared", "-C", "ph5/core/c_dependencies/libmseed"]
+        if call(command) != 0:
+            sys.exit(-1)
+
+        self.mkpath(self.build_lib)
+
+        print(self.build_lib)
+        if not self.dry_run:
+            self.copy_file("ph5/core/c_dependencies/libmseed/libmseed.so.2", 'ph5/lib')
+            self.copy_file("ph5/core/c_dependencies/libmseed/libmseed.so.2", self.build_lib)
+
+        build.run(self)
+
+
+class Develop(develop):
+    """Customized build"""
+    def run(self):
+
+
+
+        if platform == 'darwin':
+            command = ["make", "-C", "ph5/core/c_dependencies/libmseed"]
+        else:
+            command = ["make", "shared", "-C", "ph5/core/c_dependencies/libmseed"]
+        if call(command) != 0:
+            sys.exit(-1)
+        if not self.dry_run:
+            self.copy_file("ph5/core/c_dependencies/libmseed/libmseed.so.2", 'ph5/lib')
+
+        develop.run(self)
+
+
+class Install(install):
+    def initialize_options(self):
+        install.initialize_options(self)
+        self.build_scripts = None
+
+    def finalize_options(self):
+        install.finalize_options(self)
+        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
+
+    def run(self):
+        # run original install code
+        install.run(self)
+
+        self.copy_tree(self.build_lib, self.install_lib)
 
 
 setup(
@@ -109,6 +169,7 @@ setup(
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7',    
     ],
+    ext_package='ph5.lib',
     entry_points = {
         'gui_scripts': [
             'ph5view = ph5.clients.ph5view.ph5_viewer:startapp',
@@ -187,7 +248,7 @@ setup(
                      'ibm2ieee_py.c', 'ibm2ieeewrapper_py.c',
                      'rt_125a_py.c', 'rt_125awrapper_py.c',
                      'rt_130_py.c', 'rt_130wrapper_py.c', 'rt_130_py.h'
-                     ]
+                     'libmseed.h', 'mseedwrapper_py.c']
     },
     # install c-dependencies
     ext_modules=[Extension(*subcd_py.get_extension_options(),
@@ -198,7 +259,18 @@ setup(
                            include_dirs=[numpy.get_include()]),
                  Extension(*surt_125a_py.get_extension_options(),
                            include_dirs=[numpy.get_include()]),
+                 Extension(*sumseed_py.get_extension_options(),
+                           include_dirs=[numpy.get_include()],
+                           library_dirs=['ph5/lib'],
+                           libraries=['mseed']
+                           ),
                  Extension(*surt_130_py.get_extension_options(),
-                           include_dirs=[numpy.get_include()])]
+                           include_dirs=[numpy.get_include()])],
+
+    cmdclass={
+        'build': Build,
+        'install': Install,
+        'develop': Develop
+    }
 )
 
