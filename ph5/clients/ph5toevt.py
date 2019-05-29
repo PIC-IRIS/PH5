@@ -12,12 +12,15 @@ import logging
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api, segyfactory, decimate, timedoy, external_file
 
-PROG_VERSION = "2019.66"
+PROG_VERSION = "2019.149"
 LOGGER = logging.getLogger(__name__)
 # This should never get used. See ph5api.
 CHAN_MAP = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
 DECIMATION_FACTORS = segyfactory.DECIMATION_FACTORS
 
+class ph5toevt():
+    def __init__(self, description):
+        self.description = "Generate SEG-Y gathers in shot order..."
 
 def get_args():
     '''   Read command line argments   '''

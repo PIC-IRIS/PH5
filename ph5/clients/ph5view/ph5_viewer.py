@@ -29,12 +29,26 @@ try:
 except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 ###########################################################
-VER = 201914
+VER = 2019149
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
 VER_str = str(VER)
 VER_str = VER_str[:4] + '.' + VER_str[4:]
 PROG_VERSION = "%s Developmental" % VER_str
+
+class ph5_viewer():
+    def __init__(self, description):
+        self.description = """
+ph5view is a GUI program for plotting responses,
+saving files to SEGY, etc.
+It has three main panels: Control, Main, and Support.
+Control Panel: the panel with the menu and three tabs
+(Control, Shot Gather, Receiver Gather).
+Main Window: the main panel for plotting.
+Support Window: the panel to show small portion of the
+plot (the idea is to reduce the amount of trace need
+to be analyzed).
+Consult the Help Utility in ph5view to learn more."""
 
 USERHOME = os.getenv("HOME")
 
