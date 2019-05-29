@@ -5,7 +5,7 @@ Extracts data from PH5 in miniSEED and SAC formats.
 Also allows for creation of preview png images of traces.
 """
 
-
+import lazy_import
 import sys
 import os
 import logging
@@ -13,20 +13,27 @@ import copy
 import itertools
 import io
 import datetime
+read_inventory = lazy_import.lazy_callable("obspy.core.inventory.inventory.read_inventory")
+Trace = lazy_import.lazy_callable("obspy.Trace")
+Stream = lazy_import.lazy_callable("obspy.Stream")
+AttribDict = lazy_import.lazy_callable("obspy.core.util.AttribDict")
+obssac = lazy_import.lazy_module("obspy.io.sac")
 from ph5.core.ph5utils import roundSeconds, does_pattern_exists,\
     datestring_to_epoch, inday_breakup, doy_breakup
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
 from ctypes import *
+libdir = os.path.join(os.path.dirname(__file__), os.pardir, 'lib')
 try:
-    lib1 = cdll.LoadLibrary('ph5/lib/libmseed.so.2')
+    libpath = os.path.join(libdir, 'libmseed.so.2')
+    lib1 = cdll.LoadLibrary(libpath)
 except:
-    lib1 = cdll.LoadLibrary('ph5/lib/libmseed.a')
-
+    libpath = os.path.join(libdir, 'libmseed.a')
+    lib1 = cdll.LoadLibrary(libpath)
 import mseed_py
 
-PROG_VERSION = '2019.137'
+PROG_VERSION = '2019.149'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -1136,7 +1143,7 @@ def main():
                                  format='MSEED', reclen=4096)
             elif args.format.upper() == "SAC":
                 for trace in stream:
-                    sac = SACTrace.from_obspy_trace(trace)
+                    sac = obssac.SACTrace.from_obspy_trace(trace)
                     if not args.non_standard:
                         sac.write(ph5ms.filenamesac_gen(trace))
                     else:

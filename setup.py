@@ -143,7 +143,8 @@ setup(
                       'simplekml',
                       'tables',
                       'matplotlib<2',
-                      'subprocess32'
+                      'subprocess32',
+                      'lazy_import'
                       #pyicu - seems to work without
                       #pyqt4 - required external program
                       #PySide - required external program
