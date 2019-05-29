@@ -23,12 +23,9 @@ f_id = {'sta': 0, 'loc': 1, 'chan': 2,
 
 
 class PH5AvailabilityError(Exception):
-    """Exception raised when there is a problem with the request.
-    :param: message -- explanation of the error
+    """Exception raised when there is a problem with the request."
     """
-
-    def __init__(self, message):
-        self.message = message
+    pass
 
 
 class PH5Availability(object):
@@ -74,7 +71,7 @@ class PH5Availability(object):
 
             self.starttime = ph5utils.parse_date(args.start_time)
             self.endtime = ph5utils.parse_date(args.end_time)
-        except ValueError, e:
+        except ValueError as e:
             raise PH5AvailabilityError(e)
 
         if self.starttime:
@@ -1025,12 +1022,14 @@ def get_args(args):
     parser.add_argument(
         "-s", "--start_time", action="store",
         type=str, dest="start_time", metavar="start_time", default=None,
-        help="Time formats are YYYY:DOY:HH:MM:SS.ss or YYYY-mm-ddTHH:MM:SS.ss")
+        help=("Time formats are YYYY:DOY:HH:MM:SS.ss or "
+              "YYYY-mm-ddTHH:MM:SS.ss (ISO-8601)"))
 
     parser.add_argument(
         "-e", "--endtime", action="store",
         type=str, dest="end_time", metavar="end_time", default=None,
-        help="Time formats are YYYY:DOY:HH:MM:SS.ss or YYYY-mm-ddTHH:MM:SS.ss")
+        help=("Time formats are YYYY:DOY:HH:MM:SS.ss or "
+              "YYYY-mm-ddTHH:MM:SS.ss (ISO-8601)"))
 
     parser.add_argument(
         "--station", action="store", dest="sta_list",
@@ -1074,8 +1073,8 @@ def get_args(args):
 
     parser.add_argument(
         "-F", "-f", "--format", action="store", dest="format",
-        help="Format for availability's report:\n  t: text, s: sync, \
-g: geocsv, j: json",
+        help=("Format for availability's report:\n  t: text, s: sync, "
+              "g: geocsv, j: json"),
         metavar="format", type=str, default=None)
 
     parser.add_argument(
@@ -1117,11 +1116,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    """
-    ph5o = ph5api.PH5(path="ph5/test_data/ph5", nickname='master.ph5')
-    availability = PH5Availability(ph5o)
-    result = availability.get_availability(
-        starttime=1545088205.0, endtime=1550849943.1)
-    print("RESULT:", result)
-    availability.get_json_report(result)
-    """
