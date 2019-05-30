@@ -96,8 +96,10 @@ class PH5Availability(object):
                 self.SR_included = True
 
         self.format = args.format
-        if self.avail not in [2, 3]:
-            LOGGER.warning("Format only apply for aval 2 or 3.")
+        if self.format and self.avail not in [2, 3]:
+            LOGGER.warning("Format only apply for avail modes 2 or 3.")
+        elif not self.format:
+            self.format = "t"  # default to text format
 
         # define OFILE to write output
         o_filename = args.output_file
@@ -950,22 +952,30 @@ class PH5Availability(object):
         AVAIL = {0: self.has_data, 1: self.get_slc,
                  2: self.get_availability, 3: self.get_availability_extent,
                  4: self.get_availability_percentage}
-        results = []
+        result = []
         for st in self.stations:
             for ch in self.channels:
                 for loc in self.locations:
-                    result = AVAIL[self.avail](
+                    avail = AVAIL[self.avail](
                         st, loc, ch, self.starttime, self.endtime,
                         self.SR_included)
-
-                    if isinstance(result, bool):
-                        print(result)
+                    if isinstance(avail, bool):
+                        print("station={0: <5} location={1: <2} "
+                              "channel={2: <4} start={3: <5} end={4: <5} "
+                              "data_available={5}"
+                              .format(st if st else "*",
+                                      loc if loc else "*",
+                                      ch if ch else "*",
+                                      self.starttime
+                                      if self.starttime else "MIN_STARTTIME",
+                                      self.endtime
+                                      if self.endtime else "MAX_ENDTIME",
+                                      avail))
                     else:
-                        results += result
-
+                        result += avail
         if self.avail == 0:
-            return
-        if self.avail not in [2, 3] or self.format is None:
+            return  # no data available
+        elif self.avail not in [2, 3] or self.format is None:
             print(result)
             return
 
@@ -1079,7 +1089,7 @@ def get_args(args):
 
     parser.add_argument(
         "-o", "--outfile", dest="output_file", metavar="output_file",
-        help="The kef output file to be saved at.", default=None)
+        help="The output file to be saved at.", default=None)
 
     return parser.parse_args(_preprocess_sysargv(args))
 

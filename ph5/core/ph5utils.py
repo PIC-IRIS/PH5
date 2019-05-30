@@ -635,7 +635,7 @@ def parse_date(date_str):
     """
     if is_str_unicode(date_str):
         fmts = ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%S.%f",
-                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d")
+                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y:%j:%H:%M:%S.%f")
         for fmt in fmts:
             try:
                 dt = datetime.strptime(date_str, fmt)
