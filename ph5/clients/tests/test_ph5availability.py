@@ -964,7 +964,7 @@ class TestPH5Availability(unittest.TestCase):
              '-a', '2', '-o', 'test'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
-        self.assertEqual(A.OFILE, None)
+        self.assertIsNotNone(A.OFILE)
 
         # test default args
         args = ph5availability.get_args(
@@ -1038,7 +1038,7 @@ class TestPH5Availability(unittest.TestCase):
         """
         # wrong path entered
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph', '-a', '0']
+                    'some/bad/path', '-a', '0']
         with patch.object(sys, 'argv', testargs):
             with self.assertRaises(SystemExit):
                 ph5availability.main()
@@ -1081,7 +1081,7 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        self.assertEqual(output, 'True\nFalse')
+        self.assertEqual(output, 'True')
 
         # test has_data with start time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1185,9 +1185,15 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('0407', '', 'HHN', 1545085230.917, 1545085240.9220002), "\
-            "('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), "\
-            "('0407', '', 'LOG', 1545088205.0, 1545088205.0)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
+             " 2018-12-17T22:20:40.922000Z\n"
+             "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
+             " 2018-12-17T22:20:40.691998Z\n"
+             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+             " 2018-12-17T23:10:05.000000Z")
         self.assertStrEqual(output, expect)
 
         # test get_availability with channel
@@ -1197,7 +1203,11 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+             " 2018-12-17T23:10:05.000000Z")
         self.assertStrEqual(output, expect)
 
         # test get_availability with time
@@ -1209,8 +1219,13 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0), "\
-            "('9001', '', 'DPZ', 1550849943.0, 1550849943.1)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+             " 2018-12-17T23:10:05.000000Z\n"
+             "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+             " 2019-02-22T15:39:03.099999Z")
         self.assertStrEqual(output, expect)
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1219,7 +1234,11 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+             " 2018-12-17T23:10:05.000000Z")
         self.assertEqual(output, expect)
 
         # ------------------------------------------------------------ #
@@ -1230,7 +1249,11 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('9001', '', 'DPZ', 1550849943.0, 1550850189.0)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+             " 2019-02-22T15:43:09.000000Z")
         self.assertStrEqual(output, expect)
 
         # test get_availability_extent with channel
@@ -1254,7 +1277,11 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('9001', '', 'DPZ', 1550849944.1, 1550849947.1, 500.0)]"
+        expect = \
+            ("#n s     l  c   q sample-rate                    earliest"
+             "                      latest\n"
+             "AA 9001  -- DPZ         500.0 2019-02-22T15:39:04.099999Z"
+             " 2019-02-22T15:39:07.099999Z")
         self.assertEqual(output, expect)
 
         # test get_availability_extent with wildcard station, location, channel
@@ -1265,7 +1292,11 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('9001', '', 'DPZ', 1550849943.0, 1550850189.0)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+             " 2019-02-22T15:43:09.000000Z")
         self.assertEqual(output, expect)
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1274,7 +1305,11 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        expect = "[('0407', '', 'LOG', 1545088205.0, 1545088205.0)]"
+        expect = \
+            ("#n s     l  c   q                    earliest"
+             "                      latest\n"
+             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+             " 2018-12-17T23:10:05.000000Z")
         self.assertEqual(output, expect)
 
         # ------------------------------------------------------------ #
@@ -1314,7 +1349,7 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        self.assertStrEqual(output, '(1.0, 0)')
+        self.assertStrEqual(output, '[1.0, 0]')
 
         # test get_availability_percentage with station, channel, time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1325,9 +1360,7 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = re.sub(r"\(|\)", '', out.getvalue().strip())
-        ret = output.split(',')
-        self.assertAlmostEquals(0.1167, float(ret[0]), 3)
-        self.assertEqual(2, int(ret[1]))
+        self.assertStrEqual(output, '[0.11666666666666667, 2]')
         # test get_availability_percentage with station, channel, time, and
         # array not match with other parameters
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1337,7 +1370,7 @@ class TestPH5Availability(unittest.TestCase):
             with captured_output() as (out, err):
                 ph5availability.main()
         output = out.getvalue().strip()
-        self.assertEqual(output, '(0.0, 0)')
+        self.assertEqual(output, '[0.0, 0]')
 
         # ------------------------------------------------------------ #
         # test extent and text format

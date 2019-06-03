@@ -953,6 +953,7 @@ class PH5Availability(object):
                  2: self.get_availability, 3: self.get_availability_extent,
                  4: self.get_availability_percentage}
         result = []
+        has_data = False
         for st in self.stations:
             for ch in self.channels:
                 for loc in self.locations:
@@ -960,21 +961,13 @@ class PH5Availability(object):
                         st, loc, ch, self.starttime, self.endtime,
                         self.SR_included)
                     if isinstance(avail, bool):
-                        print("station={0: <5} location={1: <2} "
-                              "channel={2: <4} start={3: <5} end={4: <5} "
-                              "data_available={5}"
-                              .format(st if st else "*",
-                                      loc if loc else "*",
-                                      ch if ch else "*",
-                                      self.starttime
-                                      if self.starttime else "MIN_STARTTIME",
-                                      self.endtime
-                                      if self.endtime else "MAX_ENDTIME",
-                                      avail))
+                        if avail:
+                            has_data = True
                     else:
                         result += avail
         if self.avail == 0:
-            return  # no data available
+            print(has_data)
+            return
         elif self.avail not in [2, 3] or self.format is None:
             print(result)
             return
@@ -1089,7 +1082,8 @@ def get_args(args):
 
     parser.add_argument(
         "-o", "--outfile", dest="output_file", metavar="output_file",
-        help="The output file to be saved at.", default=None)
+        help=("The output file to be saved at. Only applies when avail is "
+              "set to 2 or 3."), default=None)
 
     return parser.parse_args(_preprocess_sysargv(args))
 
