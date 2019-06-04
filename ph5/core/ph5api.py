@@ -12,8 +12,10 @@ import re
 import numpy as np
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
+from tables.exceptions import NoSuchNodeError
 
 PROG_VERSION = '2019.93'
+
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
 
@@ -767,7 +769,11 @@ class PH5(experiment.ExperimentGroup):
         if not node:
             return []
         self.ph5_g_receivers.setcurrent(node)
-        tbl = self.ph5.get_node('/Experiment_g/Receivers_g/' + das_g, 'Das_t')
+        try:
+            tbl = self.ph5.get_node('/Experiment_g/Receivers_g/' + das_g,
+                                    'Das_t')
+        except NoSuchNodeError:
+            return []
         epoch_i = tbl.cols.time.epoch_l  # noqa
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
         sample_count_i = tbl.cols.sample_count_i  # noqa
@@ -935,10 +941,10 @@ class PH5(experiment.ExperimentGroup):
         return das
 
     def forget_das_t(self, das):
+        node = self.ph5_g_receivers.getdas_g(das)
+        node.umount()
         if das in self.Das_t:
             del self.Das_t[das]
-            node = self.ph5_g_receivers.getdas_g(das)
-            node.umount()
 
     def read_t(self, table, n=None):
         '''   Read table and return kef
@@ -1324,19 +1330,19 @@ class PH5(experiment.ExperimentGroup):
         Required: das serial and component
         Optional: Start time, End time
         :param das: das serial number
+        :param component: component channel number
         :param start: start time epoch
         :param end:  end time epoch
         :param sample_rate: sample rate
-        :param component: component channel number
         :return: earliest epoch and latest epoch
         '''
         das_t_t = None
-        if not component:
+        if component is None:
             raise ValueError("Component required for get_extent")
         if start or end:
             if not (start and end):
                 raise ValueError("if start or end, both are required")
-        self.read_das_t(das, start, end, reread=True)
+        # self.read_das_t(das, start, end, reread=True)
 
         if das not in self.Das_t:
             das_t_t = self.query_das_t(
@@ -1376,17 +1382,26 @@ class PH5(experiment.ExperimentGroup):
             latest_epoch = earliest_epoch
 
         self.forget_das_t(das)
+
         return earliest_epoch, latest_epoch
 
-    def get_availability(self, das,
-                         sample_rate, component,
+    def get_availability(self, das, sample_rate, component,
                          start=None, end=None):
-
+        '''
+        Required: das, sample_rate and component
+        Optional: Start time, End time
+        :param das: das serial number
+        :param sample_rate: sample rate
+        :param component: component channel number
+        :param start: start time epoch
+        :param end:  end time epoch
+        :return: list of tuples (sample_rate, start, end)
+        '''
         das_t_t = None
         gaps = 0
-        if not component:
+        if component is None:
             raise ValueError("Component required for get_availability")
-        if not sample_rate:
+        if sample_rate is None:
             raise ValueError("Sample rate required for get_availability")
 
         self.read_das_t(das, start, end, reread=True)
@@ -1421,7 +1436,6 @@ class PH5(experiment.ExperimentGroup):
         previous = {}
 
         times = list()
-
         for entry in new_das_t:
             if not previous:
                 previous['start'] = (
@@ -1444,31 +1458,37 @@ class PH5(experiment.ExperimentGroup):
                 previous['end'] = previous['start'] + previous['length']
                 continue
             else:
+
                 if (float(entry['time/epoch_l']) +
                         float(entry['time/micro_seconds_i']) /
                         1000000) != previous['start']+previous['length']:
                     gaps = gaps + 1
                     times.append((previous['sample_rate'],
-                                 previous['start'],
+                                 start_time,
                                  previous['end']))
                     previous['start'] = (
                             float(entry['time/epoch_l']) +
                             float(entry['time/micro_seconds_i']) /
                             1000000)
                     start_time = previous['start']
-                    if entry['sample_rate_i'] > 0:
-                        previous['length'] = (
-                                float(entry['sample_count_i']) /
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                        previous['sample_rate'] = (
-                                float(entry['sample_rate_i']) /
-                                float(entry['sample_rate_multiplier_i']))
-                    else:
-                        previous['length'] = 0
-                        previous['sample_rate'] = 0
 
-                    previous['end'] = previous['start'] + previous['length']
+                previous['start'] = (
+                        float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000)
+                if entry['sample_rate_i'] > 0:
+                    previous['length'] = (
+                            float(entry['sample_count_i']) /
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                    previous['sample_rate'] = (
+                            float(entry['sample_rate_i']) /
+                            float(entry['sample_rate_multiplier_i']))
+                else:
+                    previous['length'] = 0
+                    previous['sample_rate'] = 0
+
+                previous['end'] = previous['start'] + previous['length']
         if gaps > 0:
             start_ = (
                     float(new_das_t[-1]['time/epoch_l']) +

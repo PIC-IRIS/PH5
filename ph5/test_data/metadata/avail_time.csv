@@ -1,0 +1,7 @@
+#dataset: GeoCSV 2.0
+#delimiter: |
+#field_unit: unitless | unitless | unitless | unitless | unitless | hertz | ISO_8601 | ISO_8601
+#field_type: string | string | string | string | string | float | datetime | datetime
+network|station|location|channel|quality|sample_rate|earliest|latest
+AA|407||LOG||0|2018-12-17T23:10:05.000000Z|2018-12-17T23:10:05.000000Z
+AA|9001||DPZ||500|2019-02-22T15:39:03.000000Z|2019-02-22T15:39:03.099999Z
