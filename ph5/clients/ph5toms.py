@@ -512,12 +512,6 @@ class PH5toMSeed(object):
                                                stc.endtime,
                                                chan=stc.component,
                                                das_t=das)
-            
-            if self.format.upper() == "SEGY1" or \
-              self.format.upper() == "SEGY2":
-                # pad gaps using mean value when request type is SEG-Y
-                traces = [ph5api.pad_traces(traces)]
-
             if not isinstance(traces, list):
                 return
 
