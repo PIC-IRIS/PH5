@@ -670,6 +670,16 @@ class PH5toMSeed(object):
                     else:
                         sct = StationCutTime(deploy)
                         station_cut_times.append(sct)
+                else:
+                    check_start_time = ph5utils.datestring_to_epoch(
+                        self.start_time)
+                    if float(check_start_time) > float(deploy):
+                        sct = StationCutTime(
+                                ph5utils.datestring_to_epoch(self.start_time))
+                        station_cut_times.append(sct)
+                    else:
+                        sct = StationCutTime(deploy)
+                        station_cut_times.append(sct)
                 if float(check_start_time) > float(pickup):
                     return
             else:
