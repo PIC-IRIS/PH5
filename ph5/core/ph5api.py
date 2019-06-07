@@ -1215,6 +1215,9 @@ class PH5(experiment.ExperimentGroup):
                 if trace_start_fepoch is None:
                     trace_start_fepoch = \
                         window_start_fepoch + cut_start_sample / sr
+                    if trace_start_fepoch < start_fepoch:
+                        # adjust start time to on the requested start time
+                        trace_start_fepoch = start_fepoch
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float':
