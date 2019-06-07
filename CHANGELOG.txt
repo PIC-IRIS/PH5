@@ -68,6 +68,8 @@ ph5.utilities.tests.test_obspytoph5
  * unit tests for obspytoph5
 ph5.core.tests.test_ph5api
  * unit tests for ph5api
+ph5.core.ph5api
+ * fix ph5api cut sometimes returns too many samples (issue #298)
 
 v4.1.2:
 ph5.utilities.ph5validate
