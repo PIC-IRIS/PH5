@@ -1212,9 +1212,9 @@ class PH5(experiment.ExperimentGroup):
                 self.ph5_g_receivers.trace_info(trace_reference))
             if first:
                 # Correct start time to 'actual' time of first sample
-                start_fepoch = window_start_fepoch + cut_start_sample / sr
                 if trace_start_fepoch is None:
-                    trace_start_fepoch = start_fepoch
+                    trace_start_fepoch = \
+                        window_start_fepoch + cut_start_sample / sr
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float':
@@ -1249,8 +1249,8 @@ class PH5(experiment.ExperimentGroup):
                     #
                     # Start of trace after gap
                     #
+                    start_fepoch = trace_start_fepoch
                     trace_start_fepoch = window_start_fepoch
-                    start_fepoch = window_start_fepoch
                     samples_read = len(data_tmp)
 
                     dt = 'int32'
