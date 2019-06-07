@@ -1,3 +1,9 @@
+entry_points.py
+ * creates a dictionary, keys are names of scripts, 
+      values are (1) simple description, 
+      (2) entry points for use by setup.
+help.py
+ * calls entry_points to print the short descriptions in alpha-order.
 Master:
 ph5
  * made pep8 compliant

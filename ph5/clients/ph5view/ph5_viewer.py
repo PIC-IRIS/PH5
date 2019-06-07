@@ -29,26 +29,12 @@ try:
 except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 ###########################################################
-VER = 2019149
+VER = 201914
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
 VER_str = str(VER)
 VER_str = VER_str[:4] + '.' + VER_str[4:]
 PROG_VERSION = "%s Developmental" % VER_str
-
-class ph5_viewer():
-    def __init__(self, description):
-        self.description = """
-ph5view is a GUI program for plotting responses,
-saving files to SEGY, etc.
-It has three main panels: Control, Main, and Support.
-Control Panel: the panel with the menu and three tabs
-(Control, Shot Gather, Receiver Gather).
-Main Window: the main panel for plotting.
-Support Window: the panel to show small portion of the
-plot (the idea is to reduce the amount of trace need
-to be analyzed).
-Consult the Help Utility in ph5view to learn more."""
 
 USERHOME = os.getenv("HOME")
 
@@ -62,17 +48,13 @@ VERT_SHADER = """
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-
 attribute vec2 a_position;
 attribute float a_index;
 varying float v_index;
-
 attribute vec3 a_color;
 varying vec3 v_color;
-
 uniform vec2 u_pan;
 uniform vec2 u_scale;
-
 void main() {
     vec2 position_tr = u_scale * (a_position + u_pan);
     gl_Position =  u_model * vec4(position_tr, 0.0, 1.0);
@@ -1379,7 +1361,6 @@ class Canvas(app.Canvas):
         if event.is_dragging and self.select:
             x0, y0 = event.press_event.pos
             x1, y1 = event.last_event.pos
-
             self.zoomWidget.setGeometry(
                 QtCore.QRect(
                     QPoint(x0+self.offsetX,y0+self.offsetY),
@@ -5372,7 +5353,6 @@ class ES_Gui(QtGui.QWidget):
           If not submit form (receiver gather):
             channelCtrls need radio button to allow
             selecting only one channel at a time
-
          event form need shotCtrls (shotline) which should be radio button
           to allow selecting only one shotline at a time
         """
