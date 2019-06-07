@@ -10,6 +10,7 @@ import os
 import time
 import re
 import numpy as np
+import math
 from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 from tables.exceptions import NoSuchNodeError
@@ -1184,9 +1185,8 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int(round((((start_fepoch -
-                                                window_start_fepoch)) * sr)))
-
+                cut_start_sample = int(math.ceil((((start_fepoch -
+                                                    window_start_fepoch)) * sr)))
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
@@ -1194,9 +1194,9 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = stop_fepoch
-                cut_stop_sample = int(round((cut_stop_fepoch -
-                                             cut_start_fepoch) *
-                                            sr)) + cut_start_sample
+                cut_stop_sample = int(math.floor(((cut_stop_fepoch -
+                                                   cut_start_fepoch) *
+                                                   sr)))
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
