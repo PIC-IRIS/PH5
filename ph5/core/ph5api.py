@@ -1186,7 +1186,8 @@ class PH5(experiment.ExperimentGroup):
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
                 cut_start_sample = int(math.ceil((((start_fepoch -
-                                                    window_start_fepoch)) * sr)))
+                                                    window_start_fepoch)) *
+                                                    sr)))
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
@@ -1194,9 +1195,9 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = stop_fepoch
-                cut_stop_sample = int(math.ceil(((cut_stop_fepoch -
-                                                  cut_start_fepoch) *
-                                                  sr)))
+                cut_stop_sample = int(math.ceil((cut_stop_fepoch -
+                                                 cut_start_fepoch) *
+                                                 sr)) + cut_start_sample
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
