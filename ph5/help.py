@@ -1,50 +1,45 @@
-# A help file for ph5. When the user types $ ph5, 
-# this will print a list of all available commands, 
+# A help file for ph5. When the user types $ ph5,
+# this will print a list of all available commands,
 # along with a brief description.
 #
-# The dictionary defined in entry_points also 
-# contains the entry points fpor each script, 
+# The dictionary defined in entry_points also
+# contains the entry points fpor each script,
 # for use in setup.py.
 
 # Dave Thomas, 2019-06-11
 
 from __future__ import (print_function)
+from entry_points import CommandList
+
 
 PROG_VERSION = '2019.162'
-
-from entry_points import CommandList
 
 
 def main():
 
-	command_list = CommandList()
+    command_list = CommandList()
+    entry_points = []
+    for _, eps in command_list.entrypoints.items():
+        entry_points.extend([ep for ep in eps])
+    commands = {}
+    for ep in entry_points:
+        if not commands.get(ep.type):
+            commands[ep.type] = [ep.get_description_str()]
+        else:
+            commands[ep.type].append(ep.get_description_str())
 
-	descriptions = {group: [ep.get_description_str() for ep in eps]
-                    for group, eps in command_list.entrypoints.items()}
-
-	## print (descriptions)
-
-	guis = descriptions['gui_scripts']
-	consoles = descriptions['console_scripts']
-
-	print (" ")
-	print ("************************************************")
-	print ("These are the available PH5 scripts and commands.")
-	print ("************************************************")
-
-	print (" ")
-	print ("GUI Scripts:")
-	print ("Use Help menu for detailed instructions for each.")
-	print ("-------------------------------------------------")
-	for item in sorted(guis):
-		print (item)
-
-	print (" ")
-	print ("Console Scripts:")
-	print ("Type command_name -h for detailed instructions for each.")
-	print ("-------------------------------------------------")
-	for item in sorted(consoles):
-		print (item)
+    print('PH5: PASSCAL HDF5')
+    print('')
+    print('Usage:')
+    print('    <command> [args]')
+    for type, desc_list in commands.items():
+        if type:
+            print('')
+            print(type)
+            for desc in desc_list:
+                print(desc)
+    print('')
+    print('Type "<command> --help" for more information on a command.')
 
 
 if __name__ == '__main__':

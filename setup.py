@@ -59,6 +59,8 @@ except ImportError:
 
 
 from ph5.entry_points import CommandList
+
+
 command_list = CommandList()
 
 setup(
@@ -112,10 +114,8 @@ setup(
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7',    
     ],
-
     entry_points = {group: [ep.get_entry_point_str() for ep in eps]
                         for group, eps in command_list.entrypoints.items()}, 
-
     packages=['ph5',
               'ph5/clients',
               'ph5/clients/ph5view',
@@ -148,3 +148,4 @@ setup(
                  Extension(*surt_130_py.get_extension_options(),
                            include_dirs=[numpy.get_include()])]
 )
+
