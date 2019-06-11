@@ -24,20 +24,20 @@ def main():
     commands = {}
     for ep in entry_points:
         if not commands.get(ep.type):
-            commands[ep.type] = [ep.get_description_str()]
+            commands[ep.type] = [ep]
         else:
-            commands[ep.type].append(ep.get_description_str())
+            commands[ep.type].append(ep)
 
     print('PH5: PASSCAL HDF5')
     print('')
     print('Usage:')
     print('    <command> [args]')
-    for type, desc_list in commands.items():
+    for type, ep_list in commands.items():
         if type:
             print('')
             print(type)
-            for desc in desc_list:
-                print(desc)
+            for ep in sorted(ep_list, key=lambda x: x.command):
+                print(ep.get_description_str())
     print('')
     print('Type "<command> --help" for more information on a command.')
 
