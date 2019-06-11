@@ -732,10 +732,6 @@ class PH5toMSeed(object):
                 times_to_cut = [[start_fepoch, stop_fepoch]]
                 times_to_cut[-1][-1] = stop_fepoch
 
-            if int(times_to_cut[-1][-2]) == int(
-                    times_to_cut[-1][-1]):
-                del times_to_cut[-1]
-
             latitude = station_list[deployment][
                 st_num]['location/Y/value_d']
             longitude = station_list[deployment][

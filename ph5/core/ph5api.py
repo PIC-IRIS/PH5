@@ -1269,6 +1269,18 @@ class PH5(experiment.ExperimentGroup):
 
             window_stop_fepoch + (1. / sr)
 
+        # adjust the number of data samples as to not over extend the
+        # cut_stop_fepoch
+        calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
+        if calc_stop_fepoch > cut_stop_fepoch:
+            # calculate number of overextending samples
+            num_overextend_samples = int((calc_stop_fepoch -
+                                          cut_stop_fepoch) *
+                                         sr)
+            samples_to_cut = int(len(data) - num_overextend_samples)
+            # trim the data array to exclude the over extending samples
+            data = data[0:samples_to_cut]
+
         # Done reading all the traces catch the last bit
         if data is None:
             return [Trace(np.array([]), start_fepoch, 0., 0, sample_rate,
