@@ -12,7 +12,7 @@ from __future__ import (print_function)
 
 import argparse
 
-from entry_points import CommandList
+from entry_points import CommandList, EntryPointTypes
 
 PROG_VERSION = '2019.165'
 
@@ -26,12 +26,6 @@ def main():
         args = parser.parse_args()
 
 	doall = args.all
-##        print "args:", args
-
-##        if args.all:
-##		print ("ALL!")
-##        else:
-##            print ("NOT all, only Some.")
     except:
 	doall = False
         print ("Enter -a or --all to see all subprograms.")
@@ -42,8 +36,6 @@ def main():
         entry_points.extend([ep for ep in eps])
     commands = {}
     for ep in entry_points:
-	##print ("ep.command = ", ep.command)
-	##print ("ep.type = ", ep.type)
         if not commands.get(ep.type):
             commands[ep.type] = [ep]
         else:
@@ -53,26 +45,24 @@ def main():
     print('')
     print('Usage:')
     print('    <command> [args]')
+    print('')
     for type, ep_list in commands.items():
-	## print ("TYPE = ", type, ", args.all = ", doall) 
-	if type != "Additional Scripts" and type != None:
-	    print('')
-	    print(type)
-	    for ep in sorted(ep_list, key=lambda x: x.command):
-	        print(ep.get_description_str())
-	    print('')
+    	if type and type != EntryPointTypes.ALL:
+    	    print(type)
+    	    for ep in sorted(ep_list, key=lambda x: x.command):
+    	        print(ep.get_description_str())
+    	    print('')
+    # print additional commands if ph5 --all or ph5 -a is entered
     for type, ep_list in commands.items():
-	##print ("TYPE = ", type, ", args.all = ", doall) 
-	if type == "Additional Scripts" and doall:
-	    print('')
-	    print(type)
-	    for ep in sorted(ep_list, key=lambda x: x.command):
-	        print(ep.get_description_str())
-	    print('')
+    	if type == EntryPointTypes.ALL and doall:
+    	    print(type)
+    	    for ep in sorted(ep_list, key=lambda x: x.command):
+    	        print(ep.get_description_str())
+    	    print('')
 
     print('Type "<command> --help" for more information on a command.')
     if not(doall):
-        print('Type "ph5 --all or ph5 -a" for list of Additional commands.')	
+        print('Type "ph5 --all" or "ph5 -a" for a list of additional commands.')	
 
 
 if __name__ == '__main__':

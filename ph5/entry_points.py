@@ -14,7 +14,7 @@ class EntryPointTypes():
     QC = "Quality Control"
     INGESTION = "Data and Metadata Ingestion"
     EDITING = "Editing and Manipulation"
-    ALL = "Additional Scripts"
+    ALL = "Additional Commands"
 
 
 class EntryPoint():
