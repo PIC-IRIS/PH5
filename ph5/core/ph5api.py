@@ -188,12 +188,7 @@ class Trace(object):
         self.response_t = response_t
 
     def __repr__(self):
-        if self.sample_rate > 0:
-            end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
-                fepoch=True) + (float(self.nsamples) / self.sample_rate)))
-        else:
-            end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
-                fepoch=True)))
+        end_time = self.get_endtime()
         return "start_time: {0}\nend_time: {7}\nnsamples: {1}/{6}\nsample_rate:\
         {2}\ntime_correction_ms: {3}\nttype: {4}\nchannel_number: {5}" \
             .format(self.start_time,
@@ -204,6 +199,15 @@ class Trace(object):
                     self.das_t[0]['channel_number_i'],
                     len(self.data),
                     end_time)
+
+    def get_endtime(self):
+        if self.sample_rate > 0:
+            end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
+                fepoch=True) + (float(self.nsamples) / self.sample_rate)))
+        else:
+            end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
+                fepoch=True)))
+        return end_time.getFdsnTime()
 
     def time_correct(self):
         return timedoy.timecorrect(self.start_time, self.time_correction_ms)
@@ -1266,8 +1270,6 @@ class PH5(experiment.ExperimentGroup):
                     data = np.append(data, data_tmp)
                     samples_read += len(data_tmp)
                     das_t.append(d)
-
-            window_stop_fepoch + (1. / sr)
 
         # adjust the number of data samples as to not over extend the
         # cut_stop_fepoch
