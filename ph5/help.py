@@ -9,13 +9,32 @@
 # Dave Thomas, 2019-06-11
 
 from __future__ import (print_function)
+
+import argparse
+
 from entry_points import CommandList
 
-
-PROG_VERSION = '2019.162'
+PROG_VERSION = '2019.165'
 
 
 def main():
+
+    parser = argparse.ArgumentParser(description="Get Usage Info for PH5 Subprograms")
+    parser.add_argument("-a", "--all", action="store_true")
+
+    try:
+        args = parser.parse_args()
+
+	doall = args.all
+##        print "args:", args
+
+##        if args.all:
+##		print ("ALL!")
+##        else:
+##            print ("NOT all, only Some.")
+    except:
+	doall = False
+        print ("Enter -a or --all to see all subprograms.")
 
     command_list = CommandList()
     entry_points = []
@@ -23,6 +42,8 @@ def main():
         entry_points.extend([ep for ep in eps])
     commands = {}
     for ep in entry_points:
+	##print ("ep.command = ", ep.command)
+	##print ("ep.type = ", ep.type)
         if not commands.get(ep.type):
             commands[ep.type] = [ep]
         else:
@@ -33,13 +54,25 @@ def main():
     print('Usage:')
     print('    <command> [args]')
     for type, ep_list in commands.items():
-        if type:
-            print('')
-            print(type)
-            for ep in sorted(ep_list, key=lambda x: x.command):
-                print(ep.get_description_str())
-    print('')
+	## print ("TYPE = ", type, ", args.all = ", doall) 
+	if type != "Additional Scripts" and type != None:
+	    print('')
+	    print(type)
+	    for ep in sorted(ep_list, key=lambda x: x.command):
+	        print(ep.get_description_str())
+	    print('')
+    for type, ep_list in commands.items():
+	##print ("TYPE = ", type, ", args.all = ", doall) 
+	if type == "Additional Scripts" and doall:
+	    print('')
+	    print(type)
+	    for ep in sorted(ep_list, key=lambda x: x.command):
+	        print(ep.get_description_str())
+	    print('')
+
     print('Type "<command> --help" for more information on a command.')
+    if not(doall):
+        print('Type "ph5 --all or ph5 -a" for list of Additional commands.')	
 
 
 if __name__ == '__main__':

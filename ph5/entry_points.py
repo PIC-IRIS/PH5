@@ -14,6 +14,7 @@ class EntryPointTypes():
     QC = "Quality Control"
     INGESTION = "Data and Metadata Ingestion"
     EDITING = "Editing and Manipulation"
+    ALL = "Additional Scripts"
 
 
 class EntryPoint():
@@ -47,7 +48,7 @@ class CommandList():
                            'ph5.utilities.kefedit:startapp',
                            'A GUI for opening, editing, and saving .kef '
                            'and .ph5 files.',
-                           type=EntryPointTypes.GUI),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('noven',
                            'ph5.utilities.noven:startapp',
                            'A GUI for converting CSV metatdata files into '
@@ -70,22 +71,22 @@ class CommandList():
                 EntryPoint('cross_check_event_array_data',
                            'ph5.utilities.cross_check_event_array_data:main',
                            'Cross check Event, Array, and Data.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('dumpfair',
                            'ph5.utilities.dumpfair:main',
                            'Determine how many samples are '
                            'in Fairfield Node SEG-D files.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('dumpsac',
                            'ph5.utilities.dumpsac:main',
                            'Translate and dump a binary '
                            'SAC file to stdout.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('dumpsgy',
                            'ph5.utilities.dumpsgy:main',
                            'Translate and dump a binary '
                            'SEGY file to stdout.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('keftokml',
                            'ph5.utilities.kef2kml:main',
                            'Converts a kef file to kml format.',
@@ -93,7 +94,7 @@ class CommandList():
                 EntryPoint('meta_data_gen',
                            'ph5.utilities.meta_data_gen:main',
                            'Write info about receivers, events, or data.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('ph5tokef',
                            'ph5.utilities.tabletokef:main',
                            'Dump a table to a kef file.',
@@ -111,7 +112,7 @@ class CommandList():
                 EntryPoint('ph5_total',
                            'ph5.utilities.ph5_total:main',
                            'Find total size of ph5 files in a directory.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('ph5_validate',
                            'ph5.utilities.ph5validate:main',
                            'Runs set of checks on PH5 archive.',
@@ -119,7 +120,7 @@ class CommandList():
                 EntryPoint('tabletokef',
                            'ph5.utilities.tabletokef:main',
                            'Alias to ph5tokef. Dump a table to a kef file.',
-                           type=EntryPointTypes.QC),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('initialize_ph5',
                            'ph5.utilities.initialize_ph5:main',
                            'Program to initialize PH5 file '
@@ -139,12 +140,12 @@ class CommandList():
                            'ph5.utilities.ph5_merge_helper:main',
                            'Modify Index_t.kef and miniPH5_xxxxx.ph5 '
                            'file names so they can be merged.',
-                           type=EntryPointTypes.INGESTION),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('recreate_external_references',
                            'ph5.utilities.recreate_external_references:main',
                            'Rebuild external references under '
                            'Receivers_g from info in Index_t.',
-                           type=EntryPointTypes.INGESTION),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('reporttoph5',
                            'ph5.utilities.report2ph5:main',
                            'Load a report (pdf) into a ph5 file.',
@@ -179,7 +180,7 @@ class CommandList():
                            'ph5.utilities.grao2ph5:main',
                            'Load MSEED data into a family of ph5 '
                            'files. Can use web services.',
-                           type=EntryPointTypes.INGESTION),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('time_kef_gen',
                            'ph5.utilities.time_kef_gen:main',
                            'Generates kef file to populate '
@@ -192,7 +193,7 @@ class CommandList():
                 EntryPoint('metadatatoph5',
                            'ph5.utilities.metadatatoph5:main',
                            'Load metadata into PH5.',
-                           type=EntryPointTypes.INGESTION),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('mstoph5',
                            'ph5.utilities.obspytoph5:main',
                            'Takes data files and converts to PH5.',
@@ -201,7 +202,7 @@ class CommandList():
                            'ph5.utilities.pformacl:main',
                            'Create or open a project and process '
                            'raw data to PH5 in parallel.',
-                           type=EntryPointTypes.INGESTION),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('sort_kef_gen',
                            'ph5.utilities.sort_kef_gen:main',
                            'Generate a kef file to populate Sort_t.',
@@ -215,20 +216,20 @@ class CommandList():
                            'h5.utilities.nuke_table:main',
                            'Alias to delete_table. Initialize a table in a '
                            'ph5 file. Deletes all existing contents.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('fix_3chan_texan',
                            'ph5.utilities.fix_3chan_texan:main',
                            'For fixing 3-channel Texan data.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('index_offset_t',
                            'ph5.utilities.index_offset_t:main',
                            'Index offset table in ph5 file to speed '
                            'up execution of kernel searches.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('load_das_t',
                            'ph5.utilities.load_das_t:main',
                            'Load a batch of Das_t keffiles.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('unsimpleton',
                            'ph5.utilities.unsimpleton:main',
                            'A command line utility to link Fairfield '
@@ -239,33 +240,34 @@ class CommandList():
                            'ph5.utilities.set_deploy_pickup_times:main',
                            'Set deploy and pickup times in '
                            'an Array_t_xxx.kef file.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('set_n_i_response',
                            'ph5.utilities.set_n_i_response:main',
                            'Updating the response table references '
                            'for multiple instrument types.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('sort_array_t',
                            'ph5.utilities.sort_array_t:main',
                            'Sort an Array_t_xxx.kef file by '
                            'station ID, id_s.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('report_gen',
                            'ph5.utilities.report_gen:main',
                            'Generate data_description.txt '
                            'and/or data_request_key.txt.',
-                           type=EntryPointTypes.EDITING),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('ph5toevt',
                            'ph5.clients.ph5view.ph5toevt:main',
-                           'Extract events from a ph5 archive.',
+                           'Extract events from a ph5 archive, '
+			   'generate SEG-Y gathers in event order.',
                            type=EntryPointTypes.CLIENT),
                 EntryPoint('ph5toexml',
                            'ph5.clients.ph5toexml:main',
                            'Not available.',
-                           type=EntryPointTypes.CLIENT),
+                           type=EntryPointTypes.ALL),
                 EntryPoint('ph5toms',
                            'ph5.clients.ph5toms:main',
-                           'Return mseed from a PH5 file.',
+                           'Return mseed or SAC from a PH5 file.',
                            type=EntryPointTypes.CLIENT),
                 EntryPoint('ph5torec',
                            'ph5.clients.ph5torec:main',
