@@ -202,8 +202,10 @@ class Trace(object):
 
     def get_endtime(self):
         if self.sample_rate > 0:
+            delta = 1. / float(self.sample_rate)
+            time_diff = float(self.nsamples - 1) * delta
             end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
-                fepoch=True) + (float(self.nsamples) / self.sample_rate)))
+                fepoch=True) + time_diff))
         else:
             end_time = timedoy.TimeDOY(epoch=(self.start_time.epoch(
                 fepoch=True)))
@@ -1199,9 +1201,10 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = stop_fepoch
+                # add 1 to include the last sample
                 cut_stop_sample = int(math.ceil((cut_stop_fepoch -
                                                  cut_start_fepoch) *
-                                                sr)) + cut_start_sample
+                                                sr)) + cut_start_sample + 1
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
@@ -1276,9 +1279,11 @@ class PH5(experiment.ExperimentGroup):
         calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
         if calc_stop_fepoch > cut_stop_fepoch:
             # calculate number of overextending samples
+            # subtract 1 length of time to avoid unintentionally
+            # trimming the last sample
             num_overextend_samples = int((calc_stop_fepoch -
                                           cut_stop_fepoch) *
-                                         sr)
+                                         sr - (1. / sr))
             samples_to_cut = int(len(data) - num_overextend_samples)
             # trim the data array to exclude the over extending samples
             data = data[0:samples_to_cut]
