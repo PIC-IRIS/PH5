@@ -259,7 +259,7 @@ class CommandList():
                 EntryPoint('ph5toevt',
                            'ph5.clients.ph5view.ph5toevt:main',
                            'Extract events from a ph5 archive, '
-			   'generate SEG-Y gathers in event order.',
+                           'generate SEG-Y gathers in event order.',
                            type=EntryPointTypes.CLIENT),
                 EntryPoint('ph5toexml',
                            'ph5.clients.ph5toexml:main',
