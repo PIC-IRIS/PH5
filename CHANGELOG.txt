@@ -33,6 +33,7 @@ ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.clients.ph5tostationxml
  * Limit number of asynchronous processes
+ * Remove storage format from the sxml channel level to be compatible with sxml version 1.1
 ph5.utilities.ph5validate
  * add data time checking
 ph5.utilities.sort_kef_gen.py
