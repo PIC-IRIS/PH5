@@ -14,7 +14,7 @@ import argparse
 
 from entry_points import CommandList, EntryPointTypes
 
-PROG_VERSION = '2019.165'
+PROG_VERSION = '2019.169'
 
 
 def parse_arguments():
