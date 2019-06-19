@@ -162,7 +162,7 @@ class CommandList():
                            '(StrataVisor) into ph5 format.',
                            type=EntryPointTypes.INGESTION),
                 EntryPoint('segdtoph5',
-                           'ph5.utilities.segdtoph5:main',
+                           'ph5.utilities.segd2ph5:main',
                            'Read a standard SEG-D file and '
                            'load it into a PH5 file."',
                            type=EntryPointTypes.INGESTION),
@@ -213,7 +213,7 @@ class CommandList():
                            'existing contents.',
                            type=EntryPointTypes.EDITING),
                 EntryPoint('nuke_table',
-                           'h5.utilities.nuke_table:main',
+                           'ph5.utilities.nuke_table:main',
                            'Alias to delete_table. Initialize a table in a '
                            'ph5 file. Deletes all existing contents.',
                            type=EntryPointTypes.ALL),
