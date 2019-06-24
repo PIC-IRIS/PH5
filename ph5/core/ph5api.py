@@ -1159,6 +1159,7 @@ class PH5(experiment.ExperimentGroup):
             time_cor_guess_samples = 0
 
         samples_read = 0
+        total_samples_read = 0
         first = True
         new_trace = False
         traces = []
@@ -1191,8 +1192,8 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int(math.ceil((((start_fepoch -
-                                                    window_start_fepoch)) *
+                cut_start_sample = int(math.ceil(((start_fepoch -
+                                                    window_start_fepoch) *
                                                   sr)))
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
@@ -1200,11 +1201,17 @@ class PH5(experiment.ExperimentGroup):
                 cut_stop_sample = window_samples
             else:
                 # Requested stop is somewhere in window
-                cut_stop_fepoch = stop_fepoch
-                # add 1 to include the last sample
-                cut_stop_sample = int(math.ceil((cut_stop_fepoch -
-                                                 cut_start_fepoch) *
-                                                sr)) + cut_start_sample + 1
+                cut_stop_fepoch = round(stop_fepoch, 6)
+                from datetime import datetime
+                cut_stop_sample = int(round(
+                                        math.ceil((cut_stop_fepoch -
+                                                   window_start_fepoch) *
+                                                   sr),
+                                        6))
+                print("stop_fepoch = %.60f" % stop_fepoch)
+                print("cut_stop_fepoch = %.60f" % cut_stop_fepoch)
+                print(datetime.utcfromtimestamp(cut_stop_fepoch))
+                print("calc stop time =  %.60f" % (window_start_fepoch + (cut_stop_sample / sr)))
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
@@ -1260,6 +1267,7 @@ class PH5(experiment.ExperimentGroup):
                     start_fepoch = trace_start_fepoch
                     trace_start_fepoch = window_start_fepoch
                     samples_read = len(data_tmp)
+                    total_samples_read += samples_read
 
                     dt = 'int32'
                     if current_trace_type == 'float':
@@ -1272,19 +1280,21 @@ class PH5(experiment.ExperimentGroup):
                 else:
                     data = np.append(data, data_tmp)
                     samples_read += len(data_tmp)
+                    total_samples_read += samples_read
                     das_t.append(d)
-
+        print("samples read = %s" % total_samples_read)
         # adjust the number of data samples as to not over extend the
         # cut_stop_fepoch
         calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
-        if calc_stop_fepoch > cut_stop_fepoch:
-            # calculate number of overextending samples
-            # subtract 1 length of time to avoid unintentionally
-            # trimming the last sample
-            num_overextend_samples = int((calc_stop_fepoch -
-                                          cut_stop_fepoch) *
-                                         sr - (1. / sr))
-            samples_to_cut = int(len(data) - num_overextend_samples)
+            
+        # calculate number of overextending samples
+        num_overextend_samples = int(math.floor(calc_stop_fepoch -
+                                                cut_stop_fepoch) *
+                                                sr)
+        samples_to_cut = int(len(data) - num_overextend_samples)
+        if num_overextend_samples > 0:
+            print("num_overextend_samples = %s" % num_overextend_samples)
+            print("samples_to_cut = %s" % samples_to_cut)
             # trim the data array to exclude the over extending samples
             data = data[0:samples_to_cut]
 
