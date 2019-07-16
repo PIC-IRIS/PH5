@@ -13,7 +13,7 @@ from kef2ph5 import add_references
 from math import floor, ceil
 
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.197'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
