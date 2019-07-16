@@ -7,7 +7,11 @@ import sys
 import logging
 import time
 import re
-from ph5.core import timedoy
+import datetime
+from ph5.core import timedoy, kefx, ph5api
+from kef2ph5 import add_references
+from math import floor, ceil
+
 
 PROG_VERSION = '2018.268'
 LOGGER = logging.getLogger(__name__)
@@ -65,14 +69,8 @@ class PH5_Time(object):
         self.type_s = 'BOTH'
 
 
-#
-# Read Command line arguments
-#
-
-
 def get_args():
-    global ARRAY_FILE, DEPLOY, PICKUP
-
+    global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
     parser.usage = (" set_deploy_pickup_times -a Array_t_xxx.kef "
@@ -85,19 +83,36 @@ def get_args():
                         help="The Array_t_xxx.kef file to modify.",
                         metavar="array_kef", required=True)
 
-    parser.add_argument("-d", "--deploy-time", dest="deploy_time",
-                        help="Array deployment time: YYYY:JJJ:HH:MM:SS",
-                        metavar="deploy_time", required=True)
+    parser.add_argument("-n", "--nickname", default="master.ph5",
+                        type=str, metavar="nickname", required=False,
+                        help="Name of the PH5 file.", dest="nickname")
 
-    parser.add_argument("-p", "--pickup-time", dest="pickup_time",
+    parser.add_argument("-p", "--ph5path", action="store", default=".",
+                        help=("Comma separated list of paths to ph5 "
+                              "experiments."),
+                        type=str, metavar="ph5path", required=False,
+                        dest="path")
+
+    parser.add_argument("-dt", "--deploy-time", dest="deploy_time",
+                        help="Array deployment time: YYYY:JJJ:HH:MM:SS",
+                        metavar="deploy_time", required=False)
+
+    parser.add_argument("-pt", "--pickup-time", dest="pickup_time",
                         help="Array pickup time: YYYY:JJJ:HH:MM:SS",
-                        metavar="pickup_time", required=True)
+                        metavar="pickup_time", required=False)
+
+    parser.add_argument("-ac", "--auto-correct", dest="auto_correct",
+                        help="Assigns the metadata deploy and pickup times"
+                             "to time stamps calculated by the PH5 traces.",
+                        metavar="auto_correct", required=False, default=False)
 
     args = parser.parse_args()
-
+    NICKNAME = args.nickname
+    PATH = args.path
     ARRAY_FILE = args.array_kef
     DEPLOY = args.deploy_time
     PICKUP = args.pickup_time
+    AUTO_CORRECT = args.auto_correct
 
 
 def barf(fh, of, dep_time, pu_time):
@@ -148,11 +163,28 @@ def barf(fh, of, dep_time, pu_time):
             of.write("\t%s\n" % line)
 
 
+def kefTables(kef_file, NICKNAME, PATH):
+
+    k = kefx.Kef(ARRAY_FILE)
+    k.open()
+    while True:
+        n = k.read(10000)
+        if n == 0:
+            LOGGER.error("Kef file is empty")
+            break
+        # Get Das_g references
+        ret = k.strip_receiver_g()
+        if ret:
+            add_references(ret)
+
+            # Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
+            arrays, events, offsets = k.strip_a_e_o()
+
+
 def main():
-    global ARRAY_FILE, DEPLOY, PICKUP
+    global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
 
     get_args()
-
     if not os.path.exists(ARRAY_FILE):
         LOGGER.error("Can't open {0}!".format(ARRAY_FILE))
         sys.exit()
@@ -160,16 +192,46 @@ def main():
         fh = open(ARRAY_FILE)
         mdir = os.path.dirname(ARRAY_FILE)
         base = os.path.basename(ARRAY_FILE)
-        base = '_' + base
+        base = 'autocortime_{0}'.format(base)
         of = open(os.path.join(mdir, base), 'w+')
-        LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
-
-    dep_time = PH5_Time(passcal_s=DEPLOY)
-
-    pu_time = PH5_Time(passcal_s=PICKUP)
-
-    barf(fh, of, dep_time, pu_time)
-
+        # LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
+    if AUTO_CORRECT:
+        ph5_api_object = ph5api.PH5(path=PATH, nickname=NICKNAME)
+        ph5_api_object.read_array_t_names()
+        if not ph5_api_object.Array_t_names:
+            LOGGER.error("No arrays or no events defined in ph5 file."
+                         "Can not continue!")
+            ph5_api_object.close()
+            sys.exit()
+        LOGGER.info("Writing updated kef file: {0}".format(of.name))
+        for array_name in ph5_api_object.Array_t_names:
+            ph5_api_object.read_array_t(array_name)
+            arraybyid = ph5_api_object.Array_t[array_name]['byid']
+            arrayorder = ph5_api_object.Array_t[array_name]['order']
+            for ph5_station in arrayorder:
+                station_list = arraybyid.get(ph5_station)
+                for deployment in station_list:
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0, station_len):
+                        station = station_list[deployment][st_num]
+                        true_deploy, true_pickup = \
+                            ph5_api_object.get_extent(
+                                das=station['das/serial_number_s'],
+                                component=station['channel_number_i'],
+                                sample_rate=station['sample_rate_i'])
+                        julian_tdeploy = (
+                            datetime.datetime.fromtimestamp(floor(true_deploy))
+                            .strftime('%Y:%j:%H:%M:%S'))
+                        julian_tpickup = (
+                            datetime.datetime.fromtimestamp(ceil(true_pickup))
+                            .strftime('%Y:%j:%H:%M:%S'))
+                        dep_time = PH5_Time(passcal_s=julian_tdeploy)
+                        pu_time = PH5_Time(passcal_s=julian_tpickup)
+                        barf(fh, of, dep_time, pu_time)
+    else:
+        dep_time = PH5_Time(passcal_s=DEPLOY)
+        pu_time = PH5_Time(passcal_s=PICKUP)
+        barf(fh, of, dep_time, pu_time)
     of.close()
     fh.close()
 
