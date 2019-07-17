@@ -1191,8 +1191,8 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int(math.ceil(((start_fepoch -
-                                                    window_start_fepoch) *
+                cut_start_sample = int(math.ceil(((cut_start_fepoch -
+                                                   window_start_fepoch) *
                                                   sr)))
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
@@ -1201,11 +1201,9 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = round(stop_fepoch, 6)
-                from datetime import datetime
                 cut_stop_sample = int(round(
                                         math.ceil((cut_stop_fepoch -
-                                                   window_start_fepoch) *
-                                                   sr),
+                                                   window_start_fepoch) * sr),
                                         6))
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
@@ -1278,11 +1276,10 @@ class PH5(experiment.ExperimentGroup):
         # adjust the number of data samples as to not over extend the
         # cut_stop_fepoch
         calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
-            
+
         # calculate number of overextending samples
         num_overextend_samples = int(math.floor(calc_stop_fepoch -
-                                                cut_stop_fepoch) *
-                                                sr)
+                                                cut_stop_fepoch) * sr)
         samples_to_cut = int(len(data) - num_overextend_samples)
         if num_overextend_samples > 0:
             # trim the data array to exclude the over extending samples
