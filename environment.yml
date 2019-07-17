@@ -10,8 +10,6 @@ dependencies:
  - PySide
  - pyqt=4
  - psutil
- - matplotlib<2
- - basemap
  - obspy
  - vispy
  - icu=56.*
