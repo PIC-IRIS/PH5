@@ -445,14 +445,13 @@ class PH5toMSeed(object):
             elif response_file_sensor_a_name:
                 # only sensor response
                 inv_resp = sensor_resp
-            
+
             # Add addtional information that is in Response_t
             inv_resp.stats = AttribDict()
             inv_resp.stats.gain_value = Response_t["gain/value_i"]
             inv_resp.stats.gain_units = Response_t["gain/units_s"]
             inv_resp.stats.bitweight_value = Response_t["bit_weight/value_d"]
             inv_resp.stats.bitweight_units = Response_t["bit_weight/units_s"]
-            
 
             if inv_resp:
                 # update response manager and return response
@@ -549,7 +548,7 @@ class PH5toMSeed(object):
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
                 elif self.format.upper() == "SEGY1" or \
-                  self.format.upper() == "SEGY2":
+                        self.format.upper() == "SEGY2":
                     # These values are used to create the SEG-Y headers
                     obspy_trace.stats.receiver_id = stc.receiver_n_i
                     obspy_trace.stats.ttype = trace.ttype
@@ -939,16 +938,16 @@ class PH5toMSeed(object):
                                         # we add event info here for data
                                         # formats that use it, like SEG-Y
                                         sct = \
-                                        StationCutTime(
-                                            event_t['time/epoch_l'],
-                                            shot_id=event_t['id_s'],
-                                            shot_lat=
-                                            event_t['location/Y/value_d'],
-                                            shot_lng=
-                                            event_t['location/X/value_d'],
-                                            shot_elevation=
-                                            event_t['location/Z/value_d']
-                                        )
+                                            StationCutTime(
+                                                event_t['time/epoch_l'],
+                                                shot_id=event_t['id_s'],
+                                                shot_lat=event_t
+                                                ['location/Y/value_d'],
+                                                shot_lng=event_t
+                                                ['location/X/value_d'],
+                                                shot_elevation=event_t
+                                                ['location/Z/value_d']
+                                            )
                                         station_cut_times.append(sct)
                                     except Exception:
                                         raise PH5toMSAPIError(
