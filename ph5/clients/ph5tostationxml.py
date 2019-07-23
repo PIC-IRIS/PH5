@@ -554,7 +554,6 @@ class PH5toStationXMLParser(object):
         obs_channel.end_date = end_date
         obs_channel.sample_rate = sample_rate
         obs_channel.sample_rate_ration = sample_rate_ration
-        obs_channel.storage_format = "PH5"
         obs_channel.azimuth = azimuth
         obs_channel.dip = dip
 
