@@ -18,6 +18,7 @@ ph5.clients.ph5toms
  * Slight change to naming output on command line for more consistency
  * No longer adds extra sample at end of cut
  * Fix substring issue
+ * Add ph5toms support for the web service SEG-Y timeseries data format.
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui

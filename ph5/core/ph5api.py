@@ -772,7 +772,10 @@ class PH5(experiment.ExperimentGroup):
         ''' Uses queries to get data from specific das table'''
 
         das_g = "Das_g_{0}".format(das)
-        node = self.ph5_g_receivers.getdas_g(das)
+        try:
+            node = self.ph5_g_receivers.getdas_g(das)
+        except experiment.HDF5InteractionError as e:
+            raise e
         if not node:
             return []
         self.ph5_g_receivers.setcurrent(node)
@@ -1208,6 +1211,9 @@ class PH5(experiment.ExperimentGroup):
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
+
+            if trace_reference is None:
+                continue
 
             if not trace_reference:
                 continue
