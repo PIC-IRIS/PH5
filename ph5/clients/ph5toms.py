@@ -684,7 +684,7 @@ class PH5toMSeed(object):
             if (self.use_deploy_pickup is True and not
                     ((int(start_fepoch) >= deploy and
                       int(stop_fepoch) <= pickup))):
-                print "das not deployed within deploy/pickup time"
+                # das not deployed within deploy/pickup time
                 continue
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
@@ -731,10 +731,6 @@ class PH5toMSeed(object):
             else:
                 times_to_cut = [[start_fepoch, stop_fepoch]]
                 times_to_cut[-1][-1] = stop_fepoch
-
-            if int(times_to_cut[-1][-2]) == int(
-                    times_to_cut[-1][-1]):
-                del times_to_cut[-1]
 
             latitude = station_list[deployment][
                 st_num]['location/Y/value_d']
