@@ -23,6 +23,7 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n ph5 python=$TRAVIS_PYTHON_VERSION
   - conda config --add channels conda-forge
+  - conda config --set restore_free_channel true
   - conda env update --name ph5 --file environment.yml
   - source activate ph5
   - python setup.py develop

@@ -48,17 +48,13 @@ VERT_SHADER = """
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-
 attribute vec2 a_position;
 attribute float a_index;
 varying float v_index;
-
 attribute vec3 a_color;
 varying vec3 v_color;
-
 uniform vec2 u_pan;
 uniform vec2 u_scale;
-
 void main() {
     vec2 position_tr = u_scale * (a_position + u_pan);
     gl_Position =  u_model * vec4(position_tr, 0.0, 1.0);
@@ -1365,7 +1361,6 @@ class Canvas(app.Canvas):
         if event.is_dragging and self.select:
             x0, y0 = event.press_event.pos
             x1, y1 = event.last_event.pos
-
             self.zoomWidget.setGeometry(
                 QtCore.QRect(
                     QPoint(x0+self.offsetX,y0+self.offsetY),
@@ -5358,7 +5353,6 @@ class ES_Gui(QtGui.QWidget):
           If not submit form (receiver gather):
             channelCtrls need radio button to allow
             selecting only one channel at a time
-
          event form need shotCtrls (shotline) which should be radio button
           to allow selecting only one shotline at a time
         """

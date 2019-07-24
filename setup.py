@@ -58,6 +58,11 @@ except ImportError:
     raise ImportError(msg)
 
 
+from ph5.entry_points import CommandList
+
+
+command_list = CommandList()
+
 setup(
     name="ph5",
     version="4.1.2_2",
@@ -109,67 +114,8 @@ setup(
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7',    
     ],
-    entry_points = {
-        'gui_scripts': [
-            'ph5view = ph5.clients.ph5view.ph5_viewer:startapp',
-            'noven = ph5.utilities.noven:startapp',
-            'pforma = ph5.utilities.pformagui:startapp',
-            'kefedit = ph5.utilities.kefedit:startapp',
-            'experiment_t_gen = ph5.utilities.changes:startapp',
-        ],
-        'console_scripts': [
-            # clients
-            'ph5toevt = ph5.clients.ph5toevt:main',
-            'ph5toms = ph5.clients.ph5toms:main',
-            'ph5torec = ph5.clients.ph5torec:main',
-            'ph5tostationxml = ph5.clients.ph5tostationxml:main',
-            'ph5toexml = ph5.clients.ph5toexml:main',
-            # utilities
-            '125atoph5 = ph5.utilities.125a2ph5:main',
-            '130toph5 = ph5.utilities.1302ph5:main',
-            'cross_check_event_array_data = ph5.utilities.cross_check_event_array_data:main',
-            'csvtokef = ph5.utilities.csvtokef:main',
-            'dumpfair = ph5.utilities.dumpfair:main',
-            'dumpsac = ph5.utilities.dumpsac:main',
-            'dumpsgy = ph5.utilities.dumpsgy:main',
-            'fix_3chan_texan = ph5.utilities.fix_3chan_texan:main',
-            'fix_num_samples = ph5.utilities.fix_num_samples:main',
-            'geo_kef_gen = ph5.utilities.geod2kef:main',
-            'graotoph5 = ph5.utilities.grao2ph5:main',
-            'index_offset_t = ph5.utilities.index_offset_t:main',
-            'initialize_ph5 = ph5.utilities.initialize_ph5:main',
-            'keftocsv = ph5.utilities.keftocsv:main',
-            'keftokml = ph5.utilities.kef2kml:main',
-            'keftoph5 = ph5.utilities.kef2ph5:main',
-            'load_das_t = ph5.utilities.load_das_t:main',
-            'meta_data_gen = ph5.utilities.meta_data_gen:main',
-            'nuke_table = ph5.utilities.nuke_table:main',
-            'delete_table = ph5.utilities.nuke_table:main',
-            'pformacl = ph5.utilities.pformacl:main',
-            'ph5_merge_helper = ph5.utilities.ph5_merge_helper:main',
-            'ph5_total = ph5.utilities.ph5_total:main',
-            'ph5_validate = ph5.utilities.ph5validate:main',
-            'recreate_external_references = ph5.utilities.recreate_external_references:main',
-            'report_gen = ph5.utilities.report_gen:main',
-            'reporttoph5 = ph5.utilities.report2ph5:main',
-            'resp_load = ph5.utilities.resp_load:main',
-            'seg2toph5 = ph5.utilities.seg2toph5:main',
-            'segdtoph5 = ph5.utilities.segd2ph5:main',
-            'segytoph5 = ph5.utilities.segy2ph5:main',
-            'set_deploy_pickup_times = ph5.utilities.set_deploy_pickup_times:main',
-            'set_n_i_response = ph5.utilities.set_n_i_response:main',
-            'sort_kef_gen = ph5.utilities.sort_kef_gen:main',
-            'sort_array_t = ph5.utilities.sort_array_t:main',
-            'ph5tokef = ph5.utilities.tabletokef:main',
-            'time_kef_gen = ph5.utilities.time_kef_gen:main',
-            'tabletokef = ph5.utilities.tabletokef:main',
-            'unsimpleton = ph5.utilities.unsimpleton:main',
-            'ph5 = ph5.utilities.ph5_help:main',
-            'metadatatoph5 = ph5.utilities.metadatatoph5:main',
-            'mstoph5 = ph5.utilities.obspytoph5:main',
-            'ph5availability = ph5.clients.ph5availability:main'
-        ],
-    },
+    entry_points={group: [ep.get_entry_point_str() for ep in eps]
+                          for group, eps in command_list.entrypoints.items()}, 
     packages=['ph5',
               'ph5/clients',
               'ph5/clients/ph5view',
@@ -202,3 +148,4 @@ setup(
                  Extension(*surt_130_py.get_extension_options(),
                            include_dirs=[numpy.get_include()])]
 )
+
