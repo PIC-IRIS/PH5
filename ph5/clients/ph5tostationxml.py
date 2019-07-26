@@ -658,69 +658,76 @@ class PH5toStationXMLParser(object):
                     if sta_id not in sta_xml_obj.ph5_station_id_list:
                         continue
                     for deployment in station_list:
-                        station_entry = station_list[deployment][0]
-                        sta_longitude = station_entry['location/X/value_d']
-                        sta_latitude = station_entry['location/Y/value_d']
-                        sta_elevation = station_entry['location/Z/value_d']
+                        station_epochs = station_list[deployment]
+                        for station_entry in station_epochs:
+                            sta_longitude = station_entry['location/X/value_d']
+                            sta_latitude = station_entry['location/Y/value_d']
+                            sta_elevation = \
+                                station_entry['location/Z/value_d']
 
-                        if not self.is_lat_lon_match(sta_xml_obj,
-                                                     sta_latitude,
-                                                     sta_longitude):
-                            continue
-
-                        if station_entry['seed_station_name_s']:
-                            station_code = station_entry['seed_station_name_s']
-                        else:
-                            station_code = sta_id
-
-                        start_date = station_entry['deploy_time/epoch_l']
-                        start_date = UTCDateTime(start_date)
-                        end_date = station_entry['pickup_time/epoch_l']
-                        end_date = UTCDateTime(end_date)
-                        if sta_xml_obj.start_time and \
-                                sta_xml_obj.start_time > end_date:
-                            # chosen start time after pickup
-                            continue
-                        elif sta_xml_obj.end_time and \
-                                sta_xml_obj.end_time < start_date:
-                            # chosen end time before pickup
-                            continue
-                        creation_date = start_date
-                        termination_date = end_date
-                        site_name = station_entry['location/description_s']
-
-                        obs_channels = []
-                        # run channel filters if necessary. we do this first
-                        # to avoid creating a station that has no channels
-                        if self.manager.level.upper() == "RESPONSE" or \
-                           self.manager.level.upper() == "CHANNEL" or \
-                           sta_xml_obj.location_list != ['*'] or \
-                           sta_xml_obj.channel_list != ['*'] or \
-                           sta_xml_obj.component_list != ['*'] or \
-                           sta_xml_obj.receiver_list != ['*']:
-                            obs_channels = self.read_channels(sta_xml_obj,
-                                                              station_list,
-                                                              deployment,
-                                                              station_code,
-                                                              array_code)
-                            # go to the next station if no channels were
-                            # returned
-                            if len(obs_channels) == 0:
+                            if not self.is_lat_lon_match(sta_xml_obj,
+                                                         sta_latitude,
+                                                         sta_longitude):
                                 continue
 
-                        sta_key = self.manager.get_station_key(station_code,
-                                                               start_date,
-                                                               end_date,
-                                                               sta_longitude,
-                                                               sta_latitude,
-                                                               sta_elevation,
-                                                               site_name)
-                        if self.manager.get_obs_station(sta_key):
-                            # station already created and added to metadata
-                            obs_station = self.manager.get_obs_station(sta_key)
-                        else:
-                            # create and add a new station
-                            obs_station = self.create_obs_station(
+                            if station_entry['seed_station_name_s']:
+                                station_code = \
+                                    station_entry['seed_station_name_s']
+                            else:
+                                station_code = sta_id
+
+                            start_date = station_entry['deploy_time/epoch_l']
+                            start_date = UTCDateTime(start_date)
+                            end_date = station_entry['pickup_time/epoch_l']
+                            end_date = UTCDateTime(end_date)
+                            if sta_xml_obj.start_time and \
+                                    sta_xml_obj.start_time > end_date:
+                                # chosen start time after pickup
+                                continue
+                            elif sta_xml_obj.end_time and \
+                                    sta_xml_obj.end_time < start_date:
+                                # chosen end time before pickup
+                                continue
+                            creation_date = start_date
+                            termination_date = end_date
+                            site_name = station_entry['location/description_s']
+
+                            obs_channels = []
+                            # run channel filters if necessary. we do this
+                            # first to avoid creating a station that has no
+                            # channels
+                            if self.manager.level.upper() == "RESPONSE" or \
+                               self.manager.level.upper() == "CHANNEL" or \
+                               sta_xml_obj.location_list != ['*'] or \
+                               sta_xml_obj.channel_list != ['*'] or \
+                               sta_xml_obj.component_list != ['*'] or \
+                               sta_xml_obj.receiver_list != ['*']:
+                                obs_channels = \
+                                    self.read_channels(sta_xml_obj,
+                                                       station_entry,
+                                                       deployment,
+                                                       station_code,
+                                                       array_code)
+                                # go to the next station if no channels were
+                                # returned
+                                if len(obs_channels) == 0:
+                                    continue
+
+                            sta_key = \
+                                self.manager.get_station_key(station_code,
+                                                             start_date,
+                                                             end_date,
+                                                             sta_longitude,
+                                                             sta_latitude,
+                                                             sta_elevation,
+                                                             site_name)
+                            if self.manager.get_obs_station(sta_key):
+                                # station already created and added to metadata
+                                obs_station = \
+                                    self.manager.get_obs_station(sta_key)
+                            else:
+                                # create and add a new station
+                                obs_station = self.create_obs_station(
                                                             station_code,
                                                             start_date,
                                                             end_date,
@@ -731,24 +738,24 @@ class PH5toStationXMLParser(object):
                                                             termination_date,
                                                             site_name)
 
-                        # Add matching channels to station if necessary
-                        if obs_channels:
-                            obs_station.channels.extend(obs_channels)
-                            obs_station.selected_number_of_channels = \
-                                len(obs_station.channels)
-                        else:
-                            obs_station.selected_number_of_channels = 0
+                            # Add matching channels to station if necessary
+                            if obs_channels:
+                                obs_station.channels.extend(obs_channels)
+                                obs_station.selected_number_of_channels = \
+                                    len(obs_station.channels)
+                            else:
+                                obs_station.selected_number_of_channels = 0
 
-                        obs_station.total_number_of_channels += \
-                            len(station_list)
+                            obs_station.total_number_of_channels += \
+                                len(station_list)
 
-                        if not self.manager.get_obs_station(sta_key):
-                            all_stations.append(obs_station)
-                            self.manager.set_obs_station(sta_key, obs_station)
-
+                            if self.manager.get_obs_station(sta_key) is None:
+                                all_stations.append(obs_station)
+                                self.manager.set_obs_station(sta_key,
+                                                             obs_station)
         return all_stations
 
-    def read_channels(self, sta_xml_obj, station_list, deployment,
+    def read_channels(self, sta_xml_obj, station_entry, deployment,
                       sta_code, array_code):
 
         all_channels = []
@@ -756,7 +763,6 @@ class PH5toStationXMLParser(object):
         component_list_patterns = sta_xml_obj.component_list
         receiver_list_patterns = sta_xml_obj.receiver_list
         location_patterns = sta_xml_obj.location_list
-        station_entry = station_list[deployment][0]
         receiver_id = str(station_entry['id_s'])
         if not ph5utils.does_pattern_exists(receiver_list_patterns,
                                             receiver_id):
