@@ -504,13 +504,19 @@ class PH5toStationXMLParser(object):
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
-            obs_network.alternate_code = \
-                self.experiment_t[0]['experiment_id_s']
             obs_network.description = self.experiment_t[0]['longname_s']
             start_time, end_time = self.get_network_date()
             obs_network.start_date = UTCDateTime(start_time)
             obs_network.end_date = UTCDateTime(end_time)
             obs_network.total_number_of_stations = self.total_number_stations
+            extra = AttribDict({
+                    'PH5ReportNum': {
+                        'value': self.experiment_t[0]['experiment_id_s'],
+                        'namespace': self.manager.iris_custom_ns,
+                        'type': 'attribute'
+                    }
+                })
+            obs_network.extra = extra
             obs_network.stations = obs_stations
             return obs_network
         else:
