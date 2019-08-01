@@ -13,7 +13,7 @@ import time
 from ph5.core import experiment, timedoy
 import tabletokef
 
-PROG_VERSION = '2019.057'
+PROG_VERSION = '2019.213'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -30,24 +30,14 @@ class NukeTableError(Exception):
 #
 
 class NukeTable():
-    def __init__(self):
+    def __init__(self, PH5=None, PATH=None):
+        self.PATH = PATH
+        self.PH5 = PH5
         self.ph5 = None
-        self.PATH = None
         self.DEBUG = False
-        self.EXPERIMENT_TABLE = False
-        self.SORT_TABLE = False
-        self.OFFSET_TABLE = None
-        self.EVENT_TABLE = None
-        self.TIME_TABLE = False
-        self.INDEX_TABLE = False
-        self.M_INDEX_TABLE = False
-        self.ARRAY_TABLE = False
-        self.ALL_ARRAYS = False
-        self.RESPONSE_TABLE = False
-        self.REPORT_TABLE = False
-        self.RECEIVER_TABLE = False
-        self.DAS_TABLE = None
         self.NO_BACKUP = False
+        self.table_type = None
+        self.ARG = None
 
     def get_args(self):
         parser = argparse.ArgumentParser(
@@ -69,8 +59,9 @@ class NukeTable():
                                  "directory.",
                             metavar="ph5_path", default=".")
 
+        """ Don't see any use
         parser.add_argument("-d", dest="debug", action="store_true",
-                            default=False)
+                            default=False)"""
 
         parser.add_argument("-N", "--no_backup", dest="no_backup",
                             action="store_true", default=False,
@@ -141,29 +132,50 @@ class NukeTable():
 
         self.PH5 = args.ph5_file_prefix
         self.PATH = args.ph5_path
-        self.DEBUG = args.debug
-        self.EXPERIMENT_TABLE = args.experiment_t
-        self.SORT_TABLE = args.sort_t
-        if args.offset_t_ is not None:
+        # self.DEBUG = args.debug
+        self.table_type = None
+        self.ARG = None
+        if args.experiment_t:
+            self.table_type = "Experiment_t"
+        elif args.sort_t:
+            self.table_type = "Sort_t"
+        elif args.offset_t_ is not None:
+            self.table_type = "Offset_t"
             try:
-                self.OFFSET_TABLE = map(int, args.offset_t_.split("_"))
-                if len(self.OFFSET_TABLE) != 2:
+                self.ARG = map(int, args.offset_t_.split("_"))
+                if len(self.ARG) != 2:
                     raise NukeTableError()
             except Exception:
-                raise NukeTableError(
-                    "Offset table should be entered as arrayID "
-                    "underscore shotLineID, eg. 1_2 or 0_0.")
+                err_msg = "Offset table should be entered as arrayID "\
+                    "underscore shotLineID, eg. 1_2 or 0_0."
+                raise NukeTableError(err_msg)
+        elif args.event_t_ is not None:
+            self.table_type = "Event_t"
+            self.ARG = args.event_t_
+        elif args.time_t:
+            self.table_type = "Time_t"
+        elif args.index_t:
+            self.table_type = "Index_t"
+        elif args.m_index_t:
+            self.table_type = "Map_Index_t"
+        elif args.array_t_ is not None:
+            self.table_type = "Array_t"
+            self.ARG = args.array_t_
+        elif args.all_arrays:
+            self.table_type = "All_Array_t"
+        elif args.response_t:
+            self.table_type = "Response_t"
+        elif args.report_t:
+            self.table_type = "Report_t"
+        elif args.receiver_t:
+            self.table_type = "Receiver_t"
+        elif args.das_t_ is not None:
+            self.table_type = "Das_t"
+            self.ARG = args.das_t_
 
-        self.EVENT_TABLE = args.event_t_
-        self.TIME_TABLE = args.time_t
-        self.INDEX_TABLE = args.index_t
-        self.M_INDEX_TABLE = args.m_index_t
-        self.ARRAY_TABLE = args.array_t_
-        self.ALL_ARRAYS = args.all_arrays
-        self.RESPONSE_TABLE = args.response_t
-        self.REPORT_TABLE = args.report_t
-        self.RECEIVER_TABLE = args.receiver_t
-        self.DAS_TABLE = args.das_t_
+        if self.table_type is None:
+            raise NukeTableError("No table specified for output."
+                            "See --help for more details.")
         self.NO_BACKUP = args.no_backup
 
     #
@@ -171,12 +183,14 @@ class NukeTable():
     #
     def initialize_ph5(self, editmode=True):
         '''   Initialize the ph5 file   '''
-
         self.EX = experiment.ExperimentGroup(self.PATH, self.PH5)
         self.EX.ph5open(editmode)
         self.EX.initgroup()
         self.T2K = tabletokef.Tabletokef()
         self.T2K.set_EX(self.EX)
+
+    def close_ph5(self):
+        self.EX.ph5close()
 
     def backup(self, table_type, table_path, table):
         '''  Create a backup in kef format. File has year and doy in name.  '''
@@ -216,38 +230,40 @@ class NukeTable():
             LOGGER.info("{0} It worked.".format(n))
 
     def doNuke(self):
+        # print("doNuke:", self.table_type)
         try:
             # /Experiment_g/Experiment_t
-            if self.EXPERIMENT_TABLE:
+            if self.table_type == "Experiment_t":
                 self.T2K.read_experiment_table()
                 self.backup('Experiment_t', '/Experiment_g/Experiment_t',
                             self.T2K.EXPERIMENT_T)
                 self.EX.nuke_experiment_t()
 
             # /Experiment_g/Sorts_g/Sort_t
-            if self.SORT_TABLE:
+            elif self.table_type == "Sort_t":
                 self.T2K.read_sort_table()
                 self.backup('Sort_t', '/Experiment_g/Sorts_g/Sort_t',
                             self.T2K.SORT_T)
                 self.EX.ph5_g_sorts.nuke_sort_t()
 
             # /Experiment_g/Sorts_g/Offset_t
-            if self.OFFSET_TABLE is not None:
-                self.T2K.read_offset_table(self.OFFSET_TABLE)
-                if self.OFFSET_TABLE[0] == 0:
+            elif self.table_type == "Offset_t":
+                OFFSET_TABLE = self.ARG
+                self.T2K.read_offset_table(OFFSET_TABLE)
+                if OFFSET_TABLE[0] == 0:
                     if 'Offset_t' in self.T2K.OFFSET_T:
                         self.backup('Offset_t',
                                     '/Experiment_g/Sorts_g/Offset_t',
                                     self.T2K.OFFSET_T['Offset_t'])
 
                     if self.EX.ph5_g_sorts.nuke_offset_t():
-                        self.exclaim(self.OFFSET_TABLE)
+                        self.exclaim(OFFSET_TABLE)
                     else:
                         raise NukeTableError("{0} Not found."
-                                             .format(self.OFFSET_TABLE))
+                                             .format(OFFSET_TABLE))
                 else:
                     table_type = "Offset_t_{0:03d}_{1:03d}".format(
-                        self.OFFSET_TABLE[0], self.OFFSET_TABLE[1])
+                        OFFSET_TABLE[0], OFFSET_TABLE[1])
                     if table_type in self.T2K.OFFSET_T:
                         self.backup(
                             table_type, '/Experiment_g/Sorts_g/{0}'
@@ -255,16 +271,17 @@ class NukeTable():
                             self.T2K.OFFSET_T[table_type])
                     if self.EX.ph5_g_sorts.nuke_offset_t(
                         "Offset_t_{0:03d}_{1:03d}".format(
-                            self.OFFSET_TABLE[0], self.OFFSET_TABLE[1])):
-                        self.exclaim(self.OFFSET_TABLE)
+                            OFFSET_TABLE[0], OFFSET_TABLE[1])):
+                        self.exclaim(OFFSET_TABLE)
                     else:
                         raise NukeTableError("{0} Not found."
-                                             .format(self.OFFSET_TABLE))
+                                             .format(OFFSET_TABLE))
 
             # /Experiment_g/Sorts_g/Event_t
-            if self.EVENT_TABLE is not None:
-                self.T2K.read_event_table(self.EVENT_TABLE)
-                if self.EVENT_TABLE == 0:
+            elif self.table_type == "Event_t":
+                EVENT_TABLE = self.ARG
+                self.T2K.read_event_table(EVENT_TABLE)
+                if EVENT_TABLE == 0:
                     table_type = 'Event_t'
                     if table_type in self.T2K.EVENT_T:
                         self.backup(table_type,
@@ -272,58 +289,59 @@ class NukeTable():
                                     self.T2K.EVENT_T[table_type])
                     self.EX.ph5_g_sorts.nuke_event_t()
                 else:
-                    table_type = "Event_t_{0:03d}".format(self.EVENT_TABLE)
+                    table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
                     if table_type in self.T2K.EVENT_T:
                         self.backup(
                             table_type, '/Experiment_g/Sorts_g/{0}'.format(
                                 table_type),
                             self.T2K.EVENT_T[table_type])
                     if self.EX.ph5_g_sorts.nuke_event_t(
-                            "Event_t_{0:03d}".format(self.EVENT_TABLE)):
-                        self.exclaim(self.EVENT_TABLE)
+                            "Event_t_{0:03d}".format(EVENT_TABLE)):
+                        self.exclaim(EVENT_TABLE)
                     else:
                         raise NukeTableError("{0} Not found."
-                                             .format(self.EVENT_TABLE))
+                                             .format(EVENT_TABLE))
 
             # /Experiment_g/Sorts_g/Array_t_[n]
-            if self.ARRAY_TABLE:
+            elif self.table_type =="Array_t":
+                ARRAY_TABLE = self.ARG
                 self.T2K.read_sort_arrays()
-                table_type = 'Array_t_{0:03d}'.format(self.ARRAY_TABLE)
+                table_type = 'Array_t_{0:03d}'.format(ARRAY_TABLE)
                 if table_type in self.T2K.ARRAY_T:
                     self.backup(
                         table_type,
                         '/Experiment_g/Sorts_g/{0}'.format(table_type),
                         self.T2K.ARRAY_T[table_type])
-                if self.EX.ph5_g_sorts.nuke_array_t(self.ARRAY_TABLE):
-                    self.exclaim(self.ARRAY_TABLE)
+                if self.EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
+                    self.exclaim(ARRAY_TABLE)
                 else:
                     raise NukeTableError("{0} Not found."
-                                         .format(self.ARRAY_TABLE))
+                                         .format(ARRAY_TABLE))
 
             # /Experiment_g/Sorts_g/Array_t_xxx
-            elif self.ALL_ARRAYS:
+            elif self.table_type == "All_Array_t":
                 self.T2K.read_sort_arrays()
                 for table_type in self.T2K.ARRAY_T:
                     self.backup(
                         table_type,
                         '/Experiment_g/Sorts_g/{0}'.format(table_type),
                         self.T2K.ARRAY_T[table_type])
-                    self.ARRAY_TABLE = int(table_type[-3:])
-                    if self.EX.ph5_g_sorts.nuke_array_t(self.ARRAY_TABLE):
-                        self.exclaim(self.ARRAY_TABLE)
+                    ARRAY_TABLE = int(table_type[-3:])
+                    if self.EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
+                        self.exclaim(ARRAY_TABLE)
                     else:
                         raise NukeTableError("{0} Not found."
-                                             .format(self.ARRAY_TABLE))
+                                             .format(ARRAY_TABLE))
 
             # /Experiment_g/Receivers_g/Time_t
-            if self.TIME_TABLE:
+            elif self.table_type == "Time_t":
                 self.T2K.read_time_table()
                 self.backup('Time_t', '/Experiment_g/Receivers_g/Time_t',
                             self.T2K.TIME_T)
                 self.EX.ph5_g_receivers.nuke_time_t()
 
             # /Experiment_g/Receivers_g/Index_t
-            if self.INDEX_TABLE:
+            elif self.table_type == "Index_t":
                 self.T2K.read_index_table()
                 self.backup(
                     'Index_t', '/Experiment_g/Receivers_g/Index_t',
@@ -331,14 +349,14 @@ class NukeTable():
                 self.EX.ph5_g_receivers.nuke_index_t()
 
             # /Experiment_g/Maps_g/Index_t
-            if self.M_INDEX_TABLE:
+            elif self.table_type == "Map_Index_t":
                 self.T2K.read_m_index_table()
                 self.backup('M_Index_t', '/Experiment_g/Maps_g/Index_t',
                             self.T2K.M_INDEX_T)
                 self.EX.ph5_g_maps.nuke_index_t()
+                
             # /Experiment_g/Receivers_g/Receiver_t
-
-            if self.RECEIVER_TABLE:
+            elif self.table_type == "Receiver_t":
                 self.T2K.read_receiver_table()
                 self.backup(
                     'Receiver_t',
@@ -347,7 +365,7 @@ class NukeTable():
                 self.EX.ph5_g_receivers.nuke_receiver_t()
 
             # /Experiment_g/Responses_g/Response_t
-            if self.RESPONSE_TABLE:
+            elif self.table_type == "Response_t":
                 self.T2K.read_response_table()
                 self.backup(
                     'Response_t',
@@ -356,29 +374,36 @@ class NukeTable():
                 self.EX.ph5_g_responses.nuke_response_t()
 
             # /Experiment_g/Reports_g/Report_t
-            if self.REPORT_TABLE:
+            elif self.table_type == "Report_t":
                 self.T2K.read_report_table()
                 self.backup(
                     'Report_t', '/Experiment_g/Reports_g/Report_t',
                     self.T2K.REPORT_T)
                 self.EX.ph5_g_reports.nuke_report_t()
 
-            if self.DAS_TABLE:
+            elif self.table_type == "Das_t":
+                DAS_TABLE = self.ARG
                 yon = raw_input(
                     "Are you sure you want to delete all data in Das_t "
-                    "for das {0}? y/n ".format(self.DAS_TABLE))
+                    "for das {0}? y/n ".format(DAS_TABLE))
                 if yon == 'y':
-                    table_type = 'Das_t_{0}'.format(self.DAS_TABLE)
-                    self.T2K.read_receivers(self.DAS_TABLE)
-                    if self.DAS_TABLE in self.T2K.DAS_T:
+                    table_type = 'Das_t_{0}'.format(DAS_TABLE)
+                    self.T2K.read_receivers(DAS_TABLE)
+                    if DAS_TABLE in self.T2K.DAS_T:
                         self.backup(
                             table_type,
                             '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.
-                            format(self.DAS_TABLE),
-                            self.T2K.DAS_T[self.DAS_TABLE])
-                    self.EX.ph5_g_receivers.nuke_das_t(self.DAS_TABLE)
-
+                            format(DAS_TABLE),
+                            self.T2K.DAS_T[DAS_TABLE])
+                    self.EX.ph5_g_receivers.nuke_das_t(DAS_TABLE)
+            else:
+                raise NukeTableError(
+                    "Table_type:%s not exist!!!" % self.table_type)
         except Exception, err_msg:
+            try:
+                err_msg = err_msg.message
+            except Exception:
+                pass
             raise NukeTableError(err_msg)
 
 

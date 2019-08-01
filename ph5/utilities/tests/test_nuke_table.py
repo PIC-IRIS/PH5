@@ -1,5 +1,5 @@
 """
-unit tests for ph5availability
+unit tests for nuke_table
 """
 
 import unittest
@@ -41,49 +41,102 @@ class TestNukeTable(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 self.nukeT.get_args()
 
+        # no table type selected
+        testargs = ['nuke-table', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            self.assertRaises(nuke_table.NukeTableError, self.nukeT.get_args)
+
         # wrong format offset
         testargs = ['nuke-table', '-n', 'master.ph5', '-O', '1']
         with patch.object(sys, 'argv', testargs):
             self.assertRaises(nuke_table.NukeTableError, self.nukeT.get_args)
 
         # test param
-        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-N',
-                    '-E', '-S', '-O', '1_2', '-V', '7001', '-A', '1', '-R',
-                    '-P', '-C', '-I', '-M', '-D', '5553', '-T']
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-N','-E']
         with patch.object(sys, 'argv', testargs):
             self.nukeT.get_args()
         self.assertEqual('master.ph5', self.nukeT.PH5)
         self.assertEqual('ph5', self.nukeT.PATH)
         self.assertTrue(self.nukeT.NO_BACKUP)
-        self.assertTrue(self.nukeT.EXPERIMENT_TABLE)
-        self.assertTrue(self.nukeT.SORT_TABLE)
-        self.assertEqual([1, 2], self.nukeT.OFFSET_TABLE)
-        self.assertEqual(7001, self.nukeT.EVENT_TABLE)
-        self.assertEqual(1, self.nukeT.ARRAY_TABLE)
-        self.assertTrue(self.nukeT.RESPONSE_TABLE)
-        self.assertTrue(self.nukeT.REPORT_TABLE)
-        self.assertTrue(self.nukeT.RECEIVER_TABLE)
-        self.assertTrue(self.nukeT.INDEX_TABLE)
-        self.assertTrue(self.nukeT.M_INDEX_TABLE)
-        self.assertEqual('5553', self.nukeT.DAS_TABLE)
-        self.assertTrue(self.nukeT.TIME_TABLE)
+        self.assertEqual("Experiment_t", self.nukeT.table_type)
 
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-S']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Sort_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-O', '1_2']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Offset_t", self.nukeT.table_type)
+        self.assertEqual([1, 2], self.nukeT.ARG)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5',
+                    '-V', '1']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Event_t", self.nukeT.table_type)
+        self.assertEqual(1, self.nukeT.ARG)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-A', '1']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Array_t", self.nukeT.table_type)
+        self.assertEqual(1, self.nukeT.ARG)
+    
         # test param
         testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5',
                     '--all_arrays']
         with patch.object(sys, 'argv', testargs):
             self.nukeT.get_args()
-        self.assertTrue(self.nukeT.ALL_ARRAYS)
-        self.assertFalse(self.nukeT.DEBUG)
-        self.assertFalse(self.nukeT.NO_BACKUP)
-        self.assertFalse(self.nukeT.EXPERIMENT_TABLE)
-        self.assertFalse(self.nukeT.SORT_TABLE)
-        self.assertFalse(self.nukeT.RESPONSE_TABLE)
-        self.assertFalse(self.nukeT.REPORT_TABLE)
-        self.assertFalse(self.nukeT.RECEIVER_TABLE)
-        self.assertFalse(self.nukeT.INDEX_TABLE)
-        self.assertFalse(self.nukeT.M_INDEX_TABLE)
-        self.assertFalse(self.nukeT.TIME_TABLE)
+        self.assertEqual("All_Array_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-R']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Response_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-P']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Report_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-C']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Receiver_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-I']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertTrue("Index_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-M']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Map_Index_t", self.nukeT.table_type)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-D', '5553']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Das_t", self.nukeT.table_type)
+        self.assertEqual('5553', self.nukeT.ARG)
+
+        # test param
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-T']
+        with patch.object(sys, 'argv', testargs):
+            self.nukeT.get_args()
+        self.assertEqual("Time_t", self.nukeT.table_type)
 
     def test_initialize_ph5(self):
         """
@@ -92,17 +145,13 @@ class TestNukeTable(unittest.TestCase):
         # test wrong path
         self.nukeT.PATH = 'ph5/test_data/ph'
         self.nukeT.PH5 = 'master.ph5'
-        self.assertRaises(IOError, self.nukeT.initialize_ph5)
+        self.assertRaises(Exception, self.nukeT.initialize_ph5)
         # test right path
         self.nukeT.PATH = 'ph5/test_data/ph5'
         self.nukeT.initialize_ph5()
         self.assertEqual('ph5/test_data/ph5/master.ph5',
                          self.nukeT.EX.ph5.filename)
         self.assertEqual(self.nukeT.EX, self.nukeT.T2K.EX)
-        self.nukeT.EX.ph5close()
-        self.nukeT.T2K.close()
-        self.nukeT.PATH = None
-        self.nukeT.PH5 = None
 
     def test_backup(self):
         """
@@ -112,24 +161,24 @@ class TestNukeTable(unittest.TestCase):
         self.nukeT.PH5 = 'master.ph5'
         self.nukeT.initialize_ph5()
         self.nukeT.T2K.read_sort_arrays()
-        outfile = self.nukeT.backup(
+        outfile0_name = self.nukeT.backup(
             'Array_t_001',
             '/Experiment_g/Sorts_g/Array_t_001',
             self.nukeT.T2K.ARRAY_T['Array_t_001'])
-
-        # testing 2 backups
-        outfile2 = self.nukeT.backup(
+        self.assertEqual('Array_t_001_2019001_00.kef', outfile0_name)
+        # testing 2nd backups
+        outfile1_name = self.nukeT.backup(
             'Array_t_001',
             '/Experiment_g/Sorts_g/Array_t_001',
             self.nukeT.T2K.ARRAY_T['Array_t_001'])
-
-        with open(outfile, 'r') as ret_file:
+        self.assertEqual('Array_t_001_2019001_01.kef', outfile1_name)
+        with open(outfile0_name, 'r') as ret_file:
             ret_content = ret_file.readlines()[3:]
         with open('ph5/test_data/ph5/array_t_1.kef', 'r') as dest_file:
             dest_content = dest_file.readlines()[3:]
         self.assertEqual(dest_content, ret_content)
-        os.remove(outfile)
-        os.remove(outfile2)
+        os.remove(outfile0_name)
+        os.remove(outfile1_name)
 
         # no backup
         self.nukeT.NO_BACKUP = True
@@ -156,11 +205,6 @@ class TestNukeTable(unittest.TestCase):
                           '/Experiment_g/Sorts_g/Array_t_001',
                           self.nukeT.T2K.ARRAY_T['Array_t_001'])
         os.chmod('.', currmode)                 # return original permission
-
-        self.nukeT.EX.ph5close()
-        self.nukeT.T2K.close()
-        self.nukeT.PATH = None
-        self.nukeT.PH5 = None
 
     def _test_backupFiles(self, table_type_list, orglistdir):
         newlistdir = os.listdir('.')
@@ -203,108 +247,103 @@ class TestNukeTable(unittest.TestCase):
         orglistdir = os.listdir('.')
 
         # nuke Experiment_t
-        self.nukeT.EXPERIMENT_TABLE = True
+        self.nukeT.table_type = "Experiment_t"
         self._test_doNuke(['Experiment_t'], orglistdir)
         self._test_doNuke([], orglistdir)
-        self.nukeT.EXPERIMENT_TABLE = False
 
         # nuke Sort_t
-        self.nukeT.SORT_TABLE = True
+        self.nukeT.table_type = "Sort_t"
         self._test_doNuke(['Sort_t'], orglistdir)
         self._test_doNuke([], orglistdir)
-        self.nukeT.SORT_TABLE = False
 
         # nuke Offset_t
-        self.nukeT.OFFSET_TABLE = [3, 1]
+        self.nukeT.table_type = "Offset_t"
+        self.nukeT.ARG = [3, 1]
         self._test_doNuke(['Offset_t_003_001'], orglistdir)
         self._resetNukeT()
         self._test_doNuke(['Offset_t_003_001'], orglistdir, False)
-        self.nukeT.OFFSET_TABLE = None
 
         # nuke Offset_t not exist
-        self.nukeT.OFFSET_TABLE = [3, 2]
+        self.nukeT.ARG = [3, 2]
         self._test_doNuke(['Offset_t_003_002'], orglistdir, False)
-        self.nukeT.OFFSET_TABLE = None
 
         # cannot test OFFSET_TABLE[0]=0 or /Experiment_g/Sorts_g/Offset_t
         # because this is the old type of ph5, there is no test data for that
 
         # nuke Event_t_
-        self.nukeT.EVENT_TABLE = 1
+        self.nukeT.table_type = "Event_t"
+        self.nukeT.ARG = 1
         self._test_doNuke(['Event_t_001'], orglistdir)
         self._resetNukeT()
         self._test_doNuke(['Event_t_001'], orglistdir, False)
-        self.nukeT.EVENT_TABLE = None
 
         # nuke Event_t_ not exist
-        self.nukeT.EVENT_TABLE = 2
+        self.nukeT.ARG = 2
         self._test_doNuke(['Event_t_002'], orglistdir, False)
-        self.nukeT.EVENT_TABLE = None
 
         # cannot test EVENT_TABLE=0 or /Experiment_g/Sorts_g/Event_t
         # because this is the old type of ph5, there is no test data for that
 
         # nuke Array_t_
-        self.nukeT.ARRAY_TABLE = 1
+        self.nukeT.table_type = "Array_t"
+        self.nukeT.ARG = 1
         self._test_doNuke(['Array_t_001'], orglistdir)
         self._resetNukeT()
         self._test_doNuke(['Array_t_001'], orglistdir, False)
-        self.nukeT.ARRAY_TABLE = None
 
         # nuke Array_t_ not exist
-        self.nukeT.ARRAY_TABLE = 5
+        self.nukeT.ARG = 5
         self._test_doNuke(['Array_t_005'], orglistdir, False)
-        self.nukeT.ARRAY_TABLE = None
 
         # nuke ALL_ARRAYS
+        
+        # update deleted Array_t_001
         self._resetNukeT()
         self.nukeT.T2K.PRINTOUT = True
 
-        self.nukeT.ALL_ARRAYS = True
+        self.nukeT.table_type = "All_Array_t"
         self._test_doNuke(['Array_t_002', 'Array_t_003', 'Array_t_004',
                            'Array_t_008', 'Array_t_009'], orglistdir)
         self._resetNukeT()
-        self._test_doNuke([], orglistdir, False)
-        self.nukeT.ALL_ARRAYS = False
-        self.nukeT.ARRAY_TABLE = None  # reset for it is set when do all_arrays
+        self._test_doNuke([], orglistdir)
+        #self.nukeT.ALL_ARRAYS = False
+        #self.nukeT.ARRAY_TABLE = None  # reset for it is set when do all_arrays
 
         # nuke Time_t
-        self.nukeT.TIME_TABLE = True
+        self.nukeT.table_type = "Time_t"
         self._test_doNuke(['Time_t'], orglistdir)
         self._test_doNuke([], orglistdir)
-        self.nukeT.TIME_TABLE = False
 
         # nuke Index_t
-        self.nukeT.INDEX_TABLE = True
+        self.nukeT.table_type = "Index_t"
         self._test_doNuke(['Index_t'], orglistdir)
         self._test_doNuke([], orglistdir)
-        self.nukeT.INDEX_TABLE = False
 
         # nuke M_Index_t
-        self.nukeT.M_INDEX_TABLE = True
+        self.nukeT.table_type = "Map_Index_t"
         self._test_doNuke(['M_Index_t'], orglistdir)
         self._test_doNuke([], orglistdir)
-        self.nukeT.M_INDEX_TABLE = False
 
         # nuke Receiver_t
-        self.nukeT.RECEIVER_TABLE = True
+        self.nukeT.table_type = "Receiver_t"
         self._test_doNuke(['Receiver_t'], orglistdir)
         self._test_doNuke([], orglistdir)
         self.nukeT.RECEIVER_TABLE = False
 
         # nuke Response_t
-        self.nukeT.RESPONSE_TABLE = True
+        self.nukeT.table_type = "Response_t"
         self._test_doNuke(['Response_t'], orglistdir)
         self._test_doNuke([], orglistdir)
         self.nukeT.RECEIVER_TABLE = False
 
         # nuke Report_t: report t not exist: no backup created
-        self.nukeT.REPORT_TABLE = True
+        self.nukeT.table_type = "Report_t"
         self._test_doNuke([], orglistdir)
         self.nukeT.REPORT_TABLE = False
 
         # nuke Das_t_
-        self.nukeT.DAS_TABLE = '5553'
+        self.nukeT.table_type = "Das_t"
+        self.nukeT.ARG = '5553'
         f = StringIO('n')
         sys.stdin = f   # answer 'n' for question in doNuke()
         self._test_doNuke([], orglistdir)
@@ -318,22 +357,13 @@ class TestNukeTable(unittest.TestCase):
         sys.stdin = f   # answer 'y' for question in doNuke()
         self._test_doNuke([], orglistdir)
         f.close()
-        self.nukeT.DAS_TABLE = None
 
         # nuke Das_t not exist
-        self.nukeT.DAS_TABLE = 'xxxx'
+        self.nukeT.ARG = 'xxxx'
         f = StringIO('y')
         sys.stdin = f   # answer 'y' for question in doNuke()
         self._test_doNuke([], orglistdir)
         f.close()
-
-        # remove files:
-        os.remove('master.ph5')
-        os.remove('miniPH5_00001.ph5')
-        self.nukeT.EX.ph5close()
-        self.nukeT.T2K.close()
-        self.nukeT.PATH = None
-        self.nukeT.PH5 = None
 
     def test_main(self):
         """
@@ -501,8 +531,7 @@ class TestNukeTable(unittest.TestCase):
         try:
             os.remove('master.ph5')
             os.remove('miniPH5_00001.ph5')
-            self.nukeT.EX.ph5close()
-            self.nukeT.T2K.close()
+            self.nukeT.close_ph5()
         except Exception:
             pass
         listdir = os.listdir('.')

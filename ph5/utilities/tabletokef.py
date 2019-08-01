@@ -17,15 +17,13 @@ from ph5.core import experiment
 
 # Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2019.057'
+PROG_VERSION = '2019.213'
 LOGGER = logging.getLogger(__name__)
 
 
 #
 # To hold table rows and keys
 #
-
-
 class Rows_Keys(object):
     __slots__ = ('rows', 'keys')
 
@@ -43,8 +41,6 @@ class Rows_Keys(object):
 #
 # To hold DAS sn and references to Das_g_[sn]
 #
-
-
 class Das_Groups(object):
     __slots__ = ('das', 'node')
 
@@ -53,9 +49,12 @@ class Das_Groups(object):
         self.node = node
 
 
-#
-# These are to hold different parts of the meta-data
-#
+class TabletokefError(Exception):
+    '''   Exception gets raised in NukeTable   '''
+
+    def __init__(self, message=''):
+        super(TabletokefError, self).__init__(message)
+        self.message = message
 
 ########################################################################
 class Tabletokef:
@@ -117,13 +116,14 @@ class Tabletokef:
                                   "directory."), default=".",
                             metavar="ph5_path")
 
+        """ Don't see any use for this
         parser.add_argument("-u", "--update_key", dest="update_key",
                             help="Set generated kef file to do an "
                             "Update on key.",
-                            metavar="update_key", type=str)
+                            metavar="update_key", type=str
 
         parser.add_argument("-d", "--debug", dest="debug",
-                            action="store_true", default=False)
+                            action="store_true", default=False))"""
 
         parser.add_argument("-E", "--Experiment_t", dest="experiment_t",
                             action="store_true", default=False,
@@ -206,7 +206,7 @@ class Tabletokef:
 
         self.PH5 = args.ph5_file_prefix
         self.PATH = args.ph5_path
-        self.DEBUG = args.debug
+        # self.DEBUG = args.debug
         self.table_type = None
         self.ARG = None
         if args.experiment_t:
@@ -217,10 +217,12 @@ class Tabletokef:
             self.table_type = "Offset_t"
             try:
                 self.ARG = map(int, args.offset_t_.split("_"))
+                if len(self.ARG) != 2:
+                    raise TabletokefError()
             except Exception:
                 err_msg = "Offset table should be entered as arrayID "\
                     "underscore shotLineID, eg. 1_2 or 0_0."
-                raise Exception(err_msg)
+                raise TabletokefError(err_msg)
         elif args.event_t_ is not None:
             self.table_type = "Event_t"
             self.ARG = args.event_t_
@@ -248,7 +250,7 @@ class Tabletokef:
             self.ARG = args.das_t_
 
         if self.table_type is None:
-            raise Exception("No table specified for output."
+            raise TabletokefError("No table specified for output."
                             "See --help for more details.")
 
         # define OFILE to write output
@@ -265,10 +267,9 @@ class Tabletokef:
         self.EX.ph5open(editmode)
         self.EX.initgroup()
 
-    def close(self):
+    def close_ph5(self):
         try:
             self.EX.ph5close()
-            self.OFILE.close()
         except Exception:
             pass
 
@@ -304,6 +305,8 @@ class Tabletokef:
             print(s)
         else:
             self.OFILE.write(s + '\n')
+            self.OFILE.close()
+        
 
     def read_time_table(self):
         times, time_keys = self.EX.ph5_g_receivers.read_time()
@@ -332,7 +335,8 @@ class Tabletokef:
         try:
             events, event_keys = self.EX.ph5_g_sorts.read_events(T)
         except Exception:
-            raise Exception("Can't read {0}.\nDoes it exist?\n".format(T))
+            raise TabletokefError(
+                "Can't read {0}.\nDoes it exist?\n".format(T))
 
         rowskeys = Rows_Keys(events, event_keys)
 
@@ -365,7 +369,8 @@ class Tabletokef:
         try:
             rows, keys = self.EX.ph5_g_sorts.read_offset(name)
         except Exception:
-            return
+            raise TabletokefError(
+                "Can't read {0}.\nDoes it exist?\n".format(name))
 
         self.OFFSET_T[name] = Rows_Keys(rows, keys)
 
@@ -443,7 +448,8 @@ class Tabletokef:
             # Read SOH file(s) for this das
             self.SOH_A[d] = self.EX.ph5_g_receivers.read_soh()
 
-    def read_tables(self, tableType, arg=None, printout=False, fromKefU=False):
+    #def read_tables(self, tableType, arg=None, printout=False, fromKefU=False):
+    def read_tables(self, tableType, arg=None):
         if tableType == "Experiment_t":
             self.read_experiment_table()
             self.table_print("/Experiment_g/Experiment_t", self.EXPERIMENT_T)
@@ -462,13 +468,17 @@ class Tabletokef:
                     OFFSET_TABLE = map(int, arg.split("_"))
             except Exception:
                 OFFSET_TABLE = arg
-            self.read_offset_table(OFFSET_TABLE)
+            try:
+                self.read_offset_table(OFFSET_TABLE)
+            except Exception, e:
+                raise e
             for k in self.OFFSET_T.keys():
                 self.table_print("/Experiment_g/Sorts_g/{0}".format(k),
                                  self.OFFSET_T[k])
             return self.OFFSET_T
 
-        if tableType == "All_Offset_t":
+        if tableType == "All_Offset_t":  # for kefUtility
+            self.EX.read_offset_t_names()
             for o in self.EX.Offset_t_names:
                 if o == "Offset_t":
                     OFFSET_TABLE = [0]
@@ -490,21 +500,21 @@ class Tabletokef:
             return self.EVENT_T
 
         if tableType == "All_Event_t":
-            if fromKefU:
-                for n in self.EX.Event_t_names:
-                    if n == 'Event_t':
-                        EVENT_TABLE = 0
-                    else:
-                        EVENT_TABLE = int(n.replace('Event_t_', ''))
-                    try:
-                        self.read_event_table(EVENT_TABLE=EVENT_TABLE)
-                    except Exception, e:
-                        raise e
-            else:
-                self.read_all_event_table()
-                for k in self.EVENT_T.keys():
-                    self.table_print("/Experiment_g/Sorts_g/{0}".format(k),
-                                     self.EVENT_T[k])
+            #if fromKefU:
+                #for n in self.EX.Event_t_names:
+                    #if n == 'Event_t':
+                        #EVENT_TABLE = 0
+                    #else:
+                        #EVENT_TABLE = int(n.replace('Event_t_', ''))
+                    #try:
+                        #self.read_event_table(EVENT_TABLE=EVENT_TABLE)
+                    #except Exception, e:
+                        #raise e
+            #else:
+            self.read_all_event_table()
+            for k in self.EVENT_T.keys():
+                self.table_print("/Experiment_g/Sorts_g/{0}".format(k),
+                                 self.EVENT_T[k])
             return self.EVENT_T
 
         if tableType == "Index_t":
@@ -534,6 +544,9 @@ class Tabletokef:
                     self.table_print("/Experiment_g/Sorts_g/" + a,
                                      self.ARRAY_T[a])
                     return self.ARRAY_T[a]
+            name = "Array_t_{0:03d}".format(int(ARRAY_TABLE))
+            raise TabletokefError(
+                "Can't read {0}.\nDoes it exist?\n".format(name))
 
         if tableType == "All_Array_t":
             if not self.SORT_T:
@@ -574,13 +587,12 @@ def main():
         T2K.get_args()
 
         T2K.initialize_ph5()
-        T2K.read_tables(T2K.table_type, T2K.ARG, printout=True)
-
+        T2K.read_tables(T2K.table_type, T2K.ARG)
+    except TabletokefError, err_msg:
+        LOGGER.error(err_msg)
     except Exception, err_msg:
         LOGGER.error(err_msg)
-        T2K.close()
-        return 1
-    T2K.close()
+    T2K.close_ph5()
 
 
 if __name__ == '__main__':
