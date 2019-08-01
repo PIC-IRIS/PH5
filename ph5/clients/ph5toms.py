@@ -550,13 +550,14 @@ class PH5toMSeed(object):
                 elif self.format.upper() == "SEGY1" or \
                         self.format.upper() == "SEGY2":
                     # These values are used to create the SEG-Y headers
-                    obspy_trace.stats.receiver_id = stc.receiver_n_i
+                    obspy_trace.stats.receiver_id = stc.station
                     obspy_trace.stats.ttype = trace.ttype
                     obspy_trace.stats.byteorder = trace.byteorder
                     obspy_trace.stats.elevation = float(stc.elev)
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
                     obspy_trace.stats.array = stc.array_code
+                    obspy_trace.stats.das = stc.das
                     obspy_trace.stats.shot_id = stc.shot_id
                     obspy_trace.stats.shot_lat = stc.shot_lat
                     obspy_trace.stats.shot_lng = stc.shot_lng
