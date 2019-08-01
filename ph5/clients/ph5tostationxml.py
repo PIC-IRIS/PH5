@@ -665,10 +665,15 @@ class PH5toStationXMLParser(object):
                     for deployment, station_epoch, station_entry in \
                             ((dk, dv, se) for dk, dv in station_list.items()
                              for se in dv):
+
+                        longitude = station_entry['location/X/value_d']
+                        latitude = station_entry['location/Y/value_d']
+                        elevation = station_entry['location/Z/value_d']
+
                         if not self.is_lat_lon_match(
                                 sta_xml_obj,
-                                station_entry['location/Y/value_d'],
-                                station_entry['location/X/value_d']):
+                                latitude,
+                                longitude):
                             continue
 
                         if station_entry['seed_station_name_s']:
@@ -714,9 +719,9 @@ class PH5toStationXMLParser(object):
                                     station_code,
                                     start_date,
                                     end_date,
-                                    station_entry['location/X/value_d'],  # lng
-                                    station_entry['location/Y/value_d'],  # lat
-                                    station_entry['location/Z/value_d'],  # elv
+                                    longitude,
+                                    latitude,
+                                    elevation,
                                     station_entry['location/description_s'])
                         if self.manager.get_obs_station(sta_key):
                             # station already created and added to metadata
@@ -727,9 +732,9 @@ class PH5toStationXMLParser(object):
                                     station_code,
                                     start_date,
                                     end_date,
-                                    station_entry['location/X/value_d'],  # lng
-                                    station_entry['location/Y/value_d'],  # lat
-                                    station_entry['location/Z/value_d'],  # elv
+                                    longitude,
+                                    latitude,
+                                    elevation,
                                     start_date,  # creation_date
                                     end_date,  # termination date
                                     station_entry['location/description_s'])
@@ -759,6 +764,10 @@ class PH5toStationXMLParser(object):
         component_list_patterns = sta_xml_obj.component_list
         receiver_list_patterns = sta_xml_obj.receiver_list
         location_patterns = sta_xml_obj.location_list
+        longitude = station_entry['location/X/value_d']
+        latitude = station_entry['location/Y/value_d']
+        elevation = station_entry['location/Z/value_d']
+
         receiver_id = str(station_entry['id_s'])
         if not ph5utils.does_pattern_exists(receiver_list_patterns,
                                             receiver_id):
@@ -785,8 +794,8 @@ class PH5toStationXMLParser(object):
 
                 if not self.is_lat_lon_match(
                         sta_xml_obj,
-                        station_entry['location/Y/value_d'],
-                        station_entry['location/X/value_d']):
+                        latitude,
+                        longitude):
                     continue
                 start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
                 end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
@@ -807,9 +816,9 @@ class PH5toStationXMLParser(object):
 
                 cha_key = self.manager.get_channel_key(
                     sta_code, loc_code, cha_code, start_date, end_date,
-                    station_entry['location/X/value_d'],  # lng
-                    station_entry['location/Y/value_d'],  # lat
-                    station_entry['location/Z/value_d'],  # elv
+                    longitude,
+                    latitude,
+                    elevation,
                     station_entry['channel_number_i'],  # component
                     receiver_id,
                     sample_rate,
@@ -839,9 +848,9 @@ class PH5toStationXMLParser(object):
                         cha_code,
                         start_date,
                         end_date,
-                        station_entry['location/X/value_d'],  # lng
-                        station_entry['location/Y/value_d'],  # lat
-                        station_entry['location/Z/value_d'],  # elv
+                        longitude,
+                        latitude,
+                        elevation,
                         station_entry['channel_number_i'],  # component
                         receiver_id,
                         array_code,
