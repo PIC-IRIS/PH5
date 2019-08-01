@@ -479,7 +479,7 @@ class PH5Validate(object):
                          "You may need to reload the raw "
                          "data for this station."
                          .format(str(das_serial)))
-        
+
         try:
             das_rows = self.ph5.Das_t[das_serial]['rows']
             ph5api.filter_das_t(das_rows,
