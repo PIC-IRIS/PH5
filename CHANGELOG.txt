@@ -80,6 +80,8 @@ ph5.entry_points
       (2) entry points for use by setup.
 ph5.help
  * calls entry_points to print the short descriptions in alpha-order.
+environment.yml
+ * removed unused dependencies and added pykml as a dependency
 
 v4.1.2:
 ph5.utilities.ph5validate
