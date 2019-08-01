@@ -1,6 +1,7 @@
 dependencies:
  - python=2.7
  - hdf5=1.8.18
+ - pykml==0.1.0
  - six
  - Cython
  - nose
@@ -12,8 +13,6 @@ dependencies:
  - psutil
  - obspy
  - vispy
- - icu=56.*
- - libxslt=1.1.29=2
  - pip=19.1.1
  - pip:
    - construct==2.5.1
