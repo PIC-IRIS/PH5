@@ -1,3 +1,7 @@
+ph5
+ * fixed errors in entry_points.py that prevented apps from executing.
+ * fixed: seg2toph5, ph5toevt. 
+ * Deleted: ph5view (doesn't compile, was a W.I.P. left to wither) 
 Master:
 ph5
  * made pep8 compliant

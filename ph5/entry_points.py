@@ -3,9 +3,9 @@
 # Also provides a list of GUI and console apps when user types
 # $ ph5
 
-# Dave Thomas, 2019-06-11
+# Dave Thomas, 2019-08-06
 
-PROG_VERSION = '2019.162'
+PROG_VERSION = '2019.218'
 
 
 class EntryPointTypes():
@@ -57,11 +57,6 @@ class CommandList():
                 EntryPoint('pforma',
                            'ph5.utilities.pformagui:startapp',
                            'A GUI for loading MetaData into PH5.',
-                           type=EntryPointTypes.GUI),
-                EntryPoint('ph5view',
-                           'ph5.utilities.ph5_viewer:startapp',
-                           'A GUI program for plotting responses, saving '
-                           'files to SEGY, etc.',
                            type=EntryPointTypes.GUI),
                 ],
             'console_scripts': [
@@ -157,7 +152,7 @@ class CommandList():
                            'into PH5 and creates a new "response.kef" file.',
                            type=EntryPointTypes.INGESTION),
                 EntryPoint('seg2toph5',
-                           'ph5.utilities.segd2ph5:main',
+                           'ph5.utilities.seg2toph5:main',
                            'Read data in SEG-2 revision 1 '
                            '(StrataVisor) into ph5 format.',
                            type=EntryPointTypes.INGESTION),
@@ -257,7 +252,7 @@ class CommandList():
                            'and/or data_request_key.txt.',
                            type=EntryPointTypes.ALL),
                 EntryPoint('ph5toevt',
-                           'ph5.clients.ph5view.ph5toevt:main',
+                           'ph5.clients.ph5toevt:main',
                            'Extract events from a ph5 archive, '
                            'generate SEG-Y gathers in event order.',
                            type=EntryPointTypes.CLIENT),
