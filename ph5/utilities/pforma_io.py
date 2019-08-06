@@ -14,7 +14,7 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.218'
 LOGGER = logging.getLogger(__name__)
 
 HOME = os.environ['HOME']
@@ -643,6 +643,11 @@ class FormaIO():
 
             os.chdir(os.path.join(self.home, TO))
             for m in self.nmini:
+                if m == 'A' and TO != 'A':
+                    # already added this table in load_index when copy
+                    # master.ph5 from A to/ TO/
+                    continue
+
                 command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef"\
                     .format(m)
                 ret = subprocess.Popen(

@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.218"
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -601,9 +601,10 @@ def process_traces(rh, th, tr):
                 return False
             elif Das not in ARRAY_T[line]:
                 return False
-            elif chan_set in ARRAY_T[line][Das]:
-                # chans = ARRAY_T[line][Das].keys()  # All channels seen
-                if not ARRAY_T[line][Das][chan_set]:
+            elif dtime not in ARRAY_T[line][Das]:
+                return False
+            elif chan_set in ARRAY_T[line][Das][dtime]:
+                if not ARRAY_T[line][Das][dtime][chan_set]:
                     return False
                 else:
                     return True
@@ -783,15 +784,18 @@ def process_traces(rh, th, tr):
             line = 0
 
         chan_set = get_true_channel()
+        dtime = p_array_t['deploy_time/epoch_l']
         if line not in ARRAY_T:
             ARRAY_T[line] = {}
         if Das not in ARRAY_T[line]:
             ARRAY_T[line][Das] = {}
-        if chan_set not in ARRAY_T[line][Das]:
-            ARRAY_T[line][Das][chan_set] = []
+        if dtime not in ARRAY_T[line][Das]:
+            ARRAY_T[line][Das][dtime] = {}
+        if chan_set not in ARRAY_T[line][Das][dtime]:
+            ARRAY_T[line][Das][dtime][chan_set] = []
 
         if not seen_sta():
-            ARRAY_T[line][Das][chan_set].append(p_array_t)
+            ARRAY_T[line][Das][dtime][chan_set].append(p_array_t)
             # if rh.general_header_block_1.chan_sets_per_scan ==\
             #  len (ARRAY_T[line].keys ()) :
             # DN = True
@@ -886,12 +890,15 @@ def write_arrays(Array_t):
         stations = sorted(Array_t[line].keys())
         #   Loop through stations
         for station in stations:
-            chan_sets = sorted(Array_t[line][station].keys())
+            dtimes = sorted(Array_t[line][station].keys())
             #   Loop through channel sets
-            for chan_set in chan_sets:
+            for dtime in dtimes:
                 try:
-                    for array_t in Array_t[line][station][chan_set]:
-                        columns.populate(a, array_t)
+                    chan_sets = sorted(Array_t[line][station][dtime].
+                                       keys())
+                    for c in chan_sets:
+                        for array_t in Array_t[line][station][dtime][c]:
+                            columns.populate(a, array_t)
                 except Exception as e:
                     print e.message
 
