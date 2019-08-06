@@ -14,7 +14,7 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2019.043'
+PROG_VERSION = '2019.218'
 logging.basicConfig()
 LOGGER = logging.getLogger(__name__)
 
@@ -644,6 +644,11 @@ class FormaIO():
 
             os.chdir(os.path.join(self.home, TO))
             for m in self.nmini:
+                if m == 'A' and TO != 'A':
+                    # already added this table in load_index when copy
+                    # master.ph5 from A to/ TO/
+                    continue
+
                 command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef"\
                     .format(m)
                 ret = subprocess.Popen(
@@ -757,6 +762,7 @@ rt130RE = re.compile(r"\d\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[Zz][Ii][Pp]")
 nodalRE = re.compile(r"[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
 # For simpleton 'nodal'
 simpletonodalRE = re.compile(r"\d+\.fcnt")
+# simpletonodalRE = re.compile(r"\d.+\.fcnt")
 # For PIC rename
 picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
 
@@ -783,7 +789,7 @@ def guess_instrument_type(filename):
         return 'nodal', das
     mo = simpletonodalRE.match(filename)
     if mo:
-        return 'nodal', 'lllsss'
+        return 'nodal', '9X9050'
     mo = seg2RE.match(filename)
     if mo:
         das = mo.groups()[0]
