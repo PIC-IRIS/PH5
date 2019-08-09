@@ -25,10 +25,10 @@ class NukeTableError(Exception):
         super(NukeTableError, self).__init__(message)
         self.message = message
 
+
 #
 # Read Command line arguments
 #
-
 class NukeTable():
     def __init__(self):
         self.ph5 = None
