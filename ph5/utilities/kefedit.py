@@ -22,7 +22,7 @@ except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-PROG_VERSION = 2019.213
+PROG_VERSION = 2019.060
 EXPL = {}
 
 # CLASS ####################
@@ -426,12 +426,11 @@ class KefEdit(QtGui.QMainWindow):
         from subprocess import Popen, PIPE, STDOUT
 
         pathStr = ','.join(self.pathAll)
-        cmdStr = "keftoph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s"\
+        cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s"\
                  % options
         self.statusBar.showMessage(
-            "Inserting new table(s) %s into %s" % (pathStr, savefilename))
-        print "Inserting new table(s) %s into PH5file" % \
-              (pathStr, savefilename)
+            "Inserting new table(s) %s into PH5file" % pathStr)
+        print "Inserting new table(s) %s into PH5file" % pathStr
         p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
                   close_fds=True)
         output = p.stdout.read()
@@ -606,10 +605,6 @@ class KefEdit(QtGui.QMainWindow):
                          "the selected PH5 is a master file."
                 QtGui.QMessageBox.warning(self, "Error", errMsg % p)
                 return
-            #print("p:", p)
-            #print("self.dataTable[p]:", self.dataTable[p])
-            #print("self.labelSets[p]:", self.labelSets[p])
-            #print("self.types[p]:", self.types[p])
             pathWidget = TablePanel(self, p, self.dataTable[p],
                                     self.labelSets[p], self.types[p])
             self.path_tabWidget.addTab(pathWidget, p)
@@ -631,8 +626,7 @@ updateColName = QtGui.QColor(245, 225, 225,
 deleteColName = QtGui.QColor(180, 150, 180, 100).name()  # table cells
 UPDATECOLOR = QtGui.QBrush(QtGui.QColor(225, 175, 175, 100))  # light pink
 DELETECOLOR = QtGui.QBrush(QtGui.QColor(70, 10, 70, 100))  # light purple
-BLACK = QtGui.QBrush(QtCore.Qt.black)
-RED = QtGui.QBrush(QtCore.Qt.red)
+
 
 # CLASS ####################
 # class TablePanel: Each path will have a tableView to display its data
@@ -685,7 +679,6 @@ class TablePanel(QtGui.QMainWindow):
                 item = QtGui.QTableWidgetItem(self.table[r][c])
                 item.setFlags(
                     QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                item.setForeground(BLACK)
                 # disable cell editing
                 self.mainTableView.setItem(r, c, item)
 
@@ -771,7 +764,7 @@ class TablePanel(QtGui.QMainWindow):
 
         changeBox.addStretch(1)
 
-        mainLayout.addWidget(Separator(thick=2, orientation="horizontal"))
+        mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
         # column tools ######################
         columnBox1 = QtGui.QHBoxLayout()
         mainLayout.addLayout(columnBox1)
@@ -858,7 +851,7 @@ class TablePanel(QtGui.QMainWindow):
 
         columnBox2.addStretch(1)
 
-        mainLayout.addWidget(Separator(thick=2, orientation="horizontal"))
+        mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
         # move tools ######################
         moveBox = QtGui.QHBoxLayout()
         mainLayout.addLayout(moveBox)
@@ -901,7 +894,7 @@ class TablePanel(QtGui.QMainWindow):
 
         moveBox.addStretch(1)
 
-        mainLayout.addWidget(Separator(thick=2, orientation="horizontal"))
+        mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
 
         # delete tools ######################
         deleteBox = QtGui.QHBoxLayout()
@@ -926,30 +919,30 @@ class TablePanel(QtGui.QMainWindow):
 
         deleteBox.addStretch(1)
 
-        mainLayout.addWidget(Separator(thick=2, orientation="horizontal"))
+        mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
 
         # add tools ######################
         addBox = QtGui.QHBoxLayout()
         mainLayout.addLayout(addBox)
 
         addBox.addStretch(1)
-        self.copyBtn = QtGui.QPushButton(
-            'Copy rows from MainView to AddRowView', self)
-        self.copyBtn.installEventFilter(self)
+        self.addBtn = QtGui.QPushButton(
+            'Add Row(s) with Data Copy from Selected Cell(s)', self)
+        self.addBtn.installEventFilter(self)
         EXPL[
-            self.copyBtn] = "Copy Selected Row(s) in MainView to the" \
+            self.addBtn] = "Copy Selected Row(s) in MainView to the" \
                            "AddRowView at the bottom."
-        self.copyBtn.setFixedWidth(400)
-        self.copyBtn.clicked.connect(self.OnCopy2AddTableView)
-        addBox.addWidget(self.copyBtn)
+        self.addBtn.setFixedWidth(400)
+        self.addBtn.clicked.connect(self.OnAdd)
+        addBox.addWidget(self.addBtn)
 
         addBox.addSpacing(250)
         addBox.addWidget(QtGui.QLabel("Insert Selected Row(s) under Line No"))
         self.insertLineCtrl = QtGui.QComboBox(self)
         self.insertLineCtrl.installEventFilter(self)
         EXPL[
-            self.insertLineCtrl] = "Select MainView's Line No under which "\
-                                   "the selected rows in AddRowView will be" \
+            self.insertLineCtrl] = "Select the Line No under which the" \
+                                   "selected rows in AddRowView will be" \
                                    "inserted to."
         self.insertLineCtrl.currentIndexChanged.connect(self.OnSelectAddLine)
         self.insertLineCtrl.clear()
@@ -1000,13 +993,12 @@ class TablePanel(QtGui.QMainWindow):
     # updated: 201703
     # disabled all buttons (at the beginning and when change selectioncriteria)
     def _setButtonsDisabled(self):
-        # print("_setButtonsDisabled")
         self.changeBtn.setEnabled(False)
         self.moveBtn.setEnabled(False)
         self.moveLineCtrl.setEnabled(False)
         self.deleteBtn.setEnabled(False)
         self.unDeleteBtn.setEnabled(False)
-        self.copyBtn.setEnabled(False)
+        self.addBtn.setEnabled(False)
         self.insertBtn.setEnabled(False)
         self.insertLineCtrl.setEnabled(False)
         self.characterOrderCtrl.setEnabled(False)
@@ -1025,7 +1017,6 @@ class TablePanel(QtGui.QMainWindow):
     # updated: 201703
     # Clear all Selected cells on oth MainTableView and addTableView
     def OnClearSelected(self, event):
-        # print("OnClearSelected")
         self.mainTableView.clearSelection()
         self.addTableView.clearSelection()
         self.selectedCells = []
@@ -1039,7 +1030,7 @@ class TablePanel(QtGui.QMainWindow):
     # when a cell is selected, mark all cells on MainTableView
     # with the same value that match the selection criteria chosen
     def OnMainTableClick(self, row, column):
-        # print "OnMainTableClick:",(row,column)
+        # print "OnMainTableClick"
         self.changeBtn.setEnabled(True)
         self.insertBtn.setEnabled(False)
         self.insertLineCtrl.setEnabled(False)
@@ -1068,8 +1059,7 @@ class TablePanel(QtGui.QMainWindow):
             # stationid
             statRowList = [i for i in range(len(self.updatedTable)) if
                            self.updatedTable[i][statCol] == statName]
-            # mark selected for that station's cells on that column
-            # that have the same value
+            # mark selected for that station's cells that have the same value
             self.selectedCells, selectedRows =\
                 self._selectMatchInList(value,
                                         column,
@@ -1095,7 +1085,7 @@ class TablePanel(QtGui.QMainWindow):
         # Identify which options should be enable
         if self.allInStation.isChecked() or self.singleCell.isChecked():
             # enable add and delete options
-            self.copyBtn.setEnabled(True)
+            self.addBtn.setEnabled(True)
             noDel = True
             undelApplicable = True
             for r, c in self.selectedCells:
@@ -1123,7 +1113,7 @@ class TablePanel(QtGui.QMainWindow):
             # cells are selected
             self.moveBtn.setEnabled(False)
             self.moveLineCtrl.setEnabled(False)
-            self.copyBtn.setEnabled(False)
+            self.addBtn.setEnabled(False)
             self.deleteBtn.setEnabled(False)
             self.unDeleteBtn.setEnabled(False)
 
@@ -1137,11 +1127,10 @@ class TablePanel(QtGui.QMainWindow):
     # * identify which cell(s) are selected
     # * set the selected value in changedValCtrl
     def OnAddTableClick(self, row, column):
-        # print("OnAddTableClick")
         self.changeBtn.setEnabled(True)
         self.moveBtn.setEnabled(False)
         self.moveLineCtrl.setEnabled(False)
-        self.copyBtn.setEnabled(False)
+        self.addBtn.setEnabled(False)
         self.deleteBtn.setEnabled(False)
         self.unDeleteBtn.setEnabled(False)
         self.insertBtn.setEnabled(True)
@@ -1167,8 +1156,7 @@ class TablePanel(QtGui.QMainWindow):
             statName = self.addTableView.item(row, statCol).text()
             statRowList = [i for i in range(len(self.addDataList)) if
                            self.addDataList[i][statCol] == statName]
-            # mark selected for that station's cells on that column
-            # that have the same value
+            # mark selected for that station's cells that have the same value
             self.addCells, selectedRows =\
                 self._selectMatchInList(value,
                                         column,
@@ -1215,7 +1203,9 @@ class TablePanel(QtGui.QMainWindow):
         # print "OnXChanged:", arg
         self.plusX2CharBtn.setEnabled(False)
         self.plusX2ColBtn.setEnabled(False)
-        if not str(self.XCtrl.text()).isdigit():
+        try:
+            int(self.XCtrl.text())
+        except BaseException:
             return
 
         if self.nondigitList == []:
@@ -1240,7 +1230,6 @@ class TablePanel(QtGui.QMainWindow):
     #  * reset nondigitList (list of chars at the selected position(s) of
     # the selected column that are non-digit)
     def OnChangeCharOrder(self, arg):
-        # print "OnChangeCharOrder
         if not self.characterOrderCtrl.isEnabled():
             return
         self.noOfCharsCtrl.clear()
@@ -1257,7 +1246,6 @@ class TablePanel(QtGui.QMainWindow):
     # if nondigitList is [] (all are digit, enable plus2CharBtn according
     # to XCtrl)
     def OnChangeNoOfChars(self, arg):
-        #print "OnChangeNoOfChars"
         order = self.characterOrderCtrl.currentIndex()
         noOfChars = arg + 1
 
@@ -1285,7 +1273,6 @@ class TablePanel(QtGui.QMainWindow):
     def OnChangeChar2X(self):
         if not self._checkEmpty("character"):
             return
-
         # check type
         type_ = self.types[
             self.labels.index(str(self.selectedColumnCtrl.text()))]
@@ -1312,7 +1299,7 @@ class TablePanel(QtGui.QMainWindow):
                 index += 1
         except ValueError:
             msg = "The new value of '%s', line %s is '%s' which doesn't match"\
-                  " the required type: %s"
+                  "the required type: %s"
             QtGui.QMessageBox.warning(self, "Error", msg % (
                 self.selectedColumnCtrl.text(), index + 1, val,
                 type_.__name__))
@@ -1345,9 +1332,9 @@ class TablePanel(QtGui.QMainWindow):
                 insertChars = str(
                     int(val[order:order + noOfChars]) + int(self.XCtrl.text()))
                 if len(insertChars) > noOfChars:
-                    msg = "On line %s, the character(s) need to " \
-                          "change is '%s',"\
-                          "\nwhile the replace character(s) is/are %s of " \
+                    msg = "On line %s, the character(s) need to" \
+                          "change is '%s'," + \
+                          "\nwhile the replace character(s) is/are %s of" \
                           "which length is different."
                     QtGui.QMessageBox.warning(self, "Error", msg % (
                         index + 1, val[order:order + noOfChars], insertChars))
@@ -1383,7 +1370,7 @@ class TablePanel(QtGui.QMainWindow):
             result = QtGui.QMessageBox.question(self, "Are you sure?", msg,
                                                 QtGui.QMessageBox.Yes,
                                                 QtGui.QMessageBox.Cancel)
-            if result == QtGui.QMessageBox.Cancel:
+            if result == QtGui.QMessagedBox.Cancel:
                 return False
 
         return True
@@ -1404,7 +1391,7 @@ class TablePanel(QtGui.QMainWindow):
             newVal = type_(self.XCtrl.text())
         except ValueError:
             msg = "The new value of all cells in '%s' is '%s'," \
-                  "which doesn't match the required type: %s"
+                  "\nwhich doesn't match the required type: %s"
             QtGui.QMessageBox.warning(self, "Error", msg % (
                 self.selectedColumnCtrl.text(), self.XCtrl.text(),
                 type_.__name__))
@@ -1470,13 +1457,13 @@ class TablePanel(QtGui.QMainWindow):
         currItem.setText(str(newVal))
         self.updatedTable[r][self.selectedCol] = newVal
         if self.table[r][self.selectedCol] != newVal:
-            currItem.setForeground(RED)
+            currItem.setForeground(QtCore.Qt.red)
             if r not in self.deleteList:
                 self._changeRowBackground(r, UPDATECOLOR)
             if r not in self.updateList:
                 self.updateList.append(r)
         else:
-            currItem.setForeground(BLACK)
+            currItem.setForeground(QtCore.Qt.black)
             updated = False
             for l in range(len(self.labels)):
                 if self.updatedTable[r][l] != self.table[r][l]:
@@ -1495,40 +1482,24 @@ class TablePanel(QtGui.QMainWindow):
     # set characterOrderCtrl, changeChar2XBtn, plusX2ColBtn, plusX2Col
     # depend on type and length of the selectedColList
     def _afterUpdateCol(self):
-        # list all item in the column of the selected cell
         self.selectedColList = self.updatedTable[:, self.selectedCol]
-        # list all items with diff len than the first one
-        # in the selectedColList
         difLen = [len(item) for item in self.selectedColList if
                   len(item.strip()) != len(self.selectedColList[0].strip())]
         if difLen == []:
-            # if all items in selected ColList have same length
             self.changeChar2XBtn.setEnabled(True)
             self.characterOrderCtrl.setEnabled(True)
             self.characterOrderCtrl.clear()
             self.characterOrderCtrl.addItems(
                 [str(i + 1) for i in range(len(self.selectedColList[0]))])
         else:
-            # if some items in selected ColList have different leghth
             self.characterOrderCtrl.clear()
             self.characterOrderCtrl.setEnabled(False)
             self.changeChar2XBtn.setEnabled(False)
 
         self.plusX2ColBtn.setEnabled(False)
-        #type_ = self.types[
-            #self.labels.index(str(self.selectedColumnCtrl.text()))]
-        #if str(self.XCtrl.text()).isdigit() and type_ in [float, int]:
-            #self.plusX2ColBtn.setEnabled(True)
-
-        try:
-            notdigitList = []
-            for item in self.selectedColList:
-                if not str(item).lstrip('-').isdigit():
-                    item = float(item)
-        except Exception:
-            notdigitList.append(item)
-
-        if str(self.XCtrl.text()).isdigit() and notdigitList == []:
+        type_ = self.types[
+            self.labels.index(str(self.selectedColumnCtrl.text()))]
+        if str(self.XCtrl.text()).isdigit() and type_ in [float, int]:
             self.plusX2ColBtn.setEnabled(True)
 
     ###############################
@@ -1549,23 +1520,9 @@ class TablePanel(QtGui.QMainWindow):
     #   * change text & color in cell(s) and change the column value to the
     # one in changedValCtrl but type keep the same
     def OnChange(self, event):
-        try:
-            # check if type of changed text match with type defined for that
-            # column in ph5
-            type_ = self.types[
-                self.labels.index(str(self.selectedColumnCtrl.text()))]
-            type_(self.changedValCtrl.text())
-        except Exception:
-            msg = "Column '%s' type is '%s' while the changed text is '%s'." \
-                % (self.selectedColumnCtrl.text(),
-                   type_.__name__, self.changedValCtrl.text())
-            QtGui.QMessageBox.warning(self, "Warning", msg)
-            return
-
         if self.addCells is None:
             for r, c in self.selectedCells:
                 if r in self.deleteList:
-                    currItem = self.mainTableView.item(r, c)
                     msg = "Because the row %s has been deleted, cell" \
                           "(%s,%s) can't be changed." % (
                               r + 1, r + 1, c + 1)
@@ -1578,7 +1535,7 @@ class TablePanel(QtGui.QMainWindow):
                     self.changedValCtrl.text())
 
                 if currItem.text() == self.table[r][c]:
-                    currItem.setForeground(BLACK)
+                    currItem.setForeground(QtCore.Qt.black)
                     updated = False
                     for l in range(len(self.labels)):
                         if self.updatedTable[r][l] != self.table[r][l]:
@@ -1589,7 +1546,7 @@ class TablePanel(QtGui.QMainWindow):
                         if r in self.updateList:
                             self.updateList.remove(r)
                 else:
-                    currItem.setForeground(QtGui.QBrush(RED))
+                    currItem.setForeground(QtCore.Qt.red)
                     self._changeRowBackground(r, UPDATECOLOR)
                     if r not in self.updateList:
                         self.updateList.append(r)
@@ -1598,10 +1555,9 @@ class TablePanel(QtGui.QMainWindow):
             for r, c in self.addCells:
                 currItem = self.addTableView.item(r, c)
                 currItem.setText(self.changedValCtrl.text())
-                currItem.setForeground(RED)
+                currItem.setForeground(QtCore.Qt.red)
                 self.addDataList[r][c] = type(self.addDataList[r][c])(
                     self.changedValCtrl.text())
-        self._afterUpdateCol()
 
     ###############################
     # def OnBack2org
@@ -1616,7 +1572,7 @@ class TablePanel(QtGui.QMainWindow):
             currItem = self.mainTableView.item(r, c)
             currItem.setText(str(self.table[r][c]))
             self.updatedTable[r][c] = self.table[r][c]
-            currItem.setForeground(BLACK)
+            currItem.setForeground(QtCore.Qt.black)
             updated = False
             for l in range(len(self.labels)):
                 if self.updatedTable[r][l] != self.table[r][l]:
@@ -1644,8 +1600,6 @@ class TablePanel(QtGui.QMainWindow):
 
         self.deleteBtn.setEnabled(False)
         self.unDeleteBtn.setEnabled(True)
-        self.moveLineCtrl.setEnabled(False)
-        self.moveBtn.setEnabled(False)
 
     ###############################
     # def OnUndelete
@@ -1660,23 +1614,21 @@ class TablePanel(QtGui.QMainWindow):
                 self._changeRowBackground(row, UPDATECOLOR)
             else:
                 self._changeRowBackground(row, QtCore.Qt.white)
-            print("row:%s, deleteList:%s" % (row, self.deleteList))
             if row in self.deleteList:
-                print("remove %s from %s" % (row, self.deleteList))
                 self.deleteList.remove(row)
 
         self.deleteBtn.setEnabled(True)
         self.unDeleteBtn.setEnabled(False)
 
-    # ##############################
-    # def OnCopy2AddTableView
+        ###############################
+
+    # def OnAdd
     # author: Lan Dam
     # updated: 201703
     # Copy the selected Rows from MaintableView into the AddTableView
     # * append selected rows to self.addDataList
     # * clear AddTableView and display addDataList in AddTableView
-    def OnCopy2AddTableView(self, event):
-        # print("OnCopy2AddTableView")
+    def OnAdd(self, event):
         for row, column in self.selectedCells:
             self.addDataList.append(deepcopy(self.updatedTable[row]))
 
@@ -1693,7 +1645,6 @@ class TablePanel(QtGui.QMainWindow):
                 item = QtGui.QTableWidgetItem(self.addDataList[r][c])
                 item.setFlags(
                     QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                item.setForeground(BLACK)
                 # disable cell editing
                 self.addTableView.setItem(r, c, item)
 
@@ -1716,7 +1667,6 @@ class TablePanel(QtGui.QMainWindow):
     # updated: 201703
     # set the row selected according to what line show in moveLineCtrl
     def OnSelectMoveLine(self, index):
-        # print "OnSelectMoveLine"
         self._selectLine(self.moveLineCtrl)
 
     ###############################
@@ -1748,8 +1698,6 @@ class TablePanel(QtGui.QMainWindow):
             # self.mainTableView.scrollTo(self.mainTableView.item(lineId,0))
             self.mainTableView.setSelectionMode(
                 QtGui.QAbstractItemView.SingleSelection)
-
-
 
     ###############################
     # def OnInsert
@@ -2062,7 +2010,6 @@ class SelectTableDialog(QtGui.QDialog):
     # updated: 201703
     # when a tableType is selected, enable the properties needed
     def OnSelectTable(self, index):
-        # print "OnSelectTable: ", index
         self._disableCtrls()
         tableType = self.tableCtrl.currentText()
         if tableType == 'Array_t':
@@ -2124,8 +2071,8 @@ class SelectTableDialog(QtGui.QDialog):
 # CLASS ####################
 # Author: Lan
 # Updated: 201409
-# CLASS: Separator - is the line to separate in the Gui (reuse from PH5View)
-class Separator(QtGui.QFrame):
+# CLASS: Seperator - is the line to separate in the Gui (reuse from PH5View)
+class Seperator(QtGui.QFrame):
 
     def __init__(self, thick=2, orientation="horizontal", length=None):
         QtGui.QFrame.__init__(self)
@@ -2151,16 +2098,16 @@ class ManWindow(QtGui.QWidget):
     def __init__(self, mantype=""):
         QtGui.QWidget.__init__(self)
         self.setGeometry(100, 100, 900, 700)
-        self.view = QtGui.QTextBrowser(self)
+        view = QtGui.QTextBrowser(self)
 
         if mantype == "manual":
-            self.view.setText(kefutility.html_manual)
+            view.setText(kefutility.html_manual)
 
         elif mantype == "whatsnew":
-            self.view.setText(kefutility.html_whatsnew % PROG_VERSION)
+            view.setText(kefutility.html_whatsnew % PROG_VERSION)
 
         self.layout = QtGui.QHBoxLayout()
-        self.layout.addWidget(self.view)
+        self.layout.addWidget(view)
 
         self.setLayout(self.layout)
         self.show()
