@@ -57,6 +57,7 @@ class TestNukeTable(unittest.TestCase):
             self.nukeT.get_args()
         self.assertEqual('master.ph5', self.nukeT.PH5)
         self.assertEqual('ph5', self.nukeT.PATH)
+        self.assertTrue(self.nukeT.DEBUG)
         self.assertTrue(self.nukeT.NO_BACKUP)
         self.assertEqual("Experiment_t", self.nukeT.table_type)
 
