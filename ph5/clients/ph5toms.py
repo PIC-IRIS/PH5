@@ -6,6 +6,7 @@ Also allows for creation of preview png images of traces.
 """
 
 
+import sys
 import os
 import logging
 import copy
@@ -17,7 +18,7 @@ from obspy import Trace
 from obspy import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import SACTrace
-from ph5.core import ph5utils
+from ph5.core import ph5utils, experiment
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.core import ph5api
 from ph5.core.timedoy import epoch2passcal, passcal2epoch
@@ -34,7 +35,8 @@ class StationCut(object):
                  starttime, endtime, sample_rate,
                  sample_rate_multiplier, notimecorrect,
                  location, latitude, longitude, elev,
-                 receiver_n_i, response_n_i):
+                 receiver_n_i, response_n_i, shot_id=None,
+                 shot_lat=None, shot_lng=None, shot_elevation=None):
 
         self.net_code = net_code
         self.experiment_id = experiment_id
@@ -58,9 +60,30 @@ class StationCut(object):
         self.elev = elev
         self.receiver_n_i = receiver_n_i
         self.response_n_i = response_n_i
+        # optional attributes
+        self.shot_id = shot_id
+        self.shot_lat = shot_lat
+        self.shot_lng = shot_lng
+        self.shot_elevation = shot_elevation
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+
+class StationCutTime(object):
+    """
+    Allows for the association of cut times with events. This comes in handy
+    when writing SEG-Y since event information is sometimes included the SEG-Y
+    Trace headers.
+    """
+
+    def __init__(self, time, shot_id=None, shot_lat=None, shot_lng=None,
+                 shot_elevation=None):
+        self.time = time
+        self.shot_id = shot_id
+        self.shot_lat = shot_lat
+        self.shot_lng = shot_lng
+        self.shot_elevation = shot_elevation
 
 
 class PH5toMSAPIError(Exception):
@@ -423,6 +446,13 @@ class PH5toMSeed(object):
                 # only sensor response
                 inv_resp = sensor_resp
 
+            # Add addtional information that is in Response_t
+            inv_resp.stats = AttribDict()
+            inv_resp.stats.gain_value = Response_t["gain/value_i"]
+            inv_resp.stats.gain_units = Response_t["gain/units_s"]
+            inv_resp.stats.bitweight_value = Response_t["bit_weight/value_d"]
+            inv_resp.stats.bitweight_units = Response_t["bit_weight/units_s"]
+
             if inv_resp:
                 # update response manager and return response
                 self.resp_manager.add_response(sensor_keys,
@@ -490,7 +520,7 @@ class PH5toMSeed(object):
                     continue
                 try:
                     obspy_trace = Trace(data=trace.data)
-                    obspy_trace.stats.array = stc.array_code
+
                 except ValueError:
                     continue
                 if self.format == "SAC":
@@ -519,8 +549,23 @@ class PH5toMSeed(object):
                     obspy_trace.stats.experiment_id = stc.experiment_id
                     obspy_trace.stats.component = stc.component
                     obspy_trace.stats.response = self.get_response_obj(stc)
-                if actual_sample_rate > 0:
-                    obspy_trace.stats.sampling_rate = actual_sample_rate
+
+                elif self.format.upper() == "SEGY1" or \
+                        self.format.upper() == "SEGY2":
+                    # These values are used to create the SEG-Y headers
+                    obspy_trace.stats.receiver_id = stc.station
+                    obspy_trace.stats.ttype = trace.ttype
+                    obspy_trace.stats.byteorder = trace.byteorder
+                    obspy_trace.stats.elevation = float(stc.elev)
+                    obspy_trace.stats.component = stc.component
+                    obspy_trace.stats.response = self.get_response_obj(stc)
+                    obspy_trace.stats.array = stc.array_code
+                    obspy_trace.stats.das = stc.das
+                    obspy_trace.stats.shot_id = stc.shot_id
+                    obspy_trace.stats.shot_lat = stc.shot_lat
+                    obspy_trace.stats.shot_lng = stc.shot_lng
+                    obspy_trace.stats.shot_elevation = stc.shot_elevation
+                obspy_trace.stats.sampling_rate = actual_sample_rate
                 obspy_trace.stats.location = stc.location
                 obspy_trace.stats.station = stc.seed_station
                 obspy_trace.stats.coordinates = AttribDict()
@@ -561,7 +606,7 @@ class PH5toMSeed(object):
         return seed_cha_code, component
 
     def create_cut(self, seed_network, ph5_station, seed_station,
-                   start_times, station_list, deployment, st_num,
+                   station_cut_times, station_list, deployment, st_num,
                    array_code, experiment_id):
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
         deploy_micro = station_list[deployment][
@@ -621,34 +666,43 @@ class PH5toMSeed(object):
                         self.start_time, fepoch=True)
                     if float(check_start_time) > float(deploy):
                         start_fepoch = self.start_time
-                        start_times.append(
-                            passcal2epoch(
-                                start_fepoch, fepoch=True))
+
+                        sct = StationCutTime(
+                                passcal2epoch(start_fepoch, fepoch=True)
+                        )
+                        station_cut_times.append(sct)
                     else:
-                        start_times.append(deploy)
+                        sct = StationCutTime(deploy)
+                        station_cut_times.append(sct)
 
                 else:
                     check_start_time = ph5utils.datestring_to_epoch(
                         self.start_time)
                     if float(check_start_time) > float(deploy):
-                        start_times.append(
-                            ph5utils.datestring_to_epoch(
-                                self.start_time))
+
+                        sct = StationCutTime(
+                                ph5utils.datestring_to_epoch(self.start_time))
+                        station_cut_times.append(sct)
                     else:
-                        start_times.append(deploy)
+                        sct = StationCutTime(deploy)
+                        station_cut_times.append(sct)
                 if float(check_start_time) > float(pickup):
                     return
             else:
-                start_times.append(ph5api.fepoch(deploy, deploy_micro))
+                sct = StationCutTime(
+                    ph5api.fepoch(deploy, deploy_micro)
+                )
+                station_cut_times.append(sct)
 
-        for start_fepoch in start_times:
-
+        for sct in station_cut_times:
+            start_fepoch = sct.time
             if self.reqtype == "SHOT":
                 if self.length:
                     stop_fepoch = start_fepoch + self.length
                 else:
                     raise PH5toMSAPIError(
-                        "Error - length is required for requst by shot.")
+                        "Error - length is required for request by shot.")
+
             elif self.reqtype == "FDSN":
                 if self.end_time:
                     if "T" not in self.end_time:
@@ -683,7 +737,7 @@ class PH5toMSeed(object):
             if (self.use_deploy_pickup is True and not
                     ((int(start_fepoch) >= deploy and
                       int(stop_fepoch) <= pickup))):
-                print "das not deployed within deploy/pickup time"
+                # das not deployed within deploy/pickup time
                 continue
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
@@ -731,10 +785,6 @@ class PH5toMSeed(object):
                 times_to_cut = [[start_fepoch, stop_fepoch]]
                 times_to_cut[-1][-1] = stop_fepoch
 
-            if int(times_to_cut[-1][-2]) == int(
-                    times_to_cut[-1][-1]):
-                del times_to_cut[-1]
-
             latitude = station_list[deployment][
                 st_num]['location/Y/value_d']
             longitude = station_list[deployment][
@@ -743,14 +793,16 @@ class PH5toMSeed(object):
                 st_num]['location/Z/value_d']
 
             for starttime, endtime in tuple(times_to_cut):
-
-                self.ph5.query_das_t(das,
-                                     component,
-                                     starttime,
-                                     endtime,
-                                     sample_rate,
-                                     sample_rate_multiplier
-                                     )
+                try:
+                    self.ph5.query_das_t(das,
+                                         component,
+                                         starttime,
+                                         endtime,
+                                         sample_rate,
+                                         sample_rate_multiplier
+                                         )
+                except experiment.HDF5InteractionError:
+                    continue
 
                 station_x = StationCut(
                     seed_network,
@@ -774,7 +826,11 @@ class PH5toMSeed(object):
                     longitude,
                     elev,
                     receiver_n_i,
-                    response_n_i)
+                    response_n_i,
+                    shot_id=sct.shot_id,
+                    shot_lat=sct.shot_lat,
+                    shot_lng=sct.shot_lng,
+                    shot_elevation=sct.shot_elevation)
 
                 station_hash = hash(frozenset([seed_station, das, latitude,
                                                longitude, sample_rate,
@@ -857,7 +913,7 @@ class PH5toMSeed(object):
                 station_list = arraybyid.get(ph5_station)
 
                 for deployment in station_list:
-                    start_times = []
+                    station_cut_times = []
                     station_len = len(station_list[deployment])
 
                     for st_num in range(0, station_len):
@@ -883,26 +939,35 @@ class PH5toMSeed(object):
                                     try:
                                         event_t = self.ph5.Event_t[
                                             shotline]['byid'][shot]
-                                        start_times.append(
-                                            event_t['time/epoch_l'])
-                                        self.evt_lat = event_t[
-                                            'location/Y/value_d']
-                                        self.evt_lon = event_t[
-                                            'location/X/value_d']
+                                        # we add event info here for data
+                                        # formats that use it, like SEG-Y
+                                        sct = \
+                                            StationCutTime(
+                                                event_t['time/epoch_l'],
+                                                shot_id=event_t['id_s'],
+                                                shot_lat=event_t
+                                                ['location/Y/value_d'],
+                                                shot_lng=event_t
+                                                ['location/X/value_d'],
+                                                shot_elevation=event_t
+                                                ['location/Z/value_d']
+                                            )
+                                        station_cut_times.append(sct)
+
                                     except Exception:
                                         raise PH5toMSAPIError(
                                             "Error reading events table.")
                                 cuts_generator.append(self.create_cut(
                                     seed_network, ph5_station,
-                                    seed_station, start_times,
+                                    seed_station, station_cut_times,
                                     station_list, deployment, st_num,
                                     array_code, experiment_id))
                         elif self.reqtype == "FDSN":
                             # fdsn request
                             cuts_generator.append(self.create_cut(
                                 seed_network, ph5_station, seed_station,
-                                start_times, station_list, deployment, st_num,
-                                array_code, experiment_id))
+                                station_cut_times, station_list, deployment,
+                                st_num, array_code, experiment_id))
 
         return itertools.chain.from_iterable(cuts_generator)
 
@@ -1071,7 +1136,7 @@ def main():
 
     if not os.path.exists(ph5file):
         LOGGER.error("{0} not found.\n".format(ph5file))
-        return 1
+        sys.exit(-1)
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
 
@@ -1140,7 +1205,7 @@ def main():
 
     except PH5toMSAPIError as err:
         LOGGER.error("{0}".format(err.message))
-        return 1
+        exit(-1)
 
     ph5API_object.close()
 
