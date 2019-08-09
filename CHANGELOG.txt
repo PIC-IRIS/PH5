@@ -18,6 +18,7 @@ ph5.clients.ph5toms
  * Slight change to naming output on command line for more consistency
  * No longer adds extra sample at end of cut
  * Fix substring issue
+ * Add ph5toms support for the web service SEG-Y timeseries data format.
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui
@@ -33,6 +34,10 @@ ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.clients.ph5tostationxml
  * Limit number of asynchronous processes
+ * Remove storage format from the sxml channel level to be compatible with sxml version 1.1
+ * ph5tostationxml now correctly handles stations with multiple deployments (issue #318)
+ * Add a new custom iris namespace attribute called iris:PH5ReportNum to the network StationXML element
+ * Remove the report number from the alternateCode value in the network StationXML element
 ph5.utilities.ph5validate
  * add data time checking
 ph5.utilities.sort_kef_gen.py
@@ -68,6 +73,16 @@ ph5.utilities.tests.test_obspytoph5
  * unit tests for obspytoph5
 ph5.core.tests.test_ph5api
  * unit tests for ph5api
+ph5.core.ph5api
+ * fix ph5api cut sometimes returns too many samples (issue #298)
+ph5.entry_points
+ * creates a dictionary, keys are names of scripts, 
+      values are (1) simple description, 
+      (2) entry points for use by setup.
+ph5.help
+ * calls entry_points to print the short descriptions in alpha-order.
+environment.yml
+ * removed unused dependencies and added pykml as a dependency
 
 v4.1.2:
 ph5.utilities.ph5validate
