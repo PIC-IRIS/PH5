@@ -22,7 +22,7 @@ except Exception:
     LOGGER.error("PyQt4 must be installed for this to run")
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-PROG_VERSION = 2019.218
+PROG_VERSION = 2019.213
 EXPL = {}
 
 # CLASS ####################
@@ -200,9 +200,8 @@ class KefEdit(QtGui.QMainWindow):
     # * then call self.setData() to set the given data in display
     def OnOpenKef(self):
         self.kefFilename = filename = str(
-            QtGui.QFileDialog.getOpenFileName(
-                directory=QtCore.QDir.currentPath(),
-                filter="Kef Files(*.kef)"))
+            QtGui.QFileDialog.getOpenFileName(directory="/home/",
+                                              filter="Kef Files(*.kef)"))
         if not filename:
             return
 
@@ -239,9 +238,8 @@ class KefEdit(QtGui.QMainWindow):
     # then call self.setData() to set the given data in display]
     def OnOpenPH5(self):
         filename =\
-            str(QtGui.QFileDialog.getOpenFileName(
-                directory=QtCore.QDir.currentPath(),
-                filter="PH5 Files(*.ph5)"))
+            str(QtGui.QFileDialog.getOpenFileName(directory="/home/",
+                                                  filter="PH5 Files(*.ph5)"))
         if not filename:
             return
 
@@ -608,7 +606,10 @@ class KefEdit(QtGui.QMainWindow):
                          "the selected PH5 is a master file."
                 QtGui.QMessageBox.warning(self, "Error", errMsg % p)
                 return
-
+            #print("p:", p)
+            #print("self.dataTable[p]:", self.dataTable[p])
+            #print("self.labelSets[p]:", self.labelSets[p])
+            #print("self.types[p]:", self.types[p])
             pathWidget = TablePanel(self, p, self.dataTable[p],
                                     self.labelSets[p], self.types[p])
             self.path_tabWidget.addTab(pathWidget, p)
@@ -624,15 +625,14 @@ class KefEdit(QtGui.QMainWindow):
                 "takes some time to process.")
 
 
-updateColName = QtGui.QColor(245, 225, 225, 100).name()
-# because there is a difference
+updateColName = QtGui.QColor(245, 225, 225,
+                             100).name()  # because there is a difference
 # between color in label and in
 deleteColName = QtGui.QColor(180, 150, 180, 100).name()  # table cells
 UPDATECOLOR = QtGui.QBrush(QtGui.QColor(225, 175, 175, 100))  # light pink
 DELETECOLOR = QtGui.QBrush(QtGui.QColor(70, 10, 70, 100))  # light purple
 BLACK = QtGui.QBrush(QtCore.Qt.black)
 RED = QtGui.QBrush(QtCore.Qt.red)
-
 
 # CLASS ####################
 # class TablePanel: Each path will have a tableView to display its data
@@ -936,8 +936,9 @@ class TablePanel(QtGui.QMainWindow):
         self.copyBtn = QtGui.QPushButton(
             'Copy rows from MainView to AddRowView', self)
         self.copyBtn.installEventFilter(self)
-        EXPL[self.copyBtn] = "Copy Selected Row(s) in MainView to the" \
-            "AddRowView at the bottom."
+        EXPL[
+            self.copyBtn] = "Copy Selected Row(s) in MainView to the" \
+                           "AddRowView at the bottom."
         self.copyBtn.setFixedWidth(400)
         self.copyBtn.clicked.connect(self.OnCopy2AddTableView)
         addBox.addWidget(self.copyBtn)
@@ -1256,7 +1257,7 @@ class TablePanel(QtGui.QMainWindow):
     # if nondigitList is [] (all are digit, enable plus2CharBtn according
     # to XCtrl)
     def OnChangeNoOfChars(self, arg):
-        # print "OnChangeNoOfChars"
+        #print "OnChangeNoOfChars"
         order = self.characterOrderCtrl.currentIndex()
         noOfChars = arg + 1
 
@@ -1514,6 +1515,10 @@ class TablePanel(QtGui.QMainWindow):
             self.changeChar2XBtn.setEnabled(False)
 
         self.plusX2ColBtn.setEnabled(False)
+        #type_ = self.types[
+            #self.labels.index(str(self.selectedColumnCtrl.text()))]
+        #if str(self.XCtrl.text()).isdigit() and type_ in [float, int]:
+            #self.plusX2ColBtn.setEnabled(True)
 
         try:
             notdigitList = []
@@ -1743,6 +1748,8 @@ class TablePanel(QtGui.QMainWindow):
             # self.mainTableView.scrollTo(self.mainTableView.item(lineId,0))
             self.mainTableView.setSelectionMode(
                 QtGui.QAbstractItemView.SingleSelection)
+
+
 
     ###############################
     # def OnInsert
