@@ -23,6 +23,13 @@ PROG_VERSION = "2019.78"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
+
+os.environ['TZ'] = 'GMT'
+time.tzset()
+
+#   RE for mini files
+miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
+
 # LSB = 6.402437066e-6   #   From Malcolm UCSD
 LSB00 = 2500. / (2 ** 23)  # 0dB
 LSB12 = 625. / (2 ** 23)  # 12dB
@@ -35,12 +42,6 @@ LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
 #   Manufacturers codes
 FAIRFIELD = 20
 OTHER = 0
-
-os.environ['TZ'] = 'GMT'
-time.tzset()
-
-#   RE for mini files
-miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
 
 #
@@ -447,8 +448,6 @@ class SEGD2PH5:
     def process_das(self, rh, th, tr):
         '''
         '''
-        global LSB
-
         p_das_t = {}
         '''  Das_t
                         receiver_table_n_i
@@ -530,9 +529,9 @@ class SEGD2PH5:
                     response_file_a
                 '''
         try:
-            LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
+            self.LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
             n_i = self.RESP.match(
-                LSB, th.trace_header_N[3].preamp_gain_db)
+                self.LSB, th.trace_header_N[3].preamp_gain_db)
         except Exception as e:
             n_i = 0
         p_response_t['gain/units_s'] = 'dB'
@@ -545,7 +544,7 @@ class SEGD2PH5:
             p_response_t['gain/units_s'] = 'Unknown'
 
         p_response_t['bit_weight/units_s'] = 'mV/count'
-        p_response_t['bit_weight/value_d'] = LSB
+        p_response_t['bit_weight/value_d'] = self.LSB
         if n_i < 0:
             n_i = self.RESP.next_i()
             p_response_t['n_i'] = n_i
@@ -559,13 +558,13 @@ class SEGD2PH5:
         try:
             #   Convert to counts
             # print tr.max (), tr.min ()
-            tr_counts = tr / LSB
+            tr_counts = tr / self.LSB
             self.EXREC.ph5_g_receivers.newarray(
                 p_das_t['array_name_data_a'], tr_counts, dtype='int32',
                 description=des)
         except Exception as e:
             #   Failed, leave as float
-            # for x in tr : print x/LSB
+            # for x in tr : print x/self.LSB
             # print e.message
             sys.stderr.write(
                 "Warning: Could not convert trace to counts. max: {1},\
@@ -590,10 +589,8 @@ class SEGD2PH5:
                 return False
             elif self.Das not in self.ARRAY_T[line]:
                 return False
-            elif dtime not in self.ARRAY_T[line][self.Das]:
-                return False
-            elif chan_set in self.ARRAY_T[line][self.Das][dtime]:
-                if not self.ARRAY_T[line][self.Das][dtime][chan_set]:
+            elif chan_set in self.ARRAY_T[line][self.Das]:
+                if not self.ARRAY_T[line][self.Das][chan_set]:
                     return False
                 else:
                     return True
@@ -774,18 +771,15 @@ class SEGD2PH5:
             line = 0
 
         chan_set = self.get_true_channel(rh, th)
-        dtime = p_array_t['deploy_time/epoch_l']
         if line not in self.ARRAY_T:
             self.ARRAY_T[line] = {}
         if self.Das not in self.ARRAY_T[line]:
             self.ARRAY_T[line][self.Das] = {}
-        if dtime not in self.ARRAY_T[line][self.Das]:
-            self.ARRAY_T[line][self.Das][dtime] = {}
-        if chan_set not in self.ARRAY_T[line][self.Das][dtime]:
-            self.ARRAY_T[line][self.Das][dtime][chan_set] = []
+        if chan_set not in self.ARRAY_T[line][self.Das]:
+            self.ARRAY_T[line][self.Das][chan_set] = []
 
         if not seen_sta():
-            self.ARRAY_T[line][self.Das][dtime][chan_set].append(p_array_t)
+            self.ARRAY_T[line][self.Das][chan_set].append(p_array_t)
             # if rh.general_header_block_1.chan_sets_per_scan ==\
             #  len (self.ARRAY_T[line].keys ()) :
             # DN = True
@@ -882,15 +876,12 @@ class SEGD2PH5:
             stations = sorted(Array_t[line].keys())
             #   Loop through stations
             for station in stations:
-                dtimes = sorted(Array_t[line][station].keys())
+                chan_sets = sorted(Array_t[line][station].keys())
                 #   Loop through channel sets
-                for dtime in dtimes:
+                for chan_set in chan_sets:
                     try:
-                        chan_sets = sorted(Array_t[line][station][dtime].
-                                        keys())
-                        for c in chan_sets:
-                            for array_t in Array_t[line][station][dtime][c]:
-                                columns.populate(a, array_t)
+                        for array_t in Array_t[line][station][chan_set]:
+                            columns.populate(a, array_t)
                     except Exception as e:
                         print e.message
 
