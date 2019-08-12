@@ -907,10 +907,8 @@ class PH5(experiment.ExperimentGroup):
         rows_keep = []
         rows = []
         rk = {}
-        if das not in self.Das_t_full:
-            rows, keys = self.ph5_g_receivers.read_das()
-            self.Das_t_full[das] = {'rows': rows, 'keys': keys}
-
+        rows, keys = self.ph5_g_receivers.read_das()
+        self.Das_t_full[das] = {'rows': rows, 'keys': keys}
         if stop_epoch is not None and start_epoch is not None:
             for r in self.Das_t_full[das]['rows']:
                 # Start and stop for this das event window
