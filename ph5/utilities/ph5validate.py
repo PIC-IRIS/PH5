@@ -474,29 +474,70 @@ class PH5Validate(object):
             warning.append("Sensor serial number is missing.")
 
         self.ph5.read_das_t(das_serial, reread=False)
+        sample_rate = station['sample_rate_i']
         if das_serial not in self.ph5.Das_t:
             error.append("No data found for das serial number {0}. "
                          "You may need to reload the raw "
                          "data for this station."
                          .format(str(das_serial)))
 
+        das_time_list = self.das_time[das_serial][channel_id][sample_rate]
+
+        # check if there is any overlap time for this das
+        dup_time = [t for t in das_time_list
+                    if t[0] <= deploy_time < t[1]
+                    or t[0] < pickup_time <= t[1]]
+        if len(dup_time) > 1:
+            dup_stations = [t[2] for t in dup_time]
+            dup_stations = list(dict.fromkeys(dup_stations))  # remove dup
+            error.append("Overlap time on station(s): %s" %
+                         ", ".join(dup_stations))
+
+        das_time = [t for t in dup_time
+                    if t[0] == deploy_time and t[1] == pickup_time][0]
+        # retrieve warning for data outside the border of all arrays' time
+        if das_time[3] != '':
+            warning.append(das_time[3])
+
+        # get index of this station in self.das_time
+        index = das_time_list.index(das_time)
+
         try:
-            das_rows = self.ph5.Das_t[das_serial]['rows']
-            ph5api.filter_das_t(das_rows,
-                                channel_id)
-            true_deploy, true_pickup =\
-                self.ph5.get_extent(das=das_serial,
-                                    component=channel_id,
-                                    sample_rate=station['sample_rate_i'])
-            if deploy_time > true_deploy:
-                time = int(deploy_time - true_deploy)
-                warning.append("Data exists before deploy time: "
-                               + str(time) + " seconds ")
-            if pickup_time < true_pickup:
-                time = int(true_pickup - pickup_time)
-                warning.append("Data exists after pickup time: "
-                               + str(time) + " seconds ")
-            self.ph5.forget_das_t(das_serial)
+            # don't need to read das_t because it will be read in get_extent
+            if index != len(das_time_list) - 1:
+                # -- check data from current deploy time to next deploy time --
+                # ------------------------------------------------------------#
+                check_start = das_time_list[index][0]
+                # -1 to avoid counting the window wiht deploy time=check_end
+                check_end = das_time_list[index+1][0] - 1
+                i = 1
+                # while loop to avoid using overlaping row
+                while check_end < check_start:
+                    i += 1
+                    check_end = das_time_list[index+i][0] - 1
+
+                true_start, true_end =\
+                    self.ph5.get_extent(das=das_serial,
+                                        component=channel_id,
+                                        start=check_start,
+                                        end=check_end,
+                                        sample_rate=sample_rate)
+
+                if true_start is None:
+                    error.append(
+                        "No data found for das serial number {0} during this "
+                        "array's time. You may need to reload the raw "
+                        "data for this station.".format(str(das_serial)))
+                else:
+                    # don't check deploy time because the time sent to
+                    # get_extent() is limited from deploy time
+                    if pickup_time < true_end:
+                        time = int(true_end - pickup_time)
+                        warning.append(
+                            "Data exists after pickup time: %s seconds"
+                            % time)
+                # ------------------------------------------------------------#
+
         except KeyError:
             try:  # avoid opening too many files
                 self.ph5.forget_das_t(das_serial)
@@ -524,6 +565,65 @@ class PH5Validate(object):
 
         return info, warning, error
 
+    def analyze_time(self):
+        """
+        analyze das_time in array tables
+        """
+        self.das_time = {}
+        array_names = sorted(self.ph5.Array_t_names)
+        for array_name in array_names:
+            self.read_arrays(array_name)
+            arraybyid = self.ph5.Array_t[array_name]['byid']
+            arrayorder = self.ph5.Array_t[array_name]['order']
+            for ph5_station in arrayorder:
+                station_list = arraybyid.get(ph5_station)
+                for deployment in station_list:
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0, station_len):
+                        station = station_list[deployment][st_num]
+                        d = station['das/serial_number_s']
+                        if d not in self.das_time.keys():
+                            self.das_time[d] = {}
+                        c = station['channel_number_i']
+                        if c not in self.das_time[d].keys():
+                            self.das_time[d][c] = {}
+                        spr = station['sample_rate_i']
+                        if spr not in self.das_time[d][c].keys():
+                            self.das_time[d][c][spr] = []
+                        deploy_time = station['deploy_time/epoch_l']
+                        pickup_time = station['pickup_time/epoch_l']
+                        station_id = station['id_s']
+                        self.das_time[d][c][spr].append(
+                            [deploy_time, pickup_time, station_id, ''])
+
+        for d in self.das_time.keys():
+            for c in self.das_time[d].keys():
+                for spr in self.das_time[d][c].keys():
+                    self.das_time[d][c][spr].sort()
+                    # look for data outside the border of all arrays' time
+                    firstdeploy_time = self.das_time[d][c][spr][0][0]
+                    lastpickup_time = self.das_time[d][c][spr][-1][1]
+                    true_deploy, true_pickup =\
+                        self.ph5.get_extent(das=d,
+                                            component=c,
+                                            sample_rate=spr)
+                    if true_deploy is None:
+                        # No data found. But don't give warning here
+                        # Will give warning in check_station_completness
+                        # for more detail
+                        continue
+                    if firstdeploy_time > true_deploy:
+                        time = int(firstdeploy_time - true_deploy)
+                        warningmsg = "Data exists before deploy time: %s "\
+                            "seconds " % time
+                        self.das_time[d][c][spr][0][3] = warningmsg
+
+                    if lastpickup_time < true_pickup:
+                        time = int(true_pickup - lastpickup_time)
+                        warningmsg = "Data exists after deploy time: %s "\
+                            "seconds " % time
+                        self.das_time[d][c][spr][-1][3] += warningmsg
+
     def check_array_t(self):
         LOGGER.info("Validating Array_t")
         validation_blocks = []
@@ -539,9 +639,10 @@ class PH5Validate(object):
             validation_blocks.append(vb)
             LOGGER.error(msg)
         else:
+            self.analyze_time()
             array_names = sorted(self.ph5.Array_t_names)
             for array_name in array_names:
-                self.read_arrays(array_name)
+                # self.read_arrays(array_name) # read in analyze_time
                 arraybyid = self.ph5.Array_t[array_name]['byid']
                 arrayorder = self.ph5.Array_t[array_name]['order']
                 for ph5_station in arrayorder:
