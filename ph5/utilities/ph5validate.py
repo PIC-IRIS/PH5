@@ -13,7 +13,7 @@ import subprocess
 import sys
 from ph5.core import ph5api
 
-PROG_VERSION = "2019.29"
+PROG_VERSION = "2019.228"
 LOGGER = logging.getLogger(__name__)
 
 
