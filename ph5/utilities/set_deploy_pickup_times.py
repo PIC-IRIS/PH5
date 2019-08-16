@@ -116,8 +116,8 @@ def get_args():
 
 
 def barf(fh, of, dep_time, pu_time):
-    of.write("#  %s v%s %s\n" %
-             (sys.argv[0], PROG_VERSION, time.ctime(time.time())))
+    #of.write("#  %s v%s %s\n" %
+     #        (sys.argv[0], PROG_VERSION, time.ctime(time.time())))
     while True:
         line = fh.readline()
         if not line:
@@ -125,12 +125,15 @@ def barf(fh, of, dep_time, pu_time):
         line = line.strip()
         if not line:
             continue
+        if line[0:5] == '#   T':
+            of.write('\n')
+            of.write(line + '\n')
+            continue
         if line[0] == '#':
             of.write(line + '\n')
             continue
-
         if line[0] == '/':
-            of.write("%s:Update:id_s\n" % line)
+            of.write("%s\n" % line)
             continue
 
         if deployRE.match(line):
@@ -138,27 +141,27 @@ def barf(fh, of, dep_time, pu_time):
             pre, post = key.split('/')
             post = post.strip()
             if post == 'epoch_l':
-                of.write("\tdeploy_time/epoch_l = %d\n" % dep_time.epoch_l)
+                of.write("\tdeploy_time/epoch_l=%d\n" % dep_time.epoch_l)
             elif post == 'micro_seconds_i':
-                of.write("\tdeploy_time/micro_seconds_i = %d\n" %
+                of.write("\tdeploy_time/micro_seconds_i=%d\n" %
                          dep_time.micro_seconds_i)
             elif post == 'type_s':
-                of.write("\tdeploy_time/type_s = %s\n" % dep_time.type_s)
+                of.write("\tdeploy_time/type_s=%s\n" % dep_time.type_s)
             elif post == 'ascii_s':
-                of.write("\tdeploy_time/ascii_s = %s\n" % dep_time.ascii_s)
+                of.write("\tdeploy_time/ascii_s=%s\n" % dep_time.ascii_s)
         elif pickupRE.match(line):
             key, val = line.split('=')
             pre, post = key.split('/')
             post = post.strip()
             if post == 'epoch_l':
-                of.write("\tpickup_time/epoch_l = %d\n" % pu_time.epoch_l)
+                of.write("\tpickup_time/epoch_l=%d\n" % pu_time.epoch_l)
             elif post == 'micro_seconds_i':
-                of.write("\tpickup_time/micro_seconds_i = %d\n" %
+                of.write("\tpickup_time/micro_seconds_i=%d\n" %
                          pu_time.micro_seconds_i)
             elif post == 'type_s':
-                of.write("\tpickup_time/type_s = %s\n" % pu_time.type_s)
+                of.write("\tpickup_time/type_s=%s\n" % pu_time.type_s)
             elif post == 'ascii_s':
-                of.write("\tpickup_time/ascii_s = %s\n" % pu_time.ascii_s)
+                of.write("\tpickup_time/ascii_s=%s\n" % pu_time.ascii_s)
         else:
             of.write("\t%s\n" % line)
 
