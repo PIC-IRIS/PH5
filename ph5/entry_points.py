@@ -5,7 +5,7 @@
 
 # Dave Thomas, 2019-06-11
 
-PROG_VERSION = '2019.162'
+PROG_VERSION = '2019.228'
 
 
 class EntryPointTypes():
@@ -157,7 +157,7 @@ class CommandList():
                            'into PH5 and creates a new "response.kef" file.',
                            type=EntryPointTypes.INGESTION),
                 EntryPoint('seg2toph5',
-                           'ph5.utilities.segd2ph5:main',
+                           'ph5.utilities.seg2toph5:main',
                            'Read data in SEG-2 revision 1 '
                            '(StrataVisor) into ph5 format.',
                            type=EntryPointTypes.INGESTION),
