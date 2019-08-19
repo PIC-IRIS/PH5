@@ -115,9 +115,8 @@ def get_args():
     AUTO_CORRECT = args.auto_correct
 
 
-def barf(fh, of, dep_time, pu_time):
-    #of.write("#  %s v%s %s\n" %
-     #        (sys.argv[0], PROG_VERSION, time.ctime(time.time())))
+def barf(fh, of, dep_time, pu_time, das):
+    inc = 0
     while True:
         line = fh.readline()
         if not line:
@@ -141,27 +140,57 @@ def barf(fh, of, dep_time, pu_time):
             pre, post = key.split('/')
             post = post.strip()
             if post == 'epoch_l':
-                of.write("\tdeploy_time/epoch_l=%d\n" % dep_time.epoch_l)
+                if dep_time[inc] is None:
+                    of.write("\tdeploy_time/epoch_l=\n")
+                else:
+                    of.write("\tdeploy_time/epoch_l=%d\n" %
+                             dep_time[inc].epoch_l)
             elif post == 'micro_seconds_i':
-                of.write("\tdeploy_time/micro_seconds_i=%d\n" %
-                         dep_time.micro_seconds_i)
+                if dep_time[inc] is None:
+                    of.write("\tdeploy_time/micro_seconds_i=\n")
+                else:
+                    of.write("\tdeploy_time/micro_seconds_i=%d\n" %
+                             dep_time[inc].micro_seconds_i)
             elif post == 'type_s':
-                of.write("\tdeploy_time/type_s=%s\n" % dep_time.type_s)
+                if dep_time[inc] is None:
+                    of.write("\tdeploy_time/type_s=\n")
+                else:
+                    of.write("\tdeploy_time/type_s=%s\n" %
+                             dep_time[inc].type_s)
             elif post == 'ascii_s':
-                of.write("\tdeploy_time/ascii_s=%s\n" % dep_time.ascii_s)
+                if dep_time[inc] is None:
+                    of.write("\tdeploy_time/ascii_s=\n")
+                else:
+                    of.write("\tdeploy_time/ascii_s=%s\n" %
+                             dep_time[inc].ascii_s)
         elif pickupRE.match(line):
             key, val = line.split('=')
             pre, post = key.split('/')
             post = post.strip()
             if post == 'epoch_l':
-                of.write("\tpickup_time/epoch_l=%d\n" % pu_time.epoch_l)
+                if pu_time[inc] is None:
+                    of.write("\tpickup_time/epoch_l=\n")
+                else:
+                    of.write("\tpickup_time/epoch_l=%d\n" %
+                             pu_time[inc].epoch_l)
             elif post == 'micro_seconds_i':
-                of.write("\tpickup_time/micro_seconds_i=%d\n" %
-                         pu_time.micro_seconds_i)
+                if pu_time[inc] is None:
+                    of.write("\tpickup_time/micro_seconds_i=\n")
+                else:
+                    of.write("\tpickup_time/micro_seconds_i=%d\n" %
+                             pu_time[inc].micro_seconds_i)
             elif post == 'type_s':
-                of.write("\tpickup_time/type_s=%s\n" % pu_time.type_s)
+                if pu_time[inc] is None:
+                    of.write("\tpickup_time/type_s=\n")
+                else:
+                    of.write("\tpickup_time/type_s=%s\n" % pu_time[inc].type_s)
+                inc = inc+1  # Increments the list of input units.
             elif post == 'ascii_s':
-                of.write("\tpickup_time/ascii_s=%s\n" % pu_time.ascii_s)
+                if pu_time[inc] is None:
+                    of.write("\tpickup_time/ascii_s=\n")
+                else:
+                    of.write("\tpickup_time/ascii_s=%s\n" %
+                             pu_time[inc].ascii_s)
         else:
             of.write("\t%s\n" % line)
 
@@ -199,6 +228,8 @@ def main():
         of = open(os.path.join(mdir, base), 'w+')
         # LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
     if AUTO_CORRECT:
+        dep_time = []
+        pu_time = []
         ph5_api_object = ph5api.PH5(path=PATH, nickname=NICKNAME)
         ph5_api_object.read_array_t_names()
         if not ph5_api_object.Array_t_names:
@@ -217,24 +248,30 @@ def main():
                     station_len = len(station_list[deployment])
                     for st_num in range(0, station_len):
                         station = station_list[deployment][st_num]
+                        das = station['das/serial_number_s']
                         true_deploy, true_pickup = \
                             ph5_api_object.get_extent(
                                 das=station['das/serial_number_s'],
                                 component=station['channel_number_i'],
                                 sample_rate=station['sample_rate_i'])
+                        if type(true_deploy) != float:
+                            LOGGER.warning('No DAS Table Found for %s' % das)
+                            dep_time.append(None)
+                            pu_time.append(None)
+                            continue
                         julian_tdeploy = (
                             datetime.datetime.fromtimestamp(floor(true_deploy))
                             .strftime('%Y:%j:%H:%M:%S'))
                         julian_tpickup = (
                             datetime.datetime.fromtimestamp(ceil(true_pickup))
                             .strftime('%Y:%j:%H:%M:%S'))
-                        dep_time = PH5_Time(passcal_s=julian_tdeploy)
-                        pu_time = PH5_Time(passcal_s=julian_tpickup)
-                        barf(fh, of, dep_time, pu_time)
+                        dep_time.append(PH5_Time(passcal_s=julian_tdeploy))
+                        pu_time.append(PH5_Time(passcal_s=julian_tpickup))
+        barf(fh, of, dep_time, pu_time, das)
     else:
         dep_time = PH5_Time(passcal_s=DEPLOY)
         pu_time = PH5_Time(passcal_s=PICKUP)
-        barf(fh, of, dep_time, pu_time)
+        barf(fh, of, dep_time, pu_time, das)
     of.close()
     fh.close()
 
