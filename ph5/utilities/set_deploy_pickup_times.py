@@ -115,7 +115,8 @@ def get_args():
     AUTO_CORRECT = args.auto_correct
 
 
-def barf(fh, of, dep_time, pu_time, das):
+def barf(fh, of, dep_time, pu_time, auto):
+    
     inc = 0
     while True:
         line = fh.readline()
@@ -184,7 +185,10 @@ def barf(fh, of, dep_time, pu_time, das):
                     of.write("\tpickup_time/type_s=\n")
                 else:
                     of.write("\tpickup_time/type_s=%s\n" % pu_time[inc].type_s)
-                inc = inc+1  # Increments the list of input units.
+                if auto == True:
+                    inc = inc+1  # Increments the list of input units.
+                else:
+                    inc = 0
             elif post == 'ascii_s':
                 if pu_time[inc] is None:
                     of.write("\tpickup_time/ascii_s=\n")
@@ -217,6 +221,8 @@ def main():
     global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
 
     get_args()
+    dep_time = []
+    pu_time = []
     if not os.path.exists(ARRAY_FILE):
         LOGGER.error("Can't open {0}!".format(ARRAY_FILE))
         sys.exit()
@@ -228,8 +234,6 @@ def main():
         of = open(os.path.join(mdir, base), 'w+')
         # LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
     if AUTO_CORRECT:
-        dep_time = []
-        pu_time = []
         ph5_api_object = ph5api.PH5(path=PATH, nickname=NICKNAME)
         ph5_api_object.read_array_t_names()
         if not ph5_api_object.Array_t_names:
@@ -267,11 +271,12 @@ def main():
                             .strftime('%Y:%j:%H:%M:%S'))
                         dep_time.append(PH5_Time(passcal_s=julian_tdeploy))
                         pu_time.append(PH5_Time(passcal_s=julian_tpickup))
-        barf(fh, of, dep_time, pu_time, das)
+        barf(fh, of, dep_time, pu_time, auto = True)
     else:
-        dep_time = PH5_Time(passcal_s=DEPLOY)
-        pu_time = PH5_Time(passcal_s=PICKUP)
-        barf(fh, of, dep_time, pu_time, das)
+        
+        dep_time.append(PH5_Time(passcal_s=DEPLOY))
+        pu_time.append(PH5_Time(passcal_s=PICKUP))
+        barf(fh, of, dep_time, pu_time, auto = False)
     of.close()
     fh.close()
 
