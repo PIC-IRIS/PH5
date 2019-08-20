@@ -34,16 +34,19 @@ F = None
 #   RE for mini files
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
-mV_full_scale = 5000 # -2.5V to 2.5V
-counts_full_scale = 2**24 # 24-bit
+# -2.5V to 2.5V
+mV_full_scale = 5000
+# 24-bit
+counts_full_scale = 2**24
+
 
 def bitweight(db):
     # where db = 20log(V1,V2)
     return (mV_full_scale / (10.**(db/20.))) / counts_full_scale
 
-dbs = (0, 6, 12, 18, 24, 30, 36)
 
-LSB_MAP = {db:bitweight(db) for db in dbs }
+dbs = (0, 6, 12, 18, 24, 30, 36)
+LSB_MAP = {db: bitweight(db) for db in dbs}
 LSB = LSB_MAP[36]
 
 #   Manufacturers codes
