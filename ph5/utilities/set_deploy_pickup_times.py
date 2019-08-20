@@ -116,7 +116,7 @@ def get_args():
 
 
 def barf(fh, of, dep_time, pu_time, auto):
-    
+
     inc = 0
     while True:
         line = fh.readline()
@@ -185,7 +185,7 @@ def barf(fh, of, dep_time, pu_time, auto):
                     of.write("\tpickup_time/type_s=\n")
                 else:
                     of.write("\tpickup_time/type_s=%s\n" % pu_time[inc].type_s)
-                if auto == True:
+                if auto is True:
                     inc = inc+1  # Increments the list of input units.
                 else:
                     inc = 0
@@ -271,12 +271,11 @@ def main():
                             .strftime('%Y:%j:%H:%M:%S'))
                         dep_time.append(PH5_Time(passcal_s=julian_tdeploy))
                         pu_time.append(PH5_Time(passcal_s=julian_tpickup))
-        barf(fh, of, dep_time, pu_time, auto = True)
+        barf(fh, of, dep_time, pu_time, auto=True)
     else:
-        
         dep_time.append(PH5_Time(passcal_s=DEPLOY))
         pu_time.append(PH5_Time(passcal_s=PICKUP))
-        barf(fh, of, dep_time, pu_time, auto = False)
+        barf(fh, of, dep_time, pu_time, auto=False)
     of.close()
     fh.close()
 
