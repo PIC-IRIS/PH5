@@ -142,25 +142,25 @@ def barf(fh, of, dep_time, pu_time, auto):
             post = post.strip()
             if post == 'epoch_l':
                 if dep_time[inc] is None:
-                    of.write("\tdeploy_time/epoch_l=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tdeploy_time/epoch_l=%d\n" %
                              dep_time[inc].epoch_l)
             elif post == 'micro_seconds_i':
                 if dep_time[inc] is None:
-                    of.write("\tdeploy_time/micro_seconds_i=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tdeploy_time/micro_seconds_i=%d\n" %
                              dep_time[inc].micro_seconds_i)
             elif post == 'type_s':
                 if dep_time[inc] is None:
-                    of.write("\tdeploy_time/type_s=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tdeploy_time/type_s=%s\n" %
                              dep_time[inc].type_s)
             elif post == 'ascii_s':
                 if dep_time[inc] is None:
-                    of.write("\tdeploy_time/ascii_s=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tdeploy_time/ascii_s=%s\n" %
                              dep_time[inc].ascii_s)
@@ -170,19 +170,19 @@ def barf(fh, of, dep_time, pu_time, auto):
             post = post.strip()
             if post == 'epoch_l':
                 if pu_time[inc] is None:
-                    of.write("\tpickup_time/epoch_l=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tpickup_time/epoch_l=%d\n" %
                              pu_time[inc].epoch_l)
             elif post == 'micro_seconds_i':
                 if pu_time[inc] is None:
-                    of.write("\tpickup_time/micro_seconds_i=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tpickup_time/micro_seconds_i=%d\n" %
                              pu_time[inc].micro_seconds_i)
             elif post == 'type_s':
                 if pu_time[inc] is None:
-                    of.write("\tpickup_time/type_s=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tpickup_time/type_s=%s\n" % pu_time[inc].type_s)
                 if auto is True:
@@ -191,7 +191,7 @@ def barf(fh, of, dep_time, pu_time, auto):
                     inc = 0
             elif post == 'ascii_s':
                 if pu_time[inc] is None:
-                    of.write("\tpickup_time/ascii_s=\n")
+                    of.write("\t%s\n" % line)
                 else:
                     of.write("\tpickup_time/ascii_s=%s\n" %
                              pu_time[inc].ascii_s)
