@@ -39,7 +39,7 @@ counts_full_scale = 2**24 # 24-bit
 
 def bitweight(db):
     # where db = 20log(V1,V2)
-    return (mV_full_scale / (10**(db/20))) / counts_full_scale
+    return (mV_full_scale / (10.**(db/20.))) / counts_full_scale
 
 dbs = (0, 6, 12, 18, 24, 30, 36)
 
