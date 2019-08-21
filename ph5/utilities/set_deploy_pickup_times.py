@@ -70,7 +70,7 @@ class PH5_Time(object):
 
 
 def get_args():
-    global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
+    #global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
     parser.usage = (" set_deploy_pickup_times -a Array_t_xxx.kef "
@@ -113,9 +113,10 @@ def get_args():
     DEPLOY = args.deploy_time
     PICKUP = args.pickup_time
     AUTO_CORRECT = args.auto_correct
+    return [NICKNAME, PATH, ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT]
 
 
-def barf(fh, of, dep_time, pu_time, auto):
+def write_timekef(fh, of, dep_time, pu_time, auto):
 
     inc = 0
     while True:
@@ -198,29 +199,17 @@ def barf(fh, of, dep_time, pu_time, auto):
         else:
             of.write("\t%s\n" % line)
 
-
-def kefTables(kef_file, NICKNAME, PATH):
-
-    k = kefx.Kef(ARRAY_FILE)
-    k.open()
-    while True:
-        n = k.read(10000)
-        if n == 0:
-            LOGGER.error("Kef file is empty")
-            break
-        # Get Das_g references
-        ret = k.strip_receiver_g()
-        if ret:
-            add_references(ret)
-
-            # Make sure Array_t_xxx, Event_t_xxx, and Offset_t_aaa_sss exist
-            arrays, events, offsets = k.strip_a_e_o()
-
-
 def main():
-    global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
+    ##global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
 
-    get_args()
+    args_list = get_args()
+    NICKNAME = args_list[0] 
+    PATH = args_list[1]  
+    ARRAY_FILE = args_list[2] 
+    DEPLOY = args_list[3]  
+    PICKUP = args_list[4]  
+    AUTO_CORRECT = args_list[5] 
+    
     dep_time = []
     pu_time = []
     if not os.path.exists(ARRAY_FILE):
@@ -229,8 +218,22 @@ def main():
     else:
         fh = open(ARRAY_FILE)
         mdir = os.path.dirname(ARRAY_FILE)
-        base = os.path.basename(ARRAY_FILE)
-        base = 'autocortime_{0}'.format(base)
+        infile = os.path.basename(ARRAY_FILE)
+        base = 'autocortime_{0}'.format(infile)   
+        i=1
+        file_inc = True
+        # increments the files names
+        while file_inc: 
+            if os.path.isfile(base):
+                base = 'autocortime{0}_{1}'.format(i, infile)
+                i = i+1
+                if os.path.isfile(base):
+                    file_inc = True
+                else:
+                    file_inc = False
+            else:
+                file_inc = False
+      
         of = open(os.path.join(mdir, base), 'w+')
         # LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
     if AUTO_CORRECT:
@@ -258,7 +261,7 @@ def main():
                                 das=station['das/serial_number_s'],
                                 component=station['channel_number_i'],
                                 sample_rate=station['sample_rate_i'])
-                        if type(true_deploy) != float:
+                        if true_deploy is None or true_pickup is None :
                             LOGGER.warning('No DAS Table Found for %s' % das)
                             dep_time.append(None)
                             pu_time.append(None)
@@ -271,11 +274,11 @@ def main():
                             .strftime('%Y:%j:%H:%M:%S'))
                         dep_time.append(PH5_Time(passcal_s=julian_tdeploy))
                         pu_time.append(PH5_Time(passcal_s=julian_tpickup))
-        barf(fh, of, dep_time, pu_time, auto=True)
+        write_timekef(fh, of, dep_time, pu_time, auto=True)
     else:
         dep_time.append(PH5_Time(passcal_s=DEPLOY))
         pu_time.append(PH5_Time(passcal_s=PICKUP))
-        barf(fh, of, dep_time, pu_time, auto=False)
+        write_timekef(fh, of, dep_time, pu_time, auto=False)
     of.close()
     fh.close()
 
