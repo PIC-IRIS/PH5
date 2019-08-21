@@ -8,8 +8,7 @@ import logging
 import time
 import re
 import datetime
-from ph5.core import timedoy, kefx, ph5api
-from kef2ph5 import add_references
+from ph5.core import timedoy, ph5api
 from math import floor, ceil
 
 
@@ -70,7 +69,6 @@ class PH5_Time(object):
 
 
 def get_args():
-    #global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
     parser.usage = (" set_deploy_pickup_times -a Array_t_xxx.kef "
@@ -117,7 +115,6 @@ def get_args():
 
 
 def write_timekef(fh, of, dep_time, pu_time, auto):
-
     inc = 0
     while True:
         line = fh.readline()
@@ -199,17 +196,16 @@ def write_timekef(fh, of, dep_time, pu_time, auto):
         else:
             of.write("\t%s\n" % line)
 
-def main():
-    ##global ARRAY_FILE, DEPLOY, PICKUP, AUTO_CORRECT, NICKNAME, PATH
 
+def main():
     args_list = get_args()
-    NICKNAME = args_list[0] 
-    PATH = args_list[1]  
-    ARRAY_FILE = args_list[2] 
-    DEPLOY = args_list[3]  
-    PICKUP = args_list[4]  
-    AUTO_CORRECT = args_list[5] 
-    
+    NICKNAME = args_list[0]
+    PATH = args_list[1]
+    ARRAY_FILE = args_list[2]
+    DEPLOY = args_list[3]
+    PICKUP = args_list[4]
+    AUTO_CORRECT = args_list[5]
+
     dep_time = []
     pu_time = []
     if not os.path.exists(ARRAY_FILE):
@@ -219,11 +215,11 @@ def main():
         fh = open(ARRAY_FILE)
         mdir = os.path.dirname(ARRAY_FILE)
         infile = os.path.basename(ARRAY_FILE)
-        base = 'autocortime_{0}'.format(infile)   
-        i=1
+        base = 'autocortime_{0}'.format(infile)
+        i = 1
         file_inc = True
         # increments the files names
-        while file_inc: 
+        while file_inc:
             if os.path.isfile(base):
                 base = 'autocortime{0}_{1}'.format(i, infile)
                 i = i+1
@@ -233,7 +229,7 @@ def main():
                     file_inc = False
             else:
                 file_inc = False
-      
+
         of = open(os.path.join(mdir, base), 'w+')
         # LOGGER.info("Opened: {0}".join(os.path.join(mdir, base)))
     if AUTO_CORRECT:
@@ -261,7 +257,7 @@ def main():
                                 das=station['das/serial_number_s'],
                                 component=station['channel_number_i'],
                                 sample_rate=station['sample_rate_i'])
-                        if true_deploy is None or true_pickup is None :
+                        if true_deploy is None or true_pickup is None:
                             LOGGER.warning('No DAS Table Found for %s' % das)
                             dep_time.append(None)
                             pu_time.append(None)
