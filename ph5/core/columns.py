@@ -74,7 +74,7 @@ import string
 import logging
 
 PH5VERSION = '4.1.2'
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2019.234'
 LOGGER = logging.getLogger(__name__)
 
 #  TIME_TYPE = tables.Enum (['EPOCH', 'ASCII', 'BOTH'])
@@ -154,12 +154,11 @@ class Experiment (tables.IsDescription):
     # for these entries
     class time_stamp (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
-        type_s = tables.StringCol(
-            8)               # 'EPOCH', 'ASCII', or 'BOTH'
+        type_s = tables.StringCol(8)           # 'EPOCH', 'ASCII', or 'BOTH'
         epoch_l = tables.Int64Col()            # Seconds since January 1, 1970
         ascii_s = tables.StringCol(32)         # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col()
-    #
+
     # Experiment ID, YY-nnn (Added Feb 25, 2013)
     experiment_id_s = tables.StringCol(8, pos=1)
     net_code_s = tables.StringCol(8, pos=2)
@@ -167,31 +166,28 @@ class Experiment (tables.IsDescription):
     longname_s = tables.StringCol(256, pos=4)  # Experiment name
     PIs_s = tables.StringCol(1024, pos=5)  # Experiment principal investigators
     institutions_s = tables.StringCol(1024, pos=6)  # Institutions
-    # north_west_corner = Location ()                        # Bounding box
-    # nw corner
+    # north_west_corner = Location ()               # Bounding box nw corner
 
     class north_west_corner (tables.IsDescription):
         '''   Geographic position   '''
         _v_pos = 7
         # UTM etc.
         coordinate_system_s = tables.StringCol(32, pos=4)
-        projection_s = tables.StringCol(32, pos=5)              # Albers etc.
-        ellipsoid_s = tables.StringCol(32, pos=6)              # WGS-84 etc.
-        # X                 = Units64 ()                         # Latitude,
-        # Northing, etc.
+        projection_s = tables.StringCol(32, pos=5)   # Albers etc.
+        ellipsoid_s = tables.StringCol(32, pos=6)    # WGS-84 etc.
+        # X = Units64 ()                             # Latitude, Northing, etc.
 
         class X (tables.IsDescription):
             _v_pos = 1
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        # Y                 = Units64 ()                         # Longitude,
-        # Easting, etc.
+        # Y = Units64 ()                             # Longitude, Easting, etc.
 
         class Y (tables.IsDescription):
             _v_pos = 2
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        # Z                 = Units64 ()                         # Elevation
+        # Z                 = Units64 ()             # Elevation
 
         class Z (tables.IsDescription):
             _v_pos = 3
@@ -200,8 +196,7 @@ class Experiment (tables.IsDescription):
         #
         # Any additional comments
         description_s = tables.StringCol(1024, pos=7)
-    # south_east_corner = Location ()                        # Bounding box
-    # se corner
+    # south_east_corner = Location ()                # Bounding box se corner
 
     class south_east_corner (tables.IsDescription):
         '''   Geographic position   '''
@@ -252,15 +247,13 @@ class Data (tables.IsDescription):
     response_table_n_i = tables.Int32Col()
     time_table_n_i = tables.Int32Col()
     #
-    # start_time       = Time ()                             # Start time of
-    # trace
+    # start_time       = Time ()                # Start time of trace
 
     class time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
-        type_s = tables.StringCol(
-            8)               # 'EPOCH', 'ASCII', or 'BOTH'
-        epoch_l = tables.Int64Col()        # Seconds since January 1, 1970
-        ascii_s = tables.StringCol(32)              # WWW MMM DD HH:MM:SS YYYY
+        type_s = tables.StringCol(8)            # 'EPOCH', 'ASCII', or 'BOTH'
+        epoch_l = tables.Int64Col()             # Seconds since January 1, 1970
+        ascii_s = tables.StringCol(32)          # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col()
     #
     event_number_i = tables.Int32Col()  # Event number
@@ -362,14 +355,13 @@ class Receiver (tables.IsDescription):
     # of geophone/seismometer
     class orientation (tables.IsDescription):
         '''   Orientation of sensor   '''
-        # dip               = Units32 ()                        # Zero is up
+        # dip               = Units32 ()            # Zero is up
         class dip (tables.IsDescription):
             '''   32 bit float with units   '''
             _v_pos = 2
             units_s = tables.StringCol(16)
             value_f = tables.Float32Col(pos=1)
-        # azimuth           = Units32 ()                         # Zero is
-        # north
+        # azimuth           = Units32 ()            # Zero is north
 
         class azimuth (tables.IsDescription):
             '''   32 bit float with units   '''
@@ -384,10 +376,12 @@ class Receiver (tables.IsDescription):
 
 class Index (tables.IsDescription):
     '''   Index for multiple file ph5, /Experiment_g/Receivers_g/Index_t   '''
-    external_file_name_s = tables.StringCol(
-        32)  # Name of external file. Example: 08-005_0001_of_0009
+    # Name of external file. Example: 08-005_0001_of_0009
+    external_file_name_s = tables.StringCol(32)
+
     hdf5_path_s = tables.StringCol(64)  # HDF5 path in external file.
     # Example: /Experiment_g/Receivers_g/Das_g_xxxxx
+
     serial_number_s = tables.StringCol(64)  # DAS serial number
     # Time stamp (last write time)
 
@@ -449,24 +443,18 @@ class Sort (tables.IsDescription):
     class start_time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
         _v_pos = 3
-        type_s = tables.StringCol(8)  # 'EPOCH', 'ASCII', or 'BOTH'
-        # Seconds since January 1, 1970
-        epoch_l = tables.Int64Col(pos=2)
-        # WWW MMM DD HH:MM:SS YYYY
-        ascii_s = tables.StringCol(32, pos=1)
+        type_s = tables.StringCol(8)            # 'EPOCH', 'ASCII', or 'BOTH'
+        epoch_l = tables.Int64Col(pos=2)        # Seconds since January 1, 1970
+        ascii_s = tables.StringCol(32, pos=1)        # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col(pos=3)
-    # end_time         = Time ()                              # Pickup time
-    # of array
+    # end_time= Time ()                         # Pickup time of array
 
     class end_time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
         _v_pos = 4
-        # 'EPOCH', 'ASCII', or 'BOTH'
-        type_s = tables.StringCol(8, pos=4)
-        # Seconds since January 1, 1970
-        epoch_l = tables.Int64Col(pos=2)
-        # WWW MMM DD HH:MM:SS YYYY
-        ascii_s = tables.StringCol(32, pos=1)
+        type_s = tables.StringCol(8, pos=4)     # 'EPOCH', 'ASCII', or 'BOTH'
+        epoch_l = tables.Int64Col(pos=2)        # Seconds since January 1, 1970
+        ascii_s = tables.StringCol(32, pos=1)   # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col(pos=3)
     #
     # Description of this data grouping
@@ -478,25 +466,24 @@ class Array (tables.IsDescription):
     class deploy_time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
         _v_pos = 3
-        type_s = tables.StringCol(8, pos=4)  # 'EPOCH', 'ASCII', or 'BOTH'
+        type_s = tables.StringCol(8, pos=4)     # 'EPOCH', 'ASCII', or 'BOTH'
         epoch_l = tables.Int64Col(pos=2)        # Seconds since January 1, 1970
-        # WWW MMM DD HH:MM:SS YYYY
-        ascii_s = tables.StringCol(32, pos=1)
+
+        ascii_s = tables.StringCol(32, pos=1)   # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col(pos=3)
 
     class pickup_time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
         _v_pos = 4
-        type_s = tables.StringCol(8, pos=4)    # 'EPOCH', 'ASCII', or 'BOTH'
+        type_s = tables.StringCol(8, pos=4)     # 'EPOCH', 'ASCII', or 'BOTH'
         epoch_l = tables.Int64Col(pos=2)        # Seconds since January 1, 1970
         # WWW MMM DD HH:MM:SS YYYY
         ascii_s = tables.StringCol(32, pos=1)
         micro_seconds_i = tables.Int32Col(pos=3)
-    # order_i            = tables.Int32Col ()       #  Order of trace in gather
-    # event_number_i     = tables.Int32Col ()       #  Event number
-    id_s = tables.StringCol(16, pos=1)  # Stake ID
-    # das              = Instrument ()              #  Instrument
-    # at stake
+    # order_i            = tables.Int32Col ()   #  Order of trace in gather
+    # event_number_i     = tables.Int32Col ()   #  Event number
+    id_s = tables.StringCol(16, pos=1)          # Stake ID
+    # das              = Instrument ()          #  Instrument at stake
 
     class das (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
@@ -513,30 +500,28 @@ class Array (tables.IsDescription):
         model_s = tables.StringCol(64, pos=2)
         serial_number_s = tables.StringCol(64, pos=1)
         notes_s = tables.StringCol(1024, pos=4)
-    # location         = Location ()                         # The location
+    # location         = Location ()                 # The location
 
     class location (tables.IsDescription):
         '''   Geographic position   '''
         _v_pos = 2
         # UTM etc.
         coordinate_system_s = tables.StringCol(32, pos=4)
-        projection_s = tables.StringCol(32, pos=5)              # Albers etc.
-        ellipsoid_s = tables.StringCol(32, pos=6)              # WGS-84 etc.
-        # X                 = Units64 ()                         # Latitude,
-        # Northing, etc.
+        projection_s = tables.StringCol(32, pos=5)   # Albers etc.
+        ellipsoid_s = tables.StringCol(32, pos=6)    # WGS-84 etc.
+        # X = Units64 ()                             # Latitude, Northing, etc.
 
         class X (tables.IsDescription):
             _v_pos = 1
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        # Y                 = Units64 ()                         # Longitude,
-        # Easting, etc.
+        # Y = Units64 ()                             # Longitude, Easting, etc.
 
         class Y (tables.IsDescription):
             _v_pos = 2
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        # Z                 = Units64 ()                         # Elevation
+        # Z = Units64 ()                             # Elevation
 
         class Z (tables.IsDescription):
             _v_pos = 3
@@ -551,9 +536,8 @@ class Array (tables.IsDescription):
         # ascii_s = tables.StringCol (32)       # WWW MMM DD HH:MM:SS YYYY
         # micro_seconds_i = tables.Int32Col ()
     #
-    # data_array_a       = tables.StringCol (16)                # Name of
-    # data array
-    channel_number_i = tables.Int8Col()  # Channel number
+    # data_array_a = tables.StringCol (16)      # Name of data array
+    channel_number_i = tables.Int8Col()             # Channel number
     # SEEDling (This belongs in the Maps_g!)
     seed_band_code_s = tables.StringCol(1, pos=8)
     # Trace sample rate (samples per second)
@@ -573,31 +557,28 @@ class Array (tables.IsDescription):
 class Event (tables.IsDescription):
     '''   Table to describe an event, such as a shot   '''
     id_s = tables.StringCol(16, pos=1)  # Event ID/stake number
-    # location         = Location ()                         # Location of
-    # event
+    # location = Location ()                         # Location of event
 
     class location (tables.IsDescription):
         '''   Geographic position   '''
         _v_pos = 2
         # UTM etc.
         coordinate_system_s = tables.StringCol(32, pos=4)
-        projection_s = tables.StringCol(32, pos=5)              # Albers etc.
-        ellipsoid_s = tables.StringCol(32, pos=6)              # WGS-84 etc.
-        # X                 = Units64 ()                         # Latitude,
-        # Northing, etc.
+        projection_s = tables.StringCol(32, pos=5)   # Albers etc.
+        ellipsoid_s = tables.StringCol(32, pos=6)    # WGS-84 etc.
+        # X = Units64 ()                             # Latitude, Northing, etc.
 
         class X (tables.IsDescription):
             _v_pos = 1
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        # Y                 = Units64 ()                         # Longitude,
-        # Easting, etc.
+        # Y = Units64 ()                             # Longitude, Easting, etc.
 
         class Y (tables.IsDescription):
             _v_pos = 2
             units_s = tables.StringCol(16)
             value_d = tables.Float64Col(pos=1)
-        # Z                 = Units64 ()                         # Elevation
+        # Z = Units64 ()                             # Elevation
 
         class Z (tables.IsDescription):
             _v_pos = 3
@@ -605,27 +586,23 @@ class Event (tables.IsDescription):
             value_d = tables.Float64Col(pos=1)
         # Any additional comments
         description_s = tables.StringCol(1024, pos=7)
-    # time             = Time ()                             # Time of event
+    # time             = Time ()                     # Time of event
 
     class time (tables.IsDescription):
         '''   Time, either epoch or human readable   '''
         _v_pos = 3
-        # 'EPOCH', 'ASCII', or 'BOTH'
-        type_s = tables.StringCol(8, pos=4)
-        # Seconds since January 1, 1970
-        epoch_l = tables.Int64Col(pos=2)
-        # WWW MMM DD HH:MM:SS YYYY
-        ascii_s = tables.StringCol(32, pos=1)
+        type_s = tables.StringCol(8, pos=4)     # 'EPOCH', 'ASCII', or 'BOTH'
+        epoch_l = tables.Int64Col(pos=2)        # Seconds since January 1, 1970
+        ascii_s = tables.StringCol(32, pos=1)   # WWW MMM DD HH:MM:SS YYYY
         micro_seconds_i = tables.Int32Col(pos=3)
-    # size             = Units64 ()                          # Size of
-    # event, lbs of dynamite, Mb etc.
+    # size = Units64 ()               # Size of event, lbs of dynamite, Mb etc.
 
     class size (tables.IsDescription):
         '''   64 bit float with units   '''
         _v_pos = 4
         units_s = tables.StringCol(16)
         value_d = tables.Float64Col(pos=1)
-    # depth            = Units64 ()                          # Depth of event
+    # depth = Units64 ()                        # Depth of event
 
     class depth (tables.IsDescription):
         '''   64 bit float with units   '''
@@ -654,7 +631,7 @@ class Offset (tables.IsDescription):
     '''   Offsets from events to receivers   '''
     event_id_s = tables.StringCol(16)  # Event ID
     receiver_id_s = tables.StringCol(16)  # Receiver ID
-    # offset           = Units64 ()                           # The distance
+    # offset           = Units64 ()                # The distance
 
     class offset (tables.IsDescription):
         '''   64 bit float with units   '''
@@ -674,13 +651,12 @@ class Offset (tables.IsDescription):
 
 class Response (tables.IsDescription):
     n_i = tables.Int32Col(pos=1)  # Response number
-    # gain_i                  = tables.Int16Col (pos=2)         # Gain
+    # gain_i = tables.Int16Col (pos=2)              # Gain
 
     class gain (tables.IsDescription):
         units_s = tables.StringCol(16)
         value_i = tables.Int16Col()
-    # bit_weight_d            = tables.Float64Col (pos=3)      # Bit weight
-    # nV/count
+    # bit_weight_d = tables.Float64Col (pos=3)      # Bit weight nV/count
 
     class bit_weight (tables.IsDescription):
         '''   64 bit float with units   '''
@@ -688,8 +664,8 @@ class Response (tables.IsDescription):
         units_s = tables.StringCol(16)  # Volts/Count?
         value_d = tables.Float64Col(pos=1)
 
-    response_file_a = tables.StringCol(32)  # Response file name
-    response_file_das_a = tables.StringCol(128)  # DAS Response file name
+    response_file_a = tables.StringCol(32)          # Response file name
+    response_file_das_a = tables.StringCol(128)     # DAS Response file name
     response_file_sensor_a = tables.StringCol(128)  # Sensor Response file name
 
 
@@ -730,6 +706,7 @@ def add_last_array_node_das(dasgroup, key, ref):
     LAST_ARRAY_NODE_DAS[name][key] = ref
 
 
+
 def rowstolist(rows, keys):
     retl = []
     for r in rows:
@@ -738,7 +715,6 @@ def rowstolist(rows, keys):
             retd[k] = r[k]
 
         retl.append(retd)
-
     return retl
 
 
@@ -772,7 +748,7 @@ def _flatten(sequence, result=None, pre=None):
         # This is not a leaf so push it on the stack and recurse
         elif isinstance(item, tuple):
             pre.append(item[0])
-            item = item[1][:]
+            item = item[1:]
             _flatten(item, result, pre)
         else:
             # If we ever get here something is really wrong!
@@ -858,8 +834,8 @@ def _cast(vtype, val):
                 val = float(val)
             except ValueError:
                 val = None
-        elif (vtype == 'Int64' or vtype == 'int64' or vtype == 'UInt32' or
-              vtype == 'uint32'):
+        elif (vtype == 'Int64' or vtype == 'int64' or vtype == 'UInt64' or
+              vtype == 'uint64'):
             try:
                 val = long(val)
             except ValueError:
@@ -887,9 +863,9 @@ def _cast(vtype, val):
 
 def search(ltable, key, value):
     # XXX   More sophisticated searches using table.where???
+    v = str(value)
     if isinstance(value, types.StringType):
         v = value.strip()
-
     for r in ltable.iterrows():
         if isinstance(r[key], types.StringType):
             rk = r[key].strip()
@@ -903,6 +879,7 @@ def search(ltable, key, value):
 
 
 def lindex(ltable, value, key):
+    v = str(value)
     if isinstance(value, types.StringType):
         v = value.strip()
 
@@ -932,6 +909,7 @@ def update(ltable, p, key):
     #
     # Find row and update
     #
+    v = str(p[key])
     if isinstance(p[key], types.StringType):
         v = p[key].strip()
 
@@ -983,7 +961,7 @@ def is_mini(ltable):
     '''
        Check to see if this is an external file, and re-open 'a'
     '''
-    from tables import openFile
+    from tables import open_file
     from re import compile
     # Das_t is always in an external file
     Das_tRE = compile("(/Experiment_g/Receivers_g/Das_g_.*)/Das_t")
@@ -993,7 +971,7 @@ def is_mini(ltable):
         if ltablefile.mode != 'a':
             filename = ltablefile.filename
             ltablefile.close()
-            mini = openFile(filename, 'a')
+            mini = open_file(filename, 'a')
             ltable = mini.get_node(ltablepath)
             add_reference(ltablepath, ltable)
 
@@ -1025,7 +1003,7 @@ def populate(ltable, p, key=None):
 if __name__ == '__main__':
     pass
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 # Use dep file as standardized update format. Would need to be extended??
 
