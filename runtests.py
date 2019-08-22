@@ -12,6 +12,7 @@ from ph5.core.tests.test_ph5api import TestPH5API
 from ph5.core.tests.test_columns import TestExperiment, TestData, TestTime, \
      TestReceiver, TestIndex, TestSort, TestArray, TestEvent, TestReport, \
      TestOffset, TestResponse, Test_columns
+from ph5.core.tests.test_cs2cs import Test_cs2cs
 from ph5.utilities.tests.test_metadatatoph5 import TestMetadatatoPH5
 from ph5.utilities.tests.test_obspytoph5 import TestObspytoPH5
 
@@ -39,7 +40,8 @@ if __name__ == '__main__':
              TestMetadatatoPH5, TestObspytoPH5,
              TestPH5Availability, TestExperiment, TestData, TestTime,
              TestReceiver, TestIndex, TestSort, TestArray, TestEvent,
-             TestReport, TestOffset, TestResponse, Test_columns]
+             TestReport, TestOffset, TestResponse, Test_columns,
+             Test_cs2cs]
     passed = True
     for test_class in tests:
         test_result = run_test(test_class)

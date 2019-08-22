@@ -58,7 +58,7 @@ def utm2geod(zn, datum, X, Y, Z):
     '''   Convert UTM coordinates to geodetic coordinates   '''
     p = Proj(proj='utm', zone=zn, ellps=datum)
 
-    lon, lan = p(X, Y, inverse=True)
+    lon, lat = p(X, Y, inverse=True)
 
     return lat, lon, Z
 
