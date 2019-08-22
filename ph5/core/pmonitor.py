@@ -26,14 +26,16 @@ LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
 try:
-    from PySide import QtGui, QtCore
-except Exception as e:
-    LOGGER.error("No PySide: {0}".format(e.message))
-    try:
-        from PyQt4 import QtGui, QtCore
-        QtCore.Signal = QtCore.pyqtSignal
-    except Exception:
-        LOGGER.error("PyQt4 or PySide required: {0}".format(e.message))
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
+except Exception:
+    msg = ("\n\nNo module named PyQt4. "
+           "Please install PyQt4 first, it is needed for pmonitor. "
+           "\n\n"
+           "If using Anaconda run 'conda install pyqt=4'"
+           "For pip users, PyQt4 installation instructions are available at "
+           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
+    raise ImportError(msg)
 
 
 # RE to detect when a raw data file has finished loading

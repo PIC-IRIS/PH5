@@ -26,28 +26,6 @@ except ImportError:
     pass
 
 try:
-    import PyQt4
-except ImportError:
-    msg = ("No module named PyQt4. "
-           "Please install PyQt4 first, it is needed before installing PH5. "
-           "\n\n"
-           "If using Anaconda run 'conda install pyqt=4'"
-           "For pip users, PyQt4 installation instructions are available at "
-           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
-    raise ImportError(msg)
-
-try:
-    import PySide
-except ImportError:
-    msg = ("No module named PySide. "
-           "Please install PySide first, it is needed before installing PH5. "
-           "\n\n"
-           "If using Anaconda run 'conda install PySide'"
-           "For pip users, PySide installation instructions are available at "
-           "https://pypi.org/project/PySide/#installation.")
-    raise ImportError(msg)
-
-try:
     import numpy  # @UnusedImport # NOQA
 except ImportError:
     msg = ("No module named numpy. "
@@ -86,9 +64,6 @@ setup(
                       'tables',
                       'matplotlib<2',
                       'subprocess32'
-                      # pyicu - seems to work without
-                      # pyqt4 - required external program
-                      # PySide - required external program
                      ],
     classifiers=[
         # How mature is this project? Common values are
