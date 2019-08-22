@@ -464,8 +464,7 @@ class PH5Validate(object):
         sensor_serial = station['sensor/serial_number_s']
         if deploy_time > pickup_time:
             error.append("Deploy time is after pickup time")
-        else:
-            self.ph5.read_das_t(das_serial, reread=False)
+
         # CHANNEL SENSOR/DAS
         channel_id = station['channel_number_i']
         if das_serial is None:
@@ -474,13 +473,16 @@ class PH5Validate(object):
         if sensor_serial is None:
             warning.append("Sensor serial number is missing.")
 
+        self.ph5.read_das_t(das_serial, reread=False)
         if das_serial not in self.ph5.Das_t:
-            error.append("No data found for station {0}. "
+            error.append("No data found for das serial number {0}. "
                          "You may need to reload the raw "
                          "data for this station."
-                         .format(str(station_id)))
+                         .format(str(das_serial)))
+
         try:
-            ph5api.filter_das_t(self.ph5.Das_t[das_serial]['rows'],
+            das_rows = self.ph5.Das_t[das_serial]['rows']
+            ph5api.filter_das_t(das_rows,
                                 channel_id)
             true_deploy, true_pickup =\
                 self.ph5.get_extent(das=das_serial,
@@ -494,7 +496,12 @@ class PH5Validate(object):
                 time = int(true_pickup - pickup_time)
                 warning.append("Data exists after pickup time: "
                                + str(time) + " seconds ")
-        except BaseException:
+            self.ph5.forget_das_t(das_serial)
+        except KeyError:
+            try:  # avoid opening too many files
+                self.ph5.forget_das_t(das_serial)
+            except Exception:
+                pass
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
                          .format(str(channel_id)))
