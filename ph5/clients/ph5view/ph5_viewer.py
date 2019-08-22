@@ -21,14 +21,22 @@ import os.path as path
 from vispy import gloo, visuals, app
 import matplotlib.pyplot as plt
 from copy import deepcopy
+
 LOGGER = logging.getLogger(__name__)
+
 try:
     from PyQt4 import QtGui, QtCore
     from PyQt4.QtCore import QPoint
     from PyQt4.QtGui import QColor
 except Exception:
-    LOGGER.error("PyQt4 must be installed for this to run")
-###########################################################
+    msg = ("No module named PyQt4. "
+           "Please install PyQt4 first, it is needed for ph5_viewer. "
+           "\n\n"
+           "If using Anaconda run 'conda install pyqt=4'"
+           "For pip users, PyQt4 installation instructions are available at "
+           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
+    LOGGER.error(msg)
+
 VER = 201914
 if ph5_viewer_reader.VER > VER:
     VER = ph5_viewer_reader.VER
