@@ -46,9 +46,9 @@ class Test_cs2cs(unittest.TestCase):
         ret = cs2cs.lon2zone(179)
         self.assertIsNone(ret)
 
-    def test_utm2geod_geod2utm(self):
+    def test_geod2utm_utm2geod(self):
         """
-        test utm2geod
+        test geod2utm, utm2geod
         """
         lat = 34.023786
         lon = -106.898492
