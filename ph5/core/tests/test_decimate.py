@@ -8,7 +8,7 @@ import math as m
 
 
 class Test_decimate(unittest.TestCase):
-    print("test cs2cs's methods")
+    print("test decimate's methods")
 
     def test_decimate(self):
         """

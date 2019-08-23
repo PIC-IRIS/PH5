@@ -63,4 +63,4 @@ def cast(kv):
 
 
 if __name__ == '__main__':
-    ex = External('/home/azevedo/Data/SIIOS/Event_t_all.kef')
+    ex = External('ph5/test_data/metadata/event_t.kef')

@@ -706,7 +706,6 @@ def add_last_array_node_das(dasgroup, key, ref):
     LAST_ARRAY_NODE_DAS[name][key] = ref
 
 
-
 def rowstolist(rows, keys):
     retl = []
     for r in rows:
