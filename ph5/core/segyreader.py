@@ -196,7 +196,7 @@ class Reader ():
         buf = self.read_buf(3200)
         t = segy_h.Text()
 
-        t.parse(buf)
+        container = t.parse(buf)
 
         keys = segy_h.Text().__keys__
 
@@ -249,7 +249,7 @@ class Reader ():
         b = segy_h.Reel(self.endianess)
 
         ret = {}
-        b.parse(buf)
+        container = b.parse(buf)  # dthomas added 'container'
 
         keys = segy_h.Reel().__keys__
         for k in keys:
@@ -265,7 +265,7 @@ class Reader ():
         t = segy_h.Trace(self.endianess)
 
         ret = {}
-        t.parse(buf)
+        container = t.parse(buf)  # dthomas added 'container'
 
         keys = segy_h.Trace().__keys__
         for k in keys:
@@ -296,7 +296,7 @@ class Reader ():
             e = segy_h.iNova(self.endianess)
             keys = segy_h.iNova().__keys__
 
-        e.parse(buf)
+        container = e.parse(buf)  # dthomas added 'container'
 
         for k in keys:
             what = "container.{0}".format(k)

@@ -857,9 +857,9 @@ def process_trace(th, bh, rh, eh, tr):
         EXREC.ph5_g_maps.newdas('Das_g_', Das)
         p_das_t['array_name_log_a'] = EXREC.ph5_g_receivers.nextarray('Log_a_')
         p_das_t['response_table_n_i'] = n_i
-
+        print "rh:", rh
         year = rh['year']
-        doy = rh['day']
+        doy = rh['day']  # xxx, doy needed (Julian), but is not in rh[].
         hour = rh['hour']
         minute = rh['minute']
         seconds = rh['second']
