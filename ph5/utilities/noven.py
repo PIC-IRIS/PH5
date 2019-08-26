@@ -19,7 +19,13 @@ LOGGER = logging.getLogger(__name__)
 try:
     from PyQt4 import QtGui, QtCore
 except Exception:
-    LOGGER.error("PyQt4 must be installed for this to run")
+    msg = ("\n\nNo module named PyQt4. "
+           "Please install PyQt4 first, it is needed for noven. "
+           "\n\n"
+           "If using Anaconda run 'conda install pyqt=4'"
+           "For pip users, PyQt4 installation instructions are available at "
+           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
+    raise ImportError(msg)
 
 RECEIVER_CFG_S = '{\n'\
     '   "description_s": {\n'\
