@@ -35,7 +35,6 @@ LSB00 = 2500. / (2 ** 23)  # 0dB
 LSB12 = 625. / (2 ** 23)  # 12dB
 LSB24 = 156. / (2 ** 23)  # 24dB
 LSB36 = 39. / (2 ** 23)  # 36dB = 39mV full scale
-LSB = LSB36
 
 LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
 
@@ -104,6 +103,14 @@ class Trace(object):
 
 class SEGD2PH5:
     def __init__(self):
+        self.LSB = LSB36
+        self.TSP = False
+        self.FIRST_MINI = 1
+        self.UTM = 0
+        self.LAT = None
+        self.LON = None
+        self.MANUFACTURERS_CODE = FAIRFIELD
+
         self.DAS_INFO = {}
         self.MAP_INFO = {}
         #   Current raw file processing
@@ -138,8 +145,6 @@ class SEGD2PH5:
         self.FILES.sort(fn_sort)
 
     def get_args(self):
-
-        self.TSP = False
 
         from optparse import OptionParser
         oparser = OptionParser()
@@ -848,7 +853,8 @@ class SEGD2PH5:
                th -> first trace header
                tr -> trace data
         '''
-
+        self.RH = False
+        self.TRACE_JSON = []
         # print "\tprocess das"
         # for cs in range (rh.chan_sets_per_scan) :
         self.process_das(rh, th, tr)
@@ -948,7 +954,35 @@ class SEGD2PH5:
 
         self.DAS_INFO = {}
         self.MAP_INFO = {}
+    
+    def process_SD(self, f):
+        self.SD = segdreader.Reader(infile=f)
 
+        if not self.SD.isSEGD(
+            expected_manufactures_code=self.MANUFACTURERS_CODE):
+            sys.stdout.write(":<Error>: {0}\n".format(self.SD.name()))
+            sys.stdout.flush()
+            LOGGER.info(
+                "{0} is not a Fairfield SEG-D file. Skipping.".format(
+                    self.SD.name()))
+            return False
+        try:
+            # print "general headers"
+            self.SD.process_general_headers()
+            # print "channel sets"
+            self.SD.process_channel_set_descriptors()
+            # print "extended headers"
+            self.SD.process_extended_headers()
+            # print "external headers"
+            self.SD.process_external_headers()
+        except segdreader.InputsError as e:
+            sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
+            sys.stdout.flush()
+            LOGGER.info(
+                "Error: Possible bad SEG-D file -- {0}".format(
+                    "".join(e.message)))
+            return False
+        return self.SD
 
 def txncsptolatlon(northing, easting):
     '''
@@ -1032,6 +1066,7 @@ def get_node(sd):
 
     return pn, id, nc
 
+
 def main():
     import time
     then = time.time()
@@ -1054,7 +1089,6 @@ def main():
     for f in conv.FILES:
         conv.F = f
         traces = []
-        conv.TRACE_JSON = []
         try:
             SIZE = os.path.getsize(f)
         except Exception as e:
@@ -1064,38 +1098,8 @@ def main():
              Skipping...\n".format(f, str(e.message)))
             continue
 
-        conv.SD = segdreader.Reader(infile=f)
-        conv.LAT = None
-        conv.LON = None
-        # DN = False;
-        conv.RH = False
-        # print "isSEGD"
-        if not conv.SD.isSEGD(
-           expected_manufactures_code=conv.MANUFACTURERS_CODE):
-            sys.stdout.write(":<Error>: {0}\n".format(conv.SD.name()))
-            sys.stdout.flush()
-            LOGGER.info(
-                "{0} is not a Fairfield SEG-D file. Skipping.".format(
-                    conv.SD.name()))
+        if not conv.process_SD(f):
             continue
-
-        try:
-            # print "general headers"
-            conv.SD.process_general_headers()
-            # print "channel sets"
-            conv.SD.process_channel_set_descriptors()
-            # print "extended headers"
-            conv.SD.process_extended_headers()
-            # print "external headers"
-            conv.SD.process_external_headers()
-        except segdreader.InputsError as e:
-            sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
-            sys.stdout.flush()
-            LOGGER.info(
-                "Error: Possible bad SEG-D file -- {0}".format(
-                    "".join(e.message)))
-            continue
-
         nleft = conv.APPEND
         conv.Das = get_das(conv.SD)
         part_number, node_id, number_of_channels = get_node(conv.SD)
@@ -1115,8 +1119,6 @@ def main():
 
         n = 0
         trace_headers_list = []
-        # lat = None
-        # lon = None
         while True:
             #
             if conv.SD.isEOF():
