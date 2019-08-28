@@ -881,17 +881,17 @@ class SEGD2PH5:
             # name = self.EX.ph5_g_sorts.nextName ()
             name = "Array_t_{0:03d}".format(int(line))
             a = self.EX.ph5_g_sorts.newArraySort(name)
-            stations = sorted(Array_t[line].keys())
-            #   Loop through stations
-            for station in stations:
-                dtimes = sorted(Array_t[line][station].keys())
+            das_list = sorted(Array_t[line].keys())
+            #   Loop through das_list
+            for das in das_list:
+                dtimes = sorted(Array_t[line][das].keys())
                 #   Loop through channel sets
                 for dtime in dtimes:
                     try:
-                        chan_sets = sorted(Array_t[line][station][dtime].
+                        chan_sets = sorted(Array_t[line][das][dtime].
                                            keys())
                         for c in chan_sets:
-                            for array_t in Array_t[line][station][dtime][c]:
+                            for array_t in Array_t[line][das][dtime][c]:
                                 columns.populate(a, array_t)
                     except Exception as e:
                         print e.message
