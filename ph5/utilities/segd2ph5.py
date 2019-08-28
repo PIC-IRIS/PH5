@@ -1037,231 +1037,227 @@ def main():
     then = time.time()
     from numpy import append as npappend
 
-    def prof():
+    MINIPH5 = None
+    conv = SEGD2PH5()
+    conv.get_args()
 
-        MINIPH5 = None
-        conv = SEGD2PH5()
-        conv.get_args()
+    conv.initialize_ph5()
+    LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
+    if len(conv.FILES) > 0:
+        conv.RESP = Resp(conv.EX.ph5_g_responses)
+        rows, keys = conv.EX.ph5_g_receivers.read_index()
+        conv.INDEX_T_DAS = Rows_Keys(rows, keys)
+        rows, keys = conv.EX.ph5_g_maps.read_index()
+        conv.INDEX_T_MAP = Rows_Keys(rows, keys)
 
-        conv.initialize_ph5()
-        LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
-        LOGGER.info("{0}".format(sys.argv))
-        if len(conv.FILES) > 0:
-            conv.RESP = Resp(conv.EX.ph5_g_responses)
-            rows, keys = conv.EX.ph5_g_receivers.read_index()
-            conv.INDEX_T_DAS = Rows_Keys(rows, keys)
-            rows, keys = conv.EX.ph5_g_maps.read_index()
-            conv.INDEX_T_MAP = Rows_Keys(rows, keys)
+    for f in conv.FILES:
+        conv.F = f
+        traces = []
+        conv.TRACE_JSON = []
+        try:
+            SIZE = os.path.getsize(f)
+        except Exception as e:
+            sys.stderr.write("Error: failed to read {0}, {1}.\
+             Skipping...\n".format(f, str(e.message)))
+            LOGGER.error("Error: failed to read {0}, {1}.\
+             Skipping...\n".format(f, str(e.message)))
+            continue
 
-        for f in conv.FILES:
-            conv.F = f
-            traces = []
-            conv.TRACE_JSON = []
-            try:
-                SIZE = os.path.getsize(f)
-            except Exception as e:
-                sys.stderr.write("Error: failed to read {0}, {1}.\
-                 Skipping...\n".format(f, str(e.message)))
-                LOGGER.error("Error: failed to read {0}, {1}.\
-                 Skipping...\n".format(f, str(e.message)))
-                continue
-
-            conv.SD = segdreader.Reader(infile=f)
-            conv.LAT = None
-            conv.LON = None
-            # DN = False;
-            conv.RH = False
-            # print "isSEGD"
-            if not conv.SD.isSEGD(
-               expected_manufactures_code=conv.MANUFACTURERS_CODE):
-                sys.stdout.write(":<Error>: {0}\n".format(conv.SD.name()))
-                sys.stdout.flush()
-                LOGGER.info(
-                    "{0} is not a Fairfield SEG-D file. Skipping.".format(
-                        conv.SD.name()))
-                continue
-
-            try:
-                # print "general headers"
-                conv.SD.process_general_headers()
-                # print "channel sets"
-                conv.SD.process_channel_set_descriptors()
-                # print "extended headers"
-                conv.SD.process_extended_headers()
-                # print "external headers"
-                conv.SD.process_external_headers()
-            except segdreader.InputsError as e:
-                sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
-                sys.stdout.flush()
-                LOGGER.info(
-                    "Error: Possible bad SEG-D file -- {0}".format(
-                        "".join(e.message)))
-                continue
-
-            nleft = conv.APPEND
-            conv.Das = get_das(conv.SD)
-            part_number, node_id, number_of_channels = get_node(conv.SD)
-
-            conv.EXREC = conv.get_current_data_only(SIZE, conv.Das)
-
-            sys.stdout.write(":<Processing>: {0}\n".format(conv.SD.name()))
+        conv.SD = segdreader.Reader(infile=f)
+        conv.LAT = None
+        conv.LON = None
+        # DN = False;
+        conv.RH = False
+        # print "isSEGD"
+        if not conv.SD.isSEGD(
+           expected_manufactures_code=conv.MANUFACTURERS_CODE):
+            sys.stdout.write(":<Error>: {0}\n".format(conv.SD.name()))
             sys.stdout.flush()
             LOGGER.info(
-                "Processing: {0}... Size: {1}\n".format(conv.SD.name(), SIZE))
-            if conv.EXREC.filename != MINIPH5:
-                LOGGER.info("Opened: {0}...\n".format(conv.EXREC.filename))
-                LOGGER.info(
-                    "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
-                        conv.Das, node_id, part_number, number_of_channels))
-                MINIPH5 = conv.EXREC.filename
+                "{0} is not a Fairfield SEG-D file. Skipping.".format(
+                    conv.SD.name()))
+            continue
 
-            n = 0
-            trace_headers_list = []
-            # lat = None
-            # lon = None
-            while True:
-                #
-                if conv.SD.isEOF():
-                    if n != 0:
-                        thl = []
-                        chan_set = None
-                        t = None
-                        new_traces = []
-                        for T in traces:
-                            thl.append(T.headers)
-                            if chan_set is None:
-                                chan_set = T.headers.trace_header.channel_set
-                            if chan_set == T.headers.trace_header.channel_set:
-                                if isinstance(t, type(None)):
-                                    t = T.trace
-                                else:
-                                    t = npappend(t, T.trace)
-                            else:
-                                new_traces.append(T)
+        try:
+            # print "general headers"
+            conv.SD.process_general_headers()
+            # print "channel sets"
+            conv.SD.process_channel_set_descriptors()
+            # print "extended headers"
+            conv.SD.process_extended_headers()
+            # print "external headers"
+            conv.SD.process_external_headers()
+        except segdreader.InputsError as e:
+            sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
+            sys.stdout.flush()
+            LOGGER.info(
+                "Error: Possible bad SEG-D file -- {0}".format(
+                    "".join(e.message)))
+            continue
 
-                        traces = new_traces
-                        conv.process_traces(conv.SD.reel_headers, thl[0], t)
+        nleft = conv.APPEND
+        conv.Das = get_das(conv.SD)
+        part_number, node_id, number_of_channels = get_node(conv.SD)
 
-                        if conv.DAS_INFO:
-                            conv.writeINDEX()
-                    break
+        conv.EXREC = conv.get_current_data_only(SIZE, conv.Das)
 
-                try:
-                    trace, cs = conv.SD.process_trace()
-                except segdreader.InputsError as e:
-                    # sys.stderr.write ("Error 2: Possible bad SEG-D file \
-                    # -- {0}".format ("".join (e)))
-                    sys.stdout.write(":<Error:> {0}\n".format(conv.F))
-                    sys.stdout.flush()
-                    LOGGER.info(
-                        "Error: Possible bad SEG-D file -- {0}".format(
-                            "".join(e.message)))
-                    break
+        sys.stdout.write(":<Processing>: {0}\n".format(conv.SD.name()))
+        sys.stdout.flush()
+        LOGGER.info(
+            "Processing: {0}... Size: {1}\n".format(conv.SD.name(), SIZE))
+        if conv.EXREC.filename != MINIPH5:
+            LOGGER.info("Opened: {0}...\n".format(conv.EXREC.filename))
+            LOGGER.info(
+                "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
+                    conv.Das, node_id, part_number, number_of_channels))
+            MINIPH5 = conv.EXREC.filename
 
-                if not conv.LAT and not conv.LON:
-                    try:
-                        if conv.UTM:
-                            #   UTM
-                            conv.LAT, conv.LON = utmcsptolatlon(
-                                conv.UTM,
-                                conv.SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                conv.SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
-                        elif conv.TSP:
-                            #   Texas State Plane coordinates
-                            conv.LAT, conv.LON = txncsptolatlon(
-                                conv.SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                conv.SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
-                        else:
-                            conv.LAT = conv.SD.trace_headers.trace_header_N[
-                                      4].receiver_point_Y_final / 10.
-                            conv.LON = conv.SD.trace_headers.trace_header_N[
-                                      4].receiver_point_X_final / 10.
-                    except Exception as e:
-                        LOGGER.warning(
-                            "Failed to convert location: {0}.\n".format(
-                                e.message))
-
-                trace_headers_list.append(conv.SD.trace_headers)
-                # for cs in range (conv.SD.chan_sets_per_scan) :
-                if n == 0:
-                    traces.append(Trace(trace, conv.SD.trace_headers))
-                    n = 1
-                    #   Node kludge
-                    # conv.Das = (conv.SD.trace_headers.trace_header_N[0]\
-                    # .receiver_line * 1000) + conv.SD.trace_headers.\
-                    # trace_header_N[0].receiver_point
-                    conv.Das = get_das(conv.SD)
-                else:
-                    traces.append(Trace(trace, conv.SD.trace_headers))
-                    # traces = npappend (traces, trace)
-
-                if n >= nleft or conv.EVERY is True:
+        n = 0
+        trace_headers_list = []
+        # lat = None
+        # lon = None
+        while True:
+            #
+            if conv.SD.isEOF():
+                if n != 0:
                     thl = []
                     chan_set = None
-                    chan_set_next = None
                     t = None
                     new_traces = []
-                    # Need to check for gaps here!
                     for T in traces:
                         thl.append(T.headers)
                         if chan_set is None:
                             chan_set = T.headers.trace_header.channel_set
                         if chan_set == T.headers.trace_header.channel_set:
-                            # print type (t)
                             if isinstance(t, type(None)):
                                 t = T.trace
                             else:
                                 t = npappend(t, T.trace)
-                            # print len (t), t.min (), t.max ()
                         else:
                             new_traces.append(T)
-                            if chan_set_next is None:
-                                chan_set_next =\
-                                    T.headers.trace_header.channel_set
 
                     traces = new_traces
                     conv.process_traces(conv.SD.reel_headers, thl[0], t)
-                    if new_traces:
-                        nleft = conv.APPEND - len(new_traces)
-                    else:
-                        nleft = conv.APPEND
-                    chan_set = chan_set_next
-                    chan_set_next = None
+
                     if conv.DAS_INFO:
                         conv.writeINDEX()
-                    n = 0
-                    trace_headers_list = []
-                    continue
+                break
 
-                n += 1
+            try:
+                trace, cs = conv.SD.process_trace()
+            except segdreader.InputsError as e:
+                # sys.stderr.write ("Error 2: Possible bad SEG-D file \
+                # -- {0}".format ("".join (e)))
+                sys.stdout.write(":<Error:> {0}\n".format(conv.F))
+                sys.stdout.flush()
+                LOGGER.info(
+                    "Error: Possible bad SEG-D file -- {0}".format(
+                        "".join(e.message)))
+                break
 
-            conv.update_external_references()
-            if conv.TRACE_JSON:
-                log_array, name = conv.getLOG()
-                for line in conv.TRACE_JSON:
-                    log_array.append(line)
+            if not conv.LAT and not conv.LON:
+                try:
+                    if conv.UTM:
+                        #   UTM
+                        conv.LAT, conv.LON = utmcsptolatlon(
+                            conv.UTM,
+                            conv.SD.trace_headers.trace_header_N[
+                                4].receiver_point_Y_final / 10.,
+                            conv.SD.trace_headers.trace_header_N[
+                                4].receiver_point_X_final / 10.)
+                    elif conv.TSP:
+                        #   Texas State Plane coordinates
+                        conv.LAT, conv.LON = txncsptolatlon(
+                            conv.SD.trace_headers.trace_header_N[
+                                4].receiver_point_Y_final / 10.,
+                            conv.SD.trace_headers.trace_header_N[
+                                4].receiver_point_X_final / 10.)
+                    else:
+                        conv.LAT = conv.SD.trace_headers.trace_header_N[
+                                  4].receiver_point_Y_final / 10.
+                        conv.LON = conv.SD.trace_headers.trace_header_N[
+                                  4].receiver_point_X_final / 10.
+                except Exception as e:
+                    LOGGER.warning(
+                        "Failed to convert location: {0}.\n".format(
+                            e.message))
 
-            sys.stdout.write(":<Finished>: {0}\n".format(conv.F))
-            sys.stdout.flush()
+            trace_headers_list.append(conv.SD.trace_headers)
+            # for cs in range (conv.SD.chan_sets_per_scan) :
+            if n == 0:
+                traces.append(Trace(trace, conv.SD.trace_headers))
+                n = 1
+                #   Node kludge
+                # conv.Das = (conv.SD.trace_headers.trace_header_N[0]\
+                # .receiver_line * 1000) + conv.SD.trace_headers.\
+                # trace_header_N[0].receiver_point
+                conv.Das = get_das(conv.SD)
+            else:
+                traces.append(Trace(trace, conv.SD.trace_headers))
+                # traces = npappend (traces, trace)
 
-        conv.write_arrays(conv.ARRAY_T)
-        seconds = time.time() - then
+            if n >= nleft or conv.EVERY is True:
+                thl = []
+                chan_set = None
+                chan_set_next = None
+                t = None
+                new_traces = []
+                # Need to check for gaps here!
+                for T in traces:
+                    thl.append(T.headers)
+                    if chan_set is None:
+                        chan_set = T.headers.trace_header.channel_set
+                    if chan_set == T.headers.trace_header.channel_set:
+                        # print type (t)
+                        if isinstance(t, type(None)):
+                            t = T.trace
+                        else:
+                            t = npappend(t, T.trace)
+                        # print len (t), t.min (), t.max ()
+                    else:
+                        new_traces.append(T)
+                        if chan_set_next is None:
+                            chan_set_next =\
+                                T.headers.trace_header.channel_set
 
-        try:
-            conv.EX.ph5close()
-            conv.EXREC.ph5close()
-        except Exception as e:
-            sys.stderr.write("Warning: {0}\n".format("".join(e.message)))
+                traces = new_traces
+                conv.process_traces(conv.SD.reel_headers, thl[0], t)
+                if new_traces:
+                    nleft = conv.APPEND - len(new_traces)
+                else:
+                    nleft = conv.APPEND
+                chan_set = chan_set_next
+                chan_set_next = None
+                if conv.DAS_INFO:
+                    conv.writeINDEX()
+                n = 0
+                trace_headers_list = []
+                continue
 
-        print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
-        LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
-        logging.shutdown()
+            n += 1
 
-    prof()
+        conv.update_external_references()
+        if conv.TRACE_JSON:
+            log_array, name = conv.getLOG()
+            for line in conv.TRACE_JSON:
+                log_array.append(line)
+
+        sys.stdout.write(":<Finished>: {0}\n".format(conv.F))
+        sys.stdout.flush()
+
+    conv.write_arrays(conv.ARRAY_T)
+    seconds = time.time() - then
+
+    try:
+        conv.EX.ph5close()
+        conv.EXREC.ph5close()
+    except Exception as e:
+        sys.stderr.write("Warning: {0}\n".format("".join(e.message)))
+
+    print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
+    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
+    logging.shutdown()
 
 
 if __name__ == '__main__':
