@@ -994,6 +994,44 @@ def utmcsptolatlon(UTM, northing, easting):
     return lat, lon
 
 
+def get_das(sd):
+    #   Return line_station or das#[-9:]
+    try:
+        das = "{0}X{1}".format(
+            sd.reel_headers.extended_header_3.line_number,
+            sd.reel_headers.extended_header_3.receiver_point)
+    except Exception:
+        try:
+            das = "{0}X{1}".format(
+                sd.reel_headers.external_header.receiver_line,
+                sd.reel_headers.external_header.receiver_point)
+        except Exception:
+            das = "sn" + \
+                str(sd.reel_headers.general_header_block_1.
+                    manufactures_sn)
+            if das == 0:
+                das = "id" + \
+                    str(sd.reel_headers
+                        .extended_header_1.id_number)[-9:]
+
+    return das
+
+
+def get_node(sd):
+    #   Return node part number, node id, and number of channels
+    pn = None  # Part Number
+    id = None  # Node ID
+    nc = None  # Number of channel sets
+    try:
+        nc = sd.reel_headers.general_header_block_1[
+            'chan_sets_per_scan']
+        pn = sd.reel_headers.extended_header_1['part_number']
+        id = sd.reel_headers.extended_header_1['id_number']
+    except Exception:
+        pass
+
+    return pn, id, nc
+
 def main():
     import time
     then = time.time()
@@ -1002,52 +1040,7 @@ def main():
     def prof():
 
         MINIPH5 = None
-
-        def get_das(sd):
-            #   Return line_station or das#[-9:]
-            try:
-                das = "{0}X{1}".format(
-                    sd.reel_headers.extended_header_3.line_number,
-                    sd.reel_headers.extended_header_3.receiver_point)
-            except Exception:
-                try:
-                    das = "{0}X{1}".format(
-                        sd.reel_headers.external_header.receiver_line,
-                        sd.reel_headers.external_header.receiver_point)
-                except Exception:
-                    das = "sn" + \
-                          str(sd.reel_headers.general_header_block_1.
-                              manufactures_sn)
-                    if das == 0:
-                        das = "id" + \
-                              str(sd.reel_headers
-                                  .extended_header_1.id_number)[-9:]
-
-            return das
-
-        def get_node(sd):
-            #   Return node part number, node id, and number of channels
-            pn = None  # Part Number
-            id = None  # Node ID
-            nc = None  # Number of channel sets
-            try:
-                nc = sd.reel_headers.general_header_block_1[
-                    'chan_sets_per_scan']
-                pn = sd.reel_headers.extended_header_1['part_number']
-                id = sd.reel_headers.extended_header_1['id_number']
-            except Exception:
-                pass
-
-            return pn, id, nc
-
-        def print_container(container):
-            keys = container.keys()
-            for k in keys:
-                print k, container[k]
-
-            print '-' * 80
         conv = SEGD2PH5()
-
         conv.get_args()
 
         conv.initialize_ph5()
