@@ -892,7 +892,7 @@ class SEGD2PH5:
                 for dtime in dtimes:
                     try:
                         chan_sets = sorted(Array_t[line][station][dtime].
-                                        keys())
+                                           keys())
                         for c in chan_sets:
                             for array_t in Array_t[line][station][dtime][c]:
                                 columns.populate(a, array_t)
@@ -962,12 +962,12 @@ class SEGD2PH5:
 
         self.DAS_INFO = {}
         self.MAP_INFO = {}
-    
+
     def process_SD(self, f):
         self.SD = segdreader.Reader(infile=f)
 
         if not self.SD.isSEGD(
-            expected_manufactures_code=self.MANUFACTURERS_CODE):
+           expected_manufactures_code=self.MANUFACTURERS_CODE):
             sys.stdout.write(":<Error>: {0}\n".format(self.SD.name()))
             sys.stdout.flush()
             LOGGER.info(
@@ -991,6 +991,7 @@ class SEGD2PH5:
                     "".join(e.message)))
             return False
         return self.SD
+
 
 def txncsptolatlon(northing, easting):
     '''
