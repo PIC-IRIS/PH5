@@ -875,9 +875,6 @@ class SEGD2PH5:
     def write_arrays(self, Array_t):
         '''   Write /Experiment_g/Sorts_g/Array_t_xxx   '''
 
-        def station_cmp(x, y):
-            return cmp(x['id_s'], y['id_s'])
-
         lines = sorted(Array_t.keys())
         #   Loop through arrays/lines
         for line in lines:
