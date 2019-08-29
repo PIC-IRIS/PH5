@@ -569,6 +569,19 @@ class PH5(experiment.ExperimentGroup):
                 rows, secondary_key='channel_number_i', unique_key=False)
             self.Array_t[name] = {'byid': byid, 'order': order, 'keys': keys}
 
+    def get_sort_arrays(self):
+        '''   Read all /Experiment_t/Sorts_g/Array_t_[n]   '''
+        # We get a list of Array_t_[n] names here...
+        # (these are also in Sort_t)
+        if not self.Array_t_names:
+            self.read_array_t_names()
+        array_t_list = []
+        for n in self.Array_t_names:
+            rows, keys = self.ph5_g_sorts.read_arrays(n)
+            # We key this on the name since there can be multiple arrays
+            array_t_list.append(rows)
+        return array_t_list
+
     def get_sort_t(self, start_epoch, array_name):
         '''
            Get list of sort_t lines based on a time and array

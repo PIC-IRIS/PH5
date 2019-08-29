@@ -18,7 +18,7 @@ from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.65'
+PROG_VERSION = '2019.246'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -34,19 +34,18 @@ class ObspytoPH5Error(Exception):
 
 class ObspytoPH5(object):
 
-    def __init__(self, ph5_object,
+    def __init__(self,
+                 ph5_object,
                  ph5_path,
-                 num_mini=None,
-                 first_mini=None):
+                 first_mini=None,
+                 mini_size_max=None):
         """
         :type class: ph5.core.experiment
         :param ph5_object:
         """
         self.ph5 = ph5_object
         self.ph5_path = ph5_path
-        self.num_mini = num_mini
         self.first_mini = first_mini
-        self.mini_size_max = 26843545600
         self.verbose = False
         self.array_names = self.ph5.ph5_g_sorts.names()
         self.arrays = list()
@@ -54,6 +53,10 @@ class ObspytoPH5(object):
             array_, blah = self.ph5.ph5_g_sorts.read_arrays(name)
             for entry in array_:
                 self.arrays.append(entry)
+        if mini_size_max and mini_size_max > 0:
+            self.mini_size_max = mini_size_max
+        else:
+            self.mini_size_max = 26843545600
         self.time_t = list()
 
     def openmini(self, mini_num):
@@ -91,13 +94,14 @@ class ObspytoPH5(object):
                 minis.append(fullPath)
         return minis
 
-    def get_size_mini(self, mini_num):
+    def get_size_mini(self, mini_num, path='.'):
         """
         :param mini_num: str
         :return: size of mini file in bytes
+        : path to minfiles: defual current directory
         """
         mini_num = str(mini_num).zfill(5)
-        filename = "miniPH5_{0}.ph5".format(mini_num)
+        filename = "{0}/miniPH5_{1}.ph5".format(path, mini_num)
         return os.path.getsize(filename)
 
     def get_das_station_map(self):
@@ -149,7 +153,7 @@ class ObspytoPH5(object):
             exrec.ph5close()
         return mini_map
 
-    def toph5(self, file_tuple):
+    def toph5(self, file_tuple, path='.', dtype='int32'):
         """
         Takes a tuple (file_name or obspy stream, type)
         and loads it into ph5_object
@@ -165,7 +169,6 @@ class ObspytoPH5(object):
         in_type = None
         das_station_map = self.get_das_station_map()
         existing_minis = self.get_minis(self.ph5_path)
-
         if not das_station_map:
             err = "Array metadata must exist before loading data"
             LOGGER.error(err)
@@ -209,37 +212,39 @@ class ObspytoPH5(object):
                 LOGGER.info('Processing trace {0} in {1}'.format(
                     trace.stats.channel, trace.stats.station))
             if not trace.stats.channel == 'LOG':
-                if not trace.data.any():
+                if trace.data.size == 0:
                     LOGGER.info("No data for trace {0}...skipping".format(
                         trace.stats.channel))
                     continue
             if not existing_minis:
                 current_mini = self.first_mini
             else:
-                current_mini = None
+                # determine the next miniPH5 file index to start at
                 for mini in minis:
                     for entry in das_station_map:
                         if (entry['serial'] in mini[1] and
                                 entry['station'] == trace.stats.station):
-                            current_mini = mini[0]
-                    if not current_mini:
-                        largest = 0
-                        for x in minis:
-                            if x[0] >= largest:
-                                largest = x[0]
-                        if (self.get_size_mini(largest) <
-                                self.mini_size_max):
-                            current_mini = largest
-                        else:
-                            current_mini = largest + 1
+                            if (self.get_size_mini(mini[0], path) <
+                                    self.mini_size_max):
+                                current_mini = mini[0]
+                                break
+                if not current_mini:
+                    largest = 0
+                    for x in minis:
+                        if x[0] >= largest:
+                            largest = x[0]
+                    if (self.get_size_mini(largest, path) <
+                            self.mini_size_max):
+                        current_mini = largest
+                    else:
+                        current_mini = largest + 1
             # iterate through das_station_map
             for entry in das_station_map:
                 time_t = {}
                 das = {}
                 index_t_entry = {}
                 # only load data if it matches
-                if trace.stats.station == entry['station']:
-
+                if str(trace.stats.station) == entry['station']:
                     # open mini file
                     mini_handle, mini_name = self.openmini(current_mini)
                     # get node reference or create new node
@@ -325,15 +330,16 @@ class ObspytoPH5(object):
                                 1 /
                                 trace.stats.sampling_rate)
                     channel_list = list(trace.stats.channel)
-                    if channel_list[2] in ({'3', 'Z', 'z'}):
-                        das['channel_number_i'] = 3
-                    elif channel_list[2] in (
-                            {'2', 'E', 'e'}):
-                        das['channel_number_i'] = 2
-                    elif channel_list[2] in (
-                            {'1', 'N', 'n'}):
+                    if len(channel_list) == 3 and channel_list[2] in(
+                            {'1', 'Z', 'z'}):
                         das['channel_number_i'] = 1
-                    elif channel_list[2].isdigit():
+                    elif len(channel_list) == 3 and channel_list[2] in (
+                            {'2', 'N', 'n'}):
+                        das['channel_number_i'] = 2
+                    elif len(channel_list) == 3 and channel_list[2] in (
+                            {'3', 'E', 'e'}):
+                        das['channel_number_i'] = 3
+                    elif len(channel_list) == 3 and channel_list[2].isdigit():
                         das['channel_number_i'] = channel_list[2]
                     elif trace.stats.channel == 'LOG':
                         das['channel_number_i'] = -2
@@ -341,14 +347,6 @@ class ObspytoPH5(object):
                         das['sample_rate_multiplier_i'] = 1
                     else:
                         das['channel_number_i'] = -5
-                    if in_type == 'file':
-                        das['raw_file_name_s'] = file_tuple[0]
-                    else:
-                        das['raw_file_name_s'] = 'obspy_stream'
-                    if trace.stats.channel == 'LOG':
-                        das['sample_count_i'] = 0
-                    else:
-                        das['sample_count_i'] = trace.stats.npts
 
                     # figure out receiver and response n_i
                     for array_entry in self.arrays:
@@ -361,6 +359,15 @@ class ObspytoPH5(object):
                                 array_entry['receiver_table_n_i']
                             das['response_table_n_i'] =\
                                 array_entry['response_table_n_i']
+
+                    if in_type == 'file':
+                        das['raw_file_name_s'] = file_tuple[0]
+                    else:
+                        das['raw_file_name_s'] = 'obspy_stream'
+                    if trace.stats.channel == 'LOG':
+                        das['sample_count_i'] = 0
+                    else:
+                        das['sample_count_i'] = trace.stats.npts
 
                     # Make sure we aren't overwriting a data array
                     while True:
@@ -382,7 +389,7 @@ class ObspytoPH5(object):
                             description=None)
                     else:
                         mini_handle.ph5_g_receivers.newarray(
-                            das['array_name_data_a'], data, dtype='int32',
+                            das['array_name_data_a'], data, dtype=dtype,
                             description=None)
                     mini_handle.ph5_g_receivers.populateDas_t(das)
 
@@ -590,16 +597,20 @@ def main():
                                             currentpath=args.ph5path)
     ph5_object.ph5open(True)
     ph5_object.initgroup()
-    obs = ObspytoPH5(ph5_object, args.ph5path,
-                     args.num_mini, args.first_mini)
-    if args.verbose:
-        obs.verbose = True
-    obs.get_minis(args.ph5path)
+
+    mini_size_max = None
     if args.num_mini:
         total = 0
         for entry in valid_files:
             total = total + os.path.getsize(entry[0])
-        obs.mini_size_max = (total*.60)/args.num_mini
+        mini_size_max = (total*.60)/args.num_mini
+
+    obs = ObspytoPH5(ph5_object, args.ph5path,
+                     first_mini=args.first_mini,
+                     mini_size_max=mini_size_max)
+    if args.verbose:
+        obs.verbose = True
+
     index_t_full = list()
 
     for entry in valid_files:
