@@ -1,11 +1,10 @@
 '''
-Tests for metadatatoph5
+Tests for segd2ph5
 '''
 import unittest
 import sys
 import os
 from mock import patch
-from ph5.core import segdreader
 from ph5.utilities import segd2ph5, tabletokef
 from contextlib import contextmanager
 from StringIO import StringIO
@@ -24,6 +23,7 @@ def captured_output():
 
 class TestSegdtoph5(unittest.TestCase):
     print "Test segd2ph5"
+
     def assertStrEqual(self, str1, str2):
         """
         return True if 2 strings are the same, othewise
@@ -36,14 +36,14 @@ class TestSegdtoph5(unittest.TestCase):
                 if str1[i] != str2[i]:
                     errmsg = "The strings are different from %s.\n" % i
                     if i > 0:
-                        errmsg += "BEFORE:\n\tstr1: '%s'\n\tstr2: '%s'\n" % \
-                            (str1[:i], str2[:i])
+                        errmsg += "BEFORE the difference:\n\t'%s'\\n" % \
+                            str1[:i]
                     errmsg += "Different at:\n\tstr1: '%s'\n\tstr2: '%s'\n"\
                         "AFTER:\n\tstr1: '%s'\n\tstr2: '%s'" % \
                         (str1[i], str2[i], str1[i+1:], str2[i+1:])
                     raise AssertionError(errmsg)
 
-    def setUp(self):
+    def start_segd2ph5(self):
         self.conv = segd2ph5.SEGD2PH5()
         self.files = ["ph5/test_data/segd/rg16/PIC_9_9050_2875.0.0.rg16",
                       "ph5/test_data/segd/rg16/PIC_9_9050_2901.0.0.rg16",
@@ -52,16 +52,16 @@ class TestSegdtoph5(unittest.TestCase):
         self.conv.initialize_ph5()
 
     def tearDown(self):
-        """"""
         filelist = os.listdir(".")
         try:
             self.conv.EX.ph5close()
             self.conv.EXREC.ph5close()
             del self.conv.SD
-        except Exception as e:
+            del self.conv
+        except Exception:
             pass
         for f in filelist:
-            if f.endswith(".ph5"):
+            if f.endswith(".ph5") or f.endswith(".log"):
                 os.remove(f)
 
     def read_first_trace_in_file(self, f):
@@ -81,6 +81,7 @@ class TestSegdtoph5(unittest.TestCase):
         """
         test process_traces
         """
+        self.start_segd2ph5()
         T = self.read_first_trace_in_file(self.files[2])
         self.conv.process_traces(self.conv.SD.reel_headers, T.headers, T.trace)
 
@@ -94,7 +95,6 @@ class TestSegdtoph5(unittest.TestCase):
         deploy_time = self.conv.ARRAY_T[array_line][das].keys()[0]
         self.assertEqual(deploy_time, 1502293592)
 
-        chan_total = len(self.conv.ARRAY_T[array_line][das][deploy_time])
         chan = self.conv.ARRAY_T[array_line][das][deploy_time].keys()[0]
         self.assertEqual(chan, 1)
 
@@ -120,8 +120,8 @@ class TestSegdtoph5(unittest.TestCase):
 
         # RESP
         R_KEYS = ['n_i', 'bit_weight/value_d', 'bit_weight/units_s',
-                'gain/units_s', 'gain/value_i', 'response_file_a',
-                'response_file_das_a', 'response_file_sensor_a']
+                  'gain/units_s', 'gain/value_i', 'response_file_a',
+                  'response_file_das_a', 'response_file_sensor_a']
         LINE = {'gain/value_i': 24, 'response_file_das_a': '',
                 'bit_weight/units_s': 'mV/count',
                 'bit_weight/value_d': 1.8596649169921875e-05,
@@ -132,12 +132,11 @@ class TestSegdtoph5(unittest.TestCase):
         for k in R_KEYS:
             self.assertEqual(self.conv.RESP.lines[0][k], LINE[k])
 
-        # reel_headers??????
-
     def test_process_array(self):
         """
-        test process_traces
+        test process_array
         """
+        self.start_segd2ph5()
         # test process_array to read the first deploy of the first 2 files
         # in self.files.
         # the result ARRAY_T should have 2 different deploy times
@@ -152,20 +151,18 @@ class TestSegdtoph5(unittest.TestCase):
         das = self.conv.ARRAY_T[array_line].keys()[0]
         self.assertEqual(das, '9X9050')
 
-        deploy_total = len (self.conv.ARRAY_T[array_line][das])
+        deploy_total = len(self.conv.ARRAY_T[array_line][das])
         self.assertEqual(deploy_total, 2)
 
         # deploy_time 1st
         deploy_time = self.conv.ARRAY_T[array_line][das].keys()[0]
         self.assertEqual(deploy_time, 1544545576)
-        chan_total = len(self.conv.ARRAY_T[array_line][das][deploy_time])
         chan = self.conv.ARRAY_T[array_line][das][deploy_time].keys()[0]
         self.assertEqual(chan, 1)
 
         # deploy_time 2nd
         deploy_time = self.conv.ARRAY_T[array_line][das].keys()[1]
         self.assertEqual(deploy_time, 1546021724)
-        chan_total = len(self.conv.ARRAY_T[array_line][das][deploy_time])
         chan = self.conv.ARRAY_T[array_line][das][deploy_time].keys()[0]
         self.assertEqual(chan, 1)
 
@@ -173,6 +170,7 @@ class TestSegdtoph5(unittest.TestCase):
         """
         test write_arrays
         """
+        self.start_segd2ph5()
         T = self.read_first_trace_in_file(self.files[2])
         self.conv.process_traces(self.conv.SD.reel_headers, T.headers, T.trace)
         self.conv.write_arrays(self.conv.ARRAY_T)
@@ -197,17 +195,52 @@ class TestSegdtoph5(unittest.TestCase):
                 continue
             self.assertEqual(ss[1], str(row[ss[0]]))
 
-
     def test_get_args(self):
         """
         test get_args
         """
 
+    def assertTable(self, options, pathtokef, pathtomaster=''):
+        testargs = ['tabletokef', '-n', 'master.ph5'] + options
+        if pathtomaster != '':
+            testargs += ['-p', pathtomaster]
+        with patch.object(sys, 'argv', testargs):
+            with captured_output() as (out, err):
+                tabletokef.main()
+        result_lines = out.getvalue().strip().split("#   Table row ")[1:]
+        with open(pathtokef) as content_file:
+            comp_lines = \
+                content_file.read().strip().split("#   Table row ")[1:]
+
+        for i in range(len(result_lines)):
+            if "time_stamp" in result_lines[i]:
+                result_lines[i] = result_lines[i].split("time_stamp")[0]
+                comp_lines[i] = comp_lines[i].split("time_stamp")[0]
+            self.assertStrEqual(result_lines[i], comp_lines[i])
 
     def test_main(self):
         """
         test main
         """
+        # run list file with path to 2 segd files for the same das, same array
+        # different deploy times
+        testargs = ['segdtoph5', '-n', 'master.ph5',
+                    '-f', 'ph5/test_data/segd/rg16/RG16_list']
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        # check array
+        self.assertTable(
+            ['--all_arrays'], 'ph5/test_data/segd/rg16/all_arrays.kef')
+        # check das_t_9X9050
+        self.assertTable(
+            ['--Das_t', '9X9050'], 'ph5/test_data/segd/rg16/das_t_9X9050.kef')
+        # check index_t
+        self.assertTable(
+            ['--Index_t'], 'ph5/test_data/segd/rg16/index_t.kef')
+        # check M_index_t
+        self.assertTable(
+            ['--M_Index_t'], 'ph5/test_data/segd/rg16/M_index_t.kef')
+
 
 if __name__ == "__main__":
     unittest.main()
