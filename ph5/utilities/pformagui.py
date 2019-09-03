@@ -15,7 +15,13 @@ LOGGER = logging.getLogger(__name__)
 try:
     from PySide import QtCore, QtGui
 except Exception:
-    LOGGER.error("PySide must be installed for this to run")
+    msg = ("\n\nNo module named PySide. "
+           "Please install PySide first, it is needed for pforma. "
+           "\n\n"
+           "If using Anaconda run 'conda install PySide'"
+           "For pip users, PySide installation instructions are available at "
+           "https://pypi.org/project/PySide/#installation.")
+    raise ImportError(msg)
 
 UTMZone = '13N'
 
