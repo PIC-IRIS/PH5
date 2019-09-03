@@ -6,6 +6,7 @@ import sys
 import os
 from mock import patch
 from ph5.utilities import segd2ph5, tabletokef
+from ph5 import assertTable
 from contextlib import contextmanager
 from StringIO import StringIO
 
@@ -23,25 +24,6 @@ def captured_output():
 
 class TestSegdtoph5(unittest.TestCase):
     print "Test segd2ph5"
-
-    def assertStrEqual(self, str1, str2):
-        """
-        return True if 2 strings are the same, othewise
-        return the index of the first difference between 2 strings
-        """
-        if str1 == str2:
-            return True
-        else:
-            for i in range(len(str1)):
-                if str1[i] != str2[i]:
-                    errmsg = "The strings are different from %s.\n" % i
-                    if i > 0:
-                        errmsg += "BEFORE the difference:\n\t'%s'\\n" % \
-                            str1[:i]
-                    errmsg += "Different at:\n\tstr1: '%s'\n\tstr2: '%s'\n"\
-                        "AFTER:\n\tstr1: '%s'\n\tstr2: '%s'" % \
-                        (str1[i], str2[i], str1[i+1:], str2[i+1:])
-                    raise AssertionError(errmsg)
 
     def start_segd2ph5(self):
         self.conv = segd2ph5.SEGD2PH5()
@@ -200,24 +182,6 @@ class TestSegdtoph5(unittest.TestCase):
         test get_args
         """
 
-    def assertTable(self, options, pathtokef, pathtomaster=''):
-        testargs = ['tabletokef', '-n', 'master.ph5'] + options
-        if pathtomaster != '':
-            testargs += ['-p', pathtomaster]
-        with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                tabletokef.main()
-        result_lines = out.getvalue().strip().split("#   Table row ")[1:]
-        with open(pathtokef) as content_file:
-            comp_lines = \
-                content_file.read().strip().split("#   Table row ")[1:]
-
-        for i in range(len(result_lines)):
-            if "time_stamp" in result_lines[i]:
-                result_lines[i] = result_lines[i].split("time_stamp")[0]
-                comp_lines[i] = comp_lines[i].split("time_stamp")[0]
-            self.assertStrEqual(result_lines[i], comp_lines[i])
-
     def test_main(self):
         """
         test main
@@ -229,16 +193,16 @@ class TestSegdtoph5(unittest.TestCase):
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
         # check array
-        self.assertTable(
+        assertTable(
             ['--all_arrays'], 'ph5/test_data/segd/rg16/all_arrays.kef')
         # check das_t_9X9050
-        self.assertTable(
+        assertTable(
             ['--Das_t', '9X9050'], 'ph5/test_data/segd/rg16/das_t_9X9050.kef')
         # check index_t
-        self.assertTable(
+        assertTable(
             ['--Index_t'], 'ph5/test_data/segd/rg16/index_t.kef')
         # check M_index_t
-        self.assertTable(
+        assertTable(
             ['--M_Index_t'], 'ph5/test_data/segd/rg16/M_index_t.kef')
 
 
