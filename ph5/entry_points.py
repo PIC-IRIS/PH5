@@ -7,6 +7,7 @@
 
 PROG_VERSION = '2019.228'
 
+
 class EntryPointTypes():
     GUI = "GUI Commands"
     CLIENT = "Extraction Clients"
