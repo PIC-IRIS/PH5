@@ -988,12 +988,9 @@ def utmcsptolatlon(northing, easting):
     new_UTM = re.split(r'(\d+)', UTM)
     utmzone = str(new_UTM[1])
 
-    if str(new_UTM[2]).upper() == 'N':
-        NS = 'north'
-    elif str(new_UTM[2]).upper() == 'S':
-        NS = 'south'
-    else:
-        NS = 'north'
+    NS = str(new_UTM[2]).upper()
+    if NS != 'N' and NS != 'S':
+        NS = 'N'
 
 #  OLD WAY - deprecated, called pyproj. New way uses ph5utils.
     utm = ph5utils.UTMConversions()
