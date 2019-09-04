@@ -47,7 +47,7 @@ class TestNukeTable(unittest.TestCase):
             self.assertRaises(nuke_table.NukeTableError, self.nukeT.get_args)
 
         # test param
-        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-N',
+        testargs = ['nuke-table', '-n', 'master.ph5', '-p', 'ph5', '-d', '-N',
                     '-E', '-S', '-O', '1_2', '-V', '7001', '-A', '1', '-R',
                     '-P', '-C', '-I', '-M', '-D', '5553', '-T']
         with patch.object(sys, 'argv', testargs):
