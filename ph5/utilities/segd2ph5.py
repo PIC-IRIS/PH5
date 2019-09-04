@@ -35,7 +35,6 @@ LSB00 = 2500. / (2 ** 23)  # 0dB
 LSB12 = 625. / (2 ** 23)  # 12dB
 LSB24 = 156. / (2 ** 23)  # 24dB
 LSB36 = 39. / (2 ** 23)  # 36dB = 39mV full scale
-LSB = LSB36
 
 LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
 
@@ -104,6 +103,7 @@ class Trace(object):
 
 class SEGD2PH5:
     def __init__(self):
+        self.LSB = LSB36
         self.DAS_INFO = {}
         self.MAP_INFO = {}
         #   Current raw file processing
