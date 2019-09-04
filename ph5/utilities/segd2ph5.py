@@ -15,10 +15,9 @@ import time
 import json
 import re
 from math import modf
-from ph5.core import experiment, columns, segdreader
-from pyproj import Proj, transform
+from ph5.core import experiment, columns, segdreader, ph5utils
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.239"
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -967,6 +966,7 @@ def txncsptolatlon(northing, easting):
        Convert texas state plane coordinates in feet to
        geographic coordinates, WGS84.
     '''
+    from pyproj import Proj, transform
     #   Texas NC state plane feet Zone 4202
     sp = Proj(init='epsg:32038')
     #   WGS84, geographic
@@ -995,13 +995,9 @@ def utmcsptolatlon(northing, easting):
     else:
         NS = 'north'
 
-    utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
-    print
-    #   WGS84, geographic
-    wgs = Proj(init='epsg:4326', proj='latlong')
-    #
-    lon, lat = transform(utmc, wgs, easting, northing)
-
+#  OLD WAY - deprecated, called pyproj. New way uses ph5utils.
+    utm = ph5utils.UTMConversions()
+    lat, lon = utm.lat_long(easting, northing, utmzone, NS)
     return lat, lon
 
 

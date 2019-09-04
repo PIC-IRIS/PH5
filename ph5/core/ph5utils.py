@@ -15,8 +15,9 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 import re
+from pyproj import Proj, transform
 
-PROG_VERSION = "2019.81"
+PROG_VERSION = "2019.239"
 
 
 class PH5Response(object):
@@ -66,6 +67,28 @@ class PH5ResponseManager(object):
             if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
                set(datalogger_keys) == set(ph5_resp.datalogger_keys):
                 return ph5_resp.n_i
+
+
+class UTMConversions:  # added 2019-08-27 dthomas
+
+    def __init__(self):
+        self.wgs = Proj(init="epsg:4326", proj="latlong")
+
+    def lat_long(self, easting, northing, zone, hemisphere):
+        # utm to lat/long conversion
+        side = hemisphere.upper()
+        if side == "S":
+            ns = "south"
+        elif side == "N":
+            ns = "north"
+        else:
+            ns = None  # will throw error
+
+        mystr = "+proj=utm +zone=" + str(zone) + \
+                " +" + ns + " +ellps=WGS84"
+        utm = Proj(mystr.strip())
+        lon, lat = transform(utm, self.wgs, float(easting), float(northing))
+        return (lat, lon)
 
 
 """
