@@ -26,15 +26,14 @@ LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
 try:
-    from PyQt4 import QtGui, QtCore
-    QtCore.Signal = QtCore.pyqtSignal
-except Exception:
-    msg = ("\n\nNo module named PyQt4. "
-           "Please install PyQt4 first, it is needed for pmonitor. "
+    from PySide import QtGui, QtCore
+except Exception as e:
+    msg = ("\n\nNo module named PySide. "
+           "Please install PySide first, it is needed for pmonitor. "
            "\n\n"
-           "If using Anaconda run 'conda install pyqt=4'"
-           "For pip users, PyQt4 installation instructions are available at "
-           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
+           "If using Anaconda run 'conda install PySide'"
+           "For pip users, PySide installation instructions are available at "
+           "https://pypi.org/project/PySide/#installation.")
     raise ImportError(msg)
 
 
