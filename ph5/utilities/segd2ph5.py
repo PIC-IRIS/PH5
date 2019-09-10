@@ -839,14 +839,14 @@ def write_arrays(EX, Array_t):
     for line in lines:
         name = "Array_t_{0:03d}".format(int(line))
         a = EX.ph5_g_sorts.newArraySort(name)
-        stations = sorted(Array_t[line].keys())
-        #   Loop through stations
-        for station in stations:
-            chan_sets = sorted(Array_t[line][station].keys())
+        das_list = sorted(Array_t[line].keys())
+        #   Loop through das_list
+        for das in das_list:
+            chan_sets = sorted(Array_t[line][das].keys())
             #   Loop through channel sets
             for chan_set in chan_sets:
                 try:
-                    for array_t in Array_t[line][station][chan_set]:
+                    for array_t in Array_t[line][das][chan_set]:
                         columns.populate(a, array_t)
                 except Exception as e:
                     print e.message
