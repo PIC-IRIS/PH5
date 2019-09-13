@@ -34,14 +34,20 @@ F = None
 #   RE for mini files
 miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 
-# LSB = 6.402437066e-6   #   From Malcolm UCSD
-LSB00 = 2500. / (2 ** 23)  # 0dB
-LSB12 = 625. / (2 ** 23)  # 12dB
-LSB24 = 156. / (2 ** 23)  # 24dB
-LSB36 = 39. / (2 ** 23)  # 36dB = 39mV full scale
-LSB = LSB36
+# -2.5V to 2.5V
+mV_full_scale = 5000
+# 24-bit
+counts_full_scale = 2**24
 
-LSB_MAP = {36: LSB36, 24: LSB24, 12: LSB12, 0: LSB00}
+
+def bitweight(db):
+    # where db = 20log(V1,V2)
+    return (mV_full_scale / (10.**(db/20.))) / counts_full_scale
+
+
+dbs = (0, 6, 12, 18, 24, 30, 36)
+LSB_MAP = {db: bitweight(db) for db in dbs}
+LSB = LSB_MAP[36]
 
 #   Manufacturers codes
 FAIRFIELD = 20
