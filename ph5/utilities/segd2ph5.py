@@ -297,7 +297,6 @@ def update_external_references(conv):
     for i in conv.INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
-        i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
         # print external_file, external_path, das, target, external_group
@@ -325,7 +324,6 @@ def update_external_references(conv):
     for i in conv.INDEX_T_MAP.rows:
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
-        i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
         # print external_file, external_path, das, target, external_group
@@ -951,15 +949,12 @@ def utmcsptolatlon(northing, easting, UTM):
     new_UTM = re.split(r'(\d+)', UTM)
     utmzone = str(new_UTM[1])
 
-    if str(new_UTM[2]).upper() == 'N':
-        NS = 'north'
-    elif str(new_UTM[2]).upper() == 'S':
+    if str(new_UTM[2]).upper() == 'S':
         NS = 'south'
     else:
         NS = 'north'
 
     utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
-    print
     #   WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
     #
@@ -1028,11 +1023,10 @@ def main():
             conv.INDEX_T_MAP = Rows_Keys(rows, keys)
 
         for f in conv.FILES:
-            conv.F = f
             traces = []
             conv.TRACE_JSON = []
             try:
-                conv.SIZE = os.path.getsize(f)
+                SIZE = os.path.getsize(f)
             except Exception as e:
                 LOGGER.error("Failed to read {0}, {1}.\
                  Skipping...\n".format(f, str(e.message)))
@@ -1068,11 +1062,11 @@ def main():
             conv.Das = get_das(conv.SD)
             part_number, node_id, number_of_channels = get_node(conv.SD)
 
-            conv.EXREC = get_current_data_only(conv, conv.SIZE, conv.Das)
+            conv.EXREC = get_current_data_only(conv, SIZE, conv.Das)
 
             LOGGER.info(
                 "Processing: {0}... Size: {1}\n".format(
-                    conv.SD.name(), conv.SIZE))
+                    conv.SD.name(), SIZE))
             if conv.EXREC.filename != conv.MINIPH5:
                 LOGGER.info("Opened: {0}...\n".format(conv.EXREC.filename))
                 LOGGER.info(
