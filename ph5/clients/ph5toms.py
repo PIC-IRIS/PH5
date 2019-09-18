@@ -692,6 +692,9 @@ class PH5toMSeed(object):
         for sct in station_cut_times:
             start_fepoch = sct.time
             if self.reqtype == "SHOT":
+                if self.offset:
+                    # adjust starttime by an offset
+                    start_fepoch += int(self.offset)
                 if self.length:
                     stop_fepoch = start_fepoch + self.length
                 else:
@@ -736,10 +739,6 @@ class PH5toMSeed(object):
             start_passcal = epoch2passcal(start_fepoch, sep=':')
             start_passcal_list = start_passcal.split(":")
             start_doy = start_passcal_list[1]
-
-            if self.offset:
-                # adjust starttime by an offset
-                start_fepoch += int(self.offset)
 
             if self.doy_keep:
                 if start_doy not in self.doy:
