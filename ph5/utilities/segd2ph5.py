@@ -16,9 +16,11 @@ import json
 import re
 from math import modf
 from ph5.core import experiment, columns, segdreader
+from ph5 import LOGGING_FORMAT
 from pyproj import Proj, transform
 
 PROG_VERSION = "2019.252"
+LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -119,7 +121,7 @@ def read_infile(infile):
     try:
         fh = file(infile)
     except BaseException:
-        sys.stderr.write("Warning: Failed to open %s\n" % infile)
+        LOGGER.warning("Failed to open %s\n" % infile)
         return
 
     while True:
@@ -221,11 +223,13 @@ def get_args():
     else:
         raise Exception("No outfile (PH5) given.\n")
 
-    logging.basicConfig(
-        filename=os.path.join('.', "segd2ph5.log"),
-        format="%(asctime)s %(message)s",
-        level=logging.INFO
-    )
+    # Write log to file
+    ch = logging.FileHandler(os.path.join('.', "segd2ph5.log"))
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
     #   Need to process in order: R309_674.1.0.rg16, 309 == line,
     #   674 = receiver point, 1 = first file
     #   Sorted where the file list is read...
@@ -251,7 +255,6 @@ def openPH5(filename):
                 return EXREC
     except BaseException:
         pass
-    # sys.stderr.write ("***   Opening: {0} ".format (filename))
     exrec = experiment.ExperimentGroup(nickname=filename)
     exrec.ph5open(True)
     exrec.initgroup()
@@ -276,7 +279,7 @@ def update_index_t_info(starttime, samples, sps):
 
     DAS_INFO[das].append(di)
     MAP_INFO[das].append(dm)
-    logging.info(
+    LOGGER.info(
         "DAS: {0} File: {1} First Sample: {2} Last Sample: {3}".format(
             das, ph5file, time.ctime(starttime), time.ctime(stoptime)))
 
@@ -285,9 +288,7 @@ def update_external_references():
     '''   Update external references in master.ph5 to
           miniPH5 files in Receivers_t    '''
     global F
-    # sys.stderr.write ("Updating external references...\n");
-    #  sys.stderr.flush ()
-    logging.info("Updating external references...")
+    LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
@@ -312,12 +313,9 @@ def update_external_references():
             n += 1
         except Exception as e:
             # pass
-            sys.stderr.write("{0}\n".format(e.message))
+            LOGGER.error("{0}\n".format(e.message))
 
-        # sys.exit ()
-    # sys.stderr.write ("done, {0} das nodes recreated.\n".format (n))
-
-    logging.info("done, {0} das nodes recreated.\n".format(n))
+    LOGGER.info("done, {0} das nodes recreated.\n".format(n))
 
     n = 0
     for i in INDEX_T_MAP.rows:
@@ -349,11 +347,9 @@ def update_external_references():
             n += 1
         except Exception as e:
             # pass
-            sys.stderr.write("{0}\n".format(e.message))
+            LOGGER.error("{0}\n".format(e.message))
 
-        # sys.exit ()
-    # sys.stderr.write ("done, {0} map nodes recreated.\n".format (n))
-    logging.info("done, {0} map nodes recreated.\n".format(n))
+    LOGGER.info("done, {0} map nodes recreated.\n".format(n))
 
 
 def get_current_data_only(size_of_data, das=None):
@@ -496,7 +492,7 @@ def process_traces(rh, th, tr):
             p_das_t['receiver_table_n_i'] = M[get_true_channel()]
         else:
             p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
-            logging.warn(
+            LOGGER.warning(
                 "Header channel set: {0}. Check Receiver_t entries!".format(
                     th.trace_header.channel_set))
 
@@ -508,7 +504,7 @@ def process_traces(rh, th, tr):
         try:
             trace_epoch = th.trace_header_N[2].shot_epoch
         except Exception as e:
-            logging.warn("Failed to read shot epoch: {0}.".format(e.message))
+            LOGGER.warning("Failed to read shot epoch: {0}.".format(e.message))
             trace_epoch = 0.
 
         f, i = modf(trace_epoch / 1000000.)
@@ -547,7 +543,7 @@ def process_traces(rh, th, tr):
         try:
             p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
         except Exception as e:
-            logging.warn(
+            LOGGER.warning(
                 "Failed to read trace pre amp gain: {0}.".format(e.message))
             p_response_t['gain/value_i'] = 0.
             p_response_t['gain/units_s'] = 'Unknown'
@@ -575,8 +571,8 @@ def process_traces(rh, th, tr):
             #   Failed, leave as float
             # for x in tr : print x/LSB
             # print e.message
-            sys.stderr.write(
-                "Warning: Could not convert trace to counts. max: {1},\
+            LOGGER.warning(
+                "Could not convert trace to counts. max: {1},\
                  min {2}\n{0}".format(
                     e.message, tr.max(), tr.min()))
             p_response_t['bit_weight/value_d'] = 1.
@@ -699,7 +695,7 @@ def process_traces(rh, th, tr):
         try:
             f, i = modf(rh.extended_header_1.epoch_deploy / 1000000.)
         except Exception as e:
-            logging.warn(
+            LOGGER.warning(
                 "Failed to read extended header 1 deploy epoch: {0}.".format(
                     e.message))
             f = i = 0.
@@ -710,7 +706,7 @@ def process_traces(rh, th, tr):
         try:
             f, i = modf(rh.extended_header_1.epoch_pickup / 1000000.)
         except Exception as e:
-            logging.warn(
+            LOGGER.warning(
                 "Failed to read extended header 1 pickup epoch: {0}.".format(
                     e.message))
             f = i = 0.
@@ -727,7 +723,7 @@ def process_traces(rh, th, tr):
             else:
                 p_array_t['das/model_s'] = DM[1]
         except Exception as e:
-            logging.warn(
+            LOGGER.warning(
                 "Failed to read channel sets per scan: {0}.".format(e.message))
             p_array_t['das/model_s'] = 'zland-[13]C'
         p_array_t['das/serial_number_s'] = Das
@@ -760,7 +756,7 @@ def process_traces(rh, th, tr):
             p_array_t['location/Z/value_d'] =\
                 th.trace_header_N[4].receiver_point_depth_final / 10.
         except Exception as e:
-            logging.warn(
+            LOGGER.warning(
                 "Failed to read receiver point depth: {0}.".format(e.message))
             p_array_t['location/Z/value_d'] = 0.
 
@@ -770,14 +766,15 @@ def process_traces(rh, th, tr):
             p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
                 Das, rh.extended_header_1.id_number)
         except Exception as e:
-            logging.warn(
+            LOGGER.warning(
                 "Failed to read extended header 1 ID number: {0}.".format(
                     e.message))
 
         try:
             line = th.trace_header_N[4].line_number
         except Exception as e:
-            logging.warn("Failed to read line number: {0}.".format(e.message))
+            LOGGER.warning("Failed to read line number: {0}.".format(
+                e.message))
             line = 0
 
         chan_set = get_true_channel()
@@ -1069,12 +1066,12 @@ def main():
         try:
             get_args()
         except Exception, err_msg:
-            logging.error(err_msg)
+            LOGGER.error(err_msg)
             return 1
 
         initializeExperiment()
-        logging.info("segd2ph5 {0}".format(PROG_VERSION))
-        logging.info("{0}".format(sys.argv))
+        LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
+        LOGGER.info("{0}".format(sys.argv))
         if len(FILES) > 0:
             RESP = Resp(EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index()
@@ -1089,9 +1086,7 @@ def main():
             try:
                 SIZE = os.path.getsize(f)
             except Exception as e:
-                sys.stderr.write("Error: failed to read {0}, {1}.\
-                 Skipping...\n".format(f, str(e.message)))
-                logging.error("Error: failed to read {0}, {1}.\
+                LOGGER.error("Failed to read {0}, {1}.\
                  Skipping...\n".format(f, str(e.message)))
                 continue
 
@@ -1102,9 +1097,7 @@ def main():
             RH = False
             # print "isSEGD"
             if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
-                sys.stdout.write(":<Error>: {0}\n".format(SD.name()))
-                sys.stdout.flush()
-                logging.info(
+                LOGGER.error(
                     "{0} is not a Fairfield SEG-D file. Skipping.".format(
                         SD.name()))
                 continue
@@ -1119,10 +1112,8 @@ def main():
                 # print "external headers"
                 SD.process_external_headers()
             except segdreader.InputsError as e:
-                sys.stdout.write(":<Error>: {0}\n".format("".join(e.message)))
-                sys.stdout.flush()
-                logging.info(
-                    "Error: Possible bad SEG-D file -- {0}".format(
+                LOGGER.error(
+                    "Possible bad SEG-D file -- {0}".format(
                         "".join(e.message)))
                 continue
 
@@ -1134,16 +1125,12 @@ def main():
             part_number, node_id, number_of_channels = get_node(SD)
             #
             EXREC = get_current_data_only(SIZE, Das)
-            # sys.stderr.write ("Processing: {0}... Size: {1}\n".format\
-            #  (SD.name (), SIZE))
-            sys.stdout.write(":<Processing>: {0}\n".format(SD.name()))
-            sys.stdout.flush()
-            logging.info(
+            LOGGER.info(":<Processing>: {0}\n".format(SD.name()))
+            LOGGER.info(
                 "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
             if EXREC.filename != MINIPH5:
-                # sys.stderr.write ("Opened: {0}...\n".format (EXREC.filename))
-                logging.info("Opened: {0}...\n".format(EXREC.filename))
-                logging.info(
+                LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
+                LOGGER.info(
                     "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
                         Das, node_id, part_number, number_of_channels))
                 MINIPH5 = EXREC.filename
@@ -1183,12 +1170,9 @@ def main():
                 try:
                     trace, cs = SD.process_trace()
                 except segdreader.InputsError as e:
-                    # sys.stderr.write ("Error 2: Possible bad SEG-D file \
-                    # -- {0}".format ("".join (e)))
-                    sys.stdout.write(":<Error:> {0}\n".format(F))
-                    sys.stdout.flush()
-                    logging.info(
-                        "Error: Possible bad SEG-D file -- {0}".format(
+                    LOGGER.error("{0}\n".format(F))
+                    LOGGER.error(
+                        "Possible bad SEG-D file -- {0}".format(
                             "".join(e.message)))
                     break
 
@@ -1214,7 +1198,7 @@ def main():
                             LON = SD.trace_headers.trace_header_N[
                                       4].receiver_point_X_final / 10.
                     except Exception as e:
-                        logging.warn(
+                        LOGGER.warning(
                             "Failed to convert location: {0}.\n".format(
                                 e.message))
 
@@ -1278,8 +1262,7 @@ def main():
                 for line in TRACE_JSON:
                     log_array.append(line)
 
-            sys.stdout.write(":<Finished>: {0}\n".format(F))
-            sys.stdout.flush()
+            LOGGER.info(":<Finished>: {0}\n".format(F))
 
         write_arrays(ARRAY_T)
         seconds = time.time() - then
@@ -1288,11 +1271,10 @@ def main():
             EX.ph5close()
             EXREC.ph5close()
         except Exception as e:
-            sys.stderr.write("Warning: {0}\n".format("".join(e.message)))
+            LOGGER.warning("{0}\n".format("".join(e.message)))
 
-        print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
-        logging.info("Done...{0:b}".format(int(seconds / 6.)))
-        logging.shutdown
+        LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
+        logging.shutdown()
 
     prof()
 
