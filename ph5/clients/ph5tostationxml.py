@@ -527,12 +527,13 @@ class PH5toStationXMLParser(object):
                            sta_latitude, sta_elevation, creation_date,
                            termination_date, site_name):
         obs_station = inventory.Station(sta_code,
-                                        latitude=sta_latitude,
-                                        longitude=sta_longitude,
+                                        latitude=round(sta_latitude, 6),
+                                        longitude=round(sta_longitude, 6),
                                         start_date=start_date,
                                         end_date=end_date,
-                                        elevation=sta_elevation)
-        obs_station.site = inventory.Site(name=site_name)
+                                        elevation=round(sta_elevation, 1))
+        obs_station.site = inventory.Site(name=(site_name if site_name
+                                                else sta_code))
         obs_station.creation_date = creation_date
         obs_station.termination_date = termination_date
         obs_station.total_number_of_channels = 0  # initialized to 0
@@ -552,9 +553,9 @@ class PH5toStationXMLParser(object):
         obs_channel = inventory.Channel(
                                         code=cha_code,
                                         location_code=loc_code,
-                                        latitude=cha_latitude,
-                                        longitude=cha_longitude,
-                                        elevation=cha_elevation,
+                                        latitude=round(cha_latitude, 6),
+                                        longitude=round(cha_longitude, 6),
+                                        elevation=round(cha_elevation, 1),
                                         depth=0
                                             )
         obs_channel.start_date = start_date
