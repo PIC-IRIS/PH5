@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader
 from pyproj import Proj, transform
 
-PROG_VERSION = "2019.14"
+PROG_VERSION = "2019.252"
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
 
@@ -213,15 +213,13 @@ def get_args():
         FILES.append(options.rawfile)
 
     if len(FILES) == 0:
-        sys.stderr.write("Error: No input file given.\n")
-        sys.exit()
+        raise Exception("No input file given.\n")
 
     #   Set output file
     if options.outfile is not None:
         PH5 = options.outfile
     else:
-        sys.stderr.write("Error: No outfile (PH5) given.\n")
-        sys.exit()
+        raise Exception("No outfile (PH5) given.\n")
 
     logging.basicConfig(
         filename=os.path.join('.', "segd2ph5.log"),
@@ -1068,7 +1066,11 @@ def main():
 
             print '-' * 80
 
-        get_args()
+        try:
+            get_args()
+        except Exception, err_msg:
+            logging.error(err_msg)
+            return 1
 
         initializeExperiment()
         logging.info("segd2ph5 {0}".format(PROG_VERSION))
