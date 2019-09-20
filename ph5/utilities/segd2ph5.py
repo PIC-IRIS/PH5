@@ -239,29 +239,21 @@ def get_args(conv):
     logger.addHandler(ch)
 
 
-def initializeExperiment(PH5):
-    EX = experiment.ExperimentGroup(nickname=PH5)
-    EDIT = True
-    EX.ph5open(EDIT)
-    EX.initgroup()
-    return EX
-
-
-def openPH5(filename, conv):
+def openPH5(filename, conv=None):
     '''   Open PH5 file, miniPH5_xxxxx.ph5   '''
     try:
-        EXREC = conv.exrec
-        if EXREC.ph5.isopen:
-            if EXREC.filename != filename:
-                EXREC.ph5close()
+        ex = conv.exrec
+        if ex.ph5.isopen:
+            if ex.filename != filename:
+                ex.ph5close()
             else:
-                return EXREC
+                return ex
     except BaseException:
         pass
-    exrec = experiment.ExperimentGroup(nickname=filename)
-    exrec.ph5open(True)
-    exrec.initgroup()
-    return exrec
+    ex = experiment.ExperimentGroup(nickname=filename)
+    ex.ph5open(True)
+    ex.initgroup()
+    return ex
 
 
 def update_index_t_info(conv, starttime, samples, sps):
@@ -1006,7 +998,7 @@ def main():
             logger.error(err_msg)
             return 1
 
-        conv.ex = initializeExperiment(conv.ph5)
+        conv.ex = openPH5(conv.ph5)
         logger.info("segd2ph5 {0}".format(PROG_VERSION))
         logger.info("{0}".format(sys.argv))
         if len(conv.files) > 0:
