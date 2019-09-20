@@ -14,7 +14,7 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2019.263'
 LOGGER = logging.getLogger(__name__)
 
 HOME = os.environ['HOME']
@@ -422,8 +422,7 @@ class FormaIO():
             try:
                 self.open()
             except FormaIOError as e:
-                LOGGER.error("{0}: {1}".format(e.errno, e.message))
-                sys.exit()
+                raise e
         if self.infh is None:
             return
         n = 0
