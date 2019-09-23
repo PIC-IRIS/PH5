@@ -573,8 +573,10 @@ def process_traces(rh, th, tr):
                 return False
             elif Das not in ARRAY_T[line]:
                 return False
-            elif chan_set in ARRAY_T[line][Das]:
-                if not ARRAY_T[line][Das][chan_set]:
+            elif dtime not in ARRAY_T[line][Das]:
+                return False
+            elif chan_set in ARRAY_T[line][Das][dtime]:
+                if not ARRAY_T[line][Das][dtime][chan_set]:
                     return False
                 else:
                     return True
@@ -751,15 +753,18 @@ def process_traces(rh, th, tr):
             line = 0
 
         chan_set = get_true_channel()
+        dtime = p_array_t['deploy_time/epoch_l']
         if line not in ARRAY_T:
             ARRAY_T[line] = {}
         if Das not in ARRAY_T[line]:
             ARRAY_T[line][Das] = {}
-        if chan_set not in ARRAY_T[line][Das]:
-            ARRAY_T[line][Das][chan_set] = []
+        if dtime not in ARRAY_T[line][Das]:
+            ARRAY_T[line][Das][dtime] = {}
+        if chan_set not in ARRAY_T[line][Das][dtime]:
+            ARRAY_T[line][Das][dtime][chan_set] = []
 
         if not seen_sta():
-            ARRAY_T[line][Das][chan_set].append(p_array_t)
+            ARRAY_T[line][Das][dtime][chan_set].append(p_array_t)
 
     def process_reel_headers():
         global RH
@@ -836,14 +841,17 @@ def write_arrays(Array_t):
         das_list = sorted(Array_t[line].keys())
         #   Loop through das_list
         for das in das_list:
-            chan_sets = sorted(Array_t[line][das].keys())
-            #   Loop through channel sets
-            for chan_set in chan_sets:
-                try:
-                    for array_t in Array_t[line][das][chan_set]:
-                        columns.populate(a, array_t)
-                except Exception as e:
-                    print e.message
+            dtimes = sorted(Array_t[line][das].keys())
+            #   Loop through deploying times
+            for dtime in dtimes:
+                chan_sets = sorted(Array_t[line][das][dtime].keys())
+                #   Loop through channel sets
+                for chan_set in chan_sets:
+                    try:
+                        for array_t in Array_t[line][das][dtime][chan_set]:
+                            columns.populate(a, array_t)
+                    except Exception as e:
+                        print e.message
 
 
 def writeINDEX():
