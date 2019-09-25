@@ -475,11 +475,10 @@ class PH5Validate(object):
 
         self.ph5.read_das_t(das_serial, reread=False)
         sample_rate = station['sample_rate_i']
+        nodata_msg = "No data found for das serial number {0}. You may need "\
+            "to reload the raw data for this station.".format(str(das_serial))
         if das_serial not in self.ph5.Das_t:
-            error.append("No data found for das serial number {0}. "
-                         "You may need to reload the raw "
-                         "data for this station."
-                         .format(str(das_serial)))
+            error.append(nodata_msg)
 
         das_time_list = self.das_time[das_serial][channel_id][sample_rate]
 
@@ -504,12 +503,20 @@ class PH5Validate(object):
 
         try:
             # don't need to read das_t because it will be read in get_extent
-            if index != len(das_time_list) - 1:
+            if index != len(das_time_list) - 1 or \
+              (index == len(das_time_list) - 1 and
+               das_time_list[index][3] == ""):
+                # for the last das_time_list, although analyze_time() already
+                # check for data after pickup, but still need to check for
+                # data exist during the station's time
                 # -- check data from current deploy time to next deploy time --
                 # ------------------------------------------------------------#
                 check_start = das_time_list[index][0]
-                # -1 to avoid counting the window wiht deploy time=check_end
-                check_end = das_time_list[index+1][0] - 1
+                if index == len(das_time_list) - 1:
+                    check_end = das_time_list[index][1]
+                    # mainly to check for case true_start is None
+                else:
+                    check_end = das_time_list[index+1][0] - 1
                 i = 1
                 # while loop to avoid using overlaping row
                 while check_end < check_start:
@@ -523,10 +530,11 @@ class PH5Validate(object):
                                         end=check_end,
                                         sample_rate=sample_rate)
 
-                if true_start is None:
+                if true_start is None and nodata_msg not in error:
+                    # check for nodata_msg to avoid duplicate info
                     error.append(
                         "No data found for das serial number {0} during this "
-                        "array's time. You may need to reload the raw "
+                        "station's time. You may need to reload the raw "
                         "data for this station.".format(str(das_serial)))
                 else:
                     # don't check deploy time because the time sent to
