@@ -615,13 +615,13 @@ class PH5Validate(object):
                     if firstdeploy_time > true_deploy:
                         time = int(firstdeploy_time - true_deploy)
                         warningmsg = "Data exists before deploy time: %s "\
-                            "seconds " % time
+                            "seconds" % time
                         self.das_time[d][c][spr][0][3] = warningmsg
 
                     if lastpickup_time < true_pickup:
                         time = int(true_pickup - lastpickup_time)
-                        warningmsg = "Data exists after deploy time: %s "\
-                            "seconds " % time
+                        warningmsg = "Data exists after pickup time: %s "\
+                            "seconds" % time
                         self.das_time[d][c][spr][-1][3] += warningmsg
 
     def check_array_t(self):
