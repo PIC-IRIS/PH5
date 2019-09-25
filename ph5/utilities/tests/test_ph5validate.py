@@ -5,8 +5,6 @@ import unittest
 from ph5.core import ph5api
 from ph5.utilities import ph5validate
 import os
-import sys
-from mock import patch
 
 
 class TestPh5Validate(unittest.TestCase):
@@ -29,7 +27,7 @@ class TestPh5Validate(unittest.TestCase):
         for f in filelist:
             if f.endswith(".log"):
                 os.remove(f)
-                
+
     def test_analyze_time(self):
         """
         test analyze_method to see if das_time created has all time and station
@@ -37,7 +35,6 @@ class TestPh5Validate(unittest.TestCase):
         time range?
         """
         self.ph5validate.analyze_time()
-        #print("das_time:", self.ph5validate.das_time)
         self.assertEqual(self.ph5validate.das_time.keys(), ['12183'])
         Dtime = self.ph5validate.das_time['12183']
         self.assertEqual(Dtime.keys(), [1])
@@ -109,6 +106,7 @@ class TestPh5Validate(unittest.TestCase):
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
                       errors)
+
 
 if __name__ == "__main__":
     unittest.main()
