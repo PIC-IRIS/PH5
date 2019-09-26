@@ -1363,18 +1363,16 @@ class PH5(experiment.ExperimentGroup):
         if start or end:
             if not (start and end):
                 raise ValueError("if start or end, both are required")
-        # self.read_das_t(das, start, end, reread=True)
 
-        if das not in self.Das_t:
-            das_t_t = self.query_das_t(
-                das,
-                chan=component,
-                start_epoch=start,
-                stop_epoch=end,
-                sample_rate=sample_rate)
-            if not das_t_t:
-                LOGGER.warning("No Das table found for " + das)
-                return None, None
+        das_t_t = self.query_das_t(
+            das,
+            chan=component,
+            start_epoch=start,
+            stop_epoch=end,
+            sample_rate=sample_rate)
+        if not das_t_t:
+            LOGGER.warning("No Das table found for " + das)
+            return None, None
 
         if not das_t_t:
             Das_t = filter_das_t(self.Das_t[das]['rows'], component)
@@ -1424,7 +1422,6 @@ class PH5(experiment.ExperimentGroup):
             raise ValueError("Component required for get_availability")
         if sample_rate is None:
             raise ValueError("Sample rate required for get_availability")
-
         self.read_das_t(das, start, end, reread=True)
 
         if das not in self.Das_t:
