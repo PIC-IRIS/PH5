@@ -5,17 +5,48 @@ import unittest
 from ph5.core import ph5api
 from ph5.utilities import ph5validate
 import os
+import shutil
+import tempfile
 
 
 class TestPh5Validate(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.alltests_result = []
+        self.home = os.getcwd()
+        kefpath = self.home + "/ph5/test_data/metadata/array_t_9_validate.kef"
+        datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
+        self.tmpdir = tempfile.mkdtemp()
+        os.chdir(self.tmpdir)
+        os.system("initialize_ph5 -n master.ph5")
+        os.system("125atoph5 -n master.ph5 -r %s" % datapath)
+        os.system(
+            "keftoph5 -n master.ph5 -k %s" % kefpath)
+        os.chdir(self.home)
+
+    @classmethod
+    def tearDownClass(self):
+        if False in self.alltests_result:
+            errmsg = "Some tests in TestPH5Validate have FAILED. "\
+                "Inspect files created in %s." % self.tmpdir
+            print(errmsg)
+        else:
+            try:
+                shutil.rmtree(self.tmpdir)
+            except Exception as e:
+                print("Cannot remove %s due to the error:%s" %
+                      (self.tmpdir, str(e)))
+            filelist = os.listdir(".")
+            for f in filelist:
+                if f.endswith(".log"):
+                    os.remove(f)
 
     def setUp(self):
-        path = 'ph5/test_data/ph5_validate'
-
         self.ph5_object = ph5api.PH5(
-            nickname='master.ph5', path=path)
+            nickname='master.ph5', path=self.tmpdir)
         self.ph5validate = ph5validate.PH5Validate(
-            self.ph5_object, path, level="ERROR", outfile="ph5_validate.log")
+            self.ph5_object, self.tmpdir,
+            level="ERROR", outfile="ph5_validate.log")
 
     def tearDown(self):
         """"""
@@ -23,10 +54,8 @@ class TestPh5Validate(unittest.TestCase):
             self.ph5_object.ph5close()
         except BaseException:
             pass
-        filelist = os.listdir(".")
-        for f in filelist:
-            if f.endswith(".log"):
-                os.remove(f)
+        self.alltests_result.append(
+            self._resultForDoCleanups.wasSuccessful())
 
     def test_analyze_time(self):
         """
