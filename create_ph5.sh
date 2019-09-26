@@ -21,14 +21,7 @@ keftoph5 -n master -k ../metadata/sort_t.kef
 geo_kef_gen -n master.ph5 > ../metadata/offset_t.kef
 keftoph5 -n master -k ../metadata/offset_t.kef
 echo "Finished creating test PH5"
-cd ..
-echo "Making test PH5_validate!"
-mkdir ph5_validate
-cd ph5_validate
-initialize_ph5 -n master.ph5
-125atoph5 -n master.ph5 -r ../rt125a/I2183RAW.TRD
-keftoph5 -n master.ph5 -k ../metadata/array_t_9_validate.kef
-echo "Finished creating test PH5_validate"
+
 
 
 
