@@ -8,7 +8,7 @@ import sys
 import os
 import argparse
 from ph5 import LOGGING_FORMAT
-from ph5.core import ph5utils, ph5api, experiment, columns
+from ph5.core import ph5utils, ph5api, columns
 import tables
 import subprocess
 import logging
@@ -54,14 +54,18 @@ class Station(object):
         self.serial = serial
 
 
-class n_i_fix(object):
+class N_I_Fix(object):
 
     def __init__(self, ph5API_object, array=[]):
         self.ph5 = ph5API_object
         self.array = array
-
-        if not self.ph5.Array_t_names:
-            self.ph5.read_array_t_names()
+        self.ph5.read_sort_t()
+        self.ph5.read_array_t_names()
+        if array:
+            for a in array:
+                self.read_arrays(a)
+        else:
+            self.read_arrays(None)
 
     def read_arrays(self, name):
         if name is None:
@@ -80,6 +84,8 @@ class n_i_fix(object):
                 if not ph5utils.does_pattern_exists(
                         array_patterns, str(array)):
                     continue
+            else:
+                array = str(int(array_name[-3:]))
 
             self.read_arrays(array_name)
             arraybyid = self.ph5.Array_t[array_name]['byid']
@@ -120,7 +126,7 @@ class n_i_fix(object):
                         except BaseException:
                             LOGGER.warning(
                                 "No DAS table found for das {0} channel "
-                                "{1}.\n".format(serial, channel))
+                                "{1}.".format(serial, channel))
                             break
                         for entry in Das_t:
                             if (entry['sample_rate_i'] == sample_rate and
@@ -138,11 +144,6 @@ class n_i_fix(object):
                             bit_weight = Response_t['bit_weight/value_d']
                             bit_weight_units = Response_t['bit_weight/units_s']
                             gain_units = Response_t['gain/units_s']
-                        else:
-                            LOGGER.warning(
-                                "No Response table found for das {0} channel "
-                                "{1}.\n".format(serial, channel))
-                        try:
                             stations.append(
                                 Station(
                                     id_s,
@@ -159,9 +160,30 @@ class n_i_fix(object):
                                     bit_weight_units,
                                     gain_units,
                                     serial))
-                        except BaseException:
-                            LOGGER.error("Couldn't add station.")
+                        else:
+                            stations.append(
+                                Station(
+                                    id_s,
+                                    array,
+                                    channel,
+                                    sample_rate,
+                                    sample_rate_multiplier,
+                                    das_model.strip(),
+                                    sensor_model.strip(),
+                                    1,
+                                    response_n_i,
+                                    receiver_n_i,
+                                    None,
+                                    '',
+                                    '',
+                                    serial))
+                            LOGGER.debug(
+                                "No Response table found for das {0} channel "
+                                "{1}.".format(serial, channel))
                             continue
+        if not stations:
+            LOGGER.warning("No stations need updating. Is this the first time "
+                           "loading a response for the selected arrays?")
         return stations
 
     def update_kefs(self, path, arrays, data):
@@ -215,6 +237,7 @@ class n_i_fix(object):
             channel = None
             with open("array_t_" + str(x) + ".kef") as f:
                 kef = f.readlines()
+
             for line in kef:
                 if line.startswith("	id_s="):
                     id_s = int(line[6:])
@@ -311,11 +334,15 @@ class n_i_fix(object):
         loaded_sensor = []
         for line in csv:
             line_list = line.split(",")
-            if line_list[0] == 'Das Model':
+            if len(line_list) < 5:
+                raise RuntimeError("Unable to parse input csv file - %s" %
+                                   input_csv)
+            elif line_list[0] == 'Das Model':
                 continue
             else:
                 if line_list[5] != "":
                     name = str(
+                        "RESP_" +
                         line_list[0] +
                         "_" +
                         line_list[2] +
@@ -346,13 +373,12 @@ class n_i_fix(object):
                 if len(line_list) >= 6:
                     if line_list[6] == '\n':
                         continue
-                    if line_list[1] not in loaded_sensor:
+                    elif line_list[1] not in loaded_sensor:
                         with open(line_list[6].rstrip(), "r") as f:
                             sensor_data = f.readlines()
                         f.close()
                         try:
-                            name = line_list[1].replace(
-                                " ", "")
+                            name = "RESP_" + line_list[1].replace(" ", "")
                             name = name.translate(None, ',-=.')
                             ph5.create_array(
                                 ph5.root.Experiment_g.Responses_g,
@@ -366,18 +392,14 @@ class n_i_fix(object):
                             LOGGER.warning(
                                 "Could not load {0}"
                                 .format(name.replace(" ", "")))
-        ph5.close()
 
-        ph5_object = experiment.ExperimentGroup(nickname=nickname,
-                                                currentpath=path)
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
-
-        ret, blah = ph5_object.ph5_g_responses.read_responses()
+        ret, blah = self.ph5.ph5_g_responses.read_responses()
 
         data_list = []
         data_update = []
         for station in data:
+            if not station.gain:
+                station.gain = line_list[4]
             data_list.append([str(station.das_model),
                               str(station.sensor_model),
                               str(station.sample_rate),
@@ -387,7 +409,6 @@ class n_i_fix(object):
                               str(station.bit_weight_units),
                               str(station.gain_units)])
         unique_list = [list(x) for x in set(tuple(x) for x in data_list)]
-
         # get highest n_i
         n_i = 0
         for entry in ret:
@@ -445,13 +466,11 @@ class n_i_fix(object):
 
             data_update.append([x[0], x[1], x[2], x[3], x[4], n_i])
 
-        ph5_object.ph5_g_responses.nuke_response_t()
+        self.ph5.ph5_g_responses.nuke_response_t()
         final_ret.sort()
         for entry in final_ret:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
-
-        ph5_object.ph5close()
 
         LOGGER.info(
             "response_t.kef written into PH5")
@@ -492,7 +511,7 @@ def get_args():
 
     parser.add_argument(
         "-a", "--array", action="store",
-        help="Comma separated list of arrays to update",
+        help="Comma separated list of arrays to update. (optional)",
         type=str, dest="array", metavar="array")
 
     parser.add_argument(
@@ -513,11 +532,7 @@ def get_args():
 def main():
     args = get_args()
 
-    if args.nickname[-3:] == 'ph5':
-        ph5file = os.path.join(args.ph5path, args.nickname)
-    else:
-        args.nickname = '{0}.ph5'.format(args.nickname)
-        ph5file = os.path.join(args.ph5path, args.nickname)
+    ph5file = os.path.join(args.ph5path, args.nickname)
 
     if not os.path.exists(ph5file):
         LOGGER.warning("{0} not found.\n".format(ph5file))
@@ -533,15 +548,16 @@ def main():
         LOGGER.addHandler(ch)
 
     if args.array:
-        args.array = args.array.split(',')
+        arrays_list = args.array.split(',')
+    else:
+        arrays_list = []
 
-    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
+    ph5API_object = ph5api.PH5(path=args.ph5path,
+                               nickname=args.nickname,
+                               editmode=True)
 
-    fix_n_i = n_i_fix(ph5API_object, args.array)
-
+    fix_n_i = N_I_Fix(ph5API_object, arrays_list)
     data = fix_n_i.create_list()
-
-    ph5API_object.close()
 
     if args.input_csv is None:
         fix_n_i.create_template(data)
@@ -550,7 +566,9 @@ def main():
             args.ph5path, args.nickname, data, args.input_csv)
         import time
         time.sleep(5)
-        fix_n_i.update_kefs(args.ph5path, args.array, new_data)
+        fix_n_i.update_kefs(args.ph5path, arrays_list, new_data)
+
+    ph5API_object.close()
 
 
 if __name__ == '__main__':
