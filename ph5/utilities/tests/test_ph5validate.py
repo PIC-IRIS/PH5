@@ -2,6 +2,9 @@
 Tests for metadatatoph5
 '''
 import unittest
+import logging
+from StringIO import StringIO as StringBuffer
+import ph5
 from ph5.core import ph5api, experiment
 from ph5.utilities import ph5validate, texan2ph5, kef2ph5
 import os
@@ -11,6 +14,13 @@ import tempfile
 
 class TestPh5Validate(unittest.TestCase):
     def setUp(self):
+        # capture log string into log_capture_string
+        self.log_capture_string = StringBuffer()
+        ph5.logger.removeHandler(ph5.ch)
+        ch = logging.StreamHandler(self.log_capture_string)
+        ph5.logger.addHandler(ch)
+
+        # create tmpdir
         self.home = os.getcwd()
         kefpath = self.home + "/ph5/test_data/metadata/array_t_9_validate.kef"
         datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
