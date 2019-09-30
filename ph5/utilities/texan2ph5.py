@@ -628,8 +628,6 @@ def writeINDEX():
 
 def updatePH5(f):
     global EX, EXREC
-    sys.stdout.write(":<Processing>: {0}\n".format(f))
-    sys.stdout.flush()
     LOGGER.info("Processing: %s..." % f)
     size_of_data = os.path.getsize(f) * 1.250
     try:
@@ -661,8 +659,6 @@ def updatePH5(f):
 
     if len(pn.eventTable) > 0:
         writeET(pn.eventTable)
-    sys.stdout.write(":<Finished>: {0}\n".format(f))
-    sys.stdout.flush()
     LOGGER.info(":<Finished>: {0}\n".format(f))
 
 
