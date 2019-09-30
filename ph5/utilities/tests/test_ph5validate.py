@@ -2,8 +2,8 @@
 Tests for metadatatoph5
 '''
 import unittest
-from ph5.core import ph5api
-from ph5.utilities import ph5validate, texan2ph5
+from ph5.core import ph5api, experiment
+from ph5.utilities import ph5validate, texan2ph5, kef2ph5
 import os
 import shutil
 import tempfile
@@ -16,10 +16,31 @@ class TestPh5Validate(unittest.TestCase):
         datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
         self.tmpdir = tempfile.mkdtemp()
         os.chdir(self.tmpdir)
-        os.system("initialize_ph5 -n master.ph5")
-        os.system("125atoph5 -n master.ph5 -r %s" % datapath)
-        os.system(
-            "keftoph5 -n master.ph5 -k %s" % kefpath)
+        # initiate ph5
+        ex = experiment.ExperimentGroup(nickname='master.ph5')
+        ex.ph5open(True)  # Open ph5 file for editing
+        ex.initgroup()
+
+        # add texan data
+        texan2ph5.EX = ex
+        texan2ph5.FILES = [datapath]
+        texan2ph5.FIRST_MINI = 1
+        texan2ph5.WINDOWS = None
+        texan2ph5.SR = None
+        texan2ph5.process()
+
+        # add array table
+        kef2ph5.EX = ex
+        kef2ph5.KEFFILE = kefpath
+        kef2ph5.PH5 = "master.ph5"
+        kef2ph5.TRACE = False
+        kef2ph5.populateTables()
+
+        try:
+            ex.ph5close()
+            texan2ph5.EXREC.ph5close()
+        except Exception:
+            pass
 
         self.ph5_object = ph5api.PH5(
             nickname='master.ph5', path=self.tmpdir)
