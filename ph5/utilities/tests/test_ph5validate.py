@@ -10,9 +10,7 @@ import tempfile
 
 
 class TestPh5Validate(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.alltests_result = []
+    def setUp(self):
         self.home = os.getcwd()
         kefpath = self.home + "/ph5/test_data/metadata/array_t_9_validate.kef"
         datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
@@ -22,26 +20,7 @@ class TestPh5Validate(unittest.TestCase):
         os.system("125atoph5 -n master.ph5 -r %s" % datapath)
         os.system(
             "keftoph5 -n master.ph5 -k %s" % kefpath)
-        os.chdir(self.home)
 
-    @classmethod
-    def tearDownClass(self):
-        if False in self.alltests_result:
-            errmsg = "Some tests in TestPH5Validate have FAILED. "\
-                "Inspect files created in %s." % self.tmpdir
-            print(errmsg)
-        else:
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
-            filelist = os.listdir(".")
-            for f in filelist:
-                if f.endswith(".log"):
-                    os.remove(f)
-
-    def setUp(self):
         self.ph5_object = ph5api.PH5(
             nickname='master.ph5', path=self.tmpdir)
         self.ph5validate = ph5validate.PH5Validate(
@@ -49,13 +28,22 @@ class TestPh5Validate(unittest.TestCase):
             level="ERROR", outfile="ph5_validate.log")
 
     def tearDown(self):
-        """"""
         try:
             self.ph5_object.ph5close()
         except BaseException:
             pass
-        self.alltests_result.append(
-            self._resultForDoCleanups.wasSuccessful())
+
+        if self._resultForDoCleanups.wasSuccessful():
+            try:
+                shutil.rmtree(self.tmpdir)
+            except Exception as e:
+                print("Cannot remove %s due to the error:%s" %
+                      (self.tmpdir, str(e)))
+        else:
+            errmsg = "%s has FAILED. Inspect files created in %s." \
+                % (self._testMethodName, self.tmpdir)
+            print(errmsg)
+        os.chdir(self.home)
 
     def test_analyze_time(self):
         """
