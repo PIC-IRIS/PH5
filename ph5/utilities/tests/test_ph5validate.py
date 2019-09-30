@@ -8,6 +8,7 @@ import os
 import shutil
 import tempfile
 
+import ph5.utilities
 
 class TestPh5Validate(unittest.TestCase):
     @classmethod
@@ -63,6 +64,7 @@ class TestPh5Validate(unittest.TestCase):
         info. Does it catch the case data exists before or after the whole
         time range?
         """
+        ph5.utilities.125a2ph5.FILES = []
         self.ph5validate.analyze_time()
         self.assertEqual(self.ph5validate.das_time.keys(), ['12183'])
         Dtime = self.ph5validate.das_time['12183']
