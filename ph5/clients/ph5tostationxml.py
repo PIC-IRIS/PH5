@@ -223,7 +223,7 @@ class PH5toStationXMLRequestManager(object):
     def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format):
         self.request_list = sta_xml_obj_list
         self.ph5 = ph5api.PH5(path=ph5path, nickname=nickname)
-        self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
+        self.iris_custom_ns = "http://www.iris.edu/xml/station/1/"
         self.level = level.upper()
         self.format = format.upper()
         self.nickname = nickname
@@ -1012,7 +1012,7 @@ def main():
         if out_format == "STATIONXML":
             inv.write(args.outfile,
                       format='STATIONXML',
-                      nsmap={'iris': "http://www.fdsn.org/xml/station/1/iris"})
+                      nsmap={'iris': "http://www.iris.edu/xml/station/1/"})
         elif out_format == "KML":
             inv.write(args.outfile, format='KML')
         elif out_format == "SACPZ":
