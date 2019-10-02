@@ -595,6 +595,9 @@ class FormaIO():
                 if m == 'A' and TO != 'A':
                     try:
                         copy2('../A/master.ph5', './master.ph5')
+                        # index_t already in Sigma/master.ph5 after copied
+                        # -> skip loading into it
+                        continue
                     except BaseException:
                         raise FormaIOError(
                             errno=7,
@@ -643,6 +646,10 @@ class FormaIO():
 
             os.chdir(os.path.join(self.home, TO))
             for m in self.nmini:
+                if m == 'A' and TO != 'A':
+                    # already added this table in load_index when copy
+                    # master.ph5 from A to/ TO/
+                    continue
                 command = "keftoph5 -n master.ph5 -k ../{0}/Array_t_cat.kef"\
                     .format(m)
                 ret = subprocess.Popen(
