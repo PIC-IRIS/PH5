@@ -960,44 +960,6 @@ def writeINDEX():
     MAP_INFO = {}
 
 
-def txncsptolatlon(northing, easting):
-    '''
-       Sweetwater
-       Convert texas state plane coordinates in feet to
-       geographic coordinates, WGS84.
-    '''
-    from pyproj import Proj, transform
-    #   Texas NC state plane feet Zone 4202
-    sp = Proj(init='epsg:32038')
-    #   WGS84, geographic
-    wgs = Proj(init='epsg:4326', proj='latlong')
-    #   Texas SP coordinates: survey foot is 1200/3937 meters
-    lon, lat = transform(sp, wgs, easting * 0.30480060960121924,
-                         northing * 0.30480060960121924)
-
-    return lat, lon
-
-
-def utmcsptolatlon(northing, easting):
-    '''
-       Mount Saint Helens
-       Convert UTM to
-       geographic coordinates, WGS84.
-    '''
-    #   UTM
-    new_UTM = re.split(r'(\d+)', UTM)
-    utmzone = str(new_UTM[1])
-
-    NS = str(new_UTM[2]).upper()
-    if NS != 'N' and NS != 'S':
-        NS = 'N'
-
-#  OLD WAY - deprecated, called pyproj. New way uses ph5utils.
-    utm = ph5utils.UTMConversions()
-    lat, lon = utm.lat_long(easting, northing, utmzone, NS)
-    return lat, lon
-
-
 def correct_append_number():
     # from math import modf
     traces = SD.reel_headers.extended_header_2['number_records']
@@ -1187,18 +1149,28 @@ def main():
                     try:
                         if UTM:
                             #   UTM
-                            LAT, LON = utmcsptolatlon(
+                            utmc = ph5utils.UTMConversions()
+                            new_UTM = re.split(r'(\d+)', UTM)
+                            utmzone = str(new_UTM[1])
+
+                            NS = str(new_UTM[2]).upper()
+                            if NS != 'N' and NS != 'S':
+                                NS = 'N'
+
+                            LAT, LON = utmc.lat_long(
+                                SD.trace_headers.trace_header_N[
+                                    4].receiver_point_X_final / 10.,
                                 SD.trace_headers.trace_header_N[
                                     4].receiver_point_Y_final / 10.,
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
+                                utmzone, NS)
                         elif TSPF:
                             #   Texas State Plane coordinates
-                            LAT, LON = txncsptolatlon(
+                            tspc = ph5utils.TSPConversions()
+                            LAT, LON = tspc.lat_long(
                                 SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
+                                    4].receiver_point_X_final / 10.,
                                 SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
+                                    4].receiver_point_Y_final / 10.)
                         else:
                             LAT = SD.trace_headers.trace_header_N[
                                       4].receiver_point_Y_final / 10.

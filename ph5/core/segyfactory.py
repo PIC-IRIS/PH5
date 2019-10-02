@@ -17,7 +17,7 @@ import string
 import sys
 import logging
 from pyproj import Geod
-from ph5.core.cs2cs import geod2utm
+from ph5.core import ph5utils  # for geod2utm
 from ph5.core import segy_h, ebcdic
 
 PROG_VERSION = '2018.268'
@@ -787,11 +787,10 @@ class Ssegy:
 
         if self.utm is True:
             try:
-                Y, X, Z = geod2utm(None,  # Zone goes here
-                                   "WGS84",
-                                   self.array_t['location/Y/value_d'],
-                                   self.array_t['location/X/value_d'],
-                                   self.array_t['location/Z/value_d'])
+                utmc = ph5utils.UTMConversions()
+                Y, X, Z = utmc.geod2utm(self.array_t['location/Y/value_d'],
+                                        self.array_t['location/X/value_d'],
+                                        self.array_t['location/Z/value_d'])
                 s, vx, vy = pick_values_32(X, Y)
 
                 tra['coordScale'] = s
@@ -844,11 +843,10 @@ class Ssegy:
 
             if self.utm:
                 try:
-                    Y, X, Z = geod2utm(None,  # Zone goes here
-                                       "WGS84",
-                                       self.event_t['location/Y/value_d'],
-                                       self.event_t['location/X/value_d'],
-                                       self.event_t['location/Z/value_d'])
+                    utmc = ph5utils.UTMConversions()
+                    Y, X, Z = utmc.geod2utm(self.event_t['location/Y/value_d'],
+                                            self.event_t['location/X/value_d'],
+                                            self.event_t['location/Z/value_d'])
 
                     s, vx, vy = pick_values_32(X, Y)
                     tra['sourceLongOrX'] = vx
