@@ -299,8 +299,12 @@ class PH5toStationXMLParser(object):
             geographic constraints
         """
         if not -90 <= float(latitude) <= 90:
+            LOGGER.warning("Longitude is %s while it should be in range "
+                           "[-90, 90]" % latitude)
             return False
         elif not -180 <= float(longitude) <= 180:
+            LOGGER.warning("Latitude is %s while it should be in range "
+                           "[-90, 90]" % latitude)
             return False
         # if lat/lon box intersection
         elif not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
@@ -309,6 +313,13 @@ class PH5toStationXMLParser(object):
                                                sta_xml_obj.maxlongitude,
                                                latitude,
                                                longitude):
+            LOGGER.warning("With (lat, lon) = (%s, %s), there is a box "
+                           "intersection in which latitude boundary is: "
+                           "[%s, %s] and longtitude boundary is: [%s, %s]" %
+                           (latitude, longitude,
+                            sta_xml_obj.minlatitude, sta_xml_obj.maxlatitude,
+                            sta_xml_obj.minlongitude, sta_xml_obj.maxlongitude)
+                           )
             return False
         # check if point/radius intersection
         elif not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
@@ -317,6 +328,12 @@ class PH5toStationXMLParser(object):
                                                  sta_xml_obj.maxradius,
                                                  latitude,
                                                  longitude):
+            LOGGER.warning("With (lat, lon) = (%s, %s), there is a radial "
+                           "intersection between a point radius boundary "
+                           "[%s, %s] and a latitude/longitude point [%s, %s]" %
+                           (latitude, longitude,
+                            sta_xml_obj.minradius, sta_xml_obj.maxradius,
+                            sta_xml_obj.latitude, sta_xml_obj.longitude))
             return False
         else:
             return True
