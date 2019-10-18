@@ -926,7 +926,8 @@ class PH5toMSeed(object):
                                                                 seed_station):
                                 continue
 
-                        if self.reqtype == "SHOT" or self.reqtype == "RECEIVER":
+                        if (self.reqtype == "SHOT" or
+                                self.reqtype == "RECEIVER"):
                             # request by shot
                             for shotline in matched_shot_lines:
                                 for shot in matched_shots:
