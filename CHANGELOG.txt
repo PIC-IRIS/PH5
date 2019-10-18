@@ -23,6 +23,7 @@ ph5.clients.ph5toms
  * Fix substring issue
  * Add ph5toms support for the web service SEG-Y timeseries data format.
  * Fix bug where starttime offset was applied after calculating the end time of a shot gather request
+ * Add web service hooks for reciever gather request type
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui
