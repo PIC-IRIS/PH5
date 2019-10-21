@@ -16,8 +16,7 @@ import time
 import string
 import sys
 import logging
-from pyproj import Geod
-from ph5.core import ph5utils  # for geod2utm
+from ph5.core import ph5utils  # for geod2utm, run_geod
 from ph5.core import segy_h, ebcdic
 
 PROG_VERSION = '2018.268'
@@ -871,10 +870,12 @@ class Ssegy:
             tra['sourceToRecDist'] = self.offset_t['offset/value_d']
         else:
             try:
-                az_baz_dist = run_geod(self.event_t['location/Y/value_d'],
+                geod = ph5utils.Geodesics()
+                az_baz_dist = geod.run_geod(self.event_t['location/Y/value_d'],
                                        self.event_t['location/X/value_d'],
                                        self.array_t['location/Y/value_d'],
-                                       self.array_t['location/X/value_d'])
+                                       self.array_t['location/X/value_d'],
+                                       FACTS[UNITS])
                 tra['sourceToRecDist'] = az_baz_dist[2]
             except Exception as e:
                 # sys.stderr.write (e.message)
@@ -1054,23 +1055,6 @@ def pick_values_32(X, Y):
             sx = cs
 
     return sx, vx, vy
-
-
-def run_geod(lat0, lon0, lat1, lon1):
-    ELLIPSOID = 'WGS84'
-    UNITS = 'm'
-
-    config = "+ellps={0}".format(ELLIPSOID)
-
-    g = Geod(config)
-
-    az, baz, dist = g.inv(lon0, lat0, lon1, lat1)
-
-    if dist:
-        dist /= FACTS[UNITS]
-
-    # Return list containing azimuth, back azimuth, distance
-    return az, baz, dist
 
 
 #

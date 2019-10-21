@@ -15,7 +15,7 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 import re
-from pyproj import Transformer
+from pyproj import Transformer, Geod
 import math
 
 PROG_VERSION = "2019.275"
@@ -119,6 +119,23 @@ class TSPConversions:  # added 2019-09-30 dthomas, Texas State Plane Coords
                                            always_xy=True)
         lon, lat = transformer.transform(easting, northing)
         return (lon, lat)
+
+class Geodesics:  # added 2019-10-21 dthomas, consolidating from other locs
+
+    def run_geod(lat0, lon0, lat1, lon1, scalar =1.0):
+        ELLIPSOID = 'WGS84'
+
+        config = "+ellps={0}".format(ELLIPSOID)
+
+        g = Geod(config)
+
+        az, baz, dist = g.inv(lon0, lat0, lon1, lat1)
+
+        if dist:
+            dist /= scalar
+
+        # Return list containing azimuth, back azimuth, distance
+        return az, baz, dist
 
 
 """

@@ -12,7 +12,7 @@ import re
 from random import randint
 from inspect import stack
 from ast import literal_eval
-from pyproj import Geod
+from ph5.core import ph5utils  # for run_geod
 import simplekml as kml
 
 from ph5.core import timedoy
@@ -215,16 +215,15 @@ def qc_deploy_pickup(rows):
         #
         # Need to check for UTM and convert to lat/lon
         #
+        geod = ph5utils.Geodesics()
         units = 'm'
-        ellipsoid = 'WGS84'
-        config = "+ellps={0}".format(ellipsoid)
-        g = Geod(config)
-        az, baz, dist = g.inv(xs[0], ys[0], xs[1], ys[1])
+        az, baz, dist = geod.run_geod(ys[0], xs[0], ys[1], xs[1],
+                                              FACTS[units])
         if len(zs) > 1:
             zdelta = float(zs[1]) - float(zs[0])
         else:
             zdelta = 0.0
-        return az, baz, dist / FACTS[units], zdelta
+        return az, baz, dist, zdelta
 
     def qc_time(t1, t2):
         '''
