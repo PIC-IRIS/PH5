@@ -2,6 +2,8 @@ dependencies:
  - python=2.7
  - hdf5=1.8.18
  - pykml==0.1.0
+ - matplotlib=1
+ - subprocess32
  - six
  - Cython
  - nose

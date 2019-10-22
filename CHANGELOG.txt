@@ -17,11 +17,13 @@ ph5.clients.ph5toms
  * add day volume cuts
  * add cut length to ph5toms for webservices
  * Fix bug causing duplicate data to be written (issue #264)
- * FIx bug causing data to not be written in special cases at the start of the data in PH5
+ * Fix bug causing data to not be written in special cases at the start of the data in PH5
  * Slight change to naming output on command line for more consistency
  * No longer adds extra sample at end of cut
  * Fix substring issue
  * Add ph5toms support for the web service SEG-Y timeseries data format.
+ * Fix bug where starttime offset was applied after calculating the end time of a shot gather request
+ * Add web service hooks for reciever gather request type
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui
@@ -41,6 +43,8 @@ ph5.clients.ph5tostationxml
  * ph5tostationxml now correctly handles stations with multiple deployments (issue #318)
  * Add a new custom iris namespace attribute called iris:PH5ReportNum to the network StationXML element
  * Remove the report number from the alternateCode value in the network StationXML element
+ * Round latitude and longitude to 6 decimal places in stationxml to match SEED maximum
+ * Round elevation to 1 decimal place in stationxml to match SEED maximum
 ph5.utilities.ph5validate
  * add data time checking
 ph5.utilities.sort_kef_gen.py

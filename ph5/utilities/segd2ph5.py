@@ -18,6 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader, ph5utils
 from ph5 import LOGGING_FORMAT
 
+
 PROG_VERSION = "2019.252"
 logger = logging.getLogger(__name__)
 

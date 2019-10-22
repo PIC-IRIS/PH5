@@ -223,7 +223,7 @@ class PH5toStationXMLRequestManager(object):
     def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format):
         self.request_list = sta_xml_obj_list
         self.ph5 = ph5api.PH5(path=ph5path, nickname=nickname)
-        self.iris_custom_ns = "http://www.fdsn.org/xml/station/1/iris"
+        self.iris_custom_ns = "http://www.iris.edu/xml/station/1/"
         self.level = level.upper()
         self.format = format.upper()
         self.nickname = nickname
@@ -527,12 +527,13 @@ class PH5toStationXMLParser(object):
                            sta_latitude, sta_elevation, creation_date,
                            termination_date, site_name):
         obs_station = inventory.Station(sta_code,
-                                        latitude=sta_latitude,
-                                        longitude=sta_longitude,
+                                        latitude=round(sta_latitude, 6),
+                                        longitude=round(sta_longitude, 6),
                                         start_date=start_date,
                                         end_date=end_date,
-                                        elevation=sta_elevation)
-        obs_station.site = inventory.Site(name=site_name)
+                                        elevation=round(sta_elevation, 1))
+        obs_station.site = inventory.Site(name=(site_name if site_name
+                                                else sta_code))
         obs_station.creation_date = creation_date
         obs_station.termination_date = termination_date
         obs_station.total_number_of_channels = 0  # initialized to 0
@@ -552,9 +553,9 @@ class PH5toStationXMLParser(object):
         obs_channel = inventory.Channel(
                                         code=cha_code,
                                         location_code=loc_code,
-                                        latitude=cha_latitude,
-                                        longitude=cha_longitude,
-                                        elevation=cha_elevation,
+                                        latitude=round(cha_latitude, 6),
+                                        longitude=round(cha_longitude, 6),
+                                        elevation=round(cha_elevation, 1),
                                         depth=0
                                             )
         obs_channel.start_date = start_date
@@ -568,10 +569,15 @@ class PH5toStationXMLParser(object):
                         [x for x in
                          [sensor_manufacturer, sensor_model] if x])
 
+        das_type = " ".join(
+                        [x for x in
+                         [das_manufacturer, das_model] if x])
+        instrument_desc = "/".join(
+                            [x for x in
+                             [sensor_type, das_type] if x])
         obs_channel.sensor = inventory.Equipment(
             type=sensor_type,
-            description=("%s %s/%s %s" % (sensor_manufacturer, sensor_model,
-                                          das_manufacturer, das_model)),
+            description=instrument_desc,
             manufacturer=sensor_manufacturer,
             vendor="",
             model=sensor_model,
@@ -1011,7 +1017,7 @@ def main():
         if out_format == "STATIONXML":
             inv.write(args.outfile,
                       format='STATIONXML',
-                      nsmap={'iris': "http://www.fdsn.org/xml/station/1/iris"})
+                      nsmap={'iris': "http://www.iris.edu/xml/station/1/"})
         elif out_format == "KML":
             inv.write(args.outfile, format='KML')
         elif out_format == "SACPZ":

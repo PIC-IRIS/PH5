@@ -8,6 +8,7 @@ dist/
 *.pyc
 *.pyd.manifest
 *.pyo
+*.swp
 .cache
 .DS_Store
 .idea
