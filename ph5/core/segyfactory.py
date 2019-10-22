@@ -871,11 +871,12 @@ class Ssegy:
         else:
             try:
                 geod = ph5utils.Geodesics()
+                UNITS = 'm'
                 az_baz_dist = geod.run_geod(self.event_t['location/Y/value_d'],
-                                       self.event_t['location/X/value_d'],
-                                       self.array_t['location/Y/value_d'],
-                                       self.array_t['location/X/value_d'],
-                                       FACTS[UNITS])
+                                            self.event_t['location/X/value_d'],
+                                            self.array_t['location/Y/value_d'],
+                                            self.array_t['location/X/value_d'],
+                                            FACTS[UNITS])
                 tra['sourceToRecDist'] = az_baz_dist[2]
             except Exception as e:
                 # sys.stderr.write (e.message)

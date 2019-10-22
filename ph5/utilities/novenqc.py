@@ -218,7 +218,7 @@ def qc_deploy_pickup(rows):
         geod = ph5utils.Geodesics()
         units = 'm'
         az, baz, dist = geod.run_geod(ys[0], xs[0], ys[1], xs[1],
-                                              FACTS[units])
+                                      FACTS[units])
         if len(zs) > 1:
             zdelta = float(zs[1]) - float(zs[0])
         else:

@@ -329,6 +329,7 @@ class PH5(experiment.ExperimentGroup):
             return {}
         try:
             geod = ph5utils.Geodesics()
+            UNITS = 'm'
             if sta_line in self.Array_t and evt_line in self.Event_t:
                 array_t = self.Array_t[sta_line]['byid'][sta_id][c]
                 event_t = self.Event_t[evt_line]['byid'][evt_id]
