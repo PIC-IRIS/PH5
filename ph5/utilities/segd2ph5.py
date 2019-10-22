@@ -18,7 +18,7 @@ from math import modf
 from ph5.core import experiment, columns, segdreader, ph5utils
 from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = "2019.275"
+PROG_VERSION = "2019.252"
 logger = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
