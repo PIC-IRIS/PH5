@@ -9,7 +9,7 @@ dependencies:
  - nose
  - numpy
  - numexpr
- - pyproj
+ - pyproj=2.2
  - psutil
  - obspy
  - vispy

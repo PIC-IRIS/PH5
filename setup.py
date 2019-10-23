@@ -54,7 +54,7 @@ setup(
                       'nose',
                       'numpy',
                       'numexpr',
-                      'pyproj',
+                      'pyproj>=2',
                       'psutil',
                       'obspy',
                       'vispy',
