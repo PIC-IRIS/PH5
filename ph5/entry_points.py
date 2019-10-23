@@ -272,6 +272,11 @@ class CommandList():
                            'ph5.clients.ph5tostationxml:main',
                            'Takes PH5 files and returns StationXML.',
                            type=EntryPointTypes.CLIENT),
+                EntryPoint('ph5availability',
+                           'ph5.clients.ph5availability:main',
+                           'Takes PH5 files and returns time series '
+                           'availability info.',
+                           type=EntryPointTypes.CLIENT),
                 EntryPoint('utmtolatlong',
                            'ph5.utilities.utmtolatlong:main',
                            'Converts UTM coordinates to Latitudes'
