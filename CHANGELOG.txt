@@ -45,6 +45,8 @@ ph5.clients.ph5tostationxml
  * Remove the report number from the alternateCode value in the network StationXML element
  * Round latitude and longitude to 6 decimal places in stationxml to match SEED maximum
  * Round elevation to 1 decimal place in stationxml to match SEED maximum
+ ph5.clients.ph5availability
+ * New client for returning timeseries availability information
 ph5.utilities.ph5validate
  * add data time checking
 ph5.utilities.sort_kef_gen.py
