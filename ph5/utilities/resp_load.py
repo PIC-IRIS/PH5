@@ -8,7 +8,7 @@ import sys
 import os
 import argparse
 from ph5 import LOGGING_FORMAT
-from ph5.core import ph5utils, ph5api, columns
+from ph5.core import ph5utils, ph5api, columns, kefx
 import tables
 import subprocess
 import logging
@@ -235,57 +235,28 @@ class N_I_Fix(object):
             new_kef = []
             id_s = None
             channel = None
-            with open("array_t_" + str(x) + ".kef") as f:
-                kef = f.readlines()
-
-            for line in kef:
-                if line.startswith("	id_s="):
-                    id_s = int(line[6:])
-                    new_kef.append(line)
-                elif line.startswith("	channel_number_i="):
-                    channel = int(line[18:])
-                    new_kef.append(line)
-
-                elif "response_table_n_i=" in line:
-
-                    for station in data:
-
-                        if int(
-                                station.id_s) == id_s and int(
-                            station.channel) == channel and int(x) ==\
-                                int(station.array):
-                            if station.response_n_i:
-                                new_kef.append(
-                                    "        response_table_n_i=" +
-                                    str(station.response_n_i) + '\n')
-                                break
-                            else:
-                                new_kef.append(
-                                    "        response_table_n_i=0\n")
-                                break
-                elif "receiver_table_n_i=" in line:
-
-                    for station in data:
-
-                        if int(
-                                station.id_s) == id_s and int(
-                            station.channel) == channel and int(x) ==\
-                                int(station.array):
-                            if station.receiver_n_i:
-                                new_kef.append(
-                                    "        receiver_table_n_i=" +
-                                    str(station.receiver_n_i) + '\n')
-                                break
-                            else:
-                                new_kef.append(
-                                    "        receiver_table_n_i=0\n")
-                                break
-                else:
-                    new_kef.append(line)
-            outfile = open("array_t_" + str(x) + ".kef", 'w')
             file_name = "array_t_" + str(x) + ".kef"
-            for line in new_kef:
-                outfile.write("%s" % line)
+            kef = kefx.Kef(file_name)
+            kef.open()
+            kef.read()
+            for record in kef:
+                id_s = record["id_s"]
+                channel = record["channel_number_i"]
+                for station in data:
+                    if int(
+                            station.id_s) == id_s and int(
+                        station.channel) == channel and int(x) ==\
+                            int(station.array):
+                        record["response_table_n_i"] = \
+                            (str(station.response_n_i)
+                             if station.response_n_i else "0")
+                        record["receiver_table_n_i"] = \
+                            (str(station.receiver_table_n_i)
+                             if station.receiver_table_n_i else "0")
+                        break
+            outfile = open(file_name, 'w')
+            kef_str = kef.to_str()
+            outfile.write(kef_str)
             outfile.close()
             command = "nuke_table -n master.ph5 -p {0} -A {1}".format(
                 path, str(x))
