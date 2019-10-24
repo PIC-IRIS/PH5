@@ -123,7 +123,7 @@ class TSPConversions:  # added 2019-09-30 dthomas, Texas State Plane Coords
 
 class Geodesics:  # added 2019-10-21 dthomas, consolidating from other locs
 
-    def run_geod(lat0, lon0, lat1, lon1, scalar=1.0):
+    def run_geod(self, lat0, lon0, lat1, lon1, scalar=1.0):
         ELLIPSOID = 'WGS84'
 
         config = "+ellps={0}".format(ELLIPSOID)
