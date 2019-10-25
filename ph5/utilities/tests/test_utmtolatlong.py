@@ -8,23 +8,27 @@ class TestUTMconversion(unittest.TestCase):
 
     def test_is_valid_utm_conversion(self):
         u = UTMConversions()  # PIC Socorro
-        self.assertAlmostEqual(u.lat_long(322916, 3771967, 13, 'N'),
-                               (34.07349577107704, -106.91909595147378))
+        lat, lon = u.lat_long(322916, 3771967, 13, 'N')
+        self.assertAlmostEqual(lat, 34.07349577107704)
+        self.assertAlmostEqual(lon, -106.91909595147378)
 
     def test_is_valid_utm_conversion_south(self):
         u = UTMConversions()  # Castle Rock Antarctica
-        self.assertAlmostEqual(u.lat_long(540947, 1361594, 58, 'S'),
-                               (-77.81567398301094, 166.73816638798527))
+        lat, lon = u.lat_long(540947, 1361594, 58, 'S')
+        self.assertAlmostEqual(lat, -77.81567398301094)
+        self.assertAlmostEqual(lon, 166.73816638798527)
 
     def test_is_valid_utm_conversion_inverse(self):
         u = UTMConversions()  # PIC Socorro
-        self.assertAlmostEqual(u.geod2utm(34.0734958, -106.9190959, 1456.0),
-                               (3771967.003118457, 322916.0048106084, 1456.0))
+        northing, easting, elev = u.geod2utm(34.0734958, -106.9190959, 1456.0)
+        self.assertAlmostEqual(northing, 3771967.003118457)
+        self.assertAlmostEqual(easting, 322916.0048106084)
 
     def test_is_valid_tsp_conversion(self):
         t = TSPConversions()  # Sweetwater, Texas, units US FEET
-        self.assertAlmostEqual(t.lat_long(1380811, 6858888),
-                               (-100.40568335900281, 32.468972700219375))
+        lon, lat = t.lat_long(1380811, 6858888)
+        self.assertAlmostEqual(lon, -100.40568335900281)
+        self.assertAlmostEqual(lat, 32.468972700219375)
 
     def test_for_correct_type(self):
         with self.assertRaises(ValueError):
