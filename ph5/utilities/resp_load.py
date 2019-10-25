@@ -232,7 +232,6 @@ class N_I_Fix(object):
             process.wait()
 
         for x in arrays:
-            new_kef = []
             id_s = None
             channel = None
             file_name = "array_t_" + str(x) + ".kef"
@@ -405,7 +404,7 @@ class N_I_Fix(object):
         for x in unique_list:
             response_entry = {}
             if x[0]:
-                name = str(x[0]) + "_" + str(x[2]) + "_" + \
+                name = 'RESP_' + str(x[0]) + "_" + str(x[2]) + "_" + \
                     str(x[3]) + "_" + str(x[4])
                 name_full = '/Experiment_g/' +\
                             'Responses_g/' + name.replace(" ", "")
@@ -415,7 +414,7 @@ class N_I_Fix(object):
 
             if x[1]:
 
-                sens = x[1]
+                sens = 'RESP_' + x[1]
                 sens = sens.translate(None, ',-=.')
                 name = '/Experiment_g/' +\
                        'Responses_g/' + sens
