@@ -35,7 +35,8 @@ class Station(object):
             bit_weight,
             bit_weight_units,
             gain_units,
-            serial):
+            serial,
+            resp_loaded):
         self.id_s = id_s
         self.array = array
         self.channel = channel
@@ -52,6 +53,7 @@ class Station(object):
         self.response_file_das_a = None
         self.response_file_sensor_a = None
         self.serial = serial
+        self.resp_loaded = resp_loaded
 
 
 class n_i_fix(object):
@@ -62,6 +64,18 @@ class n_i_fix(object):
 
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
+        if not self.ph5.Response_t:
+            self.ph5.read_response_t()
+
+        self.loaded_resp = []
+        self.noloaded_resp = []
+        self.last_loaded_n_i = 0
+        for entry in self.ph5.Response_t['rows']:
+            if entry['response_file_das_a'] or entry['response_file_sensor_a']:
+                self.loaded_resp.append(entry)
+                self.last_loaded_n_i = entry['n_i']
+            else:
+                self.noloaded_resp.append(entry)
 
     def read_arrays(self, name):
         if name is None:
@@ -112,6 +126,16 @@ class n_i_fix(object):
                         deploy = station_list[deployment][
                             st_num]['deploy_time/epoch_l']
 
+                        if das_model == "":
+                            LOGGER.warning("Das Model is empty for %s station "
+                                           "%s das %s channel %s" %
+                                           (array_name, id_s, serial, channel))
+                        if not das_model.startswith("ZLAND") \
+                           and sensor_model == "":
+                            LOGGER.warning("Sensor  is empty for %s station "
+                                           "%s das %s channel %s" %
+                                           (array_name, id_s, serial, channel))
+
                         self.ph5.read_das_t(
                             serial, deploy, pickup, reread=False)
                         try:
@@ -122,6 +146,7 @@ class n_i_fix(object):
                                 "No DAS table found for das {0} channel "
                                 "{1}.\n".format(serial, channel))
                             break
+
                         for entry in Das_t:
                             if (entry['sample_rate_i'] == sample_rate and
                                     entry['sample_rate_multiplier_i']
@@ -131,17 +156,23 @@ class n_i_fix(object):
                                 receiver_n_i = entry['receiver_table_n_i']
                                 break
 
-                        Response_t = self.ph5.get_response_t_by_n_i(
-                            response_n_i)
+                        Response_t, resp_loaded = \
+                            self.get_response_t(
+                                self.ph5, das_model, sensor_model, sample_rate,
+                                sample_rate_multiplier, response_n_i)
                         if Response_t:
                             gain = Response_t['gain/value_i']
                             bit_weight = Response_t['bit_weight/value_d']
                             bit_weight_units = Response_t['bit_weight/units_s']
                             gain_units = Response_t['gain/units_s']
+                            if resp_loaded:
+                                response_n_i = Response_t['n_i']
                         else:
                             LOGGER.warning(
                                 "No Response table found for das {0} channel "
                                 "{1}.\n".format(serial, channel))
+
+                        self.ph5.forget_das_t(serial)
                         try:
                             stations.append(
                                 Station(
@@ -158,11 +189,52 @@ class n_i_fix(object):
                                     bit_weight,
                                     bit_weight_units,
                                     gain_units,
-                                    serial))
+                                    serial,
+                                    resp_loaded))
                         except BaseException:
                             LOGGER.error("Couldn't add station.")
                             continue
         return stations
+
+    #######################################
+    # def get_response_t
+    # + In response_t the after response files are loaded and updated to
+    # a row, the row with no response files are still kept with original n_i
+    # to keep track with response_table_n_i in das_t
+    # + The passed n_i is from das table. First, using passed n_i to find
+    #    bit_weight, gain and orginal response row
+    # + Then use bit_weight, gain and filenames to find the correct row in
+    # loaded_resp. If found, return that row with resp_loaded=True. Otherwise,
+    # return original resonse row
+    def get_response_t(self, ph5, d_model, s_model, s_rate, s_rate_m, n_i):
+        d_filename = "/Experiment_g/Responses_g/%s_%s_%s_" % \
+            (d_model.replace(" ", ""), s_rate, s_rate_m)
+        s_filename = "/Experiment_g/Responses_g/%s" % s_model.replace(" ", "")
+
+        resp = None
+        try:
+            for response_t in self.noloaded_resp:
+                if response_t['n_i'] == n_i:
+                    resp = response_t
+                    bit_weight = str(response_t['bit_weight/value_d'])
+                    gain = str(response_t['gain/value_i'])
+
+            for response_t in self.loaded_resp:
+                b = str(response_t['bit_weight/value_d'])
+                g = str(response_t['gain/value_i'])
+                if b != bit_weight or g != gain:
+                    continue
+                # Assume that there is no response row that has no das file
+                # but has sensor file
+                if response_t['response_file_das_a'] == d_filename + str(g):
+                    if response_t['response_file_sensor_a'] == s_filename:
+                        return response_t, True
+                    elif response_t['response_file_sensor_a'] == '':
+                        return response_t, True
+
+        except BaseException:
+            return None, False
+        return resp, False
 
     def update_kefs(self, path, arrays, data):
         for x in arrays:
@@ -338,10 +410,15 @@ class n_i_fix(object):
                             loaded_das.append(name)
                             LOGGER.info(
                                 "Loaded {0}".format(name.replace(" ", "")))
-                        except BaseException:
-                            LOGGER.warning(
-                                "Could not load {0}"
-                                .format(name.replace(" ", "")))
+                        except BaseException as e:
+                            if "already has a child" in str(e):
+                                LOGGER.warning(
+                                    "{0} has been loaded in another resp_load "
+                                    "run".format(name.replace(" ", "")))
+                            else:
+                                LOGGER.warning(
+                                    "Could not load {0}"
+                                    .format(name.replace(" ", "")))
 
                 if len(line_list) >= 6:
                     if line_list[6] == '\n':
@@ -362,10 +439,15 @@ class n_i_fix(object):
                             LOGGER.info(
                                 "Loaded {0}"
                                 .format(name.replace(" ", "")))
-                        except BaseException:
-                            LOGGER.warning(
-                                "Could not load {0}"
-                                .format(name.replace(" ", "")))
+                        except BaseException as e:
+                            if "already has a child" in str(e):
+                                LOGGER.warning(
+                                    "{0} has been loaded in another resp_load "
+                                    "run".format(name.replace(" ", "")))
+                            else:
+                                LOGGER.warning(
+                                    "Could not load {0}"
+                                    .format(name.replace(" ", "")))
         ph5.close()
 
         ph5_object = experiment.ExperimentGroup(nickname=nickname,
@@ -373,80 +455,68 @@ class n_i_fix(object):
         ph5_object.ph5open(True)
         ph5_object.initgroup()
 
-        ret, blah = ph5_object.ph5_g_responses.read_responses()
-
         data_list = []
         data_update = []
         for station in data:
-            data_list.append([str(station.das_model),
-                              str(station.sensor_model),
-                              str(station.sample_rate),
-                              str(station.sample_rate_multiplier),
-                              str(station.gain),
-                              str(station.bit_weight),
-                              str(station.bit_weight_units),
-                              str(station.gain_units)])
-        unique_list = [list(x) for x in set(tuple(x) for x in data_list)]
+            data_list.append(
+                {'d_model': str(station.das_model),
+                 's_model': str(station.sensor_model),
+                 's_rate': str(station.sample_rate),
+                 's_rate_m': str(station.sample_rate_multiplier),
+                 'gain': str(station.gain),
+                 'bit_w': str(station.bit_weight),
+                 'bit_w_u': str(station.bit_weight_units),
+                 'gain_u': str(station.gain_units),
+                 'n_i': station.response_n_i,
+                 'resp_loaded': station.resp_loaded})
 
-        # get highest n_i
-        n_i = 0
-        for entry in ret:
-            if entry['n_i'] >= n_i:
-                n_i = entry['n_i']
+        unique_list = map(dict, set(tuple(sorted(x.items()))
+                                    for x in data_list))
+        unique_list = sorted(unique_list, key=lambda i:
+                             (i['s_model'], i['d_model'], i['s_rate'],
+                              i['s_rate_m'], i['gain'], float(i['bit_w'])))
 
-        n_i = n_i + 1
+        final_ret = self.loaded_resp
 
-        no_resp = list()
-        for entry in ret:
-            if (not entry['response_file_das_a']
-                    and not entry['response_file_sensor_a']):
-                no_resp.append(entry)
-
-        has_resp = list()
-        for entry in ret:
-            if entry['response_file_das_a'] or entry['response_file_sensor_a']:
-                has_resp.append(entry)
-
-        final_ret = list()
-        final_ret.extend(has_resp)
-
+        # start n_i by add 1 to the last n_i that already have response files
+        n_i = self.last_loaded_n_i + 1
         for x in unique_list:
             response_entry = {}
-            if x[0]:
-                name = str(x[0]) + "_" + str(x[2]) + "_" + \
-                    str(x[3]) + "_" + str(x[4])
+            item = [x['d_model'], x['s_model'], x['s_rate'], x['s_rate_m'],
+                    x['gain'], x['bit_w']]
+            if x['resp_loaded']:
+                data_update.append(item + [x['n_i']])
+                continue
+            if x['d_model']:
+                name = str(x['d_model']) + "_" + str(x['s_rate']) + "_" + \
+                    str(x['s_rate_m']) + "_" + str(x['gain'])
                 name_full = '/Experiment_g/' +\
                             'Responses_g/' + name.replace(" ", "")
                 name_full = name_full.translate(None, ',-=.')
 
                 response_entry['response_file_das_a'] = name_full
 
-            if x[1]:
-
-                sens = x[1]
+            if x['s_model']:
+                sens = x['s_model']
                 sens = sens.translate(None, ',-=.')
                 name = '/Experiment_g/' +\
                        'Responses_g/' + sens
                 response_entry['response_file_sensor_a'] = name
-            response_entry['bit_weight/value_d'] = x[5]
-            response_entry['bit_weight/units_s'] = x[6]
-            response_entry['gain/value_i'] = x[4]
-            response_entry['gain/units_s'] = x[7]
+            response_entry['bit_weight/value_d'] = x['bit_w']
+            response_entry['bit_weight/units_s'] = x['bit_w_u']
+            response_entry['gain/value_i'] = x['gain']
+            response_entry['gain/units_s'] = x['gain_u']
 
-            for resp in no_resp:
-                if (str(resp['bit_weight/value_d']) ==
-                        str(response_entry['bit_weight/value_d']) and
-                        str(resp['gain/value_i']) ==
-                        str(response_entry['gain/value_i'])):
-
-                    response_entry['n_i'] = resp['n_i']
-
+            response_entry['n_i'] = n_i
             final_ret.append(response_entry)
-
-            data_update.append([x[0], x[1], x[2], x[3], x[4], n_i])
+            data_update.append(item + [n_i])
+            n_i += 1
 
         ph5_object.ph5_g_responses.nuke_response_t()
-        final_ret.sort()
+
+        # Keep all rows of the original response_t to keep track with
+        # response_table_n_i in das table
+        final_ret += self.noloaded_resp
         for entry in final_ret:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
@@ -457,19 +527,25 @@ class n_i_fix(object):
             "response_t.kef written into PH5")
 
         for station in data:
+            # don't update station.array if not listed in option -a
+            if station.array not in self.array:
+                continue
             for x in data_update:
-                if station.das_model == x[0] and str(
-                        station.sensor_model) == x[1] and int(
-                    station.sample_rate) == int(
-                    x[2]) and int(
-                    station.sample_rate_multiplier) ==\
-                        int(x[3]) and int(station.gain) == int(x[4]):
-                    station.response_n_i = x[5]
+                if str(station.das_model) == x[0] and \
+                   str(station.sensor_model) == x[1] and \
+                   str(station.sample_rate) == x[2] and \
+                   str(station.sample_rate_multiplier) == x[3] and \
+                   str(station.gain) == x[4] and \
+                   str(station.bit_weight) == x[5]:
+                    station.response_n_i = x[6]
+                    break
+            """
             true_sr =\
                 float(station.sample_rate) /\
                 float(station.sample_rate_multiplier)
             if true_sr < 1.0:
                 station.response_n_i = None
+            """
 
         return data
 
