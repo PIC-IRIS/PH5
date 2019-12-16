@@ -158,7 +158,7 @@ class n_i_fix(object):
 
                         Response_t, resp_loaded = \
                             self.get_response_t(
-                                self.ph5, das_model, sensor_model, sample_rate,
+                                das_model, sensor_model, sample_rate,
                                 sample_rate_multiplier, response_n_i)
                         if Response_t:
                             gain = Response_t['gain/value_i']
@@ -206,7 +206,7 @@ class n_i_fix(object):
     # + Then use bit_weight, gain and filenames to find the correct row in
     # loaded_resp. If found, return that row with resp_loaded=True. Otherwise,
     # return original resonse row
-    def get_response_t(self, ph5, d_model, s_model, s_rate, s_rate_m, n_i):
+    def get_response_t(self, d_model, s_model, s_rate, s_rate_m, n_i):
         d_filename = "/Experiment_g/Responses_g/%s_%s_%s_" % \
             (d_model.replace(" ", ""), s_rate, s_rate_m)
         s_filename = "/Experiment_g/Responses_g/%s" % s_model.replace(" ", "")
