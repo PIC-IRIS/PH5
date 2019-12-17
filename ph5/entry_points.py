@@ -5,7 +5,7 @@
 
 # Dave Thomas, 2019-08-06
 
-PROG_VERSION = '2019.239'
+PROG_VERSION = '2019.330'
 
 
 class EntryPointTypes():
@@ -277,10 +277,10 @@ class CommandList():
                            'Takes PH5 files and returns time series '
                            'availability info.',
                            type=EntryPointTypes.CLIENT),
-                EntryPoint('utmtolatlong',
-                           'ph5.utilities.utmtolatlong:main',
-                           'Converts UTM coordinates to Latitudes'
-                           ' & Longitudes.',
+                EntryPoint('utm_latlong',
+                           'ph5.utilities.utm_latlong:main',
+                           'Converts UTM coordinates to/from'
+                           ' Latitudes & Longitudes.',
                            type=EntryPointTypes.INGESTION),
                 ]
             }

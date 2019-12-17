@@ -18,7 +18,7 @@ import re
 from pyproj import Transformer, Geod
 import math
 
-PROG_VERSION = "2019.275"
+PROG_VERSION = "2019.330"
 
 
 class PH5Response(object):
@@ -72,7 +72,7 @@ class PH5ResponseManager(object):
 
 class UTMConversions:  # updated 2019-09-27 dthomas
 
-    def lat_long(self, easting, northing, zone, hemisphere):
+    def utm2latlong(self, easting, northing, zone, hemisphere):
         # utm to lat/long conversion
         epsg_wgs84 = "EPSG:4326"
         side = hemisphere[0].upper()
@@ -94,7 +94,7 @@ class UTMConversions:  # updated 2019-09-27 dthomas
         zone = int(math.floor((lon + 180.)/6.0) % 60) + 1
         return zone
 
-    def geod2utm(self, lat, lon, elev):
+    def geod2utm(self, lat, lon, elev):  # utility function
         # lat/long to UTM conversion
         zone = self.lon2zone(lon)
         epsg_wgs84 = "EPSG:4326"
@@ -108,6 +108,23 @@ class UTMConversions:  # updated 2019-09-27 dthomas
                                            always_xy=True)
         easting, northing = transformer.transform(lon, lat)
         return (northing, easting, elev)  # e.g. Y, X, Z
+
+    def latlong2utm(self, lat, lon):
+        # lat/long to UTM conversion
+        zone = self.lon2zone(float(lon))
+        epsg_wgs84 = "EPSG:4326"
+        if lat < 0.0:
+            epsgroot = "327"
+            hemisphere = 'S'
+        elif lat >= 0.0:
+            epsgroot = "326"
+            hemisphere = 'N'
+        epsg_utm = "EPSG:" + epsgroot + str(zone)
+
+        transformer = Transformer.from_crs(epsg_wgs84, epsg_utm,
+                                           always_xy=True)
+        easting, northing = transformer.transform(lon, lat)
+        return (easting, northing, zone, hemisphere)
 
 
 class TSPConversions:  # added 2019-09-30 dthomas, Texas State Plane Coords

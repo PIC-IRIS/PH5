@@ -8,13 +8,13 @@ class TestUTMconversion(unittest.TestCase):
 
     def test_is_valid_utm_conversion(self):
         u = UTMConversions()  # PIC Socorro
-        lat, lon = u.lat_long(322916, 3771967, 13, 'N')
+        lat, lon = u.utm2latlong(322916, 3771967, 13, 'N')
         self.assertAlmostEqual(lat, 34.07349577107704)
         self.assertAlmostEqual(lon, -106.91909595147378)
 
     def test_is_valid_utm_conversion_south(self):
         u = UTMConversions()  # Castle Rock Antarctica
-        lat, lon = u.lat_long(540947, 1361594, 58, 'S')
+        lat, lon = u.utm2latlong(540947, 1361594, 58, 'S')
         self.assertAlmostEqual(lat, -77.81567398301094)
         self.assertAlmostEqual(lon, 166.73816638798527)
 
@@ -23,6 +23,15 @@ class TestUTMconversion(unittest.TestCase):
         northing, easting, elev = u.geod2utm(34.0734958, -106.9190959, 1456.0)
         self.assertAlmostEqual(northing, 3771967.003118457)
         self.assertAlmostEqual(easting, 322916.0048106084)
+
+    def test_is_valid_utm_conversion_fancyinverse(self):
+        u = UTMConversions()  # PIC Socorro
+        easting, northing, zone, hemisphere = \
+            u.latlong2utm(34.0734958, -106.9190959)
+        self.assertAlmostEqual(easting, 322916.0048106084)
+        self.assertAlmostEqual(northing, 3771967.003118457)
+        self.assertEqual(zone, 13)
+        self.assertAlmostEqual(hemisphere, 'N')
 
     def test_is_valid_tsp_conversion(self):
         t = TSPConversions()  # Sweetwater, Texas, units US FEET
@@ -33,12 +42,12 @@ class TestUTMconversion(unittest.TestCase):
     def test_for_correct_type(self):
         with self.assertRaises(ValueError):
             u = UTMConversions()  # 'heck' is not a float
-            u.lat_long('heck', 'no', 58, 'S')
+            u.utm2latlong('heck', 'no', 58, 'S')
 
     def test_for_correct_value(self):  # 666 is invalid UTM zone
         with self.assertRaises(pyproj.exceptions.CRSError):
             u = UTMConversions()
-            u.lat_long(540947, 1361594, 666, 'S')
+            u.utm2latlong(540947, 1361594, 666, 'S')
 
 
 if __name__ == "__main__":
