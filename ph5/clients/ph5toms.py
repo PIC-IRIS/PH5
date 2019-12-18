@@ -142,7 +142,7 @@ class PH5toMSeed(object):
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
 
-        if self.reqtype == "SHOT":
+        if self.reqtype == "SHOT" or self.reqtype == "RECEIVER":
             self.ph5.read_event_t_names()
 
         if not self.stream and not os.path.exists(self.out_dir):
@@ -691,10 +691,11 @@ class PH5toMSeed(object):
 
         for sct in station_cut_times:
             start_fepoch = sct.time
-            if self.reqtype == "SHOT":
+            if self.reqtype == "SHOT" or self.reqtype == "RECEIVER":
                 if self.offset:
                     # adjust starttime by an offset
                     start_fepoch += int(self.offset)
+
                 if self.length:
                     stop_fepoch = start_fepoch + self.length
                 else:
@@ -858,9 +859,9 @@ class PH5toMSeed(object):
         array_names = sorted(self.ph5.Array_t_names)
         self.read_events(None)
 
-        if self.reqtype == "SHOT":
+        if self.reqtype == "SHOT" or self.reqtype == "RECEIVER":
             # create list of all matched shotlines and shot-ids for request by
-            # shot
+            # shot or receiver
             shot_lines = sorted(self.ph5.Event_t_names)
             matched_shot_lines = []
             matched_shots = []
@@ -925,7 +926,8 @@ class PH5toMSeed(object):
                                                                 seed_station):
                                 continue
 
-                        if self.reqtype == "SHOT":
+                        if (self.reqtype == "SHOT" or
+                                self.reqtype == "RECEIVER"):
                             # request by shot
                             for shotline in matched_shot_lines:
                                 for shot in matched_shots:
@@ -1153,9 +1155,10 @@ def main():
     args.format = args.format.upper()
 
     try:
-        if args.reqtype != "SHOT" and args.reqtype != "FDSN":
+        if args.reqtype != "SHOT" and args.reqtype != "FDSN" and \
+                args.reqtype != "RECEIVER":
             raise PH5toMSAPIError("Error - Invalid request type {0}. "
-                                  "Choose from FDSN or SHOT."
+                                  "Choose from FDSN, SHOT, or RECEIVER."
                                   .format(args.reqtype))
 
         if args.format != "MSEED" and args.format != "SAC":

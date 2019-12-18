@@ -586,10 +586,15 @@ class PH5toStationXMLParser(object):
                         [x for x in
                          [sensor_manufacturer, sensor_model] if x])
 
+        das_type = " ".join(
+                        [x for x in
+                         [das_manufacturer, das_model] if x])
+        instrument_desc = "/".join(
+                            [x for x in
+                             [sensor_type, das_type] if x])
         obs_channel.sensor = inventory.Equipment(
             type=sensor_type,
-            description=("%s %s/%s %s" % (sensor_manufacturer, sensor_model,
-                                          das_manufacturer, das_model)),
+            description=instrument_desc,
             manufacturer=sensor_manufacturer,
             vendor="",
             model=sensor_model,
