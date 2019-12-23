@@ -301,7 +301,7 @@ class PH5toStationXMLParser(object):
         if not -90 <= float(latitude) <= 90:
             return "Lat %s not in range [-90,90]" % latitude
         elif not -180 <= float(longitude) <= 180:
-            return "Lon %s not in range [-180,180]"  % longitude
+            return "Lon %s not in range [-180,180]" % longitude
         # if lat/lon box intersection
         elif not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
                                                sta_xml_obj.maxlatitude,
