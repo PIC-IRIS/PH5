@@ -299,13 +299,9 @@ class PH5toStationXMLParser(object):
             geographic constraints
         """
         if not -90 <= float(latitude) <= 90:
-            LOGGER.warning("Longitude is %s while it should be in range "
-                           "[-90, 90]" % latitude)
-            return False
+            return "Lat %s not in range [-90,90]" % latitude
         elif not -180 <= float(longitude) <= 180:
-            LOGGER.warning("Latitude is %s while it should be in range "
-                           "[-90, 90]" % latitude)
-            return False
+            return "Lon %s not in range [-180,180]"  % longitude
         # if lat/lon box intersection
         elif not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
                                                sta_xml_obj.maxlatitude,
@@ -313,14 +309,10 @@ class PH5toStationXMLParser(object):
                                                sta_xml_obj.maxlongitude,
                                                latitude,
                                                longitude):
-            LOGGER.warning("With (lat, lon) = (%s, %s), there is a box "
-                           "intersection in which latitude boundary is: "
-                           "[%s, %s] and longtitude boundary is: [%s, %s]" %
-                           (latitude, longitude,
-                            sta_xml_obj.minlatitude, sta_xml_obj.maxlatitude,
-                            sta_xml_obj.minlongitude, sta_xml_obj.maxlongitude)
-                           )
-            return False
+            return "Box intersection: Lat %s not in range [%s,%s] "\
+                "or Lon %s not in range [%s,%s]" % \
+                (latitude, sta_xml_obj.minlatitude, sta_xml_obj.maxlatitude,
+                 longitude, sta_xml_obj.minlongitude, sta_xml_obj.maxlongitude)
         # check if point/radius intersection
         elif not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
                                                  sta_xml_obj.longitude,
@@ -328,13 +320,11 @@ class PH5toStationXMLParser(object):
                                                  sta_xml_obj.maxradius,
                                                  latitude,
                                                  longitude):
-            LOGGER.warning("With (lat, lon) = (%s, %s), there is a radial "
-                           "intersection between a point radius boundary "
-                           "[%s, %s] and a latitude/longitude point [%s, %s]" %
-                           (latitude, longitude,
-                            sta_xml_obj.minradius, sta_xml_obj.maxradius,
-                            sta_xml_obj.latitude, sta_xml_obj.longitude))
-            return False
+            return "lat,lon=%s,%s: radial intersection between a point "\
+                "radius boundary [%s, %s] and a lat/lon point [%s, %s]" % \
+                (latitude, longitude,
+                 sta_xml_obj.minradius, sta_xml_obj.maxradius,
+                 sta_xml_obj.latitude, sta_xml_obj.longitude)
         else:
             return True
 
@@ -664,8 +654,8 @@ class PH5toStationXMLParser(object):
         return obs_network
 
     def read_stations(self):
-
         all_stations = []
+        check_lat_lon_msg = []
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
@@ -688,16 +678,21 @@ class PH5toStationXMLParser(object):
                         latitude = station_entry['location/Y/value_d']
                         elevation = station_entry['location/Z/value_d']
 
-                        if not self.is_lat_lon_match(
-                                sta_xml_obj,
-                                latitude,
-                                longitude):
-                            continue
-
                         if station_entry['seed_station_name_s']:
                             station_code = station_entry['seed_station_name_s']
                         else:
                             station_code = sta_id
+                        check_lat_lon = self.is_lat_lon_match(
+                            sta_xml_obj,
+                            latitude,
+                            longitude)
+                        if isinstance(check_lat_lon, str):
+                            msg = "station %s, array %s: %s" % \
+                                (station_code, array_code, check_lat_lon)
+                            if msg not in check_lat_lon_msg:
+                                check_lat_lon_msg.append(msg)
+                                LOGGER.warning(msg)
+                            continue
 
                         start_date = UTCDateTime(
                                         station_entry['deploy_time/epoch_l'])
@@ -776,7 +771,6 @@ class PH5toStationXMLParser(object):
 
     def read_channels(self, sta_xml_obj, station_entry, deployment,
                       sta_code, array_code):
-
         all_channels = []
         cha_list_patterns = sta_xml_obj.channel_list
         component_list_patterns = sta_xml_obj.component_list
@@ -809,11 +803,11 @@ class PH5toStationXMLParser(object):
                 if not ph5utils.does_pattern_exists(location_patterns,
                                                     loc_code):
                     continue
-
-                if not self.is_lat_lon_match(
-                        sta_xml_obj,
-                        latitude,
-                        longitude):
+                check_lat_lon = self.is_lat_lon_match(
+                    sta_xml_obj,
+                    latitude,
+                    longitude)
+                if isinstance(check_lat_lon, str):
                     continue
                 start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
                 end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
