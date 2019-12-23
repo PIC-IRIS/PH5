@@ -1150,7 +1150,7 @@ def main():
                             if NS != 'N' and NS != 'S':
                                 NS = 'N'
 
-                            LAT, LON = utmc.lat_long(
+                            LAT, LON = utmc.utm2latlong(
                                 SD.trace_headers.trace_header_N[
                                     4].receiver_point_X_final / 10.,
                                 SD.trace_headers.trace_header_N[
