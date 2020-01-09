@@ -3,6 +3,8 @@ Tests for segd2ph5
 '''
 import unittest
 import os
+import shutil
+import tempfile
 from ph5.utilities import segd2ph5
 from ph5.core import experiment, segdreader
 
@@ -17,19 +19,31 @@ class TestSegDtoPH5(unittest.TestCase):
         return EX
 
     def setUp(self):
+        # create tmpdir
+        self.home = os.getcwd()
+        self.tmpdir = tempfile.mkdtemp() + "/"
+        os.chdir(self.tmpdir)
+
         # initiate ph5
         self.EX = segd2ph5.EX = self.initialize_ph5(editmode=True)
 
     def tearDown(self):
         try:
-            segd2ph5.EX.ph5close()
+            self.EX.ph5close()
             segd2ph5.EXREC.ph5close()
         except Exception:
             pass
-        filelist = os.listdir(".")
-        for f in filelist:
-            if f.endswith(".ph5"):
-                os.remove(f)
+        if self._resultForDoCleanups.wasSuccessful():
+            try:
+                shutil.rmtree(self.tmpdir)
+            except Exception as e:
+                print("Cannot remove %s due to the error:%s" %
+                      (self.tmpdir, str(e)))
+        else:
+            errmsg = "%s has FAILED. Inspect files created in %s." \
+                % (self._testMethodName, self.tmpdir)
+            print(errmsg)
+        os.chdir(self.home)
 
     def test_bit_weights(self):
         # From old
@@ -70,14 +84,14 @@ class TestSegDtoPH5(unittest.TestCase):
         """
         test process_traces method
         """
-        segd2ph5.SD = SD = \
-            segdreader.Reader(infile='ph5/test_data/segd/3ch.fcnt')
+        segd2ph5.SD = SD = segdreader.Reader(
+            infile=self.home + '/ph5/test_data/segd/3ch.fcnt')
         SD.process_general_headers()
         SD.process_channel_set_descriptors()
         SD.process_extended_headers()
         SD.process_external_headers()
 
-        SIZE = os.path.getsize('ph5/test_data/segd/3ch.fcnt')
+        SIZE = os.path.getsize(self.home + '/ph5/test_data/segd/3ch.fcnt')
 
         segd2ph5.DAS_INFO = {'3X500': [segd2ph5.Index_t_Info(
             '3X500', './miniPH5_00001.ph5',
