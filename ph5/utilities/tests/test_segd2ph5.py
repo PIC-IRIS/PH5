@@ -10,11 +10,15 @@ from ph5.core import experiment, segdreader
 class TestSegDtoPH5(unittest.TestCase):
     print "test segd2ph5"
 
+    def initialize_ph5(self, editmode):
+        EX = experiment.ExperimentGroup(nickname="master.ph5")
+        EX.ph5open(editmode)
+        EX.initgroup()
+        return EX
+
     def setUp(self):
         # initiate ph5
-        segd2ph5.EX = EX = experiment.ExperimentGroup(nickname="master.ph5")
-        EX.ph5open(True)
-        EX.initgroup()
+        self.EX = segd2ph5.EX = self.initialize_ph5(editmode=True)
 
     def tearDown(self):
         try:
