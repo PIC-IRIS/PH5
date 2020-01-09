@@ -8,7 +8,10 @@ from ph5.core import experiment, segdreader
 
 
 class TestSegDtoPH5(unittest.TestCase):
+    print "test segd2ph5"
+
     def setUp(self):
+        # initiate ph5
         segd2ph5.EX = EX = experiment.ExperimentGroup(nickname="master.ph5")
         EX.ph5open(True)
         EX.initgroup()
@@ -36,6 +39,7 @@ class TestSegDtoPH5(unittest.TestCase):
         self.assertAlmostEqual(LSB36, segd2ph5.LSB_MAP[36], places=6)
 
     def test_write_arrays(self):
+        # same das, different deploy times
         arrays = \
             [{'das/serial_number_s': '3X500', 'channel_number_i': 1,
               'deploy_time/epoch_l': 1544545576},
@@ -99,7 +103,7 @@ class TestSegDtoPH5(unittest.TestCase):
         # ___________test process_traces ____________________
         segd2ph5.process_traces(SD.reel_headers, T.headers, T.trace)
 
-        # check ARRAY_T
+        # check ARRAY_T [array][das][deploy_time][chan]
         array_line = segd2ph5.ARRAY_T.keys()[0]
         self.assertEqual(array_line, 1)
 
