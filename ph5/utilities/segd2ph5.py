@@ -227,6 +227,13 @@ def get_args():
     else:
         raise Exception("No outfile (PH5) given.\n")
 
+    setLogger()
+
+
+def setLogger():
+    if LOGGER.handlers != []:
+        LOGGER.removeHandler(LOGGER.handlers[0])
+
     # Write log to file
     ch = logging.FileHandler("segd2ph5.log")
     ch.setLevel(logging.INFO)
@@ -234,10 +241,6 @@ def get_args():
     formatter = logging.Formatter(LOGGING_FORMAT)
     ch.setFormatter(formatter)
     LOGGER.addHandler(ch)
-    #   Need to process in order: R309_674.1.0.rg16, 309 == line,
-    #   674 = receiver point, 1 = first file
-    #   Sorted where the file list is read...
-    # FILES.sort ()
 
 
 def initializeExperiment():
