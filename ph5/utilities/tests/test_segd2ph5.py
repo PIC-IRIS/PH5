@@ -3,12 +3,14 @@ Tests for segd2ph5
 '''
 import unittest
 import os
+import sys
 import shutil
 import tempfile
 import logging
 from StringIO import StringIO as StringBuffer
+from mock import patch
 import ph5
-from ph5.utilities import segd2ph5
+from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import experiment, segdreader
 
 
@@ -180,6 +182,57 @@ class TestSegDtoPH5(unittest.TestCase):
                                        places=5)
             else:
                 self.assertEqual(segd2ph5.RESP.lines[0][k], response[k])
+
+    def test_main(self):
+        """
+        test main function
+        """
+        # close EX before test main
+        try:
+            segd2ph5.EX.ph5close()
+        except Exception:
+            pass
+        ####################################################################
+        # add fcnt data of the same das in the same array but with different
+        # deploytime
+        segd_dir = self.home + "/ph5/test_data/segd/"
+        # create list file
+        list_file = open('fcnt_list', "w")
+        fileList = os.listdir(segd_dir)
+        s = ""
+        for f in fileList:
+            if f.endswith(".fcnt") and f.startswith("1111"):
+                s += segd_dir + f + "\n"
+        list_file.write(s)
+        list_file.close()
+
+        # add segD to ph5
+        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list']
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+
+        # check that all deploy times are in array_t
+        self.EX = tabletokef.EX = self.initialize_ph5(editmode=False)
+        tabletokef.ARRAY_T = {}
+        tabletokef.read_sort_table()
+        tabletokef.read_sort_arrays()
+        self.assertEqual(len(tabletokef.ARRAY_T), 1)
+        self.assertEqual(tabletokef.ARRAY_T.keys()[0], "Array_t_001")
+        self.assertEqual(len(tabletokef.ARRAY_T['Array_t_001'].rows), 9)
+        # id_s 1111 SHOULD have 3 different times,
+        # each has 3 rows for 3 channels
+        time_count = {}
+        for s in tabletokef.ARRAY_T['Array_t_001'].rows:
+            if s['id_s'] == '1111':
+                d = s['deploy_time/epoch_l']
+                if d not in time_count.keys():
+                    time_count[d] = 0
+                time_count[d] += 1
+
+        self.assertDictEqual(time_count,
+                             {1561831393: 3, 1563634018: 3, 1567269236: 3})
+
+        ####################################################################
 
 
 if __name__ == "__main__":
