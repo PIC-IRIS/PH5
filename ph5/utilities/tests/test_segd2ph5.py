@@ -5,6 +5,9 @@ import unittest
 import os
 import shutil
 import tempfile
+import logging
+from StringIO import StringIO as StringBuffer
+import ph5
 from ph5.utilities import segd2ph5
 from ph5.core import experiment, segdreader
 
@@ -19,6 +22,12 @@ class TestSegDtoPH5(unittest.TestCase):
         return EX
 
     def setUp(self):
+        # capture log string into log_capture_string
+        self.log_capture_string = StringBuffer()
+        ph5.logger.removeHandler(ph5.ch)
+        ch = logging.StreamHandler(self.log_capture_string)
+        ph5.logger.addHandler(ch)
+
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
@@ -84,6 +93,7 @@ class TestSegDtoPH5(unittest.TestCase):
         """
         test process_traces method
         """
+        segd2ph5.setLogger()
         segd2ph5.SD = SD = segdreader.Reader(
             infile=self.home + '/ph5/test_data/segd/3ch.fcnt')
         SD.process_general_headers()
