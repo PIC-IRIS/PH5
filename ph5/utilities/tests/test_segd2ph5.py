@@ -9,14 +9,12 @@ import tempfile
 import logging
 from StringIO import StringIO as StringBuffer
 from mock import patch
-import ph5
+from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import experiment, segdreader
 
 
 class TestSegDtoPH5(unittest.TestCase):
-    print "test segd2ph5"
-
     def initialize_ph5(self, editmode):
         EX = experiment.ExperimentGroup(nickname="master.ph5")
         EX.ph5open(editmode)
@@ -26,9 +24,9 @@ class TestSegDtoPH5(unittest.TestCase):
     def setUp(self):
         # capture log string into log_capture_string
         self.log_capture_string = StringBuffer()
-        ph5.logger.removeHandler(ph5.ch)
+        logger.removeHandler(CH)
         ch = logging.StreamHandler(self.log_capture_string)
-        ph5.logger.addHandler(ch)
+        logger.addHandler(ch)
 
         # create tmpdir
         self.home = os.getcwd()
