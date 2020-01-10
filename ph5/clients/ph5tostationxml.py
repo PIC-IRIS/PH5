@@ -380,12 +380,12 @@ class PH5toStationXMLParser(object):
                 for deployment in station.values():
                     for station_entry in deployment:
                         start_date = station_entry['deploy_time/epoch_l']
-                        if float(start_date) < float(min_start_time):
-                            min_start_time = float(start_date)
+                        if start_date < min_start_time:
+                            min_start_time = start_date
                         end_date = station_entry['pickup_time/epoch_l']
-                        if float(end_date) > float(max_end_time):
-                            max_end_time = float(end_date)
-        return min_start_time, max_end_time
+                        if end_date > max_end_time:
+                            max_end_time = end_date
+        return float(min_start_time), float(max_end_time+1)
 
     def trim_to_level(self, network):
         if self.manager.level == "NETWORK":
