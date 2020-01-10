@@ -376,12 +376,9 @@ class PH5toStationXMLParser(object):
         max_end_time = 0
         for array_name in array_names:
             arraybyid = self.manager.ph5.Array_t[array_name]['byid']
-            arrayorder = self.manager.ph5.Array_t[array_name]['order']
-
-            for station in arrayorder:
-                station_list = arraybyid.get(station)
-                for deployment in station_list:
-                    for station_entry in station_list[deployment]:
+            for station in arraybyid.values():
+                for deployment in station.values():
+                    for station_entry in deployment:
                         start_date = station_entry['deploy_time/epoch_l']
                         if float(start_date) < float(min_start_time):
                             min_start_time = float(start_date)
