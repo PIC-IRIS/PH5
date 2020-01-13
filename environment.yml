@@ -3,6 +3,8 @@ dependencies:
  - hdf5=1.8.18
  - pykml==0.1.0
  - matplotlib=1
+ # workaround icu not from conda-forge
+ - icu=58*
  - subprocess32
  - six
  - Cython
