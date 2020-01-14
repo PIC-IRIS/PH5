@@ -2,12 +2,10 @@
 Tests for pforma_io
 '''
 import unittest
-import logging
-from StringIO import StringIO
 import os
 import shutil
 import tempfile
-import ph5
+from ph5.core.tests import log_capture_string
 from ph5.clients import ph5tostationxml
 from ph5.utilities import kef2ph5
 from ph5.core import experiment
@@ -15,11 +13,7 @@ from ph5.core import experiment
 
 class TestPH5toStationXMLParser(unittest.TestCase):
     def setUp(self):
-        # capture log string into log_capture_string
-        self.log_capture_string = StringIO()
-        ph5.logger.removeHandler(ph5.ch)
-        ch = logging.StreamHandler(self.log_capture_string)
-        ph5.logger.addHandler(ch)
+        self.log_capture_string = log_capture_string()
 
         # create tmpdir
         self.home = os.getcwd()
