@@ -1364,12 +1364,11 @@ class PH5(experiment.ExperimentGroup):
             if not (start and end):
                 raise ValueError("if start or end, both are required")
 
-        das_t_t = self.query_das_t(
-            das,
-            chan=component,
-            start_epoch=start,
-            stop_epoch=end,
-            sample_rate=sample_rate)
+        das_t_t = self.query_das_t(das,
+                                   chan=component,
+                                   start_epoch=start,
+                                   stop_epoch=end,
+                                   sample_rate=sample_rate)
         if not das_t_t:
             LOGGER.warning("No Das table found for " + das)
             return None, None
