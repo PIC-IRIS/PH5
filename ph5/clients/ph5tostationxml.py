@@ -371,7 +371,6 @@ class PH5toStationXMLParser(object):
     def get_network_date(self):
         self.read_arrays(None)
         array_names = self.manager.ph5.Array_t_names
-        array_names.sort()
         min_start_time = 7289567999
         max_end_time = 0
         for array_name in array_names:
