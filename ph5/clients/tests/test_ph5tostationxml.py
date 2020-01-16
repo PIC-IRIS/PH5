@@ -45,6 +45,32 @@ def initialize_ph5(nickname, path='.', editmode=False):
 
 
 class TestPH5toStationXMLParser(unittest.TestCase):
+    def setUp(self):
+        log_capture_string()
+        # create tmpdir
+        self.home = os.getcwd()
+        self.tmpdir = tempfile.mkdtemp() + "/"
+
+        # create ph5
+        os.chdir(self.tmpdir)
+
+    def tearDown(self):
+        if self._resultForDoCleanups.wasSuccessful():
+            try:
+                shutil.rmtree(self.tmpdir)
+            except Exception as e:
+                print("Cannot remove %s due to the error:%s" %
+                      (self.tmpdir, str(e)))
+        else:
+            errmsg = "%s has FAILED. Inspect files created in %s." \
+                % (self._testMethodName, self.tmpdir)
+            print(errmsg)
+        try:
+            self.mng.ph5.close()
+        except Exception:
+            pass
+        os.chdir(self.home)
+
     def getParser(self, level, minlat=None, maxlat=None, minlon=None,
                   maxlon=None, lat=None, lon=None, minrad=None, maxrad=None):
         self.ph5sxml = [ph5tostationxml.PH5toStationXMLRequest(
@@ -79,32 +105,6 @@ class TestPH5toStationXMLParser(unittest.TestCase):
             "/ph5/test_data/metadata/experiment.kef"
         kef2ph5.populateTables()
         ex.ph5close()
-
-    def setUp(self):
-        log_capture_string()
-        # create tmpdir
-        self.home = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp() + "/"
-
-        # create ph5
-        os.chdir(self.tmpdir)
-
-    def tearDown(self):
-        if self._resultForDoCleanups.wasSuccessful():
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
-        else:
-            errmsg = "%s has FAILED. Inspect files created in %s." \
-                % (self._testMethodName, self.tmpdir)
-            print(errmsg)
-        try:
-            self.mng.ph5.close()
-        except Exception:
-            pass
-        os.chdir(self.home)
 
     def test_get_network_date(self):
         """
