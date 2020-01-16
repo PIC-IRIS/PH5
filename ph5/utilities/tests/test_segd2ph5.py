@@ -7,6 +7,7 @@ import sys
 import shutil
 import tempfile
 from mock import patch
+from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import segdreader
 from ph5.core.tests.base_test import log_capture_string, initialize_ph5
