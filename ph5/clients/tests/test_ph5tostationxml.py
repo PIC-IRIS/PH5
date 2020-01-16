@@ -50,8 +50,6 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
-
-        # create ph5
         os.chdir(self.tmpdir)
 
     def tearDown(self):
