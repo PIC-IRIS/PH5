@@ -6,26 +6,35 @@ import os
 import sys
 import shutil
 import tempfile
+import logging
+from StringIO import StringIO as StringBuffer
 from mock import patch
 from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader
-from ph5.core.tests.base_test import log_capture_string, initialize_ph5
+from ph5.core import experiment, segdreader
 
 
 class TestSegDtoPH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.log_capture_string = log_capture_string()
+    def initialize_ph5(self, editmode):
+        EX = experiment.ExperimentGroup(nickname="master.ph5")
+        EX.ph5open(editmode)
+        EX.initgroup()
+        return EX
 
     def setUp(self):
+        # capture log string into log_capture_string
+        self.log_capture_string = StringBuffer()
+        logger.removeHandler(CH)
+        ch = logging.StreamHandler(self.log_capture_string)
+        logger.addHandler(ch)
+
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
         os.chdir(self.tmpdir)
 
         # initiate ph5
-        self.EX = segd2ph5.EX = initialize_ph5("master.ph5", editmode=True)
+        self.EX = segd2ph5.EX = self.initialize_ph5(editmode=True)
 
     def tearDown(self):
         try:
@@ -201,7 +210,7 @@ class TestSegDtoPH5(unittest.TestCase):
             segd2ph5.main()
 
         # check that all deploy times are in array_t
-        self.EX = tabletokef.EX = initialize_ph5("master.ph5", editmode=False)
+        self.EX = tabletokef.EX = self.initialize_ph5(editmode=False)
         tabletokef.ARRAY_T = {}
         tabletokef.read_sort_table()
         tabletokef.read_sort_arrays()
