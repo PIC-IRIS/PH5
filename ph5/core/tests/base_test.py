@@ -24,7 +24,7 @@ def log_capture_string():
 
 
 def initialize_ph5(nickname, path='.', editmode=False):
-    ex = experiment.ExperimentGroup(nickname=nickname, currentpath=path)
+    ex = experiment.ExperimentGroup(nickname=nickname)
     ex.ph5open(editmode)
     ex.initgroup()
     return ex
