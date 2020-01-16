@@ -7,9 +7,40 @@ import sys
 import shutil
 import tempfile
 from mock import patch
-from ph5.core.tests import base_test
+import logging
+from StringIO import StringIO
+from contextlib import contextmanager
 from ph5.clients import ph5tostationxml
 from ph5.utilities import kef2ph5
+from ph5 import logger, ch as CH
+from ph5.core import experiment
+
+
+@contextmanager
+def captured_output():
+    new_out, new_err = StringIO(), StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+
+
+def log_capture_string():
+    capture = StringIO()
+    logger.removeHandler(CH)
+    ch = logging.StreamHandler(capture)
+    logger.addHandler(ch)
+
+    return capture
+
+
+def initialize_ph5(nickname, path='.', editmode=False):
+    ex = experiment.ExperimentGroup(nickname=nickname, currentpath=path)
+    ex.ph5open(editmode)
+    ex.initgroup()
+    return ex
 
 
 class TestPH5toStationXMLParser(unittest.TestCase):
@@ -35,7 +66,7 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         return ph5tostationxml.PH5toStationXMLParser(self.mng)
 
     def createPH5(self, path, arraykef):
-        kef2ph5.EX = ex = base_test.initialize_ph5("master.ph5", path, True)
+        kef2ph5.EX = ex = initialize_ph5("master.ph5", path, True)
         kef2ph5.PH5 = path + "/master.ph5"
         kef2ph5.TRACE = False
 
@@ -49,7 +80,7 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         ex.ph5close()
 
     def setUp(self):
-        base_test.log_capture_string()
+        log_capture_string()
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
@@ -126,7 +157,7 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         testargs = ['ph5tostationxml', '-n', 'master',
                     '--level', 'network', '-f', 'text']
         with patch.object(sys, 'argv', testargs):
-            with base_test.captured_output() as (out, err):
+            with captured_output() as (out, err):
                 ph5tostationxml.main()
         output = out.getvalue().strip().split("\n")
         self.assertEqual(
