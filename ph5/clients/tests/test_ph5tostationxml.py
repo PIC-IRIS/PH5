@@ -12,7 +12,7 @@ from StringIO import StringIO
 from contextlib import contextmanager
 from ph5.clients import ph5tostationxml
 from ph5.utilities import kef2ph5
-from ph5 import logger, ch as CH
+from ph5 import logger, ch
 from ph5.core import experiment
 
 
@@ -27,11 +27,12 @@ def captured_output():
         sys.stdout, sys.stderr = old_out, old_err
 
 
+@contextmanager
 def log_capture_string():
     capture = StringIO()
-    logger.removeHandler(CH)
-    ch = logging.StreamHandler(capture)
-    logger.addHandler(ch)
+    logger.removeHandler(ch)
+    chan = logging.StreamHandler(capture)
+    logger.addHandler(chan)
 
     return capture
 
