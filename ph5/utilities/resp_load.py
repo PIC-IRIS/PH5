@@ -69,13 +69,13 @@ class n_i_fix(object):
 
         self.loaded_resp = []
         self.noloaded_resp = []
-        self.last_loaded_n_i = 0
+        self.last_loaded_n_i = -1
         for entry in self.ph5.Response_t['rows']:
             if entry['response_file_das_a'] or entry['response_file_sensor_a']:
                 self.loaded_resp.append(entry)
-                self.last_loaded_n_i = entry['n_i']
             else:
                 self.noloaded_resp.append(entry)
+            self.last_loaded_n_i = entry['n_i']
 
     def read_arrays(self, name):
         if name is None:
@@ -476,7 +476,11 @@ class n_i_fix(object):
                              (i['s_model'], i['d_model'], i['s_rate'],
                               i['s_rate_m'], i['gain'], float(i['bit_w'])))
 
-        final_ret = self.loaded_resp
+        # Keep all rows of the original response_t to keep track with
+        # response_table_n_i in das table
+        final_ret = self.noloaded_resp
+        # add the rows that already has resp files
+        final_ret += self.loaded_resp
 
         # start n_i by add 1 to the last n_i that already have response files
         n_i = self.last_loaded_n_i + 1
@@ -514,9 +518,6 @@ class n_i_fix(object):
 
         ph5_object.ph5_g_responses.nuke_response_t()
 
-        # Keep all rows of the original response_t to keep track with
-        # response_table_n_i in das table
-        final_ret += self.noloaded_resp
         for entry in final_ret:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
