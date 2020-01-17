@@ -18,7 +18,7 @@ import re
 from pyproj import Transformer, Geod
 import math
 
-PROG_VERSION = "2019.330"
+PROG_VERSION = "2020.017"
 
 
 class PH5Response(object):
@@ -70,90 +70,80 @@ class PH5ResponseManager(object):
                 return ph5_resp.n_i
 
 
-class UTMConversions:  # updated 2019-09-27 dthomas
+class UTMConversions:
 
-    def utm2latlong(self, easting, northing, zone, hemisphere):
-        # utm to lat/long conversion
-        epsg_wgs84 = "EPSG:4326"
-        side = hemisphere[0].upper()
-        if side == "S":
-            epsgroot = "327"
-        elif side == "N":
-            epsgroot = "326"
-        else:
-            epsgroot = None  # will throw error
-        epsg_utm = "EPSG:" + epsgroot + str(zone)
+    def __init__(self, lat, lon, side, zone):
+        self.epsg_wgs84 = "EPSG:4326"
 
-        transformer = Transformer.from_crs(epsg_utm,
-                                           epsg_wgs84, always_xy=True)
-        lon, lat = transformer.transform(float(easting), float(northing))
-        return (lat, lon)
+        if side is not None and lat is None:
+            if side == "S":
+                epsgroot = "327"
+            elif side == "N":
+                epsgroot = "326"
+        elif lat is not None:
+            if lat < 0.0:
+                epsgroot = "327"
+                side = 'S'
+            elif lat >= 0.0:
+                epsgroot = "326"
+                side = 'N'
+
+        if zone is not None and lon is None:
+            self.epsg_utm = "EPSG:" + epsgroot + str(zone)
+        elif lon is not None:
+            zone = self.lon2zone(lon)
+            self.epsg_utm = "EPSG:" + epsgroot + str(zone)
+
+        self.utm_zone = zone
+        self.hemisphere = side
 
     def lon2zone(self, lon):
         '''   Get UTM zone from longitude   '''
-        zone = int(math.floor((lon + 180.)/6.0) % 60) + 1
+        zone = int(math.floor((float(lon) + 180.)/6.0) % 60) + 1
         return zone
 
-    def geod2utm(self, lat, lon, elev):  # utility function
-        # lat/long to UTM conversion
-        zone = self.lon2zone(lon)
-        epsg_wgs84 = "EPSG:4326"
-        if lat < 0.0:
-            epsgroot = "327"
-        elif lat >= 0.0:
-            epsgroot = "326"
-        epsg_utm = "EPSG:" + epsgroot + str(zone)
+    def utm2latlong(self, easting, northing):
+        transformer = Transformer.from_crs(self.epsg_utm, self.epsg_wgs84,
+                                           always_xy=True)
+        lon, lat = transformer.transform(float(easting), float(northing))
+        return (lat, lon)
 
-        transformer = Transformer.from_crs(epsg_wgs84, epsg_utm,
+    def geod2utm(self, lat, lon, elev):  # utility function
+        transformer = Transformer.from_crs(self.epsg_wgs84, self.epsg_utm,
                                            always_xy=True)
         easting, northing = transformer.transform(lon, lat)
         return (northing, easting, elev)  # e.g. Y, X, Z
 
     def latlong2utm(self, lat, lon):
-        # lat/long to UTM conversion
-        zone = self.lon2zone(float(lon))
-        epsg_wgs84 = "EPSG:4326"
-        if lat < 0.0:
-            epsgroot = "327"
-            hemisphere = 'S'
-        elif lat >= 0.0:
-            epsgroot = "326"
-            hemisphere = 'N'
-        epsg_utm = "EPSG:" + epsgroot + str(zone)
-
-        transformer = Transformer.from_crs(epsg_wgs84, epsg_utm,
+        transformer = Transformer.from_crs(self.epsg_wgs84, self.epsg_utm,
                                            always_xy=True)
         easting, northing = transformer.transform(lon, lat)
-        return (easting, northing, zone, hemisphere)
+        return (easting, northing, self.utm_zone, self.hemisphere)
 
 
-class TSPConversions:  # added 2019-09-30 dthomas, Texas State Plane Coords
-
-    def lat_long(self, easting, northing):
-        epsg_wgs84 = "EPSG:4326"
-        epsg_sp4202 = "EPSG:2276"  # State Plane Coords in US FEET
-        transformer = Transformer.from_crs(epsg_sp4202, epsg_wgs84,
-                                           always_xy=True)
-        lon, lat = transformer.transform(easting, northing)
-        return (lon, lat)
+def tspc_lat_long(self, easting, northing):  # Texas State Plane Coords
+    epsg_wgs84 = "EPSG:4326"
+    epsg_sp4202 = "EPSG:2276"  # State Plane Coords in US FEET
+    transformer = Transformer.from_crs(epsg_sp4202, epsg_wgs84,
+                                       always_xy=True)
+    lon, lat = transformer.transform(easting, northing)
+    return (lon, lat)
 
 
-class Geodesics:  # added 2019-10-21 dthomas, consolidating from other locs
+def run_geod(self, lat0, lon0, lat1, lon1, scalar=1.0):
+    ELLIPSOID = 'WGS84'
 
-    def run_geod(self, lat0, lon0, lat1, lon1, scalar=1.0):
-        ELLIPSOID = 'WGS84'
+    config = "+ellps={0}".format(ELLIPSOID)
 
-        config = "+ellps={0}".format(ELLIPSOID)
+    g = Geod(config)
 
-        g = Geod(config)
+    az, baz, dist = g.inv(lon0, lat0, lon1, lat1)
 
-        az, baz, dist = g.inv(lon0, lat0, lon1, lat1)
+    if dist:
+        dist /= scalar
 
-        if dist:
-            dist /= scalar
-
-        # Return list containing azimuth, back azimuth, distance
-        return az, baz, dist
+    # Return list containing azimuth, back azimuth, distance
+    return az, baz, dist
 
 
 """

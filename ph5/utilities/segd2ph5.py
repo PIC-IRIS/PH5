@@ -19,7 +19,7 @@ from ph5.core import experiment, columns, segdreader, ph5utils
 from ph5 import LOGGING_FORMAT
 
 
-PROG_VERSION = "2019.252"
+PROG_VERSION = "2020.017"
 logger = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
@@ -1142,24 +1142,22 @@ def main():
                     try:
                         if UTM:
                             #   UTM
-                            utmc = ph5utils.UTMConversions()
                             new_UTM = re.split(r'(\d+)', UTM)
                             utmzone = str(new_UTM[1])
 
                             NS = str(new_UTM[2]).upper()
                             if NS != 'N' and NS != 'S':
                                 NS = 'N'
-
-                            LAT, LON = utmc.utm2latlong(
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.,
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                utmzone, NS)
+                            easting = SD.trace_headers.trace_header_N[
+                                          4].receiver_point_X_final / 10.
+                            northing = SD.trace_headers.trace_header_N[
+                                           4].receiver_point_Y_final / 10.
+                            utmc = ph5utils.UTMConversions(None, None,
+                                                           NS, utmzone)
+                            LAT, LON = utmc.utm2latlong(easting, northing)
                         elif TSPF:
                             #   Texas State Plane coordinates
-                            tspc = ph5utils.TSPConversions()
-                            LAT, LON = tspc.lat_long(
+                            LAT, LON = ph5utils.tspc_lat_long(
                                 SD.trace_headers.trace_header_N[
                                     4].receiver_point_X_final / 10.,
                                 SD.trace_headers.trace_header_N[

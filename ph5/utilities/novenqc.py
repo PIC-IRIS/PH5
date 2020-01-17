@@ -17,7 +17,7 @@ import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2020.015'
 LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
@@ -215,10 +215,9 @@ def qc_deploy_pickup(rows):
         #
         # Need to check for UTM and convert to lat/lon
         #
-        geod = ph5utils.Geodesics()
         units = 'm'
-        az, baz, dist = geod.run_geod(ys[0], xs[0], ys[1], xs[1],
-                                      FACTS[units])
+        az, baz, dist = ph5utils.run_geod(ys[0], xs[0], ys[1], xs[1],
+                                          FACTS[units])
         if len(zs) > 1:
             zdelta = float(zs[1]) - float(zs[0])
         else:

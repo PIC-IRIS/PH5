@@ -19,7 +19,7 @@ import logging
 from ph5.core import ph5utils  # for geod2utm, run_geod
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2020.015'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -786,10 +786,11 @@ class Ssegy:
 
         if self.utm is True:
             try:
-                utmc = ph5utils.UTMConversions()
-                Y, X, Z = utmc.geod2utm(self.array_t['location/Y/value_d'],
-                                        self.array_t['location/X/value_d'],
-                                        self.array_t['location/Z/value_d'])
+                lat = self.array_t['location/Y/value_d']
+                lon = self.array_t['location/X/value_d']
+                elev = self.array_t['location/Z/value_d']
+                utmc = ph5utils.UTMConversions(lat, lon, None, None)
+                Y, X, Z = utmc.geod2utm(lat, lon, elev)
                 s, vx, vy = pick_values_32(X, Y)
 
                 tra['coordScale'] = s
@@ -842,10 +843,11 @@ class Ssegy:
 
             if self.utm:
                 try:
-                    utmc = ph5utils.UTMConversions()
-                    Y, X, Z = utmc.geod2utm(self.event_t['location/Y/value_d'],
-                                            self.event_t['location/X/value_d'],
-                                            self.event_t['location/Z/value_d'])
+                    lat = self.event_t['location/Y/value_d']
+                    lon = self.event_t['location/X/value_d']
+                    elev = self.event_t['location/Z/value_d']
+                    utmc = ph5utils.UTMConversions(lat, lon, None, None)
+                    Y, X, Z = utmc.geod2utm(lat, lon, elev)
 
                     s, vx, vy = pick_values_32(X, Y)
                     tra['sourceLongOrX'] = vx
@@ -870,13 +872,14 @@ class Ssegy:
             tra['sourceToRecDist'] = self.offset_t['offset/value_d']
         else:
             try:
-                geod = ph5utils.Geodesics()
+                lat1 = self.event_t['location/Y/value_d']
+                lon1 = self.event_t['location/X/value_d']
+                lat2 = self.array_t['location/Y/value_d']
+                lon2 = self.array_t['location/X/value_d']
+
                 UNITS = 'm'
-                az_baz_dist = geod.run_geod(self.event_t['location/Y/value_d'],
-                                            self.event_t['location/X/value_d'],
-                                            self.array_t['location/Y/value_d'],
-                                            self.array_t['location/X/value_d'],
-                                            FACTS[UNITS])
+                az_baz_dist = ph5utils.run_geod(lat1, lon1, lat2, lon2,
+                                                FACTS[UNITS])
                 tra['sourceToRecDist'] = az_baz_dist[2]
             except Exception as e:
                 # sys.stderr.write (e.message)
