@@ -17,7 +17,6 @@ import re
 from math import modf
 from ph5.core import experiment, columns, segdreader, ph5utils
 from ph5 import LOGGING_FORMAT
-## from pyproj import Proj, transform
 
 PROG_VERSION = "2020.017"
 LOGGER = logging.getLogger(__name__)
@@ -1073,7 +1072,7 @@ def main():
                     try:
                         if UTM:
                             #   UTM
-                           new_UTM = re.split(r'(\d+)', UTM)
+                            new_UTM = re.split(r'(\d+)', UTM)
                             utmzone = str(new_UTM[1])
 
                             NS = str(new_UTM[2]).upper()
@@ -1174,4 +1173,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
