@@ -28,13 +28,19 @@ def captured_output():
 
 
 @contextmanager
-def log_capture_string():
+def captured_log():
     capture = StringIO()
-    logger.removeHandler(ch)
-    chan = logging.StreamHandler(capture)
-    logger.addHandler(chan)
-
-    return capture
+    try:
+        chan = logging.StreamHandler(capture)
+        logger.removeHandler(ch)
+        logger.addHandler(chan)
+        yield capture
+    finally:
+        try:
+            logger.removeHandler(chan)
+        except Exception:
+            pass
+        logger.addHandler(ch)
 
 
 def initialize_ph5(nickname, path='.', editmode=False):
@@ -46,7 +52,6 @@ def initialize_ph5(nickname, path='.', editmode=False):
 
 class TestPH5toStationXMLParser(unittest.TestCase):
     def setUp(self):
-        log_capture_string()
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
@@ -91,18 +96,19 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         return ph5tostationxml.PH5toStationXMLParser(self.mng)
 
     def createPH5(self, path, arraykef):
-        kef2ph5.EX = ex = initialize_ph5("master.ph5", path, True)
-        kef2ph5.PH5 = path + "/master.ph5"
-        kef2ph5.TRACE = False
+        with captured_log():
+            kef2ph5.EX = ex = initialize_ph5("master.ph5", path, True)
+            kef2ph5.PH5 = path + "/master.ph5"
+            kef2ph5.TRACE = False
 
-        kef2ph5.KEFFILE = self.home + arraykef
+            kef2ph5.KEFFILE = self.home + arraykef
 
-        kef2ph5.populateTables()
-        # add experiment_t
-        kef2ph5.KEFFILE = self.home + \
-            "/ph5/test_data/metadata/experiment.kef"
-        kef2ph5.populateTables()
-        ex.ph5close()
+            kef2ph5.populateTables()
+            # add experiment_t
+            kef2ph5.KEFFILE = self.home + \
+                "/ph5/test_data/metadata/experiment.kef"
+            kef2ph5.populateTables()
+            ex.ph5close()
 
     def test_get_network_date(self):
         """
