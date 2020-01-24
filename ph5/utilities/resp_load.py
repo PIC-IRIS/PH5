@@ -59,10 +59,11 @@ class Station(object):
 
 class n_i_fix(object):
 
-    def __init__(self, ph5API_object, array=[], reload_resp=False):
+    def __init__(self, ph5API_object, reload_resp, skip_response_t, array=[]):
         self.ph5 = ph5API_object
         self.array = array
         self.reload_resp = reload_resp
+        self.skip_response_t = skip_response_t
 
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
@@ -447,6 +448,8 @@ class n_i_fix(object):
                                 ph5, name, sensor_data, loaded_sensor)
 
         ph5.close()
+        if self.skip_response_t:
+            return
 
         data_list = []
         data_update = []
@@ -593,6 +596,15 @@ def get_args():
         dest="reload_resp",
         default=False)
 
+    parser.add_argument(
+        "-s",
+        "--skip_response_t",
+        action="store_true",
+        help=("Load response data in response_g "
+              "but skip updating response_t."),
+        dest="skip_response_t",
+        default=False)
+
     args = parser.parse_args()
     return args
 
@@ -624,7 +636,8 @@ def main():
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
 
-    fix_n_i = n_i_fix(ph5API_object, args.array, args.reload_resp)
+    fix_n_i = n_i_fix(ph5API_object, args.reload_resp, args.skip_response_t,
+                      args.array)
 
     data = fix_n_i.create_list()
 
@@ -635,6 +648,8 @@ def main():
     else:
         new_data = fix_n_i.load_response(
             args.ph5path, args.nickname, data, args.input_csv)
+        if args.skip_response_t:
+            sys.exit()
         import time
         time.sleep(5)
         fix_n_i.update_kefs(args.ph5path, args.array, new_data)
