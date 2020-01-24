@@ -588,11 +588,9 @@ def get_args():
     parser.add_argument(
         "-r",
         "--reload",
-        action="store",
-        help=("True if need to reload resp files."),
-        type=bool,
+        action="store_true",
+        help=("When need to reload resp files."),
         dest="reload_resp",
-        metavar="reload_resp",
         default=False)
 
     args = parser.parse_args()
