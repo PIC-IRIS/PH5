@@ -1,3 +1,4 @@
+
 """
 Author: Derick Hess
 Creates template csv for loading RESPS,
@@ -58,9 +59,10 @@ class Station(object):
 
 class n_i_fix(object):
 
-    def __init__(self, ph5API_object, array=[]):
+    def __init__(self, ph5API_object, array=[], reload_resp=False):
         self.ph5 = ph5API_object
         self.array = array
+        self.reload_resp = reload_resp
 
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
@@ -373,9 +375,40 @@ class n_i_fix(object):
                     "in the CSV file then re-run this program with the "
                     "-i input.csv option")
 
+    def read_respdata(self, resp_filename):
+        data = None
+        with open(resp_filename, "r") as f:
+            data = f.readlines()
+        if data is None:
+            LOGGER.warning("Could not read {0}.".format(resp_filename))
+        return data
+
+    def load_respdata(self, ph5, name, data, loaded_list, first_load=True):
+        try:
+            if not first_load:
+                ph5.remove_node(ph5.root.Experiment_g.Responses_g, name)
+            ph5.create_array(ph5.root.Experiment_g.Responses_g, name, data)
+            loaded_list.append(name)
+            if first_load:
+                LOGGER.info("Loaded {0}".format(name))
+            else:
+                LOGGER.info("Reload {0}.".format(name))
+        except Exception as e:
+            if "already has a child" not in str(e):
+                LOGGER.warning("Could not load {0}".format(name))
+            else:
+                if self.reload_resp:
+                    self.load_respdata(
+                        ph5, name, data, loaded_list, first_load=False)
+                else:
+                    LOGGER.warning(
+                        "{0} has been loaded in another resp_load run."
+                        .format(name.replace(" ", "")))
+
     def load_response(self, path, nickname, data, input_csv):
         ph5 = tables.open_file(os.path.join(path, nickname), "a")
 
+        # load response files from the paths in input.csv
         with open(input_csv, "r") as f:
             csv = f.readlines()
         f.close()
@@ -396,64 +429,24 @@ class n_i_fix(object):
                         "_" +
                         line_list[4])
                     if name not in loaded_das:
-                        with open(line_list[5].rstrip(), "r") as f:
-                            das_data = f.readlines()
-                        f.close()
-                        try:
-                            name = name.replace(
-                                    " ", "")
+                        das_data = self.read_respdata(line_list[5].rstrip())
+                        if das_data is not None:
+                            name = name.replace(" ", "")
                             name = name.translate(None, ',-=.')
-                            ph5.create_array(
-                                ph5.root.Experiment_g.Responses_g,
-                                name.replace(
-                                    " ", ""), das_data)
-                            loaded_das.append(name)
-                            LOGGER.info(
-                                "Loaded {0}".format(name.replace(" ", "")))
-                        except BaseException as e:
-                            if "already has a child" in str(e):
-                                LOGGER.warning(
-                                    "{0} has been loaded in another resp_load "
-                                    "run".format(name.replace(" ", "")))
-                            else:
-                                LOGGER.warning(
-                                    "Could not load {0}"
-                                    .format(name.replace(" ", "")))
+                            self.load_respdata(ph5, name, das_data, loaded_das)
 
                 if len(line_list) >= 6:
                     if line_list[6] == '\n':
                         continue
                     if line_list[1] not in loaded_sensor:
-                        with open(line_list[6].rstrip(), "r") as f:
-                            sensor_data = f.readlines()
-                        f.close()
-                        try:
-                            name = line_list[1].replace(
-                                " ", "")
+                        sensor_data = self.read_respdata(line_list[6].rstrip())
+                        if sensor_data is not None:
+                            name = line_list[1].replace(" ", "")
                             name = name.translate(None, ',-=.')
-                            ph5.create_array(
-                                ph5.root.Experiment_g.Responses_g,
-                                name.replace(
-                                    " ", ""), sensor_data)
-                            loaded_sensor.append(line_list[1])
-                            LOGGER.info(
-                                "Loaded {0}"
-                                .format(name.replace(" ", "")))
-                        except BaseException as e:
-                            if "already has a child" in str(e):
-                                LOGGER.warning(
-                                    "{0} has been loaded in another resp_load "
-                                    "run".format(name.replace(" ", "")))
-                            else:
-                                LOGGER.warning(
-                                    "Could not load {0}"
-                                    .format(name.replace(" ", "")))
-        ph5.close()
+                            self.load_respdata(
+                                ph5, name, sensor_data, loaded_sensor)
 
-        ph5_object = experiment.ExperimentGroup(nickname=nickname,
-                                                currentpath=path)
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
+        ph5.close()
 
         data_list = []
         data_update = []
@@ -476,13 +469,15 @@ class n_i_fix(object):
                              (i['s_model'], i['d_model'], i['s_rate'],
                               i['s_rate_m'], i['gain'], float(i['bit_w'])))
 
+        # ------------ add existing reponse entries to final_ret --------------
         # Keep all rows of the original response_t to keep track with
         # response_table_n_i in das table
         final_ret = self.noloaded_resp
         # add the rows that already has resp files
         final_ret += self.loaded_resp
 
-        # start n_i by add 1 to the last n_i that already have response files
+        # ------------ add new response enstries to final_ret -----------------
+        # increase n_i by 1 from the last n_i
         n_i = self.last_loaded_n_i + 1
         for x in unique_list:
             response_entry = {}
@@ -516,17 +511,24 @@ class n_i_fix(object):
             data_update.append(item + [n_i])
             n_i += 1
 
+        # ---------------------- update response_t ----------------------------
+        ph5_object = experiment.ExperimentGroup(nickname=nickname,
+                                                currentpath=path)
+        ph5_object.ph5open(True)
+        ph5_object.initgroup()
+        # delete response_t
         ph5_object.ph5_g_responses.nuke_response_t()
 
+        # populate response_t with entries from final_ret
         for entry in final_ret:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
 
         ph5_object.ph5close()
 
-        LOGGER.info(
-            "response_t.kef written into PH5")
+        LOGGER.info("response_t.kef written into PH5")
 
+        # --------- update data with new n_i new response_t's entries ---------
         for station in data:
             # don't update station.array if not listed in option -a
             if station.array not in self.array:
@@ -583,6 +585,16 @@ def get_args():
         metavar="input_csv",
         default=None)
 
+    parser.add_argument(
+        "-r",
+        "--reload",
+        action="store",
+        help=("True if need to reload resp files."),
+        type=bool,
+        dest="reload_resp",
+        metavar="reload_resp",
+        default=False)
+
     args = parser.parse_args()
     return args
 
@@ -614,7 +626,7 @@ def main():
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
 
-    fix_n_i = n_i_fix(ph5API_object, args.array)
+    fix_n_i = n_i_fix(ph5API_object, args.array, args.reload_resp)
 
     data = fix_n_i.create_list()
 
