@@ -923,7 +923,6 @@ def writeINDEX():
     MAP_INFO = {}
 
 
-
 def main():
     import time
     then = time.time()
