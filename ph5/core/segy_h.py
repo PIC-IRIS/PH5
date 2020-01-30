@@ -117,7 +117,7 @@ class Text (object):
 def reel_header():
     REEL = "REEL" / construct.Struct(
                             # Job identification number [3201-3204]
-                            "jobid"/ construct.Int32ub,
+                            "jobid" / construct.Int32ub,
                             # Line number [3205-3208]
                             "lino" / construct.Int32ub,
                             # Reel number [3209-3212]
@@ -180,7 +180,7 @@ def reel_header():
                             "extxt" / construct.Int16ub,
                             # Unassigned [3507-3600]
                             "unass2" / construct.Bytes(94))
-    
+
     return REEL
 
 # 400 byte reel header (Little Endian)
@@ -189,7 +189,7 @@ def reel_header():
 def reel_header_le():
     REEL = "REEL" / construct.Struct(
                             # Job identification number [3201-3204]
-                            "jobid"/ construct.Int32ul,
+                            "jobid" / construct.Int32ul,
                             # Line number [3205-3208]
                             "lino" / construct.Int32ul,
                             # Reel number [3209-3212]
@@ -253,7 +253,6 @@ def reel_header_le():
                             # Unassigned [3507-3600]
                             "unass2" / construct.Bytes(94))
     return REEL
-
 
 
 class Reel (object):
@@ -794,16 +793,16 @@ def menlo_header():
                         # Azimuth of source-receiver (min of arc)
                         "azimuth" / construct.Int16sb,
                         # 1--L28 (PASSCAL)(4.5 Hz)
-                         # 2--L22 (2 Hz)
-                         # 3--L10B (8 Hz)
-                         # 4--L4 1 Hz
-                         # 5--L4 2 Hz
-                         # 6--FBA
-                         # 7--TDC-10 (4.5 Hz)
-                         # 8--L28 (GSC)
-                         # 9--LRS1033 (4.5 HZ)
-                         # 99--unknown
-                         # Geophone number (empty)
+                        # 2--L22 (2 Hz)
+                        # 3--L10B (8 Hz)
+                        # 4--L4 1 Hz
+                        # 5--L4 2 Hz
+                        # 6--FBA
+                        # 7--TDC-10 (4.5 Hz)
+                        # 8--L28 (GSC)
+                        # 9--LRS1033 (4.5 HZ)
+                        # 99--unknown
+                        # Geophone number (empty)
                         "sensor_sn" / construct.Int16sb,
                         # Inst. ID number
                         "das_sn" / construct.Int16ub,
@@ -856,16 +855,16 @@ def menlo_header_le():
                         # Azimuth of source-receiver (min of arc)
                         "azimuth" / construct.Int16sl,
                         # 1--L28 (PASSCAL)(4.5 Hz)
-                         # 2--L22 (2 Hz)
-                         # 3--L10B (8 Hz)
-                         # 4--L4 1 Hz
-                         # 5--L4 2 Hz
-                         # 6--FBA
-                         # 7--TDC-10 (4.5 Hz)
-                         # 8--L28 (GSC)
-                         # 9--LRS1033 (4.5 HZ)
-                         # 99--unknown
-                         # Geophone number (empty)
+                        # 2--L22 (2 Hz)
+                        # 3--L10B (8 Hz)
+                        # 4--L4 1 Hz
+                        # 5--L4 2 Hz
+                        # 6--FBA
+                        # 7--TDC-10 (4.5 Hz)
+                        # 8--L28 (GSC)
+                        # 9--LRS1033 (4.5 HZ)
+                        # 99--unknown
+                        # Geophone number (empty)
                         "sensor_sn" / construct.Int16sl,
                         # Inst. ID number
                         "das_sn" / construct.Int16ul,
@@ -957,7 +956,7 @@ def seg_header():
                         "Sto" / construct.Int16sb,
                         # Source Energy direction
                         "Sed" / construct.Bytes(6),
-                          # Source measurement mantissa
+                        # Source measurement mantissa
                         "Smsmant" / construct.Int32sb,
                         # Source measurement exponent
                         "Smsexp" / construct.Int16sb,
@@ -1006,7 +1005,7 @@ def seg_header_le():
                         "Sto" / construct.Int16sl,
                         # Source Energy direction
                         "Sed" / construct.Bytes(6),
-                          # Source measurement mantissa
+                        # Source measurement mantissa
                         "Smsmant" / construct.Int32sl,
                         # Source measurement exponent
                         "Smsexp" / construct.Int16sl,
@@ -1066,7 +1065,8 @@ class Seg (object):
 
 
 def inova_header():
-    TRACE = construct.Struct("TRACE",
+    TRACE = construct.Struct(
+                            "TRACE",
                             # iNova revision (322)
                             "Revision" / construct.Int16ub,
                             # Derived from POSIX time of shot
@@ -1276,7 +1276,8 @@ def inova_header():
 
 
 def inova_header_le():
-    TRACE = construct.Struct("TRACE",
+    TRACE = construct.Struct(
+                            "TRACE",
                             # iNova revision (322)
                             "Revision" / construct.Int16ub,
                             # Derived from POSIX time of shot
