@@ -3,33 +3,52 @@ Tests for metadatatoph5
 '''
 import unittest
 import logging
-from StringIO import StringIO as StringBuffer
-import ph5
+from StringIO import StringIO
+from ph5 import logger, ch
 from ph5.core import ph5api, experiment
 from ph5.utilities import ph5validate, texan2ph5, kef2ph5
 import os
 import shutil
 import tempfile
+from contextlib import contextmanager
+
+
+@contextmanager
+def captured_log():
+    capture = StringIO()
+    try:
+        chan = logging.StreamHandler(capture)
+        logger.removeHandler(ch)
+        logger.addHandler(chan)
+        yield capture
+    finally:
+        logger.removeHandler(chan)
+        logger.addHandler(ch)
+
+
+def initialize_ph5(nickname, path, editmode=False):
+    ex = experiment.ExperimentGroup(nickname=nickname, currentpath=path)
+    ex.ph5open(editmode)
+    ex.initgroup()
+    return ex
+
+
+def get_dir():
+    home = os.getcwd()
+    tmpdir = tempfile.mkdtemp()
+    os.chdir(tmpdir)
+    return home, tmpdir
 
 
 class TestPh5Validate(unittest.TestCase):
     def setUp(self):
-        # capture log string into log_capture_string
-        self.log_capture_string = StringBuffer()
-        ph5.logger.removeHandler(ph5.ch)
-        ch = logging.StreamHandler(self.log_capture_string)
-        ph5.logger.addHandler(ch)
-
         # create tmpdir
-        self.home = os.getcwd()
+        self.home, self.tmpdir = get_dir()
         kefpath = self.home + "/ph5/test_data/metadata/array_t_9_validate.kef"
         datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
-        self.tmpdir = tempfile.mkdtemp()
-        os.chdir(self.tmpdir)
+
         # initiate ph5
-        ex = experiment.ExperimentGroup(nickname='master.ph5')
-        ex.ph5open(True)  # Open ph5 file for editing
-        ex.initgroup()
+        ex = initialize_ph5("master.ph5", self.tmpdir, True)
 
         # add texan data
         texan2ph5.EX = ex
@@ -37,14 +56,16 @@ class TestPh5Validate(unittest.TestCase):
         texan2ph5.FIRST_MINI = 1
         texan2ph5.WINDOWS = None
         texan2ph5.SR = None
-        texan2ph5.process()
+        with captured_log():
+            texan2ph5.process()
 
         # add array table
         kef2ph5.EX = ex
         kef2ph5.KEFFILE = kefpath
         kef2ph5.PH5 = "master.ph5"
         kef2ph5.TRACE = False
-        kef2ph5.populateTables()
+        with captured_log():
+            kef2ph5.populateTables()
 
         try:
             ex.ph5close()
@@ -83,64 +104,81 @@ class TestPh5Validate(unittest.TestCase):
         time range?
         """
         self.ph5validate.analyze_time()
-        self.assertEqual(self.ph5validate.das_time.keys(), ['12183'])
-        Dtime = self.ph5validate.das_time['12183']
-        self.assertEqual(Dtime.keys(), [1])
-        self.assertEqual(Dtime[1].keys(), [500])
-        self.assertEqual(len(Dtime[1][500]), 3)  # for 3 different deploy time
+        self.assertEqual(self.ph5validate.das_time.keys(), [('12183', 1, 500)])
+        Dtime = self.ph5validate.das_time[('12183', 1, 500)]
 
-        # station 9001: with the smallest deploy time,
-        # check for "Data exists before deploy time"
-        self.assertEqual([1550849950, 1550850034, '9001',
-                          'Data exists before deploy time: 7 seconds.'],
-                         Dtime[1][500][0])
-        self.assertEqual([1550850043, 1550850093, '9002', ''],
-                         Dtime[1][500][1])
-        # station 9003: with the biggest pickup time,
-        # check for "Data exists after pickup time"
-        self.assertEqual([1550850125, 1550850187, '9003',
-                          'Data exists after pickup time: 2 seconds.'],
-                         Dtime[1][500][2])
+        # 3 different deploy time
+        self.assertEqual(len(Dtime['time_windows']), 3)
+
+        # station 9001
+        self.assertEqual(Dtime['time_windows'][0],
+                         (1550849950, 1550850034, '9001'))
+        # station 9002
+        self.assertEqual(Dtime['time_windows'][1],
+                         (1550850043, 1550850093, '9002'))
+        # station 9003
+        self.assertEqual(Dtime['time_windows'][2],
+                         (1550850125, 1550850187, '9003'))
+
+        self.assertEqual(Dtime['min_deploy_time'],
+                         [1550849950,
+                          'Data exists before deploy time: 7 seconds.'])
+
+        self.assertEqual(Dtime['max_pickup_time'],
+                         [1550850187,
+                          'Data exists after pickup time: 2 seconds.'])
 
     def test_check_station_completeness(self):
-        self.ph5validate.das_time = \
-            {'12183': {1: {500: [[1550849950, 1550850034, '9001',
-                                  'Data exists before deploy time: 7 seconds.'
-                                  ],
-                                 [1550850043, 1550850093, '9002', ''],
-                                 [1550850125, 1550850187, '9003',
-                                  'Data exists after deploy time: 2 seconds.']
-                                 ]}}}
+        self.ph5validate.das_time = {
+            ('12183', 1, 500):
+            {'time_windows': [(1550849950, 1550850034, '9001'),
+                              (1550850043, 1550850093, '9002'),
+                              (1550850125, 1550850187, '9003')],
+             'min_deploy_time': [1550849950,
+                                 'Data exists before deploy time: 7 seconds.'],
+             'max_pickup_time': [1550850187,
+                                 'Data exists after deploy time: 2 seconds.']
+             }
+        }
+
         self.ph5validate.read_arrays('Array_t_009')
         arraybyid = self.ph5validate.ph5.Array_t['Array_t_009']['byid']
+        DT = self.ph5validate.das_time[('12183', 1, 500)]
 
-        # check returning warning from das_time
+        # check warning before min_deploy_time
         station = arraybyid.get('9001')[1][0]
         ret = self.ph5validate.check_station_completeness(station)
         warnings = ret[1]
         self.assertIn('Data exists before deploy time: 7 seconds.', warnings)
+
+        # check warning after max_pickup_time
+        station = arraybyid.get('9003')[1][0]
+        ret = self.ph5validate.check_station_completeness(station)
+        warnings = ret[1]
+        self.assertIn('Data exists after deploy time: 2 seconds.', warnings)
+
         # check warning data after pickup time
         station = arraybyid.get('9002')[1][0]
         ret = self.ph5validate.check_station_completeness(station)
         warnings = ret[1]
         self.assertIn('Data exists after pickup time: 36 seconds.', warnings)
+
         # check error overlaping
         # => change deploy time of the 3rd station
-        self.ph5validate.das_time['12183'][1][500][2][0] = 1550850090
+        DT['time_windows'][2] = \
+            (1550850090, 1550850187, '9003')
         ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
-        self.assertIn('Overlap time on station(s): 9003, 9002', errors)
+        self.assertIn('Overlap time on station(s): 9002, 9003', errors)
+
         # check no data found for array's time
         # => change array's time to where there is no data
-        # this can only check if there is no data exit before deploy time
-        # or after pickup time
         station = arraybyid.get('9003')[1][0]
-        station['deploy_time/epoch_l'] = \
-            self.ph5validate.das_time['12183'][1][500][2][0] = 1550850190
-        station['pickup_time/epoch_l'] = \
-            self.ph5validate.das_time['12183'][1][500][2][1] = 1550850191
-        self.ph5validate.das_time['12183'][1][500][2][3] = ""
-        ret = self.ph5validate.check_station_completeness(station)
+        station['deploy_time/epoch_l'] = 1550850190
+        station['pickup_time/epoch_l'] = 1550850191
+        DT['time_windows'][2] = (1550850190, 1550850191, '9003')
+        with captured_log():
+            ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
         self.assertIn("No data found for das serial number 12183 during this "
                       "station's time. You may need to reload the raw data "
@@ -149,8 +187,10 @@ class TestPh5Validate(unittest.TestCase):
         # check no data found errors
         station = arraybyid.get('9002')[1][0]
         station['das/serial_number_s'] = '1218'
-        self.ph5validate.das_time['1218'] = self.ph5validate.das_time['12183']
-        ret = self.ph5validate.check_station_completeness(station)
+        self.ph5validate.das_time[('1218', 1, 500)] = \
+            self.ph5validate.das_time[('12183', 1, 500)]
+        with captured_log():
+            ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
