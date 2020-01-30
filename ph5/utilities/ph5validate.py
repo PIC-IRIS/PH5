@@ -482,39 +482,46 @@ class PH5Validate(object):
                 .format(str(das_serial))
             error.append(nodata_err)
 
-        das_time_list = self.das_time[das_serial][channel_id][sample_rate]
+        DT = self.das_time[(das_serial, channel_id, sample_rate)]
+        # add bound_errors if applicable
+        if deploy_time == DT['min_deploy_time'][0]:
+            try:
+                warning.append(DT['min_deploy_time'][1])
+            except IndexError:
+                pass
+        if pickup_time == DT['max_pickup_time'][0]:
+            try:
+                warning.append(DT['max_pickup_time'][1])
+            except IndexError:
+                pass
 
+        das_time_list = DT['time_windows']
+
+        index = das_time_list.index((deploy_time, pickup_time, station_id))
+
+        overlaps = []
         # check if there is any overlap time for this das
-        dup_time = [t for t in das_time_list
-                    if t[0] <= deploy_time < t[1]
-                    or t[0] < pickup_time <= t[1]]
-        if len(dup_time) > 1:
-            dup_stations = [t[2] for t in dup_time]
-            dup_stations = list(dict.fromkeys(dup_stations))  # remove dup
+        for i in range(len(das_time_list)):
+            t = das_time_list[i]
+            if ((t[0] <= deploy_time < t[1]) or (t[0] < pickup_time <= t[1])):
+                overlaps.append(t[2])
+
+        if len(overlaps) > 1:
             error.append("Overlap time on station(s): %s" %
-                         ", ".join(dup_stations))
-
-        sta_time = [t for t in dup_time
-                    if t[0] == deploy_time and t[1] == pickup_time][0]
-        # retrieve warning for data outside the border of all arrays' time
-        if sta_time[3] != '':
-            warning.append(sta_time[3])
-
-        # get index of this station in das_time_list
-        index = das_time_list.index(sta_time)
+                         ", ".join(overlaps))
 
         try:
             # don't need to read das_t because it will be read in get_extent
-            if index != len(das_time_list) - 1 or \
-              (index == len(das_time_list) - 1 and sta_time[3] == ''):
-                # for last index, need to check if no data exist
-                # -- check data from current deploy time to next deploy time -1
-                # -1: to avoid include the next deploy time
-                # ------------------------------------------------------------#
+            if (index <= (len(das_time_list) - 1)):
+                # current deploy time
                 check_start = das_time_list[index][0]
                 if index == len(das_time_list) - 1:
+                    # for last index, need to check if no data exist
+                    # so check from curr deploy time to current pickup time
                     check_end = das_time_list[index][1]
                 else:
+                    # -- check data from current deploy time to
+                    # next deploy time -1 (-1 to avoid include next deploy time
                     check_end = das_time_list[index+1][0] - 1
                 i = 1
                 # while loop to avoid using overlaping row
@@ -574,62 +581,67 @@ class PH5Validate(object):
 
     def analyze_time(self):
         """
-        analyze das_time in array tables
+        Analyze the array table to create dictionary self.das_time with key
+        is a set of (das, channel, sample_rate)
+        Each item's value includes
+        * time_windows: a deploy-time-sorted list of all time windows
+        of stations that match its key
+        * min_deploy_time: [item1, item2]:
+          item1: min_deploy_time value
+          item2: error message if there is any data before the min deploy
+        * max_pickup_time: [item1, item2]
+          item1: max_deploy_time value
+          item2: error message if there is any data after max deploy
+
+        self.das_time will help check_station_completness with:
+        * reporting error outside min_deploy_time, max_pickup_time
+        * check overlaping time
+        * correctly check data exist from a station pickup time to the
+        next deploy time available
         """
+        self.read_arrays(None)
         self.das_time = {}
-        array_names = sorted(self.ph5.Array_t_names)
-        for array_name in array_names:
-            self.read_arrays(array_name)
+        for array_name in self.ph5.Array_t_names:
             arraybyid = self.ph5.Array_t[array_name]['byid']
-            arrayorder = self.ph5.Array_t[array_name]['order']
-            for ph5_station in arrayorder:
-                station_list = arraybyid.get(ph5_station)
-                for deployment in station_list:
-                    station_len = len(station_list[deployment])
-                    for st_num in range(0, station_len):
-                        station = station_list[deployment][st_num]
-                        d = station['das/serial_number_s']
-                        if d not in self.das_time.keys():
-                            self.das_time[d] = {}
-                        c = station['channel_number_i']
-                        if c not in self.das_time[d].keys():
-                            self.das_time[d][c] = {}
-                        spr = station['sample_rate_i']
-                        if spr not in self.das_time[d][c].keys():
-                            self.das_time[d][c][spr] = []
-                        deploy_time = station['deploy_time/epoch_l']
-                        pickup_time = station['pickup_time/epoch_l']
-                        station_id = station['id_s']
-                        self.das_time[d][c][spr].append(
-                            [deploy_time, pickup_time, station_id, ''])
+            for stations in arraybyid.values():
+                for deployment in stations.values():
+                    for stat in deployment:
+                        d = stat['das/serial_number_s']
+                        c = stat['channel_number_i']
+                        spr = stat['sample_rate_i']
+                        key = (d, c, spr)
+                        if key not in self.das_time.keys():
+                            self.das_time[key] = {'time_windows': []}
+                        self.das_time[key]['time_windows'].append(
+                            (stat['deploy_time/epoch_l'],
+                             stat['pickup_time/epoch_l'],
+                             stat['id_s']))
 
-        for d in self.das_time.keys():
-            for c in self.das_time[d].keys():
-                for spr in self.das_time[d][c].keys():
-                    self.das_time[d][c][spr].sort()
-                    # look for data outside the border of all arrays' time
-                    firstdeploy_time = self.das_time[d][c][spr][0][0]
-                    lastpickup_time = self.das_time[d][c][spr][-1][1]
-                    true_deploy, true_pickup =\
-                        self.ph5.get_extent(das=d,
-                                            component=c,
-                                            sample_rate=spr)
-                    if true_deploy is None:
-                        # No data found. But don't give warning here
-                        # Will give warning in check_station_completness
-                        # for more detail
-                        continue
-                    if firstdeploy_time > true_deploy:
-                        time = int(firstdeploy_time - true_deploy)
-                        warningmsg = "Data exists before deploy time: %s "\
-                            "seconds." % time
-                        self.das_time[d][c][spr][0][3] = warningmsg
+        for key in self.das_time.keys():
+            DT = self.das_time[key]
+            DT['time_windows'].sort()
+            d, c, spr = key
+            DT['min_deploy_time'] = [DT['time_windows'][0][0]]
+            DT['max_pickup_time'] = [max([t[1] for t in DT['time_windows']])]
+            # look for data outside time border of each set
+            true_deploy, true_pickup = self.ph5.get_extent(das=d,
+                                                           component=c,
+                                                           sample_rate=spr)
+            if true_deploy is None:
+                # No data found. But don't give warning here because it
+                #  will be given in check_station_completness
+                continue
+            if true_deploy < DT['min_deploy_time'][0]:
+                time = int(DT['min_deploy_time'][0] - true_deploy)
+                warningmsg = "Data exists before deploy time: %s seconds." \
+                    % time
+                DT['min_deploy_time'].append(warningmsg)
 
-                    if lastpickup_time < true_pickup:
-                        time = int(true_pickup - lastpickup_time)
-                        warningmsg = "Data exists after pickup time: %s "\
-                            "seconds." % time
-                        self.das_time[d][c][spr][-1][3] += warningmsg
+            if DT['max_pickup_time'][0] < true_pickup:
+                time = int(true_pickup - DT['max_pickup_time'][0])
+                warningmsg = "Data exists after pickup time: %s seconds." \
+                    % time
+                DT['max_pickup_time'].append(warningmsg)
 
     def check_array_t(self):
         LOGGER.info("Validating Array_t")
