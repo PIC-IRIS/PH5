@@ -121,7 +121,7 @@ class UTMConversions:
         return (easting, northing, self.utm_zone, self.hemisphere)
 
 
-def tspc_lat_long(self, easting, northing):  # Texas State Plane Coords
+def tspc_lat_long(easting, northing):  # Texas State Plane Coords
     epsg_wgs84 = "EPSG:4326"
     epsg_sp4202 = "EPSG:2276"  # State Plane Coords in US FEET
     transformer = Transformer.from_crs(epsg_sp4202, epsg_wgs84,
@@ -130,7 +130,7 @@ def tspc_lat_long(self, easting, northing):  # Texas State Plane Coords
     return (lon, lat)
 
 
-def run_geod(self, lat0, lon0, lat1, lon1, scalar=1.0):
+def run_geod(lat0, lon0, lat1, lon1, scalar=1.0):
     ELLIPSOID = 'WGS84'
 
     config = "+ellps={0}".format(ELLIPSOID)

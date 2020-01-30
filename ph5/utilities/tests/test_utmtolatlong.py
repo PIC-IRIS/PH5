@@ -35,7 +35,7 @@ class TestUTMconversion(unittest.TestCase):
 
     def test_is_valid_tsp_conversion(self):
         # Sweetwater, Texas, units US FEET
-        lon, lat = tspc_lat_long(self, 1380811, 6858888)
+        lon, lat = tspc_lat_long(1380811, 6858888)
         self.assertAlmostEqual(lon, -100.40568335900281)
         self.assertAlmostEqual(lat, 32.468972700219375)
 
