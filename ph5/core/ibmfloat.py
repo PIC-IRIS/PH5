@@ -25,36 +25,41 @@ PROG_VERSION = '2015.092'
 
 
 def ibm():
-    IBM = construct.BitStruct("IBM",
-                              construct.BitField("s", 1),
-                              construct.BitField("e", 7),
-                              construct.BitField("m", 24))
+    IBM = "IBM" / construct.BitStruct(
+                        "s" / construct.BitField(1),
+                        "e" / construct.BitField(7),
+                        "m" / construct.BitField(24),
+                        )
     return IBM
 
 
 def ieee():
-    IEEE = construct.BitStruct("IEEE",
-                               construct.BitField("s", 1),
-                               construct.BitField("e", 8),
-                               construct.BitField("m", 23))
+    IEEE = "IEEE" / construct.BitStruct(
+                        "s" / construct.BitField(1),
+                        "e" / construct.BitField(8),
+                        "m" / construct.BitField(23),
+                        )
     return IEEE
 
 
 def pfloat():
-    PFLOAT = construct.Struct("PFLOAT",
-                              construct.BFloat32("x"))
+    PFLOAT = "PFLOAT" / construct.Struct(
+                        "x" / construct.Float32b
+                        )
     return PFLOAT
 
 
 def puint():
-    PINT = construct.Struct("PINT",
-                            construct.UBInt32("x"))
+    PINT = "PINT" / construct.Struct(
+                        "x" / construct.Int32ub
+                        )
     return PINT
 
 
 def psint():
-    PINT = construct.Struct("PINT",
-                            construct.SBInt32("x"))
+    PINT = "PINT" / construct.Struct(
+                        "x" / construct.Int32sb
+                        )
     return PINT
 
 
