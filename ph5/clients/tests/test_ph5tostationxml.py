@@ -30,16 +30,13 @@ def captured_output():
 @contextmanager
 def captured_log():
     capture = StringIO()
+    chan = logging.StreamHandler(capture)
+    logger.removeHandler(ch)
+    logger.addHandler(chan)
     try:
-        chan = logging.StreamHandler(capture)
-        logger.removeHandler(ch)
-        logger.addHandler(chan)
         yield capture
     finally:
-        try:
-            logger.removeHandler(chan)
-        except Exception:
-            pass
+        logger.removeHandler(chan)
         logger.addHandler(ch)
 
 
