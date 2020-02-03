@@ -16,7 +16,7 @@ import string
 import rt_130_py
 import construct
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2020.34'
 LOGGER = logging.getLogger(__name__)
 
 ver = construct.version[0] + construct.version[1] / 10.
@@ -30,26 +30,22 @@ def __version__():
 
 
 def pfloat():
-    PFLOAT = construct.Struct("PFLOAT",
-                              construct.BFloat32("x"))
+    PFLOAT = "PFLOAT" / construct.Struct("X" / construct.Float32b)
     return PFLOAT
 
 
 def puint():
-    PINT = construct.Struct("PINT",
-                            construct.UBInt32("x"))
+    PINT = "PINT" / construct.Struct("x" / construct.Int32ub)
     return PINT
 
 
 def psint():
-    PINT = construct.Struct("PINT",
-                            construct.SBInt32("x"))
+    PINT = "PINT" / construct.Struct("x" / construct.Int32sb)
     return PINT
 
 
 def psshort():
-    PSHORT = construct.Struct("PSHORT",
-                              construct.SBInt16("x"))
+    PSHORT = "PSHORT" / construct.Struct("x" / construct.Int16sb)
     return PSHORT
 
 
@@ -100,18 +96,17 @@ class PH_object(object):
 
 
 def packet_header():
-    PH = construct.BitStruct("PH",
-                             construct.BitField("PacketType", 16),
-                             construct.BitField("ExperimentNumber", 8),
-                             construct.BitField("Year", 8),
-                             construct.BitField("UnitIDNumber", 16),
-                             construct.BitField("DOY", 12),
-                             construct.BitField("HH", 8),
-                             construct.BitField("MM", 8),
-                             construct.BitField("SS", 8),
-                             construct.BitField("TTT", 12),
-                             construct.BitField("ByteCount", 16),
-                             construct.BitField("PacketSequence", 16))
+    PH = "PH" / construct.Struct("PacketType" / construct.BitsInteger(16),
+                                 "ExperimentNumber" / construct.BitsInteger(8),
+                                 "Year" / construct.BitsInteger(8),
+                                 "UnitIDNumber" / construct.BitsInteger(16),
+                                 "DOY" / construct.BitsInteger(12),
+                                 "HH" / construct.BitsInteger(8),
+                                 "MM" / construct.BitsInteger(8),
+                                 "SS" / construct.BitsInteger(8),
+                                 "TTT" / construct.BitsInteger(12),
+                                 "ByteCount" / construct.BitsInteger(16),
+                                 "PacketSequence" / construct.BitsInteger(16))
     return PH
 
 
@@ -192,22 +187,20 @@ class DT_object(object):
 
 
 def data_packet():
-    DT = construct.BitStruct("DT",
-                             construct.BitField("PacketHeader", 128),
-                             construct.BitField("EventNumber", 16),
-                             construct.BitField("DataStream", 8),
-                             construct.BitField("Channel", 8),
-                             construct.BitField("Samples", 16),
-                             # construct.BitField ("Flags", 8),
-                             construct.Flag("Calibration"),
-                             construct.Flag("Overscaled"),
-                             construct.Flag("StackedData"),
-                             construct.BitField("Unused", 2),
-                             construct.Flag("Second_EH_ET"),
-                             construct.Flag("LastDataPacket"),
-                             construct.Flag("FirstDataPacket"),
-                             construct.BitField("DataFormat", 8),
-                             construct.BitField("Data", 8000))
+    DT = "DT" / construct.Struct("PacketHeader" / construct.BitsInteger(128),
+                                 "EventNumber" / construct.BitsInteger(16),
+                                 "DataStream" / construct.BitsInteger(8),
+                                 "Channel" / construct.BitsInteger(8),
+                                 "Samples" / construct.BitsInteger(16),
+                                 "Calibration" / construct.Flag,
+                                 "Overscaled" / construct.Flag,
+                                 "StackedData" / construct.Flag,
+                                 "Unused" / construct.BitsInteger(2),
+                                 "Second_EH_ET" / construct.Flag,
+                                 "LastDataPacket" / construct.Flag,
+                                 "FirstDataPacket" / construct.Flag,
+                                 "DataFormat" / construct.BitsInteger(8),
+                                 "Data" / construct.BitsInteger(8000))
     return DT
 
 
@@ -315,48 +308,44 @@ class EH_object(object):
 
 
 def event_header():
-    EH = construct.Struct("EH",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128),
-                                              construct.BitField(
-                                                  "EventNumber", 16),
-                                              construct.BitField(
-                                                  "DataStream", 8),
-                                              construct.BitField(
-                                                  "Reserved", 24),
-                                              construct.BitField("Flags", 8),
-                                              construct.BitField("DataFormat",
-                                                                 8)),
-                          construct.String("TriggerTimeMessage", 33),
-                          construct.String("TimeSource", 1),
-                          construct.String("TimeQuality", 1),
-                          construct.String("ExtStationName", 1),
-                          construct.String("StationName", 4),
-                          construct.String("StreamName", 16),
-                          construct.String("Reserved1", 8),
-                          construct.String("SampleRate", 4),
-                          construct.String("TriggerType", 4),
-                          construct.String("TriggerTime", 16),
-                          construct.String("FirstSampleTime", 16),
-                          construct.String("DetriggerTime", 16),
-                          construct.String("LastSampleTime", 16),
-                          construct.String("NominalBitWeight", 128),
-                          construct.String("TrueBitWeight", 128),
-                          construct.String("Gain", 16),
-                          construct.String("A_DResolution", 16),
-                          construct.String("FullScaleAnalog", 16),
-                          construct.String("ChannelCode", 64),
-                          construct.String("SensorFSA", 16),
-                          construct.String("SensorVPU", 96),
-                          construct.String("SensorUnits", 16),
-                          construct.String("StationNumber", 48),
-                          construct.String("Reserved2", 156),
-                          construct.String("TotalChannels", 2),
-                          construct.String("Comment", 40),
-                          construct.String("FilterList", 16),
-                          construct.String("Position", 26),
-                          construct.String("RefTek120", 80))
+    EH = "EH" / construct.Struct(
+                            "PacketHeader" / construct.BitStruct(
+                                "PacketHeader" / construct.BitsInteger(128),
+                                "EventNumber" / construct.BitsInteger(16),
+                                "DataStream" / construct.BitsInteger(8),
+                                "Reserved" / construct.BitsInteger(24),
+                                "Flags" / construct.BitsInteger(8),
+                                "DataFormat" / construct.BitsInteger(8)
+                             ),
+                             "TriggerTimeMessage" / construct.Bytes(33),
+                             "TimeSource" / construct.Bytes(1),
+                             "TimeQuality" / construct.Bytes(1),
+                             "ExtStationName" / construct.Bytes(1),
+                             "StationName" / construct.Bytes(4),
+                             "StreamName" / construct.Bytes(16),
+                             "Reserved1" / construct.Bytes(8),
+                             "SampleRate" / construct.Bytes(4),
+                             "TriggerType" / construct.Bytes(4),
+                             "TriggerTime" / construct.Bytes(16),
+                             "FirstSampleTime" / construct.Bytes(16),
+                             "DetriggerTime" / construct.Bytes(16),
+                             "LastSampleTime" / construct.Bytes(16),
+                             "NominalBitWeight" / construct.Bytes(128),
+                             "TrueBitWeight" / construct.Bytes(128),
+                             "Gain" / construct.Bytes(16),
+                             "A_DResolution" / construct.Bytes(16),
+                             "FullScaleAnalog" / construct.Bytes(16),
+                             "ChannelCode" / construct.Bytes(64),
+                             "SensorFSA" / construct.Bytes(16),
+                             "SensorVPU" / construct.Bytes(96),
+                             "SensorUnits" / construct.Bytes(16),
+                             "StationNumber" / construct.Bytes(48),
+                             "Reserved2" / construct.Bytes(156),
+                             "TotalChannels" / construct.Bytes(2),
+                             "Comment" / construct.Bytes(40),
+                             "FilterList" / construct.Bytes(16),
+                             "Position" / construct.Bytes(26),
+                             "RefTek120" / construct.Bytes(80))
     return EH
 
 
@@ -529,12 +518,12 @@ class EH(object):
 # State of Health packets
 #
 def SOH_packet():
-    SH = construct.Struct("SH",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128)),
-                          construct.String("Reserved", 8),
-                          construct.String("Information", 1000))
+    SH = "SH" / construct.Struct(
+                            "BIN" / construct.BitStruct(
+                              "PacketHeader" / construct.BitsInteger(128)
+                            ),
+                            "Reserved" / construct.Bytes(8),
+                            "Information" / construct.Bytes(1000))
     return SH
 
 
@@ -576,112 +565,108 @@ class SH(object):
 
 #
 # Station Channel packets
-#
 
 
 def station_channel():
-    SC = construct.Struct("SC",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128)),
-                          construct.String("ExperimentNumber", 2),
-                          construct.String("ExperimentName", 24),
-                          construct.String("ExperimentComment", 40),
-                          construct.String("StationNumber", 4),
-                          construct.String("StationName", 24),
-                          construct.String("StationComment", 40),
-                          construct.String("DASModel", 12),
-                          construct.String("DASSerial", 12),
-                          construct.String("ExperimentStart", 14),
-                          construct.String("TimeClockType", 4),
-                          construct.String("TimeClockSN", 10),
-                          construct.Struct("ChanInfo1",
-                                           construct.String("Channel", 2),
-                                           construct.String("ChannelName", 10),
-                                           construct.String("Azimuth", 10),
-                                           construct.String("Inclination", 10),
-                                           construct.String("XCoordinate", 10),
-                                           construct.String("YCoordinate", 10),
-                                           construct.String("ZCoordinate", 10),
-                                           construct.String("XYUnits", 4),
-                                           construct.String("ZUnits", 4),
-                                           construct.String("PreampGain", 4),
-                                           construct.String("SensorModel", 12),
-                                           construct.String(
-                                               "SensorSerial", 12),
-                                           construct.String("Comments", 40),
-                                           construct.String(
-                                               "AdjustedNominalBitWeight", 8)),
-                          construct.Struct("ChanInfo2",
-                                           construct.String("Channel", 2),
-                                           construct.String("ChannelName", 10),
-                                           construct.String("Azimuth", 10),
-                                           construct.String("Inclination", 10),
-                                           construct.String("XCoordinate", 10),
-                                           construct.String("YCoordinate", 10),
-                                           construct.String("ZCoordinate", 10),
-                                           construct.String("XYUnits", 4),
-                                           construct.String("ZUnits", 4),
-                                           construct.String("PreampGain", 4),
-                                           construct.String("SensorModel", 12),
-                                           construct.String(
-                                               "SensorSerial", 12),
-                                           construct.String("Comments", 40),
-                                           construct.String(
-                                               "AdjustedNominalBitWeight", 8)),
-                          construct.Struct("ChanInfo3",
-                                           construct.String("Channel", 2),
-                                           construct.String("ChannelName", 10),
-                                           construct.String("Azimuth", 10),
-                                           construct.String("Inclination", 10),
-                                           construct.String("XCoordinate", 10),
-                                           construct.String("YCoordinate", 10),
-                                           construct.String("ZCoordinate", 10),
-                                           construct.String("XYUnits", 4),
-                                           construct.String("ZUnits", 4),
-                                           construct.String("PreampGain", 4),
-                                           construct.String("SensorModel", 12),
-                                           construct.String(
-                                               "SensorSerial", 12),
-                                           construct.String("Comments", 40),
-                                           construct.String(
-                                               "AdjustedNominalBitWeight", 8)),
-                          construct.Struct("ChanInfo4",
-                                           construct.String("Channel", 2),
-                                           construct.String("ChannelName", 10),
-                                           construct.String("Azimuth", 10),
-                                           construct.String("Inclination", 10),
-                                           construct.String("XCoordinate", 10),
-                                           construct.String("YCoordinate", 10),
-                                           construct.String("ZCoordinate", 10),
-                                           construct.String("XYUnits", 4),
-                                           construct.String("ZUnits", 4),
-                                           construct.String("PreampGain", 4),
-                                           construct.String("SensorModel", 12),
-                                           construct.String(
-                                               "SensorSerial", 12),
-                                           construct.String("Comments", 40),
-                                           construct.String(
-                                               "AdjustedNominalBitWeight", 8)),
-                          construct.Struct("ChanInfo5",
-                                           construct.String("Channel", 2),
-                                           construct.String("ChannelName", 10),
-                                           construct.String("Azimuth", 10),
-                                           construct.String("Inclination", 10),
-                                           construct.String("XCoordinate", 10),
-                                           construct.String("YCoordinate", 10),
-                                           construct.String("ZCoordinate", 10),
-                                           construct.String("XYUnits", 4),
-                                           construct.String("ZUnits", 4),
-                                           construct.String("PreampGain", 4),
-                                           construct.String("SensorModel", 12),
-                                           construct.String(
-                                               "SensorSerial", 12),
-                                           construct.String("Comments", 40),
-                                           construct.String(
-                                               "AdjustedNominalBitWeight", 8)),
-                          construct.String("Reserved", 76),
-                          construct.String("ImplementTime", 16))
+    
+    SC = "SC" / construct.Struct(
+                            "BIN" / construct.BitStruct(
+                              "PacketHeader" / construct.BitsInteger(128)
+                            ),
+                            "ExperimentNumber" / construct.Bytes(2),
+                            "ExperimentName" / construct.Bytes(24),
+                            "ExperimentComment" / construct.Bytes(40),
+                            "StationNumber" / construct.Bytes(4),
+                            "StationName" / construct.Bytes(24),
+                            "StationComment" / construct.Bytes(40),
+                            "DASModel" / construct.Bytes(12),
+                            "DASSerial" / construct.Bytes(12),
+                            "ExperimentStart" / construct.Bytes(14),
+                            "TimeClockType" / construct.Bytes(4),
+                            "TimeClockSN" / construct.Bytes(10),
+                            "ChanInfo1" / construct.Struct(
+                                "Channel" / construct.Bytes(2),
+                                "ChannelName" / construct.Bytes(10),
+                                "Azimuth" / construct.Bytes(10),
+                                "Inclination" / construct.Bytes(10),
+                                "XCoordinate" / construct.Bytes(10),
+                                "YCoordinate" / construct.Bytes(10),
+                                "ZCoordinate" / construct.Bytes(10),
+                                "XYUnits" / construct.Bytes(4),
+                                "ZUnits" / construct.Bytes(4),
+                                "PreampGain" / construct.Bytes(4),
+                                "SensorModel" / construct.Bytes(12),
+                                "SensorSerial" / construct.Bytes(12),
+                                "Comments" / construct.Bytes(40),
+                                "AdjustedNominalBitWeight" / construct.Bytes(8)
+                            ),
+                            "ChanInfo2" / construct.Struct(
+                                "Channel" / construct.Bytes(2),
+                                "ChannelName" / construct.Bytes(10),
+                                "Azimuth" / construct.Bytes(10),
+                                "Inclination" / construct.Bytes(10),
+                                "XCoordinate" / construct.Bytes(10),
+                                "YCoordinate" / construct.Bytes(10),
+                                "ZCoordinate" / construct.Bytes(10),
+                                "XYUnits" / construct.Bytes(4),
+                                "ZUnits" / construct.Bytes(4),
+                                "PreampGain" / construct.Bytes(4),
+                                "SensorModel" / construct.Bytes(12),
+                                "SensorSerial" / construct.Bytes(12),
+                                "Comments" / construct.Bytes(40),
+                                "AdjustedNominalBitWeight" / construct.Bytes(8)
+                            ),
+                            "ChanInfo3" / construct.Struct(
+                                "Channel" / construct.Bytes(2),
+                                "ChannelName" / construct.Bytes(10),
+                                "Azimuth" / construct.Bytes(10),
+                                "Inclination" / construct.Bytes(10),
+                                "XCoordinate" / construct.Bytes(10),
+                                "YCoordinate" / construct.Bytes(10),
+                                "ZCoordinate" / construct.Bytes(10),
+                                "XYUnits" / construct.Bytes(4),
+                                "ZUnits" / construct.Bytes(4),
+                                "PreampGain" / construct.Bytes(4),
+                                "SensorModel" / construct.Bytes(12),
+                                "SensorSerial" / construct.Bytes(12),
+                                "Comments" / construct.Bytes(40),
+                                "AdjustedNominalBitWeight" / construct.Bytes(8)
+                            ),
+                            "ChanInfo4" / construct.Struct(
+                                "Channel" / construct.Bytes(2),
+                                "ChannelName" / construct.Bytes(10),
+                                "Azimuth" / construct.Bytes(10),
+                                "Inclination" / construct.Bytes(10),
+                                "XCoordinate" / construct.Bytes(10),
+                                "YCoordinate" / construct.Bytes(10),
+                                "ZCoordinate" / construct.Bytes(10),
+                                "XYUnits" / construct.Bytes(4),
+                                "ZUnits" / construct.Bytes(4),
+                                "PreampGain" / construct.Bytes(4),
+                                "SensorModel" / construct.Bytes(12),
+                                "SensorSerial" / construct.Bytes(12),
+                                "Comments" / construct.Bytes(40),
+                                "AdjustedNominalBitWeight" / construct.Bytes(8)
+                            ),
+                            "ChanInfo5" / construct.Struct(
+                                "Channel" / construct.Bytes(2),
+                                "ChannelName" / construct.Bytes(10),
+                                "Azimuth" / construct.Bytes(10),
+                                "Inclination" / construct.Bytes(10),
+                                "XCoordinate" / construct.Bytes(10),
+                                "YCoordinate" / construct.Bytes(10),
+                                "ZCoordinate" / construct.Bytes(10),
+                                "XYUnits" / construct.Bytes(4),
+                                "ZUnits" / construct.Bytes(4),
+                                "PreampGain" / construct.Bytes(4),
+                                "SensorModel" / construct.Bytes(12),
+                                "SensorSerial" / construct.Bytes(12),
+                                "Comments" / construct.Bytes(40),
+                                "AdjustedNominalBitWeight" / construct.Bytes(8)
+                            ),
+                          "Reserved" / construct.Bytes(76),
+                          "ImplementTime" / construct.Bytes(16)          
+                        )
     return SC
 
 
@@ -778,18 +763,18 @@ class SC(object):
 
 
 def aux_data_parameter():
-    AD = construct.Struct("AD",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128)),
-                          construct.String("Marker", 2),
-                          construct.String("Channels", 16),
-                          construct.String("SamplePeriod", 8),
-                          construct.String("DataFormat", 2),
-                          construct.String("RecordLength", 8),
-                          construct.String("RecordingDestination", 4),
-                          construct.String("Reserved", 950),
-                          construct.String("ImplementTime", 16))
+    AD = "AD" / construct.Struct(
+                                "BIN" / construct.BitStruct(
+                                  "PacketHeader" / construct.BitsInteger(128)
+                                ),
+                                "Marker" / construct.Bytes(2),
+                                "Channels" / construct.Bytes(16),
+                                "SamplePeriod" / construct.Bytes(8),
+                                "DataFormat" / construct.Bytes(2),
+                                "RecordLength" / construct.Bytes(8),
+                                "RecordingDestination" / construct.Bytes(4),
+                                "Reserved" / construct.Bytes(950),
+                                "ImplementTime" / construct.Bytes(16))
     return AD
 
 
@@ -844,149 +829,144 @@ class AD(object):
 
 
 def cal_parameter():
-    CD = construct.Struct("CD",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128)),
-                          construct.Struct("_72ACalibration",
-                                           construct.String("StartTime", 14),
-                                           construct.String(
-                                               "RepeatInterval", 8),
-                                           construct.String("Intervals", 4),
-                                           construct.String("Length", 8),
-                                           construct.String("StepOnOff", 4),
-                                           construct.String("StepPeriod", 8),
-                                           construct.String("StepSize", 8),
-                                           construct.String(
-                                               "StepAmplitude", 8),
-                                           construct.String("StepOutput", 4),
-                                           construct.String("Reserved", 48)),
-                          construct.Struct("_130AutoCenter1",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String(
-                                               "ReadingInterval", 4),
-                                           construct.String(
-                                               "CycleInterval", 2),
-                                           construct.String("Level", 4),
-                                           construct.String("Attempts", 2),
-                                           construct.String("AttemptInterval",
-                                                            2)),
-                          construct.Struct("_130AutoCenter2",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String(
-                                               "ReadingInterval", 4),
-                                           construct.String(
-                                               "CycleInterval", 2),
-                                           construct.String("Level", 4),
-                                           construct.String("Attempts", 2),
-                                           construct.String("AttemptInterval",
-                                                            2)),
-                          construct.Struct("_130AutoCenter3",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String(
-                                               "ReadingInterval", 4),
-                                           construct.String(
-                                               "CycleInterval", 2),
-                                           construct.String("Level", 4),
-                                           construct.String("Attempts", 2),
-                                           construct.String("AttemptInterval",
-                                                            2)),
-                          construct.Struct("_130AutoCenter4",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String(
-                                               "ReadingInterval", 4),
-                                           construct.String(
-                                               "CycleInterval", 2),
-                                           construct.String("Level", 4),
-                                           construct.String("Attempts", 2),
-                                           construct.String("AttemptInterval",
-                                                            2)),
-                          construct.Struct("_130Calibration1",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved", 2),
-                                           construct.String("Duration", 4),
-                                           construct.String("Amplitude", 4),
-                                           construct.String("Signal", 4),
-                                           construct.String("StepInterval", 4),
-                                           construct.String("StepWidth", 4),
-                                           construct.String("SineFrequency",
-                                                            4)),
-                          construct.Struct("_130Calibration2",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved", 2),
-                                           construct.String("Duration", 4),
-                                           construct.String("Amplitude", 4),
-                                           construct.String("Signal", 4),
-                                           construct.String("StepInterval", 4),
-                                           construct.String("StepWidth", 4),
-                                           construct.String("SineFrequency",
-                                                            4)),
-                          construct.Struct("_130Calibration3",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved", 2),
-                                           construct.String("Duration", 4),
-                                           construct.String("Amplitude", 4),
-                                           construct.String("Signal", 4),
-                                           construct.String("StepInterval", 4),
-                                           construct.String("StepWidth", 4),
-                                           construct.String("SineFrequency",
-                                                            4)),
-                          construct.Struct("_130Calibration4",
-                                           construct.String("Sensor", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved", 2),
-                                           construct.String("Duration", 4),
-                                           construct.String("Amplitude", 4),
-                                           construct.String("Signal", 4),
-                                           construct.String("StepInterval", 4),
-                                           construct.String("StepWidth", 4),
-                                           construct.String("SineFrequency",
-                                                            4)),
-                          construct.Struct("_130CalibrationSequence1",
-                                           construct.String("Sequence", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved1", 2),
-                                           construct.String("StartTime", 14),
-                                           construct.String("Interval", 8),
-                                           construct.String("Count", 2),
-                                           construct.String("RecordLength", 8),
-                                           construct.String("Reserved2", 22)),
-                          construct.Struct("_130CalibrationSequence2",
-                                           construct.String("Sequence", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved1", 2),
-                                           construct.String("StartTime", 14),
-                                           construct.String("Interval", 8),
-                                           construct.String("Count", 2),
-                                           construct.String("RecordLength", 8),
-                                           construct.String("Reserved2", 22)),
-                          construct.Struct("_130CalibrationSequence3",
-                                           construct.String("Sequence", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved1", 2),
-                                           construct.String("StartTime", 14),
-                                           construct.String("Interval", 8),
-                                           construct.String("Count", 2),
-                                           construct.String("RecordLength", 8),
-                                           construct.String("Reserved2", 22)),
-                          construct.Struct("_130CalibrationSequence4",
-                                           construct.String("Sequence", 1),
-                                           construct.String("Enable", 1),
-                                           construct.String("Reserved1", 2),
-                                           construct.String("StartTime", 14),
-                                           construct.String("Interval", 8),
-                                           construct.String("Count", 2),
-                                           construct.String("RecordLength", 8),
-                                           construct.String("Reserved2", 22)),
-                          construct.String("Reserved", 470),
-                          construct.String("ImplementTime", 16))
+    CD = "CD" / construct.Struct(
+                                "BIN" / construct.BitStruct(
+                                  "PacketHeader" / construct.BitsInteger(128)
+                                ),
+                                "_72ACalibration" / construct.Struct(
+                                    "StartTime" / construct.Bytes(14),
+                                    "RepeatInterval" / construct.Bytes(8),
+                                    "Intervals" / construct.Bytes(4),
+                                    "Length" / construct.Bytes(8),
+                                    "StepOnOff" / construct.Bytes(4),
+                                    "StepPeriod" / construct.Bytes(8),
+                                    "StepSize" / construct.Bytes(8),
+                                    "StepAmplitude" / construct.Bytes(8),
+                                    "StepOutput" / construct.Bytes(4),
+                                    "Reserved" / construct.Bytes(48)
+                                ),
+                                "_130AutoCenter1" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "ReadingInterval" / construct.Bytes(4),
+                                    "CycleInterval" / construct.Bytes(2),
+                                    "Level" / construct.Bytes(4),
+                                    "Attempts" / construct.Bytes(2),
+                                    "AttemptInterval" / construct.Bytes(2)
+                                ),
+                                "_130AutoCenter2" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "ReadingInterval" / construct.Bytes(4),
+                                    "CycleInterval" / construct.Bytes(2),
+                                    "Level" / construct.Bytes(4),
+                                    "Attempts" / construct.Bytes(2),
+                                    "AttemptInterval" / construct.Bytes(2)
+                                ),
+                                "_130AutoCenter3" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "ReadingInterval" / construct.Bytes(4),
+                                    "CycleInterval" / construct.Bytes(2),
+                                    "Level" / construct.Bytes(4),
+                                    "Attempts" / construct.Bytes(2),
+                                    "AttemptInterval" / construct.Bytes(2)
+                                ),
+                                "_130AutoCenter4" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "ReadingInterval" / construct.Bytes(4),
+                                    "CycleInterval" / construct.Bytes(2),
+                                    "Level" / construct.Bytes(4),
+                                    "Attempts" / construct.Bytes(2),
+                                    "AttemptInterval" / construct.Bytes(2)
+                                ),
+                                "_130Calibration1" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved" / construct.Bytes(2),
+                                    "Duration" / construct.Bytes(4),
+                                    "Amplitude" / construct.Bytes(4),
+                                    "Signal" / construct.Bytes(4),
+                                    "StepInterval" / construct.Bytes(4),
+                                    "StepWidth" / construct.Bytes(4),
+                                    "SineFrequency" / construct.Bytes(4)
+                                ),
+                                "_130Calibration2" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved" / construct.Bytes(2),
+                                    "Duration" / construct.Bytes(4),
+                                    "Amplitude" / construct.Bytes(4),
+                                    "Signal" / construct.Bytes(4),
+                                    "StepInterval" / construct.Bytes(4),
+                                    "StepWidth" / construct.Bytes(4),
+                                    "SineFrequency" / construct.Bytes(4)
+                                ),
+                                "_130Calibration3" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved" / construct.Bytes(2),
+                                    "Duration" / construct.Bytes(4),
+                                    "Amplitude" / construct.Bytes(4),
+                                    "Signal" / construct.Bytes(4),
+                                    "StepInterval" / construct.Bytes(4),
+                                    "StepWidth" / construct.Bytes(4),
+                                    "SineFrequency" / construct.Bytes(4)
+                                ),
+                                "_130Calibration4" / construct.Struct(
+                                    "Sensor" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved" / construct.Bytes(2),
+                                    "Duration" / construct.Bytes(4),
+                                    "Amplitude" / construct.Bytes(4),
+                                    "Signal" / construct.Bytes(4),
+                                    "StepInterval" / construct.Bytes(4),
+                                    "StepWidth" / construct.Bytes(4),
+                                    "SineFrequency" / construct.Bytes(4)
+                                ),
+                                "_130CalibrationSequence1" / construct.Struct(
+                                    "Sequence" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved1" / construct.Bytes(2),
+                                    "StartTime" / construct.Bytes(14),
+                                    "Interval" / construct.Bytes(8),
+                                    "Count" / construct.Bytes(2),
+                                    "RecordLength" / construct.Bytes(8),
+                                    "Reserved2" / construct.Bytes(22),
+                                ),
+                                "_130CalibrationSequence2" / construct.Struct(
+                                    "Sequence" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved1" / construct.Bytes(2),
+                                    "StartTime" / construct.Bytes(14),
+                                    "Interval" / construct.Bytes(8),
+                                    "Count" / construct.Bytes(2),
+                                    "RecordLength" / construct.Bytes(8),
+                                    "Reserved2" / construct.Bytes(22),
+                                ),
+                                "_130CalibrationSequence3" / construct.Struct(
+                                    "Sequence" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved1" / construct.Bytes(2),
+                                    "StartTime" / construct.Bytes(14),
+                                    "Interval" / construct.Bytes(8),
+                                    "Count" / construct.Bytes(2),
+                                    "RecordLength" / construct.Bytes(8),
+                                    "Reserved2" / construct.Bytes(22),
+                                ),
+                                "_130CalibrationSequence4" / construct.Struct(
+                                    "Sequence" / construct.Bytes(1),
+                                    "Enable" / construct.Bytes(1),
+                                    "Reserved1" / construct.Bytes(2),
+                                    "StartTime" / construct.Bytes(14),
+                                    "Interval" / construct.Bytes(8),
+                                    "Count" / construct.Bytes(2),
+                                    "RecordLength" / construct.Bytes(8),
+                                    "Reserved2" / construct.Bytes(22),
+                                ),
+                                "Reserved" / construct.Bytes(470),
+                                "ImplementTime" / construct.Bytes(16))
     return CD
 
 
@@ -1043,163 +1023,147 @@ class DS_object(object):
 
 
 def data_stream():
-    DS = construct.Struct("DS",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128)),
-                          construct.String("DataStreamInfo", 920),
-                          construct.String("Reserved", 72),
-                          construct.String("ImplementTime", 16))
+    DS = "DS" / construct.Struct(
+                                "BIN" / construct.BitStruct(
+                                  "PacketHeader" / construct.BitsInteger(128)
+                                ),
+                                "DataStreamInfo" / construct.Bytes(920),
+                                "Reserved" / construct.Bytes(72),
+                                "ImplementTime" / construct.Bytes(16))
     return DS
 
 
 def data_stream_info():
-    DSI = construct.Struct("DSI",
-                           construct.Struct("Info1",
-                                            construct.String("DataStream", 2),
-                                            construct.String(
-                                                "DataStreamName", 16),
-                                            construct.String(
-                                                "RecordingDestination", 4),
-                                            construct.String("Reserved", 4),
-                                            construct.String(
-                                                "ChannelsIncluded", 16),
-                                            construct.String("SampleRate", 4),
-                                            construct.String("DataFormat", 2),
-                                            construct.String("Reserved1", 16),
-                                            construct.String("TriggerType", 4),
-                                            construct.String(
-                                                "TriggerDescription", 162)),
-                           construct.Struct("Info2",
-                                            construct.String("DataStream", 2),
-                                            construct.String(
-                                                "DataStreamName", 16),
-                                            construct.String(
-                                                "RecordingDestination", 4),
-                                            construct.String("Reserved", 4),
-                                            construct.String(
-                                                "ChannelsIncluded", 16),
-                                            construct.String("SampleRate", 4),
-                                            construct.String("DataFormat", 2),
-                                            construct.String("Reserved1", 16),
-                                            construct.String("TriggerType", 4),
-                                            construct.String(
-                                                "TriggerDescription", 162)),
-                           construct.Struct("Info3",
-                                            construct.String("DataStream", 2),
-                                            construct.String(
-                                                "DataStreamName", 16),
-                                            construct.String(
-                                                "RecordingDestination", 4),
-                                            construct.String("Reserved", 4),
-                                            construct.String(
-                                                "ChannelsIncluded", 16),
-                                            construct.String("SampleRate", 4),
-                                            construct.String("DataFormat", 2),
-                                            construct.String("Reserved1", 16),
-                                            construct.String("TriggerType", 4),
-                                            construct.String(
-                                                "TriggerDescription", 162)),
-                           construct.Struct("Info4",
-                                            construct.String("DataStream", 2),
-                                            construct.String(
-                                                "DataStreamName", 16),
-                                            construct.String(
-                                                "RecordingDestination", 4),
-                                            construct.String("Reserved", 4),
-                                            construct.String(
-                                                "ChannelsIncluded", 16),
-                                            construct.String("SampleRate", 4),
-                                            construct.String("DataFormat", 2),
-                                            construct.String("Reserved1", 16),
-                                            construct.String("TriggerType", 4),
-                                            construct.String(
-                                                "TriggerDescription", 162)))
+    DSI = "DSI" / construct.Struct(
+            "Info1" / construct.Struct(
+                "DataStream" / construct.Bytes(2),
+                "DataStreamName" / construct.Bytes(16),
+                "RecordingDestination" / construct.Bytes(4),
+                "Reserved" / construct.Bytes(4),
+                "ChannelsIncluded" / construct.Bytes(16),
+                "SampleRate" / construct.Bytes(4),
+                "DataFormat" / construct.Bytes(2),
+                "Reserved1" / construct.Bytes(16),
+                "TriggerType" / construct.Bytes(4),
+                "TriggerDescription" / construct.Bytes(162)
+            ),
+            "Info2" / construct.Struct(
+                "DataStream" / construct.Bytes(2),
+                "DataStreamName" / construct.Bytes(16),
+                "RecordingDestination" / construct.Bytes(4),
+                "Reserved" / construct.Bytes(4),
+                "ChannelsIncluded" / construct.Bytes(16),
+                "SampleRate" / construct.Bytes(4),
+                "DataFormat" / construct.Bytes(2),
+                "Reserved1" / construct.Bytes(16),
+                "TriggerType" / construct.Bytes(4),
+                "TriggerDescription" / construct.Bytes(162)
+            ),
+            "Info3" / construct.Struct(
+                "DataStream" / construct.Bytes(2),
+                "DataStreamName" / construct.Bytes(16),
+                "RecordingDestination" / construct.Bytes(4),
+                "Reserved" / construct.Bytes(4),
+                "ChannelsIncluded" / construct.Bytes(16),
+                "SampleRate" / construct.Bytes(4),
+                "DataFormat" / construct.Bytes(2),
+                "Reserved1" / construct.Bytes(16),
+                "TriggerType" / construct.Bytes(4),
+                "TriggerDescription" / construct.Bytes(162)
+            ),
+            "Info4" / construct.Struct(
+                "DataStream" / construct.Bytes(2),
+                "DataStreamName" / construct.Bytes(16),
+                "RecordingDestination" / construct.Bytes(4),
+                "Reserved" / construct.Bytes(4),
+                "ChannelsIncluded" / construct.Bytes(16),
+                "SampleRate" / construct.Bytes(4),
+                "DataFormat" / construct.Bytes(2),
+                "Reserved1" / construct.Bytes(16),
+                "TriggerType" / construct.Bytes(4),
+                "TriggerDescription" / construct.Bytes(162)
+            )
+        )
     return DSI
 
 
 def continuous_trigger():
-    CON = construct.Struct("CON",
-                           construct.String("RecordLength", 8),
-                           construct.String("StartTime", 14),
-                           construct.String("Reserved", 140))
+    CON = "CON" / construct.Struct("RecordLength" / construct.Bytes(8),
+                                   "StartTime" / construct.Bytes(14),
+                                   "Reserved" / construct.Bytes(140))
     return CON
 
 
 def cross_stream_trigger():
-    CRS = construct.Struct("CRS",
-                           construct.String("TriggerStreamNo", 2),
-                           construct.String("PretriggerLength", 8),
-                           construct.String("RecordLength", 8),
-                           construct.String("Reserved", 144))
+    CRS = "CRS" / construct.Struct("TriggerStreamNo" / construct.Bytes(2),
+                                   "PretriggerLength" / construct.Bytes(8),
+                                   "RecordLength" / construct.Bytes(8),
+                                   "Reserved" / construct.Bytes(144))
     return CRS
 
 
 def event_trigger():
-    EVT = construct.Struct("EVT",
-                           construct.String("TriggerChannels", 16),
-                           construct.String("MinimumChannels", 2),
-                           construct.String("TriggerWindow", 8),
-                           construct.String("PretriggerLength", 8),
-                           construct.String("PosttriggerLength", 8),
-                           construct.String("RecordLength", 8),
-                           construct.String("Reserved1", 8),
-                           construct.String("STALength", 8),
-                           construct.String("LTALength", 8),
-                           construct.String("MeanRemoval", 8),
-                           construct.String("TriggerRatio", 8),
-                           construct.String("DetriggerRatio", 8),
-                           construct.String("LTAHold", 4),
-                           construct.String("LowPassCornerFreq", 4),
-                           construct.String("HighPassCornerFreq", 4),
-                           construct.String("Reserved2", 52))
+    EVT = "EVT" / construct.Struct("TriggerChannels" / construct.Bytes(16),
+                                   "MinimumChannels" / construct.Bytes(2),
+                                   "TriggerWindow" / construct.Bytes(8),
+                                   "PretriggerLength" / construct.Bytes(8),
+                                   "TriggerWindow" / construct.Bytes(8),
+                                   "PretriggerLength" / construct.Bytes(8),
+                                   "PosttriggerLength" / construct.Bytes(8),
+                                   "RecordLength" / construct.Bytes(8),
+                                   "Reserved1" / construct.Bytes(8),
+                                   "STALength" / construct.Bytes(8),
+                                   "LTALength" / construct.Bytes(8),
+                                   "MeanRemoval" / construct.Bytes(8),
+                                   "TriggerRatio" / construct.Bytes(8),
+                                   "DetriggerRatio" / construct.Bytes(8),
+                                   "LTAHold" / construct.Bytes(4),
+                                   "LowPassCornerFreq" / construct.Bytes(4),
+                                   "HighPassCornerFreq" / construct.Bytes(4),
+                                   "Reserved2" / construct.Bytes(52))
     return EVT
 
 
 def external_trigger():
-    EXT = construct.Struct("EXT",
-                           construct.String("PretriggerLength", 8),
-                           construct.String("RecordLength", 8),
-                           construct.String("Reserved", 146))
+    EXT = "EXT" / construct.Struct("PretriggerLength" / construct.Bytes(8),
+                                   "RecordLength" / construct.Bytes(8),
+                                   "Reserved" / construct.Bytes(146))
     return EXT
 
 
 def level_trigger():
-    LEV = construct.Struct("LEV",
-                           construct.String("Level", 8),
-                           construct.String("PretriggerLength", 8),
-                           construct.String("RecordLength", 8),
-                           construct.String("LowPassCornerFreq", 4),
-                           construct.String("HighPassCornerFreq", 4),
-                           construct.String("Reserved", 130))
+    LEV = "LEV" / construct.Struct("Level" / construct.Bytes(8),
+                                   "PretriggerLength" / construct.Bytes(8),
+                                   "RecordLength" / construct.Bytes(8),
+                                   "LowPassCornerFreq" / construct.Bytes(4),
+                                   "HighPassCornerFreq" / construct.Bytes(4),
+                                   "Reserved" / construct.Bytes(130))
     return LEV
 
 
 def time_trigger():
-    TIM = construct.Struct("TIM",
-                           construct.String("StartTime", 14),
-                           construct.String("RepeatInterval", 8),
-                           construct.String("Intervals", 4),
-                           construct.String("Reserved1", 8),
-                           construct.String("RecordLength", 8),
-                           construct.String("Reserved2", 120))
+    TIM = "TIM" / construct.Struct("StartTime" / construct.Bytes(14),
+                                   "RepeatInterval" / construct.Bytes(8),
+                                   "Intervals" / construct.Bytes(4),
+                                   "Reserved1" / construct.Bytes(8),
+                                   "RecordLength" / construct.Bytes(8),
+                                   "Reserved2" / construct.Bytes(120))
     return TIM
 
 
 def time_list_trigger():
-    TML = construct.Struct("TML",
-                           construct.String("StartTime01", 14),
-                           construct.String("StartTime02", 14),
-                           construct.String("StartTime03", 14),
-                           construct.String("StartTime04", 14),
-                           construct.String("StartTime05", 14),
-                           construct.String("StartTime06", 14),
-                           construct.String("StartTime07", 14),
-                           construct.String("StartTime08", 14),
-                           construct.String("StartTime09", 14),
-                           construct.String("StartTime10", 14),
-                           construct.String("StartTime11", 14),
-                           construct.String("RecordLength", 8))
+    TML = "TML" / construct.Struct("StartTime01" / construct.Bytes(14),
+                                   "StartTime02" / construct.Bytes(14),
+                                   "StartTime03" / construct.Bytes(14),
+                                   "StartTime04" / construct.Bytes(14),
+                                   "StartTime05" / construct.Bytes(14),
+                                   "StartTime06" / construct.Bytes(14),
+                                   "StartTime07" / construct.Bytes(14),
+                                   "StartTime08" / construct.Bytes(14),
+                                   "StartTime09" / construct.Bytes(14),
+                                   "StartTime10" / construct.Bytes(14),
+                                   "StartTime11" / construct.Bytes(14),
+                                   "RecordLength" / construct.Bytes(8))
     return TML
 
 
@@ -1317,26 +1281,25 @@ class DS(object):
 
 
 def filter_description():
-    FD = construct.Struct("FD",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128),
-                                              construct.String("FilterInfo",
-                                                               992)),
-                          construct.String("ImplementTime", 16))
+    FD = "FD" / construct.Struct(
+                    "BIN" / construct.BitStruct(
+                        "PacketHeader" / construct.BitsInteger(128),
+                        "FilterInfo" / construct.Bytes(992),
+                    ),
+                    "ImplementTime" / construct.Bytes(16)
+                )
     return FD
 
 
 def filter_info():
-    FI = construct.Struct("FI",
-                          construct.UBInt8("FilterBlockCount"),
-                          construct.String("FilterID", 1),
-                          construct.UBInt8("FilterDecimation"),
-                          construct.UBInt8("FilterScaler"),
-                          construct.UBInt8("FilterCoefficientCount"),
-                          construct.UBInt8("PacketCoefficientCount"),
-                          construct.UBInt8("CoefficientPacketCount"),
-                          construct.UBInt8("CoefficientFormat"))
+    FI = "FI" / construct.Struct("FilterBlockCount" / construct.Int8ub,
+                                   "FilterID" / construct.Bytes(1),
+                                   "FilterDecimation" / construct.Int8ub,
+                                   "FilterScaler" / construct.Int8ub,
+                                   "FilterCoefficientCount" / construct.Int8ub,
+                                   "PacketCoefficientCount" / construct.Int8ub,
+                                   "CoefficientPacketCount" / construct.Int8ub,
+                                   "CoefficientFormat" / construct.Int8ub)
     return FI
 
 
@@ -1452,31 +1415,32 @@ class FD(object):
 
 
 def operating_mode():
-    OM = construct.Struct("OM",
-                          construct.BitStruct("BIN",
-                                              construct.BitField(
-                                                  "PacketHeader", 128)),
-                          construct.String("_72APowerState", 2),
-                          construct.String("RecordingMode", 2),
-                          construct.String("Reserved1", 4),
-                          construct.String("AutoDumpOnET", 1),
-                          construct.String("Reserved2", 1),
-                          construct.String("AutoDumpThreshold", 2),
-                          construct.String("_72APowerDownDelay", 4),
-                          construct.String("DiskWrap", 1),
-                          construct.String("Reserved3", 1),
-                          construct.String("_72ADiskPower", 1),
-                          construct.String("_72ATerminatorPower", 1),
-                          construct.String("DiskRetry", 1),
-                          construct.String("Reserved4", 11),
-                          construct.String("Reserved5", 2),
-                          construct.String("_72AWakeUpStartTime", 12),
-                          construct.String("_72AWakeUpDuration", 6),
-                          construct.String("_72AWakeUpRepeatInterval", 6),
-                          construct.String("_72AWakeUpNumberOfIntervals", 2),
-                          construct.String("Reserved6", 484),
-                          construct.String("Reserved7", 448),
-                          construct.String("ImplementTime", 16))
+    OM = "OM" / construct.Struct(
+                    "BIN" / construct.BitStruct(
+                        "PacketHeader" / construct.BitsInteger(128),
+                    ),
+                    "_72APowerState" / construct.Bytes(2),
+                    "RecordingMode" / construct.Bytes(2),
+                    "Reserved1" / construct.Bytes(4),
+                    "AutoDumpOnET" / construct.Bytes(1),
+                    "Reserved2" / construct.Bytes(1),
+                    "AutoDumpThreshold" / construct.Bytes(),
+                    "_72APowerDownDelay" / construct.Bytes(4),
+                    "DiskWrap" / construct.Bytes(1),
+                    "Reserved3" / construct.Bytes(1),
+                    "_72ADiskPower" / construct.Bytes(1),
+                    "_72ATerminatorPower" / construct.Bytes(1),
+                    "DiskRetry" / construct.Bytes(1),
+                    "Reserved4" / construct.Bytes(11),
+                    "Reserved5" / construct.Bytes(2),
+                    "_72AWakeUpStartTime" / construct.Bytes(12),
+                    "_72AWakeUpDuration" / construct.Bytes(6),
+                    "_72AWakeUpRepeatInterval" / construct.Bytes(6),
+                    "_72AWakeUpNumberOfIntervals" / construct.Bytes(2),
+                    "Reserved6" / construct.Bytes(484),
+                    "Reserved7" / construct.Bytes(448),
+                    "ImplementTime" / construct.Bytes(16),
+                    )
     return OM
 
 

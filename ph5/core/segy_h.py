@@ -14,7 +14,7 @@ import logging
 import construct
 from ph5.core import ibmfloat, ebcdic
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2020.34'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -1189,7 +1189,7 @@ def inova_header():
                             #    29 -- Analog-1C
                             #    37 -- FireFly
                             #    48 -- Node
-                            "FSU" / construct.BitField(3),  # FSU Serial Number
+                            "FSU" / construct.BitsInteger(3),  # FSU Serial Number
                             # Device Channel Number
                             "DevChan" / construct.Int8ub,
                             # Source coordinate confidence indicator. Rates
@@ -1260,7 +1260,7 @@ def inova_header():
                             # Y -- Cross-line
                             #    0x0C -- Accelerometer-3c Vertical, Z
                             # Sensor serial number
-                            "SensorSerial" / construct.BitField(3),
+                            "SensorSerial" / construct.BitsInteger(3),
                             # Sensor version number
                             "SensorVersion" / construct.Int8ub,
                             # Sensor revision
@@ -1400,7 +1400,7 @@ def inova_header_le():
                             #    29 -- Analog-1C
                             #    37 -- FireFly
                             #    48 -- Node
-                            "FSU" / construct.BitField(3),  # FSU Serial Number
+                            "FSU" / construct.BitsInteger(3),  # FSU Serial Number
                             # Device Channel Number
                             "DevChan" / construct.Int8ub,
                             # Source coordinate confidence indicator. Rates
@@ -1471,7 +1471,7 @@ def inova_header_le():
                             # Y -- Cross-line
                             #    0x0C -- Accelerometer-3c Vertical, Z
                             # Sensor serial number
-                            "SensorSerial" / construct.BitField(3),
+                            "SensorSerial" / construct.BitsInteger(3),
                             # Sensor version number
                             "SensorVersion" / construct.Int8ub,
                             # Sensor revision
