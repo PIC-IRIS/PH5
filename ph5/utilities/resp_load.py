@@ -75,10 +75,19 @@ class n_i_fix(object):
         self.last_loaded_n_i = -1
         for entry in self.ph5.Response_t['rows']:
             if entry['response_file_das_a'] or entry['response_file_sensor_a']:
+                if not entry['response_file_das_a']:
+                    LOGGER.warning("Response_t n_i=%s resonse_file_das_a has "
+                                   "been deleted mannually." % entry['n_i'])
+                if (('ZLAND' not in entry['response_file_das_a']) and
+                        (not entry['response_file_sensor_a'])):
+                    LOGGER.warning("Response_t n_i=%s resonse_file_sensor_a "
+                                   "has been deleted mannually."
+                                   % entry['n_i'])
                 self.loaded_resp.append(entry)
             else:
                 self.noloaded_resp.append(entry)
-            self.last_loaded_n_i = entry['n_i']
+            if self.last_loaded_n_i < entry['n_i']:
+                self.last_loaded_n_i = entry['n_i']
 
     def read_arrays(self, name):
         if name is None:
@@ -88,6 +97,21 @@ class n_i_fix(object):
             self.ph5.read_array_t(name)
 
     def create_list(self):
+        """
+        create the list of stations from input array list with additional info
+        from das_t and response_t to help load_response() in creating new
+        n_i(s).
+        The list with new n_i to is also be used to update array_t so its order
+        need to be the same with the original array_t's.
+        Process:
+          + Read each row from array_t
+          + Using that info to read das_t for response_table_n_i
+          + Pass info from array_t and das_t to get_response_t() to identify
+            the corresponding response_t's row and the info about if response
+            file names has been loaded to response_t
+        Return:
+          A list of all the collected info wrapped in Station instances
+        """
         array_names = sorted(self.ph5.Array_t_names)
         stations = []
         for array_name in array_names:
@@ -129,15 +153,20 @@ class n_i_fix(object):
                         deploy = station_list[deployment][
                             st_num]['deploy_time/epoch_l']
 
+                        # give warning when das_model="" or sensor_model=""
+                        # if das_model is not ZLAND to notice user that this
+                        # station's response_table_n_i will not be updated
                         if das_model == "":
-                            LOGGER.warning("Das Model is empty for %s station "
-                                           "%s das %s channel %s" %
-                                           (array_name, id_s, serial, channel))
+                            LOGGER.warning(
+                                "Das Model is empty for %s station %s das %s "
+                                "channel %s => no response_table_n_i updated" %
+                                (array_name, id_s, serial, channel))
                         if not das_model.startswith("ZLAND") \
                            and sensor_model == "":
-                            LOGGER.warning("Sensor  is empty for %s station "
-                                           "%s das %s channel %s" %
-                                           (array_name, id_s, serial, channel))
+                            LOGGER.warning(
+                                "Sensor  is empty for %s station %s das %s "
+                                "channel %s => no response_table_n_i updated" %
+                                (array_name, id_s, serial, channel))
 
                         self.ph5.read_das_t(
                             serial, deploy, pickup, reread=False)
@@ -199,17 +228,23 @@ class n_i_fix(object):
                             continue
         return stations
 
-    #######################################
-    # def get_response_t
-    # + In response_t the after response files are loaded and updated to
-    # a row, the row with no response files are still kept with original n_i
-    # to keep track with response_table_n_i in das_t
-    # + The passed n_i is from das table. First, using passed n_i to find
-    #    bit_weight, gain and orginal response row
-    # + Then use bit_weight, gain and filenames to find the correct row in
-    # loaded_resp. If found, return that row with resp_loaded=True. Otherwise,
-    # return original resonse row
     def get_response_t(self, d_model, s_model, s_rate, s_rate_m, n_i):
+        """
+        Receive:
+          :para d_model: das_model from array_t
+          :para s_model: sensor_model from array_t
+          :para s_rate: sample_rate_i from array_t
+          :para s_rate_m: sample_rate_multiplier_i from array_t
+          :para n_i: response_table_n_i from das_t based on das info in array_t
+        Process:
+          + Look in noloaded_resp for row to return if can't find in
+            loaded_resp and bit_weight, gain according to n_i
+          + Use passed info and found (bit_weight, gain) to look for match row
+            in loaded_resp
+        Return:
+          => loaded_resp row and resp_loaded=True if found in loaded_resp
+          => noloaded_resp row and resp_loaded=False otherwise.
+        """
         d_filename = "/Experiment_g/Responses_g/%s_%s_%s_" % \
             (d_model.replace(" ", ""), s_rate, s_rate_m)
         s_filename = "/Experiment_g/Responses_g/%s" % s_model.replace(" ", "")
@@ -218,6 +253,11 @@ class n_i_fix(object):
         try:
             for response_t in self.noloaded_resp:
                 if response_t['n_i'] == n_i:
+                    # Look for the matched n_i from original rows to get
+                    # bit_weight and gain to form response_file_das_a
+                    # for the condition when look in the loadeded_resp.
+                    # resp is is the row to return at the end when can't find
+                    # a match row in loaded_resp
                     resp = response_t
                     bit_weight = str(response_t['bit_weight/value_d'])
                     gain = str(response_t['gain/value_i'])
@@ -227,8 +267,7 @@ class n_i_fix(object):
                 g = str(response_t['gain/value_i'])
                 if b != bit_weight or g != gain:
                     continue
-                # Assume that there is no response row that has no das file
-                # but has sensor file
+
                 if response_t['response_file_das_a'] == d_filename + str(g):
                     if response_t['response_file_sensor_a'] == s_filename:
                         return response_t, True
@@ -377,6 +416,13 @@ class n_i_fix(object):
                     "-i input.csv option")
 
     def read_respdata(self, resp_filename):
+        """
+        Receive:
+          :para resp_filename: name of a response file
+        Return
+          List of lines read from the file
+          If cannot read, return None with warning
+        """
         data = None
         with open(resp_filename, "r") as f:
             data = f.readlines()
@@ -385,6 +431,20 @@ class n_i_fix(object):
         return data
 
     def load_respdata(self, ph5, name, data, loaded_list, first_load=True):
+        """
+        Receive:
+          :para ph5: table ph5
+          :para name: name of response file in ph5
+              ie. rt130_100_1_1, Hyperion, etc.
+          :para loaded_list: list to track which response_files have been
+              loaded
+          :para first_load:
+               + first_load=True is when trying to load response data
+                 the first time => create new node with the given dataanyway
+               + first_load=False is when the first try is failed and reload
+                 response flag (-r) is set, then load_respdata() is recalled
+                 => remove node before recreating the node with new data
+        """
         try:
             if not first_load:
                 ph5.remove_node(ph5.root.Experiment_g.Responses_g, name)
@@ -407,6 +467,23 @@ class n_i_fix(object):
                         .format(name.replace(" ", "")))
 
     def load_response(self, path, nickname, data, input_csv):
+        """
+        Receive:
+          :para path: path to ph5 file's directory
+          :para nickname: name of ph5 file
+          :para data: list of station based rows created by self.create_list()
+          :para input_csv: csv file that provide response file names for the
+            associated das/sensor models, samplerate, samplerate multiplier,
+            gain
+        Process:
+          + Read response files from input.csv to load response data into ph5
+          + From para data, get a unique list of sensor model, das model,
+            sample rate, sample rate multiplier, gain, bitweight, resp_loaded
+            for n_i condition checking
+          + In response_t, all existing are kept, n_i will be created
+          corresponding to rows withresp_loaded=False
+          + n_i will be updated for the rows in the input array_t
+        """
         ph5 = tables.open_file(os.path.join(path, nickname), "a")
 
         # load response files from the paths in input.csv
@@ -497,6 +574,9 @@ class n_i_fix(object):
                 name_full = name_full.translate(None, ',-=.')
 
                 response_entry['response_file_das_a'] = name_full
+            else:
+                # skip updating if no d_model
+                continue
 
             if x['s_model']:
                 sens = x['s_model']
@@ -504,6 +584,9 @@ class n_i_fix(object):
                 name = '/Experiment_g/' +\
                        'Responses_g/' + sens
                 response_entry['response_file_sensor_a'] = name
+            elif not x['d_model'].startswith('ZLAND'):
+                # Skip updating if no s_model and d_model not ZLAND
+                continue
             response_entry['bit_weight/value_d'] = x['bit_w']
             response_entry['bit_weight/units_s'] = x['bit_w_u']
             response_entry['gain/value_i'] = x['gain']
