@@ -1,23 +1,24 @@
 import unittest
 from testfixtures import LogCapture
 from ph5.log_capture_test import logEx
+import ph5
 
 
 class TestLogEx(unittest.TestCase):
     def setUp(self):
         # enable propagating to higher loggers
-        logEx.logger.propagate = 1
+        ph5.logger.propagate = 1
         # disable writing log to console
-        logEx.logger.removeHandler(logEx.ch)
+        ph5.logger.removeHandler(ph5.ch)
 
     def tearDown(self):
         # enable disable to higher loggers
-        logEx.logger.propagate = 0
+        ph5.logger.propagate = 0
         # enable writing log to console
-        logEx.logger.addHandler(logEx.ch)
+        ph5.logger.addHandler(ph5.ch)
 
     def test_makeLog(self):
-        path = 'unittest_ex.log_capture_test.logEx'
+        path = 'ph5'
 
         with LogCapture() as log:
             logEx.makeLog()
