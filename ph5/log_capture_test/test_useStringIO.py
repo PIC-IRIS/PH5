@@ -3,28 +3,29 @@ import logging
 from StringIO import StringIO
 from contextlib import contextmanager
 from ph5.log_capture_test import logEx
+import ph5
 
 
 @contextmanager
 def captured_log():
     capture = StringIO()
     chan = logging.StreamHandler(capture)
-    logEx.logger.addHandler(chan)
+    ph5.logger.addHandler(chan)
     try:
         yield capture
     finally:
-        logEx.logger.removeHandler(chan)
+        ph5.logger.removeHandler(chan)
 
 
 class TestLogEx(unittest.TestCase):
 
     def setUp(self):
         # disable writing log to console
-        logEx.logger.removeHandler(logEx.ch)
+        ph5.logger.removeHandler(ph5.ch)
 
     def tearDown(self):
         # enable writing log to console
-        logEx.logger.addHandler(logEx.ch)
+        ph5.logger.addHandler(ph5.ch)
 
     def test_makeLog(self):
         with captured_log() as log:
