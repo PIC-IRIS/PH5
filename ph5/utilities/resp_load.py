@@ -73,6 +73,12 @@ class n_i_fix(object):
         self.loaded_resp = []
         self.noloaded_resp = []
         self.last_loaded_n_i = -1
+        """
+        From reponse_t get the list of
+        + original response rows: noloaded_resp
+        + rows created by other resp_load run
+        + the highest n_ilast_loaded_n_i
+        """
         for entry in self.ph5.Response_t['rows']:
             if entry['response_file_das_a'] or entry['response_file_sensor_a']:
                 if not entry['response_file_das_a']:
@@ -161,8 +167,8 @@ class n_i_fix(object):
                                 "Das Model is empty for %s station %s das %s "
                                 "channel %s => no response_table_n_i updated" %
                                 (array_name, id_s, serial, channel))
-                        if not das_model.startswith("ZLAND") \
-                           and sensor_model == "":
+                        if ((not das_model.startswith("ZLAND"))
+                           and sensor_model == ""):
                             LOGGER.warning(
                                 "Sensor  is empty for %s station %s das %s "
                                 "channel %s => no response_table_n_i updated" %
