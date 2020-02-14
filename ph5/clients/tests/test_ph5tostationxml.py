@@ -5,7 +5,8 @@ import unittest
 import os
 import shutil
 import tempfile
-from ph5.core.tests import log_capture_string
+import logging
+from testfixtures import LogCapture
 from ph5.clients import ph5tostationxml
 from ph5.utilities import kef2ph5
 from ph5.core import experiment
@@ -13,8 +14,6 @@ from ph5.core import experiment
 
 class TestPH5toStationXMLParser(unittest.TestCase):
     def setUp(self):
-        self.log_capture_string = log_capture_string()
-
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
@@ -119,33 +118,37 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         test read station method
         """
         self.parser.add_ph5_stationids()
-        self.parser.read_stations()
-
-        loglines = self.log_capture_string.getvalue().split("\n")
+        with LogCapture() as log:
+            log.setLevel(logging.WARNING)
+            self.parser.read_stations()
 
         self.assertEqual(
-            loglines[5],
+            log.records[0].msg,
             "station 1111, array 001: Lat -107.0 not in range [-90,90]")
 
         self.assertEqual(
-            loglines[6],
+            log.records[1].msg,
             "station 1112, array 001: Lon 182.0 not in range [-180,180]")
 
         self.assertEqual(
-            loglines[7], "station 1113, array 001: Box intersection: Lat 70.0 "
+            log.records[2].msg,
+            "station 1113, array 001: Box intersection: Lat 70.0 "
             "not in range [34.0,40.0] or Lon 100.0 not in range [-111,-105.0]")
 
         self.assertEqual(
-            loglines[8], "station 1114, array 001: Box intersection: Lat 35.0 "
+            log.records[3].msg,
+            "station 1114, array 001: Box intersection: Lat 35.0 "
             "not in range [34.0,40.0] or Lon 100.0 not in range [-111,-105.0]")
 
         self.assertEqual(
-            loglines[9], "station 1116, array 001: lat,lon=35.0,-111.0: "
+            log.records[4].msg,
+            "station 1116, array 001: lat,lon=35.0,-111.0: "
             "radial intersection between a point radius boundary [0, 3] and "
             "a lat/lon point [36, -107]")
 
         self.assertEqual(
-            loglines[10], "station 1117, array 001: lat,lon=40.0,-106.0: "
+            log.records[5].msg,
+            "station 1117, array 001: lat,lon=40.0,-106.0: "
             "radial intersection between a point radius boundary [0, 3] and "
             "a lat/lon point [36, -107]")
 
