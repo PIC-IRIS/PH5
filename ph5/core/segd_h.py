@@ -12,7 +12,7 @@ import sys
 import construct
 import bcd_py
 
-PROG_VERSION = '2016.287 Developmental'
+PROG_VERSION = '2020.34'
 
 
 def __version__():
@@ -29,20 +29,21 @@ class HeaderError (exceptions.Exception):
 
 
 def storage_unit_label():
-    BIN = construct.Struct("BIN",
-                           construct.String("storage_unit_sequence_number", 4),
-                           construct.String("fairfield_revision", 5),
-                           construct.String("storage_unit_structure", 6),
-                           construct.String("binding_edition", 4),
-                           construct.String("max_block_size", 10),
-                           construct.String("api_producer_code", 10),
-                           construct.String("creation_date", 11),
-                           construct.String("serial_number", 12),
-                           construct.String("reserved01", 6),
-                           construct.String("external_label_name", 12),
-                           construct.String("recording_entity_name", 24),
-                           construct.String("user_defined", 14),
-                           construct.String("max_file_size_MB", 10))
+    BIN = "BIN" / construct.Struct(
+            "storage_unit_sequence_number" / construct.Bytes(4),
+            "fairfield_revision" / construct.Bytes(5),
+            "storage_unit_structure" / construct.Bytes(6),
+            "binding_edition" / construct.Bytes(4),
+            "max_block_size" / construct.Bytes(10),
+            "api_producer_code" / construct.Bytes(10),
+            "creation_date" / construct.Bytes(11),
+            "serial_number" / construct.Bytes(12),
+            "reserved01" / construct.Bytes(6),
+            "external_label_name" / construct.Bytes(12),
+            "recording_entity_name" / construct.Bytes(24),
+            "user_defined" / construct.Bytes(14),
+            "max_file_size_MB" / construct.Bytes(10)
+        )
     return BIN
 
 
@@ -91,94 +92,84 @@ class Storage_unit_label (object):
 
 
 def swap_block_bits():
-    B = construct.BitStruct("BIN",
-                            construct.BitField('A', 256, swapped=True))
-
-    L = construct.BitStruct("BIN",
-                            construct.BitField('A', 256))
-
+    B = "BIN" / construct.BitStruct(
+            "A" / construct.BitsInteger(256, swapped=True))
+    L = "BIN" / construct.BitStruct(
+            "A" / construct.BitsInteger(256))
     return B, L
 
 
 def swap_block_64():
-    B = construct.Struct("BIN",
-                         construct.UBInt64('A'),
-                         construct.UBInt64('B'),
-                         construct.UBInt64('C'),
-                         construct.UBInt64('D')
-                         )
-    L = construct.Struct("BIN",
-                         construct.ULInt64('A'),
-                         construct.ULInt64('B'),
-                         construct.ULInt64('C'),
-                         construct.ULInt64('D')
-                         )
-
+    B = "BIN" / construct.BitStruct(
+            "A" / construct.Int64ub,
+            "B" / construct.Int64ub,
+            "C" / construct.Int64ub,
+            "D" / construct.Int64ub)
+    L = "BIN" / construct.BitStruct(
+            "A" / construct.Int64ul,
+            "B" / construct.Int64ul,
+            "C" / construct.Int64ul,
+            "D" / construct.Int64ul)
     return B, L
 
 
 def swap_block_32():
-    B = construct.Struct("BIN",
-                         construct.UBInt32('A'),
-                         construct.UBInt32('B'),
-                         construct.UBInt32('C'),
-                         construct.UBInt32('D'),
-                         construct.UBInt32('E'),
-                         construct.UBInt32('F'),
-                         construct.UBInt32('G'),
-                         construct.UBInt32('H')
-                         )
-    L = construct.Struct("BIN",
-                         construct.ULInt32('A'),
-                         construct.ULInt32('B'),
-                         construct.ULInt32('C'),
-                         construct.ULInt32('D'),
-                         construct.ULInt32('E'),
-                         construct.ULInt32('F'),
-                         construct.ULInt32('G'),
-                         construct.ULInt32('H')
-                         )
-
+    B = "BIN" / construct.BitStruct(
+            "A" / construct.Int32ub,
+            "B" / construct.Int32ub,
+            "C" / construct.Int32ub,
+            "D" / construct.Int32ub,
+            "E" / construct.Int32ub,
+            "F" / construct.Int32ub,
+            "G" / construct.Int32ub,
+            "H" / construct.Int32ub)
+    L = "BIN" / construct.BitStruct(
+            "A" / construct.Int32ul,
+            "B" / construct.Int32ul,
+            "C" / construct.Int32ul,
+            "D" / construct.Int32ul,
+            "E" / construct.Int32ul,
+            "F" / construct.Int32ul,
+            "G" / construct.Int32ul,
+            "H" / construct.Int32ul)
     return B, L
 
 
 def swap_block_16():
-    B = construct.Struct("BIN",
-                         construct.UBInt16('A'),
-                         construct.UBInt16('B'),
-                         construct.UBInt16('C'),
-                         construct.UBInt16('D'),
-                         construct.UBInt16('E'),
-                         construct.UBInt16('F'),
-                         construct.UBInt16('G'),
-                         construct.UBInt16('H'),
-                         construct.UBInt16('I'),
-                         construct.UBInt16('J'),
-                         construct.UBInt16('K'),
-                         construct.UBInt16('L'),
-                         construct.UBInt16('M'),
-                         construct.UBInt16('N'),
-                         construct.UBInt16('O'),
-                         construct.UBInt16('P')
-                         )
-    L = construct.Struct("BIN",
-                         construct.ULInt16('A'),
-                         construct.ULInt16('B'),
-                         construct.ULInt16('C'),
-                         construct.ULInt16('D'),
-                         construct.ULInt16('E'),
-                         construct.ULInt16('F'),
-                         construct.ULInt16('G'),
-                         construct.ULInt16('H'),
-                         construct.ULInt16('I'),
-                         construct.ULInt16('J'),
-                         construct.ULInt16('K'),
-                         construct.ULInt16('L'),
-                         construct.ULInt16('M'),
-                         construct.ULInt16('N'),
-                         construct.ULInt16('O'),
-                         construct.ULInt16('P')
-                         )
+    B = "BIN" / construct.BitStruct(
+            "A" / construct.Int16ub,
+            "B" / construct.Int16ub,
+            "C" / construct.Int16ub,
+            "D" / construct.Int16ub,
+            "E" / construct.Int16ub,
+            "F" / construct.Int16ub,
+            "G" / construct.Int16ub,
+            "H" / construct.Int16ub,
+            "I" / construct.Int16ub,
+            "J" / construct.Int16ub,
+            "K" / construct.Int16ub,
+            "L" / construct.Int16ub,
+            "M" / construct.Int16ub,
+            "N" / construct.Int16ub,
+            "O" / construct.Int16ub,
+            "P" / construct.Int16ub)
+    L = "BIN" / construct.BitStruct(
+            "A" / construct.Int16ul,
+            "B" / construct.Int16ul,
+            "C" / construct.Int16ul,
+            "D" / construct.Int16ul,
+            "E" / construct.Int16ul,
+            "F" / construct.Int16ul,
+            "G" / construct.Int16ul,
+            "H" / construct.Int16ul,
+            "I" / construct.Int16ul,
+            "J" / construct.Int16ul,
+            "K" / construct.Int16ul,
+            "L" / construct.Int16ul,
+            "M" / construct.Int16ul,
+            "N" / construct.Int16ul,
+            "O" / construct.Int16ul,
+            "P" / construct.Int16ul)
 
     return B, L
 #
@@ -187,80 +178,45 @@ def swap_block_16():
 
 
 def general_header_block_1():
-    swap = True
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.BitStruct("BIN",
-                              #
-                              construct.BitField(
-                                  "file_number", 16, swapped=swap),
-                              # 8058 is IEEE 32 bit float
-                              construct.BitField(
-                                  "data_sample_format_code", 16, swapped=swap),
-                              construct.BitField(
-                                  "general_constant_1", 8, swapped=swap),
-                              construct.BitField(
-                                  "general_constant_2", 8, swapped=swap),
-                              construct.BitField(
-                                  "general_constant_3", 8, swapped=swap),
-                              construct.BitField(
-                                  "general_constant_4", 8, swapped=swap),
-                              construct.BitField(
-                                  "general_constant_5", 8, swapped=swap),
-                              construct.BitField(
-                                  "general_constant_6", 8, swapped=swap),
-                              construct.BitField(
-                                  "first_shot_point_year", 8, swapped=swap),
-                              construct.BitField(
-                                  "number_additional_general_header_blocks",
-                                  4,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "first_shot_point_doy", 12, swapped=swap),
-                              construct.BitField(
-                                  "first_shot_point_time_utc",
-                                  24,
-                                  swapped=swap),
-                              # 20 is Fairfield
-                              construct.BitField(
-                                  "manufactures_code", 8, swapped=swap),
-                              construct.BitField(
-                                  "manufactures_sn", 16, swapped=swap),
-                              # Traces written in superblocks. 0=No, 1=Yes
-                              construct.BitField(
-                                  "super_blocks", 8, swapped=swap),
-                              construct.BitField("user01", 16, swapped=swap),
-                              # Sample interval in 1/16 msec
-                              construct.BitField(
-                                  "base_scan_interval", 8, swapped=swap),
-                              construct.BitField(
-                                  "polarity_code", 4, swapped=swap),
-                              construct.BitField("user02", 12, swapped=swap),
-                              construct.BitField(
-                                  "record_type", 4, swapped=swap),
-                              # From time zero, 0.5 X 1.024 seconds, if 0xFFF
-                              # look in general header block 2
-                              construct.BitField(
-                                  "record_length", 12, swapped=swap),
-                              construct.BitField(
-                                  "scan_types_per_record", 8, swapped=swap),
-                              # 0xFF look in general header block 2
-                              construct.BitField(
-                                  "chan_sets_per_scan", 8, swapped=swap),
-                              construct.BitField(
-                                  "number_skew_blocks", 8, swapped=swap),
-                              # 0xFF look in general header block 2
-                              construct.BitField(
-                                  "number_extended_header_blocks",
-                                  8,
-                                  swapped=swap),
-                              # 0xFF look in general header block 2
-                              construct.BitField(
-                                  "number_external_header_blocks",
-                                  8,
-                                  swapped=swap))
-
+    swap = False
+    BIN = "BIN" / construct.BitStruct(
+            "file_number" / construct.BitsInteger(16, swapped=swap),
+            # 8058 is IEEE 32 bit float
+            "data_sample_format_code" / construct.BitsInteger(16, swapped=swap),
+            "general_constant_1" / construct.BitsInteger(8, swapped=swap),
+            "general_constant_2" / construct.BitsInteger(8, swapped=swap),
+            "general_constant_3" / construct.BitsInteger(8, swapped=swap),
+            "general_constant_4" / construct.BitsInteger(8, swapped=swap),
+            "general_constant_5" / construct.BitsInteger(8, swapped=swap),
+            "general_constant_6" / construct.BitsInteger(8, swapped=swap),
+            "first_shot_point_year" / construct.BitsInteger(8, swapped=swap),
+            "number_additional_general_header_blocks" /
+            construct.BitsInteger(4, swapped=swap),
+            "first_shot_point_doy" / construct.BitsInteger(12, swapped=swap),
+            "first_shot_point_time_utc" / construct.BitsInteger(24, swapped=swap),
+            # 20 is Fairfield
+            "manufactures_code" / construct.BitsInteger(8, swapped=swap),
+            "manufactures_sn" / construct.BitsInteger(16, swapped=swap),
+            # Traces written in superblocks. 0=No, 1=Yes
+            "super_blocks" / construct.BitsInteger(8, swapped=swap),
+            "user01" / construct.BitsInteger(16, swapped=swap),
+            # Sample interval in 1/16 msec
+            "base_scan_interval" / construct.BitsInteger(8, swapped=swap),
+            "polarity_code" / construct.BitsInteger(4, swapped=swap),
+            "user02" / construct.BitsInteger(12, swapped=swap),
+            "record_type" / construct.BitsInteger(4, swapped=swap),
+            # From time zero, 0.5 X 1.024 seconds, if 0xFFF
+            # look in general header block 2
+            "record_length" / construct.BitsInteger(12, swapped=swap),
+            "scan_types_per_record" / construct.BitsInteger(8, swapped=swap),
+            # 0xFF look in general header block 2
+            "chan_sets_per_scan" / construct.BitsInteger(8, swapped=swap),
+            "number_skew_blocks" / construct.BitsInteger(8, swapped=swap),
+            # 0xFF look in general header block 2
+            "number_extended_header_blocks" / construct.BitsInteger(8, swapped=swap),
+            # 0xFF look in general header block 2
+            "number_external_header_blocks" / construct.BitsInteger(8, swapped=swap),
+        )
     return BIN
 
 
@@ -381,51 +337,34 @@ class General_header_block_1 (object):
 
 def general_header_block_2():
     swap = False
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.BitStruct("BIN",
-                              construct.BitField(
-                                  "extended_file_number", 24, swapped=swap),
-                              construct.BitField(
-                                  "extended_chan_sets_per_scan_type",
-                                  16,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "extended_header_blocks", 16, swapped=swap),
-                              # External header blocks is 3 bytes in Fairfield
-                              # 1.6. Append user01.
-                              construct.BitField(
-                                  "external_header_blocks", 24, swapped=swap),
-                              # construct.BitField ("user01", 8, swapped=swap),
-                              # 0x0106, or 0x0201
-                              construct.BitField(
-                                  "file_version_number", 16, swapped=swap),
-                              construct.BitField(
-                                  "number_general_trailer_blocks",
-                                  16,
-                                  swapped=swap),
-                              # Record length in milliseconds
-                              construct.BitField(
-                                  "extended_record_length", 24, swapped=swap),
-                              construct.BitField("user02", 8, swapped=swap),
-                              construct.BitField(
-                                  "general_header_block_number",
-                                  8,
-                                  swapped=swap),
-                              construct.BitField("user03", 8, swapped=swap),
-                              # 2.1
-                              construct.BitField(
-                                  "sequence_number", 16, swapped=swap),
-                              # 2.1
-                              construct.BitField(
-                                  "super_block_size", 32, swapped=swap),
-                              construct.BitField("user04", 32, swapped=swap),
-                              # 2.1
-                              construct.BitField("zsystem_revision_number",
-                                                 16,
-                                                 swapped=swap))
-
+    if sys.byteorder == 'little':
+        swap = True
+    BIN = "BIN" / construct.BitStruct(
+            "extended_file_number" / construct.BitsInteger(24, swapped=swap),
+            "extended_chan_sets_per_scan_type" /
+            construct.BitsInteger(16, swapped=swap),
+            "extended_header_blocks" / construct.BitsInteger(16, swapped=swap),
+            # External header blocks is 3 bytes in Fairfield
+            # 1.6. Append user01.
+            "external_header_blocks" / construct.BitsInteger(24, swapped=swap),
+            # construct.BitsInteger ("user01", 8, swapped=swap),
+            # 0x0106, or 0x0201
+            "file_version_number" / construct.BitsInteger(16, swapped=swap),
+            "number_general_trailer_blocks" /
+            construct.BitsInteger(16, swapped=swap),
+            # Record length in milliseconds
+            "extended_record_length" / construct.BitsInteger(24, swapped=swap),
+            "user02" / construct.BitsInteger(8, swapped=swap),
+            "general_header_block_number" / construct.BitsInteger(8, swapped=swap),
+            "user03" / construct.BitsInteger(8, swapped=swap),
+            # 2.1
+            "sequence_number" / construct.BitsInteger(16, swapped=swap),
+            # 2.1
+            "super_block_size" / construct.BitsInteger(32, swapped=swap),
+            "user04" / construct.BitsInteger(32, swapped=swap),
+            # 2.1
+            "zsystem_revision_number" / construct.BitsInteger(16, swapped=swap)
+        )
     return BIN
 
 
@@ -497,38 +436,22 @@ class General_header_block_2 (object):
 
 def general_header_block_3():
     swap = False
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.BitStruct("BIN",
-                              construct.BitField(
-                                  "extended_file_number", 24, swapped=swap),
-                              construct.BitField(
-                                  "source_line_number_int", 24, swapped=swap),
-                              construct.BitField(
-                                  "source_line_number_frac", 16, swapped=swap),
-                              construct.BitField(
-                                  "source_point_number_int", 24, swapped=swap),
-                              construct.BitField(
-                                  "source_point_number_frac",
-                                  16,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "source_point_index", 8, swapped=swap),
-                              construct.BitField(
-                                  "phase_control", 8, swapped=swap),
-                              construct.BitField(
-                                  "vibrator_type", 8, swapped=swap),
-                              construct.BitField(
-                                  "phase_angle", 16, swapped=swap),
-                              construct.BitField(
-                                  "general_header_block_number",
-                                  8,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "source_set_number", 8, swapped=swap),
-                              construct.BitField("user01", 96, swapped=swap))
-
+    if sys.byteorder == 'little':
+        swap = True
+    BIN = "BIN" / construct.BitStruct(
+        "extended_file_number" / construct.BitsInteger(24, swapped=swap),
+        "source_line_number_int" / construct.BitsInteger(24, swapped=swap),
+        "source_line_number_frac" / construct.BitsInteger(16, swapped=swap),
+        "source_point_number_int" / construct.BitsInteger(24, swapped=swap),
+        "source_point_number_frac" / construct.BitsInteger(16, swapped=swap),
+        "source_point_index" / construct.BitsInteger(8, swapped=swap),
+        "phase_control" / construct.BitsInteger(8, swapped=swap),
+        "vibrator_type" / construct.BitsInteger(8, swapped=swap),
+        "phase_angle" / construct.BitsInteger(16, swapped=swap),
+        "general_header_block_number" / construct.BitsInteger(8, swapped=swap),
+        "source_set_number" / construct.BitsInteger(8, swapped=swap),
+        "user01" / construct.BitsInteger(96, swapped=swap)
+    )
     return BIN
 
 
@@ -592,77 +515,37 @@ class General_header_block_3 (object):
 
 
 def channel_set_descriptor():
-    swap = True
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.BitStruct("BIN",
-                              construct.BitField(
-                                  "scan_type_number", 8, swapped=swap),
-                              construct.BitField(
-                                  "chan_set_number", 8, swapped=swap),
-                              # Times 2 is milliseconds
-                              construct.BitField(
-                                  "chan_set_start_time", 16, swapped=swap),
-                              # Times 2 is milliseconds
-                              construct.BitField(
-                                  "chan_set_end_time", 16, swapped=swap),
-                              construct.BitField(
-                                  "optional_mp_factor_extension_byte",
-                                  8,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "mp_factor_scaler_multiplier",
-                                  8,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "number_of_chans_in_chan_set",
-                                  16,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "chan_type_code", 4, swapped=swap),
-                              construct.BitField("user01", 4, swapped=swap),
-                              construct.BitField(
-                                  "number_sub-scans", 4, swapped=swap),
-                              # 3 is fixed gain
-                              construct.BitField(
-                                  "gain_control_type", 4, swapped=swap),
-                              construct.BitField(
-                                  "alias_filter_freq", 16, swapped=swap),
-                              construct.BitField(
-                                  "alias_filter_slope_db", 16, swapped=swap),
-                              construct.BitField(
-                                  "low_cut_filter_freq", 16, swapped=swap),
-                              construct.BitField(
-                                  "low_cut_filter_slope_db", 16, swapped=swap),
-                              construct.BitField(
-                                  "notch_filter_freq", 16, swapped=swap),
-                              construct.BitField(
-                                  "second_notch_filter_freq",
-                                  16,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "third_notch_filter_freq",
-                                  16,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "extended_chan_set_number",
-                                  16,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "extended_header_flag", 4, swapped=swap),
-                              # Always 10 for Fairfield
-                              construct.BitField(
-                                  "number_trace_header_extensions",
-                                  4,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "vertical_stack_size", 8, swapped=swap),
-                              construct.BitField(
-                                  "streamer_cable_number", 8, swapped=swap),
-                              construct.BitField("array_forming",
-                                                 8,
-                                                 swapped=swap))
+    swap = False
+    BIN = "BIN" / construct.BitStruct(
+        "scan_type_number" / construct.BitsInteger(8, swapped=swap),
+        "chan_set_number" / construct.BitsInteger(8, swapped=swap),
+        # Times 2 is milliseconds
+        "chan_set_start_time" / construct.BitsInteger(16, swapped=swap),
+        # Times 2 is milliseconds
+        "chan_set_end_time" / construct.BitsInteger(16, swapped=swap),
+        "optional_mp_factor_extension_byte" /
+        construct.BitsInteger(8, swapped=swap),
+        "mp_factor_scaler_multiplier" / construct.BitsInteger(8, swapped=swap),
+        "number_of_chans_in_chan_set" / construct.BitsInteger(16, swapped=swap),
+        "chan_type_code" / construct.BitsInteger(4, swapped=swap),
+        "number_sub-scans" / construct.BitsInteger(4, swapped=swap),
+        # 3 is fixed gain
+        "gain_control_type" / construct.BitsInteger(4, swapped=swap),
+        "alias_filter_freq" / construct.BitsInteger(16, swapped=swap),
+        "alias_filter_slope_db" / construct.BitsInteger(16, swapped=swap),
+        "low_cut_filter_freq" / construct.BitsInteger(16, swapped=swap),
+        "low_cut_filter_slope_db" / construct.BitsInteger(16, swapped=swap),
+        "notch_filter_freq" / construct.BitsInteger(16, swapped=swap),
+        "second_notch_filter_freq" / construct.BitsInteger(16, swapped=swap),
+        "third_notch_filter_freq" / construct.BitsInteger(16, swapped=swap),
+        "extended_chan_set_number" / construct.BitsInteger(16, swapped=swap),
+        "extended_header_flag" / construct.BitsInteger(4, swapped=swap),
+        # Always 10 for Fairfield
+        "number_trace_header_extensions" / construct.BitsInteger(4, swapped=swap),
+        "vertical_stack_size" / construct.BitsInteger(8, swapped=swap),
+        "streamer_cable_number" / construct.BitsInteger(8, swapped=swap),
+        "array_forming" / construct.BitsInteger(8, swapped=swap)
+    )
     return BIN
 
 
@@ -767,14 +650,15 @@ class Channel_set_descriptor (object):
 # 1.6
 #
 def extended_header_1():
-    BIN = construct.Struct("BIN",
-                           # Remote unit
-                           construct.UBInt32("part_number"),
-                           construct.UBInt32("id_number"),
-                           # All epochs in micro-seconds
-                           construct.UBInt64("epoch_deploy"),
-                           construct.UBInt64("epoch_pickup"),
-                           construct.UBInt64("remote_unit_epoch"))
+    BIN = "BIN" / construct.BitStruct(
+        # Remote unit
+        "part_number" / construct.Int32ub,
+        "id_number" / construct.Int32ub,
+        # All epochs in micro-seconds
+        "epoch_deploy" / construct.Int64ub,
+        "epoch_pickup" / construct.Int64ub,
+        "remote_unit_epoch" / construct.Int64ub
+    )
     return BIN
 
 
@@ -817,20 +701,20 @@ class Extended_header_1 (object):
 
 
 def extended_header_1_shot():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt64("shot_epoch_time"),
-                           construct.UBInt32("shot_skew_time"),
-                           construct.UBInt16("files_shot_point"),
-                           construct.UBInt64("file_index"),
-                           construct.UBInt8("user01"),
-                           construct.UBInt8("data_decimation_flag"),
-                           construct.UBInt16(
-                               "number_decimation_filter_coefficients"),
-                           construct.UBInt8("base_scan_interval_0"),
-                           construct.UBInt32("pre_shot_guard_base"),
-                           construct.UBInt32("post_shot_guard_base"),
-                           construct.UBInt16("simultaneous_shots"),
-                           construct.UBInt8("user02"))
+    BIN = "BIN" / construct.BitStruct(
+        "shot_epoch_time" / construct.Int64ub,
+        "shot_skew_time" / construct.Int32ub,
+        "files_shot_point" / construct.Int16ub,
+        "file_index" / construct.Int64ub,
+        "user01" / construct.Int8ub,
+        "data_decimation_flag" / construct.Int8ub,
+        "number_decimation_filter_coefficients" / construct.Int16ub,
+        "base_scan_interval_0" / construct.Int8ub,
+        "pre_shot_guard_base" / construct.Int32ub,
+        "post_shot_guard_base" / construct.Int32ub,
+        "simultaneous_shots" / construct.Int16ub,
+        "user02" / construct.Int8ub
+    )
     return BIN
 
 
@@ -881,41 +765,41 @@ class Extended_header_1_shot (object):
 
 
 def extended_header_2():
-    BIN = construct.Struct("BIN",
-                           construct.BFloat32("drift_window"),
-                           construct.UBInt64("clock_drift_ns"),
-                           # Clock stop method
-                           construct.UBInt8("clock_stop_method"),
-                           # 0 - normal
-                           # 1 - storage full
-                           # 2 - power loss
-                           # 3 - reboot by command
-                           # Frequency drift flag
-                           construct.UBInt8("Frequency_drift"),
-                           # 0 - not in spec
-                           # 1 - in spec
-                           # Oscillator type
-                           construct.UBInt8("oscillator_type"),
-                           # 0 - control board
-                           # 1 - atomic
-                           # 2 - ovenized
-                           # 3 - double ovenized
-                           # 4 - disciplined
-                           # 0 - normal (shots)
-                           construct.UBInt8("collection_method"),
-                           # 1 - continuous (fixed time slice)
-                           # 2 - shot sliced with guard band
-                           # Number of traces
-                           construct.UBInt32("number_records"),
-                           construct.UBInt32("number_files"),
-                           construct.UBInt32("file_number"),
-                           # Decimation flag
-                           construct.UBInt8("decimation_flag"),
-                           # 0 - not decimated
-                           # 1 - decimated
-                           construct.UBInt8("base_scan_interval"),
-                           construct.UBInt16("decimation_filter_coefficients")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "drift_window" / construct.Float32b,
+        "clock_drift_ns" / construct.Int64ub,
+        # Clock stop method
+        "clock_stop_method" / construct.Int8ub,
+        # 0 - normal
+        # 1 - storage full
+        # 2 - power loss
+        # 3 - reboot by command
+        # Frequency drift flag
+        "Frequency_drift" / construct.Int8ub,
+        # 0 - not in spec
+        # 1 - in spec
+        # Oscillator type
+        "oscillator_type" / construct.Int8ub,
+        # 0 - control board
+        # 1 - atomic
+        # 2 - ovenized
+        # 3 - double ovenized
+        # 4 - disciplined
+        # 0 - normal (shots)
+        "collection_method" / construct.Int8ub,
+        # 1 - continuous (fixed time slice)
+        # 2 - shot sliced with guard band
+        # Number of traces
+        "number_records" / construct.Int32ub,
+        "number_files" / construct.Int32ub,
+        "file_number" / construct.Int32ub,
+        # Decimation flag
+        "decimation_flag" / construct.Int8ub,
+        # 0 - not decimated
+        # 1 - decimated
+        "base_scan_interval" / construct.Int8ub,
+        "decimation_filter_coefficients" / construct.Int16ub
+    )
     return BIN
 
 
@@ -966,19 +850,18 @@ class Extended_header_2 (object):
 
 
 def extended_header_2_test():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("test_analysis_code"),
-                           construct.UBInt32(
-                               "first_test_oscillator_attenuation"),
-                           construct.UBInt32(
-                               "second_test_oscillator_attenuation"),
-                           construct.UBInt32("start_delay_usec"),
-                           # 00 - No filter, 01 - Apply filter
-                           construct.UBInt32("dc_filter_flag"),
-                           construct.BFloat32("dc_filter_frequency"),
-                           # See page 9 of format spec
-                           construct.UBInt32("preamp_path"),
-                           construct.UBInt32("test_oscillator_signal_type"))
+    BIN = "BIN" / construct.BitStruct(
+        "test_analysis_code" / Int32ub,
+        "first_test_oscillator_attenuation" / Int32ub,
+        "second_test_oscillator_attenuation" / Int32ub,
+        "start_delay_usec" / Int32ub,
+        # 00 - No filter, 01 - Apply filter
+        "dc_filter_flag" / Int32ub,
+        "dc_filter_frequency" / Float32b,
+        # See page 9 of format spec
+        "preamp_path" / Int32ub,
+        "test_oscillator_signal_type" / Int32ub,
+    )
     return BIN
 
 
@@ -1025,22 +908,19 @@ class Extended_header_2_test (object):
 
 
 def extended_header_3():
-    swap = True
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("line_number"),
-                           construct.UBInt32("receiver_point"),
-                           construct.UBInt8("point_index"),
-                           construct.UBInt32("first_shot_line"),
-                           construct.UBInt32("first_shot_point"),
-                           construct.UBInt8("first_shot_point_index"),
-                           construct.UBInt32("last_shot_line"),
-                           construct.UBInt32("last_shot_point"),
-                           construct.UBInt8("last_shot_point_index"),
-                           construct.BitField("reserved01", 5, swapped=swap)
-                           )
+    swap = False
+    BIN = "BIN" / construct.BitStruct(
+        "line_number" / construct.Int32ub,
+        "receiver_point" / construct.Int32ub,
+        "point_index" / construct.Int8ub,
+        "first_shot_line" / construct.Int32ub,
+        "first_shot_point" / construct.Int32ub,
+        "first_shot_point_index" / construct.Int8ub,
+        "last_shot_line" / construct.Int32ub,
+        "last_shot_point" / construct.Int32ub,
+        "last_shot_point_index" / construct.Int8ub,
+        "reserved01" / construct.BitsInteger(5, swapped=swap)
+    )
     return BIN
 
 
@@ -1092,16 +972,16 @@ def extended_header_3_test():
     if sys.byteorder == 'big':
         pass
 
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("test_signal_type"),
-                           construct.UBInt32("test_signal_frequency_1"),
-                           construct.UBInt32("test_signal_frequency_2"),
-                           construct.UBInt32("test_signal_amplitude_1"),
-                           construct.UBInt32("test_signal_amplitude_2"),
-                           construct.BFloat32("test_signal_duty_cycle"),
-                           construct.UBInt32("test_signal_active_duration"),
-                           construct.UBInt32("test_signal_active_time")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "test_signal_type" / construct.Int32ub,
+        "test_signal_frequency_1" / construct.Int32ub,
+        "test_signal_frequency_2" / construct.Int32ub,
+        "test_signal_amplitude_1" / construct.Int32ub,
+        "test_signal_amplitude_2" / construct.Int32ub,
+        "test_signal_duty_cycle" / construct.Float32b,
+        "test_signal_active_duration" / construct.Int32ub,
+        "test_signal_active_time" / construct.Int32ub
+    )
     return BIN
 
 
@@ -1148,17 +1028,17 @@ class Extended_header_3_test (object):
 
 
 def extended_header_4():
-    BIN = construct.Struct("BIN",
-                           # Decimation filter coefficients
-                           construct.BFloat32("coef01"),
-                           construct.BFloat32("coef02"),
-                           construct.BFloat32("coef03"),
-                           construct.BFloat32("coef04"),
-                           construct.BFloat32("coef05"),
-                           construct.BFloat32("coef06"),
-                           construct.BFloat32("coef07"),
-                           construct.BFloat32("coef08")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        # Decimation filter coefficients
+        "coef01" / construct.Float32b,
+        "coef02" / construct.Float32b,
+        "coef03" / construct.Float32b,
+        "coef04" / construct.Float32b,
+        "coef05" / construct.Float32b,
+        "coef06" / construct.Float32b,
+        "coef07" / construct.Float32b,
+        "coef08" / construct.Float32b
+    )
     return BIN
 
 
@@ -1205,16 +1085,16 @@ class Extended_header_4 (object):
 
 
 def extended_header_4_test():
-    BIN = construct.Struct("BIN",
-                           construct.BFloat32("idle_level"),
-                           construct.BFloat32("active_level"),
-                           construct.BFloat32("pattern_01"),
-                           construct.BFloat32("pattern_02"),
-                           construct.BFloat32("channel_mask"),
-                           construct.BFloat32("user01"),
-                           construct.BFloat32("user02"),
-                           construct.BFloat32("user03")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "idle_level" / construct.Float32b,
+        "active_level" / construct.Float32b,
+        "pattern_01" / construct.Float32b,
+        "pattern_02" / construct.Float32b,
+        "channel_mask" / construct.Float32b,
+        "user01" / construct.Float32b,
+        "user02" / construct.Float32b,
+        "user03" / construct.Float32b
+    )
     return BIN
 
 
@@ -1261,17 +1141,14 @@ class Extended_header_4_test (object):
 
 
 def external_header():
-    swap = True
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("size"),
-                           construct.UBInt32("receiver_line"),
-                           construct.UBInt32("receiver_point"),
-                           construct.UBInt8("receiver_point_index"),
-                           construct.BitField("reserved01", 18, swapped=swap)
-                           )
+    swap = False
+    BIN = "BIN" / construct.BitStruct(
+        "size" / construct.Int32ub,
+        "receiver_line" / construct.Int32ub,
+        "receiver_point" / construct.Int32ub,
+        "receiver_point_index" / construct.Int8ub,
+        "reserved01" / construct.BitsInteger(18, swapped=swap)
+    )
     return BIN
 
 
@@ -1315,23 +1192,25 @@ class External_header (object):
 
 
 def external_header_shot():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt64("shot_epoch"),
-                           construct.UBInt32("shot_line"),
-                           construct.UBInt32("shot_point"),
-                           construct.UBInt8("shot_point_index"),
-                           construct.UBInt32("shot_point_X"),
-                           construct.UBInt32("shot_point_Y"),
-                           construct.UBInt32("shot_point_depth"),
-                           construct.UBInt8("shot_info"),  # 0 - Undefined
-                           # 1 - preplan
-                           # 2 - as shot
-                           # 3 - post processed
-                           construct.UBInt8("shot_status"),  # 0 - normal
-                           # 1 - Bad - operator defined
-                           # 2 - Bad Failed T0 QC test
-                           construct.UBInt8("reserved01")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "shot_epoch" / construct.Int64ub,
+        "shot_line" / construct.Int32ub,
+        "shot_point" / construct.Int32ub,
+        "shot_point_index" / construct.Int8ub,
+        "shot_point_X" / construct.Int32ub,
+        "shot_point_Y" / construct.Int32ub,
+        "shot_point_depth" / construct.Int32ub,
+        "shot_info" / construct.Int8ub,
+        # 0 - Undefined
+        # 1 - preplan
+        # 2 - as shot
+        # 3 - post processed
+        "shot_status" / construct.Int8ub,
+        # 0 - normal
+        # 1 - Bad - operator defined
+        # 2 - Bad Failed T0 QC test
+        "reserved01" / construct.Int8ub,
+    )
     return BIN
 
 
@@ -1380,20 +1259,20 @@ class External_header_shot (object):
 
 
 def external_header_shot_blocks():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("shot_line_number"),
-                           construct.UBInt32("shot_point_number"),
-                           construct.UBInt8("shot_point_index"),
-                           construct.UBInt32("shot_point_pre_X"),
-                           construct.UBInt32("shot_point_pre_Y"),
-                           construct.UBInt32("shot_point_X"),
-                           construct.UBInt32("shot_point_Y"),
-                           construct.UBInt32("shot_point_depth"),
-                           # See format spec ZSystem
-                           construct.UBInt8("shot_info_source"),
-                           construct.UBInt8("energy_source_type"),
-                           construct.UBInt8("shot_status_flag")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "shot_line_number" / construct.Int32ub,
+        "shot_point_number" / construct.Int32ub,
+        "shot_point_index" / construct.Int8ub,
+        "shot_point_pre_X" / construct.Int32ub,
+        "shot_point_pre_Y" / construct.Int32ub,
+        "shot_point_X" / construct.Int32ub,
+        "shot_point_Y" / construct.Int32ub,
+        "shot_point_depth" / construct.Int32ub,
+        # See format spec ZSystem
+        "shot_info_source" / construct.Int8ub,
+        "energy_source_type" / construct.Int8ub,
+        "shot_status_flag" / construct.Int8ub
+    )
     return BIN
 
 
@@ -1430,33 +1309,22 @@ class External_header_shot_blocks (object):
 
 
 def trace_header():
-    swap = True
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.BitStruct("BIN",
-                              construct.BitField(
-                                  "tape_file", 16, swapped=swap),
-                              construct.BitField("scan_type", 8, swapped=swap),
-                              construct.BitField(
-                                  "channel_set", 8, swapped=swap),
-                              construct.BitField(
-                                  "trace_number", 16, swapped=swap),
-                              construct.BitField(
-                                  "first_timing_word", 24, swapped=swap),
-                              construct.BitField(
-                                  "trace_extension_blocks", 8, swapped=swap),
-                              construct.BitField(
-                                  "sample_skew_value", 8, swapped=swap),
-                              construct.BitField(
-                                  "trace_edit_code", 8, swapped=swap),
-                              construct.BitField(
-                                  "time_break_window", 24, swapped=swap),
-                              construct.BitField(
-                                  "extended_channel_set", 16, swapped=swap),
-                              construct.BitField(
-                                  "extended_file_number", 24, swapped=swap)
-                              )
+    swap = False
+    if sys.byteorder == 'little':
+        swap = True
+    BIN = "BIN" / construct.BitStruct(
+        "tape_file" / construct.BitsInteger(16, swapped=swap),
+        "scan_type" / construct.BitsInteger(8, swapped=swap),
+        "channel_set" / construct.BitsInteger(8, swapped=swap),
+        "trace_number" / construct.BitsInteger(16, swapped=swap),
+        "first_timing_word" / construct.BitsInteger(24, swapped=swap),
+        "trace_extension_blocks" / construct.BitsInteger(8, swapped=swap),
+        "sample_skew_value" / construct.BitsInteger(8, swapped=swap),
+        "trace_edit_code" / construct.BitsInteger(8, swapped=swap),
+        "time_break_window" / construct.BitsInteger(24, swapped=swap),
+        "extended_channel_set" / construct.BitsInteger(16, swapped=swap),
+        "extended_file_number" / construct.BitsInteger(24, swapped=swap),
+    )
     return BIN
 #
 # 1.6, 2.1
@@ -1532,43 +1400,29 @@ class Trace_header (object):
 
 
 def trace_header_1():
-    # Don't byte swap
     swap = False
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.BitStruct("BIN",
-                              construct.BitField(
-                                  "receiver_line", 24, swapped=swap),
-                              construct.BitField(
-                                  "receiver_point", 24, swapped=swap),
-                              construct.BitField(
-                                  "receiver_point_index", 8, swapped=swap),
-                              construct.BitField(
-                                  "samples_per_trace", 24, swapped=swap),
-                              construct.BitField(
-                                  "extended_receiver_line_number",
-                                  40,
-                                  swapped=swap),
-                              construct.BitField(
-                                  "extended_receiver_point_number",
-                                  40,
-                                  swapped=swap),
-                              # 00 - Not defined
-                              construct.BitField(
-                                  "sensor_type", 8, swapped=swap),
-                              # 01 - Hydrophone
-                              # 02 - Vertical geophone
-                              # 03 - In-line geophone
-                              # 04 - Cross-line geophone
-                              # 05 - Other horizontal geophone
-                              # 06 - Vertical accelerometer
-                              # 07 - In-line accelerometer
-                              # 08 - Cross-line accelerometer
-                              # 09 - Other horizontal accelerometer
-                              construct.BitField(
-                                  "reserved01", 88, swapped=swap)
-                              )
+    if sys.byteorder == 'little':
+        swap = True
+    BIN = "BIN" / construct.BitStruct(
+        "receiver_line" / construct.BitsInteger(24, swapped=swap),
+        "receiver_point" / construct.BitsInteger(24, swapped=swap),
+        "receiver_point_index" / construct.BitsInteger(8, swapped=swap),
+        "samples_per_trace" / construct.BitsInteger(24, swapped=swap),
+        "extended_receiver_line_number" / construct.BitsInteger(40, swapped=swap),
+        "extended_receiver_point_number" / construct.BitsInteger(40, swapped=swap),
+        # 00 - Not defined
+        # 01 - Hydrophone
+        # 02 - Vertical geophone
+        # 03 - In-line geophone
+        # 04 - Cross-line geophone
+        # 05 - Other horizontal geophone
+        # 06 - Vertical accelerometer
+        # 07 - In-line accelerometer
+        # 08 - Cross-line accelerometer
+        # 09 - Other horizontal accelerometer
+        "sensor_type" / construct.BitsInteger(8, swapped=swap),
+        "reserved01" / construct.BitsInteger(88, swapped=swap)
+    )
     return BIN
 
 
@@ -1615,26 +1469,27 @@ class Trace_header_1 (object):
 
 
 def trace_header_2():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("shot_line"),
-                           construct.UBInt32("shot_point"),
-                           construct.UBInt8("shot_point_index"),
-                           construct.UBInt32("shot_point_X"),
-                           construct.UBInt32("shot_point_Y"),
-                           construct.UBInt32("shot_point_X_final"),
-                           construct.UBInt32("shot_point_Y_final"),
-                           construct.UBInt32("shot_point_depth_final"),
-                           # 0 - Undefined
-                           construct.UBInt8("final_shot_info"),
-                           # 1 - preplan
-                           # 2 - as shot
-                           # 3 - post processed
-                           construct.UBInt8("energy_source"),  # 0 - Undefined
-                           # 1 - Vibroseis
-                           # 2 - Dynamite
-                           # 3 - Air gun
-                           construct.UBInt8("reserved01")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "shot_line" / construct.Int32ub,
+        "shot_point" / construct.Int32ub,
+        "shot_point_index" / construct.Int8ub,
+        "shot_point_X" / construct.Int32ub,
+        "shot_point_Y" / construct.Int32ub,
+        "shot_point_X_final" / construct.Int32ub,
+        "shot_point_Y_final" / construct.Int32ub,
+        "shot_point_depth_final" / construct.Int32ub,
+        # 0 - Undefined
+        # 1 - preplan
+        # 2 - as shot
+        # 3 - post processed
+        "final_shot_info" / construct.Int8ub,
+        # 0 - Undefined
+        # 1 - Vibroseis
+        # 2 - Dynamite
+        # 3 - Air gun
+        "energy_source" / construct.Int8ub,
+        "reserved01" / construct.Int8ub,
+    )
     return BIN
 
 
@@ -1684,12 +1539,11 @@ class Trace_header_2 (object):
 
 
 def trace_header_3():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt64("shot_epoch"),
-                           construct.UBInt64("shot_skew_time"),
-                           construct.UBInt64("clock_correction"),
-                           construct.UBInt64("clock_correction_not_applied")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "shot_line" / construct.Int64ub,
+        "shot_skew_time" / construct.Int64ub,
+        "clock_correction" / construct.Int64ub,
+        "clock_correction_not_applied" / construct.Int64ub)
     return BIN
 
 
@@ -1732,12 +1586,11 @@ class Trace_header_3 (object):
 
 
 def trace_header_3_remote_unit():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt64("remote_unit_id"),
-                           construct.UBInt64("deployment_epoch"),
-                           construct.UBInt64("pickup_epoch"),
-                           construct.UBInt64("remote_start_epoch")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "remote_unit_id" / construct.Int64ub,
+        "deployment_epoch" / construct.Int64ub,
+        "pickup_epoch" / construct.Int64ub,
+        "remote_start_epoch" / construct.Int64ub)
     return BIN
 
 
@@ -1780,12 +1633,11 @@ class Trace_header_3_remote_unit (object):
 
 
 def trace_header_3_timing_block():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt64("acquisition_drift_window"),
-                           construct.UBInt64("clock_drift"),
-                           construct.UBInt64("applied_clock_correction"),
-                           construct.UBInt64("remaining_clock_correction")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "acquisition_drift_window" / construct.Int64ub,
+        "clock_drift" / construct.Int64ub,
+        "applied_clock_correction" / construct.Int64ub,
+        "remaining_clock_correction" / construct.Int64ub)
     return BIN
 
 
@@ -1828,24 +1680,26 @@ class Trace_header_3_timing_block (object):
 
 
 def trace_header_4():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("pre_shot_guard_band"),
-                           construct.UBInt32("post_shot_guard_band"),
-                           construct.UNInt8("preamp_gain_db"),
-                           construct.UBInt8("trace_flag"),  # 0 - not clipped
-                           # 1 - digital clip detected
-                           # 2 - analog clip detected
-                           # 0x8 - normal seismic data record
-                           construct.UBInt8("record_type"),
-                           # 0x2 - test data record
-                           construct.UBInt8("shot_status"),  # 0 - normal
-                           # 1 - Bad operator says
-                           # 2 - Bad Failed T0 QC test
-                           construct.UBInt32("reserved01"),
-                           construct.UBInt64("reserved02"),
-                           construct.BFloat32("first_break_pick_time"),
-                           construct.BFloat32("rms_noise")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "pre_shot_guard_band" / construct.Int32ub,
+        "post_shot_guard_band" / construct.Int32ub,
+        "preamp_gain_db" / construct.Int8ub,
+        "trace_flag" / construct.Int8ub,
+        # 0 - not clipped
+        # 1 - digital clip detected
+        # 2 - analog clip detected
+        # 0x8 - normal seismic data record
+        # 0x2 - test data record
+        "record_type" / construct.Int8ub,
+        # 0 - normal
+        # 1 - Bad operator says
+        # 2 - Bad Failed T0 QC test
+        "shot_status" / construct.Int8ub,
+        "reserved01" / construct.Int32ub,
+        "reserved02" / construct.Int64ub,
+        "first_break_pick_time" / construct.Float32b,
+        "rms_noise" / construct.Float32b
+        )
     return BIN
 
 
@@ -1894,28 +1748,29 @@ class Trace_header_4 (object):
 
 
 def trace_header_5():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("line_number"),
-                           construct.UBInt32("point"),
-                           construct.UBInt8("point_index"),
-                           construct.UBInt32("receiver_point_X"),
-                           construct.UBInt32("receiver_point_Y"),
-                           construct.UBInt32("receiver_point_X_final"),
-                           construct.UBInt32("receiver_point_Y_final"),
-                           construct.UBInt32("receiver_point_depth_final"),
-                           construct.UBInt8("receiver_info"),  # 1 - preplan
-                           # 2 - as laid (no navigation sensor)
-                           # 3 - as laid (HiPAP only)
-                           # 4 - as laid (HiPAP and INS)
-                           # 5 - as laid (HiPAP and DVL)
-                           # 6 - as laid (HiPAP, DVL and INS)
-                           # 7 - post processed (HiPAP only)
-                           # 8 - post processed (HiPAP and INS)
-                           # 9 - post processed (HiPAP and DVL)
-                           # 10 - post processed (HiPAP, DVL and INS)
-                           # 11 - first break analysis
-                           construct.UBInt16("reserved01")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "line_number" / construct.Int32ub,
+        "point" / construct.Int32ub,
+        "point_index" / construct.Int8ub,
+        "receiver_point_X" / construct.Int32ub,
+        "receiver_point_Y" / construct.Int32ub,
+        "receiver_point_X_final" / construct.Int32ub,
+        "receiver_point_Y_final" / construct.Int32ub,
+        "receiver_point_depth_final" / construct.Int32ub,
+        # 1 - preplan
+        # 2 - as laid (no navigation sensor)
+        # 3 - as laid (HiPAP only)
+        # 4 - as laid (HiPAP and INS)
+        # 5 - as laid (HiPAP and DVL)
+        # 6 - as laid (HiPAP, DVL and INS)
+        # 7 - post processed (HiPAP only)
+        # 8 - post processed (HiPAP and INS)
+        # 9 - post processed (HiPAP and DVL)
+        # 10 - post processed (HiPAP, DVL and INS)
+        # 11 - first break analysis
+        "receiver_info" / construct.Int8ub,
+        "reserved01" / construct.Int16ub
+        )
     return BIN
 
 
@@ -1964,21 +1819,21 @@ class Trace_header_5 (object):
 
 
 def trace_header_5_acquisition_data_block():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt8("preamp_gain"),
-                           construct.UBInt8("clipped_flag"),
-                           construct.UBInt8("record_type_code"),
-                           construct.UBInt8("shot_status_flag"),
-                           construct.UBInt8("periodic_data_type"),
-                           # See ZSystem format spec
-                           construct.UBInt8("acquisition_stop_method"),
-                           construct.UBInt8("frequency_drift_flag"),
-                           construct.UBInt8("oscillator_type"),
-                           construct.UBInt64("reserved01"),
-                           construct.UBInt64("reserved02"),
-                           construct.BFloat32("post_process_pick_time"),
-                           construct.BFloat32("post_process_rms_noise")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "preamp_gain" / construct.Int8ub,
+        "clipped_flag" / construct.Int8ub,
+        "record_type_code" / construct.Int8ub,
+        "shot_status_flag" / construct.Int8ub,
+        # See ZSystem format spec
+        "periodic_data_type" / construct.Int8ub,
+        "acquisition_stop_method" / construct.Int8ub,
+        "frequency_drift_flag" / construct.Int8ub,
+        "oscillator_type" / construct.Int8ub,
+        "reserved01" / construct.Int64ub,
+        "reserved02" / construct.Int64ub,
+        "post_process_pick_time" / construct.Int32ub,
+        "post_process_rms_noise" / construct.Int32ub,
+        )
     return BIN
 
 
@@ -2033,16 +1888,15 @@ class Trace_header_5_acquisition_data_block (object):
 
 
 def trace_header_6():
-    BIN = construct.Struct("BIN",
-                           construct.BFloat32("H1X"),
-                           construct.BFloat32("H2X"),
-                           construct.BFloat32("VX"),
-                           construct.BFloat32("H1Y"),
-                           construct.BFloat32("H2Y"),
-                           construct.BFloat32("VY"),
-                           construct.BFloat32("H1Z"),
-                           construct.BFloat32("H2Z")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "H1X" / construct.Float32b,
+        "H2X" / construct.Float32b,
+        "VX" / construct.Float32b,
+        "H1Y" / construct.Float32b,
+        "H2Y" / construct.Float32b,
+        "VY" / construct.Float32b,
+        "H1Z" / construct.Float32b,
+        "H2Z" / construct.Float32b)
     return BIN
 
 
@@ -2089,15 +1943,14 @@ class Trace_header_6 (object):
 
 
 def trace_header_7():
-    BIN = construct.Struct("BIN",
-                           construct.BFloat32("VZ"),
-                           construct.BFloat32("azimuth"),
-                           construct.BFloat32("pitch"),
-                           construct.BFloat32("roll"),
-                           construct.BFloat32("remote_temp"),
-                           construct.BFloat32("remote_humidity"),
-                           construct.UBInt64("reserved01")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "VZ" / construct.Float32b,
+        "azimuth" / construct.Float32b,
+        "pitch" / construct.Float32b,
+        "roll" / construct.Float32b,
+        "remote_temp" / construct.Float32b,
+        "remote_humidity" / construct.Float32b,
+        "reserved01" / construct.Int64ub)
     return BIN
 
 
@@ -2143,43 +1996,41 @@ class Trace_header_7 (object):
 
 
 def trace_header_8():
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("test_code"),
-                           construct.UBInt32(
-                               "first_test_oscillator_attenuation"),
-                           construct.UBInt32(
-                               "second_test_oscillator_attenuation"),
-                           construct.UBInt32("start_delay_usec"),
-                           construct.UBInt32("dc_filter"),  # 0 - no filter
-                           # 1 - apply filter
-                           construct.UBInt32("dc_filter_freq"),
-                           # 0 - external input selected (default)
-                           construct.UBInt32("pre_amp_path"),
-                           # 1 - simulated data delected
-                           # 2 - pre-amp input shorted to ground
-                           # 3 - test oscillator with sensors
-                           # 4 - test oscillator without sensors
-                           # 5 - common mode test oscillator with sensors
-                           # 6 - common mode test oscillator without sensors
-                           # 7 - test oscillator on positive sensors with
-                           # neg sensor grounded
-                           # 8 - test oscillator on negative sensors with pos
-                           # sensor grounded
-                           # 9 - test oscillator on positive PA input, with
-                           # neg PA input grounded
-                           # 10 - test oscillator on negative PA input, with
-                           # pos PA input grounded
-                           # 11 - test oscillator on positive PA input, with
-                           # neg PA input ground, no sensors
-                           # 12 - test oscillator on negative PA input, with
-                           # pos PA input ground, no sensors
-                           # 0 - test oscillator path open
-                           construct.UBInt32("oscillator_siganl_type")
-                           # 1 - test signal selected
-                           # 2 - DC reference selected
-                           # 3 - test oscillator path grounded
-                           # 4 DC reference toggle selected
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        "test_code" / construct.Int32ub,
+        "first_test_oscillator_attenuation" / construct.Int32ub,
+        "second_test_oscillator_attenuation" / construct.Int32ub,
+        "start_delay_usec" / construct.Int32ub,
+        # 0 - no filter
+        # 1 - apply filter
+        "dc_filter" / construct.Int32ub,
+        "dc_filter_freq" / construct.Int32ub,
+        # 0 - external input selected (default)
+        # 1 - simulated data delected
+        # 2 - pre-amp input shorted to ground
+        # 3 - test oscillator with sensors
+        # 4 - test oscillator without sensors
+        # 5 - common mode test oscillator with sensors
+        # 6 - common mode test oscillator without sensors
+        # 7 - test oscillator on positive sensors with
+        # neg sensor grounded
+        # 8 - test oscillator on negative sensors with pos
+        # sensor grounded
+        # 9 - test oscillator on positive PA input, with
+        # neg PA input grounded
+        # 10 - test oscillator on negative PA input, with
+        # pos PA input grounded
+        # 11 - test oscillator on positive PA input, with
+        # neg PA input ground, no sensors
+        # 12 - test oscillator on negative PA input, with
+        # pos PA input ground, no sensors
+        "pre_amp_path" / construct.Int32ub,
+        # 0 - test oscillator path open
+        # 1 - test signal selected
+        # 2 - DC reference selected
+        # 3 - test oscillator path grounded
+        # 4 DC reference toggle selected
+        "oscillator_siganl_type" / construct.Int32ub)
     return BIN
 
 
@@ -2226,29 +2077,29 @@ class Trace_header_8 (object):
 
 
 def trace_header_9():
-    BIN = construct.Struct("BIN",
-                           # 0 - pattern address ramp
-                           construct.UBInt32("generator_signal_type"),
-                           # 1 - pattern is RU address ramp
-                           # 2 - pattern is built from provided values
-                           # 3 - pattern is random numbers
-                           # 4 - pattern is a walking 1s
-                           # 5 - pattern is a walking 0s
-                           # 6 - test signal is a specified DC value
-                           # 7 - test signal is a pulse train with
-                           # specified duty cycle
-                           # 8 - test signal is a sine wave
-                           # 9 - test signal is a dual tone sine
-                           # 10 - test signal is an impulse
-                           # 11 - test signal is a step function
-                           construct.UBInt32("generator_freq_1"),
-                           construct.UBInt32("generator_freq_2"),
-                           construct.UBInt32("generator amplitude_1"),
-                           construct.UBInt32("generator_amplitude_2"),
-                           construct.UBInt32("generator_duty_cycle"),
-                           construct.UBInt32("generator_duration_usec"),
-                           construct.UBInt32("generator_activation_time_usec")
-                           )
+    BIN = "BIN" / construct.BitStruct(
+        # 0 - pattern address ramp
+        # 1 - pattern is RU address ramp
+        # 2 - pattern is built from provided values
+        # 3 - pattern is random numbers
+        # 4 - pattern is a walking 1s
+        # 5 - pattern is a walking 0s
+        # 6 - test signal is a specified DC value
+        # 7 - test signal is a pulse train with
+        # specified duty cycle
+        # 8 - test signal is a sine wave
+        # 9 - test signal is a dual tone sine
+        # 10 - test signal is an impulse
+        # 11 - test signal is a step function
+        "generator_signal_type" / construct.Int32ub,
+        "generator_freq_1" / construct.Int32ub,
+        "generator_freq_2" / construct.Int32ub,
+        "generator_amplitude_1" / construct.Int32ub,
+        "generator_amplitude_2" / construct.Int32ub,
+        "generator_duty_cycle" / construct.Int32ub,
+        "generator_duration_usec" / construct.Int32ub,
+        "generator_activation_time_usec" / construct.Int32ub
+    )
     return BIN
 
 
@@ -2256,7 +2107,7 @@ class Trace_header_9 (object):
     __keys__ = ("generator_signal_type",
                 "generator_freq_1",
                 "generator_freq_2",
-                "generator amplitude_1",
+                "generator_amplitude_1",
                 "generator_amplitude_2",
                 "generator_duty_cycle",
                 "generator_duration_usec",
@@ -2295,17 +2146,16 @@ class Trace_header_9 (object):
 
 
 def trace_header_10():
-    swap = True
-    if sys.byteorder == 'big':
-        swap = False
-
-    BIN = construct.Struct("BIN",
-                           construct.UBInt32("idle_level"),
-                           construct.UBInt32("active_level"),
-                           construct.UBInt32("generator_pattern_1"),
-                           construct.UBInt32("generator_patern_2"),
-                           construct.BitField("reserved01", 16, swapped=swap)
-                           )
+    swap = False
+    if sys.byteorder == 'little':
+        swap = True
+    BIN = "BIN" / construct.BitStruct(
+        "idle_level" / construct.Int32ub,
+        "active_level" / construct.Int32ub,
+        "generator_pattern_1" / construct.Int32ub,
+        "generator_patern_2" / construct.Int32ub,
+        "reserved01" / construct.BitsInteger(16, swapped=swap)
+    )
     return BIN
 
 
@@ -2352,12 +2202,12 @@ class Trace_header_10 (object):
 def convert_bcd_fields(ret, nbcd, nnibbles):
     for k in nbcd:
         bcd = ret[k]
-        n = nnibbles[k]
+        num_digits = nnibbles[k] * 2
         if sys.byteorder == 'little':
-            bcd = construct.ULInt64("xxx").build(bcd)
+            bcd = construct.Int64ul.build(bcd)
         else:
-            bcd = construct.UBInt64("xxx").build(bcd)
+            bcd = construct.Int64ub.build(bcd)
 
-        ret[k] = bcd_py.bcd2int(bcd, 0, n)
+        ret[k] = bcd_py.bcd2int(bcd, 0, num_digits)
 
     return ret

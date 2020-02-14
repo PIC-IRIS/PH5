@@ -10,7 +10,7 @@ import sys
 import construct
 
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2020.34'
 
 
 def __version__():
@@ -137,115 +137,114 @@ class HeaderError (exceptions.Exception):
 
 
 def bin_header_le_float():
-    BIN = construct.Struct("BIN",
-                           # Increment between evenly spaced samples (nominal
-                           # value).
-                           construct.LFloat32("delta"),
-                           # Minimum value of dependent variable.
-                           construct.LFloat32("depmin"),
-                           # Maximum value of dependent variable.
-                           construct.LFloat32("depmax"),
-                           # Multiplying scale factor for dependent variable
-                           construct.LFloat32("scale"),
-                           # Observed increment if different from nominal
-                           # value.
-                           construct.LFloat32("odelta"),
-                           # Beginning value of the independent variable.
-                           # [required]
-                           construct.LFloat32("b"),
-                           # Ending value of the independent variable.
-                           # [required]
-                           construct.LFloat32("e"),
-                           # Event origin time (seconds relative to reference
-                           # time.)
-                           construct.LFloat32("o"),
-                           # First arrival time (seconds relative to reference
-                           # time.)
-                           construct.LFloat32("a"),
-                           construct.LFloat32("fmt"),     #
-                           construct.LFloat32("t0"),      #
-                           construct.LFloat32("t1"),      #
-                           construct.LFloat32("t2"),      #
-                           construct.LFloat32("t3"),      #
-                           construct.LFloat32("t4"),      #
-                           construct.LFloat32("t5"),      #
-                           construct.LFloat32("t6"),      #
-                           construct.LFloat32("t7"),      #
-                           construct.LFloat32("t8"),      #
-                           construct.LFloat32("t9"),      #
-                           # Fini or end of event time (seconds relative to
-                           # reference
-                           construct.LFloat32("f"),
-                           # time.)
-                           construct.LFloat32("resp0"),   #
-                           construct.LFloat32("resp1"),   #
-                           construct.LFloat32("resp2"),   #
-                           construct.LFloat32("resp3"),   #
-                           construct.LFloat32("resp4"),   #
-                           construct.LFloat32("resp5"),   #
-                           construct.LFloat32("resp6"),   #
-                           construct.LFloat32("resp7"),   #
-                           construct.LFloat32("resp8"),   #
-                           construct.LFloat32("resp9"),   #
-                           # Station latitude (degrees, north positive)
-                           construct.LFloat32("stla"),
-                           # Station longitude (degrees, east positive).
-                           construct.LFloat32("stlo"),
-                           # Station elevation (meters). [not currently used]
-                           construct.LFloat32("stel"),
-                           # Station depth below surface (meters). [not
-                           # currently
-                           construct.LFloat32("stdp"),
-                           # used]
-                           # Event latitude (degrees north positive).
-                           construct.LFloat32("evla"),
-                           # Event longitude (degrees east positive).
-                           construct.LFloat32("evlo"),
-                           # Event elevation (meters). [not currently used]
-                           construct.LFloat32("evel"),
-                           # Event depth below surface (meters). [not currently
-                           # used]
-                           construct.LFloat32("evdp"),
-                           construct.LFloat32("mag"),  # Event magnitude.
-                           # User defined variable storage area {ai n}=0,9.
-                           construct.LFloat32("user0"),
-                           construct.LFloat32("user1"),   #
-                           construct.LFloat32("user2"),   #
-                           construct.LFloat32("user3"),   #
-                           construct.LFloat32("user4"),   #
-                           construct.LFloat32("user5"),   #
-                           construct.LFloat32("user6"),   #
-                           construct.LFloat32("user7"),   #
-                           construct.LFloat32("user8"),   #
-                           construct.LFloat32("user9"),   #
-                           # Station to event distance (km).
-                           construct.LFloat32("dist"),
-                           # Event to station azimuth (degrees).
-                           construct.LFloat32("az"),
-                           # Station to event azimuth (degrees).
-                           construct.LFloat32("baz"),
-                           # Station to event great circle arc length
-                           # (degrees).
-                           construct.LFloat32("gcarc"),
-                           construct.LFloat32("sb"),      #
-                           construct.LFloat32("sdelta"),  #
-                           # Mean value of dependent variable.
-                           construct.LFloat32("depmen"),
-                           # Component azimuth (degrees, clockwise from north).
-                           construct.LFloat32("cmpaz"),
-                           # Component incident angle (degrees, from vertical).
-                           construct.LFloat32("cmpinc"),
-                           construct.LFloat32("xminimum"),
-                           construct.LFloat32("xmaximum"),
-                           construct.LFloat32("yminimum"),
-                           construct.LFloat32("ymaximum"),
-                           construct.LFloat32("unused6"),
-                           construct.LFloat32("unused7"),
-                           construct.LFloat32("unused8"),
-                           construct.LFloat32("unused9"),
-                           construct.LFloat32("unused10"),
-                           construct.LFloat32("unused11"),
-                           construct.LFloat32("unused12"))
+    BIN = "BIN" / construct.Struct(
+                            # Increment between evenly spaced samples (nominal
+                            # value).
+                            "delta" / construct.Float32l,
+                            # Minimum value of dependent variable.
+                            "depmin" / construct.Float32l,
+                            # Maximum value of dependent variable.
+                            "depmax" / construct.Float32l,
+                            # Multiplying scale factor for dependent variable
+                            "scale" / construct.Float32l,
+                            # Observed increment if different from nominal
+                            # value.
+                            "odelta" / construct.Float32l,
+                            # Beginning value of the independent variable.
+                            # [required]
+                            "b" / construct.Float32l,
+                            # Ending value of the independent variable.
+                            # [required]
+                            "e" / construct.Float32l,
+                            # Event origin time (seconds relative to reference
+                            # time.)
+                            "o" / construct.Float32l,
+                            # First arrival time (seconds relative to reference
+                            # time.)
+                            "a" / construct.Float32l,
+                            "fmt" / construct.Float32l,
+                            "t0" / construct.Float32l,
+                            "t1" / construct.Float32l,
+                            "t2" / construct.Float32l,
+                            "t3" / construct.Float32l,
+                            "t4" / construct.Float32l,
+                            "t5" / construct.Float32l,
+                            "t6" / construct.Float32l,
+                            "t7" / construct.Float32l,
+                            "t8" / construct.Float32l,
+                            "t9" / construct.Float32l,
+                            # Fini or end of event time (seconds relative to
+                            # reference time.)
+                            "resp0" / construct.Float32l,
+                            "resp1" / construct.Float32l,
+                            "resp2" / construct.Float32l,
+                            "resp3" / construct.Float32l,
+                            "resp4" / construct.Float32l,
+                            "resp5" / construct.Float32l,
+                            "resp6" / construct.Float32l,
+                            "resp7" / construct.Float32l,
+                            "resp8" / construct.Float32l,
+                            "resp9" / construct.Float32l,
+                            # Station latitude (degrees, north positive)
+                            "stla" / construct.Float32l,
+                            # Station longitude (degrees, east positive).
+                            "stlo" / construct.Float32l,
+                            # Station elevation (meters). [not currently used]
+                            "stel" / construct.Float32l,
+                            # Station depth below surface (meters). [not
+                            # currently
+                            "stdp" / construct.Float32l,
+                            # used]
+                            # Event latitude (degrees north positive).
+                            "evla" / construct.Float32l,
+                            # Event longitude (degrees east positive).
+                            "evlo" / construct.Float32l,
+                            # Event elevation (meters). [not currently used]
+                            "evel" / construct.Float32l,
+                            # Event depth below surface (meters). [not currently
+                            # used]
+                            "evdp" / construct.Float32l,
+                            # Event magnitude.
+                            "mag" / construct.Float32l,
+                            # User defined variable storage area {ai n}=0,9.
+                            "user0" / construct.Float32l,
+                            "user1" / construct.Float32l,
+                            "user2" / construct.Float32l,
+                            "user3" / construct.Float32l,
+                            "user4" / construct.Float32l,
+                            "user5" / construct.Float32l,
+                            "user6" / construct.Float32l,
+                            "user7" / construct.Float32l,
+                            "user8" / construct.Float32l,
+                            "user9" / construct.Float32l,
+                            # Station to event distance (km).
+                            "dist" / construct.Float32l,
+                            # Event to station azimuth (degrees).
+                            "az" / construct.Float32l,
+                            # Station to event azimuth (degrees).
+                            "baz" / construct.Float32l,
+                            # Station to event great circle arc length
+                            # (degrees).
+                            "gcarc" / construct.Float32l,
+                            "sb" / construct.Float32l,
+                            "sdelta" / construct.Float32l,
+                            # Mean value of dependent variable.
+                            "depmen" / construct.Float32l,
+                            # Component azimuth (degrees, clockwise from north).
+                            "cmpaz" / construct.Float32l,
+                            # Component incident angle (degrees, from vertical).
+                            "xminimum" / construct.Float32l,
+                            "xmaximum" / construct.Float32l,
+                            "yminimum" / construct.Float32l,
+                            "ymaximum" / construct.Float32l,
+                            "unused6" / construct.Float32l,
+                            "unused7" / construct.Float32l,
+                            "unused8" / construct.Float32l,
+                            "unused9" / construct.Float32l,
+                            "unused10" / construct.Float32l,
+                            "unused11" / construct.Float32l,
+                            "unused12" / construct.Float32l,
+                            )
     return BIN
 # SAC Little Endian binary header, int part
 
@@ -254,56 +253,64 @@ def bin_header_le_int():
     BIN = construct.Struct("BIN",
                            # GMT year corresponding to reference (zero) time in
                            # file.
-                           construct.SLInt32("nzyear"),
-                           construct.SLInt32("nzjday"),  # GMT julian day.
-                           construct.SLInt32("nzhour"),  # GMT hour.
-                           construct.SLInt32("nzmin"),  # GMT minute.
-                           construct.SLInt32("nzsec"),  # GMT second.
-                           construct.SLInt32("nzmsec"),  # GMT millisecond.
+                           "nzyear" / construct.Int32sl,
+                           # GMT julian day.
+                           "nzjday" / construct.Int32sl,
+                           # GMT hour.
+                           "nzhour" / construct.Int32sl,
+                           # GMT minute.
+                           "nzmin" / construct.Int32sl,
+                           # GMT second.
+                           "nzsec" / construct.Int32sl,
+                           # GMT millisecond.
+                           "nzmsec" / construct.Int32sl,
                            # Header version number. Current value is the
                            # integer 6.
-                           construct.SLInt32("nvhdr"),
+                           "nvhdr" / construct.Int32sl,
                            # Older version data (NVHDR < 6) are automatically
                            # updated
-                           construct.SLInt32("norid"),  # Origin ID (CSS 3.0)
-                           construct.SLInt32("nevid"),  # Event ID (CSS 3.0)
+                           "norid" / construct.Int32sl,
+                           # Event ID (CSS 3.0)
+                           "nevid" / construct.Int32sl,
                            # Number of points per data component. [required]
-                           construct.SLInt32("npts"),
-                           construct.SLInt32("nsnpts"),     #
-                           construct.SLInt32("nwfid"),  # Waveform ID (CSS 3.0)
-                           construct.SLInt32("nxsize"),     #
-                           construct.SLInt32("nysize"),     #
-                           construct.SLInt32("unused15"),   #
+                           "npts" / construct.Int32sl,
+                           "nsnpts" / construct.Int32sl,
+                           # Waveform ID (CSS 3.0)
+                           "nwfid" / construct.Int32sl,
+                           "nxsize" / construct.Int32sl,
+                           "nysize" / construct.Int32sl,
+                           "unused15" / construct.Int32sl,
                            # Type of file [required]:
-                           construct.SLInt32("iftype"),
+                           "iftype" / construct.Int32sl,
                            #    * ITIME {Time series file}
                            #    * IRLIM {Spectral file---real and imaginary}
                            #    * IAMPH {Spectral file---amplitude and phase}
                            #    * IXY {General x versus y data}
                            #    * IXYZ {General XYZ (3-D) file}
                            # Type of dependent variable:
-                           construct.SLInt32("idep"),
+                           "idep" / construct.Int32sl,
                            #    * IUNKN (Unknown)
                            #    * IDISP (Displacement in nm)
                            #    * IVEL (Velocity in nm/sec)
                            #    * IVOLTS (Velocity in volts)
                            #    * IACC (Acceleration in nm/sec/sec)
                            # Reference time equivalence:
-                           construct.SLInt32("iztype"),
+                           "iztype" / construct.Int32sl,
                            #    * IUNKN (5): Unknown
                            #    * IB (9): Begin time
                            #    * IDAY (10): Midnight of refernece GMT day
                            #    * IO (11): Event origin time
                            #    * IA (12): First arrival time
                            #    * ITn (13-22): User defined time pick n,n=0,9
-                           construct.SLInt32("unused16"),   #
+                           "unused16" / construct.Int32sl,
                            # Type of recording instrument. [currently not used]
-                           construct.SLInt32("iinst"),
+                           "iinst" / construct.Int32sl,
                            # Station geographic region. [not currently used]
-                           construct.SLInt32("istreg"),
+                           "istreg" / construct.Int32sl,
                            # Event geographic region. [not currently used]
-                           construct.SLInt32("ievreg"),
-                           construct.SLInt32("ievtyp"),  # Type of event:
+                           "ievreg" / construct.Int32sl,
+                           # Type of event:
+                           "ievtyp" / construct.Int32sl,
                            # * IUNKN (Unknown)
                            # * INUCL (Nuclear event)
                            # * IPREN (Nuclear pre-shot event)
@@ -332,77 +339,80 @@ def bin_header_le_int():
                            # * IT (Teleseismic event of unknown origin)
                            # * IU (Undetermined or conflicting information)
                            # Quality of data [not currently used]:
-                           construct.SLInt32("iqual"),
+                           "iqual" / construct.Int32sl,
                            #    * IGOOD (Good data)
                            #    * IGLCH (Glitches)
                            #    * IDROP (Dropouts)
                            #    * ILOWSN (Low signal to noise ratio)
                            #    * IOTHER (Other)
                            # Synthetic data flag [not currently used]:
-                           construct.SLInt32("isynth"),
+                           "isynth" / construct.Int32sl,
                            #    * IRLDTA (Real data)
                            #    * ?????
                            #    (Flags for various synthetic seismogram
                            #      codes)
-                           construct.SLInt32("imagtyp"),    #
-                           construct.SLInt32("imagsrc"),    #
-                           construct.SLInt32("unused19"),   #
-                           construct.SLInt32("unused20"),   #
-                           construct.SLInt32("unused21"),   #
-                           construct.SLInt32("unused22"),   #
-                           construct.SLInt32("unused23"),   #
-                           construct.SLInt32("unused24"),   #
-                           construct.SLInt32("unused25"),   #
-                           construct.SLInt32("unused26"),   #
+                           "imagtyp" / construct.Int32sl,
+                           "imagsrc" / construct.Int32sl,
+                           "unused19" / construct.Int32sl,
+                           "unused20" / construct.Int32sl,
+                           "unused21" / construct.Int32sl,
+                           "unused22" / construct.Int32sl,
+                           "unused23" / construct.Int32sl,
+                           "unused24" / construct.Int32sl,
+                           "unused25" / construct.Int32sl,
+                           "unused26" / construct.Int32sl,
                            # TRUE if data is evenly spaced. [required]
-                           construct.SLInt32("leven"),
+                           "leven" / construct.Int32sl,
                            # TRUE if station components have a positive
                            # polarity
-                           construct.SLInt32("lpspol"),
+                           "lpspol" / construct.Int32sl,
                            # (left-hand rule).
                            # TRUE if it is okay to overwrite this file on disk.
-                           construct.SLInt32("lovrok"),
+                           "lovrok" / construct.Int32sl,
                            # TRUE if DIST AZ BAZ and GCARC are to be calculated
                            # from
-                           construct.SLInt32("lcalda"),
+                           "lcalda" / construct.Int32sl,
                            # st event coordinates.
-                           construct.SLInt32("unused27"))
+                           "unused27" / construct.Int32sl)
     return BIN
 # SAC Little Endian binary header, string part
 
 
 def bin_header_le_char():
     BIN = construct.Struct("BIN",
-                           construct.String("kstnm", 8),  # Station name.
-                           construct.String("kevnm", 16),  # Event name.
+                           # Station name.
+                           "kstnm" / constrct.Bytes(8),
+                           # Event name.
+                           "kevnm" / constrct.Bytes(16),
                            # Hole identification if nuclear event.
-                           construct.String("khole", 8),
-                           construct.String("ko", 8),       #
+                           "khole" / constrct.Bytes(8),
+                           "ko" / constrct.Bytes(8),
                            # First arrival time identification.
-                           construct.String("ka", 8),
+                           "ka" / constrct.Bytes(8),
                            # A User defined time {ai n}=0,9.  pick
                            # identifications
-                           construct.String("kt0", 8),
-                           construct.String("kt1", 8),      #
-                           construct.String("kt2", 8),      #
-                           construct.String("kt3", 8),      #
-                           construct.String("kt4", 8),      #
-                           construct.String("kt5", 8),      #
-                           construct.String("kt6", 8),      #
-                           construct.String("kt7", 8),      #
-                           construct.String("kt8", 8),      #
-                           construct.String("kt9", 8),      #
-                           construct.String("kf", 8),       #
+                           "kt0" / constrct.Bytes(8),
+                           "kt1" / constrct.Bytes(8),
+                           "kt2" / constrct.Bytes(8),
+                           "kt3" / constrct.Bytes(8),
+                           "kt4" / constrct.Bytes(8),
+                           "kt5" / constrct.Bytes(8),
+                           "kt6" / constrct.Bytes(8),
+                           "kt7" / constrct.Bytes(8),
+                           "kt8" / constrct.Bytes(8),
+                           "kt9" / constrct.Bytes(8),
+                           "kf" / constrct.Bytes(8),
                            # User defined variable storage area {ai n}=0,9.
-                           construct.String("kuser0", 8),
-                           construct.String("kuser1", 8),   #
-                           construct.String("kuser2", 8),   #
-                           construct.String("kcmpnm", 8),  # Component name.
+                           "kuser0" / constrct.Bytes(8),
+                           "kuser1" / constrct.Bytes(8),
+                           "kuser2" / constrct.Bytes(8),
+                           # Component name.
+                           "kcmpnm" / constrct.Bytes(8),
                            # Name of seismic network.
-                           construct.String("knetwk", 8),
-                           construct.String("kdatrd", 8),   #
-                           construct.String("kinst", 8))  # Generic name of
-    # recording instrument
+                           "knetwk" / constrct.Bytes(8),
+                           "kdatrd" / constrct.Bytes(8),
+                           # Generic name of recording instrument
+                           "kinst" / constrct.Bytes(8))
     return BIN
 
 # SAC Big Endian binary header, float part
@@ -410,151 +420,150 @@ def bin_header_le_char():
 
 def bin_header_be_float():
     BIN = construct.Struct("BIN",
-                           construct.BFloat32("delta"),
-                           construct.BFloat32("depmin"),
-                           construct.BFloat32("depmax"),
-                           construct.BFloat32("scale"),
-                           construct.BFloat32("odelta"),
-                           construct.BFloat32("b"),
-                           construct.BFloat32("e"),
-                           construct.BFloat32("o"),
-                           construct.BFloat32("a"),
-                           construct.BFloat32("fmt"),
-                           construct.BFloat32("t0"),
-                           construct.BFloat32("t1"),
-                           construct.BFloat32("t2"),
-                           construct.BFloat32("t3"),
-                           construct.BFloat32("t4"),
-                           construct.BFloat32("t5"),
-                           construct.BFloat32("t6"),
-                           construct.BFloat32("t7"),
-                           construct.BFloat32("t8"),
-                           construct.BFloat32("t9"),
-                           construct.BFloat32("f"),
-                           construct.BFloat32("resp0"),
-                           construct.BFloat32("resp1"),
-                           construct.BFloat32("resp2"),
-                           construct.BFloat32("resp3"),
-                           construct.BFloat32("resp4"),
-                           construct.BFloat32("resp5"),
-                           construct.BFloat32("resp6"),
-                           construct.BFloat32("resp7"),
-                           construct.BFloat32("resp8"),
-                           construct.BFloat32("resp9"),
-                           construct.BFloat32("stla"),
-                           construct.BFloat32("stlo"),
-                           construct.BFloat32("stel"),
-                           construct.BFloat32("stdp"),
-                           construct.BFloat32("evla"),
-                           construct.BFloat32("evlo"),
-                           construct.BFloat32("evel"),
-                           construct.BFloat32("evdp"),
-                           construct.BFloat32("mag"),
-                           construct.BFloat32("user0"),
-                           construct.BFloat32("user1"),
-                           construct.BFloat32("user2"),
-                           construct.BFloat32("user3"),
-                           construct.BFloat32("user4"),
-                           construct.BFloat32("user5"),
-                           construct.BFloat32("user6"),
-                           construct.BFloat32("user7"),
-                           construct.BFloat32("user8"),
-                           construct.BFloat32("user9"),
-                           construct.BFloat32("dist"),
-                           construct.BFloat32("az"),
-                           construct.BFloat32("baz"),
-                           construct.BFloat32("gcarc"),
-                           construct.BFloat32("sb"),
-                           construct.BFloat32("sdelta"),
-                           construct.BFloat32("depmen"),
-                           construct.BFloat32("cmpaz"),
-                           construct.BFloat32("cmpinc"),
-                           construct.BFloat32("xminimum"),
-                           construct.BFloat32("xmaximum"),
-                           construct.BFloat32("yminimum"),
-                           construct.BFloat32("ymaximum"),
-                           construct.BFloat32("unused6"),
-                           construct.BFloat32("unused7"),
-                           construct.BFloat32("unused8"),
-                           construct.BFloat32("unused9"),
-                           construct.BFloat32("unused10"),
-                           construct.BFloat32("unused11"),
-                           construct.BFloat32("unused12"))
+                           "delta" / construct.Float32b,
+                           "depmin" / construct.Float32b,
+                           "depmax" / construct.Float32b,
+                           "scale" / construct.Float32b,
+                           "odelta" / construct.Float32b,
+                           "b" / construct.Float32b,
+                           "e" / construct.Float32b,
+                           "o" / construct.Float32b,
+                           "a" / construct.Float32b,
+                           "t0" / construct.Float32b,
+                           "t1" / construct.Float32b,
+                           "t2" / construct.Float32b,
+                           "t3" / construct.Float32b,
+                           "t4" / construct.Float32b,
+                           "t5" / construct.Float32b,
+                           "t6" / construct.Float32b,
+                           "t7" / construct.Float32b,
+                           "t8" / construct.Float32b,
+                           "t9" / construct.Float32b,
+                           "f" / construct.Float32b,
+                           "resp0" / construct.Float32b,
+                           "resp1" / construct.Float32b,
+                           "resp2" / construct.Float32b,
+                           "resp3" / construct.Float32b,
+                           "resp4" / construct.Float32b,
+                           "resp5" / construct.Float32b,
+                           "resp6" / construct.Float32b,
+                           "resp7" / construct.Float32b,
+                           "resp8" / construct.Float32b,
+                           "resp9" / construct.Float32b,
+                           "stala" / construct.Float32b,
+                           "stalo" / construct.Float32b,
+                           "stel" / construct.Float32b,
+                           "stdp" / construct.Float32b,
+                           "evla" / construct.Float32b,
+                           "evlo" / construct.Float32b,
+                           "evel" / construct.Float32b,
+                           "evdp" / construct.Float32b,
+                           "mag" / construct.Float32b,
+                           "user0" / construct.Float32b,
+                           "user1" / construct.Float32b,
+                           "user2" / construct.Float32b,
+                           "user3" / construct.Float32b,
+                           "user4" / construct.Float32b,
+                           "user5" / construct.Float32b,
+                           "user6" / construct.Float32b,
+                           "user7" / construct.Float32b,
+                           "user8" / construct.Float32b,
+                           "user9" / construct.Float32b,
+                           "dist" / construct.Float32b,
+                           "az" / construct.Float32b,
+                           "baz" / construct.Float32b,
+                           "gcarc" / construct.Float32b,
+                           "sb" / construct.Float32b,
+                           "sdelta" / construct.Float32b,
+                           "depmen" / construct.Float32b,
+                           "cmpaz" / construct.Float32b,
+                           "cmpinc" / construct.Float32b,
+                           "xminimum" / construct.Float32b,
+                           "xmaximum" / construct.Float32b,
+                           "yminimum" / construct.Float32b,
+                           "ymaximum" / construct.Float32b,
+                           "unused6" / construct.Float32b,
+                           "unused7" / construct.Float32b,
+                           "unused8" / construct.Float32b,
+                           "unused9" / construct.Float32b,
+                           "unused10" / construct.Float32b,
+                           "unused11" / construct.Float32b,
+                           "unused12" / construct.Float32b)
     return BIN
 # SAC Big Endian binary header, int part
 
 
 def bin_header_be_int():
     BIN = construct.Struct("BIN",
-                           construct.SBInt32("nzyear"),
-                           construct.SBInt32("nzjday"),
-                           construct.SBInt32("nzhour"),
-                           construct.SBInt32("nzmin"),
-                           construct.SBInt32("nzsec"),
-                           construct.SBInt32("nzmsec"),
-                           construct.SBInt32("nvhdr"),
-                           construct.SBInt32("norid"),
-                           construct.SBInt32("nevid"),
-                           construct.SBInt32("npts"),
-                           construct.SBInt32("nsnpts"),
-                           construct.SBInt32("nwfid"),
-                           construct.SBInt32("nxsize"),
-                           construct.SBInt32("nysize"),
-                           construct.SBInt32("unused15"),
-                           construct.SBInt32("iftype"),
-                           construct.SBInt32("idep"),
-                           construct.SBInt32("iztype"),
-                           construct.SBInt32("unused16"),
-                           construct.SBInt32("iinst"),
-                           construct.SBInt32("istreg"),
-                           construct.SBInt32("ievreg"),
-                           construct.SBInt32("ievtyp"),
-                           construct.SBInt32("iqual"),
-                           construct.SBInt32("isynth"),
-                           construct.SBInt32("imagtyp"),
-                           construct.SBInt32("imagsrc"),
-                           construct.SBInt32("unused19"),
-                           construct.SBInt32("unused20"),
-                           construct.SBInt32("unused21"),
-                           construct.SBInt32("unused22"),
-                           construct.SBInt32("unused23"),
-                           construct.SBInt32("unused24"),
-                           construct.SBInt32("unused25"),
-                           construct.SBInt32("unused26"),
-                           construct.SBInt32("leven"),
-                           construct.SBInt32("lpspol"),
-                           construct.SBInt32("lovrok"),
-                           construct.SBInt32("lcalda"),
-                           construct.SBInt32("unused27"))
+                           "nzyear" / construct.Int32sb,
+                           "nzjday" / construct.Int32sb,
+                           "nzhour" / construct.Int32sb,
+                           "nzmin" / construct.Int32sb,
+                           "nzsec" / construct.Int32sb,
+                           "nzmsec" / construct.Int32sb,
+                           "nvhdr" / construct.Int32sb,
+                           "norid" / construct.Int32sb,
+                           "nevid" / construct.Int32sb,
+                           "npts" / construct.Int32sb,
+                           "nsnpts" / construct.Int32sb,
+                           "nwfid" / construct.Int32sb,
+                           "nxsize" / construct.Int32sb,
+                           "nysize" / construct.Int32sb,
+                           "unused15" / construct.Int32sb,
+                           "iftype" / construct.Int32sb,
+                           "idep" / construct.Int32sb,
+                           "iztype" / construct.Int32sb,
+                           "unused16" / construct.Int32sb,
+                           "iinst" / construct.Int32sb,
+                           "istreg" / construct.Int32sb,
+                           "ievreg" / construct.Int32sb,
+                           "ievtyp" / construct.Int32sb,
+                           "iqual" / construct.Int32sb,
+                           "isynth" / construct.Int32sb,
+                           "imagtyp" / construct.Int32sb,
+                           "imagsrc" / construct.Int32sb,
+                           "unused19" / construct.Int32sb,
+                           "unused20" / construct.Int32sb,
+                           "unused21" / construct.Int32sb,
+                           "unused22" / construct.Int32sb,
+                           "unused23" / construct.Int32sb,
+                           "unused24" / construct.Int32sb,
+                           "unused25" / construct.Int32sb,
+                           "unused26" / construct.Int32sb,
+                           "leven" / construct.Int32sb,
+                           "lpspol" / construct.Int32sb,
+                           "lovrok" / construct.Int32sb,
+                           "lcalda" / construct.Int32sb,
+                           "unused27" / construct.Int32sb)
     return BIN
 # SAC Big Endian binary header, string part
 
 
 def bin_header_be_char():
     BIN = construct.Struct("BIN",
-                           construct.String("kstnm", 8),
-                           construct.String("kevnm", 16),
-                           construct.String("khole", 8),
-                           construct.String("ko", 8),
-                           construct.String("ka", 8),
-                           construct.String("kt0", 8),
-                           construct.String("kt1", 8),
-                           construct.String("kt2", 8),
-                           construct.String("kt3", 8),
-                           construct.String("kt4", 8),
-                           construct.String("kt5", 8),
-                           construct.String("kt6", 8),
-                           construct.String("kt7", 8),
-                           construct.String("kt8", 8),
-                           construct.String("kt9", 8),
-                           construct.String("kf", 8),
-                           construct.String("kuser0", 8),
-                           construct.String("kuser1", 8),
-                           construct.String("kuser2", 8),
-                           construct.String("kcmpnm", 8),
-                           construct.String("knetwk", 8),
-                           construct.String("kdatrd", 8),
-                           construct.String("kinst", 8))
+                           "kstnm" / constrct.Bytes(8),
+                           "kevnm" / constrct.Bytes(16),
+                           "khole" / constrct.Bytes(8),
+                           "ko" / constrct.Bytes(8),
+                           "ka" / constrct.Bytes(8),
+                           "kt0" / constrct.Bytes(8),
+                           "kt1" / constrct.Bytes(8),
+                           "kt2" / constrct.Bytes(8),
+                           "kt3" / constrct.Bytes(8),
+                           "kt4" / constrct.Bytes(8),
+                           "kt5" / constrct.Bytes(8),
+                           "kt6" / constrct.Bytes(8),
+                           "kt7" / constrct.Bytes(8),
+                           "kt8" / constrct.Bytes(8),
+                           "kt9" / constrct.Bytes(8),
+                           "kf" / constrct.Bytes(8),
+                           "kuser0" / constrct.Bytes(8),
+                           "kuser1" / constrct.Bytes(8),
+                           "kuser2" / constrct.Bytes(8),
+                           "kcmpnm" / constrct.Bytes(8),
+                           "knetwk" / constrct.Bytes(8),
+                           "kdatrd" / constrct.Bytes(8),
+                           "kinst" / constrct.Bytes(8))
     return BIN
 
 

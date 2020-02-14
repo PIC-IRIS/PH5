@@ -59,7 +59,7 @@ setup(
                       'obspy',
                       'vispy',
                       'lxml',
-                      'construct==2.5.1',
+                      'construct==2.9.45',
                       'simplekml',
                       'tables',
                       'matplotlib<2',

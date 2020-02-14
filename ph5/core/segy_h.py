@@ -14,7 +14,7 @@ import logging
 import construct
 from ph5.core import ibmfloat, ebcdic
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2020.34'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -40,47 +40,46 @@ class HeaderError (exceptions.Exception):
 
 
 def text_header():
-    TEXT = construct.Struct("TEXT",
-                            construct.String("_01_", 80),
-                            construct.String("_02_", 80),
-                            construct.String("_03_", 80),
-                            construct.String("_04_", 80),
-                            construct.String("_05_", 80),
-                            construct.String("_06_", 80),
-                            construct.String("_07_", 80),
-                            construct.String("_08_", 80),
-                            construct.String("_09_", 80),
-                            construct.String("_10_", 80),
-                            construct.String("_11_", 80),
-                            construct.String("_12_", 80),
-                            construct.String("_13_", 80),
-                            construct.String("_14_", 80),
-                            construct.String("_15_", 80),
-                            construct.String("_16_", 80),
-                            construct.String("_17_", 80),
-                            construct.String("_18_", 80),
-                            construct.String("_19_", 80),
-                            construct.String("_20_", 80),
-                            construct.String("_21_", 80),
-                            construct.String("_22_", 80),
-                            construct.String("_23_", 80),
-                            construct.String("_24_", 80),
-                            construct.String("_25_", 80),
-                            construct.String("_26_", 80),
-                            construct.String("_27_", 80),
-                            construct.String("_28_", 80),
-                            construct.String("_29_", 80),
-                            construct.String("_30_", 80),
-                            construct.String("_31_", 80),
-                            construct.String("_32_", 80),
-                            construct.String("_33_", 80),
-                            construct.String("_34_", 80),
-                            construct.String("_35_", 80),
-                            construct.String("_36_", 80),
-                            construct.String("_37_", 80),
-                            construct.String("_38_", 80),
-                            construct.String("_39_", 80),
-                            construct.String("_40_", 80))
+    TEXT = "TEXT" / construct.Struct('_01_' / construct.Bytes(80),
+                                     '_02_' / construct.Bytes(80),
+                                     '_03_' / construct.Bytes(80),
+                                     '_04_' / construct.Bytes(80),
+                                     '_05_' / construct.Bytes(80),
+                                     '_06_' / construct.Bytes(80),
+                                     '_07_' / construct.Bytes(80),
+                                     '_08_' / construct.Bytes(80),
+                                     '_09_' / construct.Bytes(80),
+                                     '_10_' / construct.Bytes(80),
+                                     '_11_' / construct.Bytes(80),
+                                     '_12_' / construct.Bytes(80),
+                                     '_13_' / construct.Bytes(80),
+                                     '_14_' / construct.Bytes(80),
+                                     '_15_' / construct.Bytes(80),
+                                     '_16_' / construct.Bytes(80),
+                                     '_17_' / construct.Bytes(80),
+                                     '_18_' / construct.Bytes(80),
+                                     '_19_' / construct.Bytes(80),
+                                     '_20_' / construct.Bytes(80),
+                                     '_21_' / construct.Bytes(80),
+                                     '_22_' / construct.Bytes(80),
+                                     '_23_' / construct.Bytes(80),
+                                     '_24_' / construct.Bytes(80),
+                                     '_25_' / construct.Bytes(80),
+                                     '_26_' / construct.Bytes(80),
+                                     '_27_' / construct.Bytes(80),
+                                     '_28_' / construct.Bytes(80),
+                                     '_29_' / construct.Bytes(80),
+                                     '_30_' / construct.Bytes(80),
+                                     '_31_' / construct.Bytes(80),
+                                     '_32_' / construct.Bytes(80),
+                                     '_33_' / construct.Bytes(80),
+                                     '_34_' / construct.Bytes(80),
+                                     '_35_' / construct.Bytes(80),
+                                     '_36_' / construct.Bytes(80),
+                                     '_37_' / construct.Bytes(80),
+                                     '_38_' / construct.Bytes(80),
+                                     '_39_' / construct.Bytes(80),
+                                     '_40_' / construct.Bytes(80))
     return TEXT
 
 
@@ -102,13 +101,12 @@ class Text (object):
                 self.__dict__[k] = keyval[k]
             else:
                 raise HeaderError(
-                    "Warning: Attempt to set unknown variable\
-                    %s in textural header.\n" %
-                    k)
+                    "Warning: Attempt to set unknown variable "
+                    "%s in reel header." % k)
 
     def get(self):
         t = text_header()
-        return t.build(self)
+        return t.build(self.__dict__)
 
     def parse(self, buf):
         t = text_header()
@@ -117,116 +115,143 @@ class Text (object):
 
 # 400 byte reel header
 def reel_header():
-    REEL = construct.Struct("REEL",
-                            # Job identification number
-                            construct.UBInt32("jobid"),
-                            construct.UBInt32("lino"),  # Line number
-                            construct.UBInt32("reno"),  # Reel number
-                            construct.UBInt16("ntrpr"),  # Traces per ensemble
-                            # Aux traces per ensemble
-                            construct.UBInt16("nart"),
-                            # ***   Sample interval us   ***
-                            construct.UBInt16("hdt"),
-                            construct.UBInt16("dto"),  # Field sample interval
-                            # ***   Number of samples per trace   ***
-                            construct.UBInt16("hns"),
-                            # Field samples per trace
-                            construct.UBInt16("nso"),
-                            # ***  Data format, 5 = 4-byte IEEE   ***
-                            construct.UBInt16("format"),
-                            construct.UBInt16("fold"),  # Ensemble fold
-                            # Trace sorting code, 5 == shot gathers
-                            construct.UBInt16("tsort"),
-                            construct.UBInt16("vscode"),  # Vertical sum code
-                            # Starting sweep frequency
-                            construct.UBInt16("hsfs"),
-                            # Ending sweep frequency
-                            construct.UBInt16("hsfe"),
-                            construct.UBInt16("hslen"),  # Sweep length us
-                            construct.UBInt16("hstyp"),  # Sweep type code
-                            # Trace number of sweep channel
-                            construct.UBInt16("schn"),
-                            # Sweep taper length ms at start
-                            construct.UBInt16("hstas"),
-                            # Sweep taper length ms at end
-                            construct.UBInt16("hstae"),
-                            construct.UBInt16("htatyp"),  # Taper type
-                            # Correlated data traces
-                            construct.UBInt16("hcorr"),
-                            # Binary gain recovered
-                            construct.UBInt16("bgrcv"),
-                            # Amplitude recovery method
-                            construct.UBInt16("rcvm"),
-                            construct.UBInt16("mfeet"),  # Measurement system
-                            # Impulse signal polarity
-                            construct.UBInt16("polyt"),
-                            # Vibratory polarity code
-                            construct.UBInt16("vpol"),
-                            construct.BitField("unass1", 240),  # Unassigned
-                            # *** SEG-Y Revision number   ***
-                            construct.UBInt16("rev"),
-                            construct.UBInt16("trlen"),  # *** Trace length ***
-                            # *** Number of extended text headers ***
-                            construct.UBInt16("extxt"),
-                            construct.BitField("unass2", 94))  # Unassigned
+    REEL = "REEL" / construct.Struct(
+                            # Job identification number [3201-3204]
+                            "jobid" / construct.Int32ub,
+                            # Line number [3205-3208]
+                            "lino" / construct.Int32ub,
+                            # Reel number [3209-3212]
+                            "reno" / construct.Int32ub,
+                            # Traces per ensemble [3213-3214]
+                            "ntrpr" / construct.Int16ub,
+                            # Aux traces per ensemble [3215-3216]
+                            "nart" / construct.Int16ub,
+                            # Sample interval us [3217-3218]
+                            "hdt" / construct.Int16ub,
+                            # Field sample interval [3219-3220]
+                            "dto" / construct.Int16ub,
+                            # Number of samples per trace [3221-3222]
+                            "hns" / construct.Int16ub,
+                            # Field samples per trace [3223-3224]
+                            "nso" / construct.Int16ub,
+                            # Data format, 5 = 4-byte IEEE [3225-3226]
+                            "format" / construct.Int16ub,
+                            # Ensemble fold [3227-3228]
+                            "fold" / construct.Int16ub,
+                            # Trace sorting code, 5 == shot gathers [3229-3230]
+                            "tsort" / construct.Int16ub,
+                            # Vertical sum code [3231-3232]
+                            "vscode" / construct.Int16ub,
+                            # Starting sweep frequency [3233-3234]
+                            "hsfs" / construct.Int16ub,
+                            # Ending sweep frequency [3235-3236]
+                            "hsfe" / construct.Int16ub,
+                            # Sweep length us [3237-3238]
+                            "hslen" / construct.Int16ub,
+                            # Sweep type code [3239-3240]
+                            "hstyp" / construct.Int16ub,
+                            # Trace number of sweep channel [3241-3242]
+                            "schn" / construct.Int16ub,
+                            # Sweep taper length ms at start [3243-3244]
+                            "hstas" / construct.Int16ub,
+                            # Sweep taper length ms at end [3245-3246]
+                            "hstae" / construct.Int16ub,
+                            # Taper type [3247-3248]
+                            "htatyp" / construct.Int16ub,
+                            # Correlated data traces [3249-3250]
+                            "hcorr" / construct.Int16ub,
+                            # Binary gain recovered [3251-3252]
+                            "bgrcv" / construct.Int16ub,
+                            # Amplitude recovery method [3253-3254]
+                            "rcvm" / construct.Int16ub,
+                            # Measurement system [3255-3256]
+                            "mfeet" / construct.Int16ub,
+                            # Impulse signal polarity [3257-3258]
+                            "polyt" / construct.Int16ub,
+                            # Vibratory polarity code [3259-3260]
+                            "vpol" / construct.Int16ub,
+                            # Unassigned [3261-3500]
+                            "unass1" / construct.Bytes(240),
+                            # SEG-Y Revision number [3501-3503]
+                            "rev" / construct.Int16ub,
+                            # Fixed length trace flag [3503-3504]
+                            "trlen" / construct.Int16ub,
+                            # Number of extended text headers [3505-3506]
+                            "extxt" / construct.Int16ub,
+                            # Unassigned [3507-3600]
+                            "unass2" / construct.Bytes(94))
+
     return REEL
 
 # 400 byte reel header (Little Endian)
 
 
 def reel_header_le():
-    REEL = construct.Struct("REEL",
-                            # Job identification number
-                            construct.ULInt32("jobid"),
-                            construct.ULInt32("lino"),  # Line number
-                            construct.ULInt32("reno"),  # Reel number
-                            construct.ULInt16("ntrpr"),  # Traces per ensemble
-                            # Aux traces per ensemble
-                            construct.ULInt16("nart"),
-                            # ***   Sample interval us   ***
-                            construct.ULInt16("hdt"),
-                            construct.ULInt16("dto"),  # Field sample interval
-                            # ***   Number of samples per trace   ***
-                            construct.ULInt16("hns"),
-                            # Field samples per trace
-                            construct.ULInt16("nso"),
-                            # ***  Data format, 5 = 4-byte IEEE   ***
-                            construct.ULInt16("format"),
-                            construct.ULInt16("fold"),  # Ensemble fold
-                            # Trace sorting code, 5 == shot gathers
-                            construct.ULInt16("tsort"),
-                            construct.ULInt16("vscode"),  # Vertical sum code
-                            # Starting sweep frequency
-                            construct.ULInt16("hsfs"),
-                            # Ending sweep frequency
-                            construct.ULInt16("hsfe"),
-                            construct.ULInt16("hslen"),  # Sweep length us
-                            construct.ULInt16("hstyp"),  # Sweep type code
-                            # Trace number of sweep channel
-                            construct.ULInt16("schn"),
-                            # Sweep taper length ms at start
-                            construct.ULInt16("hstas"),
-                            # Sweep taper length ms at end
-                            construct.ULInt16("hstae"),
-                            construct.ULInt16("htatyp"),  # Taper type
-                            # Correlated data traces
-                            construct.ULInt16("hcorr"),
-                            # Binary gain recovered
-                            construct.ULInt16("bgrcv"),
-                            # Amplitude recovery method
-                            construct.ULInt16("rcvm"),
-                            construct.ULInt16("mfeet"),  # Measurement system
-                            # Impulse signal polarity
-                            construct.ULInt16("polyt"),
-                            # Vibratory polarity code
-                            construct.ULInt16("vpol"),
-                            construct.BitField("unass1", 240),  # Unassigned
-                            # *** SEG-Y Revision number   ***
-                            construct.ULInt16("rev"),
-                            construct.ULInt16("trlen"),  # *** Trace length ***
-                            # *** Number of extended text headers ***
-                            construct.ULInt16("extxt"),
-                            construct.BitField("unass2", 94))  # Unassigned
+    REEL = "REEL" / construct.Struct(
+                            # Job identification number [3201-3204]
+                            "jobid" / construct.Int32ul,
+                            # Line number [3205-3208]
+                            "lino" / construct.Int32ul,
+                            # Reel number [3209-3212]
+                            "reno" / construct.Int32ul,
+                            # Traces per ensemble [3213-3214]
+                            "ntrpr" / construct.Int16ul,
+                            # Aux traces per ensemble [3215-3216]
+                            "nart" / construct.Int16ul,
+                            # Sample interval us [3217-3218]
+                            "hdt" / construct.Int16ul,
+                            # Field sample interval [3219-3220]
+                            "dto" / construct.Int16ul,
+                            # Number of samples per trace [3221-3222]
+                            "hns" / construct.Int16ul,
+                            # Field samples per trace [3223-3224]
+                            "nso" / construct.Int16ul,
+                            # Data format, 5 = 4-byte IEEE [3225-3226]
+                            "format" / construct.Int16ul,
+                            # Ensemble fold [3227-3228]
+                            "fold" / construct.Int16ul,
+                            # Trace sorting code, 5 == shot gathers [3229-3230]
+                            "tsort" / construct.Int16ul,
+                            # Vertical sum code [3231-3232]
+                            "vscode" / construct.Int16ul,
+                            # Starting sweep frequency [3233-3234]
+                            "hsfs" / construct.Int16ul,
+                            # Ending sweep frequency [3235-3236]
+                            "hsfe" / construct.Int16ul,
+                            # Sweep length us [3237-3238]
+                            "hslen" / construct.Int16ul,
+                            # Sweep type code [3239-3240]
+                            "hstyp" / construct.Int16ul,
+                            # Trace number of sweep channel [3241-3242]
+                            "schn" / construct.Int16ul,
+                            # Sweep taper length ms at start [3243-3244]
+                            "hstas" / construct.Int16ul,
+                            # Sweep taper length ms at end [3245-3246]
+                            "hstae" / construct.Int16ul,
+                            # Taper type [3247-3248]
+                            "htatyp" / construct.Int16ul,
+                            # Correlated data traces [3249-3250]
+                            "hcorr" / construct.Int16ul,
+                            # Binary gain recovered [3251-3252]
+                            "bgrcv" / construct.Int16ul,
+                            # Amplitude recovery method [3253-3254]
+                            "rcvm" / construct.Int16ul,
+                            # Measurement system [3255-3256]
+                            "mfeet" / construct.Int16ul,
+                            # Impulse signal polarity [3257-3258]
+                            "polyt" / construct.Int16ul,
+                            # Vibratory polarity code [3259-3260]
+                            "vpol" / construct.Int16ul,
+                            # Unassigned [3261-3500]
+                            "unass1" / construct.Bytes(240),
+                            # SEG-Y Revision number [3501-3503]
+                            "rev" / construct.Int16ul,
+                            # Fixed length trace flag [3503-3504]
+                            "trlen" / construct.Int16ul,
+                            # Number of extended text headers [3505-3506]
+                            "extxt" / construct.Int16ul,
+                            # Unassigned [3507-3600]
+                            "unass2" / construct.Bytes(94))
     return REEL
 
 
@@ -258,7 +283,7 @@ class Reel (object):
         else:
             r = reel_header_le()
 
-        return r.build(self)
+        return r.build(self.__dict__)
 
     def parse(self, buf):
         if self.endian == 'big':
@@ -273,129 +298,151 @@ class Reel (object):
 
 
 def trace_header():
-    TRACE = construct.Struct("TRACE",
-                             # *** Line trace sequence number ***
-                             construct.SBInt32("lineSeq"),
-                             # Reel trace sequence number
-                             construct.SBInt32("reelSeq"),
-                             # *** Field record number ***
-                             construct.SBInt32("event_number"),
-                             # *** Field trace number ***
-                             construct.SBInt32("channel_number"),
-                             # Energy source point number
-                             construct.SBInt32("energySourcePt"),
-                             construct.SBInt32("cdpEns"),  # Ensemble number
-                             construct.SBInt32(
-                                 "traceInEnsemble"),  # Trace number
-                             construct.SBInt16("traceID"),  # Trace ID code
-                             # Number of vertically summed traces
-                             construct.SBInt16("vertSum"),
-                             # Number of horizontally summed traces
-                             construct.SBInt16("horSum"),
-                             construct.SBInt16("dataUse"),  # Data use
-                             # Offset (distance)
-                             construct.SBInt32("sourceToRecDist"),
-                             # Receiver group elevation
-                             construct.SBInt32("recElevation"),
-                             # Source elevation
-                             construct.SBInt32("sourceSurfaceElevation"),
-                             construct.SBInt32("sourceDepth"),  # Source depth
-                             # Elevation at receiver group
-                             construct.SBInt32("datumElevRec"),
-                             # Source elevation
-                             construct.SBInt32("datumElevSource"),
-                             # Water depth at source
-                             construct.SBInt32("sourceWaterDepth"),
-                             # Water depth at group
-                             construct.SBInt32("recWaterDepth"),
-                             # Elevation and depth scalar
-                             construct.SBInt16("elevationScale"),
-                             # Coordinate scalar
-                             construct.SBInt16("coordScale"),
-                             # X coordinate of source
-                             construct.SBInt32("sourceLongOrX"),
-                             # Y coordinate of source
-                             construct.SBInt32("sourceLatOrY"),
-                             # X coordinate of receiver group
-                             construct.SBInt32("recLongOrX"),
-                             # Y coordinate of receiver group
-                             construct.SBInt32("recLatOrY"),
-                             # Coordinate system
-                             construct.SBInt16("coordUnits"),
-                             # Weathering velocity
-                             construct.SBInt16("weatheringVelocity"),
-                             # Sub-weathering velocity
-                             construct.SBInt16("subWeatheringVelocity"),
-                             # Uphole time at source in ms
-                             construct.SBInt16("sourceUpholeTime"),
-                             # Uphole time at group in ms
-                             construct.SBInt16("recUpholeTime"),
-                             # Source static correction in ms
-                             construct.SBInt16("sourceStaticCor"),
-                             # Group static correction in ms
-                             construct.SBInt16("recStaticCor"),
-                             # Total static applied in ms
-                             construct.SBInt16("totalStatic"),
-                             construct.SBInt16("lagTimeA"),  # Lag time A, ms
-                             construct.SBInt16("lagTimeB"),  # Lag time B, ms
-                             # Delay recording time, ms
-                             construct.SBInt16("delay"),
-                             # Mute start time, ms
-                             construct.SBInt16("muteStart"),
-                             construct.SBInt16("muteEnd"),  # Mute end time, ms
-                             # *** Number of samples ***
-                             construct.UBInt16("sampleLength"),
-                             # *** Sample interval, us ***
-                             construct.SBInt16("deltaSample"),
-                             construct.SBInt16("gainType"),  # Gain type
-                             construct.SBInt16("gainConst"),  # Gain constant
-                             construct.SBInt16("initialGain"),  # Early gain
-                             construct.SBInt16("correlated"),  # Correlated?
-                             # Sweep frequency at start
-                             construct.SBInt16("sweepStart"),
-                             # Sweep frequency at end
-                             construct.SBInt16("sweepEnd"),
-                             # Sweep length in ms
-                             construct.SBInt16("sweepLength"),
-                             construct.SBInt16("sweepType"),  # Sweep type
-                             # Sweep taper at start, ms
-                             construct.SBInt16("sweepTaperAtStart"),
-                             # Sweep taper at end, ms
-                             construct.SBInt16("sweepTaperAtEnd"),
-                             construct.SBInt16("taperType"),  # Taper type
-                             # Alias filter frequency, Hz
-                             construct.SBInt16("aliasFreq"),
-                             # Alias filter slope, dB/octave
-                             construct.SBInt16("aliasSlope"),
-                             # Notch filter frequency, Hz
-                             construct.SBInt16("notchFreq"),
-                             # Notch filter slope, dB/octave
-                             construct.SBInt16("notchSlope"),
-                             # Low-cut frequency, Hz
-                             construct.SBInt16("lowCutFreq"),
-                             # High-cut frequency, Hz
-                             construct.SBInt16("hiCutFreq"),
-                             # Low-cut slope, dB/octave
-                             construct.SBInt16("lowCutSlope"),
-                             # High-cut slope, dB/octave
-                             construct.SBInt16("hiCutSlope"),
-                             construct.SBInt16("year"),  # Year
-                             construct.SBInt16("day"),  # Day of Year
-                             construct.SBInt16("hour"),  # Hour
-                             construct.SBInt16("minute"),  # Minute
-                             construct.SBInt16("second"),  # Seconds
-                             # Time bias code
-                             construct.SBInt16("timeBasisCode"),
-                             # Trace weighting for LSB
-                             construct.SBInt16("traceWeightingFactor"),
-                             # Geophone group number
-                             construct.UBInt16("phoneRollPos1"),
-                             # Geophone group number (field)
-                             construct.UBInt16("phoneFirstTrace"),
-                             # Geophone group number, last trace (field)
-                             construct.UBInt16("phoneLastTrace"),
-                             construct.SBInt16("gapSize"),  # Gap size
-                             construct.SBInt16("taperOvertravel"))
+    TRACE = "TRACE" / construct.Struct(
+                         # Line trace sequence number [1-4]
+                         "lineSeq" / construct.Int32sb,
+                         # Reel trace sequence number [5-8]
+                         "reelSeq" / construct.Int32sb,
+                         # Original field record number [9-12]
+                         "field_record_number" / construct.Int32sb,
+                         # Trace number within the original field record
+                         # [13-16]
+                         "channel_number" / construct.Int32sb,
+                         # Energy source point number [17-20]
+                         "energySourcePt" / construct.Int32sb,
+                         # Ensemble number [21-24]
+                         "cdpEns" / construct.Int32sb,
+                         # Trace number [25-28]
+                         "traceInEnsemble" / construct.Int32sb,
+                         # Trace ID code [29-30]
+                         "traceID" / construct.Int16sb,
+                         # Number of vertically summed traces [31-32]
+                         "vertSum" / construct.Int16sb,
+                         # Number of horizontally summed traces [33-34]
+                         "horSum" / construct.Int16sb,
+                         # Data use [35-36]
+                         "dataUse" / construct.Int16sb,
+                         # Offset (distance). Distance from center of the
+                         # source point to the center of the receiver group
+                         # (negative if opposite to direction in which line
+                         # is shot). [37-40]
+                         "sourceToRecDist" / construct.Int32sb,
+                         # Receiver group elevation [41-44]
+                         "recElevation" / construct.Int32sb,
+                         # Source elevation [45-48]
+                         "sourceSurfaceElevation" / construct.Int32sb,
+                         # Source depth [49-52]
+                         "sourceDepth" / construct.Int32sb,
+                         # Seismic Datum elevation at receiver group
+                         # [53-56]
+                         "datumElevRec" / construct.Int32sb,
+                         # Seismic Datum elevation at source [57-60]
+                         "datumElevSource" / construct.Int32sb,
+                         # Water depth at source [61-64]
+                         "sourceWaterDepth" / construct.Int32sb,
+                         # Water depth at group [65-68]
+                         "recWaterDepth" / construct.Int32sb,
+                         # Elevation and depth scalar [69-70]
+                         "elevationScale" / construct.Int16sb,
+                         # Coordinate scalar [71-72]
+                         "coordScale" / construct.Int16sb,
+                         # X coordinate of source [73-76]
+                         "sourceLongOrX" / construct.Int32sb,
+                         # Y coordinate of source [77-80]
+                         "sourceLatOrY" / construct.Int32sb,
+                         # X coordinate of receiver group [81-84]
+                         "recLongOrX" / construct.Int32sb,
+                         # Y coordinate of receiver group [85-88]
+                         "recLatOrY" / construct.Int32sb,
+                         # Coordinate system [89-90]
+                         "coordUnits" / construct.Int16sb,
+                         # Weathering velocity [91-92]
+                         "weatheringVelocity" / construct.Int16sb,
+                         # Sub-weathering velocity [93-94]
+                         "subWeatheringVelocity" / construct.Int16sb,
+                         # Uphole time at source in ms [95-96]
+                         "sourceUpholeTime" / construct.Int16sb,
+                         # Uphole time at group in ms [97-98]
+                         "recUpholeTime" / construct.Int16sb,
+                         # Source static correction in ms [99-100]
+                         "sourceStaticCor" / construct.Int16sb,
+                         # Group static correction in ms [101-102]
+                         "recStaticCor" / construct.Int16sb,
+                         # Total static applied in ms [103-104]
+                         "totalStatic" / construct.Int16sb,
+                         # Lag time A, ms [105-106]
+                         "lagTimeA" / construct.Int16sb,
+                         # Lag time B, ms [107-108]
+                         "lagTimeB" / construct.Int16sb,
+                         # Delay recording time, ms [109-110]
+                         "delay" / construct.Int16sb,
+                         # Mute start time, ms [111-112]
+                         "muteStart" / construct.Int16sb,
+                         # Mute end time, ms [113-114]
+                         "muteEnd" / construct.Int16sb,
+                         # Number of samples [115-116]
+                         "sampleLength" / construct.Int16ub,
+                         # Sample interval, us [117-118]
+                         "deltaSample" / construct.Int16sb,
+                         # Gain type [119-120]
+                         "gainType" / construct.Int16sb,
+                         # Gain constant [121-122]
+                         "gainConst" / construct.Int16sb,
+                         # Early gain [123-124]
+                         "initialGain" / construct.Int16sb,
+                         # Correlated? [125-126]
+                         "correlated" / construct.Int16sb,
+                         # Sweep frequency at start [127-128]
+                         "sweepStart" / construct.Int16sb,
+                         # Sweep frequency at end [129-130]
+                         "sweepEnd" / construct.Int16sb,
+                         # Sweep length in ms [131-132]
+                         "sweepLength" / construct.Int16sb,
+                         # Sweep type [133-134]
+                         "sweepType" / construct.Int16sb,
+                         # Sweep taper at start, ms [135-136]
+                         "sweepTaperAtStart" / construct.Int16sb,
+                         # Sweep taper at end, ms [137-138]
+                         "sweepTaperAtEnd" / construct.Int16sb,
+                         # Taper type [139-140]
+                         "taperType" / construct.Int16sb,
+                         # Alias filter frequency, Hz [141-142]
+                         "aliasFreq" / construct.Int16sb,
+                         # Alias filter slope, dB/octave [143-144]
+                         "aliasSlope" / construct.Int16sb,
+                         # Notch filter frequency, Hz [145-146]
+                         "notchFreq" / construct.Int16sb,
+                         # Notch filter slope, dB/octave [147-148]
+                         "notchSlope" / construct.Int16sb,
+                         # Low-cut frequency, Hz [149-150]
+                         "lowCutFreq" / construct.Int16sb,
+                         # High-cut frequency, Hz [151-152]
+                         "hiCutFreq" / construct.Int16sb,
+                         # Low-cut slope, dB/octave [153-154]
+                         "lowCutSlope" / construct.Int16sb,
+                         # High-cut slope, dB/octave [155-156]
+                         "hiCutSlope" / construct.Int16sb,
+                         "year" / construct.Int16sb,  # Year [157-158]
+                         "day" / construct.Int16sb,  # Day of Year [159-160]
+                         "hour" / construct.Int16sb,  # Hour [161-162]
+                         "minute" / construct.Int16sb,  # Minute [163-164]
+                         "second" / construct.Int16sb,  # Seconds [165-166]
+                         # Time bias code [167-168]
+                         "timeBasisCode" / construct.Int16sb,
+                         # Trace weighting for LSB [169-170]
+                         "traceWeightingFactor" / construct.Int16sb,
+                         # Geophone group number [171-172]
+                         "phoneRollPos1" / construct.Int16ub,
+                         # Geophone group number (field) [173-174]
+                         "phoneFirstTrace" / construct.Int16ub,
+                         # Geophone group number, last trace (field)
+                         # [175-176]
+                         "phoneLastTrace" / construct.Int16ub,
+                         # Gap size [177-178]
+                         "gapSize" / construct.Int16sb,
+                         # Over travel associated with taper at beginning
+                         # or end of line [179-180]
+                         "taperOvertravel" / construct.Int16ub)
     # Over travel
     return TRACE
 
@@ -405,135 +452,157 @@ def trace_header():
 
 
 def trace_header_le():
-    TRACE = construct.Struct("TRACE",
-                             # *** Line trace sequence number ***
-                             construct.SLInt32("lineSeq"),
-                             # Reel trace sequence number
-                             construct.SLInt32("reelSeq"),
-                             # *** Field record number ***
-                             construct.SLInt32("event_number"),
-                             # *** Field trace number ***
-                             construct.SLInt32("channel_number"),
-                             # Energy source point number
-                             construct.SLInt32("energySourcePt"),
-                             construct.SLInt32("cdpEns"),  # Ensemble number
-                             construct.SLInt32(
-                                 "traceInEnsemble"),  # Trace number
-                             construct.SLInt16("traceID"),  # Trace ID code
-                             # Number of vertically summed traces
-                             construct.SLInt16("vertSum"),
-                             # Number of horizontally summed traces
-                             construct.SLInt16("horSum"),
-                             construct.SLInt16("dataUse"),  # Data use
-                             # Offset (distance)
-                             construct.SLInt32("sourceToRecDist"),
-                             # Receiver group elevation
-                             construct.SLInt32("recElevation"),
-                             # Source elevation
-                             construct.SLInt32("sourceSurfaceElevation"),
-                             construct.SLInt32("sourceDepth"),  # Source depth
-                             # Elevation at receiver group
-                             construct.SLInt32("datumElevRec"),
-                             # Source elevation
-                             construct.SLInt32("datumElevSource"),
-                             # Water depth at source
-                             construct.SLInt32("sourceWaterDepth"),
-                             # Water depth at group
-                             construct.SLInt32("recWaterDepth"),
-                             # Elevation and depth scalar
-                             construct.SLInt16("elevationScale"),
-                             # Coordinate scalar
-                             construct.SLInt16("coordScale"),
-                             # X coordinate of source
-                             construct.SLInt32("sourceLongOrX"),
-                             # Y coordinate of source
-                             construct.SLInt32("sourceLatOrY"),
-                             # X coordinate of receiver group
-                             construct.SLInt32("recLongOrX"),
-                             # Y coordinate of receiver group
-                             construct.SLInt32("recLatOrY"),
-                             # Coordinate system
-                             construct.SLInt16("coordUnits"),
-                             # Weathering velocity
-                             construct.SLInt16("weatheringVelocity"),
-                             # Sub-weathering velocity
-                             construct.SLInt16("subWeatheringVelocity"),
-                             # Uphole time at source in ms
-                             construct.SLInt16("sourceUpholeTime"),
-                             # Uphole time at group in ms
-                             construct.SLInt16("recUpholeTime"),
-                             # Source static correction in ms
-                             construct.SLInt16("sourceStaticCor"),
-                             # Group static correction in ms
-                             construct.SLInt16("recStaticCor"),
-                             # Total static applied in ms
-                             construct.SLInt16("totalStatic"),
-                             construct.SLInt16("lagTimeA"),  # Lag time A, ms
-                             construct.SLInt16("lagTimeB"),  # Lag time B, ms
-                             # Delay recording time, ms
-                             construct.SLInt16("delay"),
-                             # Mute start time, ms
-                             construct.SLInt16("muteStart"),
-                             construct.SLInt16("muteEnd"),  # Mute end time, ms
-                             # *** Number of samples ***
-                             construct.ULInt16("sampleLength"),
-                             # *** Sample interval, us ***
-                             construct.SLInt16("deltaSample"),
-                             construct.SLInt16("gainType"),  # Gain type
-                             construct.SLInt16("gainConst"),  # Gain constant
-                             construct.SLInt16("initialGain"),  # Early gain
-                             construct.SLInt16("correlated"),  # Correlated?
-                             # Sweep frequency at start
-                             construct.SLInt16("sweepStart"),
-                             # Sweep frequency at end
-                             construct.SLInt16("sweepEnd"),
-                             # Sweep length in ms
-                             construct.SLInt16("sweepLength"),
-                             construct.SLInt16("sweepType"),  # Sweep type
-                             # Sweep taper at start, ms
-                             construct.SLInt16("sweepTaperAtStart"),
-                             # Sweep taper at end, ms
-                             construct.SLInt16("sweepTaperAtEnd"),
-                             construct.SLInt16("taperType"),  # Taper type
-                             # Alias filter frequency, Hz
-                             construct.SLInt16("aliasFreq"),
-                             # Alias filter slope, dB/octave
-                             construct.SLInt16("aliasSlope"),
-                             # Notch filter frequency, Hz
-                             construct.SLInt16("notchFreq"),
-                             # Notch filter slope, dB/octave
-                             construct.SLInt16("notchSlope"),
-                             # Low-cut frequency, Hz
-                             construct.SLInt16("lowCutFreq"),
-                             # High-cut frequency, Hz
-                             construct.SLInt16("hiCutFreq"),
-                             # Low-cut slope, dB/octave
-                             construct.SLInt16("lowCutSlope"),
-                             # High-cut slope, dB/octave
-                             construct.SLInt16("hiCutSlope"),
-                             construct.SLInt16("year"),  # Year
-                             construct.SLInt16("day"),  # Day of Year
-                             construct.SLInt16("hour"),  # Hour
-                             construct.SLInt16("minute"),  # Minute
-                             construct.SLInt16("second"),  # Seconds
-                             # Time bias code
-                             construct.SLInt16("timeBasisCode"),
-                             # Trace weighting for LSB
-                             construct.SLInt16("traceWeightingFactor"),
-                             # Geophone group number
-                             construct.ULInt16("phoneRollPos1"),
-                             # Geophone group number (field)
-                             construct.ULInt16("phoneFirstTrace"),
-                             # Geophone group number, last trace (field)
-                             construct.ULInt16("phoneLastTrace"),
-                             construct.SLInt16("gapSize"),  # Gap size
-                             construct.SLInt16("taperOvertravel"))
+    TRACE = "TRACE" / construct.Struct(
+                         # Line trace sequence number [1-4]
+                         "lineSeq" / construct.Int32sl,
+                         # Reel trace sequence number [5-8]
+                         "reelSeq" / construct.Int32sl,
+                         # Original field record number [9-12]
+                         "field_record_number" / construct.Int32sl,
+                         # Trace number within the original field record
+                         # [13-16]
+                         "channel_number" / construct.Int32sl,
+                         # Energy source point number [17-20]
+                         "energySourcePt" / construct.Int32sl,
+                         # Ensemble number [21-24]
+                         "cdpEns" / construct.Int32sl,
+                         # Trace number [25-28]
+                         "traceInEnsemble" / construct.Int32sl,
+                         # Trace ID code [29-30]
+                         "traceID" / construct.Int16sl,
+                         # Number of vertically summed traces [31-32]
+                         "vertSum" / construct.Int16sl,
+                         # Number of horizontally summed traces [33-34]
+                         "horSum" / construct.Int16sl,
+                         # Data use [35-36]
+                         "dataUse" / construct.Int16sl,
+                         # Offset (distance). Distance from center of the
+                         # source point to the center of the receiver group
+                         # (negative if opposite to direction in which line
+                         # is shot). [37-40]
+                         "sourceToRecDist" / construct.Int32sl,
+                         # Receiver group elevation [41-44]
+                         "recElevation" / construct.Int32sl,
+                         # Source elevation [45-48]
+                         "sourceSurfaceElevation" / construct.Int32sl,
+                         # Source depth [49-52]
+                         "sourceDepth" / construct.Int32sl,
+                         # Seismic Datum elevation at receiver group
+                         # [53-56]
+                         "datumElevRec" / construct.Int32sl,
+                         # Seismic Datum elevation at source [57-60]
+                         "datumElevSource" / construct.Int32sl,
+                         # Water depth at source [61-64]
+                         "sourceWaterDepth" / construct.Int32sl,
+                         # Water depth at group [65-68]
+                         "recWaterDepth" / construct.Int32sl,
+                         # Elevation and depth scalar [69-70]
+                         "elevationScale" / construct.Int16sl,
+                         # Coordinate scalar [71-72]
+                         "coordScale" / construct.Int16sl,
+                         # X coordinate of source [73-76]
+                         "sourceLongOrX" / construct.Int32sl,
+                         # Y coordinate of source [77-80]
+                         "sourceLatOrY" / construct.Int32sl,
+                         # X coordinate of receiver group [81-84]
+                         "recLongOrX" / construct.Int32sl,
+                         # Y coordinate of receiver group [85-88]
+                         "recLatOrY" / construct.Int32sl,
+                         # Coordinate system [89-90]
+                         "coordUnits" / construct.Int16sl,
+                         # Weathering velocity [91-92]
+                         "weatheringVelocity" / construct.Int16sl,
+                         # Sub-weathering velocity [93-94]
+                         "subWeatheringVelocity" / construct.Int16sl,
+                         # Uphole time at source in ms [95-96]
+                         "sourceUpholeTime" / construct.Int16sl,
+                         # Uphole time at group in ms [97-98]
+                         "recUpholeTime" / construct.Int16sl,
+                         # Source static correction in ms [99-100]
+                         "sourceStaticCor" / construct.Int16sl,
+                         # Group static correction in ms [101-102]
+                         "recStaticCor" / construct.Int16sl,
+                         # Total static applied in ms [103-104]
+                         "totalStatic" / construct.Int16sl,
+                         # Lag time A, ms [105-106]
+                         "lagTimeA" / construct.Int16sl,
+                         # Lag time B, ms [107-108]
+                         "lagTimeB" / construct.Int16sl,
+                         # Delay recording time, ms [109-110]
+                         "delay" / construct.Int16sl,
+                         # Mute start time, ms [111-112]
+                         "muteStart" / construct.Int16sl,
+                         # Mute end time, ms [113-114]
+                         "muteEnd" / construct.Int16sl,
+                         # Number of samples [115-116]
+                         "sampleLength" / construct.Int16ul,
+                         # Sample interval, us [117-118]
+                         "deltaSample" / construct.Int16sl,
+                         # Gain type [119-120]
+                         "gainType" / construct.Int16sl,
+                         # Gain constant [121-122]
+                         "gainConst" / construct.Int16sl,
+                         # Early gain [123-124]
+                         "initialGain" / construct.Int16sl,
+                         # Correlated? [125-126]
+                         "correlated" / construct.Int16sl,
+                         # Sweep frequency at start [127-128]
+                         "sweepStart" / construct.Int16sl,
+                         # Sweep frequency at end [129-130]
+                         "sweepEnd" / construct.Int16sl,
+                         # Sweep length in ms [131-132]
+                         "sweepLength" / construct.Int16sl,
+                         # Sweep type [133-134]
+                         "sweepType" / construct.Int16sl,
+                         # Sweep taper at start, ms [135-136]
+                         "sweepTaperAtStart" / construct.Int16sl,
+                         # Sweep taper at end, ms [137-138]
+                         "sweepTaperAtEnd" / construct.Int16sl,
+                         # Taper type [139-140]
+                         "taperType" / construct.Int16sl,
+                         # Alias filter frequency, Hz [141-142]
+                         "aliasFreq" / construct.Int16sl,
+                         # Alias filter slope, dB/octave [143-144]
+                         "aliasSlope" / construct.Int16sl,
+                         # Notch filter frequency, Hz [145-146]
+                         "notchFreq" / construct.Int16sl,
+                         # Notch filter slope, dB/octave [147-148]
+                         "notchSlope" / construct.Int16sl,
+                         # Low-cut frequency, Hz [149-150]
+                         "lowCutFreq" / construct.Int16sl,
+                         # High-cut frequency, Hz [151-152]
+                         "hiCutFreq" / construct.Int16sl,
+                         # Low-cut slope, dB/octave [153-154]
+                         "lowCutSlope" / construct.Int16sl,
+                         # High-cut slope, dB/octave [155-156]
+                         "hiCutSlope" / construct.Int16sl,
+                         "year" / construct.Int16sl,  # Year [157-158]
+                         "day" / construct.Int16sl,  # Day of Year [159-160]
+                         "hour" / construct.Int16sl,  # Hour [161-162]
+                         "minute" / construct.Int16sl,  # Minute [163-164]
+                         "second" / construct.Int16sl,  # Seconds [165-166]
+                         # Time bias code [167-168]
+                         "timeBasisCode" / construct.Int16sl,
+                         # Trace weighting for Lsl [169-170]
+                         "traceWeightingFactor" / construct.Int16sl,
+                         # Geophone group number [171-172]
+                         "phoneRollPos1" / construct.Int16ul,
+                         # Geophone group number (field) [173-174]
+                         "phoneFirstTrace" / construct.Int16ul,
+                         # Geophone group number, last trace (field)
+                         # [175-176]
+                         "phoneLastTrace" / construct.Int16ul,
+                         # Gap size [177-178]
+                         "gapSize" / construct.Int16sl,
+                         # Over travel associated with taper at beginning
+                         # or end of line [179-180]
+                         "taperOvertravel" / construct.Int16ul)
     # Over travel
     return TRACE
 
 
 class Trace (object):
-    __keys__ = ("lineSeq", "reelSeq", "event_number", "channel_number",
+    __keys__ = ("lineSeq", "reelSeq", "field_record_number", "channel_number",
                 "energySourcePt", "cdpEns", "traceInEnsemble", "traceID",
                 "vertSum", "horSum", "dataUse", "sourceToRecDist",
                 "recElevation", "sourceSurfaceElevation", "sourceDepth",
@@ -590,27 +659,27 @@ class Trace (object):
 
 
 def passcal_header():
-    TRACE = construct.Struct("TRACE",
-                             construct.String("station_name", 6),
-                             construct.String("sensor_serial", 8),
-                             construct.String("channel_name", 4),
-                             construct.SBInt16("totalStaticHi"),
-                             construct.SBInt32("samp_rate"),
-                             construct.SBInt16("data_form"),
-                             construct.SBInt16("m_secs"),
-                             construct.SBInt16("trigyear"),
-                             construct.SBInt16("trigday"),
-                             construct.SBInt16("trighour"),
-                             construct.SBInt16("trigminute"),
-                             construct.SBInt16("trigsecond"),
-                             construct.SBInt16("trigmills"),
-                             construct.BFloat32("scale_fac"),
-                             construct.UBInt16("inst_no"),
-                             construct.SBInt16("unassigned"),
-                             construct.SBInt32("num_samps"),
-                             construct.SBInt32("max"),
-                             construct.SBInt32("min"))
-
+    TRACE = "TRACE" / construct.Struct(
+                        "station_name" / construct.Bytes(6),
+                        "sensor_serial" / construct.Bytes(8),
+                        "channel_name" / construct.Bytes(4),
+                        "totalStaticHi" / construct.Int16sb,
+                        "samp_rate" / construct.Int32sb,
+                        "data_form" / construct.Int16sb,
+                        "m_secs" / construct.Int16sb,
+                        "trigyear" / construct.Int16sb,
+                        "trigday" / construct.Int16sb,
+                        "trighour" / construct.Int16sb,
+                        "trigminute" / construct.Int16sb,
+                        "trigsecond" / construct.Int16sb,
+                        "trigmills" / construct.Int16sb,
+                        "scale_fac" / construct.Float32b,
+                        "inst_no" / construct.Int16ub,
+                        "unassigned" / construct.Int16sb,
+                        "num_samps" / construct.Int32sb,
+                        "max" / construct.Int32sb,
+                        "min" / construct.Int32sb
+                        )
     return TRACE
 
 #
@@ -619,27 +688,27 @@ def passcal_header():
 
 
 def passcal_header_le():
-    TRACE = construct.Struct("TRACE",
-                             construct.String("station_name", 6),
-                             construct.String("sensor_serial", 8),
-                             construct.String("channel_name", 4),
-                             construct.SLInt16("totalStaticHi"),
-                             construct.SLInt32("samp_rate"),
-                             construct.SLInt16("data_form"),
-                             construct.SLInt16("m_secs"),
-                             construct.SLInt16("trigyear"),
-                             construct.SLInt16("trigday"),
-                             construct.SLInt16("trighour"),
-                             construct.SLInt16("trigminute"),
-                             construct.SLInt16("trigsecond"),
-                             construct.SLInt16("trigmills"),
-                             construct.LFloat32("scale_fac"),
-                             construct.ULInt16("inst_no"),
-                             construct.SLInt16("unassigned"),
-                             construct.SLInt32("num_samps"),
-                             construct.SLInt32("max"),
-                             construct.SLInt32("min"))
-
+    TRACE = "TRACE" / construct.Struct(
+                        "station_name" / construct.Bytes(6),
+                        "sensor_serial" / construct.Bytes(8),
+                        "channel_name" / construct.Bytes(4),
+                        "totalStaticHi" / construct.Int16sl,
+                        "samp_rate" / construct.Int32sl,
+                        "data_form" / construct.Int16sl,
+                        "m_secs" / construct.Int16sl,
+                        "trigyear" / construct.Int16sl,
+                        "trigday" / construct.Int16sl,
+                        "trighour" / construct.Int16sl,
+                        "trigminute" / construct.Int16sl,
+                        "trigsecond" / construct.Int16sl,
+                        "trigmills" / construct.Int16sl,
+                        "scale_fac" / construct.Float32l,
+                        "inst_no" / construct.Int16ul,
+                        "unassigned" / construct.Int16sl,
+                        "num_samps" / construct.Int32sl,
+                        "max" / construct.Int32sl,
+                        "min" / construct.Int32sl
+                        )
     return TRACE
 
 
@@ -691,60 +760,60 @@ class Passcal (object):
 
 
 def menlo_header():
-    TRACE = construct.Struct("TRACE",
-                             # Microsec trace start time
-                             construct.SBInt32("start_usec"),
-                             # Charge size (kg)
-                             construct.SBInt16("shot_size"),
-                             # Shot/trigger time - year
-                             construct.SBInt16("shot_year"),
-                             # Shot/trigger time- Julian day
-                             construct.SBInt16("shot_doy"),
-                             # Shot/trigger time - hour
-                             construct.SBInt16("shot_hour"),
-                             # Shot/trigger time - minute
-                             construct.SBInt16("shot_minute"),
-                             # Shot/trigger time - second
-                             construct.SBInt16("shot_second"),
-                             # Shot/trigger time - microsec
-                             construct.SBInt32("shot_us"),
-                             # Override for sample interval (SET = 0)
-                             construct.SBInt32("si_override"),
-                             # Azimuth of sensor orient axis (empty)
-                             construct.SBInt16("sensor_azimuth"),
-                             # Geophone inclination (empty)
-                             construct.SBInt16("sensor_inclination"),
-                             # LMO static (x/v)  (ms) (empty)
-                             construct.SBInt32("lmo_ms"),
-                             # LMO flag: (0=Y, 1=N) (SET = 1)
-                             construct.SBInt16("lmo_flag"),
-                             # 13 = rt-130, 16 = texan
-                             construct.SBInt16("inst_type"),
-                             construct.SBInt16("correction"),  # 0
-                             # Azimuth of source-receiver (min of arc)
-                             construct.SBInt16("azimuth"),
-                             construct.SBInt16(
-                                 "sensor_type"),  # 1--L28 (PASSCAL)(4.5 Hz)\
-                             # 2--L22 (2 Hz)\
-                             # 3--L10B (8 Hz)\
-                             # 4--L4 1 Hz\
-                             # 5--L4 2 Hz\
-                             # 6--FBA\
-                             # 7--TDC-10 (4.5 Hz)\
-                             # 8--L28 (GSC)\
-                             # 9--LRS1033 (4.5 HZ)\
-                             # 99--unknown
-                             # Geophone number (empty)
-                             construct.SBInt16("sensor_sn"),
-                             construct.UBInt16("das_sn"),  # Inst. ID number
-                             construct.UBInt16("empty1"),
-                             # Number of samples if > 2^15 (see 115-116)
-                             construct.SBInt32("samples"),
-                             construct.UBInt32("empty2"),
-                             # Receiver clock drift removed
-                             construct.SBInt16("clock_drift"),
-                             construct.UBInt16("empty3"))
-
+    TRACE = "TRACE" / construct.Struct(
+                        # Microsec trace start time
+                        "start_usec" / construct.Int32sb(),
+                        # Charge size (kg)
+                        "shot_size" / construct.Int16sb(),
+                        # Shot/trigger time - year
+                        "shot_year" / construct.Int16sb(),
+                        # Shot/trigger time - Julian day
+                        "shot_doy" / construct.Int16sb(),
+                        # Shot/trigger time - hour
+                        "shot_hour" / construct.Int16sb(),
+                        # Shot/trigger time - minute
+                        "shot_minute" / construct.Int16sb(),
+                        # Shot/trigger time - second
+                        "shot_second" / construct.Int16sb(),
+                        # Shot/trigger time - microsec
+                        "shot_us" / construct.Int32sb(),
+                        # Override for sample interval (SET = 0)
+                        "si_override" / construct.Int32sb(),
+                        # Azimuth of sensor orient axis (empty)
+                        "sensor_azimuth" / construct.Int16sb,
+                        # Geophone inclination (empty)
+                        "sensor_inclination" / construct.Int16sb,
+                        # LMO static (x/v)  (ms) (empty)
+                        "lmo_ms" / construct.Int32sb,
+                        # LMO flag: (0=Y, 1=N) (SET = 1)
+                        "lmo_flag" / construct.Int16sb,
+                        # 13 = rt-130, 16 = texan
+                        "inst_type" / construct.Int16sb,
+                        "correction" / construct.Int16sb,
+                        # Azimuth of source-receiver (min of arc)
+                        "azimuth" / construct.Int16sb,
+                        # 1--L28 (PASSCAL)(4.5 Hz)
+                        # 2--L22 (2 Hz)
+                        # 3--L10B (8 Hz)
+                        # 4--L4 1 Hz
+                        # 5--L4 2 Hz
+                        # 6--FBA
+                        # 7--TDC-10 (4.5 Hz)
+                        # 8--L28 (GSC)
+                        # 9--LRS1033 (4.5 HZ)
+                        # 99--unknown
+                        # Geophone number (empty)
+                        "sensor_sn" / construct.Int16sb,
+                        # Inst. ID number
+                        "das_sn" / construct.Int16ub,
+                        "empty1" / construct.Int16ub,
+                        # Number of samples if > 2^15 (see 115-116)
+                        "samples" / construct.Int32sb,
+                        "empty2" / construct.Int32ub,
+                        # Receiver clock drift removed
+                        "clock_drift" / construct.Int16sb,
+                        "empty3" / construct.Int16ub,
+                        )
     return TRACE
 
 #
@@ -753,59 +822,60 @@ def menlo_header():
 
 
 def menlo_header_le():
-    TRACE = construct.Struct("TRACE",
-                             # Microsec trace start time
-                             construct.SLInt32("start_usec"),
-                             # Charge size (kg)
-                             construct.SLInt16("shot_size"),
-                             # Shot/trigger time - year
-                             construct.SLInt16("shot_year"),
-                             # Shot/trigger time- Julian day
-                             construct.SLInt16("shot_doy"),
-                             # Shot/trigger time - hour
-                             construct.SLInt16("shot_hour"),
-                             # Shot/trigger time - minute
-                             construct.SLInt16("shot_minute"),
-                             # Shot/trigger time - second
-                             construct.SLInt16("shot_second"),
-                             # Shot/trigger time - microsec
-                             construct.SLInt32("shot_us"),
-                             # Override for sample interval (SET = 0)
-                             construct.SLInt32("si_override"),
-                             # Azimuth of sensor orient axis (empty)
-                             construct.SLInt16("sensor_azimuth"),
-                             # Geophone inclination (empty)
-                             construct.SLInt16("sensor_inclination"),
-                             # LMO static (x/v)  (ms) (empty)
-                             construct.SLInt32("lmo_ms"),
-                             # LMO flag: (0=Y, 1=N) (SET = 1)
-                             construct.SLInt16("lmo_flag"),
-                             # 13 = rt-130, 16 = texan
-                             construct.SLInt16("inst_type"),
-                             construct.SLInt16("correction"),  # 0
-                             # Azimuth of source-receiver (min of arc)
-                             construct.SLInt16("azimuth"),
-                             construct.SLInt16(
-                                 "sensor_type"),  # 1--L28 (PASSCAL)(4.5 Hz)\
-                             # 2--L22 (2 Hz)\
-                             # 3--L10B (8 Hz)\
-                             # 4--L4 1 Hz\
-                             # 5--L4 2 Hz\
-                             # 6--FBA\
-                             # 7--TDC-10 (4.5 Hz)\
-                             # 8--L28 (GSC)\
-                             # 9--LRS1033 (4.5 HZ)\
-                             # 99--unknown
-                             # Geophone number (empty)
-                             construct.SLInt16("sensor_sn"),
-                             construct.ULInt16("das_sn"),  # Inst. ID number
-                             construct.ULInt16("empty1"),
-                             # Number of samples if > 2^15 (see 115-116)
-                             construct.SLInt32("samples"),
-                             construct.ULInt32("empty2"),
-                             # Receiver clock drift removed
-                             construct.SLInt16("clock_drift"),
-                             construct.ULInt16("empty3"))
+    TRACE = "TRACE" / construct.Struct(
+                        # Microsec trace start time
+                        "start_usec" / construct.Int32sl(),
+                        # Charge size (kg)
+                        "shot_size" / construct.Int16sl(),
+                        # Shot/trigger time - year
+                        "shot_year" / construct.Int16sl(),
+                        # Shot/trigger time - Julian day
+                        "shot_doy" / construct.Int16sl(),
+                        # Shot/trigger time - hour
+                        "shot_hour" / construct.Int16sl(),
+                        # Shot/trigger time - minute
+                        "shot_minute" / construct.Int16sl(),
+                        # Shot/trigger time - second
+                        "shot_second" / construct.Int16sl(),
+                        # Shot/trigger time - microsec
+                        "shot_us" / construct.Int32sl(),
+                        # Override for sample interval (SET = 0)
+                        "si_override" / construct.Int32sl(),
+                        # Azimuth of sensor orient axis (empty)
+                        "sensor_azimuth" / construct.Int16sl,
+                        # Geophone inclination (empty)
+                        "sensor_inclination" / construct.Int16sl,
+                        # LMO static (x/v)  (ms) (empty)
+                        "lmo_ms" / construct.Int32sl,
+                        # LMO flag: (0=Y, 1=N) (SET = 1)
+                        "lmo_flag" / construct.Int16sl,
+                        # 13 = rt-130, 16 = texan
+                        "inst_type" / construct.Int16sl,
+                        "correction" / construct.Int16sl,
+                        # Azimuth of source-receiver (min of arc)
+                        "azimuth" / construct.Int16sl,
+                        # 1--L28 (PASSCAL)(4.5 Hz)
+                        # 2--L22 (2 Hz)
+                        # 3--L10B (8 Hz)
+                        # 4--L4 1 Hz
+                        # 5--L4 2 Hz
+                        # 6--FBA
+                        # 7--TDC-10 (4.5 Hz)
+                        # 8--L28 (GSC)
+                        # 9--LRS1033 (4.5 HZ)
+                        # 99--unknown
+                        # Geophone number (empty)
+                        "sensor_sn" / construct.Int16sl,
+                        # Inst. ID number
+                        "das_sn" / construct.Int16ul,
+                        "empty1" / construct.Int16ul,
+                        # Number of samples if > 2^15 (see 115-116)
+                        "samples" / construct.Int32sl,
+                        "empty2" / construct.Int32ul,
+                        # Receiver clock drift removed
+                        "clock_drift" / construct.Int16sl,
+                        "empty3" / construct.Int16ul,
+                        )
 
     return TRACE
 
@@ -857,41 +927,47 @@ class Menlo (object):
 
 
 def seg_header():
-    TRACE = construct.Struct("TRACE",
-                             # X coordinate of ensemble
-                             construct.SBInt32("Xcoor"),
-                             # Y coordinate of ensemble
-                             construct.SBInt32("Ycoor"),
-                             # Same as lino in reel header
-                             construct.SBInt32("Inn"),
-                             construct.SBInt32("Cnn"),  # Same as cdp
-                             construct.SBInt32("Spn"),  # Shot point number
-                             # Scaler to apply to Spn
-                             construct.SBInt16("Scal"),
-                             # Trace value measurement units
-                             construct.SBInt16("Tvmu"),
-                             # Transduction constant mantissa
-                             construct.SBInt32("Tucmant"),
-                             # Transduction constant exponent
-                             construct.SBInt16("Tucexp"),
-                             construct.SBInt16("Tdu"),  # Transduction units
-                             # Device/Trace identifier
-                             construct.SBInt16("Dti"),
-                             construct.SBInt16("Tscaler"),  # Time scalar
-                             # Source Type/Orientation
-                             construct.SBInt16("Sto"),
-                             # Source Energy direction
-                             construct.String("Sed", 6),
-                             # Source measurement mantissa
-                             construct.SBInt32("Smsmant"),
-                             # Source measurement exponent
-                             construct.SBInt16("Smsexp"),
-                             # Source measurement Units
-                             construct.SBInt16("Smu"),
-                             # Last 8 bytes undefined in rev1
-                             # Trace start time usec
-                             construct.UBInt32("start_usec"),
-                             construct.UBInt32("shot_us"))  # Shot time usec
+    TRACE = "TRACE" / construct.Struct(
+                        # X coordinate of ensemble
+                        "Xcoor" / construct.Int32sb,
+                        # Y coordinate of ensemble
+                        "Ycoor" / construct.Int32sb,
+                        # Same as lino in reel header
+                        "Inn" / construct.Int32sb,
+                        # Same as cdp
+                        "Cnn" / construct.Int32sb,
+                        # Shot point number
+                        "Spn" / construct.Int32sb,
+                        # Scaler to apply to Spn
+                        "Scal" / construct.Int16sb,
+                        # Trace value measurement units
+                        "Tvmu" / construct.Int16sb,
+                        # Transduction constant mantissa
+                        "Tucmant" / construct.Int32sb,
+                        # Transduction constant exponent
+                        "Tucexp" / construct.Int16sb,
+                        # Transduction units
+                        "Tdu" / construct.Int16sb,
+                        # Device/Trace identifier
+                        "Dti" / construct.Int16sb,
+                        # Time scalar
+                        "Tscaler" / construct.Int16sb,
+                        # Source Type/Orientation
+                        "Sto" / construct.Int16sb,
+                        # Source Energy direction
+                        "Sed" / construct.Bytes(6),
+                        # Source measurement mantissa
+                        "Smsmant" / construct.Int32sb,
+                        # Source measurement exponent
+                        "Smsexp" / construct.Int16sb,
+                        # Source measurement Units
+                        "Smu" / construct.Int16sb,
+                        # Last 8 bytes undefined in rev1
+                        # Trace start time usec
+                        "start_usec" / construct.Int32ub,
+                        # Shot time usec
+                        "shot_us" / construct.Int32ub
+                        )
     return TRACE
 
 #
@@ -900,41 +976,47 @@ def seg_header():
 
 
 def seg_header_le():
-    TRACE = construct.Struct("TRACE",
-                             # X coordinate of ensemble
-                             construct.SLInt32("Xcoor"),
-                             # Y coordinate of ensemble
-                             construct.SLInt32("Ycoor"),
-                             # Same as lino in reel header
-                             construct.SLInt32("Inn"),
-                             construct.SLInt32("Cnn"),  # Same as cdp
-                             construct.SLInt32("Spn"),  # Shot point number
-                             # Scaler to apply to Spn
-                             construct.SLInt16("Scal"),
-                             # Trace value measurement units
-                             construct.SLInt16("Tvmu"),
-                             # Transduction constant mantissa
-                             construct.SLInt32("Tucmant"),
-                             # Transduction constant exponent
-                             construct.SLInt16("Tucexp"),
-                             construct.SLInt16("Tdu"),  # Transduction units
-                             # Device/Trace identifier
-                             construct.SLInt16("Dti"),
-                             construct.SLInt16("Tscaler"),  # Time scalar
-                             # Source Type/Orientation
-                             construct.SLInt16("Sto"),
-                             # Source Energy direction
-                             construct.String("Sed", 6),
-                             # Source measurement mantissa
-                             construct.SLInt32("Smsmant"),
-                             # Source measurement exponent
-                             construct.SLInt16("Smsexp"),
-                             # Source measurement Units
-                             construct.SLInt16("Smu"),
-                             # Last 8 bytes undefined in rev1
-                             # Trace start time usec
-                             construct.UBInt32("start_usec"),
-                             construct.UBInt32("shot_us"))  # Shot time usec
+    TRACE = "TRACE" / construct.Struct(
+                        # X coordinate of ensemble
+                        "Xcoor" / construct.Int32sl,
+                        # Y coordinate of ensemble
+                        "Ycoor" / construct.Int32sl,
+                        # Same as lino in reel header
+                        "Inn" / construct.Int32sl,
+                        # Same as cdp
+                        "Cnn" / construct.Int32sl,
+                        # Shot point number
+                        "Spn" / construct.Int32sl,
+                        # Scaler to apply to Spn
+                        "Scal" / construct.Int16sl,
+                        # Trace value measurement units
+                        "Tvmu" / construct.Int16sl,
+                        # Transduction constant mantissa
+                        "Tucmant" / construct.Int32sl,
+                        # Transduction constant exponent
+                        "Tucexp" / construct.Int16sl,
+                        # Transduction units
+                        "Tdu" / construct.Int16sl,
+                        # Device/Trace identifier
+                        "Dti" / construct.Int16sl,
+                        # Time scalar
+                        "Tscaler" / construct.Int16sl,
+                        # Source Type/Orientation
+                        "Sto" / construct.Int16sl,
+                        # Source Energy direction
+                        "Sed" / construct.Bytes(6),
+                        # Source measurement mantissa
+                        "Smsmant" / construct.Int32sl,
+                        # Source measurement exponent
+                        "Smsexp" / construct.Int16sl,
+                        # Source measurement Units
+                        "Smu" / construct.Int16sl,
+                        # Last 8 bytes undefined in rev1
+                        # Trace start time usec
+                        "start_usec" / construct.Int32ul,
+                        # Shot time usec
+                        "shot_us" / construct.Int32ul
+                        )
     return TRACE
 
 
@@ -983,207 +1065,210 @@ class Seg (object):
 
 
 def inova_header():
-    TRACE = construct.Struct("TRACE",
-                             # iNova revision (322)
-                             construct.UBInt16("Revision"),
-                             # Derived from POSIX time of shot
-                             construct.UBInt32("ShotID"),
-                             # Aux channel description
-                             construct.UBInt8("AuxChanSig"),
-                             #    0x08 -- Master Clock Timebreak
-                             #    0x09 -- Master Confirmation Timebreak
-                             #    0x0A -- Slave Clock Timebreak
-                             #    0x0B -- Slave Confirmation Timebreak
-                             #    0x0C -- Analog Uphole
-                             #    0x0E -- Digital Uphole
-                             #    0x10 -- Waterbreak
-                             #    0x14 -- User Specified #1
-                             #    0x18 -- User Specified #2
-                             #    0x1C -- User Specified #3
-                             #    0x20 -- Unfiltered Pilot
-                             #    0x24 -- Filtered Pilot
-                             #    0x28 -- User Specified #4
-                             #    0x2C -- User Specified #5
-                             #    0x30 -- User Specified #6
-                             #    0x31 -- Vibrator Reference
-                             #    0x32 -- Vibrator Out
-                             #    0x33 -- Vibrator User
-                             #    0x34 -- User Specified #7
-                             #    0x38 -- User Specified #8
-                             #    0x3C -- User Specified #9
-                             #    0x3D -- Aux Channel from iNova Image System
-                             #    0x3E -- GPS Aux / External Data
-                             #    0x3F -- Unused Channel
-                             construct.UBInt8("AuxChanID"),  # Aux Channel ID
-                             # Shot Point Line in hundredths
-                             construct.UBInt32("SPL"),
-                             # Shot Point Station in hundredths
-                             construct.UBInt32("SPS"),
-                             construct.UBInt16("unass01"),  # Unassigned
-                             construct.UBInt16("unass02"),  # Unassigned
-                             # Sensor Interface Unit Type
-                             construct.UBInt8("SenInt"),
-                             #    18 -- VSM
-                             #    21 -- Vectorseis
-                             #    42 -- Geophone Digitizer Unit
-                             #    49 -- iNova Standard Analog Channel GDC
-                             # Vectorseis sensitivity
-                             construct.UBInt8("VectSens"),
-                             #    0 = 40nG
-                             #    3 = 160nG
-                             # Absolute horizontal orientation azimuth of
-                             # Vectorseis in
-                             construct.UBInt16("HorAz"),
-                             # 0.0001 radians, measured from due-North
-                             # Absolute vertical orientation angle, in 0.0001
-                             # radians.
-                             construct.UBInt16("VertAngle"),
-                             # A vertically planted sensor will
-                             # have a value of
-                             # 1416 (Pi * 10,000),
-                             # while a horizontally planted sensor will have a
-                             # value of 15708 (Pi/2 * 10,000)
-                             construct.UBInt8("SourceType"),  # Source type:
-                             #    0 -- Built-in test
-                             #    1 -- Dynamite
-                             #    2 -- Vibrator
-                             #    3 -- AirGun
-                             #    4 -- WaterGun
-                             #    5 -- WeightDrop
-                             #    6 -- Other
-                             #    7 -- MixedSources
-                             #    8 -- NoSource or Unknown
-                             #    9 -- TestOsc (For GDC this is an
-                             # external test
-                             # oscillator)
-                             #    10 -- Impulsive
-                             construct.UBInt8("SensorType"),  # Sensor type:
-                             #    0 -- Unknown
-                             #    1 -- Hydrophone
-                             #    2 -- Geo-Vertical Geophone, Marshphone,
-                             # or Z
-                             #    3 -- Geo-Horiz Inline Geophone -- X
-                             #    4 -- Geo-Horiz Cross-Line Geophone -- Y
-                             #    5 -- Geo-Horiz Other
-                             #    6 -- SVSM Vertical -- Z
-                             #    7 -- SVSM Horizontal Inline -- X
-                             #    8 -- SVSM Horizontal Crossline -- Y
-                             #    9 -- Acc-Horiz Other
-                             # Auxillary Channel Set type
-                             construct.UBInt8("AuxChanSetType"),
-                             #    0x00 -- Unused channel
-                             #    0x02 -- Timebreak
-                             #    0x03 -- Uphole
-                             #    0x04 -- Waterbreak
-                             #    0x05 -- Time Counter
-                             #    0x06 -- External Data
-                             #    0x07 -- Other
-                             #    0x08 -- Unfiltered Pilot
-                             #    0x09 -- Filtered Pilot
-                             #    0x0A -- Special #1
-                             #    0x0B -- Special #2
-                             #    0x0D -- Special #3
-                             #    0x0E -- Special #4
-                             #    0x0F -- Special #5
-                             #    0xFA -- Reserved (T2 only)
-                             # Noise Edit Type:
-                             construct.UBInt8("NoiseEditType"),
-                             #    0 -- Raw Data, Vertical Stack
-                             #    2 -- Diversity Stack
-                             # Noise Edit Gate Size:
-                             construct.UBInt16("NoiseEditGate"),
-                             #    0 -- Raw Data, Vertical Stack
-                             #    n -- Number of Samples in Gate,
-                             # Diversity Stack
-                             # System Device type:
-                             construct.UBInt8("SystemDevice"),
-                             #    7 -- MRX
-                             #    9 -- RSR
-                             #    17 -- VRSR
-                             #    20 -- VRSR2
-                             #    23 -- AuxUNIT-1C
-                             #    25 -- DUNIT-3C
-                             #    29 -- Analog-1C
-                             #    37 -- FireFly
-                             #    48 -- Node
-                             construct.BitField("FSU", 3),  # FSU Serial Number
-                             # Device Channel Number
-                             construct.UBInt8("DevChan"),
-                             # Source coordinate confidence indicator. Rates
-                             # the level
-                             construct.UBInt8("SourceCoCo"),
-                             # of confidence in the accuracy of source x,y,z.
-                             # 0 -- Good
-                             # Device status bits
-                             construct.UBInt8("DevStatusBits"),
-                             #    Bit 0 -- A/D Modulator Over-range
-                             #    Bit 1 -- A/D Decimator Numerical Overflow
-                             #    Bit 2 -- Analog Preamp Overscale or
-                             # VSMT Data Invalid
-                             #    Bit 3 -- SVSM VLFF error
-                             #    Bit 4 -- Invalid Receiver Line/Station
-                             #    Bit 5 -- Trace was Zero filled (T2 only)
-                             #    Bit 6 -- Battery improperly removed
-                             #    Bit 7 -- SVSM Dynamic Offset Filter mode,
-                             # 0 = static
-                             # BIT test type and codes (0 - 28) See FireFly SEG
-                             # Y Ver 3.0 Tech Bulletin
-                             construct.UBInt8("BITTest"),
-                             # Sweep Phase Rotation; 0 if undefined
-                             construct.UBInt16("SweepPhaseRot"),
-                             construct.UBInt8("unass03"),  # Unassigned
-                             construct.UBInt8("BoxFun"),  # Box function
-                             # Source effort used to generate the trace
-                             # (mantissa)
-                             construct.UBInt32("SourceEffortM"),
-                             # Source effort, (exponent)
-                             construct.UBInt16("SourceEffortE"),
-                             # Source measurement units
-                             construct.UBInt16("SourceUnits"),
-                             #    -1 -- Other
-                             #    0 -- Unknown
-                             #    1 -- Joule
-                             #    2 -- Kilowatt
-                             #    3 -- Pascal
-                             #    4 -- Bar
-                             #    5 -- Bar-meter
-                             #    6 -- Kilograms
-                             #    7 -- Pounds
-                             construct.UBInt8("EventType"),  # Event type:
-                             #    0x00 -- Zeroed or truncated trace
-                             #    0x40 -- BIT data - Raw Trace
-                             #    0x80 -- Seis data - Normal, Raw
-                             #    0x88 -- Seis data - Normal, Stack
-                             #    0x90 -- Seis data - Normal, Correlated
-                             #    0xA0 -- Seis data - Test, Raw
-                             #    0xA8 -- Seis data - Test, Stack
-                             #    0xB0 -- Seis data - Test, Correlated
-                             # Sensor type ID
-                             construct.UBInt8("SensorTypeID"),
-                             #    0x00 -- No sensor defined
-                             #    0x01 -- Geophone - 1 component vertical
-                             #    0x02 -- Marshphone
-                             #    0x03 -- Hydrophone
-                             #    0x04 -- Aux
-                             #    0x05 -- Geophone-3c Horizontal,
-                             # X -- In-line
-                             #    0x06 -- Geophone-3c Horizontal,
-                             # Y -- Cross-line
-                             #    0x07 -- Geophone-3c Vertical, Z
-                             #    0x08 -- Reserved
-                             #    0x0C -- Accelerometer-3c Horizontal,
-                             # X -- In-line
-                             #    0x0C -- Accelerometer-3c Horizontal,
-                             # Y -- Cross-line
-                             #    0x0C -- Accelerometer-3c Vertical, Z
-                             # Sensor serial number
-                             construct.BitField("SensorSerial", 3),
-                             # Sensor version number
-                             construct.UBInt8("SensorVersion"),
-                             construct.UBInt8("SensorRev"),  # Sensor revision
-                             construct.UBInt8("VOR"))  # VOR applied
-    #    0 -- No VOR applied
-    #    2 -- VOR applied
+    TRACE = construct.Struct(
+                            "TRACE",
+                            # iNova revision (322)
+                            "Revision" / construct.Int16ub,
+                            # Derived from POSIX time of shot
+                            "ShotID" / construct.Int32ub,
+                            # Aux channel description
+                            "AuxChanSig" / construct.Int8ub,
+                            #    0x08 -- Master Clock Timebreak
+                            #    0x09 -- Master Confirmation Timebreak
+                            #    0x0A -- Slave Clock Timebreak
+                            #    0x0B -- Slave Confirmation Timebreak
+                            #    0x0C -- Analog Uphole
+                            #    0x0E -- Digital Uphole
+                            #    0x10 -- Waterbreak
+                            #    0x14 -- User Specified #1
+                            #    0x18 -- User Specified #2
+                            #    0x1C -- User Specified #3
+                            #    0x20 -- Unfiltered Pilot
+                            #    0x24 -- Filtered Pilot
+                            #    0x28 -- User Specified #4
+                            #    0x2C -- User Specified #5
+                            #    0x30 -- User Specified #6
+                            #    0x31 -- Vibrator Reference
+                            #    0x32 -- Vibrator Out
+                            #    0x33 -- Vibrator User
+                            #    0x34 -- User Specified #7
+                            #    0x38 -- User Specified #8
+                            #    0x3C -- User Specified #9
+                            #    0x3D -- Aux Channel from iNova Image System
+                            #    0x3E -- GPS Aux / External Data
+                            #    0x3F -- Unused Channel
+                            "AuxChanID" / construct.Int8ub,  # Aux Channel ID
+                            # Shot Point Line in hundredths
+                            "SPL" / construct.Int32ub,
+                            # Shot Point Station in hundredths
+                            "SPS" / construct.Int32ub,
+                            "unass01" / construct.Int16ub,  # Unassigned
+                            "unass02" / construct.Int16ub,  # Unassigned
+                            # Sensor Interface Unit Type
+                            "SenInt" / construct.Int8ub,
+                            #    18 -- VSM
+                            #    21 -- Vectorseis
+                            #    42 -- Geophone Digitizer Unit
+                            #    49 -- iNova Standard Analog Channel GDC
+                            # Vectorseis sensitivity
+                            "VectSens" / construct.Int8ub,
+                            #    0 = 40nG
+                            #    3 = 160nG
+                            # Absolute horizontal orientation azimuth of
+                            # Vectorseis in
+                            "HorAz" / construct.Int16ub,
+                            # 0.0001 radians, measured from due-North
+                            # Absolute vertical orientation angle, in 0.0001
+                            # radians.
+                            "VertAngle" / construct.Int16ub,
+                            # A vertically planted sensor will
+                            # have a value of
+                            # 1416 (Pi * 10,000),
+                            # while a horizontally planted sensor will have a
+                            # value of 15708 (Pi/2 * 10,000)
+                            "SourceType" / construct.Int8ub,  # Source type:
+                            #    0 -- Built-in test
+                            #    1 -- Dynamite
+                            #    2 -- Vibrator
+                            #    3 -- AirGun
+                            #    4 -- WaterGun
+                            #    5 -- WeightDrop
+                            #    6 -- Other
+                            #    7 -- MixedSources
+                            #    8 -- NoSource or Unknown
+                            #    9 -- TestOsc (For GDC this is an
+                            # external test
+                            # oscillator)
+                            #    10 -- Impulsive
+                            "SensorType" / construct.Int8ub,  # Sensor type:
+                            #    0 -- Unknown
+                            #    1 -- Hydrophone
+                            #    2 -- Geo-Vertical Geophone, Marshphone,
+                            # or Z
+                            #    3 -- Geo-Horiz Inline Geophone -- X
+                            #    4 -- Geo-Horiz Cross-Line Geophone -- Y
+                            #    5 -- Geo-Horiz Other
+                            #    6 -- SVSM Vertical -- Z
+                            #    7 -- SVSM Horizontal Inline -- X
+                            #    8 -- SVSM Horizontal Crossline -- Y
+                            #    9 -- Acc-Horiz Other
+                            # Auxillary Channel Set type
+                            "AuxChanSetType" / construct.Int8ub,
+                            #    0x00 -- Unused channel
+                            #    0x02 -- Timebreak
+                            #    0x03 -- Uphole
+                            #    0x04 -- Waterbreak
+                            #    0x05 -- Time Counter
+                            #    0x06 -- External Data
+                            #    0x07 -- Other
+                            #    0x08 -- Unfiltered Pilot
+                            #    0x09 -- Filtered Pilot
+                            #    0x0A -- Special #1
+                            #    0x0B -- Special #2
+                            #    0x0D -- Special #3
+                            #    0x0E -- Special #4
+                            #    0x0F -- Special #5
+                            #    0xFA -- Reserved (T2 only)
+                            # Noise Edit Type:
+                            "NoiseEditType" / construct.Int8ub,
+                            #    0 -- Raw Data, Vertical Stack
+                            #    2 -- Diversity Stack
+                            # Noise Edit Gate Size:
+                            "NoiseEditGate" / construct.Int8ub,
+                            #    0 -- Raw Data, Vertical Stack
+                            #    n -- Number of Samples in Gate,
+                            # Diversity Stack
+                            # System Device type:
+                            "SystemDevice" / construct.Int8ub,
+                            #    7 -- MRX
+                            #    9 -- RSR
+                            #    17 -- VRSR
+                            #    20 -- VRSR2
+                            #    23 -- AuxUNIT-1C
+                            #    25 -- DUNIT-3C
+                            #    29 -- Analog-1C
+                            #    37 -- FireFly
+                            #    48 -- Node
+                            "FSU" / construct.BitsInteger(3),  # FSU Serial Number
+                            # Device Channel Number
+                            "DevChan" / construct.Int8ub,
+                            # Source coordinate confidence indicator. Rates
+                            # the level
+                            "SourceCoCo" / construct.Int8ub,
+                            # of confidence in the accuracy of source x,y,z.
+                            # 0 -- Good
+                            # Device status bits
+                            "DevStatusBits" / construct.Int8ub,
+                            #    Bit 0 -- A/D Modulator Over-range
+                            #    Bit 1 -- A/D Decimator Numerical Overflow
+                            #    Bit 2 -- Analog Preamp Overscale or
+                            # VSMT Data Invalid
+                            #    Bit 3 -- SVSM VLFF error
+                            #    Bit 4 -- Invalid Receiver Line/Station
+                            #    Bit 5 -- Trace was Zero filled (T2 only)
+                            #    Bit 6 -- Battery improperly removed
+                            #    Bit 7 -- SVSM Dynamic Offset Filter mode,
+                            # 0 = static
+                            # BIT test type and codes (0 - 28) See FireFly SEG
+                            # Y Ver 3.0 Tech Bulletin
+                            "BITTest" / construct.Int8ub,
+                            # Sweep Phase Rotation; 0 if undefined
+                            "SweepPhaseRot" / construct.Int16ub,
+                            "unass03" / construct.Int8ub,  # Unassigned
+                            "BoxFun" / construct.Int8ub,  # Box function
+                            # Source effort used to generate the trace
+                            # (mantissa)
+                            "SourceEffortM" / construct.Int32ub,
+                            # Source effort, (exponent)
+                            "SourceEffortE" / construct.Int16ub,
+                            # Source measurement units
+                            "SourceUnits" / construct.Int16ub,
+                            #    -1 -- Other
+                            #    0 -- Unknown
+                            #    1 -- Joule
+                            #    2 -- Kilowatt
+                            #    3 -- Pascal
+                            #    4 -- Bar
+                            #    5 -- Bar-meter
+                            #    6 -- Kilograms
+                            #    7 -- Pounds
+                            "EventType" / construct.Int8ub,  # Event type:
+                            #    0x00 -- Zeroed or truncated trace
+                            #    0x40 -- BIT data - Raw Trace
+                            #    0x80 -- Seis data - Normal, Raw
+                            #    0x88 -- Seis data - Normal, Stack
+                            #    0x90 -- Seis data - Normal, Correlated
+                            #    0xA0 -- Seis data - Test, Raw
+                            #    0xA8 -- Seis data - Test, Stack
+                            #    0xB0 -- Seis data - Test, Correlated
+                            # Sensor type ID
+                            "SensorTypeID" / construct.Int8ub,
+                            #    0x00 -- No sensor defined
+                            #    0x01 -- Geophone - 1 component vertical
+                            #    0x02 -- Marshphone
+                            #    0x03 -- Hydrophone
+                            #    0x04 -- Aux
+                            #    0x05 -- Geophone-3c Horizontal,
+                            # X -- In-line
+                            #    0x06 -- Geophone-3c Horizontal,
+                            # Y -- Cross-line
+                            #    0x07 -- Geophone-3c Vertical, Z
+                            #    0x08 -- Reserved
+                            #    0x0C -- Accelerometer-3c Horizontal,
+                            # X -- In-line
+                            #    0x0C -- Accelerometer-3c Horizontal,
+                            # Y -- Cross-line
+                            #    0x0C -- Accelerometer-3c Vertical, Z
+                            # Sensor serial number
+                            "SensorSerial" / construct.BitsInteger(3),
+                            # Sensor version number
+                            "SensorVersion" / construct.Int8ub,
+                            # Sensor revision
+                            "SensorRev" / construct.Int8ub,
+                            # VOR applied
+                            #    0 -- No VOR applied
+                            #    2 -- VOR applied
+                            "VOR" / construct.Int8ub)
     return TRACE
 #
 # iNova FireFly extened header version 3.0 (Little endian)
@@ -1191,206 +1276,210 @@ def inova_header():
 
 
 def inova_header_le():
-    TRACE = construct.Struct("TRACE",
-                             # iNova revision (322)
-                             construct.ULInt16("Revision"),
-                             # Derived from POSIX time of shot
-                             construct.ULInt32("ShotID"),
-                             # Aux channel description
-                             construct.ULInt8("AuxChanSig"),
-                             #    0x08 -- Master Clock Timebreak
-                             #    0x09 -- Master Confirmation Timebreak
-                             #    0x0A -- Slave Clock Timebreak
-                             #    0x0B -- Slave Confirmation Timebreak
-                             #    0x0C -- Analog Uphole
-                             #    0x0E -- Digital Uphole
-                             #    0x10 -- Waterbreak
-                             #    0x14 -- User Specified #1
-                             #    0x18 -- User Specified #2
-                             #    0x1C -- User Specified #3
-                             #    0x20 -- Unfiltered Pilot
-                             #    0x24 -- Filtered Pilot
-                             #    0x28 -- User Specified #4
-                             #    0x2C -- User Specified #5
-                             #    0x30 -- User Specified #6
-                             #    0x31 -- Vibrator Reference
-                             #    0x32 -- Vibrator Out
-                             #    0x33 -- Vibrator User
-                             #    0x34 -- User Specified #7
-                             #    0x38 -- User Specified #8
-                             #    0x3C -- User Specified #9
-                             #    0x3D -- Aux Channel from iNova Image System
-                             #    0x3E -- GPS Aux / External Data
-                             #    0x3F -- Unused Channel
-                             construct.ULInt8("AuxChanID"),  # Aux Channel ID
-                             # Shot Point Line in hundredths
-                             construct.ULInt32("SPL"),
-                             # Shot Point Station in hundredths
-                             construct.ULInt32("SPS"),
-                             construct.ULInt16("unass01"),  # Unassigned
-                             construct.ULInt16("unass02"),  # Unassigned
-                             # Sensor Interface Unit Type
-                             construct.ULInt8("SenInt"),
-                             #    18 -- VSM
-                             #    21 -- Vectorseis
-                             #    42 -- Geophone Digitizer Unit
-                             #    49 -- iNova Standard Analog Channel GDC
-                             # Vectorseis sensitivity
-                             construct.ULInt8("VectSens"),
-                             #    0 = 40nG
-                             #    3 = 160nG
-                             # Absolute horizontal orientation azimuth of
-                             # Vectorseis in
-                             construct.ULInt16("HorAz"),
-                             # 0.0001 radians, measured from due-North
-                             # Absolute vertical orientation angle, in 0.0001
-                             # radians.
-                             construct.ULInt16("VertAngle"),
-                             # A vertically planted sensor will
-                             # have a value of
-                             # 31416 (Pi * 10,000),
-                             # while a horizontally planted sensor will have a
-                             # value of 15708 (Pi/2 * 10,000)
-                             construct.ULInt8("SourceType"),  # Source type:
-                             #    0 -- Built-in test
-                             #    1 -- Dynamite
-                             #    2 -- Vibrator
-                             #    3 -- AirGun
-                             #    4 -- WaterGun
-                             #    5 -- WeightDrop
-                             #    6 -- Other
-                             #    7 -- MixedSources
-                             #    8 -- NoSource or Unknown
-                             #    9 -- TestOsc (For GDC this is an external
-                             # test oscillator)
-                             #    10 -- Impulsive
-                             construct.ULInt8("SensorType"),  # Sensor type:
-                             #    0 -- Unknown
-                             #    1 -- Hydrophone
-                             #    2 -- Geo-Vertical Geophone, Marshphone,
-                             # or Z
-                             #    3 -- Geo-Horiz Inline Geophone -- X
-                             #    4 -- Geo-Horiz Cross-Line Geophone -- Y
-                             #    5 -- Geo-Horiz Other
-                             #    6 -- SVSM Vertical -- Z
-                             #    7 -- SVSM Horizontal Inline -- X
-                             #    8 -- SVSM Horizontal Crossline -- Y
-                             #    9 -- Acc-Horiz Other
-                             # Auxillary Channel Set type
-                             construct.ULInt8("AuxChanSetType"),
-                             #    0x00 -- Unused channel
-                             #    0x02 -- Timebreak
-                             #    0x03 -- Uphole
-                             #    0x04 -- Waterbreak
-                             #    0x05 -- Time Counter
-                             #    0x06 -- External Data
-                             #    0x07 -- Other
-                             #    0x08 -- Unfiltered Pilot
-                             #    0x09 -- Filtered Pilot
-                             #    0x0A -- Special #1
-                             #    0x0B -- Special #2
-                             #    0x0D -- Special #3
-                             #    0x0E -- Special #4
-                             #    0x0F -- Special #5
-                             #    0xFA -- Reserved (T2 only)
-                             # Noise Edit Type:
-                             construct.ULInt8("NoiseEditType"),
-                             #    0 -- Raw Data, Vertical Stack
-                             #    2 -- Diversity Stack
-                             # Noise Edit Gate Size:
-                             construct.ULInt16("NoiseEditGate"),
-                             #    0 -- Raw Data, Vertical Stack
-                             #    n -- Number of Samples in Gate,
-                             # Diversity Stack
-                             # System Device type:
-                             construct.ULInt8("SystemDevice"),
-                             #    7 -- MRX
-                             #    9 -- RSR
-                             #    17 -- VRSR
-                             #    20 -- VRSR2
-                             #    23 -- AuxUNIT-1C
-                             #    25 -- DUNIT-3C
-                             #    29 -- Analog-1C
-                             #    37 -- FireFly
-                             #    48 -- Node
-                             construct.BitField("FSU", 3),  # FSU Serial Number
-                             # Device Channel Number
-                             construct.ULInt8("DevChan"),
-                             # Source coordinate confidence indicator. Rates
-                             # the level
-                             construct.ULInt8("SourceCoCo"),
-                             # of confidence in the accuracy of source x,y,z.
-                             # 0 -- Good
-                             # Device status bits
-                             construct.ULInt8("DevStatusBits"),
-                             #    Bit 0 -- A/D Modulator Over-range
-                             #    Bit 1 -- A/D Decimator Numerical Overflow
-                             #    Bit 2 -- Analog Preamp Overscale or
-                             # VSMT Data Invalid
-                             #    Bit 3 -- SVSM VLFF error
-                             #    Bit 4 -- Invalid Receiver Line/Station
-                             #    Bit 5 -- Trace was Zero filled (T2 only)
-                             #    Bit 6 -- Battery improperly removed
-                             #    Bit 7 -- SVSM Dynamic Offset Filter mode,
-                             # 0 = static
-                             # BIT test type and codes (0 - 28) See FireFly SEG
-                             # Y Ver 3.0 Tech Bulletin
-                             construct.ULInt8("BITTest"),
-                             # Sweep Phase Rotation; 0 if undefined
-                             construct.ULInt16("SweepPhaseRot"),
-                             construct.ULInt8("unass03"),  # Unassigned
-                             construct.ULInt8("BoxFun"),  # Box function
-                             # Source effort used to generate the trace
-                             # (mantissa)
-                             construct.ULInt32("SourceEffortM"),
-                             # Source effort, (exponent)
-                             construct.ULInt16("SourceEffortE"),
-                             # Source measurement units
-                             construct.ULInt16("SourceUnits"),
-                             #    -1 -- Other
-                             #    0 -- Unknown
-                             #    1 -- Joule
-                             #    2 -- Kilowatt
-                             #    3 -- Pascal
-                             #    4 -- Bar
-                             #    5 -- Bar-meter
-                             #    6 -- Kilograms
-                             #    7 -- Pounds
-                             construct.ULInt8("EventType"),  # Event type:
-                             #    0x00 -- Zeroed or truncated trace
-                             #    0x40 -- BIT data - Raw Trace
-                             #    0x80 -- Seis data - Normal, Raw
-                             #    0x88 -- Seis data - Normal, Stack
-                             #    0x90 -- Seis data - Normal, Correlated
-                             #    0xA0 -- Seis data - Test, Raw
-                             #    0xA8 -- Seis data - Test, Stack
-                             #    0xB0 -- Seis data - Test, Correlated
-                             # Sensor type ID
-                             construct.ULInt8("SensorTypeID"),
-                             #    0x00 -- No sensor defined
-                             #    0x01 -- Geophone - 1 component vertical
-                             #    0x02 -- Marshphone
-                             #    0x03 -- Hydrophone
-                             #    0x04 -- Aux
-                             #    0x05 -- Geophone-3c Horizontal,
-                             # X -- In-line
-                             #    0x06 -- Geophone-3c Horizontal,
-                             # Y -- Cross-line
-                             #    0x07 -- Geophone-3c Vertical, Z
-                             #    0x08 -- Reserved
-                             #    0x0C -- Accelerometer-3c Horizontal,
-                             # X -- In-line
-                             #    0x0C -- Accelerometer-3c Horizontal,
-                             # Y -- Cross-line
-                             #    0x0C -- Accelerometer-3c Vertical, Z
-                             # Sensor serial number
-                             construct.BitField("SensorSerial", 3),
-                             # Sensor version number
-                             construct.ULInt8("SensorVersion"),
-                             construct.ULInt8("SensorRev"),  # Sensor revision
-                             construct.ULInt8("VOR"))  # VOR applied
-    #    0 -- No VOR applied
-    #    2 -- VOR applied
+    TRACE = construct.Struct(
+                            "TRACE",
+                            # iNova revision (322)
+                            "Revision" / construct.Int16ub,
+                            # Derived from POSIX time of shot
+                            "ShotID" / construct.Int32ub,
+                            # Aux channel description
+                            "AuxChanSig" / construct.Int8ub,
+                            #    0x08 -- Master Clock Timebreak
+                            #    0x09 -- Master Confirmation Timebreak
+                            #    0x0A -- Slave Clock Timebreak
+                            #    0x0B -- Slave Confirmation Timebreak
+                            #    0x0C -- Analog Uphole
+                            #    0x0E -- Digital Uphole
+                            #    0x10 -- Waterbreak
+                            #    0x14 -- User Specified #1
+                            #    0x18 -- User Specified #2
+                            #    0x1C -- User Specified #3
+                            #    0x20 -- Unfiltered Pilot
+                            #    0x24 -- Filtered Pilot
+                            #    0x28 -- User Specified #4
+                            #    0x2C -- User Specified #5
+                            #    0x30 -- User Specified #6
+                            #    0x31 -- Vibrator Reference
+                            #    0x32 -- Vibrator Out
+                            #    0x33 -- Vibrator User
+                            #    0x34 -- User Specified #7
+                            #    0x38 -- User Specified #8
+                            #    0x3C -- User Specified #9
+                            #    0x3D -- Aux Channel from iNova Image System
+                            #    0x3E -- GPS Aux / External Data
+                            #    0x3F -- Unused Channel
+                            "AuxChanID" / construct.Int8ub,  # Aux Channel ID
+                            # Shot Point Line in hundredths
+                            "SPL" / construct.Int32ub,
+                            # Shot Point Station in hundredths
+                            "SPS" / construct.Int32ub,
+                            "unass01" / construct.Int16ub,  # Unassigned
+                            "unass02" / construct.Int16ub,  # Unassigned
+                            # Sensor Interface Unit Type
+                            "SenInt" / construct.Int8ub,
+                            #    18 -- VSM
+                            #    21 -- Vectorseis
+                            #    42 -- Geophone Digitizer Unit
+                            #    49 -- iNova Standard Analog Channel GDC
+                            # Vectorseis sensitivity
+                            "VectSens" / construct.Int8ub,
+                            #    0 = 40nG
+                            #    3 = 160nG
+                            # Absolute horizontal orientation azimuth of
+                            # Vectorseis in
+                            "HorAz" / construct.Int16ub,
+                            # 0.0001 radians, measured from due-North
+                            # Absolute vertical orientation angle, in 0.0001
+                            # radians.
+                            "VertAngle" / construct.Int16ub,
+                            # A vertically planted sensor will
+                            # have a value of
+                            # 1416 (Pi * 10,000),
+                            # while a horizontally planted sensor will have a
+                            # value of 15708 (Pi/2 * 10,000)
+                            "SourceType" / construct.Int8ub,  # Source type:
+                            #    0 -- Built-in test
+                            #    1 -- Dynamite
+                            #    2 -- Vibrator
+                            #    3 -- AirGun
+                            #    4 -- WaterGun
+                            #    5 -- WeightDrop
+                            #    6 -- Other
+                            #    7 -- MixedSources
+                            #    8 -- NoSource or Unknown
+                            #    9 -- TestOsc (For GDC this is an
+                            # external test
+                            # oscillator)
+                            #    10 -- Impulsive
+                            "SensorType" / construct.Int8ub,  # Sensor type:
+                            #    0 -- Unknown
+                            #    1 -- Hydrophone
+                            #    2 -- Geo-Vertical Geophone, Marshphone,
+                            # or Z
+                            #    3 -- Geo-Horiz Inline Geophone -- X
+                            #    4 -- Geo-Horiz Cross-Line Geophone -- Y
+                            #    5 -- Geo-Horiz Other
+                            #    6 -- SVSM Vertical -- Z
+                            #    7 -- SVSM Horizontal Inline -- X
+                            #    8 -- SVSM Horizontal Crossline -- Y
+                            #    9 -- Acc-Horiz Other
+                            # Auxillary Channel Set type
+                            "AuxChanSetType" / construct.Int8ub,
+                            #    0x00 -- Unused channel
+                            #    0x02 -- Timebreak
+                            #    0x03 -- Uphole
+                            #    0x04 -- Waterbreak
+                            #    0x05 -- Time Counter
+                            #    0x06 -- External Data
+                            #    0x07 -- Other
+                            #    0x08 -- Unfiltered Pilot
+                            #    0x09 -- Filtered Pilot
+                            #    0x0A -- Special #1
+                            #    0x0B -- Special #2
+                            #    0x0D -- Special #3
+                            #    0x0E -- Special #4
+                            #    0x0F -- Special #5
+                            #    0xFA -- Reserved (T2 only)
+                            # Noise Edit Type:
+                            "NoiseEditType" / construct.Int8ub,
+                            #    0 -- Raw Data, Vertical Stack
+                            #    2 -- Diversity Stack
+                            # Noise Edit Gate Size:
+                            "NoiseEditGate" / construct.Int8ub,
+                            #    0 -- Raw Data, Vertical Stack
+                            #    n -- Number of Samples in Gate,
+                            # Diversity Stack
+                            # System Device type:
+                            "SystemDevice" / construct.Int8ub,
+                            #    7 -- MRX
+                            #    9 -- RSR
+                            #    17 -- VRSR
+                            #    20 -- VRSR2
+                            #    23 -- AuxUNIT-1C
+                            #    25 -- DUNIT-3C
+                            #    29 -- Analog-1C
+                            #    37 -- FireFly
+                            #    48 -- Node
+                            "FSU" / construct.BitsInteger(3),  # FSU Serial Number
+                            # Device Channel Number
+                            "DevChan" / construct.Int8ub,
+                            # Source coordinate confidence indicator. Rates
+                            # the level
+                            "SourceCoCo" / construct.Int8ub,
+                            # of confidence in the accuracy of source x,y,z.
+                            # 0 -- Good
+                            # Device status bits
+                            "DevStatusBits" / construct.Int8ub,
+                            #    Bit 0 -- A/D Modulator Over-range
+                            #    Bit 1 -- A/D Decimator Numerical Overflow
+                            #    Bit 2 -- Analog Preamp Overscale or
+                            # VSMT Data Invalid
+                            #    Bit 3 -- SVSM VLFF error
+                            #    Bit 4 -- Invalid Receiver Line/Station
+                            #    Bit 5 -- Trace was Zero filled (T2 only)
+                            #    Bit 6 -- Battery improperly removed
+                            #    Bit 7 -- SVSM Dynamic Offset Filter mode,
+                            # 0 = static
+                            # BIT test type and codes (0 - 28) See FireFly SEG
+                            # Y Ver 3.0 Tech Bulletin
+                            "BITTest" / construct.Int8ub,
+                            # Sweep Phase Rotation; 0 if undefined
+                            "SweepPhaseRot" / construct.Int16ub,
+                            "unass03" / construct.Int8ub,  # Unassigned
+                            "BoxFun" / construct.Int8ub,  # Box function
+                            # Source effort used to generate the trace
+                            # (mantissa)
+                            "SourceEffortM" / construct.Int32ub,
+                            # Source effort, (exponent)
+                            "SourceEffortE" / construct.Int16ub,
+                            # Source measurement units
+                            "SourceUnits" / construct.Int16ub,
+                            #    -1 -- Other
+                            #    0 -- Unknown
+                            #    1 -- Joule
+                            #    2 -- Kilowatt
+                            #    3 -- Pascal
+                            #    4 -- Bar
+                            #    5 -- Bar-meter
+                            #    6 -- Kilograms
+                            #    7 -- Pounds
+                            "EventType" / construct.Int8ub,  # Event type:
+                            #    0x00 -- Zeroed or truncated trace
+                            #    0x40 -- BIT data - Raw Trace
+                            #    0x80 -- Seis data - Normal, Raw
+                            #    0x88 -- Seis data - Normal, Stack
+                            #    0x90 -- Seis data - Normal, Correlated
+                            #    0xA0 -- Seis data - Test, Raw
+                            #    0xA8 -- Seis data - Test, Stack
+                            #    0xB0 -- Seis data - Test, Correlated
+                            # Sensor type ID
+                            "SensorTypeID" / construct.Int8ub,
+                            #    0x00 -- No sensor defined
+                            #    0x01 -- Geophone - 1 component vertical
+                            #    0x02 -- Marshphone
+                            #    0x03 -- Hydrophone
+                            #    0x04 -- Aux
+                            #    0x05 -- Geophone-3c Horizontal,
+                            # X -- In-line
+                            #    0x06 -- Geophone-3c Horizontal,
+                            # Y -- Cross-line
+                            #    0x07 -- Geophone-3c Vertical, Z
+                            #    0x08 -- Reserved
+                            #    0x0C -- Accelerometer-3c Horizontal,
+                            # X -- In-line
+                            #    0x0C -- Accelerometer-3c Horizontal,
+                            # Y -- Cross-line
+                            #    0x0C -- Accelerometer-3c Vertical, Z
+                            # Sensor serial number
+                            "SensorSerial" / construct.BitsInteger(3),
+                            # Sensor version number
+                            "SensorVersion" / construct.Int8ub,
+                            # Sensor revision
+                            "SensorRev" / construct.Int8ub,
+                            # VOR applied
+                            #    0 -- No VOR applied
+                            #    2 -- VOR applied
+                            "VOR" / construct.Int8ub)
     return TRACE
 
 
