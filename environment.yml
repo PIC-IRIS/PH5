@@ -15,6 +15,7 @@ dependencies:
  - psutil
  - obspy
  - vispy
+ - testfixtures
  - pip=19.1.1
  - pip:
    - construct==2.5.1
