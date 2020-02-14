@@ -1025,8 +1025,8 @@ def process():
 
         print '-' * 80
 
-    logger.info("segd2ph5 {0}".format(PROG_VERSION))
-    logger.info("{0}".format(sys.argv))
+    LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
     if len(FILES) > 0:
         RESP = Resp(EX.ph5_g_responses)
         rows, keys = EX.ph5_g_receivers.read_index()
@@ -1041,7 +1041,7 @@ def process():
         try:
             SIZE = os.path.getsize(f)
         except Exception as e:
-            logger.error("Failed to read {0}, {1}.\
+            LOGGER.error("Failed to read {0}, {1}.\
              Skipping...\n".format(f, str(e.message)))
             continue
 
@@ -1052,7 +1052,7 @@ def process():
         RH = False
         # print "isSEGD"
         if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
-            logger.error(
+            LOGGER.error(
                 "{0} is not a Fairfield SEG-D file. Skipping.".format(
                     SD.name()))
             continue
@@ -1067,7 +1067,7 @@ def process():
             # print "external headers"
             SD.process_external_headers()
         except segdreader.InputsError as e:
-            logger.error(
+            LOGGER.error(
                 "Possible bad SEG-D file -- {0}".format(
                     "".join(e.message)))
             continue
@@ -1080,12 +1080,12 @@ def process():
         part_number, node_id, number_of_channels = get_node(SD)
         #
         EXREC = get_current_data_only(SIZE, Das)
-        logger.info(":<Processing>: {0}\n".format(SD.name()))
-        logger.info(
+        LOGGER.info(":<Processing>: {0}\n".format(SD.name()))
+        LOGGER.info(
             "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
         if EXREC.filename != MINIPH5:
-            logger.info("Opened: {0}...\n".format(EXREC.filename))
-            logger.info(
+            LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
+            LOGGER.info(
                 "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
                     Das, node_id, part_number, number_of_channels))
             MINIPH5 = EXREC.filename
@@ -1125,8 +1125,8 @@ def process():
             try:
                 trace, cs = SD.process_trace()
             except segdreader.InputsError as e:
-                logger.error("{0}\n".format(F))
-                logger.error(
+                LOGGER.error("{0}\n".format(F))
+                LOGGER.error(
                     "Possible bad SEG-D file -- {0}".format(
                         "".join(e.message)))
                 break
@@ -1153,7 +1153,7 @@ def process():
                         LON = SD.trace_headers.trace_header_N[
                                   4].receiver_point_X_final / 10.
                 except Exception as e:
-                    logger.warning(
+                    LOGGER.warning(
                         "Failed to convert location: {0}.\n".format(
                             e.message))
 
@@ -1217,7 +1217,7 @@ def process():
             for line in TRACE_JSON:
                 log_array.append(line)
 
-        logger.info(":<Finished>: {0}\n".format(F))
+        LOGGER.info(":<Finished>: {0}\n".format(F))
 
     write_arrays(ARRAY_T)
 
@@ -1229,7 +1229,7 @@ def main():
     try:
         get_args()
     except Exception, err_msg:
-        logger.error(err_msg)
+        LOGGER.error(err_msg)
         return 1
 
     initializeExperiment()
@@ -1242,9 +1242,9 @@ def main():
         EX.ph5close()
         EXREC.ph5close()
     except Exception as e:
-        logger.warning("{0}\n".format("".join(e.message)))
+        LOGGER.warning("{0}\n".format("".join(e.message)))
 
-    logger.info("Done...{0:b}".format(int(seconds / 6.)))
+    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
     logging.shutdown()
 
 
