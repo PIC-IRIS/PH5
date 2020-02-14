@@ -2,36 +2,15 @@
 Tests for pforma_io
 '''
 import unittest
-import logging
-from StringIO import StringIO
-from contextlib import contextmanager
 import os
-import sys
 import shutil
 import tempfile
-import ph5
 from ph5.utilities import segd2ph5, pforma_io, tabletokef
-
-
-@contextmanager
-def captured_output():
-    new_out, new_err = StringIO(), StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
+from testfixtures import OutputCapture
 
 
 class TestPforma(unittest.TestCase):
     def setUp(self):
-        # capture log string into log_capture_string
-        self.log_capture_string = StringIO()
-        ph5.logger.removeHandler(ph5.ch)
-        ch = logging.StreamHandler(self.log_capture_string)
-        ph5.logger.addHandler(ch)
-
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
@@ -88,7 +67,7 @@ class TestPforma(unittest.TestCase):
         # test unite
         fio = pforma_io.FormaIO(infile="", outdir=self.tmpdir)
         fio.initialize_ph5()
-        with captured_output() as (out, err):
+        with OutputCapture():
             fio.unite("Sigma")
 
         # check array_t and index_t in Sigma/ are the same as in A/
