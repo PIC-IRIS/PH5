@@ -7,14 +7,22 @@ import sys
 import shutil
 import tempfile
 import logging
-from StringIO import StringIO as StringBuffer
 from mock import patch
 from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import experiment, segdreader
+from ph5.core.tests import test_base
 
 
 class TestSegDtoPH5(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        test_base.change_logger_handler()
+
+    @classmethod
+    def tearDownClass(self):
+        test_base.revert_logger_handler()
+
     def initialize_ph5(self, editmode):
         EX = experiment.ExperimentGroup(nickname="master.ph5")
         EX.ph5open(editmode)
@@ -22,12 +30,6 @@ class TestSegDtoPH5(unittest.TestCase):
         return EX
 
     def setUp(self):
-        # capture log string into log_capture_string
-        self.log_capture_string = StringBuffer()
-        logger.removeHandler(CH)
-        ch = logging.StreamHandler(self.log_capture_string)
-        logger.addHandler(ch)
-
         # create tmpdir
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
