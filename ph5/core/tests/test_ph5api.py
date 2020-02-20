@@ -4,9 +4,17 @@ Tests for ph5api
 
 import unittest
 from ph5.core import ph5api
+from ph5.core.tests import test_base
 
 
 class TestPH5API(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        test_base.change_logger_handler()
+
+    @classmethod
+    def tearDownClass(self):
+        test_base.revert_logger_handler()
 
     def setUp(self):
         self.ph5API_object = ph5api.PH5(path='ph5/test_data/ph5',
