@@ -9,19 +9,11 @@ import os
 from ph5.utilities import metadatatoph5
 import sys
 from mock import patch
-from ph5.core.tests import test_base
+from ph5.core.tests.test_base import PH5TestCase
 from testfixtures import OutputCapture
 
 
-class TestObspytoPH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        test_base.change_logger_handler()
-
-    @classmethod
-    def tearDownClass(self):
-        test_base.revert_logger_handler()
-
+class TestObspytoPH5(PH5TestCase):
     def setUp(self):
         self.path = 'ph5/test_data/miniseedph5'
         try:

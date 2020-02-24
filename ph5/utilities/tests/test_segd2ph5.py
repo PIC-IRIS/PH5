@@ -9,18 +9,10 @@ import tempfile
 from mock import patch
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import experiment, segdreader
-from ph5.core.tests import test_base
+from ph5.core.tests.test_base import PH5TestCase
 
 
-class TestSegDtoPH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        test_base.change_logger_handler()
-
-    @classmethod
-    def tearDownClass(self):
-        test_base.revert_logger_handler()
-
+class TestSegDtoPH5(PH5TestCase):
     def initialize_ph5(self, editmode):
         EX = experiment.ExperimentGroup(nickname="master.ph5")
         EX.ph5open(editmode)

@@ -1,6 +1,7 @@
 from ph5 import logger, ch
 from StringIO import StringIO
 import logging
+import unittest
 
 newch = None
 
@@ -22,3 +23,13 @@ def revert_logger_handler():
     # revert logger handler
     logger.removeHandler(newch)
     logger.addHandler(ch)
+
+
+class PH5TestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        change_logger_handler()
+
+    @classmethod
+    def tearDownClass(self):
+        revert_logger_handler()
