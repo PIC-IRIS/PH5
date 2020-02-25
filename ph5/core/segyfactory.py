@@ -16,10 +16,10 @@ import time
 import string
 import sys
 import logging
-from ph5.core import ph5utils  # for geod2utm, run_geod
+from ph5.core import ph5utils  # for geod_to_utm, run_geod
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = '2020.015'
+PROG_VERSION = '2020.055'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -789,8 +789,8 @@ class Ssegy:
                 lat = self.array_t['location/Y/value_d']
                 lon = self.array_t['location/X/value_d']
                 elev = self.array_t['location/Z/value_d']
-                utmc = ph5utils.UTMConversions(lat, lon, None, None)
-                Y, X, Z = utmc.geod2utm(lat, lon, elev)
+                utmc = ph5utils.LatLongToUtmConvert(lat, lon)
+                Y, X, Z = utmc.geod_to_utm(elev)
                 s, vx, vy = pick_values_32(X, Y)
 
                 tra['coordScale'] = s
@@ -846,8 +846,8 @@ class Ssegy:
                     lat = self.event_t['location/Y/value_d']
                     lon = self.event_t['location/X/value_d']
                     elev = self.event_t['location/Z/value_d']
-                    utmc = ph5utils.UTMConversions(lat, lon, None, None)
-                    Y, X, Z = utmc.geod2utm(lat, lon, elev)
+                    utmc = ph5utils.LatLongToUtmConvert(lat, lon)
+                    Y, X, Z = utmc.geod_to_utm(elev)
 
                     s, vx, vy = pick_values_32(X, Y)
                     tra['sourceLongOrX'] = vx

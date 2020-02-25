@@ -14,7 +14,7 @@ import math
 from ph5.core import columns, experiment, timedoy, ph5utils
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2020.017'
+PROG_VERSION = '2020.055'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION

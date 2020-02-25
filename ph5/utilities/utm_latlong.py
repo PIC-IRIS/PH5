@@ -1,12 +1,12 @@
 # This script is used to convert UTM coordinates to/from Latitude/Longitude
-# Dave Thomas, 2019-11-26
+# Dave Thomas, 2020-02-24
 
 from __future__ import (print_function)
 from ph5.core import ph5utils
 import argparse
 import logging
 
-PROG_VERSION = '2020.015'
+PROG_VERSION = '2020.055'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -27,8 +27,8 @@ def convert_file_from_utm(infile, outfile):  # batch file method
             zone = int(fieldset[2])
             hemisphere = str(fieldset[3]).upper()
             try:
-                utm = ph5utils.UTMConversions(None, None, hemisphere, zone)
-                lat, lon = utm.utm2latlong(easting, northing)
+                lat, lon = ph5utils.utm_to_lat_long(easting, northing,
+                                                    hemisphere, zone)
                 ps = "easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
                 printstr1 = (ps % (easting, northing, zone, hemisphere))
                 printstr2 = "Lon = %.7f, Lat = %.7f" % (lon, lat)
@@ -56,8 +56,8 @@ def convert_file_from_latlong(infile, outfile):  # batch file method
             lat = float(fieldset[0])
             lon = float(fieldset[1])
             try:
-                utm = ph5utils.UTMConversions(lat, lon, None, None)
-                easting, northing, zone, hemisphere = utm.latlong2utm(lat, lon)
+                utm = ph5utils.LatLongToUtmConvert(lat, lon)
+                easting, northing, zone, hemisphere = utm.lat_long_to_utm()
                 ps = "easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
                 printstr1 = "Lon = %.7f, Lat = %.7f" % (lon, lat)
                 printstr2 = (ps % (easting, northing, zone, hemisphere))
@@ -74,11 +74,12 @@ def doinline_from_utm(easting, northing, zone, hemisphere):  # interactive
     print ("easting=%s, northing=%s, zone=%s, hemisphere=%s"
            % (easting, northing, zone, hemisphere))
     try:
-        utm = ph5utils.UTMConversions(None, None, hemisphere, zone)
         indat = ("Input: easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
                  % (float(easting), float(northing), int(zone), hemisphere))
         print (indat)
-        lat, lon = utm.utm2latlong(float(easting), float(northing))
+
+        lat, lon = ph5utils.utm_to_lat_long(easting, northing,
+                                            hemisphere, zone)
         outstr = "Lon = %.7f, Lat = %.7f" % (lon, lat)
         print (outstr)
         print (''.join('*'*50))
@@ -89,10 +90,15 @@ def doinline_from_utm(easting, northing, zone, hemisphere):  # interactive
 
 def doinline_from_latlong(lon, lat):  # interactive
     try:
-        utm = ph5utils.UTMConversions(lat, lon, None, None)
+        if abs(float(lat)) > 90.0:
+            msg = "Geodetic Error, your latitude, %.7f, is out of limit." \
+                   % (float(lat))
+            print (msg)
+            return
+        utm = ph5utils.LatLongToUtmConvert(lat, lon)
         indat = "Input: lon=%.7f, lat=%.7f" % (float(lon), float(lat))
         print (indat)
-        easting, northing, zone, hemisphere = utm.latlong2utm(lat, lon)
+        easting, northing, zone, hemisphere = utm.lat_long_to_utm()
         outstr = "easting=%.1f, northing=%.1f, zone=%s, hemisphere=%s" \
             % (float(easting), float(northing), zone, hemisphere)
         print (outstr)

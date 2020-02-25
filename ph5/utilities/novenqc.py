@@ -17,7 +17,7 @@ import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = '2020.015'
+PROG_VERSION = '2020.055'
 LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
