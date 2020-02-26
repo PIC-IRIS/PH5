@@ -11,7 +11,7 @@ dependencies:
  - nose
  - numpy
  - numexpr
- - pyproj=2.2
+ - pyproj
  - psutil
  - obspy
  - vispy
