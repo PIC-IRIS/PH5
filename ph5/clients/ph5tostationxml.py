@@ -17,6 +17,7 @@ from obspy.core import UTCDateTime
 from obspy.core.inventory.response import Response
 from obspy.io.xseed.core import _is_resp
 import pickle
+import tables
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
@@ -221,6 +222,8 @@ class PH5toStationXMLRequestManager(object):
     """
 
     def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format):
+        self.ph5path = ph5path
+        self.nickname = nickname
         self.request_list = sta_xml_obj_list
         self.ph5 = ph5api.PH5(path=ph5path, nickname=nickname)
         self.iris_custom_ns = "http://www.iris.edu/xml/station/1/"
@@ -288,6 +291,18 @@ class PH5toStationXMLParser(object):
         self.response_table_n_i = None
         self.receiver_table_n_i = None
         self.total_number_stations = 0
+        self.no_resp_file_msg = []
+        self.no_resp_data_msg = []
+        self.all_response_table_n_i_s = []
+        self.manager.ph5.read_response_t()
+        n_i_list = []
+        for entry in self.manager.ph5.Response_t['rows']:
+            n_i_list.append(entry['n_i'])
+        dup_indexes = set([i for i in n_i_list
+                           if n_i_list.count(i) > 1])
+        if len(dup_indexes) != 0:
+            raise PH5toStationXMLError("Response_t n_i duplicated: %s" %
+                                       ','.join(map(str, dup_indexes)))
 
     def is_lat_lon_match(self, sta_xml_obj, latitude, longitude):
         """
@@ -402,29 +417,110 @@ class PH5toStationXMLParser(object):
 
     def get_network(self, path):
         network = self.read_networks(path)
+
         if network:
             network = self.trim_to_level(network)
             return network
         else:
             return
 
-    def get_response_inv(self, obs_channel):
+    def check_resp_data(self, name, device):
+        """
+        Check if response data is loaded for response table's
+        response file name
+        :para name: name of response file
+        :para device: 'das'/'sensor'
+        """
+        path = self.manager.ph5path
+        nickname = self.manager.nickname
+        ph5 = tables.open_file(os.path.join(path, nickname), "r")
+        try:
+            ph5.get_node(ph5.root.Experiment_g.Responses_g, name)
+        except tables.NoSuchNodeError:
+            errmsg = "No response data loaded for %s" % name
+            if errmsg not in self.no_resp_data_msg:
+                self.no_resp_data_msg.append(errmsg)
+            ph5.close()
+            return False
+        ph5.close()
+        return True
+
+    def check_resp_file(self, Response_t, station, chan,
+                        device, name_from_array):
+        """
+        Check response file names in response_t and array_t are matched
+        :para Response_t: response table
+        :para station: station id
+        :para chan: channel info
+        :para device: 'das'/'sensor'
+        :para name_from_array: response file name formed from info in array_t
+        """
+        name_from_response = Response_t['response_file_%s_a' % device]
+        name_from_response_short = name_from_response.split('/')[-1]
+        if (name_from_response_short == ''):
+            if (name_from_array != ''):
+                errmsg = "Response_t's n_i %s: response_file_%s_a "\
+                    "is required." % (self.response_table_n_i, device)
+                if errmsg not in self.no_resp_file_msg:
+                    self.no_resp_file_msg.append(errmsg)
+                return None
+        else:
+            if name_from_array != name_from_response_short:
+                LOGGER.error(
+                    "%s-%s-response_table_n_i %s: "
+                    "Response %s file name should be '%s' "
+                    "while currently is '%s'."
+                    % (station,
+                       chan,
+                       self.response_table_n_i,
+                       device,
+                       name_from_array,
+                       name_from_response_short))
+                return None
+
+        return name_from_response
+
+    def get_response_inv(self, obs_channel, station, chan):
 
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
+
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
             self.manager.ph5.read_response_t()
+
             Response_t = \
                 self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+
             if Response_t:
-                response_file_das_a_name = Response_t.get(
-                    'response_file_das_a', None)
-                response_file_sensor_a_name = Response_t.get(
-                    'response_file_sensor_a', None)
+                das_model = obs_channel.data_logger.model.\
+                    translate(None, ',-=.').replace(" ", "")
+                resp_das_from_info = "%s_%s_%s_%s" % \
+                    (das_model,
+                     int(obs_channel.sample_rate_ration),
+                     int(obs_channel.sample_rate_ration /
+                         obs_channel.sample_rate),
+                     Response_t['gain/value_i'])
+                response_file_das_a_name = self.check_resp_file(
+                    Response_t, station, chan, 'das', resp_das_from_info)
+                if response_file_das_a_name is None:
+                    return Response()
+                if not self.check_resp_data(resp_das_from_info, 'das'):
+                    return Response()
+
+                resp_sensor_from_info = obs_channel.sensor.model.\
+                    translate(None, ',-=.').replace(" ", "")
+                if das_model.startswith("ZLAND"):
+                    resp_sensor_from_info = ""
+                response_file_sensor_a_name = self.check_resp_file(
+                    Response_t, station, chan, 'sensor', resp_sensor_from_info)
+                if response_file_sensor_a_name is None:
+                    return Response()
+                if not self.check_resp_data(resp_das_from_info, 'sensor'):
+                    return Response()
             else:
                 LOGGER.error('Response table not found')
                 return Response()
@@ -502,6 +598,17 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
+        # ### Sum up errors to limit log messages ###
+        if self.no_resp_file_msg != []:
+            for msg in self.no_resp_file_msg:
+                LOGGER.error(msg)
+        if self.no_resp_data_msg != []:
+            for msg in self.no_resp_data_msg:
+                LOGGER.error(msg)
+        if len(self.all_response_table_n_i_s) == 1:
+            LOGGER.warning("Only one response_table_n_i=%s in array_t."
+                           % self.all_response_table_n_i_s[0])
+        ############################################
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -760,6 +867,7 @@ class PH5toStationXMLParser(object):
                             all_stations.append(obs_station)
                             self.manager.set_obs_station(sta_key,
                                                          obs_station)
+
         return all_stations
 
     def read_channels(self, sta_xml_obj, station_entry, deployment,
@@ -875,8 +983,12 @@ class PH5toStationXMLParser(object):
                     # read response and add it to obspy channel inventory
                     self.response_table_n_i = \
                         station_entry['response_table_n_i']
+                    if (self.response_table_n_i not in
+                       self.all_response_table_n_i_s):
+                        self.all_response_table_n_i_s.append(
+                            self.response_table_n_i)
                     obs_channel.response = \
-                        self.get_response_inv(obs_channel)
+                        self.get_response_inv(obs_channel, sta_code, cha_code)
 
                     all_channels.append(obs_channel)
         return all_channels
@@ -938,7 +1050,6 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
         pool.terminate()
 
         networks = [n for n in results if n is not None]
-
         if networks:
             inv = inventory.Inventory(
                                         networks=networks,
@@ -999,6 +1110,8 @@ def main():
                 for fname in fileList:
                     if fname == nickname:
                         paths.append(dirName)
+        if paths == []:
+            raise NoDataError("No file found under path(s) {0}.".format(paths))
 
         args_dict_list = [args_dict]
         out_format = args_dict.get('out_format').upper()
@@ -1011,8 +1124,11 @@ def main():
                                     level,
                                     uri,
                                     args_dict_list)
+
         if not inv:
             raise NoDataError("Request resulted in no data.")
+
+        raw_input('Check logs for errors and press any key to continue.')
 
         if out_format == "STATIONXML":
             inv.write(args.outfile,
