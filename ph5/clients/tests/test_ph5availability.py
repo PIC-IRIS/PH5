@@ -5,11 +5,11 @@ unit tests for ph5availability
 import unittest
 from ph5.clients import ph5availability
 from ph5.core import ph5api
-from ph5.core.tests import test_base
 import sys
 import os
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
+from ph5.core.tests.test_base import PH5TestCase
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -61,15 +61,7 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-class TestPH5Availability(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        test_base.change_logger_handler()
-
-    @classmethod
-    def tearDownClass(self):
-        test_base.revert_logger_handler()
-
+class TestSegDtoPH5(PH5TestCase):
     def setUp(self):
         """
         setup for tests
