@@ -399,6 +399,10 @@ class PH5Validate(object):
         sensor_model/das_model, sample_rate, sample_rate_multiplier):
         """
         LOGGER.info("Validating Response_t")
+        header = ("-=-=-=-=-=-=-=-=-\n"
+                  "Response_t\n"
+                  "1 error\n"
+                  "-=-=-=-=-=-=-=-=-\n")
         unique_resp_file_names = []
         unique_resp_file_names_n_i = []
         self.ph5.read_response_t()
@@ -438,17 +442,14 @@ class PH5Validate(object):
         dup_indexes = set([i for i in n_i_list
                            if n_i_list.count(i) > 1])
         if len(dup_indexes) != 0:
-            header = ("-=-=-=-=-=-=-=-=-\n"
-                      "Response_t\n"
-                      "1 error\n"
-                      "-=-=-=-=-=-=-=-=-\n")
-
             errmsg = "Response_t n_i duplicated: %s" % \
                 ','.join(map(str, dup_indexes))
             LOGGER.error(errmsg)
             errors.append(errmsg)
-            return [ValidationBlock(heading=header, error=[errmsg])]
-        return []
+        if errors != []:
+            return [ValidationBlock(heading=header, error=errors)]
+        else:
+            return []
 
     def check_station_completeness(self, station):
         """
