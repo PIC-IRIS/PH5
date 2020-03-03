@@ -10,7 +10,9 @@ import argparse
 import logging
 import re
 import subprocess
+import os
 import sys
+import tables
 from ph5.core import ph5api
 
 PROG_VERSION = "2019.29"
@@ -327,6 +329,127 @@ class PH5Validate(object):
             validation_blocks.append(vb)
         return validation_blocks
 
+    def check_resp_data(self, path, nickname, name, errors):
+        """
+        Check if response data is loaded for response table's
+        response file name
+        :para path: path to ph5 file
+        :para nickname: name of ph5 file
+        :para name: name of response file
+        :para errors: list of errors have been collected for checking
+              response_t
+        """
+
+        ph5 = tables.open_file(os.path.join(path, nickname), "r")
+        try:
+            ph5.get_node(ph5.root.Experiment_g.Responses_g, name)
+        except tables.NoSuchNodeError:
+            errmsg = "No response data loaded for %s" % name
+            errors.append(errmsg)
+            LOGGER.error(errmsg)
+
+        ph5.close()
+
+    def check_resp_file_name(self, Response_t, n_i, station, chan,
+                             dev_type, name_from_array, errors):
+        """
+        Check response file names in response_t and array_t are matched
+        :para Response_t: response table
+        :para n_i: response_table_n_i
+        :para station: station id
+        :para chan: channel info
+        :para dev_type: 'das'/'sensor'
+        :para name_from_array: response file name formed from info in array_t
+        :para errors: list of errors have been collected for checking
+                      response_t
+        """
+        name_from_response = Response_t['response_file_%s_a' % dev_type]
+        name_from_response_short = name_from_response.split('/')[-1]
+        if (name_from_response_short == ''):
+            if (name_from_array != ''):
+                errmsg = "Response_t's n_i %s: response_file_%s_a "\
+                    "is required." % (n_i, dev_type)
+                if errmsg not in errors:
+                    errors.append(errmsg)
+                    LOGGER.error(errmsg)
+                return None
+        else:
+            if name_from_array != name_from_response_short:
+                errmsg = "%s-%s-response_table_n_i %s: "\
+                    "Response %s file name should be '%s' "\
+                    "while currently is '%s'."\
+                    % (station,
+                       chan,
+                       n_i,
+                       dev_type,
+                       name_from_array,
+                       name_from_response_short)
+                if errmsg not in errors:
+                    errors.append(errmsg)
+                    LOGGER.error(errmsg)
+                return None
+
+        return name_from_response
+
+    def check_response_t(self, resp_check_info, path, nickname):
+        """
+        :para path: path to ph5 file
+        :para nickname: name of ph5 file
+        :para resp_check_info: a list of dict of {n_i, stationid, channel_id,
+        sensor_model/das_model, sample_rate, sample_rate_multiplier):
+        """
+        LOGGER.info("Validating Response_t")
+        unique_resp_file_names = []
+        unique_resp_file_names_n_i = []
+        self.ph5.read_response_t()
+        errors = []
+        for info in resp_check_info:
+            Response_t = self.ph5.get_response_t_by_n_i(info['n_i'])
+            model = info['model'].translate(None, ',-=.').replace(" ", "")
+            if len(info) == 4:
+                # check sensor
+                resp_name_from_info = model
+                dev_type = 'sensor'
+
+            else:
+                # check das
+                resp_name_from_info = "%s_%s_%s_%s" % \
+                    (model, info['spr'], info['sprm'],
+                     Response_t['gain/value_i'])
+                dev_type = 'das'
+            if ((resp_name_from_info, info['n_i']) in
+                    unique_resp_file_names_n_i):
+                continue
+            unique_resp_file_names_n_i.append((resp_name_from_info,
+                                               info['n_i']))
+            resp_name_in_response_t = self.check_resp_file_name(
+                Response_t, info['n_i'], info['sta'], info['chan'],
+                dev_type, resp_name_from_info, errors)
+
+            if resp_name_in_response_t in unique_resp_file_names:
+                continue
+            unique_resp_file_names.append(resp_name_in_response_t)
+            if resp_name_in_response_t is not None:
+                self.check_resp_data(path, nickname,
+                                     resp_name_from_info, errors)
+
+        # check for duplicated n_i
+        n_i_list = [e['n_i'] for e in self.ph5.Response_t['rows']]
+        dup_indexes = set([i for i in n_i_list
+                           if n_i_list.count(i) > 1])
+        if len(dup_indexes) != 0:
+            header = ("-=-=-=-=-=-=-=-=-\n"
+                      "Response_t\n"
+                      "1 error\n"
+                      "-=-=-=-=-=-=-=-=-\n")
+
+            errmsg = "Response_t n_i duplicated: %s" % \
+                ','.join(map(str, dup_indexes))
+            LOGGER.error(errmsg)
+            errors.append(errmsg)
+            return [ValidationBlock(heading=header, error=[errmsg])]
+        return []
+
     def check_station_completeness(self, station):
         """
         Checks that the following are present in Experiment_t:
@@ -527,6 +650,7 @@ class PH5Validate(object):
     def check_array_t(self):
         LOGGER.info("Validating Array_t")
         validation_blocks = []
+        resp_check_info = []
         info = []
         warning = []
         error = []
@@ -552,6 +676,28 @@ class PH5Validate(object):
                             station = station_list[deployment][st_num]
                             station_id = station['id_s']
                             channel_id = station['channel_number_i']
+                            resp_n_i = station['response_table_n_i']
+                            das_model = station['das/model_s']
+                            item = {'n_i': resp_n_i,
+                                    'sta': station_id,
+                                    'chan': channel_id,
+                                    'model': das_model,
+                                    'spr': station['sample_rate_i'],
+                                    'sprm': station['sample_rate_multiplier_i']
+                                    }
+                            if item not in resp_check_info:
+                                resp_check_info.append(item)
+
+                            sensor_model = '' \
+                                if das_model.startswith("ZLAND") \
+                                else station['sensor/model_s']
+                            item = {'n_i': resp_n_i,
+                                    'sta': station_id,
+                                    'chan': channel_id,
+                                    'model': sensor_model}
+                            if item not in resp_check_info:
+                                resp_check_info.append(item)
+
                             LOGGER.debug("Validating Station {0} Channel {1}"
                                          .format(str(station_id),
                                                  str(channel_id)))
@@ -573,7 +719,7 @@ class PH5Validate(object):
                                                      warning=warning,
                                                      error=error)
                                 validation_blocks.append(vb)
-        return validation_blocks
+        return validation_blocks,  resp_check_info
 
     def check_event_t_completeness(self, event):
         """
@@ -761,7 +907,10 @@ def main():
                                   args.outfile)
         validation_blocks = []
         validation_blocks.extend(ph5validate.check_experiment_t())
-        validation_blocks.extend(ph5validate.check_array_t())
+        vb_array, resp_check_info = ph5validate.check_array_t()
+        validation_blocks.extend(vb_array)
+        validation_blocks.extend(ph5validate.check_response_t(
+            resp_check_info, args.ph5path, args.nickname))
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
