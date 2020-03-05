@@ -29,8 +29,8 @@
         <SampleRate>200.0</SampleRate>
         <StorageFormat>PH5</StorageFormat>
         <Sensor>
-          <Type>None CMG-3T</Type>
-          <Description>None CMG-3T/None Q330</Description>
+          <Type>CMG-3T</Type>
+          <Description>CMG-3T/Q330</Description>
           <Manufacturer>None</Manufacturer>
           <Vendor></Vendor>
           <Model>CMG-3T</Model>
@@ -39,7 +39,7 @@
           <RemovalDate>2019-01-14T18:12:04</RemovalDate>
         </Sensor>
         <DataLogger>
-          <Type>None Q330</Type>
+          <Type>Q330</Type>
           <Description></Description>
           <Manufacturer>None</Manufacturer>
           <Vendor></Vendor>
@@ -210,8 +210,8 @@
         <SampleRate>100.0</SampleRate>
         <StorageFormat>PH5</StorageFormat>
         <Sensor>
-          <Type>None CMG-3T</Type>
-          <Description>None CMG-3T/None Q330</Description>
+          <Type>CMG-3T</Type>
+          <Description>CMG-3T/Q330</Description>
           <Manufacturer>None</Manufacturer>
           <Vendor></Vendor>
           <Model>CMG-3T</Model>
@@ -220,7 +220,7 @@
           <RemovalDate>2019-01-14T18:12:04</RemovalDate>
         </Sensor>
         <DataLogger>
-          <Type>None Q330</Type>
+          <Type>Q330</Type>
           <Description></Description>
           <Manufacturer>None</Manufacturer>
           <Vendor></Vendor>
@@ -433,8 +433,8 @@
         <SampleRate>0.0</SampleRate>
         <StorageFormat>PH5</StorageFormat>
         <Sensor>
-          <Type>None CMG-3T</Type>
-          <Description>None CMG-3T/None Q330</Description>
+          <Type>CMG-3T</Type>
+          <Description>CMG-3T/Q330</Description>
           <Manufacturer>None</Manufacturer>
           <Vendor></Vendor>
           <Model>CMG-3T</Model>
@@ -443,7 +443,7 @@
           <RemovalDate>2019-01-14T18:12:05</RemovalDate>
         </Sensor>
         <DataLogger>
-          <Type>None Q330</Type>
+          <Type>Q330</Type>
           <Description></Description>
           <Manufacturer>None</Manufacturer>
           <Vendor></Vendor>
