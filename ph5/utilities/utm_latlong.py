@@ -56,8 +56,8 @@ def convert_file_from_latlong(infile, outfile):  # batch file method
             lat = float(fieldset[0])
             lon = float(fieldset[1])
             try:
-                utm = ph5utils.LatLongToUtmConvert(lat, lon)
-                easting, northing, zone, hemisphere = utm.lat_long_to_utm()
+                easting, northing, zone, hemisphere =\
+                         ph5utils.lat_long_to_utm(lat, lon)
                 ps = "easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
                 printstr1 = "Lon = %.7f, Lat = %.7f" % (lon, lat)
                 printstr2 = (ps % (easting, northing, zone, hemisphere))
@@ -95,10 +95,10 @@ def doinline_from_latlong(lon, lat):  # interactive
                    % (float(lat))
             print (msg)
             return
-        utm = ph5utils.LatLongToUtmConvert(lat, lon)
+        easting, northing, zone, hemisphere = \
+            ph5utils.lat_long_to_utm(lat, lon)
         indat = "Input: lon=%.7f, lat=%.7f" % (float(lon), float(lat))
         print (indat)
-        easting, northing, zone, hemisphere = utm.lat_long_to_utm()
         outstr = "easting=%.1f, northing=%.1f, zone=%s, hemisphere=%s" \
             % (float(easting), float(northing), zone, hemisphere)
         print (outstr)

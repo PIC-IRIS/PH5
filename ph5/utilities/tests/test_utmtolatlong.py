@@ -1,13 +1,14 @@
 import unittest
 import pyproj
-from ph5.core.ph5utils import LatLongToUtmConvert
+from ph5.core.ph5utils import lat_long_to_utm
 from ph5.core.ph5utils import utm_to_lat_long
+from ph5.core.ph5utils import geod_to_utm
 from ph5.core.ph5utils import tspc_lat_long
 
 
 class TestUTMconversion(unittest.TestCase):
 
-    def test_is_valid_utm_conversion(self):
+    def test_is_valid_utm_conversion_north(self):
         # location: PIC
         lat, lon = utm_to_lat_long(322916, 3771967, 'N', 13)
         self.assertAlmostEqual(lat, 34.07349577107704)
@@ -31,20 +32,31 @@ class TestUTMconversion(unittest.TestCase):
 
     def test_is_valid_geod_conversion(self):
         # location: PIC
-        u = LatLongToUtmConvert(34.0734958, -106.9190959)
-        northing, easting, elev = u.geod_to_utm(1456.0)
+        northing, easting, elev =\
+            geod_to_utm(34.0734958, -106.9190959, 1456.0)
         self.assertAlmostEqual(northing, 3771967.003118457)
         self.assertAlmostEqual(easting, 322916.0048106084)
         self.assertAlmostEqual(elev, 1456.0)
 
-    def test_is_valid_latlong_conversion(self):
+    def test_is_valid_latlong_conversion_north(self):
         # location: PIC
-        u = LatLongToUtmConvert(34.0734958, -106.9190959)
-        easting, northing, zone, hemisphere = u.lat_long_to_utm()
+        easting, northing, zone, hemisphere =\
+                 lat_long_to_utm(34.0734958, -106.9190959)
+
         self.assertAlmostEqual(easting, 322916.0048106084)
         self.assertAlmostEqual(northing, 3771967.003118457)
         self.assertEqual(zone, 13)
         self.assertAlmostEqual(hemisphere, 'N')
+
+    def test_is_valid_latlong_conversion_south(self):
+        # location: Castle Rock Antarctica
+        easting, northing, zone, hemisphere =\
+            lat_long_to_utm(-77.81567398301094, 166.73816638798527)
+
+        self.assertAlmostEqual(easting, 540947.0)
+        self.assertAlmostEqual(northing, 1361594.0)
+        self.assertEqual(zone, 58)
+        self.assertAlmostEqual(hemisphere, 'S')
 
     def test_is_valid_tsp_conversion(self):
         # Sweetwater, Texas, units US FEET

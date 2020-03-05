@@ -71,30 +71,32 @@ class PH5ResponseManager(object):
                 return ph5_resp.n_i
 
 
-class LatLongToUtmConvert:
+def lat_long_to_utm(lat, lon):
 
-    def __init__(self, lat, lon):
-        epsg_wgs84 = "EPSG:4326"
+    epsg_wgs84 = "EPSG:4326"
 
-        if lat < 0.0:
-            epsgroot = "327"
-            self.hemisphere = 'S'
-        elif lat >= 0.0:
-            epsgroot = "326"
-            self.hemisphere = 'N'
+    if lat < 0.0:
+        epsgroot = "327"
+        hemisphere = 'S'
+    elif lat >= 0.0:
+        epsgroot = "326"
+        hemisphere = 'N'
 
-        self.utm_zone = int(math.floor((float(lon) + 180.)/6.0) % 60) + 1
-        epsg_utm = "EPSG:" + epsgroot + str(self.utm_zone)
-        transformer = Transformer.from_crs(epsg_wgs84,
-                                           epsg_utm,
-                                           always_xy=True)
-        self.easting, self.northing = transformer.transform(lon, lat)
+    utm_zone = int(math.floor((float(lon) + 180.)/6.0) % 60) + 1
+    epsg_utm = "EPSG:" + epsgroot + str(utm_zone)
+    transformer = Transformer.from_crs(epsg_wgs84,
+                                       epsg_utm,
+                                       always_xy=True)
+    easting, northing = transformer.transform(lon, lat)
 
-    def geod_to_utm(self, elev):
-        return (self.northing, self.easting, elev)
+    return (easting, northing, utm_zone, hemisphere)
 
-    def lat_long_to_utm(self):
-        return (self.easting, self.northing, self.utm_zone, self.hemisphere)
+
+def geod_to_utm(lat, lon, elev):
+
+    easting, northing, utm_zone, hemisphere = lat_long_to_utm(lat, lon)
+
+    return (northing, easting, elev)
 
 
 def utm_to_lat_long(easting, northing, hemisphere, zone):

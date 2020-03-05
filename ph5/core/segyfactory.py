@@ -789,8 +789,7 @@ class Ssegy:
                 lat = self.array_t['location/Y/value_d']
                 lon = self.array_t['location/X/value_d']
                 elev = self.array_t['location/Z/value_d']
-                utmc = ph5utils.LatLongToUtmConvert(lat, lon)
-                Y, X, Z = utmc.geod_to_utm(elev)
+                Y, X, Z = ph5utils.geod_to_utm(lat, lon, elev)
                 s, vx, vy = pick_values_32(X, Y)
 
                 tra['coordScale'] = s
@@ -846,8 +845,7 @@ class Ssegy:
                     lat = self.event_t['location/Y/value_d']
                     lon = self.event_t['location/X/value_d']
                     elev = self.event_t['location/Z/value_d']
-                    utmc = ph5utils.LatLongToUtmConvert(lat, lon)
-                    Y, X, Z = utmc.geod_to_utm(elev)
+                    Y, X, Z = ph5utils.geod_to_utm(lat, lon, elev)
 
                     s, vx, vy = pick_values_32(X, Y)
                     tra['sourceLongOrX'] = vx
