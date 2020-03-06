@@ -149,7 +149,7 @@ converted longitudes, latitudes or UTM Coordinates")
             if args.easting is not None and args.northing is not None \
              and args.zone is not None and args.side is not None:
                 doinline_from_utm(args.easting, args.northing,
-                                  args.zone, args.side)
+                                  args.zone, args.side.upper())
             else:
                 print ("Error-you must specify easting, northing, zone, side")
         elif args.latlong == 1:
