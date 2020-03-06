@@ -11,11 +11,11 @@ from obspy import UTCDateTime
 import os
 import sys
 from mock import patch
-from ph5.core.tests.test_base import PH5TestCase
+from ph5.core.tests.test_base import LogTestCase
 from testfixtures import OutputCapture
 
 
-class TestMetadatatoPH5(PH5TestCase):
+class TestMetadatatoPH5(LogTestCase):
     def setUp(self):
         self.path = 'ph5/test_data/miniseedph5'
         try:

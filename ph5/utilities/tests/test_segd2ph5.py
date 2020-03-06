@@ -9,10 +9,10 @@ import tempfile
 from mock import patch
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import experiment, segdreader
-from ph5.core.tests.test_base import PH5TestCase
+from ph5.core.tests.test_base import LogTestCase
 
 
-class TestSegDtoPH5(PH5TestCase):
+class TestSegDtoPH5(LogTestCase):
     def initialize_ph5(self, editmode):
         EX = experiment.ExperimentGroup(nickname="master.ph5")
         EX.ph5open(editmode)

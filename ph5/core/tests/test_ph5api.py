@@ -4,10 +4,10 @@ Tests for ph5api
 
 import unittest
 from ph5.core import ph5api
-from ph5.core.tests.test_base import PH5TestCase
+from ph5.core.tests.test_base import LogTestCase
 
 
-class TestPH5API(PH5TestCase):
+class TestPH5API(LogTestCase):
     def setUp(self):
         self.ph5API_object = ph5api.PH5(path='ph5/test_data/ph5',
                                         nickname='master.ph5')

@@ -25,11 +25,11 @@ def revert_logger_handler():
     logger.addHandler(ch)
 
 
-class PH5TestCase(unittest.TestCase):
+class LogTestCase(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         change_logger_handler()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         revert_logger_handler()

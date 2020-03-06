@@ -9,7 +9,7 @@ import sys
 import os
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
-from ph5.core.tests.test_base import PH5TestCase
+from ph5.core.tests.test_base import LogTestCase
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -61,7 +61,7 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-class TestSegDtoPH5(PH5TestCase):
+class TestSegDtoPH5(LogTestCase):
     def setUp(self):
         """
         setup for tests
