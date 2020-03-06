@@ -4,6 +4,9 @@ from ph5.core.ph5utils import lat_long_to_utm
 from ph5.core.ph5utils import utm_to_lat_long
 from ph5.core.ph5utils import geod_to_utm
 from ph5.core.ph5utils import tspc_lat_long
+from ph5.core.ph5utils import latlon2geod
+
+PROG_VERSION = '2020.066'
 
 
 class TestUTMconversion(unittest.TestCase):
@@ -63,6 +66,15 @@ class TestUTMconversion(unittest.TestCase):
         lon, lat = tspc_lat_long(1380811, 6858888)
         self.assertAlmostEqual(lon, -100.40568335900281)
         self.assertAlmostEqual(lat, 32.468972700219375)
+
+    def test_is_valid_latlon2geod_conversion(self):
+        # socorro to albuquerque in miles
+        az, baz, dist = latlon2geod(34.0543, -106.907,
+                                    35.1053, -106.646,
+                                    1609.344)
+        self.assertAlmostEqual(az, 11.533074930503515)
+        self.assertAlmostEqual(baz, -168.3187871800244)
+        self.assertAlmostEqual(dist, 73.95826059337135)
 
 
 if __name__ == "__main__":

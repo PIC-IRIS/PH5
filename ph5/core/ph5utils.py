@@ -19,7 +19,7 @@ import re
 from pyproj import Transformer, Geod
 import math
 
-PROG_VERSION = "2020.055"
+PROG_VERSION = "2020.066"
 
 
 class PH5Response(object):
@@ -116,8 +116,7 @@ def utm_to_lat_long(easting, northing, hemisphere, zone):
 
 
 def tspc_lat_long(easting, northing):
-    # Texas State Plane Coords
-    # State Plane Coords in US FEET
+    # Texas State Plane Coords, in US FEET
     epsg_wgs84 = "EPSG:4326"
     epsg_sp4202 = "EPSG:2276"
     transformer = Transformer.from_crs(epsg_sp4202, epsg_wgs84,
@@ -126,7 +125,8 @@ def tspc_lat_long(easting, northing):
     return (lon, lat)
 
 
-def run_geod(lat0, lon0, lat1, lon1, scalar=1.0):
+def latlon2geod(lat0, lon0, lat1, lon1, scalar=1.0):
+    # Return azimuth, back azimuth, geodetic distance
     ELLIPSOID = 'WGS84'
 
     config = "+ellps={0}".format(ELLIPSOID)
@@ -138,7 +138,6 @@ def run_geod(lat0, lon0, lat1, lon1, scalar=1.0):
     if dist:
         dist /= scalar
 
-    # Return list containing azimuth, back azimuth, distance
     return az, baz, dist
 
 

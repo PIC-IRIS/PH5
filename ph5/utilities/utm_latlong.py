@@ -6,11 +6,12 @@ from ph5.core import ph5utils
 import argparse
 import logging
 
-PROG_VERSION = '2020.055'
+PROG_VERSION = '2020.066'
 LOGGER = logging.getLogger(__name__)
 
 
-def convert_file_from_utm(infile, outfile):  # batch file method
+def convert_file_from_utm(infile, outfile):
+    # batch file method
     counter = 0
     with open(outfile, "w") as theoutfile, open(infile) as theinfile:
         ws = "Easting, Northing, Zone, Hemisphere, => Longitude, Latitude\n"
@@ -18,7 +19,8 @@ def convert_file_from_utm(infile, outfile):  # batch file method
         for line in theinfile:
             counter = counter + 1
             if counter == 1:
-                continue  # skip header line
+                # skip header line
+                continue
             fieldset = line.strip().split(",")
             if len(fieldset) <= 1:
                 continue
@@ -41,7 +43,8 @@ def convert_file_from_utm(infile, outfile):  # batch file method
                 return
 
 
-def convert_file_from_latlong(infile, outfile):  # batch file method
+def convert_file_from_latlong(infile, outfile):
+    # batch file method
     counter = 0
     with open(outfile, "w") as theoutfile, open(infile) as theinfile:
         ws = "Longitude, Latitude, =>Easting, Northing, Zone, Hemisphere\n"
@@ -49,7 +52,8 @@ def convert_file_from_latlong(infile, outfile):  # batch file method
         for line in theinfile:
             counter = counter + 1
             if counter == 1:
-                continue  # skip header line
+                # skip header line
+                continue
             fieldset = line.strip().split(",")
             if len(fieldset) <= 1:
                 continue
@@ -70,9 +74,8 @@ def convert_file_from_latlong(infile, outfile):  # batch file method
                 return
 
 
-def doinline_from_utm(easting, northing, zone, hemisphere):  # interactive
-    print ("easting=%s, northing=%s, zone=%s, hemisphere=%s"
-           % (easting, northing, zone, hemisphere))
+def doinline_from_utm(easting, northing, zone, hemisphere):
+    # interactive method
     try:
         indat = ("Input: easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
                  % (float(easting), float(northing), int(zone), hemisphere))
@@ -88,7 +91,8 @@ def doinline_from_utm(easting, northing, zone, hemisphere):  # interactive
         return
 
 
-def doinline_from_latlong(lon, lat):  # interactive
+def doinline_from_latlong(lon, lat):
+    # interactive method
     try:
         if abs(float(lat)) > 90.0:
             msg = "Geodetic Error, your latitude, %.7f, is out of limit." \
@@ -130,6 +134,7 @@ converted longitudes, latitudes or UTM Coordinates")
 
     args = parser.parse_args()
 
+    # for batch file method
     if args.infile is not None and args.outfile is not None:
         if args.utm == 1:
             convert_file_from_utm(args.infile, args.outfile)
@@ -138,7 +143,8 @@ converted longitudes, latitudes or UTM Coordinates")
         else:
             print ("Error, you must specify either -u/--utm, OR -l/--latlong")
 
-    else:  # direct method
+    # for direct method
+    else:
         if args.utm == 1:
             if args.easting is not None and args.northing is not None \
              and args.zone is not None and args.side is not None:

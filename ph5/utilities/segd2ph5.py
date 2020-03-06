@@ -19,7 +19,7 @@ from ph5.core import experiment, columns, segdreader, ph5utils
 from ph5 import LOGGING_FORMAT
 
 
-PROG_VERSION = "2020.055"
+PROG_VERSION = "2020.066"
 
 LOGGER = logging.getLogger(__name__)
 

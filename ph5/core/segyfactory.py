@@ -16,10 +16,10 @@ import time
 import string
 import sys
 import logging
-from ph5.core import ph5utils  # for geod_to_utm, run_geod
+from ph5.core import ph5utils
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = '2020.055'
+PROG_VERSION = '2020.066'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -876,8 +876,8 @@ class Ssegy:
                 lon2 = self.array_t['location/X/value_d']
 
                 UNITS = 'm'
-                az_baz_dist = ph5utils.run_geod(lat1, lon1, lat2, lon2,
-                                                FACTS[UNITS])
+                az_baz_dist = ph5utils.latlon2geod(lat1, lon1, lat2, lon2,
+                                                   FACTS[UNITS])
                 tra['sourceToRecDist'] = az_baz_dist[2]
             except Exception as e:
                 # sys.stderr.write (e.message)

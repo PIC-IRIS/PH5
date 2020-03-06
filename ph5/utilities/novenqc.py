@@ -12,12 +12,13 @@ import re
 from random import randint
 from inspect import stack
 from ast import literal_eval
-from ph5.core import ph5utils  # for run_geod
+from ph5.core import ph5utils
 import simplekml as kml
 
 from ph5.core import timedoy
 
-PROG_VERSION = '2020.055'
+PROG_VERSION = '2020.066'
+
 LOGGER = logging.getLogger(__name__)
 
 FACTS = {'km': 1000., 'm': 1., 'dm': 1. / 10., 'cm': 1. / 100.,
@@ -216,8 +217,8 @@ def qc_deploy_pickup(rows):
         # Need to check for UTM and convert to lat/lon
         #
         units = 'm'
-        az, baz, dist = ph5utils.run_geod(ys[0], xs[0], ys[1], xs[1],
-                                          FACTS[units])
+        az, baz, dist = ph5utils.latlon2geod(ys[0], xs[0], ys[1], xs[1],
+                                             FACTS[units])
         if len(zs) > 1:
             zdelta = float(zs[1]) - float(zs[0])
         else:
