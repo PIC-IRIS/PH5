@@ -12,14 +12,10 @@ from mock import patch
 from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import experiment, segdreader
+from ph5.core.tests.test_base import initialize_ex
 
 
 class TestSegDtoPH5(unittest.TestCase):
-    def initialize_ph5(self, editmode):
-        EX = experiment.ExperimentGroup(nickname="master.ph5")
-        EX.ph5open(editmode)
-        EX.initgroup()
-        return EX
 
     def setUp(self):
         # capture log string into log_capture_string
@@ -34,7 +30,7 @@ class TestSegDtoPH5(unittest.TestCase):
         os.chdir(self.tmpdir)
 
         # initiate ph5
-        self.EX = segd2ph5.EX = self.initialize_ph5(editmode=True)
+        self.EX = segd2ph5.EX = initialize_ex('master.ph5', '.', True)
 
     def tearDown(self):
         try:
@@ -210,7 +206,7 @@ class TestSegDtoPH5(unittest.TestCase):
             segd2ph5.main()
 
         # check that all deploy times are in array_t
-        self.EX = tabletokef.EX = self.initialize_ph5(editmode=False)
+        self.EX = tabletokef.EX = initialize_ex('master.ph5', '.', False)
         tabletokef.ARRAY_T = {}
         tabletokef.read_sort_table()
         tabletokef.read_sort_arrays()
