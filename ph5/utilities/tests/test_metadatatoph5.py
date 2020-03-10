@@ -18,12 +18,7 @@ from testfixtures import OutputCapture
 class TestMetadatatoPH5(LogTestCase):
     def setUp(self):
         self.path = 'ph5/test_data/miniseedph5'
-        try:
-            os.mkdir(self.path)
-        except OSError:
-            print ("Creation of the directory %s failed" % self.path)
-        else:
-            print ("Successfully created the directory %s " % self.path)
+        os.mkdir(self.path)
 
         self.ph5_object = experiment.ExperimentGroup(
             nickname='master.ph5',
