@@ -1018,7 +1018,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare("True")
+                out.compare("True")
 
         # test has_data station with data all channels
         # expect to return True 3 times, once for each channel
@@ -1029,7 +1029,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare("True")
+                out.compare("True")
 
         # test has_data station with no data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1038,7 +1038,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('False')
+                out.compare('False')
 
         # test has_data station list data, no data,
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1047,7 +1047,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('True')
+                out.compare('True')
 
         # test has_data with start time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1056,7 +1056,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('True')
+                out.compare('True')
 
         # test has_data with end time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1065,7 +1065,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('True')
+                out.compare('True')
 
         # test has_data with time range having data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1075,7 +1075,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('True')
+                out.compare('True')
 
         # test has_data with time range having no data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1085,14 +1085,14 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('False')
+                out.compare('False')
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '0', '-A', '2']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('True')
+                out.compare('True')
 
         # ------------------------------------------------------------ #
         # test get_slc with station
@@ -1102,8 +1102,8 @@ class TestSegDtoPH5(LogTestCase):
             with OutputCapture() as out:
                 ph5availability.main()
 
-        out.compare("[('0407', '', 'HHN'), ('0407', '', 'LHN'), "
-                    "('0407', '', 'LOG')]")
+                out.compare("[('0407', '', 'HHN'), ('0407', '', 'LHN'), "
+                            "('0407', '', 'LOG')]")
 
         # test get_slc with channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1111,7 +1111,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare("[('0407', '', 'LOG')]")
+                out.compare("[('0407', '', 'LOG')]")
 
         # test get_slc with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1121,7 +1121,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare("[('9001', '', 'DPZ')]")
+                out.compare("[('9001', '', 'DPZ')]")
 
         # test get_slc with array
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1129,7 +1129,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare("[('0407', '', 'HHN')]")
+                out.compare("[('0407', '', 'HHN')]")
 
         # ------------------------------------------------------------ #
         # test get_availability with station
@@ -1138,15 +1138,15 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
-            " 2018-12-17T22:20:40.922000Z\n"
-            "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
-            " 2018-12-17T22:20:40.691998Z\n"
-            "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-            " 2018-12-17T23:10:05.000000Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
+                    " 2018-12-17T22:20:40.922000Z\n"
+                    "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
+                    " 2018-12-17T22:20:40.691998Z\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # test get_availability with channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1154,11 +1154,11 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-            " 2018-12-17T23:10:05.000000Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # test get_availability with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1168,24 +1168,24 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-            " 2018-12-17T23:10:05.000000Z\n"
-            "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
-            " 2019-02-22T15:39:03.099999Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z\n"
+                    "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+                    " 2019-02-22T15:39:03.099999Z")
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '2', '-A', '4']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-            " 2018-12-17T23:10:05.000000Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # ------------------------------------------------------------ #
         # test get_availability_extent with station
@@ -1194,11 +1194,11 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
-            " 2019-02-22T15:43:09.000000Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+                    " 2019-02-22T15:43:09.000000Z")
 
         # test get_availability_extent with channel
         # if wrong format is stated, still print out tuple result with
@@ -1208,7 +1208,8 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare("[('500', '', 'DP2', 1502294400.38, 1502294460.38)]")
+                out.compare(
+                    "[('500', '', 'DP2', 1502294400.38, 1502294460.38)]")
 
         # test get_availability_extent with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1218,11 +1219,11 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q sample-rate                    earliest"
-            "                      latest\n"
-            "AA 9001  -- DPZ         500.0 2019-02-22T15:39:04.099999Z"
-            " 2019-02-22T15:39:07.099999Z")
+                out.compare(
+                    "#n s     l  c   q sample-rate                    earliest"
+                    "                      latest\n"
+                    "AA 9001  -- DPZ         500.0 2019-02-22T15:39:04.099999Z"
+                    " 2019-02-22T15:39:07.099999Z")
 
         # test get_availability_extent with wildcard station, location, channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1231,22 +1232,22 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
-            " 2019-02-22T15:43:09.000000Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+                    " 2019-02-22T15:43:09.000000Z")
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3', '-A', '4']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare(
-            "#n s     l  c   q                    earliest"
-            "                      latest\n"
-            "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-            " 2018-12-17T23:10:05.000000Z")
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # ------------------------------------------------------------ #
         # test get_availability_percentage with station, no channel
@@ -1255,7 +1256,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('')
+                out.compare('')
 
         # test get_availability_percentage with channel, no station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1263,7 +1264,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('')
+                out.compare('')
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1272,7 +1273,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('')
+                out.compare('')
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1281,7 +1282,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('[1.0, 0]')
+                out.compare('[1.0, 0]')
 
         # test get_availability_percentage with station, channel, time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1291,8 +1292,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        # output = re.sub(r"\(|\)", '', out.getvalue().strip())
-        out.compare('[0.11666666666666667, 2]')
+                out.compare('[0.11666666666666667, 2]')
         # test get_availability_percentage with station, channel, time, and
         # array not match with other parameters
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1301,7 +1301,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        out.compare('[0.0, 0]')
+                out.compare('[0.0, 0]')
 
         # ------------------------------------------------------------ #
         # test extent and text format
@@ -1310,13 +1310,13 @@ class TestSegDtoPH5(LogTestCase):
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3',
                     '-F', 't', '-S']
-        with patch.object(sys, 'argv', testargs):
-            with OutputCapture() as out:
-                ph5availability.main()
         with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
                 content_file:
             content = content_file.read().strip()
-        out.compare(content)
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5availability.main()
+                out.compare(content)
 
         # test extent and geocsv format
         # should return 10 channels
@@ -1324,25 +1324,25 @@ class TestSegDtoPH5(LogTestCase):
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3',
                     '-F', 'g', '-S']
-        with patch.object(sys, 'argv', testargs):
-            with OutputCapture() as out:
-                ph5availability.main()
         with open('ph5/test_data/metadata/extent_full.csv', 'r') as \
                 content_file:
             content = content_file.read().strip()
-        out.compare(content)
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5availability.main()
+                out.compare(content)
 
         # test extent and text format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'ph5/test_data/ph5', '-a', '3',
                     '-F', 't', '-S']
-        with patch.object(sys, 'argv', testargs):
-            with OutputCapture() as out:
-                ph5availability.main()
         with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
                 content_file:
             content = content_file.read().strip()
-        out.compare(content)
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5availability.main()
+                out.compare(content)
 
         self.maxDiff = None
         # test extent and sync format
@@ -1352,7 +1352,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        output = out.captured.strip()
+                output = out.captured.strip()
 
         i1 = output.find('\n')
         with open('ph5/test_data/metadata/extent_full.sync', 'r') as \
@@ -1369,7 +1369,7 @@ class TestSegDtoPH5(LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5availability.main()
-        output = out.captured.strip()
+                output = out.captured.strip()
         i1 = output.find('"datasources"')
         with open('ph5/test_data/metadata/extent_full.json', 'r') as \
                 content_file:
@@ -1679,12 +1679,12 @@ class TestSegDtoPH5(LogTestCase):
         self.availability.OFILE = None
         with OutputCapture() as out:
             self.availability.print_report("this is a text line")
-        out.compare("this is a text line")
+            out.compare("this is a text line")
 
         self.availability.OFILE = open("test", 'w')
         with OutputCapture() as out:
             self.availability.print_report("this is a text line")
-        out.compare("")
+            out.compare("")
         self.assertTrue(self.availability.OFILE.closed)
         with open('test', 'r') as content_file:
             content = content_file.read().strip()
@@ -1833,9 +1833,9 @@ class TestSegDtoPH5(LogTestCase):
 
         with LogCapture() as log:
             ret = self.availability.get_report(result, format='k')
-        self.assertEqual(ret, result)
-        self.assertEqual(log.records[0].msg,
-                         "The entered format k is not supported.")
+            self.assertEqual(ret, result)
+            self.assertEqual(log.records[0].msg,
+                             "The entered format k is not supported.")
 
     def tearDown(self):
         """
