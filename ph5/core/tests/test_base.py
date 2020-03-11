@@ -11,7 +11,7 @@ def initialize_ex(nickname, path, editmode=False):
     ex.initgroup()
     return ex
 
-  
+
 class TempDirTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -35,4 +35,3 @@ class TempDirTestCase(unittest.TestCase):
             print(errmsg)
 
         os.chdir(self.home)
-
