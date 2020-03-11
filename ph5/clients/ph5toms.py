@@ -43,8 +43,8 @@ class StationCut(object):
         self.station = station
         self.seed_station = seed_station
         self.array_code = array_code
-        self.seed_channel = seed_channel
         self.location = location
+        self.seed_channel = seed_channel
         self.component = component
         self.das = das
         self.das_manufacturer = das_manufacturer
@@ -65,6 +65,47 @@ class StationCut(object):
         self.shot_lat = shot_lat
         self.shot_lng = shot_lng
         self.shot_elevation = shot_elevation
+
+    def __str__(self):
+        return (
+            "net_code: {}"
+            "experiment_id: {}"
+            "station: {}"
+            "seed_station: {}"
+            "array_code: {}"
+            "location: {}"
+            "seed_channel: {}"
+            "component: {}"
+            "das: {}"
+            "das_manufacturer: {}"
+            "das_model: {}"
+            "sensor_type: {}"
+            "starttime: {}"
+            "endtime: {}"
+            "sample_rate: {}"
+            "sample_rate_multiplier: {}"
+            "notimecorrect: {}"
+            "latitude: {}"
+            "longitude: {}"
+            "elev: {}"
+            "receiver_n_i: {}"
+            "response_n_i: {}"
+            "shot_id: {}"
+            "shot_lat: {}"
+            "shot_lng: {}"
+            "shot_elevation: {}"
+            .format(
+                self.net_code, self.experiment_id, self.station,
+                self.seed_station, self.array_code, self.location,
+                self.seed_channel, self.component, self.das,
+                self.das_manufacturer, self.das_model, self.sensor_type,
+                self.starttime, self.endtime, self.sample_rate,
+                self.sample_rate_multiplier, self.notimecorrect,
+                self.latitude, self.longitude, self.elev,
+                self.receiver_n_i, self.response_n_i, self.shot_id,
+                self.shot_lat, self.shot_lng, self.shot_elevation,
+            )
+        )
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -798,7 +839,7 @@ class PH5toMSeed(object):
                 except experiment.HDF5InteractionError:
                     continue
 
-                station_x = StationCut(
+                station_cut = StationCut(
                     seed_network,
                     experiment_id,
                     ph5_station,
@@ -826,15 +867,12 @@ class PH5toMSeed(object):
                     shot_lng=sct.shot_lng,
                     shot_elevation=sct.shot_elevation)
 
-                station_hash = hash(frozenset([seed_station, das, latitude,
-                                               longitude, sample_rate,
-                                               sample_rate_multiplier,
-                                               starttime, endtime]))
-                if station_hash in self.hash_list:
+                station_cut_hash = hash(str(station_cut))
+                if station_cut_hash in self.hash_list:
                     continue
                 else:
-                    self.hash_list.append(station_hash)
-                    yield station_x
+                    self.hash_list.append(station_cut_hash)
+                    yield station_cut
 
     def create_cut_list(self):
         cuts_generator = []
