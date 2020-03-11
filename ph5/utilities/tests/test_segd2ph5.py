@@ -4,8 +4,6 @@ Tests for segd2ph5
 import unittest
 import os
 import sys
-import shutil
-import tempfile
 import logging
 from StringIO import StringIO as StringBuffer
 from mock import patch
@@ -13,42 +11,30 @@ from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import segdreader
 from ph5.core.tests.test_base import initialize_ex
+from ph5.core.tests.test_base import TempDirTestCase
 
 
-class TestSegDtoPH5(unittest.TestCase):
+class TestSegDtoPH5(TempDirTestCase):
 
     def setUp(self):
+        super(TestSegDtoPH5, self).setUp()
         # capture log string into log_capture_string
         self.log_capture_string = StringBuffer()
         logger.removeHandler(CH)
         ch = logging.StreamHandler(self.log_capture_string)
         logger.addHandler(ch)
 
-        # create tmpdir
-        self.home = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp() + "/"
-        os.chdir(self.tmpdir)
-
         # initiate ph5
         self.EX = segd2ph5.EX = initialize_ex('master.ph5', '.', True)
 
     def tearDown(self):
+        self.EX.ph5close()
         try:
-            self.EX.ph5close()
             segd2ph5.EXREC.ph5close()
-        except Exception:
+        except AttributeError:
             pass
-        if self._resultForDoCleanups.wasSuccessful():
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
-        else:
-            errmsg = "%s has FAILED. Inspect files created in %s." \
-                % (self._testMethodName, self.tmpdir)
-            print(errmsg)
-        os.chdir(self.home)
+
+        super(TestSegDtoPH5, self).tearDown()
 
     def test_bit_weights(self):
         # From old
