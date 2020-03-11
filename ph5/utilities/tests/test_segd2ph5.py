@@ -11,7 +11,7 @@ from StringIO import StringIO as StringBuffer
 from mock import patch
 from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import experiment, segdreader
+from ph5.core import segdreader
 from ph5.core.tests.test_base import initialize_ex
 
 
