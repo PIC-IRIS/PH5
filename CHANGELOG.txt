@@ -94,7 +94,8 @@ ph5.help
 environment.yml
  * removed unused dependencies and added pykml as a dependency
  * add testfixtures to capture log/output in unittest
-ph5.core.test_base
+ph5.core.test.test_base
+ * add TempDirTestCase to handle temporary dictionary that keeps ph5 and log files for unittests
  * allow log to be propagated to higger loggers
  * dissable log to be written to console in tests
  * apply above in class LogTestCase so any test want to apply the above can extend this
