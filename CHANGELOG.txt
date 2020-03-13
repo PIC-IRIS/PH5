@@ -24,6 +24,7 @@ ph5.clients.ph5toms
  * Add ph5toms support for the web service SEG-Y timeseries data format.
  * Fix bug where starttime offset was applied after calculating the end time of a shot gather request
  * Add web service hooks for reciever gather request type
+ * Correctly write all requested channel components (issue #374)
 ph5.utilities.report_gen
  * add report_gen entry point to setup.py
 ph5.utilities.pformagui
@@ -92,6 +93,8 @@ ph5.help
  * calls entry_points to print the short descriptions in alpha-order.
 environment.yml
  * removed unused dependencies and added pykml as a dependency
+ph5.core.tests.test_base
+ * add initialize_ex for creating ph5 experiment object
 
 v4.1.2:
 ph5.utilities.ph5validate
