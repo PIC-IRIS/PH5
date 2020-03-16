@@ -99,6 +99,7 @@ ph5.core.test.test_base
  * allow log to be propagated to higger loggers
  * dissable log to be written to console in tests
  * apply above in class LogTestCase so any test want to apply the above can extend this
+ * add initialize_ex for creating ph5 experiment object
 ph5.clients.test.test_ph5availability
  * Unittest: Stop sending log to screen; Apply testfixtures;
 ph5.core.tests.test_segd2ph5
