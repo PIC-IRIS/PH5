@@ -1,10 +1,12 @@
 '''
 Tests for segd2ph5
 '''
-import unittest
 import os
 import sys
+import unittest
+
 from mock import patch
+
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import segdreader
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \

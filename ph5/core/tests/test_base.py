@@ -1,10 +1,11 @@
-from ph5 import logger, ch
-from StringIO import StringIO
-import logging
-import unittest
 import os
 import shutil
 import tempfile
+import unittest
+import logging
+from StringIO import StringIO
+
+from ph5 import logger, ch
 from ph5.core import experiment
 
 

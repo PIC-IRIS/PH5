@@ -1,17 +1,18 @@
 '''
 Tests for metadatatoph5
 '''
-
-import unittest
-from ph5.utilities import metadatatoph5
-from ph5.utilities import initialize_ph5
-from obspy.core import inventory
-from obspy import UTCDateTime
 import os
 import sys
+import unittest
+
+from obspy.core import inventory
+from obspy import UTCDateTime
 from mock import patch
-from ph5.core.tests.test_base import LogTestCase, initialize_ex
 from testfixtures import OutputCapture
+
+from ph5.utilities import metadatatoph5
+from ph5.utilities import initialize_ph5
+from ph5.core.tests.test_base import LogTestCase, initialize_ex
 
 
 class TestMetadatatoPH5(LogTestCase):

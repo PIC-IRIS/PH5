@@ -1,15 +1,17 @@
 '''
-Tests for metadatatoph5
+Tests for obspytoph5
 '''
+import os
+import sys
 import unittest
+
+from mock import patch
+from testfixtures import OutputCapture
+
 from ph5.utilities import obspytoph5
 from ph5.utilities import initialize_ph5
-import os
 from ph5.utilities import metadatatoph5
-import sys
-from mock import patch
 from ph5.core.tests.test_base import LogTestCase, initialize_ex
-from testfixtures import OutputCapture
 
 
 class TestObspytoPH5(LogTestCase):
