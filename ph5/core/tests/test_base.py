@@ -6,8 +6,6 @@ import os
 import shutil
 import tempfile
 
-newch = None
-
 
 class LogTestCase(unittest.TestCase):
     @classmethod
@@ -18,15 +16,15 @@ class LogTestCase(unittest.TestCase):
         logger.removeHandler(ch)
         # add StringIO handler to prevent message "No handlers could be found"
         log = StringIO()
-        newch = logging.StreamHandler(log)
-        logger.addHandler(newch)
+        cls.newch = logging.StreamHandler(log)
+        logger.addHandler(cls.newch)
 
     @classmethod
     def tearDownClass(cls):
         # disable propagating to higher loggers
         logger.propagate = 0
         # revert logger handler
-        logger.removeHandler(newch)
+        logger.removeHandler(cls.newch)
         logger.addHandler(ch)
 
 
