@@ -2,74 +2,23 @@
 Tests for pforma_io
 '''
 import unittest
-import os
 import sys
-import shutil
-import tempfile
 from mock import patch
-import logging
-from StringIO import StringIO
-from contextlib import contextmanager
 from ph5.clients import ph5tostationxml
-from ph5.utilities import kef2ph5
-from ph5 import logger, ch
-from ph5.core import experiment
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
+     kef_to_ph5
+from testfixtures import OutputCapture
 
 
-@contextmanager
-def captured_output():
-    new_out, new_err = StringIO(), StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
-
-
-@contextmanager
-def captured_log():
-    capture = StringIO()
-    chan = logging.StreamHandler(capture)
-    logger.removeHandler(ch)
-    logger.addHandler(chan)
-    try:
-        yield capture
-    finally:
-        logger.removeHandler(chan)
-        logger.addHandler(ch)
-
-
-def initialize_ph5(nickname, path, editmode=False):
-    ex = experiment.ExperimentGroup(nickname=nickname, currentpath=path)
-    ex.ph5open(editmode)
-    ex.initgroup()
-    return ex
-
-
-class TestPH5toStationXMLParser(unittest.TestCase):
-    def setUp(self):
-        # create tmpdir
-        self.home = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp() + "/"
-        os.chdir(self.tmpdir)
+class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
 
     def tearDown(self):
-        if self._resultForDoCleanups.wasSuccessful():
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
-        else:
-            errmsg = "%s has FAILED. Inspect files created in %s." \
-                % (self._testMethodName, self.tmpdir)
-            print(errmsg)
         try:
             self.mng.ph5.close()
-        except Exception:
+        except AttributeError:
             pass
-        os.chdir(self.home)
+
+        super(TestPH5toStationXMLParser, self).tearDown()
 
     def getParser(self, level, minlat=None, maxlat=None, minlon=None,
                   maxlon=None, lat=None, lon=None, minrad=None, maxrad=None):
@@ -92,29 +41,16 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         )
         return ph5tostationxml.PH5toStationXMLParser(self.mng)
 
-    def createPH5(self, path, arraykef):
-        with captured_log():
-            kef2ph5.EX = ex = initialize_ph5("master.ph5", path, True)
-            kef2ph5.PH5 = path + "/master.ph5"
-            kef2ph5.TRACE = False
-
-            kef2ph5.KEFFILE = self.home + arraykef
-
-            kef2ph5.populateTables()
-            # add experiment_t
-            kef2ph5.KEFFILE = self.home + \
-                "/ph5/test_data/metadata/experiment.kef"
-            kef2ph5.populateTables()
-            ex.ph5close()
-
     def test_get_network_date(self):
         """
         test get_network_date
         """
-        # add array_t from array_multideploy to test error of getting only the
-        # first deploy time when calculating nettime
-        self.createPH5(self.tmpdir,
-                       "/ph5/test_data/metadata/array_multi_deploy.kef")
+        # array_multideploy: same station different deploy times
+        # => check if network time cover all or only the first 1
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   self.home + "/ph5/test_data/metadata",
+                   ["array_multi_deploy.kef", "experiment.kef"])
         parser = self.getParser("NETWORK")
         parser.add_ph5_stationids()
         parser.read_stations()
@@ -125,10 +61,12 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         """
         test create_obs_network
         """
-        # add array_t from array_multideploy to test error of getting only the
-        # first deploy time when calculating nettime
-        self.createPH5(self.tmpdir,
-                       "/ph5/test_data/metadata/array_multi_deploy.kef")
+        # array_multideploy: same station different deploy times
+        # => check if network time cover all or only the first 1
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   self.home + "/ph5/test_data/metadata",
+                   ["array_multi_deploy.kef", "experiment.kef"])
         parser = self.getParser("NETWORK")
         parser.manager.ph5.read_experiment_t()
         parser.experiment_t = parser.manager.ph5.Experiment_t['rows']
@@ -140,10 +78,12 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
     def test_read_networks(self):
-        # add array_t from array_multideploy to test error of getting only the
-        # first deploy time when calculating nettime
-        self.createPH5(self.tmpdir,
-                       "/ph5/test_data/metadata/array_multi_deploy.kef")
+        # array_multideploy: same station different deploy times
+        # => check if network time cover all or only the first 1
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   self.home + "/ph5/test_data/metadata",
+                   ["array_multi_deploy.kef", "experiment.kef"])
         parser = self.getParser("NETWORK")
         ret = parser.read_networks('.')
         self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
@@ -152,16 +92,18 @@ class TestPH5toStationXMLParser(unittest.TestCase):
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
     def test_main(self):
-        # add array_t from array_multideploy to test error of getting only the
-        # first deploy time when calculating nettime
-        self.createPH5(self.tmpdir,
-                       "/ph5/test_data/metadata/array_multi_deploy.kef")
+        # array_multideploy: same station different deploy times
+        # => check if network time cover all or only the first 1
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   self.home + "/ph5/test_data/metadata",
+                   ["array_multi_deploy.kef", "experiment.kef"])
         testargs = ['ph5tostationxml', '-n', 'master',
                     '--level', 'network', '-f', 'text']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5tostationxml.main()
-        output = out.getvalue().strip().split("\n")
+                output = out.captured.strip().split("\n")
         self.assertEqual(
             output[1],
             "AA|PH5 TEST SET|2019-06-29T18:08:33|2019-09-28T14:29:39|1")
