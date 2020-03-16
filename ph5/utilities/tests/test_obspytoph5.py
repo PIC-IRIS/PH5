@@ -11,27 +11,31 @@ from testfixtures import OutputCapture
 from ph5.utilities import obspytoph5
 from ph5.utilities import initialize_ph5
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import LogTestCase, initialize_ex
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
+     initialize_ex
 
 
-class TestObspytoPH5(LogTestCase):
+class TestObspytoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
-        self.path = 'ph5/test_data/miniseedph5'
-        os.mkdir(self.path)
+        super(TempDirTestCase, self).setUp()
 
-        ph5_object = initialize_ex('master.ph5', self.path, True)
+        ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
         initialize_ph5.set_receiver_t(default_receiver_t)
         os.remove(default_receiver_t)
         ph5_object.initgroup()
         self.obs = obspytoph5.ObspytoPH5(
             ph5_object,
-            self.path,
+            self.tmpdir,
             1,
             1)
         self.obs.verbose = True
         ph5_object.ph5flush()
         ph5_object.ph5_g_sorts.update_local_table_nodes()
+
+    def tearDown(self):
+        self.obs.ph5.ph5close()
+        super(TestObspytoPH5, self).tearDown()
 
     def test_get_args(self):
         """
@@ -221,16 +225,6 @@ class TestObspytoPH5(LogTestCase):
         self.assertEqual(
             'ph5/test_data/miniseed/0407LOG.m',
             ret[1]['raw_file_name_s'])
-
-    def tearDown(self):
-        """"""
-        self.obs.ph5.ph5close()
-        os.remove(os.path.join(self.path, 'master.ph5'))
-        try:
-            os.remove(os.path.join(self.path, 'miniPH5_00001.ph5'))
-        except BaseException:
-            pass
-        os.removedirs(self.path)
 
 
 if __name__ == "__main__":
