@@ -39,15 +39,16 @@ class LogTestCase(unittest.TestCase):
 
 class TempDirTestCase(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self, changedir=True):
         """
         create tmpdir
         """
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp() + "/"
-        os.chdir(self.tmpdir)
+        if changedir:
+            os.chdir(self.tmpdir)
 
-    def tearDown(self):
+    def tearDown(self, changedir=True):
         if self._resultForDoCleanups.wasSuccessful():
             try:
                 shutil.rmtree(self.tmpdir)
@@ -59,4 +60,5 @@ class TempDirTestCase(unittest.TestCase):
                 % (self._testMethodName, self.tmpdir)
             print(errmsg)
 
-        os.chdir(self.home)
+        if changedir:
+            os.chdir(self.home)
