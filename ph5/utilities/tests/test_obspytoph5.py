@@ -17,7 +17,7 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
 
 class TestObspytoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TempDirTestCase, self).setUp()
+        super(TestObspytoPH5, self).setUp(changedir=False)
 
         ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
@@ -35,7 +35,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
 
     def tearDown(self):
         self.obs.ph5.ph5close()
-        super(TestObspytoPH5, self).tearDown()
+        super(TestObspytoPH5, self).tearDown(changedir=False)
 
     def test_get_args(self):
         """
@@ -204,10 +204,8 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         for entry in index_t_full:
             self.obs.ph5.ph5_g_receivers.populateIndex_t(entry)
         self.obs.update_external_references(index_t_full)
-        self.assertTrue(
-            os.path.isfile("ph5/test_data/miniseedph5/master.ph5"))
-        self.assertTrue(
-            os.path.isfile("ph5/test_data/miniseedph5/miniPH5_00001.ph5"))
+        self.assertTrue(os.path.isfile(self.tmpdir + "master.ph5"))
+        self.assertTrue(os.path.isfile(self.tmpdir + "miniPH5_00001.ph5"))
 
         node = self.obs.ph5.ph5_g_receivers.getdas_g('5553')
         self.obs.ph5.ph5_g_receivers.setcurrent(node)
