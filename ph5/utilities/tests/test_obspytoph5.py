@@ -12,12 +12,12 @@ from ph5.utilities import obspytoph5
 from ph5.utilities import initialize_ph5
 from ph5.utilities import metadatatoph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
-     initialize_ex
+     initialize_ex, del_files_in_dir
 
 
 class TestObspytoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TestObspytoPH5, self).setUp(changedir=False)
+        super(TestObspytoPH5, self).setUp()
 
         ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
@@ -35,7 +35,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
 
     def tearDown(self):
         self.obs.ph5.ph5close()
-        super(TestObspytoPH5, self).tearDown(changedir=False)
+        super(TestObspytoPH5, self).tearDown()
 
     def test_get_args(self):
         """
@@ -58,13 +58,13 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         """
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    'ph5/test_data/metadata/station.xml']
+                    '../metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
 
         # first need to run obspytoph5
         testargs = ['obspytoph5', '-n', 'master.ph5', '-d',
-                    'ph5/test_data/miniseed/']
+                    '../miniseed/']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
@@ -80,26 +80,21 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
                 'stream_number_i', 'time/ascii_s', 'time/epoch_l',
                 'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
         self.assertEqual(keys, das_keys)
-        self.assertEqual(
-            'ph5/test_data/miniseed/0407HHN.m',
-            ret[0]['raw_file_name_s'])
-        self.assertEqual(
-            'ph5/test_data/miniseed/0407LHN.m',
-            ret[1]['raw_file_name_s'])
+        self.assertEqual('../miniseed/0407HHN.ms',
+                         ret[0]['raw_file_name_s'])
+        self.assertEqual('../miniseed/0407LHN.ms',
+                         ret[1]['raw_file_name_s'])
         ph5_object.ph5close()
-        os.remove('master.ph5')
-        os.remove('miniPH5_00001.ph5')
-        os.remove('metadatatoph5.log')
-        os.remove('datatoph5.log')
+        del_files_in_dir(self.tmpdir)
 
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    'ph5/test_data/metadata/station.xml']
+                    '../metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         # first need to run obspytoph5
         testargs = ['obspytoph5', '-n', 'master.ph5', '-f',
-                    'ph5/test_data/miniseed/0407HHN.ms']
+                    '../miniseed/0407HHN.ms']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
@@ -115,24 +110,20 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
                 'stream_number_i', 'time/ascii_s', 'time/epoch_l',
                 'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
         self.assertEqual(keys, das_keys)
-        self.assertEqual(
-            'ph5/test_data/miniseed/0407HHN.m',
-            ret[0]['raw_file_name_s'])
+        self.assertEqual('../miniseed/0407HHN.ms',
+                         ret[0]['raw_file_name_s'])
         ph5_object.ph5close()
-        os.remove('master.ph5')
-        os.remove('miniPH5_00001.ph5')
-        os.remove('metadatatoph5.log')
-        os.remove('datatoph5.log')
+        del_files_in_dir(self.tmpdir)
 
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    'ph5/test_data/metadata/station.xml']
+                    '../metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
 
         # now make a list for obspytoph5
         f = open("test_list", "w")
-        f.write("ph5/test_data/miniseed/0407HHN.ms")
+        f.write("../miniseed/0407HHN.ms")
         f.close()
         # first need to run obspytoph5
         testargs = ['obspytoph5', '-n', 'master.ph5', '-l',
@@ -152,15 +143,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
                 'stream_number_i', 'time/ascii_s', 'time/epoch_l',
                 'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
         self.assertEqual(keys, das_keys)
-        self.assertEqual(
-            'ph5/test_data/miniseed/0407HHN.m',
-            ret[0]['raw_file_name_s'])
+        self.assertEqual('../miniseed/0407HHN.ms',
+                         ret[0]['raw_file_name_s'])
         ph5_object.ph5close()
-        os.remove('master.ph5')
-        os.remove('miniPH5_00001.ph5')
-        os.remove('metadatatoph5.log')
-        os.remove('datatoph5.log')
-        os.remove('test_list')
+        # ph5 and log files will be removed in tearDown
 
     def test_to_ph5(self):
         """
@@ -168,7 +154,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         """
         index_t_full = list()
         # try load without metadata
-        entry = "ph5/test_data/miniseed/0407HHN.ms"
+        entry = "../miniseed/0407HHN.ms"
         message, index_t = self.obs.toph5((entry, 'MSEED'))
         self.assertFalse(index_t)
         self.assertEqual('stop', message)
@@ -176,11 +162,8 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         # with metadata
         metadata = metadatatoph5.MetadatatoPH5(
             self.obs.ph5)
-        f = open(
-            "ph5/test_data/metadata/station.xml", "r")
-        inventory_ = metadata.read_metadata(
-            f,
-            "station.xml")
+        f = open("../metadata/station.xml", "r")
+        inventory_ = metadata.read_metadata(f, "station.xml")
         f.close()
         parsed_array = metadata.parse_inventory(inventory_)
         metadata.toph5(parsed_array)
@@ -192,7 +175,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             index_t_full.append(e)
 
         # now load LOG CH
-        entry = "ph5/test_data/miniseed/0407LOG.ms"
+        entry = "../miniseed/0407LOG.ms"
         message, index_t = self.obs.toph5((entry, 'MSEED'))
         self.assertTrue('done', message)
         self.assertTrue(1, len(index_t))
@@ -204,8 +187,8 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         for entry in index_t_full:
             self.obs.ph5.ph5_g_receivers.populateIndex_t(entry)
         self.obs.update_external_references(index_t_full)
-        self.assertTrue(os.path.isfile(self.tmpdir + "master.ph5"))
-        self.assertTrue(os.path.isfile(self.tmpdir + "miniPH5_00001.ph5"))
+        self.assertTrue(os.path.isfile("master.ph5"))
+        self.assertTrue(os.path.isfile("miniPH5_00001.ph5"))
 
         node = self.obs.ph5.ph5_g_receivers.getdas_g('5553')
         self.obs.ph5.ph5_g_receivers.setcurrent(node)
@@ -217,12 +200,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
                 'stream_number_i', 'time/ascii_s', 'time/epoch_l',
                 'time/micro_seconds_i', 'time/type_s', 'time_table_n_i']
         self.assertEqual(keys, das_keys)
-        self.assertEqual(
-            'ph5/test_data/miniseed/0407HHN.m',
-            ret[0]['raw_file_name_s'])
-        self.assertEqual(
-            'ph5/test_data/miniseed/0407LOG.m',
-            ret[1]['raw_file_name_s'])
+        self.assertEqual('../miniseed/0407HHN.ms',
+                         ret[0]['raw_file_name_s'])
+        self.assertEqual('../miniseed/0407LOG.ms',
+                         ret[1]['raw_file_name_s'])
 
 
 if __name__ == "__main__":
