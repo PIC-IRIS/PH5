@@ -409,6 +409,13 @@ class PH5Validate(object):
         errors = []
         for info in resp_check_info:
             Response_t = self.ph5.get_response_t_by_n_i(info['n_i'])
+            if Response_t is None:
+                errmsg = "No response_t for n_i=", info['n_i']
+                if errmsg not in errors:
+                    errors.append(errmsg)
+                    LOGGER.error(errmsg)
+                continue
+
             model = info['model'].translate(None, ',-=.').replace(" ", "")
             if len(info) == 4:
                 # check sensor
