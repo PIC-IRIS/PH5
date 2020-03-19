@@ -1,6 +1,5 @@
 import os
 import shutil
-import tempfile
 import unittest
 import logging
 from StringIO import StringIO
@@ -44,7 +43,8 @@ class TempDirTestCase(unittest.TestCase):
         create tmpdir
         """
         self.home = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
+        self.tmpdir = self.home + "/ph5/test_data/tmp/"
+        os.mkdir(self.tmpdir)
         os.chdir(self.tmpdir)
 
     def tearDown(self):
