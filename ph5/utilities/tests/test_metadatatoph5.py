@@ -18,7 +18,7 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
 
 class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TestMetadatatoPH5, self).setUp()
+        super(TestMetadatatoPH5, self).setUp(changedir=False)
 
         self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
@@ -29,7 +29,7 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
 
     def tearDown(self):
         self.ph5_object.ph5close()
-        super(TestMetadatatoPH5, self).tearDown()
+        super(TestMetadatatoPH5, self).tearDown(changedir=False)
 
     def test_get_args(self):
         """
@@ -53,7 +53,7 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         test main function
         """
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    '../metadata/station.xml']
+                    'ph5/test_data/metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
@@ -102,7 +102,7 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         tests read_metadata method
         """
         # open file to pass handle
-        f = open("../metadata/station.xml", "r")
+        f = open("ph5/test_data/metadata/station.xml", "r")
 
         # should be a stationxml file, valid
         inventory_ = self.metadata.read_metadata(
@@ -122,7 +122,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                          inventory_[0].stations[0].channels[1].code)
 
         # open file to pass handle
-        f = open("../metadata/1B.13.AAA.2018123.dataless", "r")
+        f = open(
+            "ph5/test_data/metadata/1B.13.AAA.2018123.dataless", "r")
 
         # should be a dataless SEED file, valid
         inventory_ = self.metadata.read_metadata(
@@ -139,7 +140,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                          inventory_[0].stations[0].channels[1].code)
 
         # open file to pass handle
-        f = open("../metadata/station.txt", "r")
+        f = open(
+            "ph5/test_data/metadata/station.txt", "r")
 
         # should be a station TXT, valid
         inventory_ = self.metadata.read_metadata(
@@ -156,7 +158,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                          inventory_[0].stations[4].channels[0].code)
 
         # open file to pass handle
-        f = open("../metadata/array_9_rt125a.kef", "r")
+        f = open(
+            "ph5/test_data/metadata/array_9_rt125a.kef", "r")
         # should be a KEF, valid
         inventory_ = self.metadata.read_metadata(
             f,
@@ -166,7 +169,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         self.assertFalse(inventory_)
 
         # open file to pass handle
-        f = open("../metadata/array_8_130.csv", "r")
+        f = open(
+            "ph5/test_data/metadata/array_8_130.csv", "r")
         # should be a CSV, valid
         inventory_ = self.metadata.read_metadata(
             f,
@@ -176,7 +180,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         self.assertTrue(inventory_)
 
         # unknown file type
-        f = open("../metadata/RESP/125a500_32_RESP", "r")
+        f = open(
+            "ph5/test_data/metadata/RESP/125a500_32_RESP", "r")
         # should be a KEF, valid
         inventory_ = self.metadata.read_metadata(
             f,
@@ -197,7 +202,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         """
         # valid station xml
         # open file to pass handle
-        f = open("../metadata/station.xml", "r")
+        f = open(
+            "ph5/test_data/metadata/station.xml", "r")
 
         # should be a station TXT, valid
         inventory_ = self.metadata.read_metadata(
@@ -245,7 +251,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
 
         # test dataless seed
         # should be a dataless SEED file, valid
-        f = open("../metadata/1B.13.AAA.2018123.dataless", "r")
+        f = open(
+            "ph5/test_data/metadata/1B.13.AAA.2018123.dataless", "r")
         inventory_ = self.metadata.read_metadata(
             f,
             "1B.13.AAA.2018123.dataless")
@@ -273,7 +280,8 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         """
         test to_ph5 method
         """
-        f = open("../metadata/station.xml", "r")
+        f = open(
+            "ph5/test_data/metadata/station.xml", "r")
         inventory_ = self.metadata.read_metadata(
             f,
             "station.xml")
