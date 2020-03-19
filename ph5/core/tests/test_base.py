@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import unittest
 import logging
 from StringIO import StringIO
@@ -13,10 +14,6 @@ def initialize_ex(nickname, path, editmode=False):
     ex.ph5open(editmode)
     ex.initgroup()
     return ex
-
-
-def del_files_in_dir(directory):
-    map(os.unlink, (os.path.join(directory, f) for f in os.listdir(directory)))
 
 
 class LogTestCase(unittest.TestCase):
@@ -47,8 +44,7 @@ class TempDirTestCase(unittest.TestCase):
         create tmpdir
         """
         self.home = os.getcwd()
-        os.mkdir("ph5/test_data/tmp")
-        self.tmpdir = self.home + "/ph5/test_data/tmp"
+        self.tmpdir = tempfile.mkdtemp(dir=self.home + '/ph5/test_data/')
         os.chdir(self.tmpdir)
 
     def tearDown(self):
