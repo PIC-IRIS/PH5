@@ -44,7 +44,7 @@ class TempDirTestCase(unittest.TestCase):
         create tmpdir
         """
         self.home = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp() + "/"
+        self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
         os.chdir(self.tmpdir)
 
     def tearDown(self):
