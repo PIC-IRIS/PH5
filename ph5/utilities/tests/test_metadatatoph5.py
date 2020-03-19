@@ -12,24 +12,20 @@ from testfixtures import OutputCapture
 
 from ph5.utilities import metadatatoph5
 from ph5.utilities import initialize_ph5
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
-     initialize_ex
+from ph5.core.tests.test_base import LogTestCase, initialize_ex
 
 
-class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
+class TestMetadatatoPH5(LogTestCase):
     def setUp(self):
-        super(TestMetadatatoPH5, self).setUp(changedir=False)
+        self.path = 'ph5/test_data/miniseedph5'
+        os.mkdir(self.path)
 
-        self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+        self.ph5_object = initialize_ex('master.ph5', self.path, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
         initialize_ph5.set_receiver_t(default_receiver_t)
         os.remove(default_receiver_t)
         self.metadata = metadatatoph5.MetadatatoPH5(
             self.ph5_object)
-
-    def tearDown(self):
-        self.ph5_object.ph5close()
-        super(TestMetadatatoPH5, self).tearDown(changedir=False)
 
     def test_get_args(self):
         """
@@ -317,6 +313,11 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual('H', ret[0]['seed_instrument_code_s'])
         self.assertEqual('H', ret[0]['seed_band_code_s'])
         self.assertEqual('N', ret[0]['seed_orientation_code_s'])
+
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        os.remove(os.path.join(self.path, 'master.ph5'))
+        os.removedirs(self.path)
 
 
 if __name__ == "__main__":
