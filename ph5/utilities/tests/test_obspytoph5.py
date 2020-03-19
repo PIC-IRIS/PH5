@@ -12,7 +12,7 @@ from ph5.utilities import obspytoph5
 from ph5.utilities import initialize_ph5
 from ph5.utilities import metadatatoph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
-     initialize_ex
+     initialize_ex, del_files_in_dir
 
 
 class TestObspytoPH5(TempDirTestCase, LogTestCase):
@@ -52,7 +52,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(ret.ph5path, '.')
         self.assertTrue(ret.verbose)
 
-    def test_main1(self):
+    def test_main(self):
+        """
+        test main
+        """
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     '../metadata/station.xml']
@@ -82,8 +85,8 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual('../miniseed/0407LHN.ms',
                          ret[1]['raw_file_name_s'])
         ph5_object.ph5close()
+        del_files_in_dir(self.tmpdir)
 
-    def test_main2(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     '../metadata/station.xml']
@@ -110,8 +113,8 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual('../miniseed/0407HHN.ms',
                          ret[0]['raw_file_name_s'])
         ph5_object.ph5close()
+        del_files_in_dir(self.tmpdir)
 
-    def test_main3(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     '../metadata/station.xml']
@@ -143,6 +146,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual('../miniseed/0407HHN.ms',
                          ret[0]['raw_file_name_s'])
         ph5_object.ph5close()
+        # ph5 and log files will be removed in tearDown
 
     def test_to_ph5(self):
         """
