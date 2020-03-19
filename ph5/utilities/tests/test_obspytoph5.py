@@ -20,10 +20,6 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         super(TestObspytoPH5, self).setUp()
 
         ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
-        default_receiver_t = initialize_ph5.create_default_receiver_t()
-        initialize_ph5.set_receiver_t(default_receiver_t)
-        os.remove(default_receiver_t)
-        ph5_object.initgroup()
         self.obs = obspytoph5.ObspytoPH5(
             ph5_object,
             self.tmpdir,
