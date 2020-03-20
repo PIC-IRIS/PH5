@@ -50,6 +50,7 @@ class TempDirTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.debug()
+        self.find_all_file_loggers()
         if self._resultForDoCleanups.wasSuccessful():
             try:
                 shutil.rmtree(self.tmpdir)
@@ -69,3 +70,12 @@ class TempDirTestCase(unittest.TestCase):
         print('tmpdir: {}'.format(self.tmpdir))
         print('cwd:    {}'.format(os.getcwd()))
         print('home:   {}'.format(self.home))
+
+    def find_all_file_loggers(self):
+        for k,v in  logging.Logger.manager.loggerDict.items()  :
+            # print('+ [%s] {%s} ' % (str.ljust( k, 20)  , str(v.__class__)[8:-2]) ) 
+            if not isinstance(v, logging.PlaceHolder):
+                for h in v.handlers :
+                    if isinstance(h, logging.FileHandler):
+                        print('+ [%s] {%s} ' % (str.ljust( k, 20)  , str(v.__class__)[8:-2]) ) 
+                        print('     +++',str(h.__class__)[8:-2] )
