@@ -54,7 +54,7 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', True)
+        ph5_object = initialize_ex('master.ph5', '.', False)
         array_names = ph5_object.ph5_g_sorts.names()
         self.assertEqual(
             ['Array_t_001', 'Array_t_002', 'Array_t_003'], array_names)
