@@ -46,8 +46,10 @@ class TempDirTestCase(unittest.TestCase):
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
         os.chdir(self.tmpdir)
+        self.debug()
 
     def tearDown(self):
+        self.debug()
         if self._resultForDoCleanups.wasSuccessful():
             try:
                 shutil.rmtree(self.tmpdir)
@@ -60,3 +62,10 @@ class TempDirTestCase(unittest.TestCase):
             print(errmsg)
 
         os.chdir(self.home)
+
+    def debug(self):
+        print()
+        print('id:     {}'.format(self.id))
+        print('tmpdir: {}'.format(self.tmpdir))
+        print('cwd:    {}'.format(os.getcwd()))
+        print('home:   {}'.format(self.home))
