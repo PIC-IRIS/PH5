@@ -17,16 +17,17 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
 class TestObspytoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestObspytoPH5, self).setUp()
-
-        ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
-        self.obs = obspytoph5.ObspytoPH5(
-            ph5_object,
-            self.tmpdir,
-            1,
-            1)
-        self.obs.verbose = True
-        ph5_object.ph5flush()
-        ph5_object.ph5_g_sorts.update_local_table_nodes()
+        if self._testMethodName != 'test_main':
+            # not apply for test_main1,2,3()
+            ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+            self.obs = obspytoph5.ObspytoPH5(
+                ph5_object,
+                self.tmpdir,
+                1,
+                1)
+            self.obs.verbose = True
+            ph5_object.ph5flush()
+            ph5_object.ph5_g_sorts.update_local_table_nodes()
 
     def tearDown(self):
         self.obs.ph5.ph5close()
@@ -61,7 +62,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', True)
+        ph5_object = initialize_ex('master.ph5', '.', False)
         node = ph5_object.ph5_g_receivers.getdas_g('5553')
         ph5_object.ph5_g_receivers.setcurrent(node)
         ret, das_keys = ph5_object.ph5_g_receivers.read_das()
@@ -91,7 +92,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', True)
+        ph5_object = initialize_ex('master.ph5', '.', False)
         node = ph5_object.ph5_g_receivers.getdas_g('5553')
         ph5_object.ph5_g_receivers.setcurrent(node)
         ret, das_keys = ph5_object.ph5_g_receivers.read_das()
@@ -124,7 +125,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', True)
+        ph5_object = initialize_ex('master.ph5', '.', False)
         node = ph5_object.ph5_g_receivers.getdas_g('5553')
         ph5_object.ph5_g_receivers.setcurrent(node)
         ret, das_keys = ph5_object.ph5_g_receivers.read_das()
