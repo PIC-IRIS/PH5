@@ -17,6 +17,7 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
 
 class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
+        super(TempDirTestCase, self).setUp()
         super(TestMetadatatoPH5, self).setUp()
         if self._testMethodName != 'test_main':
             # not apply for test_main()
@@ -28,6 +29,7 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         if self._testMethodName != 'test_main':
             self.ph5_object.ph5close()
         super(TestMetadatatoPH5, self).tearDown()
+        super(TempDirTestCase, self).tearDown()
 
     def test_get_args(self):
         """
