@@ -78,9 +78,9 @@ ph5.utilities.obspytoph5
 ph5.utilities.metadatatoph5
  * new tool for loading stationxml and dataless SEED
 ph5.utilities.tests.test_metadatatoph5
- * unit tests for metadatatoph5; Stop sending log to screen;
+ * unit tests for metadatatoph5; Stop sending log to screen; Apply tmpdir from test_base
 ph5.utilities.tests.test_obspytoph5
- * unit tests for obspytoph5; Stop sending log to screen;
+ * unit tests for obspytoph5; Stop sending log to screen; Apply tmpdir from test_base
 ph5.core.tests.test_ph5api
  * unit tests for ph5api; Stop sending log to screen;
 ph5.core.ph5api

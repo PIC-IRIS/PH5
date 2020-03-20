@@ -17,8 +17,7 @@ def initialize_ex(nickname, path, editmode=False):
 
 
 class LogTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         # enable propagating to higher loggers
         logger.propagate = 1
         # disable writing log to console
@@ -28,8 +27,7 @@ class LogTestCase(unittest.TestCase):
         cls.newch = logging.StreamHandler(log)
         logger.addHandler(cls.newch)
 
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(cls):
         # disable propagating to higher loggers
         logger.propagate = 0
         # revert logger handler
