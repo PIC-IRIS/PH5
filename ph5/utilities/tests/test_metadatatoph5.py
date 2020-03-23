@@ -11,13 +11,12 @@ from mock import patch
 from testfixtures import OutputCapture
 
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
+from ph5.core.tests.test_base import TempDirTestCase, \
      initialize_ex
 
 
-class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
+class TestMetadatatoPH5(TempDirTestCase):
     def setUp(self):
-        super(TempDirTestCase, self).setUp()
         super(TestMetadatatoPH5, self).setUp()
         if self._testMethodName != 'test_main':
             # not apply for test_main()
@@ -29,7 +28,6 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         if self._testMethodName != 'test_main':
             self.ph5_object.ph5close()
         super(TestMetadatatoPH5, self).tearDown()
-        super(TempDirTestCase, self).tearDown()
 
     def test_get_args(self):
         """

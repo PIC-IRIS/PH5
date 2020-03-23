@@ -61,11 +61,12 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-class TestSegDtoPH5(LogTestCase):
+class TestPH5Availability(LogTestCase):
     def setUp(self):
         """
         setup for tests
         """
+        super(TestPH5Availability, self).setUp()
         self.ph5_object = ph5api.PH5(
             path='ph5/test_data/ph5',
             nickname='master.ph5')
@@ -1842,6 +1843,7 @@ class TestSegDtoPH5(LogTestCase):
         teardown for tests
         """
         self.ph5_object.close()
+        super(TestPH5Availability, self).tearDown()
 
 
 if __name__ == "__main__":

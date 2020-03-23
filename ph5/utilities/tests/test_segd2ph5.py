@@ -9,11 +9,11 @@ from mock import patch
 
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import segdreader
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
+from ph5.core.tests.test_base import TempDirTestCase, \
      initialize_ex
 
 
-class TestSegDtoPH5(TempDirTestCase, LogTestCase):
+class TestSegDtoPH5(TempDirTestCase):
 
     def setUp(self):
         super(TestSegDtoPH5, self).setUp()

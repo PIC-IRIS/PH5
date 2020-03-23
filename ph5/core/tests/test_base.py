@@ -17,30 +17,31 @@ def initialize_ex(nickname, path, editmode=False):
 
 
 class LogTestCase(unittest.TestCase):
-    def setUp(cls):
+    def setUp(self):
         # enable propagating to higher loggers
         logger.propagate = 1
         # disable writing log to console
         logger.removeHandler(ch)
         # add StringIO handler to prevent message "No handlers could be found"
         log = StringIO()
-        cls.newch = logging.StreamHandler(log)
-        logger.addHandler(cls.newch)
+        self.newch = logging.StreamHandler(log)
+        logger.addHandler(self.newch)
 
-    def tearDown(cls):
+    def tearDown(self):
         # disable propagating to higher loggers
         logger.propagate = 0
         # revert logger handler
-        logger.removeHandler(cls.newch)
+        logger.removeHandler(self.newch)
         logger.addHandler(ch)
 
 
-class TempDirTestCase(unittest.TestCase):
+class TempDirTestCase(LogTestCase):
 
     def setUp(self):
         """
         create tmpdir
         """
+        super(TempDirTestCase, self).setUp()
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
         os.chdir(self.tmpdir)
@@ -58,3 +59,4 @@ class TempDirTestCase(unittest.TestCase):
             print(errmsg)
 
         os.chdir(self.home)
+        super(TempDirTestCase, self).tearDown()
