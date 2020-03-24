@@ -20,8 +20,9 @@ class LogTestCase(unittest.TestCase):
     def setUp(self):
         # enable propagating to higher loggers
         logger.propagate = 1
-        self.handlers = logger.handlers
-        logger.handlers = []
+        self.handlers = [h for h in logger.handlers]
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
         # add StringIO handler to catch log in need
         log = StringIO()
         new_handler = logging.StreamHandler(log)
@@ -30,7 +31,10 @@ class LogTestCase(unittest.TestCase):
     def tearDown(self):
         # disable propagating to higher loggers
         logger.propagate = 0
-        logger.handlers = self.handlers
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        for handler in self.handlers:
+            logger.addHandler(handler)
 
 
 class TempDirTestCase(LogTestCase):
