@@ -16,6 +16,7 @@ from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
 
 class TestMetadatatoPH5(TempDirTestCase):
     def setUp(self):
+        self.LOGGERs = [metadatatoph5.LOGGER]
         super(TestMetadatatoPH5, self).setUp()
         if self._testMethodName != 'test_main':
             # not apply for test_main()

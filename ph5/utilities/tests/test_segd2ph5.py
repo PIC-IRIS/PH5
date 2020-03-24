@@ -15,6 +15,7 @@ from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
 class TestSegDtoPH5(TempDirTestCase):
 
     def setUp(self):
+        self.LOGGERs = [segd2ph5.LOGGER]
         super(TestSegDtoPH5, self).setUp()
         # initiate ph5
         self.EX = segd2ph5.EX = initialize_ex('master.ph5', '.', True)

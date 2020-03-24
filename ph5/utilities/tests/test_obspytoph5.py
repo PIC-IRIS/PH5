@@ -15,6 +15,7 @@ from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
 
 class TestObspytoPH5(TempDirTestCase):
     def setUp(self):
+        self.LOGGERs = [metadatatoph5.LOGGER, obspytoph5.LOGGER]
         super(TestObspytoPH5, self).setUp()
         if self._testMethodName != 'test_main':
             # not apply for test_main1,2,3()

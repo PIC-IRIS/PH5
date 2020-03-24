@@ -66,6 +66,7 @@ class TestPH5Availability(LogTestCase):
         """
         setup for tests
         """
+        self.LOGGERs = [ph5availability.LOGGER]
         super(TestPH5Availability, self).setUp()
         self.ph5_object = ph5api.PH5(
             path='ph5/test_data/ph5',
