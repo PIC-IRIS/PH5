@@ -10,11 +10,10 @@ from testfixtures import OutputCapture
 
 from ph5.utilities import obspytoph5
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
-     initialize_ex
+from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
 
 
-class TestObspytoPH5(TempDirTestCase, LogTestCase):
+class TestObspytoPH5(TempDirTestCase):
     def setUp(self):
         super(TestObspytoPH5, self).setUp()
         if self._testMethodName != 'test_main':

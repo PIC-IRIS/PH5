@@ -11,11 +11,10 @@ from mock import patch
 from testfixtures import OutputCapture
 
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, \
-     initialize_ex
+from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
 
 
-class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
+class TestMetadatatoPH5(TempDirTestCase):
     def setUp(self):
         super(TestMetadatatoPH5, self).setUp()
         if self._testMethodName != 'test_main':
