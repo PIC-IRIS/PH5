@@ -22,10 +22,10 @@ class LogTestCase(unittest.TestCase):
         logger.propagate = 1
         self.handlers = logger.handlers
         logger.handlers = []
-        # add StringIO handler catch log in need
+        # add StringIO handler to catch log in need
         log = StringIO()
-        newch = logging.StreamHandler(log)
-        logger.addHandler(newch)
+        new_handler = logging.StreamHandler(log)
+        logger.addHandler(new_handler)
 
     def tearDown(self):
         # disable propagating to higher loggers
