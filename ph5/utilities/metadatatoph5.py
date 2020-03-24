@@ -517,7 +517,6 @@ def main():
         metadata.toph5(parsed_array)
 
     ph5_object.ph5close()
-    LOGGER.removeHandler(ch)
 
 
 if __name__ == '__main__':
