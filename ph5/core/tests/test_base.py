@@ -5,7 +5,7 @@ import unittest
 import logging
 from StringIO import StringIO
 
-from ph5 import logger, ch
+from ph5 import logger
 from ph5.core import experiment
 
 
@@ -20,19 +20,17 @@ class LogTestCase(unittest.TestCase):
     def setUp(self):
         # enable propagating to higher loggers
         logger.propagate = 1
-        # disable writing log to console
-        logger.removeHandler(ch)
-        # add StringIO handler to prevent message "No handlers could be found"
+        self.handlers = logger.handlers
+        logger.handlers = []
+        # add StringIO handler catch log in need
         log = StringIO()
-        self.newch = logging.StreamHandler(log)
-        logger.addHandler(self.newch)
+        newch = logging.StreamHandler(log)
+        logger.addHandler(newch)
 
     def tearDown(self):
         # disable propagating to higher loggers
         logger.propagate = 0
-        # revert logger handler
-        logger.removeHandler(self.newch)
-        logger.addHandler(ch)
+        logger.handlers = self.handlers
 
 
 class TempDirTestCase(LogTestCase):
