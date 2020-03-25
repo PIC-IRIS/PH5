@@ -37,20 +37,23 @@ class LogTestCase(unittest.TestCase):
         logger.addHandler(ch)
 
     def setUp(self):
+        super(LogTestCase, self).setUp()
         file_loggers = self.find_all_file_loggers()
+        # print('\nLog setup:')
         if file_loggers:
-            print('\nsetup: {}'.format(file_loggers))
+            print('\n\tsetup: {}'.format(file_loggers))
 
     def tearDown(self):
         file_loggers = self.find_all_file_loggers()
         if file_loggers:
-            print('Teardown1 {}'.format(self.find_all_file_loggers()))
+            print('\n\tTeardown1 {}'.format(self.find_all_file_loggers()))
 
             # remove all file handlers
             for l, h in self.find_all_file_loggers():
                 l.removeHandler(h)
 
-            print('Teardown2 {}'.format(self.find_all_file_loggers()))
+            print('\tTeardown2 {}'.format(self.find_all_file_loggers()))
+        super(LogTestCase, self).tearDown()
 
     @staticmethod
     def find_all_file_loggers():
@@ -77,11 +80,19 @@ class TempDirTestCase(unittest.TestCase):
         """
         create tmpdir
         """
+        self.tmpdir = None
+        self.home = None
+        # self.debug()
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
         os.chdir(self.tmpdir)
+        self.addCleanup(os.chdir, self.home)
+        # self.debug()
+        super(TempDirTestCase, self).setUp()
 
     def tearDown(self):
+        super(TempDirTestCase, self).tearDown()
+        # self.debug()
         if self._resultForDoCleanups.wasSuccessful():
             try:
                 shutil.rmtree(self.tmpdir)
