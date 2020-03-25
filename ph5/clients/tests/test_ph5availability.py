@@ -9,7 +9,7 @@ import sys
 import os
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
-from ph5.core.tests.test_base import LogTestCase
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -61,16 +61,25 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-class TestSegDtoPH5(LogTestCase):
+class TestSegDtoPH5(LogTestCase, TempDirTestCase):
     def setUp(self):
         """
         setup for tests
         """
+        super(TestSegDtoPH5, self).setUp()
+
         self.ph5_object = ph5api.PH5(
             path='ph5/test_data/ph5',
             nickname='master.ph5')
         self.availability = ph5availability.PH5Availability(
             self.ph5_object)
+
+    def tearDown(self):
+        """
+        teardown for tests
+        """
+        self.ph5_object.close()
+        super(TestSegDtoPH5, self).tearDown()
 
     def test_get_slc(self):
         """
@@ -1836,12 +1845,6 @@ class TestSegDtoPH5(LogTestCase):
             self.assertEqual(ret, result)
             self.assertEqual(log.records[0].msg,
                              "The entered format k is not supported.")
-
-    def tearDown(self):
-        """
-        teardown for tests
-        """
-        self.ph5_object.close()
 
 
 if __name__ == "__main__":

@@ -36,6 +36,40 @@ class LogTestCase(unittest.TestCase):
         logger.removeHandler(cls.newch)
         logger.addHandler(ch)
 
+    def setUp(self):
+        file_loggers = self.find_all_file_loggers()
+        if file_loggers:
+            print('\nsetup: {}'.format(file_loggers))
+
+    def tearDown(self):
+        file_loggers = self.find_all_file_loggers()
+        if file_loggers:
+            print('Teardown1 {}'.format(self.find_all_file_loggers()))
+
+            # remove all file handlers
+            for l, h in self.find_all_file_loggers():
+                l.removeHandler(h)
+
+            print('Teardown2 {}'.format(self.find_all_file_loggers()))
+
+    @staticmethod
+    def find_all_file_loggers():
+        file_logger_handlers = list()
+        for k, v in logging.Logger.manager.loggerDict.items():
+            if not isinstance(v, logging.PlaceHolder):
+                for h in v.handlers:
+                    if isinstance(h, logging.FileHandler):
+                        file_logger_handlers.append((logging.getLogger(k), h))
+        return file_logger_handlers
+
+    def remove_all_file_handlers(self):
+        for k, v in logging.Logger.manager.loggerDict.items():
+            if not isinstance(v, logging.PlaceHolder):
+                for h in v.handlers:
+                    if isinstance(h, logging.FileHandler):
+                        print('Removing: {}   {}'.format(k, h.baseFilename))
+                        print(logging.getLogger(k).removeHandler(h))
+
 
 class TempDirTestCase(unittest.TestCase):
 
@@ -46,11 +80,8 @@ class TempDirTestCase(unittest.TestCase):
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
         os.chdir(self.tmpdir)
-        self.debug()
 
     def tearDown(self):
-        self.debug()
-        self.find_all_file_loggers()
         if self._resultForDoCleanups.wasSuccessful():
             try:
                 shutil.rmtree(self.tmpdir)
@@ -70,12 +101,3 @@ class TempDirTestCase(unittest.TestCase):
         print('tmpdir: {}'.format(self.tmpdir))
         print('cwd:    {}'.format(os.getcwd()))
         print('home:   {}'.format(self.home))
-
-    def find_all_file_loggers(self):
-        for k,v in  logging.Logger.manager.loggerDict.items()  :
-            # print('+ [%s] {%s} ' % (str.ljust( k, 20)  , str(v.__class__)[8:-2]) ) 
-            if not isinstance(v, logging.PlaceHolder):
-                for h in v.handlers :
-                    if isinstance(h, logging.FileHandler):
-                        print('+ [%s] {%s} ' % (str.ljust( k, 20)  , str(v.__class__)[8:-2]) ) 
-                        print('     +++',str(h.__class__)[8:-2] )
