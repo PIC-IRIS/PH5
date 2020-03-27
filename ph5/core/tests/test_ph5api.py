@@ -9,9 +9,12 @@ from ph5.core.tests.test_base import LogTestCase
 
 class TestPH5API(LogTestCase):
     def setUp(self):
-        super(TestPH5API, self).setUp()
         self.ph5API_object = ph5api.PH5(path='ph5/test_data/ph5',
                                         nickname='master.ph5')
+
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5API, self).tearDown()
 
     def test_load_ph5(self):
         """
@@ -1203,10 +1206,6 @@ class TestPH5API(LogTestCase):
         self.ph5API_object.clear()
         self.ph5API_object.close()
         self.assertIsNone(self.ph5API_object.ph5)
-
-    def tearDown(self):
-        self.ph5API_object.close()
-        super(TestPH5API, self).tearDown()
 
 
 if __name__ == "__main__":
