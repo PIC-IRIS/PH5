@@ -1733,6 +1733,7 @@ class TestPH5Availability(TempDirTestCase, LogTestCase):
         with open('test', 'r') as content_file:
             content = content_file.read().strip()
         self.assertEqual(content, "this is a text line")
+        os.remove('test')
 
     def test_get_geoCSV_report(self):
         """
