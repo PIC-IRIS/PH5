@@ -17,50 +17,38 @@ def initialize_ex(nickname, path, editmode=False):
 
 
 class LogTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         # enable propagating to higher loggers
         logger.propagate = 1
-        cls.handlers = [h for h in logger.handlers]
-        # switch handler that send log to console
-        # to StringIO handler to catch log's messages in test
+        self.handlers = [h for h in logger.handlers]
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        # add StringIO handler to catch log in need
         log = StringIO()
         new_handler = logging.StreamHandler(log)
-        logger.handlers = [new_handler]
-
-    @classmethod
-    def tearDownClass(cls):
-        # disable propagating to higher loggers
-        logger.propagate = 0
-        # put back the stream handler in ph5.__init__.logger
-        logger.handlers = cls.handlers
+        logger.addHandler(new_handler)
 
     def tearDown(self):
-        # clean up handlers in any ph5 files' loggers that have been used
-        # but exclude logger from ph5/__init__.py to catch log's messages in
-        # next test
-        for k, v in logging.Logger.manager.loggerDict.items():
-            if (not isinstance(v, logging.PlaceHolder)) and ('ph5.' in k):
-                v.handlers = []
-        super(LogTestCase, self).tearDown()
+        # disable propagating to higher loggers
+        logger.propagate = 0
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        for handler in self.handlers:
+            logger.addHandler(handler)
 
 
-class TempDirTestCase(unittest.TestCase):
+class TempDirTestCase(LogTestCase):
 
     def setUp(self):
         """
         create tmpdir
         """
-        self.tmpdir = None
-        self.home = None
+        super(TempDirTestCase, self).setUp()
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(dir=self.home + "/ph5/test_data/")
         os.chdir(self.tmpdir)
-        self.addCleanup(os.chdir, self.home)
-        super(TempDirTestCase, self).setUp()
 
     def tearDown(self):
-        super(TempDirTestCase, self).tearDown()
         if self._resultForDoCleanups.wasSuccessful():
             try:
                 shutil.rmtree(self.tmpdir)
@@ -71,4 +59,6 @@ class TempDirTestCase(unittest.TestCase):
             errmsg = "%s has FAILED. Inspect files created in %s." \
                 % (self._testMethodName, self.tmpdir)
             print(errmsg)
+
         os.chdir(self.home)
+        super(TempDirTestCase, self).tearDown()
