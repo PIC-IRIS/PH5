@@ -10,28 +10,26 @@ from testfixtures import OutputCapture
 
 from ph5.utilities import obspytoph5
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
-    initialize_ex
+from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
 
 
-class TestObspytoPH5(TempDirTestCase, LogTestCase):
+class TestObspytoPH5(TempDirTestCase):
     def setUp(self):
         super(TestObspytoPH5, self).setUp()
-        if 'test_main' not in self._testMethodName:
-            # self.ph5_object will be created in test_main1/2/3
-            # after data are added to ph5
-            self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+        if self._testMethodName != 'test_main':
+            # not apply for test_main1,2,3()
+            ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
             self.obs = obspytoph5.ObspytoPH5(
-                self.ph5_object,
+                ph5_object,
                 self.tmpdir,
                 1,
                 1)
             self.obs.verbose = True
-            self.ph5_object.ph5flush()
-            self.ph5_object.ph5_g_sorts.update_local_table_nodes()
+            ph5_object.ph5flush()
+            ph5_object.ph5_g_sorts.update_local_table_nodes()
 
     def tearDown(self):
-        self.ph5_object.ph5close()
+        self.obs.ph5.ph5close()
         super(TestObspytoPH5, self).tearDown()
 
     def test_get_args(self):
@@ -52,8 +50,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
     def test_main1(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    os.path.join(self.home,
-                                 'ph5/test_data/metadata/station.xml')]
+                    '../metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
 
@@ -64,10 +61,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        self.ph5_object = initialize_ex('master.ph5', '.', False)
-        node = self.ph5_object.ph5_g_receivers.getdas_g('5553')
-        self.ph5_object.ph5_g_receivers.setcurrent(node)
-        ret, das_keys = self.ph5_object.ph5_g_receivers.read_das()
+        ph5_object = initialize_ex('master.ph5', '.', False)
+        node = ph5_object.ph5_g_receivers.getdas_g('5553')
+        ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
         keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
                 'array_name_log_a', 'channel_number_i', 'event_number_i',
                 'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
@@ -79,12 +76,12 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
                          ret[0]['raw_file_name_s'])
         self.assertEqual('../miniseed/0407LHN.ms',
                          ret[1]['raw_file_name_s'])
+        ph5_object.ph5close()
 
     def test_main2(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    os.path.join(self.home,
-                                 'ph5/test_data/metadata/station.xml')]
+                    '../metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         # first need to run obspytoph5
@@ -94,10 +91,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        self.ph5_object = initialize_ex('master.ph5', '.', False)
-        node = self.ph5_object.ph5_g_receivers.getdas_g('5553')
-        self.ph5_object.ph5_g_receivers.setcurrent(node)
-        ret, das_keys = self.ph5_object.ph5_g_receivers.read_das()
+        ph5_object = initialize_ex('master.ph5', '.', False)
+        node = ph5_object.ph5_g_receivers.getdas_g('5553')
+        ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
         keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
                 'array_name_log_a', 'channel_number_i', 'event_number_i',
                 'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
@@ -107,12 +104,12 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(keys, das_keys)
         self.assertEqual('../miniseed/0407HHN.ms',
                          ret[0]['raw_file_name_s'])
+        ph5_object.ph5close()
 
     def test_main3(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    os.path.join(self.home,
-                                 'ph5/test_data/metadata/station.xml')]
+                    '../metadata/station.xml']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
 
@@ -127,10 +124,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        self.ph5_object = initialize_ex('master.ph5', '.', False)
-        node = self.ph5_object.ph5_g_receivers.getdas_g('5553')
-        self.ph5_object.ph5_g_receivers.setcurrent(node)
-        ret, das_keys = self.ph5_object.ph5_g_receivers.read_das()
+        ph5_object = initialize_ex('master.ph5', '.', False)
+        node = ph5_object.ph5_g_receivers.getdas_g('5553')
+        ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
         keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
                 'array_name_log_a', 'channel_number_i', 'event_number_i',
                 'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
@@ -140,6 +137,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(keys, das_keys)
         self.assertEqual('../miniseed/0407HHN.ms',
                          ret[0]['raw_file_name_s'])
+        ph5_object.ph5close()
 
     def test_to_ph5(self):
         """
