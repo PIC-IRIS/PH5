@@ -61,7 +61,6 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-
 class TestPH5Availability(LogTestCase, TempDirTestCase):
     def setUp(self):
         """
