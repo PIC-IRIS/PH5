@@ -67,9 +67,9 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         setup for tests
         """
         super(TestPH5Availability, self).setUp()
-
+        self.ph5test_path = os.path.join(self.home, 'ph5/test_data/ph5')
         self.ph5_object = ph5api.PH5(
-            path=os.path.join(self.home, 'ph5/test_data/ph5'),
+            path=self.ph5test_path,
             nickname='master.ph5')
         self.availability = ph5availability.PH5Availability(
             self.ph5_object)
@@ -855,31 +855,31 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                 ph5availability.get_args(['-n', 'master.ph5'])
             with self.assertRaises(SystemExit):
                 ph5availability.get_args(
-                    ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5'])
+                    ['-n', 'master.ph5', '-p', self.ph5test_path])
             # test false args
             with self.assertRaises(SystemExit):
                 ph5availability.get_args(
-                    ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+                    ['-n', 'master.ph5', '-p', self.ph5test_path,
                      '-a', '0', '-T'])
         # test default args
         ret = vars(ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0']))
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0']))
         expect = {
             'array_t_': None, 'format': None, 'start_time': None,
             'output_file': None, 'avail': 0, 'end_time': None,
-            'sta_id_list': [], 'ph5path': 'ph5/test_data/ph5',
+            'sta_id_list': [], 'ph5path': self.ph5test_path,
             'samplerate': False, 'nickname': 'master.ph5', 'sta_list': [],
             'channel': [], 'location': None}
         self.assertDictEqual(ret, expect)
         # test correct args received
         ret = vars(ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-s', '2017-08-09T16:00:00.380000',
              '-e', '2017-08-09T16:01:00.380000', '--station', '500,0407',
              '--station_id', '500,0407', '-l', '00', '-c', 'DP1', '-S',
              '-A', '1', '-F', 't', '-o', 'extent.txt']))
         expect = {
-            'array_t_': 1, 'format': 't', 'ph5path': 'ph5/test_data/ph5',
+            'array_t_': 1, 'format': 't', 'ph5path': self.ph5test_path,
             'output_file': 'extent.txt', 'avail': 0,
             'start_time': '2017-08-09T16:00:00.380000',
             'end_time': '2017-08-09T16:01:00.380000',
@@ -895,41 +895,41 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         A = self.availability
         # test wrong format channel
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-c', '1 2 3'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format location: len > 2
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-l', 'Oaa'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format location: invalid character
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-l', 'O^'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format station
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '--station', 'o-g'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong avail:5
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '5'])
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '5'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # given -o but avail not 2 or 3
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+            ['-n', 'master.ph5', '-p', self.ph5test_path,
              '-a', '0', '-o', 'test'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -937,7 +937,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # given -o, avail=2 but no format given
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+            ['-n', 'master.ph5', '-p', self.ph5test_path,
              '-a', '2', '-o', 'test'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -945,7 +945,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test default args
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0'])
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
         self.assertEqual(A.stations, ['*'])
@@ -960,7 +960,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test wildcard station, location, channel
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '--station', '*', '-l', '*', '-c', '*'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -970,7 +970,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test wildcard station, location, channel
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '--station_id', '?001', '-l', '??', '-c', 'DP?'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -981,7 +981,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # test args are assigned correctly,
         # a=0, check if SR_included=False, OFILE=None
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-s', '2017-08-09T16:00:00.380000',
              '-e', '2017-08-09T16:01:00.380000', '--station', '500,0407',
              '-l', '00', '-c', 'DP1', '-S',
@@ -1001,7 +1001,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # same args, with avail=2, check if SR_included=True
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '2',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '2',
              '-S', '-F', 't', '-o', 'extent.txt'])
         ret = A.analyze_args(args)
         self.assertEqual(A.SR_included, True)
@@ -1022,7 +1022,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data station with data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '--station',
                     '500', '--channel', 'DP1']
         with patch.object(sys, 'argv', testargs):
@@ -1034,7 +1034,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # expect to return True 3 times, once for each channel
         # master_PH5_file without extension
         testargs = ['ph5availability', '-n', 'master', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '--station', '500', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1043,7 +1043,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data station with no data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '--station',
                     '9576', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
@@ -1053,7 +1053,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data station list data, no data,
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '--station', '9001,91234', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1062,7 +1062,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data with start time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '-s',
                     '2017-08-09T16:00:00.380000', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
@@ -1072,7 +1072,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data with end time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '-e',
                     '2019-02-22T15:43:09.000000', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
@@ -1082,7 +1082,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data with time range having data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0',
                     '-s', '2019-02-22T15:39:03.000000',
                     '-e', '2019-02-22T15:43:09.000000', '--channel', '*']
@@ -1093,7 +1093,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test has_data with time range having no data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0',
                     '-s', '2017-08-09T16:01:01.0',
                     '-e', '2018-12-17T22:20:30.0', '--channel', '*']
@@ -1103,7 +1103,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                 out.compare('False')
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '0', '-A', '2']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1113,7 +1113,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # ------------------------------------------------------------ #
         # test get_slc with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '1', '--station', '0407']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1124,7 +1124,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_slc with channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '1', '-c', 'LOG']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1133,7 +1133,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_slc with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '1',
                     '-s', '2019-02-22T15:39:03.000000',
                     '-e', '2019-02-22T15:43:09.000000']
@@ -1144,7 +1144,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_slc with array
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '1', '-A', '2']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1154,7 +1154,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # ------------------------------------------------------------ #
         # test get_availability with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '2', '--station', '0407']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1171,7 +1171,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability with channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '2', '-c', 'LOG']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1184,7 +1184,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '2',
                     '-s', '2018-12-17T23:10:05.0',
                     '-e', '2019-02-22T15:39:03.1']
@@ -1200,7 +1200,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                     " 2019-02-22T15:39:03.099999Z")
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '2', '-A', '4']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1214,7 +1214,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # ------------------------------------------------------------ #
         # test get_availability_extent with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '--station', '9001']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1229,7 +1229,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # if wrong format is stated, still print out tuple result with
         # a warning
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-c', 'DP2', '-F', 'k']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1239,7 +1239,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability_extent with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-S',
                     '-s', '2019-02-22T15:39:04.1',
                     '-e', '2019-02-22T15:39:07.1']
@@ -1254,7 +1254,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability_extent with wildcard station, location, channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3',
                     '--station', '?001', '-l', '*', '-c', 'DP?']
         with patch.object(sys, 'argv', testargs):
@@ -1267,7 +1267,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                     " 2019-02-22T15:43:09.000000Z")
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-A', '4']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1281,7 +1281,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # ------------------------------------------------------------ #
         # test get_availability_percentage with station, no channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '4', '--station', '9001']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1290,7 +1290,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability_percentage with channel, no station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '4', '-c', 'DP2']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1299,7 +1299,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '4', '-c', 'DP2',
                     '--station', '*']
         with patch.object(sys, 'argv', testargs):
@@ -1309,7 +1309,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '4', '-c', 'DP1',
                     '--station', '500']
         with patch.object(sys, 'argv', testargs):
@@ -1319,7 +1319,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test get_availability_percentage with station, channel, time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '4', '--station', '9001',
                     '-s', '2019-02-22T15:39:03.0', '-c', 'DPZ',
                     '-e', '2019-02-22T15:40:03.0']
@@ -1330,7 +1330,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # test get_availability_percentage with station, channel, time, and
         # array not match with other parameters
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '4', '-A', '3',
                     '--station', '0407', '-c', 'HHN']
         with patch.object(sys, 'argv', testargs):
@@ -1343,7 +1343,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # should return 10 channels
         # should match slc_full.txt from test data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3',
                     '-F', 't', '-S']
         with open(os.path.join(self.home,
@@ -1359,7 +1359,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # should return 10 channels
         # should match slc_full_geocsv.csv from test data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-F', 'g', '-S']
         with open(os.path.join(self.home,
                                'ph5/test_data/metadata/extent_full.csv'),
@@ -1372,7 +1372,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test extent and text format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-F', 't', '-S']
         with open(os.path.join(self.home,
                                'ph5/test_data/metadata/extent_full.txt'),
@@ -1386,7 +1386,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.maxDiff = None
         # test extent and sync format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-F', 's', '-S']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
@@ -1404,7 +1404,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
         # test extent and json format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    os.path.join(self.home, 'ph5/test_data/ph5'),
+                    self.ph5test_path,
                     '-a', '3', '-F', 'j', '-S']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
