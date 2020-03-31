@@ -11,21 +11,23 @@ from mock import patch
 from testfixtures import OutputCapture
 
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
+    initialize_ex
 
 
-class TestMetadatatoPH5(TempDirTestCase):
+class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestMetadatatoPH5, self).setUp()
         if self._testMethodName != 'test_main':
-            # not apply for test_main()
+            # the condition exclude test_main() when creating self.ph5_object
+            # because in test_main(), self.ph5_object  have to be created after
+            # the call of main() to check the data added by main()
             self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
             self.metadata = metadatatoph5.MetadatatoPH5(
                 self.ph5_object)
 
     def tearDown(self):
-        if self._testMethodName != 'test_main':
-            self.ph5_object.ph5close()
+        self.ph5_object.ph5close()
         super(TestMetadatatoPH5, self).tearDown()
 
     def test_get_args(self):
@@ -50,16 +52,20 @@ class TestMetadatatoPH5(TempDirTestCase):
         test main function
         """
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    '../metadata/station.xml']
+                    os.path.join(self.home,
+                                 'ph5/test_data/metadata/station.xml')]
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
-        # create ph5_object to check the result after run main()
-        ph5_object = initialize_ex('master.ph5', '.', False)
-        array_names = ph5_object.ph5_g_sorts.names()
+        # This self.ph5_object isn't the repeat of the self.ph5_object in
+        # setUp() because the one in setUp() already excludes test_main().
+        # This self.ph5_object has to be created after
+        # the call of main() to check the data added by main()
+        self.ph5_object = initialize_ex('master.ph5', '.', False)
+        array_names = self.ph5_object.ph5_g_sorts.names()
         self.assertEqual(
             ['Array_t_001', 'Array_t_002', 'Array_t_003'], array_names)
-        ret, keys = ph5_object.ph5_g_sorts.read_arrays('Array_t_001')
+        ret, keys = self.ph5_object.ph5_g_sorts.read_arrays('Array_t_001')
         key = ['id_s', 'location/X/value_d', 'location/X/units_s',
                'location/Y/value_d', 'location/Y/units_s',
                'location/Z/value_d', 'location/Z/units_s',
@@ -83,7 +89,6 @@ class TestMetadatatoPH5(TempDirTestCase):
         self.assertEqual('H', ret[0]['seed_instrument_code_s'])
         self.assertEqual('H', ret[0]['seed_band_code_s'])
         self.assertEqual('N', ret[0]['seed_orientation_code_s'])
-        ph5_object.ph5close()
 
     def test_init(self):
         """
@@ -98,7 +103,8 @@ class TestMetadatatoPH5(TempDirTestCase):
         tests read_metadata method
         """
         # open file to pass handle
-        f = open("../metadata/station.xml", "r")
+        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.xml"),
+                 "r")
 
         # should be a stationxml file, valid
         inventory_ = self.metadata.read_metadata(
@@ -118,7 +124,9 @@ class TestMetadatatoPH5(TempDirTestCase):
                          inventory_[0].stations[0].channels[1].code)
 
         # open file to pass handle
-        f = open("../metadata/1B.13.AAA.2018123.dataless", "r")
+        f = open(os.path.join(
+            self.home, "ph5/test_data/metadata/1B.13.AAA.2018123.dataless"),
+            "r")
 
         # should be a dataless SEED file, valid
         inventory_ = self.metadata.read_metadata(
@@ -135,7 +143,8 @@ class TestMetadatatoPH5(TempDirTestCase):
                          inventory_[0].stations[0].channels[1].code)
 
         # open file to pass handle
-        f = open("../metadata/station.txt", "r")
+        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.txt"),
+                 "r")
 
         # should be a station TXT, valid
         inventory_ = self.metadata.read_metadata(
@@ -152,7 +161,8 @@ class TestMetadatatoPH5(TempDirTestCase):
                          inventory_[0].stations[4].channels[0].code)
 
         # open file to pass handle
-        f = open("../metadata/array_9_rt125a.kef", "r")
+        f = open(os.path.join(
+            self.home, "ph5/test_data/metadata/array_9_rt125a.kef"), "r")
         # should be a KEF, valid
         inventory_ = self.metadata.read_metadata(
             f,
@@ -162,7 +172,8 @@ class TestMetadatatoPH5(TempDirTestCase):
         self.assertFalse(inventory_)
 
         # open file to pass handle
-        f = open("../metadata/array_8_130.csv", "r")
+        f = open(os.path.join(
+            self.home, "ph5/test_data/metadata/array_8_130.csv"), "r")
         # should be a CSV, valid
         inventory_ = self.metadata.read_metadata(
             f,
@@ -172,7 +183,8 @@ class TestMetadatatoPH5(TempDirTestCase):
         self.assertTrue(inventory_)
 
         # unknown file type
-        f = open("../metadata/RESP/125a500_32_RESP", "r")
+        f = open(os.path.join(
+            self.home, "ph5/test_data/metadata/RESP/125a500_32_RESP"), "r")
         # should be a KEF, valid
         inventory_ = self.metadata.read_metadata(
             f,
@@ -193,7 +205,8 @@ class TestMetadatatoPH5(TempDirTestCase):
         """
         # valid station xml
         # open file to pass handle
-        f = open("../metadata/station.xml", "r")
+        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.xml"),
+                 "r")
 
         # should be a station TXT, valid
         inventory_ = self.metadata.read_metadata(
@@ -241,7 +254,9 @@ class TestMetadatatoPH5(TempDirTestCase):
 
         # test dataless seed
         # should be a dataless SEED file, valid
-        f = open("../metadata/1B.13.AAA.2018123.dataless", "r")
+        f = open(os.path.join(
+            self.home,
+            "ph5/test_data/metadata/1B.13.AAA.2018123.dataless"), "r")
         inventory_ = self.metadata.read_metadata(
             f,
             "1B.13.AAA.2018123.dataless")
@@ -269,7 +284,8 @@ class TestMetadatatoPH5(TempDirTestCase):
         """
         test to_ph5 method
         """
-        f = open("../metadata/station.xml", "r")
+        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.xml"),
+                 "r")
         inventory_ = self.metadata.read_metadata(
             f,
             "station.xml")
