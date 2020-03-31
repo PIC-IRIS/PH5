@@ -3,12 +3,12 @@ Tests for metadatatoph5
 '''
 import unittest
 from ph5.utilities import obspytoph5
-from ph5.core import experiment
 from ph5.utilities import initialize_ph5
 import os
 from ph5.utilities import metadatatoph5
 import sys
 from mock import patch
+from ph5.core.tests.test_base import initialize_ex
 
 
 class TestObspytoPH5(unittest.TestCase):
@@ -22,11 +22,7 @@ class TestObspytoPH5(unittest.TestCase):
         else:
             print ("Successfully created the directory %s " % self.path)
 
-        ph5_object = experiment.ExperimentGroup(
-            nickname='master.ph5',
-            currentpath=self.path)
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
+        ph5_object = initialize_ex('master.ph5', self.path, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
         initialize_ph5.set_receiver_t(default_receiver_t)
         os.remove(default_receiver_t)
@@ -71,10 +67,7 @@ class TestObspytoPH5(unittest.TestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = experiment.ExperimentGroup(
-            nickname='master.ph5')
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
+        ph5_object = initialize_ex('master.ph5', '.', True)
         node = ph5_object.ph5_g_receivers.getdas_g('5553')
         ph5_object.ph5_g_receivers.setcurrent(node)
         ret, das_keys = ph5_object.ph5_g_receivers.read_das()
@@ -109,10 +102,7 @@ class TestObspytoPH5(unittest.TestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = experiment.ExperimentGroup(
-            nickname='master.ph5')
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
+        ph5_object = initialize_ex('master.ph5', '.', True)
         node = ph5_object.ph5_g_receivers.getdas_g('5553')
         ph5_object.ph5_g_receivers.setcurrent(node)
         ret, das_keys = ph5_object.ph5_g_receivers.read_das()
@@ -149,10 +139,7 @@ class TestObspytoPH5(unittest.TestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = experiment.ExperimentGroup(
-            nickname='master.ph5')
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
+        ph5_object = initialize_ex('master.ph5', '.', True)
         node = ph5_object.ph5_g_receivers.getdas_g('5553')
         ph5_object.ph5_g_receivers.setcurrent(node)
         ret, das_keys = ph5_object.ph5_g_receivers.read_das()

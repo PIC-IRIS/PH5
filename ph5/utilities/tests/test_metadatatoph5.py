@@ -4,13 +4,13 @@ Tests for metadatatoph5
 
 import unittest
 from ph5.utilities import metadatatoph5
-from ph5.core import experiment
 from ph5.utilities import initialize_ph5
 from obspy.core import inventory
 from obspy import UTCDateTime
 import os
 import sys
 from mock import patch
+from ph5.core.tests.test_base import initialize_ex
 
 
 class TestMetadatatoPH5(unittest.TestCase):
@@ -24,11 +24,7 @@ class TestMetadatatoPH5(unittest.TestCase):
         else:
             print ("Successfully created the directory %s " % self.path)
 
-        self.ph5_object = experiment.ExperimentGroup(
-            nickname='master.ph5',
-            currentpath=self.path)
-        self.ph5_object.ph5open(True)
-        self.ph5_object.initgroup()
+        self.ph5_object = initialize_ex('master.ph5', self.path, True)
         default_receiver_t = initialize_ph5.create_default_receiver_t()
         initialize_ph5.set_receiver_t(default_receiver_t)
         os.remove(default_receiver_t)
@@ -59,10 +55,7 @@ class TestMetadatatoPH5(unittest.TestCase):
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
-        ph5_object = experiment.ExperimentGroup(
-            nickname='master.ph5')
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
+        ph5_object = initialize_ex('master.ph5', '.', True)
         array_names = ph5_object.ph5_g_sorts.names()
         self.assertEqual(
             ['Array_t_001', 'Array_t_002', 'Array_t_003'], array_names)
