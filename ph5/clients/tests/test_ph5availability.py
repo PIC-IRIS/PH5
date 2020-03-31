@@ -61,12 +61,13 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-class TestAvailability(LogTestCase, TempDirTestCase):
+
+class TestPH5Availability(LogTestCase, TempDirTestCase):
     def setUp(self):
         """
         setup for tests
         """
-        super(TestAvailability, self).setUp()
+        super(TestPH5Availability, self).setUp()
 
         self.ph5_object = ph5api.PH5(
             path=os.path.join(self.home, 'ph5/test_data/ph5'),
@@ -79,7 +80,7 @@ class TestAvailability(LogTestCase, TempDirTestCase):
         teardown for tests
         """
         self.ph5_object.close()
-        super(TestAvailability, self).tearDown()
+        super(TestPH5Availability, self).tearDown()
 
     def test_get_slc(self):
         """

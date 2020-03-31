@@ -5,7 +5,7 @@ import unittest
 import logging
 from StringIO import StringIO
 
-from ph5 import logger, ch
+from ph5 import logger
 from ph5.core import experiment
 
 
@@ -17,24 +17,24 @@ def initialize_ex(nickname, path, editmode=False):
 
 
 class LogTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         # enable propagating to higher loggers
         logger.propagate = 1
-        # disable writing log to console
-        logger.removeHandler(ch)
-        # add StringIO handler to prevent message "No handlers could be found"
+        self.handlers = [h for h in logger.handlers]
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        # add StringIO handler to catch log in need
         log = StringIO()
-        cls.newch = logging.StreamHandler(log)
-        logger.addHandler(cls.newch)
+        new_handler = logging.StreamHandler(log)
+        logger.addHandler(new_handler)
 
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
         # disable propagating to higher loggers
         logger.propagate = 0
-        # revert logger handler
-        logger.removeHandler(cls.newch)
-        logger.addHandler(ch)
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        for handler in self.handlers:
+            logger.addHandler(handler)
 
     def setUp(self):
         super(LogTestCase, self).setUp()
@@ -74,7 +74,7 @@ class LogTestCase(unittest.TestCase):
                         print(logging.getLogger(k).removeHandler(h))
 
 
-class TempDirTestCase(unittest.TestCase):
+class TempDirTestCase(LogTestCase):
 
     def setUp(self):
         """
