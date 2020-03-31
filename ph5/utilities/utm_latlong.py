@@ -6,7 +6,7 @@ from ph5.core import ph5utils
 import argparse
 import logging
 
-PROG_VERSION = '2020.066'
+PROG_VERSION = '2020.091'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -14,7 +14,7 @@ def convert_file_from_utm(infile, outfile):
     # batch file method
     counter = 0
     with open(outfile, "w") as theoutfile, open(infile) as theinfile:
-        ws = "Easting, Northing, Zone, Hemisphere, => Longitude, Latitude\n"
+        ws = "Northing, Easting, Zone, Hemisphere, => Latitude, Longitude\n"
         theoutfile.write(ws)
         for line in theinfile:
             counter = counter + 1
@@ -29,17 +29,17 @@ def convert_file_from_utm(infile, outfile):
             zone = int(fieldset[2])
             hemisphere = str(fieldset[3]).upper()
             try:
-                lat, lon = ph5utils.utm_to_lat_long(easting, northing,
-                                                    hemisphere, zone)
-                ps = "easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
-                printstr1 = (ps % (easting, northing, zone, hemisphere))
-                printstr2 = "Lon = %.7f, Lat = %.7f" % (lon, lat)
-                print (printstr1 + " => " + printstr2)
+                lat, lon = ph5utils.utm_to_lat_lon(northing, easting,
+                                                   hemisphere, zone)
+                ps = "northing=%.1f, easting=%.1f, zone=%d, hemisphere=%s"
+                printstr1 = (ps % (northing, easting, zone, hemisphere))
+                printstr2 = "Lat = %.7f, Lon = %.7f" % (lat, lon)
+                LOGGER.info(printstr1 + " => " + printstr2)
                 outstr = "%.1f, %.1f, %d, %s, %.7f, %.7f" \
-                    % (easting, northing, zone, hemisphere, lon, lat)
+                    % (northing, easting, zone, hemisphere, lat, lon)
                 theoutfile.write(outstr + "\n")
             except ValueError:
-                print ("There was an error in UTM file conversion.")
+                LOGGER.error("There was an error in UTM data conversion.")
                 return
 
 
@@ -47,7 +47,7 @@ def convert_file_from_latlong(infile, outfile):
     # batch file method
     counter = 0
     with open(outfile, "w") as theoutfile, open(infile) as theinfile:
-        ws = "Longitude, Latitude, =>Easting, Northing, Zone, Hemisphere\n"
+        ws = "Latitude, Longitude, =>Northing, Easting, Zone, Hemisphere\n"
         theoutfile.write(ws)
         for line in theinfile:
             counter = counter + 1
@@ -60,17 +60,17 @@ def convert_file_from_latlong(infile, outfile):
             lat = float(fieldset[0])
             lon = float(fieldset[1])
             try:
-                easting, northing, zone, hemisphere =\
-                         ph5utils.lat_long_to_utm(lat, lon)
-                ps = "easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
-                printstr1 = "Lon = %.7f, Lat = %.7f" % (lon, lat)
-                printstr2 = (ps % (easting, northing, zone, hemisphere))
-                print (printstr1 + " => " + printstr2)
+                northing, easting, zone, hemisphere =\
+                         ph5utils.lat_lon_to_utm(lat, lon)
+                ps = "northing=%.1f, easting=%.1f, zone=%d, hemisphere=%s"
+                printstr1 = "Lat = %.7f, Lon = %.7f" % (lat, lon)
+                printstr2 = (ps % (northing, easting, zone, hemisphere))
+                LOGGER.info(printstr1 + " => " + printstr2)
                 outstr = "%.7f, %.7f, %.1f, %.1f, %d, %s" \
-                    % (lon, lat, easting, northing, zone, hemisphere)
+                    % (lat, lon, northing, easting, zone, hemisphere)
                 theoutfile.write(outstr + "\n")
             except ValueError:
-                print ("There was an error in UTM file conversion.")
+                LOGGER.error("There was an error in UTM data conversion.")
                 return
 
 
@@ -79,36 +79,36 @@ def doinline_from_utm(easting, northing, zone, hemisphere):
     try:
         indat = ("Input: easting=%.1f, northing=%.1f, zone=%d, hemisphere=%s"
                  % (float(easting), float(northing), int(zone), hemisphere))
-        print (indat)
+        LOGGER.info(indat)
 
-        lat, lon = ph5utils.utm_to_lat_long(easting, northing,
-                                            hemisphere, zone)
-        outstr = "Lon = %.7f, Lat = %.7f" % (lon, lat)
-        print (outstr)
-        print (''.join('*'*50))
+        lat, lon = ph5utils.utm_to_lat_lon(northing, easting,
+                                           hemisphere, zone)
+        outstr = "Lat = %.7f, Lon = %.7f" % (lat, lon)
+        LOGGER.info(outstr)
+        LOGGER.info(''.join('*'*50))
     except ValueError:
-        print ("There was an error in UTM data conversion.")
+        LOGGER.error("There was an error in UTM data conversion.")
         return
 
 
-def doinline_from_latlong(lon, lat):
+def doinline_from_latlong(lat, lon):
     # interactive method
     try:
         if abs(float(lat)) > 90.0:
-            msg = "Geodetic Error, your latitude, %.7f, is out of limit." \
-                   % (float(lat))
-            print (msg)
+            LOGGER.error(
+                "Your latitude, {0}, is out of limit."
+                .format(lat))
             return
-        easting, northing, zone, hemisphere = \
-            ph5utils.lat_long_to_utm(lat, lon)
-        indat = "Input: lon=%.7f, lat=%.7f" % (float(lon), float(lat))
-        print (indat)
-        outstr = "easting=%.1f, northing=%.1f, zone=%s, hemisphere=%s" \
-            % (float(easting), float(northing), zone, hemisphere)
-        print (outstr)
-        print (''.join('*'*50))
+        northing, easting, zone, hemisphere = \
+            ph5utils.lat_lon_to_utm(float(lat), float(lon))
+        indat = "Input: lat=%.7f, lon=%.7f" % (float(lat), float(lon))
+        LOGGER.info(indat)
+        outstr = "northing =%.1f, easting =%.1f, zone =%s, hemisphere =%s" \
+            % (float(northing), float(easting), zone, hemisphere)
+        LOGGER.info(outstr)
+        LOGGER.info(''.join('*'*50))
     except ValueError:
-        print ("There was an error in UTM data conversion.")
+        LOGGER.error("There was an error in UTM data conversion.")
         return
 
 
@@ -141,7 +141,7 @@ converted longitudes, latitudes or UTM Coordinates")
         elif args.latlong == 1:
             convert_file_from_latlong(args.infile, args.outfile)
         else:
-            print ("Error, you must specify either -u/--utm, OR -l/--latlong")
+            LOGGER.error("You must specify either -u/--utm, OR -l/--latlong")
 
     # for direct method
     else:
@@ -151,14 +151,14 @@ converted longitudes, latitudes or UTM Coordinates")
                 doinline_from_utm(args.easting, args.northing,
                                   args.zone, args.side.upper())
             else:
-                print ("Error-you must specify easting, northing, zone, side")
+                LOGGER.error("You must specify northing,easting,zone, & side")
         elif args.latlong == 1:
             if args.longitude is not None and args.latitude is not None:
-                doinline_from_latlong(args.longitude, args.latitude)
+                doinline_from_latlong(args.latitude, args.longitude)
             else:
-                print ("Error, you must specify longitude and latitude.")
+                LOGGER.error("You must specify longitude and latitude.")
         else:
-            print ("Error, you must choose -u/--utm, OR -l/--latlong")
+            LOGGER.error("You must choose -u/--utm, OR -l/--latlong")
 
 
 if __name__ == '__main__':

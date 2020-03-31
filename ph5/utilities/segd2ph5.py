@@ -19,7 +19,7 @@ from ph5.core import experiment, columns, segdreader, ph5utils
 from ph5 import LOGGING_FORMAT
 
 
-PROG_VERSION = "2020.066"
+PROG_VERSION = "2020.085"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1084,16 +1084,16 @@ def main():
                                           4].receiver_point_X_final / 10.
                             northing = SD.trace_headers.trace_header_N[
                                            4].receiver_point_Y_final / 10.
-                            LAT, LON = ph5utils.utm_to_lat_long(
-                                                easting, northing,
+                            LAT, LON = ph5utils.utm_to_lat_lon(
+                                                northing, easting,
                                                 NS, utmzone)
                         elif TSPF:
                             #   Texas State Plane coordinates
-                            LAT, LON = ph5utils.tspc_lat_long(
+                            LAT, LON = ph5utils.tspc_lat_lon(
                                 SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.,
+                                    4].receiver_point_Y_final / 10.,
                                 SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.)
+                                    4].receiver_point_X_final / 10.)
                         else:
                             LAT = SD.trace_headers.trace_header_N[
                                       4].receiver_point_Y_final / 10.

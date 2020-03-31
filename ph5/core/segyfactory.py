@@ -19,7 +19,7 @@ import logging
 from ph5.core import ph5utils
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = '2020.066'
+PROG_VERSION = '2020.091'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -789,7 +789,7 @@ class Ssegy:
                 lat = self.array_t['location/Y/value_d']
                 lon = self.array_t['location/X/value_d']
                 elev = self.array_t['location/Z/value_d']
-                Y, X, Z = ph5utils.geod_to_utm(lat, lon, elev)
+                Y, X, Z = ph5utils.lat_lon_elev_to_utm(lat, lon, elev)
                 s, vx, vy = pick_values_32(X, Y)
 
                 tra['coordScale'] = s
@@ -845,7 +845,7 @@ class Ssegy:
                     lat = self.event_t['location/Y/value_d']
                     lon = self.event_t['location/X/value_d']
                     elev = self.event_t['location/Z/value_d']
-                    Y, X, Z = ph5utils.geod_to_utm(lat, lon, elev)
+                    Y, X, Z = ph5utils.lat_lon_elev_to_utm(lat, lon, elev)
 
                     s, vx, vy = pick_values_32(X, Y)
                     tra['sourceLongOrX'] = vx
@@ -876,8 +876,8 @@ class Ssegy:
                 lon2 = self.array_t['location/X/value_d']
 
                 UNITS = 'm'
-                az_baz_dist = ph5utils.latlon2geod(lat1, lon1, lat2, lon2,
-                                                   FACTS[UNITS])
+                az_baz_dist = ph5utils.lat_lon_to_geod(lat1, lon1, lat2, lon2,
+                                                       FACTS[UNITS])
                 tra['sourceToRecDist'] = az_baz_dist[2]
             except Exception as e:
                 # sys.stderr.write (e.message)

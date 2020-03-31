@@ -14,7 +14,7 @@ import math
 from ph5.core import columns, experiment, timedoy, ph5utils
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2020.066'
+PROG_VERSION = '2020.091'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -336,12 +336,12 @@ class PH5(experiment.ExperimentGroup):
                 lat0 = array_t[0]['location/Y/value_d']
                 lon1 = event_t['location/X/value_d']
                 lat1 = event_t['location/Y/value_d']
-                az, baz, dist = ph5utils.latlon2geod(lat0, lon0, lat1, lon1,
-                                                     FACTS_M[UNITS])
+                az, baz, dist = ph5utils.lat_lon_to_geod(lat0, lon0,
+                                                         lat1, lon1,
+                                                         FACTS_M[UNITS])
         except Exception as e:
             LOGGER.warning("Couldn't get offset. {0}".format(repr(e)))
             return {}
-
         return {'event_id_s': evt_id, 'receiver_id_s': sta_id,
                 'azimuth/value_f': az, 'azimuth/units_s': 'degrees',
                 'offset/value_d': dist, 'offset/units_s': 'm'}
