@@ -10,26 +10,32 @@ from testfixtures import OutputCapture
 
 from ph5.utilities import obspytoph5
 from ph5.utilities import metadatatoph5
-from ph5.core.tests.test_base import TempDirTestCase, initialize_ex
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
+    initialize_ex
 
 
-class TestObspytoPH5(TempDirTestCase):
+class TestObspytoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestObspytoPH5, self).setUp()
-        if self._testMethodName != 'test_main':
-            # not apply for test_main1,2,3()
-            ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+        self.station_xml_path = os.path.join(
+            self.home, 'ph5/test_data/metadata/station.xml')
+        if 'test_main' not in self._testMethodName:
+            # the condition exclude test_main1/2/3() when creating
+            # self.ph5_object because in test_main(), self.ph5_object have to
+            # be created after the call of main() to check the data added
+            # by main()
+            self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
             self.obs = obspytoph5.ObspytoPH5(
-                ph5_object,
+                self.ph5_object,
                 self.tmpdir,
                 1,
                 1)
             self.obs.verbose = True
-            ph5_object.ph5flush()
-            ph5_object.ph5_g_sorts.update_local_table_nodes()
+            self.ph5_object.ph5flush()
+            self.ph5_object.ph5_g_sorts.update_local_table_nodes()
 
     def tearDown(self):
-        self.obs.ph5.ph5close()
+        self.ph5_object.ph5close()
         super(TestObspytoPH5, self).tearDown()
 
     def test_get_args(self):
@@ -50,21 +56,29 @@ class TestObspytoPH5(TempDirTestCase):
     def test_main1(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    '../metadata/station.xml']
+                    self.station_xml_path]
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
 
         # first need to run obspytoph5
+        # need to use relative path '../miniseed/' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
         testargs = ['obspytoph5', '-n', 'master.ph5', '-d',
                     '../miniseed/']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', False)
-        node = ph5_object.ph5_g_receivers.getdas_g('5553')
-        ph5_object.ph5_g_receivers.setcurrent(node)
-        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
+
+        # This self.ph5_object isn't the repeat of the self.ph5_object in
+        # setUp() because the one in setUp() already excludes test_main().
+        # This self.ph5_object has to be created after
+        # the call of main() to check the data added by main()
+        self.ph5_object = initialize_ex('master.ph5', '.', False)
+        node = self.ph5_object.ph5_g_receivers.getdas_g('5553')
+        self.ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = self.ph5_object.ph5_g_receivers.read_das()
         keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
                 'array_name_log_a', 'channel_number_i', 'event_number_i',
                 'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
@@ -76,25 +90,32 @@ class TestObspytoPH5(TempDirTestCase):
                          ret[0]['raw_file_name_s'])
         self.assertEqual('../miniseed/0407LHN.ms',
                          ret[1]['raw_file_name_s'])
-        ph5_object.ph5close()
 
     def test_main2(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    '../metadata/station.xml']
+                    self.station_xml_path]
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         # first need to run obspytoph5
+        # need to use relative path '../miniseed/' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
         testargs = ['obspytoph5', '-n', 'master.ph5', '-f',
                     '../miniseed/0407HHN.ms']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', False)
-        node = ph5_object.ph5_g_receivers.getdas_g('5553')
-        ph5_object.ph5_g_receivers.setcurrent(node)
-        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
+
+        # This self.ph5_object isn't the repeat of the self.ph5_object in
+        # setUp() because the one in setUp() already excludes test_main().
+        # This self.ph5_object has to be created after
+        # the call of main() to check the data added by main()
+        self.ph5_object = initialize_ex('master.ph5', '.', False)
+        node = self.ph5_object.ph5_g_receivers.getdas_g('5553')
+        self.ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = self.ph5_object.ph5_g_receivers.read_das()
         keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
                 'array_name_log_a', 'channel_number_i', 'event_number_i',
                 'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
@@ -104,17 +125,19 @@ class TestObspytoPH5(TempDirTestCase):
         self.assertEqual(keys, das_keys)
         self.assertEqual('../miniseed/0407HHN.ms',
                          ret[0]['raw_file_name_s'])
-        ph5_object.ph5close()
 
     def test_main3(self):
         # first need to run metadatatoph5
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    '../metadata/station.xml']
+                    self.station_xml_path]
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
 
         # now make a list for obspytoph5
         f = open("test_list", "w")
+        # need to use relative path '../miniseed/' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
         f.write("../miniseed/0407HHN.ms")
         f.close()
         # first need to run obspytoph5
@@ -124,10 +147,15 @@ class TestObspytoPH5(TempDirTestCase):
             obspytoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
         self.assertTrue(os.path.isfile('miniPH5_00001.ph5'))
-        ph5_object = initialize_ex('master.ph5', '.', False)
-        node = ph5_object.ph5_g_receivers.getdas_g('5553')
-        ph5_object.ph5_g_receivers.setcurrent(node)
-        ret, das_keys = ph5_object.ph5_g_receivers.read_das()
+
+        # This self.ph5_object isn't the repeat of the self.ph5_object in
+        # setUp() because the one in setUp() already excludes test_main().
+        # This self.ph5_object has to be created after
+        # the call of main() to check the data added by main()
+        self.ph5_object = initialize_ex('master.ph5', '.', False)
+        node = self.ph5_object.ph5_g_receivers.getdas_g('5553')
+        self.ph5_object.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = self.ph5_object.ph5_g_receivers.read_das()
         keys = ['array_name_SOH_a', 'array_name_data_a', 'array_name_event_a',
                 'array_name_log_a', 'channel_number_i', 'event_number_i',
                 'raw_file_name_s', 'receiver_table_n_i', 'response_table_n_i',
@@ -137,7 +165,6 @@ class TestObspytoPH5(TempDirTestCase):
         self.assertEqual(keys, das_keys)
         self.assertEqual('../miniseed/0407HHN.ms',
                          ret[0]['raw_file_name_s'])
-        ph5_object.ph5close()
 
     def test_to_ph5(self):
         """
@@ -145,14 +172,19 @@ class TestObspytoPH5(TempDirTestCase):
         """
         index_t_full = list()
         # try load without metadata
+        # need to use relative path '../miniseed/' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
         entry = "../miniseed/0407HHN.ms"
         message, index_t = self.obs.toph5((entry, 'MSEED'))
         self.assertFalse(index_t)
         self.assertEqual('stop', message)
 
         # with metadata
-        metadata = metadatatoph5.MetadatatoPH5(
-            self.obs.ph5)
+        metadata = metadatatoph5.MetadatatoPH5(self.obs.ph5)
+        # need to use relative path '../miniseed/' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
         f = open("../metadata/station.xml", "r")
         inventory_ = metadata.read_metadata(f, "station.xml")
         f.close()
@@ -166,6 +198,9 @@ class TestObspytoPH5(TempDirTestCase):
             index_t_full.append(e)
 
         # now load LOG CH
+        # need to use relative path '../miniseed/' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
         entry = "../miniseed/0407LOG.ms"
         message, index_t = self.obs.toph5((entry, 'MSEED'))
         self.assertTrue('done', message)
