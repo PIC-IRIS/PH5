@@ -70,13 +70,14 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         """
         segd2ph5.setLogger()
         segd2ph5.SD = SD = segdreader.Reader(
-            infile=self.home + '/ph5/test_data/segd/3ch.fcnt')
+            infile=os.path.join(self.home + '/ph5/test_data/segd/3ch.fcnt'))
         SD.process_general_headers()
         SD.process_channel_set_descriptors()
         SD.process_extended_headers()
         SD.process_external_headers()
 
-        SIZE = os.path.getsize(self.home + '/ph5/test_data/segd/3ch.fcnt')
+        SIZE = os.path.getsize(
+            os.path.join(self.home + '/ph5/test_data/segd/3ch.fcnt'))
 
         segd2ph5.DAS_INFO = {'3X500': [segd2ph5.Index_t_Info(
             '3X500', './miniPH5_00001.ph5',
@@ -168,7 +169,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         ####################################################################
         # add fcnt data of the same das in the same array but with different
         # deploytime
-        segd_dir = self.home + "/ph5/test_data/segd/"
+        segd_dir = os.path.join(self.home + "/ph5/test_data/segd/")
         # create list file
         list_file = open('fcnt_list', "w")
         fileList = os.listdir(segd_dir)
