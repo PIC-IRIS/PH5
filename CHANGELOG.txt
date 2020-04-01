@@ -78,9 +78,9 @@ ph5.utilities.obspytoph5
 ph5.utilities.metadatatoph5
  * new tool for loading stationxml and dataless SEED
 ph5.utilities.tests.test_metadatatoph5
- * unit tests for metadatatoph5; Stop sending log to screen; Apply tmpdir from test_base
+ * unit tests for metadatatoph5; Stop sending log to screen; Apply tmpdir from test_base; Use testfixture to capture output
 ph5.utilities.tests.test_obspytoph5
- * unit tests for obspytoph5; Stop sending log to screen; Apply tmpdir from test_base
+ * unit tests for obspytoph5; Stop sending log to screen; Apply tmpdir from test_base; Use testfixture to capture output
 ph5.core.tests.test_ph5api
  * unit tests for ph5api; Stop sending log to screen;
 ph5.core.ph5api
@@ -95,15 +95,13 @@ environment.yml
  * removed unused dependencies and added pykml as a dependency
  * add testfixtures to capture log/output in unittest
 ph5.core.test.test_base
- * add TempDirTestCase to handle temporary dictionary that keeps ph5 and log files for unittests
- * allow log to be propagated to higger loggers
- * dissable log to be written to console in tests
- * apply above in class LogTestCase so any test want to apply the above can extend this
+ * use TempDirTestCase to handle temporary dictionary that keeps ph5 and log files created in unittests
+ * use LogTestCase to dissable log to be written to console in unittests, remove all handlers created in unittest except the one to capture log messages
  * add initialize_ex for creating ph5 experiment object
 ph5.clients.test.test_ph5availability
- * Unittest: Stop sending log to screen; Apply testfixtures;
+ * Unittest: Stop sending log to screen; Apply testfixtures to capture output and log; Apply tmpdir from test_base
 ph5.core.tests.test_segd2ph5
- * Unittest: Stop sending log to screen
+ * Unittest: Stop sending log to screen; Apply tmpdir from test_base;
 
 v4.1.2:
 ph5.utilities.ph5validate
