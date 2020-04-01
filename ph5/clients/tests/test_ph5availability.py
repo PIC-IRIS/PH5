@@ -3,12 +3,14 @@ unit tests for ph5availability
 """
 
 import unittest
-from ph5.clients import ph5availability
-from ph5.core import ph5api
 import sys
 import os
+
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
+
+from ph5.clients import ph5availability
+from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
@@ -1733,7 +1735,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         with open('test', 'r') as content_file:
             content = content_file.read().strip()
         self.assertEqual(content, "this is a text line")
-        os.remove('test')
 
     def test_get_geoCSV_report(self):
         """
