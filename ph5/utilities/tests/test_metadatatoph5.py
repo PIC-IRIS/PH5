@@ -103,14 +103,11 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         tests read_metadata method
         """
         # open file to pass handle
-        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.xml"),
-                 "r")
-
-        # should be a stationxml file, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "station.xml")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/station.xml"),
+                  "r") as f:
+            # should be a stationxml file, valid
+            inventory_ = self.metadata.read_metadata(f, "station.xml")
         self.assertTrue(inventory_)
         self.assertTrue(isinstance(inventory_,
                                    inventory.Inventory))
@@ -124,15 +121,14 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                          inventory_[0].stations[0].channels[1].code)
 
         # open file to pass handle
-        f = open(os.path.join(
-            self.home, "ph5/test_data/metadata/1B.13.AAA.2018123.dataless"),
-            "r")
-
-        # should be a dataless SEED file, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "1B.13.AAA.2018123.dataless")
-        f.close()
+        with open(os.path.join(
+                self.home,
+                "ph5/test_data/metadata/1B.13.AAA.2018123.dataless"),
+                "r") as f:
+            # should be a dataless SEED file, valid
+            inventory_ = self.metadata.read_metadata(
+                f,
+                "1B.13.AAA.2018123.dataless")
         # check that it contains what we think it should
         self.assertEqual(4, len(inventory_[0].stations))
         self.assertEqual('HOL2B',
@@ -143,14 +139,11 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                          inventory_[0].stations[0].channels[1].code)
 
         # open file to pass handle
-        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.txt"),
-                 "r")
-
-        # should be a station TXT, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "station.txt")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/station.txt"),
+                  "r") as f:
+            # should be a station TXT, valid
+            inventory_ = self.metadata.read_metadata(f, "station.txt")
         # check that it contains what we think it should
         self.assertEqual(397, len(inventory_[0].stations))
         self.assertEqual('1005',
@@ -161,42 +154,34 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                          inventory_[0].stations[4].channels[0].code)
 
         # open file to pass handle
-        f = open(os.path.join(
-            self.home, "ph5/test_data/metadata/array_9_rt125a.kef"), "r")
-        # should be a KEF, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "array_9_rt125a.kef")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/array_9_rt125a.kef"),
+                  "r") as f:
+            # should be a KEF, valid
+            inventory_ = self.metadata.read_metadata(f, "array_9_rt125a.kef")
         # check that it contains what we think it should
         self.assertFalse(inventory_)
 
         # open file to pass handle
-        f = open(os.path.join(
-            self.home, "ph5/test_data/metadata/array_8_130.csv"), "r")
-        # should be a CSV, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "array_8_130.csv")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/array_8_130.csv"),
+                  "r") as f:
+            # should be a CSV, valid
+            inventory_ = self.metadata.read_metadata(f, "array_8_130.csv")
         # check that it contains what we think it should
         self.assertTrue(inventory_)
 
         # unknown file type
-        f = open(os.path.join(
-            self.home, "ph5/test_data/metadata/RESP/125a500_32_RESP"), "r")
-        # should be a KEF, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "125a500_32_RESP")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/RESP/125a500_32_RESP"),
+                  "r") as f:
+            # should be a KEF, valid
+            inventory_ = self.metadata.read_metadata(f, "125a500_32_RESP")
         # check that it contains what we think it should
         self.assertFalse(inventory_)
 
         # try a closed file handle
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "125a500_32_RESP")
+        inventory_ = self.metadata.read_metadata(f, "125a500_32_RESP")
         self.assertFalse(inventory_)
 
     def test_parse_inventory(self):
@@ -205,14 +190,11 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         """
         # valid station xml
         # open file to pass handle
-        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.xml"),
-                 "r")
-
-        # should be a station TXT, valid
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "station.xml")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/station.xml"),
+                  "r") as f:
+            # should be a station TXT, valid
+            inventory_ = self.metadata.read_metadata(f, "station.xml")
         parsed_array = self.metadata.parse_inventory(inventory_)
         # expect an array kef with 3 channels HHN, LHN, LOG
         self.assertTrue(parsed_array)
@@ -254,13 +236,13 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
 
         # test dataless seed
         # should be a dataless SEED file, valid
-        f = open(os.path.join(
-            self.home,
-            "ph5/test_data/metadata/1B.13.AAA.2018123.dataless"), "r")
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "1B.13.AAA.2018123.dataless")
-        f.close()
+        with open(os.path.join(
+                self.home,
+                "ph5/test_data/metadata/1B.13.AAA.2018123.dataless"),
+                "r") as f:
+            inventory_ = self.metadata.read_metadata(
+                f,
+                "1B.13.AAA.2018123.dataless")
         parsed_array = self.metadata.parse_inventory(inventory_)
         self.assertTrue(parsed_array)
         self.assertTrue(19, len(parsed_array))
@@ -284,12 +266,10 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         """
         test to_ph5 method
         """
-        f = open(os.path.join(self.home, "ph5/test_data/metadata/station.xml"),
-                 "r")
-        inventory_ = self.metadata.read_metadata(
-            f,
-            "station.xml")
-        f.close()
+        with open(os.path.join(self.home,
+                               "ph5/test_data/metadata/station.xml"),
+                  "r") as f:
+            inventory_ = self.metadata.read_metadata(f, "station.xml")
         parsed_array = self.metadata.parse_inventory(inventory_)
         # return true if successful
         self.assertTrue(self.metadata.toph5(parsed_array))

@@ -134,12 +134,11 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             metadatatoph5.main()
 
         # now make a list for obspytoph5
-        f = open("test_list", "w")
-        # need to use relative path '../miniseed/' because das_t's
-        # 'raw_file_name_s will be chopped off if the path's length is greater
-        # than 32
-        f.write("../miniseed/0407HHN.ms")
-        f.close()
+        with open("test_list", "w") as f:
+            # need to use relative path '../miniseed/0407HHN.ms' because
+            # das_t's 'raw_file_name_s will be chopped off if the path's
+            # length is greater than 32
+            f.write("../miniseed/0407HHN.ms")
         # first need to run obspytoph5
         testargs = ['obspytoph5', '-n', 'master.ph5', '-l',
                     'test_list']
@@ -172,7 +171,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         """
         index_t_full = list()
         # try load without metadata
-        # need to use relative path '../miniseed/' because das_t's
+        # need to use relative path '../miniseed/0407HHN.ms' because das_t's
         # 'raw_file_name_s will be chopped off if the path's length is greater
         # than 32
         entry = "../miniseed/0407HHN.ms"
@@ -182,12 +181,8 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
 
         # with metadata
         metadata = metadatatoph5.MetadatatoPH5(self.obs.ph5)
-        # need to use relative path '../miniseed/' because das_t's
-        # 'raw_file_name_s will be chopped off if the path's length is greater
-        # than 32
-        f = open("../metadata/station.xml", "r")
-        inventory_ = metadata.read_metadata(f, "station.xml")
-        f.close()
+        with open(self.station_xml_path, "r") as f:
+            inventory_ = metadata.read_metadata(f, "station.xml")
         parsed_array = metadata.parse_inventory(inventory_)
         metadata.toph5(parsed_array)
         self.obs.ph5.initgroup()
@@ -198,7 +193,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             index_t_full.append(e)
 
         # now load LOG CH
-        # need to use relative path '../miniseed/' because das_t's
+        # need to use relative path '../miniseed/0407LOG.ms' because das_t's
         # 'raw_file_name_s will be chopped off if the path's length is greater
         # than 32
         entry = "../miniseed/0407LOG.ms"
