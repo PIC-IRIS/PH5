@@ -1454,111 +1454,59 @@ class PH5(experiment.ExperimentGroup):
         if not new_das_t:
             LOGGER.warning("No Das table found for " + das)
             return None
+
+        gaps = 0
         previous = {}
-
-        times = list()
+        times = []
         for entry in new_das_t:
+            # set the values for this entry
+            cur_time = (float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000)
+            if entry['sample_rate_i'] > 0:
+                cur_len = (float(entry['sample_count_i']) /
+                           float(entry['sample_rate_i']) /
+                           float(entry['sample_rate_multiplier_i']))
+                cur_sr = (float(entry['sample_rate_i']) /
+                          float(entry['sample_rate_multiplier_i']))
+            else:
+                cur_len = 0
+                cur_sr = 0
+
             if not previous:
-                previous['start'] = (
-                        float(entry['time/epoch_l']) +
-                        float(entry['time/micro_seconds_i']) /
-                        1000000)
-                start_time = previous['start']
-                if entry['sample_rate_i'] > 0:
-                    previous['length'] = (
-                            float(entry['sample_count_i']) /
-                            float(entry['sample_rate_i']) /
-                            float(entry['sample_rate_multiplier_i']))
-                    previous['sample_rate'] = (
-                            float(entry['sample_rate_i']) /
-                            float(entry['sample_rate_multiplier_i']))
-                else:
-                    previous['length'] = 0
-                    previous['sample_rate'] = 0
-
-                previous['end'] = previous['start'] + previous['length']
-                continue
+                previous['start'] = cur_time
+                previous['length'] = cur_len
+                previous['sample_rate'] = cur_sr
+                previous['end'] = cur_time + cur_len
             else:
-
-                if (float(entry['time/epoch_l']) +
-                        float(entry['time/micro_seconds_i']) /
-                        1000000) != previous['start']+previous['length']:
-                    gaps = gaps + 1
+                if cur_time == previous['start'] and \
+                        cur_len == previous['length'] and \
+                        cur_sr == previous['sample_rate']:
+                    # duplicate entry - skip
+                    continue
+                elif cur_time > previous['end'] or \
+                        cur_sr != previous['sample_rate']:
+                    # there is a gap so add a new entry
                     times.append((previous['sample_rate'],
-                                 start_time,
-                                 previous['end']))
-                    previous['start'] = (
-                            float(entry['time/epoch_l']) +
-                            float(entry['time/micro_seconds_i']) /
-                            1000000)
-                    start_time = previous['start']
+                                  previous['start'],
+                                  previous['end']))
+                    # increment the number of gaps and reset previous
+                    gaps = gaps + 1
+                    previous['start'] = cur_time
+                    previous['end'] = cur_time + cur_len
+                    previous['length'] = cur_len
+                    previous['sample_rate'] = cur_sr
+                elif cur_time == previous['end'] and \
+                        cur_sr == previous['sample_rate']:
+                    # extend the end time since this was a continuous segment
+                    previous['end'] = cur_time + cur_len
+                    previous['length'] = cur_len
+                    previous['sample_rate'] = cur_sr
 
-                previous['start'] = (
-                        float(entry['time/epoch_l']) +
-                        float(entry['time/micro_seconds_i']) /
-                        1000000)
-                if entry['sample_rate_i'] > 0:
-                    previous['length'] = (
-                            float(entry['sample_count_i']) /
-                            float(entry['sample_rate_i']) /
-                            float(entry['sample_rate_multiplier_i']))
-                    previous['sample_rate'] = (
-                            float(entry['sample_rate_i']) /
-                            float(entry['sample_rate_multiplier_i']))
-                else:
-                    previous['length'] = 0
-                    previous['sample_rate'] = 0
-
-                previous['end'] = previous['start'] + previous['length']
-        if gaps > 0:
-            start_ = (
-                    float(new_das_t[-1]['time/epoch_l']) +
-                    float(new_das_t[-1]['time/micro_seconds_i']) /
-                    1000000)
-            if new_das_t[-1]['sample_rate_i'] > 0:
-                length_ = (
-                        float(new_das_t[-1]['sample_count_i']) /
-                        float(new_das_t[-1]['sample_rate_i']) /
-                        float(new_das_t[-1]['sample_rate_multiplier_i']))
-                sample_rate_ = (
-                        float(new_das_t[-1]['sample_rate_i']) /
-                        float(new_das_t[-1]['sample_rate_multiplier_i']))
-            else:
-                length_ = 0
-                sample_rate_ = 0
-            end_ = start_ + length_
-            times.append((sample_rate_, start_, end_))
-
-        if gaps == 0:
-            start_time = (
-                    float(new_das_t[0]['time/epoch_l']) +
-                    float(new_das_t[0]['time/micro_seconds_i']) /
-                    1000000)
-            if new_das_t[0]['sample_rate_i'] > 0:
-                sample_rate_ = (
-                        float(new_das_t[0]['sample_rate_i']) /
-                        float(new_das_t[0]['sample_rate_multiplier_i']))
-            else:
-                sample_rate_ = 0
-
-            start_ = (
-                    float(new_das_t[-1]['time/epoch_l']) +
-                    float(new_das_t[-1]['time/micro_seconds_i']) /
-                    1000000)
-            if new_das_t[-1]['sample_rate_i'] > 0:
-                length_ = (
-                        float(new_das_t[-1]['sample_count_i']) /
-                        float(new_das_t[-1]['sample_rate_i']) /
-                        float(new_das_t[-1]['sample_rate_multiplier_i']))
-                sample_rate_ = (
-                        float(new_das_t[-1]['sample_rate_i']) /
-                        float(new_das_t[-1]['sample_rate_multiplier_i']))
-            else:
-                length_ = 0
-                sample_rate_ = 0
-            end_ = start_ + length_
-
-            times.append((sample_rate_, start_time, end_))
+        # add the last continuous segment
+        times.append((previous['sample_rate'],
+                      previous['start'],
+                      previous['end']))
 
         self.forget_das_t(das)
 
