@@ -72,4 +72,5 @@ class TempDirTestCase(unittest.TestCase):
             errmsg = "%s has FAILED. Inspect files created in %s." \
                 % (self._testMethodName, self.tmpdir)
             print(errmsg)
+
         os.chdir(self.home)
