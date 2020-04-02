@@ -46,6 +46,7 @@ class LogTestCase(unittest.TestCase):
 
 
 class TempDirTestCase(unittest.TestCase):
+    total_error_failure = 0
 
     def setUp(self):
         """
@@ -62,7 +63,10 @@ class TempDirTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(TempDirTestCase, self).tearDown()
-        if self._resultForDoCleanups.wasSuccessful():
+        current_total_error_failure = len(self._resultForDoCleanups.errors) + \
+            len(self._resultForDoCleanups.failures)
+
+        if current_total_error_failure == TempDirTestCase.total_error_failure:
             try:
                 shutil.rmtree(self.tmpdir)
             except Exception as e:
@@ -72,5 +76,5 @@ class TempDirTestCase(unittest.TestCase):
             errmsg = "%s has FAILED. Inspect files created in %s." \
                 % (self._testMethodName, self.tmpdir)
             print(errmsg)
-
+            TempDirTestCase.total_error_failure = current_total_error_failure
         os.chdir(self.home)
