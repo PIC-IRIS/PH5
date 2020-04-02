@@ -78,9 +78,9 @@ ph5.utilities.obspytoph5
 ph5.utilities.metadatatoph5
  * new tool for loading stationxml and dataless SEED
 ph5.utilities.tests.test_metadatatoph5
- * unit tests for metadatatoph5; Stop sending log to screen; Apply tmpdir from test_base; Use testfixture to capture output
+ * unit tests for metadatatoph5; Stop sending log to screen; Apply tmpdir from test_base; Use testfixture to capture output; Use os.path.join for path
 ph5.utilities.tests.test_obspytoph5
- * unit tests for obspytoph5; Stop sending log to screen; Apply tmpdir from test_base; Use testfixture to capture output
+ * unit tests for obspytoph5; Stop sending log to screen; Apply tmpdir from test_base; Use testfixture to capture output; Use os.path.join for path except for path to miniseed because data_t's raw_file_name_s will truncate the path that's longer than 32
 ph5.core.tests.test_ph5api
  * unit tests for ph5api; Stop sending log to screen;
 ph5.core.ph5api
@@ -93,15 +93,14 @@ ph5.help
  * calls entry_points to print the short descriptions in alpha-order.
 environment.yml
  * removed unused dependencies and added pykml as a dependency
- * add testfixtures to capture log/output in unittest
 ph5.core.test.test_base
- * use TempDirTestCase to handle temporary dictionary that keeps ph5 and log files created in unittests
+ * use TempDirTestCase to handle temporary dictionary that keeps ph5 and log files created in unittests, this dictionary will be : deleted if test successful, remained if test failed
  * use LogTestCase to dissable log to be written to console in unittests, remove all handlers created in unittest except the one to capture log messages
  * add initialize_ex for creating ph5 experiment object
 ph5.clients.test.test_ph5availability
- * Unittest: Stop sending log to screen; Apply testfixtures to capture output and log; Apply tmpdir from test_base
+ * Unittest: Stop sending log to screen; Apply testfixtures to capture output and log; Apply tmpdir from test_base; Use os.path.join for path
 ph5.core.tests.test_segd2ph5
- * Unittest: Stop sending log to screen; Apply tmpdir from test_base;
+ * Unittest: Stop sending log to screen; Apply tmpdir from test_base; Use os.path.join for path
 
 v4.1.2:
 ph5.utilities.ph5validate
