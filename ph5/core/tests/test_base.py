@@ -5,7 +5,7 @@ import unittest
 import logging
 from StringIO import StringIO
 
-from ph5 import logger
+from ph5 import logger, ch
 from ph5.core import experiment
 
 
@@ -21,28 +21,45 @@ class LogTestCase(unittest.TestCase):
     def setUpClass(cls):
         # enable propagating to higher loggers
         logger.propagate = 1
-        cls.handlers = [h for h in logger.handlers]
-        # switch handler that send log to console
-        # to StringIO handler to catch log's messages in test
+        # disable writing log to console
+        logger.removeHandler(ch)
+        # add StringIO handler to prevent message "No handlers could be found"
         log = StringIO()
-        new_handler = logging.StreamHandler(log)
-        logger.handlers = [new_handler]
+        cls.newch = logging.StreamHandler(log)
+        logger.addHandler(cls.newch)
 
     @classmethod
     def tearDownClass(cls):
         # disable propagating to higher loggers
         logger.propagate = 0
-        # put back the stream handler in ph5.__init__.logger
-        logger.handlers = cls.handlers
+        # revert logger handler
+        logger.removeHandler(cls.newch)
+        logger.addHandler(ch)
 
     def tearDown(self):
-        # clean up handlers in any ph5 files' loggers that have been used
-        # but exclude logger from ph5/__init__.py to catch log's messages in
-        # next test
-        for k, v in logging.Logger.manager.loggerDict.items():
-            if (not isinstance(v, logging.PlaceHolder)) and ('ph5.' in k):
-                v.handlers = []
+        file_loggers = self.find_all_file_loggers()
+        if file_loggers:
+            # remove all file handlers
+            for l, h in self.find_all_file_loggers():
+                l.removeHandler(h)
         super(LogTestCase, self).tearDown()
+
+    @staticmethod
+    def find_all_file_loggers():
+        file_logger_handlers = list()
+        for k, v in logging.Logger.manager.loggerDict.items():
+            if not isinstance(v, logging.PlaceHolder):
+                for h in v.handlers:
+                    if isinstance(h, logging.FileHandler):
+                        file_logger_handlers.append((logging.getLogger(k), h))
+        return file_logger_handlers
+
+    def remove_all_file_handlers(self):
+        for k, v in logging.Logger.manager.loggerDict.items():
+            if not isinstance(v, logging.PlaceHolder):
+                for h in v.handlers:
+                    if isinstance(h, logging.FileHandler):
+                        logging.getLogger(k).removeHandler(h)
 
 
 class TempDirTestCase(unittest.TestCase):
@@ -52,8 +69,6 @@ class TempDirTestCase(unittest.TestCase):
         """
         create tmpdir
         """
-        self.tmpdir = None
-        self.home = None
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(
             dir=os.path.join(self.home, "ph5/test_data/"))
