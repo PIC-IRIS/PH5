@@ -15,52 +15,19 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
 
-class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
-    def setUp(self):
-        super(TestMetadatatoPH5, self).setUp()
-        if self._testMethodName != 'test_main':
-            # the condition exclude test_main() when creating self.ph5_object
-            # because in test_main(), self.ph5_object  have to be created after
-            # the call of main() to check the data added by main()
-            self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
-            self.metadata = metadatatoph5.MetadatatoPH5(
-                self.ph5_object)
-
+class TestMetadatatoPH5_main(TempDirTestCase, LogTestCase):
     def tearDown(self):
         self.ph5_object.ph5close()
-        super(TestMetadatatoPH5, self).tearDown()
-
-    def test_get_args(self):
-        """
-        test get_args
-        """
-        with OutputCapture():
-            with self.assertRaises(SystemExit):
-                metadatatoph5.get_args([])
-            with self.assertRaises(SystemExit):
-                metadatatoph5.get_args(['-n', 'master.ph5'])
-            with self.assertRaises(SystemExit):
-                metadatatoph5.get_args(['-f', 'test.xml'])
-            ret = metadatatoph5.get_args(
-                ['-n', 'master.ph5', '-f', 'test.xml'])
-        self.assertEqual(ret.nickname, 'master.ph5')
-        self.assertEqual(ret.infile, 'test.xml')
-        self.assertEqual(ret.ph5path, '.')
+        super(TestMetadatatoPH5_main, self).tearDown()
 
     def test_main(self):
-        """
-        test main function
-        """
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     os.path.join(self.home,
                                  'ph5/test_data/metadata/station.xml')]
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         self.assertTrue(os.path.isfile('master.ph5'))
-        # This self.ph5_object isn't the repeat of the self.ph5_object in
-        # setUp() because the one in setUp() already excludes test_main().
-        # This self.ph5_object has to be created after
-        # the call of main() to check the data added by main()
+
         self.ph5_object = initialize_ex('master.ph5', '.', False)
         array_names = self.ph5_object.ph5_g_sorts.names()
         self.assertEqual(
@@ -90,6 +57,32 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual('H', ret[0]['seed_band_code_s'])
         self.assertEqual('N', ret[0]['seed_orientation_code_s'])
 
+
+class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestMetadatatoPH5, self).setUp()
+        self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+        self.metadata = metadatatoph5.MetadatatoPH5(
+            self.ph5_object)
+
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestMetadatatoPH5, self).tearDown()
+
+    def test_get_args(self):
+        with OutputCapture():
+            with self.assertRaises(SystemExit):
+                metadatatoph5.get_args([])
+            with self.assertRaises(SystemExit):
+                metadatatoph5.get_args(['-n', 'master.ph5'])
+            with self.assertRaises(SystemExit):
+                metadatatoph5.get_args(['-f', 'test.xml'])
+            ret = metadatatoph5.get_args(
+                ['-n', 'master.ph5', '-f', 'test.xml'])
+        self.assertEqual(ret.nickname, 'master.ph5')
+        self.assertEqual(ret.infile, 'test.xml')
+        self.assertEqual(ret.ph5path, '.')
+
     def test_init(self):
         """
         test creating metadatatoph5 instance
@@ -99,9 +92,6 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                                    metadatatoph5.MetadatatoPH5))
 
     def test_read_metadata(self):
-        """
-        tests read_metadata method
-        """
         # open file to pass handle
         with open(os.path.join(self.home,
                                "ph5/test_data/metadata/station.xml"),
@@ -185,9 +175,6 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         self.assertFalse(inventory_)
 
     def test_parse_inventory(self):
-        """
-        test parsing inventory
-        """
         # valid station xml
         # open file to pass handle
         with open(os.path.join(self.home,
@@ -263,9 +250,6 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
                 datalogger_keys))
 
     def test_to_ph5(self):
-        """
-        test to_ph5 method
-        """
         with open(os.path.join(self.home,
                                "ph5/test_data/metadata/station.xml"),
                   "r") as f:
