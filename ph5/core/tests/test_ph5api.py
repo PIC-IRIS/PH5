@@ -1,7 +1,7 @@
 '''
 Tests for ph5api
 '''
-
+import os
 import unittest
 
 from ph5.core import ph5api
@@ -11,8 +11,10 @@ from ph5.core.tests.test_base import LogTestCase
 class TestPH5API(LogTestCase):
     def setUp(self):
         super(TestPH5API, self).setUp()
-        self.ph5API_object = ph5api.PH5(path='ph5/test_data/ph5',
-                                        nickname='master.ph5')
+        self.home = os.getcwd()
+        self.ph5API_object = ph5api.PH5(
+            path=os.path.join(self.home, 'ph5/test_data/ph5'),
+            nickname='master.ph5')
 
     def tearDown(self):
         self.ph5API_object.close()
