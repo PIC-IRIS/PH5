@@ -5,6 +5,7 @@ unit tests for ph5availability
 import unittest
 import sys
 import os
+import logging
 
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
@@ -1255,17 +1256,26 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                     '-a', '4', '--station', '9001']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
-                ph5availability.main()
-                out.compare('')
-
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
+                    ph5availability.main()
+                    out.compare('')
+                    self.assertEqual(log.records[0].msg,
+                                     "get_availability_percentage requires "
+                                     "providing exact station/channel.")
         # test get_availability_percentage with channel, no station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     self.ph5test_path,
                     '-a', '4', '-c', 'DP2']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
-                ph5availability.main()
-                out.compare('')
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
+                    ph5availability.main()
+                    out.compare('')
+                    self.assertEqual(log.records[0].msg,
+                                     "get_availability_percentage requires "
+                                     "providing exact station/channel.")
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
@@ -1274,8 +1284,13 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                     '--station', '*']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
-                ph5availability.main()
-                out.compare('')
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
+                    ph5availability.main()
+                    out.compare('')
+                    self.assertEqual(log.records[0].msg,
+                                     "get_availability_percentage requires "
+                                     "providing exact station/channel.")
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
