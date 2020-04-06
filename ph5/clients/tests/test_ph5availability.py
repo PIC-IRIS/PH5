@@ -65,9 +65,6 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
 
 class TestPH5Availability(LogTestCase, TempDirTestCase):
     def setUp(self):
-        """
-        setup for tests
-        """
         super(TestPH5Availability, self).setUp()
         self.ph5test_path = os.path.join(self.home, 'ph5/test_data/ph5')
         self.ph5_object = ph5api.PH5(
@@ -77,17 +74,10 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             self.ph5_object)
 
     def tearDown(self):
-        """
-        teardown for tests
-        """
         self.ph5_object.close()
         super(TestPH5Availability, self).tearDown()
 
     def test_get_slc(self):
-        """
-        test get_slc method
-        """
-
         # should return ALL available
         # station location and channels
         ret = self.availability.get_slc()
@@ -304,9 +294,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(0, len(ret))
 
     def test_get_availability_extent(self):
-        """
-        test get_availability_extent method
-        """
         # expected to return all extent information
         ret = self.availability.get_availability_extent()
         # There are 10 channels all with data
@@ -483,9 +470,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             '*', '*', '*', None, 1502294460.38)
 
     def test_get_availability(self):
-        """
-        test get_availability method
-        """
         # expected to return all availability information
         ret = self.availability.get_availability()
         # There are 10 channels all with data
@@ -597,10 +581,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                          1502294400.38, 1502294460.38) in ret)
 
     def test_get_availability_percentage(self):
-        """
-        test get_availability_percentage method
-        """
-
         # should return 100% and 0 gaps
         ret = self.availability.get_availability_percentage(
             '500',
@@ -679,9 +659,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(0, ret[1])
 
     def test_has_data(self):
-        """
-        test has_data method
-        """
         # assumes all for everything
         # should return true
         self.assertTrue(
@@ -847,9 +824,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                 endtime=1741883104))
 
     def test_get_args(self):
-        """
-        test get_args
-        """
         with OutputCapture():
             with self.assertRaises(SystemExit):
                 ph5availability.get_args([])
@@ -891,9 +865,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertDictEqual(ret, expect)
 
     def test_analyze_args(self):
-        """
-        test analyze_args method
-        """
         A = self.availability
         # test wrong format channel
         args = ph5availability.get_args(
@@ -1012,9 +983,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(A.OFILE.closed, False)
 
     def test_main(self):
-        """
-        test main function
-        """
         # wrong path entered
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'some/bad/path', '-a', '0']
@@ -1421,9 +1389,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertMultiLineEqual(output[i1:], content[i2:])
 
     def test_convert_time(self):
-        """
-        test convert_time method
-        """
         # convert list with epoch times at 3, 4
         ret = self.availability.convert_time(
             ['500', '', 'DP2', 1502294400.38, 1502294460.38])
@@ -1450,9 +1415,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             ('500', '', 'DP2', 1502294400.38, 1502294460.38))
 
     def test_get_channel(self):
-        """
-        test get_channel method
-        """
         # get channel from station that lacks of info for channel
         ret = self.availability.get_channel({})
         self.assertEqual('DPX', ret)
@@ -1464,9 +1426,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual('LOG', ret)
 
     def test_get_slc_info(self):
-        """
-        test get_slc_info method
-        """
         arrayorder, arraybyid = self.availability.get_array_order_id(
             'Array_t_001')
         st = arraybyid['500'][1][0]
@@ -1502,17 +1461,11 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             self.availability.get_slc_info, st, '500', '*', '*')
 
     def test_get_start(self):
-        """
-        test get_start method
-        """
         ret = self.availability.get_start(
             {'time/epoch_l': 1502294400, 'time/micro_seconds_i': 380000})
         self.assertEqual(1502294400.38, ret)
 
     def test_get_end(self):
-        """
-        test get_end method
-        """
         # samplerate != 0
         ret = self.availability.get_end(
             {'sample_count_i': 15000}, 1502294400.38, 500)
@@ -1524,9 +1477,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(1502294400.38, ret)
 
     def test_get_sample_rate(self):
-        """
-        test get_sample_rate method
-        """
         # sample_rate_i != 0
         ret = self.availability.get_sample_rate(
             {'sample_rate_i': 100, 'sample_rate_multiplier_i': 1})
@@ -1538,9 +1488,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(0, ret)
 
     def test_get_time_das_t(self):
-        """
-        test get_time_das_t method
-        """
         # start=None, end=None; no component, sample_rate
         ret = self.availability.get_time_das_t(
             '3X500', None, None)
@@ -1675,9 +1622,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual((46500, 7000.0, 4), ret)
 
     def test_get_array_order_id(self):
-        """
-        test get_array_order_id method
-        """
         ret = self.availability.get_array_order_id('Array_t_009')
         self.assertEqual(['9001'], ret[0])
         self.assertTrue(1, len(ret[1]))
@@ -1690,9 +1634,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             'Array_t_010')
 
     def test_get_text_report(self):
-        """
-        test get_text_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_text_report(result).strip()
@@ -1737,9 +1678,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(content, "this is a text line")
 
     def test_get_geoCSV_report(self):
-        """
-        test get_geoCSV_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_geoCSV_report(result).strip()
@@ -1769,9 +1707,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertMultiLineEqual(ret, content)
 
     def test_get_sync_report(self):
-        """
-        test get_sync_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_sync_report(result).strip()
@@ -1808,9 +1743,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertMultiLineEqual(ret[i1:], content[i2:])
 
     def test_get_json_report(self):
-        """
-        test get_json_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_json_report(result).strip()
@@ -1853,9 +1785,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             result)
 
     def test_get_report(self):
-        """
-        test get_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_report(result, format='t').strip()
