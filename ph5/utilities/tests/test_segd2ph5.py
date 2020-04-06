@@ -120,7 +120,9 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
 
         SIZE = os.path.getsize(
             os.path.join(self.home, 'ph5/test_data/segd/3ch.fcnt'))
-
+        # need to use relative path './miniPH5_00001.ph5' because
+        # index_t's 'external_file_name_s will be chopped off if the path's
+        # length is greater than 32
         segd2ph5.DAS_INFO = {'3X500': [segd2ph5.Index_t_Info(
             '3X500', './miniPH5_00001.ph5',
             '/Experiment_g/Receivers_g/Das_g_3X500',
