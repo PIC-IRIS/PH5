@@ -54,13 +54,6 @@ class LogTestCase(unittest.TestCase):
                         file_logger_handlers.append((logging.getLogger(k), h))
         return file_logger_handlers
 
-    def remove_all_file_handlers(self):
-        for k, v in logging.Logger.manager.loggerDict.items():
-            if not isinstance(v, logging.PlaceHolder):
-                for h in v.handlers:
-                    if isinstance(h, logging.FileHandler):
-                        logging.getLogger(k).removeHandler(h)
-
 
 class TempDirTestCase(unittest.TestCase):
     total_error_failure = 0
