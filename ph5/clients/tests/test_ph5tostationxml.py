@@ -1,5 +1,5 @@
 '''
-Tests for pforma_io
+Tests for ph5tostationxml
 '''
 import unittest
 import os
