@@ -36,16 +36,11 @@ class LogTestCase(unittest.TestCase):
         logger.removeHandler(cls.newch)
         logger.addHandler(ch)
 
-    def tearDown(self):
-        file_loggers = self.find_all_file_loggers()
-        if file_loggers:
-            # remove all file handlers
-            for l, h in self.find_all_file_loggers():
-                l.removeHandler(h)
-        super(LogTestCase, self).tearDown()
+    def setUp(self):
+        self.addCleanup(self.remove_file_loggers)
+        super(LogTestCase, self).setUp()
 
-    @staticmethod
-    def find_all_file_loggers():
+    def find_all_file_loggers(self):
         file_logger_handlers = list()
         for k, v in logging.Logger.manager.loggerDict.items():
             if not isinstance(v, logging.PlaceHolder):
@@ -54,14 +49,19 @@ class LogTestCase(unittest.TestCase):
                         file_logger_handlers.append((logging.getLogger(k), h))
         return file_logger_handlers
 
+    def remove_file_loggers(self):
+        for l, h in self.find_all_file_loggers():
+            l.removeHandler(h)
+
 
 class TempDirTestCase(unittest.TestCase):
-    total_error_failure = 0
-
     def setUp(self):
         """
         create tmpdir
         """
+        # Save the number of errors the test runner has seen.
+        self.prev_errors = (len(self._resultForDoCleanups.errors) +
+                            len(self._resultForDoCleanups.failures))
         self.home = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(
             dir=os.path.join(self.home, "ph5/test_data/"))
@@ -71,18 +71,33 @@ class TempDirTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(TempDirTestCase, self).tearDown()
-        current_total_error_failure = len(self._resultForDoCleanups.errors) + \
-            len(self._resultForDoCleanups.failures)
-
-        if current_total_error_failure == TempDirTestCase.total_error_failure:
+        current_errors = (len(self._resultForDoCleanups.errors) +
+                          len(self._resultForDoCleanups.failures))
+        if current_errors == self.prev_errors:
             try:
                 shutil.rmtree(self.tmpdir)
             except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
+                print("Cannot remove {} due to the error:{}".format(
+                    self.tmpdir, e))
         else:
-            errmsg = "%s has FAILED. Inspect files created in %s." \
-                % (self._testMethodName, self.tmpdir)
-            print(errmsg)
-            TempDirTestCase.total_error_failure = current_total_error_failure
-        os.chdir(self.home)
+            print("{} has FAILED. Inspect files created in {}.".format(
+                self._testMethodName, self.tmpdir))
+            self.prev_errors = current_errors
+
+
+class TestTests(TempDirTestCase, LogTestCase):
+    """
+    These tests create failures and errors to exercise and ensure cleanup
+    still happens properly, and that following tests are isolated.
+    Perhaps they should be sprinkled through out other tests cases?
+    """
+    @unittest.expectedFailure
+    def test_fails(self):
+        self.assertTrue(False)
+
+    @unittest.expectedFailure
+    def test_raises(self):
+        raise Exception('Testing exceptions')
+
+    def test_good(self):
+        self.assertTrue(True)

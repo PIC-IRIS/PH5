@@ -126,11 +126,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.station_xml_path = os.path.join(
             self.home, 'ph5/test_data/metadata/station.xml')
         self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
-        self.obs = obspytoph5.ObspytoPH5(
-            self.ph5_object,
-            self.tmpdir,
-            1,
-            1)
+        self.obs = obspytoph5.ObspytoPH5(self.ph5_object, self.tmpdir, 1, 1)
         self.obs.verbose = True
         self.ph5_object.ph5flush()
         self.ph5_object.ph5_g_sorts.update_local_table_nodes()

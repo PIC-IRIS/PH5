@@ -16,10 +16,6 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
 
 
 class TestMetadatatoPH5_main(TempDirTestCase, LogTestCase):
-    def tearDown(self):
-        self.ph5_object.ph5close()
-        super(TestMetadatatoPH5_main, self).tearDown()
-
     def test_main(self):
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     os.path.join(self.home,
@@ -56,18 +52,7 @@ class TestMetadatatoPH5_main(TempDirTestCase, LogTestCase):
         self.assertEqual('H', ret[0]['seed_instrument_code_s'])
         self.assertEqual('H', ret[0]['seed_band_code_s'])
         self.assertEqual('N', ret[0]['seed_orientation_code_s'])
-
-
-class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
-    def setUp(self):
-        super(TestMetadatatoPH5, self).setUp()
-        self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
-        self.metadata = metadatatoph5.MetadatatoPH5(
-            self.ph5_object)
-
-    def tearDown(self):
         self.ph5_object.ph5close()
-        super(TestMetadatatoPH5, self).tearDown()
 
     def test_get_args(self):
         with OutputCapture():
@@ -82,6 +67,18 @@ class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(ret.nickname, 'master.ph5')
         self.assertEqual(ret.infile, 'test.xml')
         self.assertEqual(ret.ph5path, '.')
+
+
+class TestMetadatatoPH5(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestMetadatatoPH5, self).setUp()
+        self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+        self.metadata = metadatatoph5.MetadatatoPH5(
+            self.ph5_object)
+
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestMetadatatoPH5, self).tearDown()
 
     def test_init(self):
         """
