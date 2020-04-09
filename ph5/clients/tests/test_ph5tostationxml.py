@@ -33,6 +33,14 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
 
 
 class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(TestPH5toStationXMLParser, self).setUp()
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ["array_multi_deploy.kef", "experiment.kef"])
+        self.parser = self.getParser("NETWORK")
+
     def tearDown(self):
         self.mng.ph5.close()
         super(TestPH5toStationXMLParser, self).tearDown()
@@ -59,47 +67,25 @@ class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
         return ph5tostationxml.PH5toStationXMLParser(self.mng)
 
     def test_get_network_date(self):
-        # array_multideploy: same station different deploy times
-        # => check if network time cover all
-        kef_to_ph5(self.tmpdir,
-                   'master.ph5',
-                   os.path.join(self.home, "ph5/test_data/metadata"),
-                   ["array_multi_deploy.kef", "experiment.kef"])
-        parser = self.getParser("NETWORK")
-        parser.add_ph5_stationids()
-        parser.read_stations()
+        self.parser.add_ph5_stationids()
+        self.parser.read_stations()
 
-        ret = parser.get_network_date()
+        ret = self.parser.get_network_date()
         self.assertTupleEqual(ret, (1561831713.0, 1569680979.0))
 
     def test_create_obs_network(self):
-        # array_multideploy: same station different deploy times
-        # => check if network time cover all
-        kef_to_ph5(self.tmpdir,
-                   'master.ph5',
-                   os.path.join(self.home, "ph5/test_data/metadata"),
-                   ["array_multi_deploy.kef", "experiment.kef"])
-        parser = self.getParser("NETWORK")
-        parser.manager.ph5.read_experiment_t()
-        parser.experiment_t = parser.manager.ph5.Experiment_t['rows']
-        parser.add_ph5_stationids()
+        self.parser.manager.ph5.read_experiment_t()
+        self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
+        self.parser.add_ph5_stationids()
 
-        ret = parser.create_obs_network()
+        ret = self.parser.create_obs_network()
         self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
         self.assertEqual(ret.end_date.isoformat(), '2019-09-28T14:29:39')
         self.assertEqual(ret.code, 'AA')
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
     def test_read_networks(self):
-        # array_multideploy: same station different deploy times
-        # => check if network time cover all
-        kef_to_ph5(self.tmpdir,
-                   'master.ph5',
-                   os.path.join(self.home, "ph5/test_data/metadata"),
-                   ["array_multi_deploy.kef", "experiment.kef"])
-        parser = self.getParser("NETWORK")
-
-        ret = parser.read_networks('.')
+        ret = self.parser.read_networks('.')
         self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
         self.assertEqual(ret.end_date.isoformat(), '2019-09-28T14:29:39')
         self.assertEqual(ret.code, 'AA')
