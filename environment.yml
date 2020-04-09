@@ -15,11 +15,12 @@ dependencies:
  - psutil
  - obspy
  - vispy
+ - testfixtures  # development
  - pip=19.1.1
  - pip:
    - construct==2.5.1
    - simplekml
    - tables==3.4.2
-   - flake8
-   - pyflakes
-   - coverage
+   - flake8      # development
+   - pyflakes    # development
+   - coverage    # development
