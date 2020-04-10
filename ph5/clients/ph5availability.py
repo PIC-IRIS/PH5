@@ -1109,13 +1109,14 @@ def main():
 
         availability.process_all()
 
-        ph5API_object.close()
     except ph5api.APIError as err:
-        LOGGER.error(err)
+        LOGGER.error(err.msg)
     except PH5AvailabilityError as err:
-        LOGGER.error(err)
+        LOGGER.error(str(err))
     except Exception as err:
-        LOGGER.error(err)
+        LOGGER.error(str(err))
+
+    ph5API_object.close()
 
 
 if __name__ == '__main__':
