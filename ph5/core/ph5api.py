@@ -1456,7 +1456,10 @@ class PH5(experiment.ExperimentGroup):
             return None
 
         gaps = 0
-        previous = {}
+        prev_start = None
+        prev_end = None
+        prev_len = None
+        prev_sr = None
         times = []
         for entry in new_das_t:
             # set the values for this entry
@@ -1472,41 +1475,43 @@ class PH5(experiment.ExperimentGroup):
             else:
                 cur_len = 0
                 cur_sr = 0
+            cur_end = cur_time + cur_len
 
-            if not previous:
-                previous['start'] = cur_time
-                previous['length'] = cur_len
-                previous['sample_rate'] = cur_sr
-                previous['end'] = cur_time + cur_len
+            if (prev_start is None and prev_end is None and
+                    prev_len is None and prev_sr is None):
+                prev_start = cur_time
+                prev_end = cur_end
+                prev_len = cur_len
+                prev_sr = cur_sr
             else:
-                if cur_time == previous['start'] and \
-                        cur_len == previous['length'] and \
-                        cur_sr == previous['sample_rate']:
+                if (cur_time == prev_start and
+                        cur_len == prev_len and
+                        cur_sr == prev_sr):
                     # duplicate entry - skip
                     continue
-                elif cur_time > previous['end'] or \
-                        cur_sr != previous['sample_rate']:
+                elif (cur_time > prev_end or
+                        cur_sr != prev_sr):
                     # there is a gap so add a new entry
-                    times.append((previous['sample_rate'],
-                                  previous['start'],
-                                  previous['end']))
+                    times.append((prev_sr,
+                                  prev_start,
+                                  prev_end))
                     # increment the number of gaps and reset previous
                     gaps = gaps + 1
-                    previous['start'] = cur_time
-                    previous['end'] = cur_time + cur_len
-                    previous['length'] = cur_len
-                    previous['sample_rate'] = cur_sr
-                elif cur_time == previous['end'] and \
-                        cur_sr == previous['sample_rate']:
+                    prev_start = cur_time
+                    prev_end = cur_end
+                    prev_len = cur_len
+                    prev_sr = cur_sr
+                elif (cur_time == prev_end and
+                        cur_sr == prev_sr):
                     # extend the end time since this was a continuous segment
-                    previous['end'] = cur_time + cur_len
-                    previous['length'] = cur_len
-                    previous['sample_rate'] = cur_sr
+                    prev_end = cur_end
+                    prev_len = cur_len
+                    prev_sr = cur_sr
 
         # add the last continuous segment
-        times.append((previous['sample_rate'],
-                      previous['start'],
-                      previous['end']))
+        times.append((prev_sr,
+                      prev_start,
+                      prev_end))
 
         self.forget_das_t(das)
 
