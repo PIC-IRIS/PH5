@@ -1,0 +1,28 @@
+dependencies:
+ - python=2.7
+ - hdf5=1.8.18
+ - pykml==0.1.0
+ - matplotlib=1
+ # workaround icu not from conda-forge
+ - icu=58.*
+ - subprocess32
+ - six
+ - Cython
+ - nose
+ - numpy
+ - numexpr
+ - pyproj
+ - PySide
+ - pyqt=4
+ - psutil
+ - obspy
+ - vispy
+ - testfixtures  # development
+ - pip=19.1.1
+ - pip:
+   - construct==2.5.1
+   - simplekml
+   - tables==3.4.2
+   - flake8      # development
+   - pyflakes    # development
+   - coverage    # development
