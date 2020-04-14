@@ -5,11 +5,8 @@ import unittest
 import logging
 from StringIO import StringIO
 
-from testfixtures import OutputCapture
-
 from ph5 import logger, ch
 from ph5.core import experiment
-from ph5.utilities import kef2ph5
 
 
 def initialize_ex(nickname, path, editmode=False):
@@ -17,42 +14,6 @@ def initialize_ex(nickname, path, editmode=False):
     ex.ph5open(editmode)
     ex.initgroup()
     return ex
-
-
-def kef_to_ph5(ph5path, nickname, kefpath, keflist, ex=None):
-    """
-    Add kef to ph5file or to experiment (if ex is passed).
-    (The task of deleting table before adding the table should happen before
-    calling this function. If it is required to have a delete function for all,
-    it should be written in nuke_table.py)
-
-    :para ph5path: path to ph5 file
-    :type ph5path: string
-    :para kefpath: path to kef files
-    :type kefpath: string
-    :para keflist: A list of kef file names
-    :type keflist: list of string
-    :para ex: ph5 experiment from caller
-    :para ex: ph5 experiment object
-    :result: the tables in the kef files will be added to ph5 file or the
-    reference ex (if passed)
-    """
-
-    if ex is None:
-        with OutputCapture():
-            kef2ph5.EX = initialize_ex(nickname, ph5path, True)
-    else:
-        kef2ph5.EX = ex
-
-    kef2ph5.PH5 = os.path.join(ph5path, nickname)
-    kef2ph5.TRACE = False
-
-    for kef in keflist:
-        kef2ph5.KEFFILE = os.path.join(kefpath, kef)
-        kef2ph5.populateTables()
-
-    if ex is None:
-        kef2ph5.EX.ph5close()
 
 
 class LogTestCase(unittest.TestCase):
@@ -121,7 +82,6 @@ class TempDirTestCase(unittest.TestCase):
         else:
             print("{} has FAILED. Inspect files created in {}.".format(
                 self._testMethodName, self.tmpdir))
-            self.prev_errors = current_errors
 
 
 class TestTests(TempDirTestCase, LogTestCase):
