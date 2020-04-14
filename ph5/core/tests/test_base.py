@@ -82,7 +82,6 @@ class TempDirTestCase(unittest.TestCase):
         else:
             print("{} has FAILED. Inspect files created in {}.".format(
                 self._testMethodName, self.tmpdir))
-            self.prev_errors = current_errors
 
 
 class TestTests(TempDirTestCase, LogTestCase):
