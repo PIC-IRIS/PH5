@@ -966,194 +966,142 @@ def utmcsptolatlon(northing, easting):
     return lat, lon
 
 
-def main():
-    import time
-    then = time.time()
+def correct_append_number():
+    # from math import modf
+    traces = SD.reel_headers.extended_header_2['number_records']
+    x = traces % APPEND
+    APPEND - x
+
+
+def process():
     from numpy import append as npappend
+    global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
+        ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
 
-    def prof():
-        global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
-            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
+    MINIPH5 = None
+    ARRAY_T = {}
 
-        MINIPH5 = None
-        ARRAY_T = {}
-
-        def get_das(sd):
-            #   Return line_station or das#[-9:]
+    def get_das(sd):
+        #   Return line_station or das#[-9:]
+        try:
+            das = "{0}X{1}".format(
+                sd.reel_headers.extended_header_3.line_number,
+                sd.reel_headers.extended_header_3.receiver_point)
+        except Exception:
             try:
                 das = "{0}X{1}".format(
-                    sd.reel_headers.extended_header_3.line_number,
-                    sd.reel_headers.extended_header_3.receiver_point)
+                    sd.reel_headers.external_header.receiver_line,
+                    sd.reel_headers.external_header.receiver_point)
             except Exception:
-                try:
-                    das = "{0}X{1}".format(
-                        sd.reel_headers.external_header.receiver_line,
-                        sd.reel_headers.external_header.receiver_point)
-                except Exception:
-                    das = "sn" + \
-                          str(sd.reel_headers.general_header_block_1.
-                              manufactures_sn)
-                    if das == 0:
-                        das = "id" + \
-                              str(sd.reel_headers
-                                  .extended_header_1.id_number)[-9:]
+                das = "sn" + \
+                      str(sd.reel_headers.general_header_block_1.
+                          manufactures_sn)
+                if das == 0:
+                    das = "id" + \
+                          str(sd.reel_headers
+                              .extended_header_1.id_number)[-9:]
 
-            return das
+        return das
 
-        def get_node(sd):
-            #   Return node part number, node id, and number of channels
-            pn = None  # Part Number
-            id = None  # Node ID
-            nc = None  # Number of channel sets
-            try:
-                nc = sd.reel_headers.general_header_block_1[
-                    'chan_sets_per_scan']
-                pn = sd.reel_headers.extended_header_1['part_number']
-                id = sd.reel_headers.extended_header_1['id_number']
-            except Exception:
-                pass
+    def get_node(sd):
+        #   Return node part number, node id, and number of channels
+        pn = None  # Part Number
+        id = None  # Node ID
+        nc = None  # Number of channel sets
+        try:
+            nc = sd.reel_headers.general_header_block_1[
+                'chan_sets_per_scan']
+            pn = sd.reel_headers.extended_header_1['part_number']
+            id = sd.reel_headers.extended_header_1['id_number']
+        except Exception:
+            pass
 
-            return pn, id, nc
+        return pn, id, nc
+
+    def print_container(container):
+        keys = container.keys()
+        for k in keys:
+            print k, container[k]
+
+        print '-' * 80
+
+    LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
+    if len(FILES) > 0:
+        RESP = Resp(EX.ph5_g_responses)
+        rows, keys = EX.ph5_g_receivers.read_index()
+        INDEX_T_DAS = Rows_Keys(rows, keys)
+        rows, keys = EX.ph5_g_maps.read_index()
+        INDEX_T_MAP = Rows_Keys(rows, keys)
+
+    for f in FILES:
+        F = f
+        traces = []
+        TRACE_JSON = []
+        try:
+            SIZE = os.path.getsize(f)
+        except Exception as e:
+            LOGGER.error("Failed to read {0}, {1}.\
+             Skipping...\n".format(f, str(e.message)))
+            continue
+
+        SD = segdreader.Reader(infile=f)
+        LAT = None
+        LON = None
+        # DN = False;
+        RH = False
+        # print "isSEGD"
+        if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
+            LOGGER.error(
+                "{0} is not a Fairfield SEG-D file. Skipping.".format(
+                    SD.name()))
+            continue
 
         try:
-            get_args()
-        except Exception, err_msg:
-            LOGGER.error(err_msg)
-            return 1
+            # print "general headers"
+            SD.process_general_headers()
+            # print "channel sets"
+            SD.process_channel_set_descriptors()
+            # print "extended headers"
+            SD.process_extended_headers()
+            # print "external headers"
+            SD.process_external_headers()
+        except segdreader.InputsError as e:
+            LOGGER.error(
+                "Possible bad SEG-D file -- {0}".format(
+                    "".join(e.message)))
+            continue
 
-        initializeExperiment()
-        LOGGER.info("segd2ph5 {0}".format(PROG_VERSION))
-        LOGGER.info("{0}".format(sys.argv))
-        if len(FILES) > 0:
-            RESP = Resp(EX.ph5_g_responses)
-            rows, keys = EX.ph5_g_receivers.read_index()
-            INDEX_T_DAS = Rows_Keys(rows, keys)
-            rows, keys = EX.ph5_g_maps.read_index()
-            INDEX_T_MAP = Rows_Keys(rows, keys)
-
-        for f in FILES:
-            F = f
-            traces = []
-            TRACE_JSON = []
-            try:
-                SIZE = os.path.getsize(f)
-            except Exception as e:
-                LOGGER.error("Failed to read {0}, {1}.\
-                 Skipping...\n".format(f, str(e.message)))
-                continue
-
-            SD = segdreader.Reader(infile=f)
-            LAT = None
-            LON = None
-            RH = False
-            if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
-                LOGGER.error(
-                    "{0} is not a Fairfield SEG-D file. Skipping.".format(
-                        SD.name()))
-                continue
-
-            try:
-                SD.process_general_headers()
-                SD.process_channel_set_descriptors()
-                SD.process_extended_headers()
-                SD.process_external_headers()
-            except segdreader.InputsError as e:
-                LOGGER.error(
-                    "Possible bad SEG-D file -- {0}".format(
-                        "".join(e.message)))
-                continue
-
-            nleft = APPEND
-            Das = get_das(SD)
-            part_number, node_id, number_of_channels = get_node(SD)
-            EXREC = get_current_data_only(SIZE, Das)
-            LOGGER.info(":<Processing>: {0}\n".format(SD.name()))
+        # Das = (SD.reel_headers.extended_header_3.line_number * 1000) +\
+        #  SD.reel_headers.extended_header_3.receiver_point
+        # APPEND = correct_append_number ()
+        nleft = APPEND
+        Das = get_das(SD)
+        part_number, node_id, number_of_channels = get_node(SD)
+        #
+        EXREC = get_current_data_only(SIZE, Das)
+        LOGGER.info(":<Processing>: {0}\n".format(SD.name()))
+        LOGGER.info(
+            "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
+        if EXREC.filename != MINIPH5:
+            LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
             LOGGER.info(
-                "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
-            if EXREC.filename != MINIPH5:
-                LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
-                LOGGER.info(
-                    "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
-                        Das, node_id, part_number, number_of_channels))
-                MINIPH5 = EXREC.filename
+                "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
+                    Das, node_id, part_number, number_of_channels))
+            MINIPH5 = EXREC.filename
 
-            n = 0
-            trace_headers_list = []
-            while True:
-                if SD.isEOF():
-                    if n != 0:
-                        thl = []
-                        chan_set = None
-                        t = None
-                        new_traces = []
-                        for T in traces:
-                            thl.append(T.headers)
-                            if chan_set is None:
-                                chan_set = T.headers.trace_header.channel_set
-                            if chan_set == T.headers.trace_header.channel_set:
-                                if isinstance(t, type(None)):
-                                    t = T.trace
-                                else:
-                                    t = npappend(t, T.trace)
-                            else:
-                                new_traces.append(T)
-
-                        traces = new_traces
-                        process_traces(SD.reel_headers, thl[0], t)
-                        if DAS_INFO:
-                            writeINDEX()
-                    break
-
-                try:
-                    trace, cs = SD.process_trace()
-                except segdreader.InputsError as e:
-                    LOGGER.error("{0}\n".format(F))
-                    LOGGER.error(
-                        "Possible bad SEG-D file -- {0}".format(
-                            "".join(e.message)))
-                    break
-
-                if not LAT and not LON:
-                    try:
-                        if UTM:
-                            #   UTM
-                            LAT, LON = utmcsptolatlon(
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
-                        elif TSPF:
-                            #   Texas State Plane coordinates
-                            LAT, LON = txncsptolatlon(
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
-                        else:
-                            LAT = SD.trace_headers.trace_header_N[
-                                      4].receiver_point_Y_final / 10.
-                            LON = SD.trace_headers.trace_header_N[
-                                      4].receiver_point_X_final / 10.
-                    except Exception as e:
-                        LOGGER.warning(
-                            "Failed to convert location: {0}.\n".format(
-                                e.message))
-
-                trace_headers_list.append(SD.trace_headers)
-                if n == 0:
-                    traces.append(Trace(trace, SD.trace_headers))
-                    n = 1
-                    Das = get_das(SD)
-                else:
-                    traces.append(Trace(trace, SD.trace_headers))
-
-                if n >= nleft or EVERY is True:
+        n = 0
+        trace_headers_list = []
+        # lat = None
+        # lon = None
+        while True:
+            #
+            if SD.isEOF():
+                if n != 0:
                     thl = []
                     chan_set = None
-                    chan_set_next = None
                     t = None
                     new_traces = []
-                    # Need to check for gaps here!
                     for T in traces:
                         thl.append(T.headers)
                         if chan_set is None:
@@ -1165,47 +1113,139 @@ def main():
                                 t = npappend(t, T.trace)
                         else:
                             new_traces.append(T)
-                            if chan_set_next is None:
-                                chan_set_next =\
-                                    T.headers.trace_header.channel_set
 
                     traces = new_traces
                     process_traces(SD.reel_headers, thl[0], t)
-                    if new_traces:
-                        nleft = APPEND - len(new_traces)
-                    else:
-                        nleft = APPEND
-                    chan_set = chan_set_next
-                    chan_set_next = None
+                    # process_traces (SD.reel_headers,\
+                    # trace_headers_list[0], trace)
                     if DAS_INFO:
                         writeINDEX()
-                    n = 0
-                    trace_headers_list = []
-                    continue
+                break
 
-                n += 1
+            try:
+                trace, cs = SD.process_trace()
+            except segdreader.InputsError as e:
+                LOGGER.error("{0}\n".format(F))
+                LOGGER.error(
+                    "Possible bad SEG-D file -- {0}".format(
+                        "".join(e.message)))
+                break
 
-            update_external_references()
-            if TRACE_JSON:
-                log_array, name = getLOG()
-                for line in TRACE_JSON:
-                    log_array.append(line)
+            if not LAT and not LON:
+                try:
+                    if UTM:
+                        #   UTM
+                        LAT, LON = utmcsptolatlon(
+                            SD.trace_headers.trace_header_N[
+                                4].receiver_point_Y_final / 10.,
+                            SD.trace_headers.trace_header_N[
+                                4].receiver_point_X_final / 10.)
+                    elif TSPF:
+                        #   Texas State Plane coordinates
+                        LAT, LON = txncsptolatlon(
+                            SD.trace_headers.trace_header_N[
+                                4].receiver_point_Y_final / 10.,
+                            SD.trace_headers.trace_header_N[
+                                4].receiver_point_X_final / 10.)
+                    else:
+                        LAT = SD.trace_headers.trace_header_N[
+                                  4].receiver_point_Y_final / 10.
+                        LON = SD.trace_headers.trace_header_N[
+                                  4].receiver_point_X_final / 10.
+                except Exception as e:
+                    LOGGER.warning(
+                        "Failed to convert location: {0}.\n".format(
+                            e.message))
 
-            LOGGER.info(":<Finished>: {0}\n".format(F))
+            trace_headers_list.append(SD.trace_headers)
+            # for cs in range (SD.chan_sets_per_scan) :
+            if n == 0:
+                traces.append(Trace(trace, SD.trace_headers))
+                n = 1
+                #   Node kludge
+                # Das = (SD.trace_headers.trace_header_N[0]\
+                # .receiver_line * 1000) + SD.trace_headers.\
+                # trace_header_N[0].receiver_point
+                Das = get_das(SD)
+            else:
+                traces.append(Trace(trace, SD.trace_headers))
+                # traces = npappend (traces, trace)
 
-        write_arrays(ARRAY_T)
-        seconds = time.time() - then
+            if n >= nleft or EVERY is True:
+                thl = []
+                chan_set = None
+                chan_set_next = None
+                t = None
+                new_traces = []
+                # Need to check for gaps here!
+                for T in traces:
+                    thl.append(T.headers)
+                    if chan_set is None:
+                        chan_set = T.headers.trace_header.channel_set
+                    if chan_set == T.headers.trace_header.channel_set:
+                        # print type (t)
+                        if isinstance(t, type(None)):
+                            t = T.trace
+                        else:
+                            t = npappend(t, T.trace)
+                        # print len (t), t.min (), t.max ()
+                    else:
+                        new_traces.append(T)
+                        if chan_set_next is None:
+                            chan_set_next =\
+                                T.headers.trace_header.channel_set
 
-        try:
-            EX.ph5close()
-            EXREC.ph5close()
-        except Exception as e:
-            LOGGER.warning("{0}\n".format("".join(e.message)))
+                traces = new_traces
+                process_traces(SD.reel_headers, thl[0], t)
+                if new_traces:
+                    nleft = APPEND - len(new_traces)
+                else:
+                    nleft = APPEND
+                chan_set = chan_set_next
+                chan_set_next = None
+                if DAS_INFO:
+                    writeINDEX()
+                n = 0
+                trace_headers_list = []
+                continue
 
-        LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
-        logging.shutdown()
+            n += 1
 
-    prof()
+        update_external_references()
+        if TRACE_JSON:
+            log_array, name = getLOG()
+            for line in TRACE_JSON:
+                log_array.append(line)
+
+        LOGGER.info(":<Finished>: {0}\n".format(F))
+
+    write_arrays(ARRAY_T)
+
+
+def main():
+    import time
+    then = time.time()
+
+    try:
+        get_args()
+    except Exception, err_msg:
+        LOGGER.error(err_msg)
+        return 1
+
+    initializeExperiment()
+
+    process()
+
+    seconds = time.time() - then
+
+    try:
+        EX.ph5close()
+        EXREC.ph5close()
+    except Exception as e:
+        LOGGER.warning("{0}\n".format("".join(e.message)))
+
+    LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
+    logging.shutdown()
 
 
 if __name__ == '__main__':
