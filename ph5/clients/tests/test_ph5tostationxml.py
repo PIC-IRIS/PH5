@@ -5,8 +5,8 @@ import unittest
 import os
 import sys
 import logging
-from mock import patch
 
+from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
 from ph5.utilities import kef2ph5
@@ -21,6 +21,7 @@ def kef_to_ph5(ph5path, nickname, kefpath, keflist, ex=None):
     (The task of deleting table before adding the table should happen before
     calling this function. If it is required to have a delete function for all,
     it should be written in nuke_table.py)
+
     :para ph5path: path to ph5 file
     :type ph5path: string
     :para kefpath: path to kef files
