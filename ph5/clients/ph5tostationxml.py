@@ -695,7 +695,7 @@ class PH5toStationXMLParser(object):
                             latitude,
                             longitude)
                         if isinstance(check_lat_lon, str):
-                            msg = "array %s, station %s, channel %s: %s"% \
+                            msg = "array %s, station %s, channel %s: %s" % \
                                 (station_code, array_code,
                                  station_entry['channel_number_i'],
                                  check_lat_lon)
