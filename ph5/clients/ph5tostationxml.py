@@ -288,6 +288,12 @@ class PH5toStationXMLParser(object):
         self.response_table_n_i = None
         self.receiver_table_n_i = None
         self.total_number_stations = 0
+        self.unique_errmsg = []
+
+    def add_uni_errmsg(self, errmsg):
+        # prevent repeating errmsg
+        if errmsg not in self.unique_errmsg:
+            self.unique_errmsg.append(errmsg)
 
     def is_lat_lon_match(self, sta_xml_obj, latitude, longitude):
         """
@@ -505,6 +511,8 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
+        for msg in self.unique_errmsg:
+            LOGGER.error(msg)
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -656,7 +664,6 @@ class PH5toStationXMLParser(object):
 
     def read_stations(self):
         all_stations = []
-        check_lat_lon_msg = []
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
             for array_name in self.array_names:
@@ -688,11 +695,11 @@ class PH5toStationXMLParser(object):
                             latitude,
                             longitude)
                         if isinstance(check_lat_lon, str):
-                            msg = "station %s, array %s: %s" % \
-                                (station_code, array_code, check_lat_lon)
-                            if msg not in check_lat_lon_msg:
-                                check_lat_lon_msg.append(msg)
-                                LOGGER.warning(msg)
+                            msg = "array %s, station %s, channel %s: %s"% \
+                                (station_code, array_code,
+                                 station_entry['channel_number_i'],
+                                 check_lat_lon)
+                            self.add_uni_errmsg(msg)
                             continue
 
                         start_date = UTCDateTime(
