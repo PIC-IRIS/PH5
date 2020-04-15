@@ -102,10 +102,10 @@ def get_args():
                                 formatter_class=argparse.RawTextHelpFormatter)
 
     parser.usage = ("meta-data-gen --nickname=ph5-file-prefix "
-                    "options")
+                    "options".format(PROG_VERSION))
 
     parser.description = ("Write info about receivers, events, or data.\n\n"
-                          "Version: {0}".format(PROG_VERSION))
+                          "Version: {0}")
 
     parser.add_argument("-E", "--experiment", dest="experiment_gen",
                         help="Write info about experiment to stdout,"

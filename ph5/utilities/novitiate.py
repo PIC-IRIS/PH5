@@ -529,7 +529,8 @@ def churn_recv(recvqc, recvkey):
                     'meters',
                     coordinate_system,
                     'none',
-                    ellipsoid)
+                    ellipsoid,
+                    '')
         # Sensor information
         array_t += '\tsensor/serial_number_s = {0}' \
                    '\n\tsensor/model_s = {1}' \

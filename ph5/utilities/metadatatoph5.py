@@ -143,7 +143,7 @@ class MetadatatoPH5(object):
                     'ascii', 'ignore')
                 array_station['id_s'] = station.code.encode('ascii',
                                                             'ignore')
-                LOGGER.info('*****************')
+                LOGGER.info('*****************'.format(station.code))
                 LOGGER.info('Found station {0}'.format(station.code))
                 for channel in station:
                     LOGGER.info('Found channel {0}'.format(channel.code))
@@ -313,7 +313,7 @@ class MetadatatoPH5(object):
                     array_list.append(array_dict)
                     LOGGER.info("Loaded channel {0}".format(channel.code))
                 LOGGER.info("Loaded Station {0}".format(station.code))
-                LOGGER.info("******************\n")
+                LOGGER.info("******************\n".format(station.code))
 
         return array_list
 

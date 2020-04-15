@@ -581,7 +581,7 @@ def process_trace(th, bh, rh, eh, tr):
         for t in th:
             keys = sorted(t.keys())
             for k in keys:
-                line = "{0} {1:<80}".format(k, t[k])
+                line = "{1:<80}".format(k, t[k])
                 data.append(line)
 
         EXREC.ph5_g_receivers.newarray(

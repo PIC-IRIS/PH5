@@ -1,78 +1,58 @@
 '''
 Tests for segd2ph5
 '''
+import unittest
 import os
 import sys
-import unittest
-
+import shutil
+import tempfile
+import logging
+from StringIO import StringIO as StringBuffer
 from mock import patch
-
+from ph5 import logger, ch as CH
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
-    initialize_ex
+from ph5.core import experiment, segdreader
 
 
-class TestSegDtoPH5_main(TempDirTestCase, LogTestCase):
-    def tearDown(self):
-        self.EX.ph5close()
-        super(TestSegDtoPH5_main, self).tearDown()
+class TestSegDtoPH5(unittest.TestCase):
+    def initialize_ph5(self, editmode):
+        EX = experiment.ExperimentGroup(nickname="master.ph5")
+        EX.ph5open(editmode)
+        EX.initgroup()
+        return EX
 
-    def test_main(self):
-        # add fcnt data of the same das in the same array but with different
-        # deploytime
-        segd_dir = os.path.join(self.home, "ph5/test_data/segd/")
-        # create list file
-        list_file = open('fcnt_list', "w")
-        fileList = os.listdir(segd_dir)
-        s = ""
-        for f in fileList:
-            if f.endswith(".fcnt") and f.startswith("1111"):
-                s += segd_dir + f + "\n"
-        list_file.write(s)
-        list_file.close()
-
-        # add segD to ph5
-        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list']
-        with patch.object(sys, 'argv', testargs):
-            segd2ph5.main()
-
-        # check that all deploy times are in array_t
-        self.EX = tabletokef.EX = initialize_ex('master.ph5', '.', False)
-        tabletokef.ARRAY_T = {}
-        tabletokef.read_sort_table()
-        tabletokef.read_sort_arrays()
-        self.assertEqual(len(tabletokef.ARRAY_T), 1)
-        self.assertEqual(tabletokef.ARRAY_T.keys()[0], "Array_t_001")
-        self.assertEqual(len(tabletokef.ARRAY_T['Array_t_001'].rows), 9)
-        # id_s 1111 SHOULD have 3 different times,
-        # each has 3 rows for 3 channels
-        time_count = {}
-        for s in tabletokef.ARRAY_T['Array_t_001'].rows:
-            if s['id_s'] == '1111':
-                d = s['deploy_time/epoch_l']
-                if d not in time_count.keys():
-                    time_count[d] = 0
-                time_count[d] += 1
-
-        self.assertDictEqual(time_count,
-                             {1561831393: 3, 1563634018: 3, 1567269236: 3})
-
-
-class TestSegDtoPH5(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TestSegDtoPH5, self).setUp()
+        # capture log string into log_capture_string
+        self.log_capture_string = StringBuffer()
+        logger.removeHandler(CH)
+        ch = logging.StreamHandler(self.log_capture_string)
+        logger.addHandler(ch)
+
+        # create tmpdir
+        self.home = os.getcwd()
+        self.tmpdir = tempfile.mkdtemp() + "/"
+        os.chdir(self.tmpdir)
+
         # initiate ph5
-        self.EX = segd2ph5.EX = initialize_ex('master.ph5', '.', True)
+        self.EX = segd2ph5.EX = self.initialize_ph5(editmode=True)
 
     def tearDown(self):
-        self.EX.ph5close()
         try:
+            self.EX.ph5close()
             segd2ph5.EXREC.ph5close()
-        except AttributeError:
+        except Exception:
             pass
-
-        super(TestSegDtoPH5, self).tearDown()
+        if self._resultForDoCleanups.wasSuccessful():
+            try:
+                shutil.rmtree(self.tmpdir)
+            except Exception as e:
+                print("Cannot remove %s due to the error:%s" %
+                      (self.tmpdir, str(e)))
+        else:
+            errmsg = "%s has FAILED. Inspect files created in %s." \
+                % (self._testMethodName, self.tmpdir)
+            print(errmsg)
+        os.chdir(self.home)
 
     def test_bit_weights(self):
         # From old
@@ -110,19 +90,19 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
             i += 1
 
     def test_process_traces(self):
+        """
+        test process_traces method
+        """
         segd2ph5.setLogger()
         segd2ph5.SD = SD = segdreader.Reader(
-            infile=os.path.join(self.home, 'ph5/test_data/segd/3ch.fcnt'))
+            infile=self.home + '/ph5/test_data/segd/3ch.fcnt')
         SD.process_general_headers()
         SD.process_channel_set_descriptors()
         SD.process_extended_headers()
         SD.process_external_headers()
 
-        SIZE = os.path.getsize(
-            os.path.join(self.home, 'ph5/test_data/segd/3ch.fcnt'))
-        # need to use relative path './miniPH5_00001.ph5' because
-        # index_t's 'external_file_name_s will be chopped off if the path's
-        # length is greater than 32
+        SIZE = os.path.getsize(self.home + '/ph5/test_data/segd/3ch.fcnt')
+
         segd2ph5.DAS_INFO = {'3X500': [segd2ph5.Index_t_Info(
             '3X500', './miniPH5_00001.ph5',
             '/Experiment_g/Receivers_g/Das_g_3X500',
@@ -200,6 +180,57 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
                                        places=5)
             else:
                 self.assertEqual(segd2ph5.RESP.lines[0][k], response[k])
+
+    def test_main(self):
+        """
+        test main function
+        """
+        # close EX before test main
+        try:
+            segd2ph5.EX.ph5close()
+        except Exception:
+            pass
+        ####################################################################
+        # add fcnt data of the same das in the same array but with different
+        # deploytime
+        segd_dir = self.home + "/ph5/test_data/segd/"
+        # create list file
+        list_file = open('fcnt_list', "w")
+        fileList = os.listdir(segd_dir)
+        s = ""
+        for f in fileList:
+            if f.endswith(".fcnt") and f.startswith("1111"):
+                s += segd_dir + f + "\n"
+        list_file.write(s)
+        list_file.close()
+
+        # add segD to ph5
+        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list']
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+
+        # check that all deploy times are in array_t
+        self.EX = tabletokef.EX = self.initialize_ph5(editmode=False)
+        tabletokef.ARRAY_T = {}
+        tabletokef.read_sort_table()
+        tabletokef.read_sort_arrays()
+        self.assertEqual(len(tabletokef.ARRAY_T), 1)
+        self.assertEqual(tabletokef.ARRAY_T.keys()[0], "Array_t_001")
+        self.assertEqual(len(tabletokef.ARRAY_T['Array_t_001'].rows), 9)
+        # id_s 1111 SHOULD have 3 different times,
+        # each has 3 rows for 3 channels
+        time_count = {}
+        for s in tabletokef.ARRAY_T['Array_t_001'].rows:
+            if s['id_s'] == '1111':
+                d = s['deploy_time/epoch_l']
+                if d not in time_count.keys():
+                    time_count[d] = 0
+                time_count[d] += 1
+
+        self.assertDictEqual(time_count,
+                             {1561831393: 3, 1563634018: 3, 1567269236: 3})
+
+        ####################################################################
 
 
 if __name__ == "__main__":

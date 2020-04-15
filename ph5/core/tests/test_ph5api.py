@@ -1,24 +1,16 @@
 '''
 Tests for ph5api
 '''
-import os
+
 import unittest
-
 from ph5.core import ph5api
-from ph5.core.tests.test_base import LogTestCase
 
 
-class TestPH5API(LogTestCase):
+class TestPH5API(unittest.TestCase):
+
     def setUp(self):
-        super(TestPH5API, self).setUp()
-        self.home = os.getcwd()
-        self.ph5API_object = ph5api.PH5(
-            path=os.path.join(self.home, 'ph5/test_data/ph5'),
-            nickname='master.ph5')
-
-    def tearDown(self):
-        self.ph5API_object.close()
-        super(TestPH5API, self).tearDown()
+        self.ph5API_object = ph5api.PH5(path='ph5/test_data/ph5',
+                                        nickname='master.ph5')
 
     def test_load_ph5(self):
         """
@@ -780,6 +772,7 @@ class TestPH5API(LogTestCase):
     def test_textural_cut(self):
         """
         tests cutting of text data from arrays
+        using textural_cut method
         """
         # try  das that doesn't exist
         traces = self.ph5API_object.textural_cut('0407',
@@ -836,6 +829,10 @@ class TestPH5API(LogTestCase):
         self.assertFalse(traces)
 
     def test_cut(self):
+        """
+        test regular cut method
+        """
+
         # try cutting das that doesn't exist
         # should return a single trace object with no data
         traces = self.ph5API_object.cut('9999',
@@ -935,6 +932,9 @@ class TestPH5API(LogTestCase):
                          traces[0].data[-1])
 
     def test_get_extent(self):
+        """
+        test get extent functionality
+        """
         # test das that exists
         earliest, latest = self.ph5API_object.get_extent(
             '9EEF',
@@ -1038,6 +1038,9 @@ class TestPH5API(LogTestCase):
         self.assertAlmostEqual(1545085240.922, latest, 5)
 
     def test_get_availability(self):
+        """
+        test get_availability functionality
+        """
         # test das that doesn't exist
         times = self.ph5API_object.get_availability(
             '12345',
@@ -1091,6 +1094,9 @@ class TestPH5API(LogTestCase):
                          times[0])
 
     def test_channels(self):
+        """
+        rest channels method
+        """
         # should give 3 channels
         chans = self.ph5API_object.channels(
             'Array_t_001',
@@ -1189,9 +1195,16 @@ class TestPH5API(LogTestCase):
         self.assertEqual(0, len(das_t))
 
     def test_close_ph5(self):
+        """
+        close ph5 object
+
+        """
         self.ph5API_object.clear()
         self.ph5API_object.close()
         self.assertIsNone(self.ph5API_object.ph5)
+
+    def tearDown(self):
+        self.ph5API_object.close()
 
 
 if __name__ == "__main__":
