@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 """
 Script to run all tests in the entire project
