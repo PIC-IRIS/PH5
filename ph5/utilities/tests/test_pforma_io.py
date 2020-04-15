@@ -3,9 +3,6 @@ Tests for pforma_io
 '''
 import unittest
 import os
-import sys
-
-from mock import patch
 
 from ph5.utilities import segd2ph5, pforma_io, tabletokef
 from testfixtures import OutputCapture
@@ -13,48 +10,55 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
 class TestPforma(LogTestCase, TempDirTestCase):
-
     def test_unite(self):
         """
-        creating element folders and A's master.ph5 to imitate the "Run"
-        in pforma
+        Test unite method.
+        Place creating element folders and A's PH5 in test to imitate the "Run"
+        period in pforma and will not need in other tests for pforma_io.
         """
         # create element folders
         MINIS = ['A', 'B', 'C', 'D']
         for n in MINIS:
-            os.mkdir(os.path.join(self.tmpdir, n))
+            os.mkdir(self.tmpdir + n)
+        os.chdir(self.tmpdir + "A")
 
-        # add data to A/master.ph5
-        os.chdir(os.path.join(self.tmpdir, "A"))
-        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
-                    os.path.join(self.home, "ph5/test_data/segd/3ch.fcnt")]
-        with patch.object(sys, 'argv', testargs):
-            segd2ph5.main()
+        # create ph5 in A/
+        segd2ph5.TSPF = False
+        segd2ph5.MANUFACTURERS_CODE = segd2ph5.FAIRFIELD
+        segd2ph5.NUM_MINI = None
+        segd2ph5.FIRST_MINI = 1
+        segd2ph5.UTM = 0
+        segd2ph5.PH5 = "master.ph5"
+        segd2ph5.FILES = [self.home + "/ph5/test_data/segd/3ch.fcnt"]
+        segd2ph5.initializeExperiment()
+        segd2ph5.process()
+        segd2ph5.EX.ph5close()
+        segd2ph5.EXREC.ph5close()
 
-        # run unite that create ph5 files in Sigma/
+        # create EX for tabletokef (cannot reuse segd2ph5 because the type
+        # for ph5_t_array has been changed - issue #362)
+        tabletokef.PH5 = "master.ph5"
+        tabletokef.PATH = self.tmpdir + "A"
+        tabletokef.initialize_ph5()
+        # readPH5's filename and path are not neccessary, will be removed
+        # later in another PR
+        ARRAY_T_A = tabletokef.readPH5(tabletokef.EX, "", "", "All_Array_t")
+        INDEX_T_A = tabletokef.readPH5(tabletokef.EX, "", "", "Index_t")
+        tabletokef.EX.ph5close()
+
+        # test unite
         fio = pforma_io.FormaIO(infile="", outdir=self.tmpdir)
-        # fio.initialize_ph5 creates ph5 file and doesn't leave it open
-        # so doesn't need to close
         fio.initialize_ph5()
         with OutputCapture():
             fio.unite("Sigma")
 
-        # get array_t and index_t in A/
-        tabletokef.PH5 = "master.ph5"
-        tabletokef.PATH = os.path.join(self.tmpdir, "A")
-        tabletokef.initialize_ph5()  # need to close
-        ARRAY_T_A = tabletokef.readPH5(tabletokef.EX, "", "", "All_Array_t")
-        INDEX_T_A = tabletokef.readPH5(tabletokef.EX, "", "", "Index_t")
-
-        # get array_t and index_t in Sigma/
-        self.path = os.path.join(self.tmpdir, "Sigma")
-        tabletokef.EX.initgroup()
+        # check array_t and index_t in Sigma/ are the same as in A/
+        self.path = self.tmpdir + "Sigma"
+        tabletokef.initialize_ph5()
         ARRAY_T_Sigma = tabletokef.readPH5(
             tabletokef.EX, "", "", "All_Array_t")
         INDEX_T_Sigma = tabletokef.readPH5(tabletokef.EX, "", "", "Index_t")
-        tabletokef.EX.ph5close()
 
-        # check array_t and index_t in Sigma/ are the same as in A/
         self.assertEqual(ARRAY_T_A.keys(), ARRAY_T_Sigma.keys())
         array_key = ARRAY_T_A.keys()[0]
         self.assertDictEqual(ARRAY_T_A[array_key].rows[0],
@@ -62,6 +66,8 @@ class TestPforma(LogTestCase, TempDirTestCase):
 
         self.assertDictEqual(INDEX_T_A.rows[0],
                              INDEX_T_Sigma.rows[0])
+
+        tabletokef.EX.ph5close()
 
 
 if __name__ == "__main__":
