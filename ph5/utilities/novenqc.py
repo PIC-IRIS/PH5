@@ -388,7 +388,7 @@ def match_type(value, ttype):
             else:
                 return False
         else:
-            print "Unknown type (0) in cfg.".format(ttype)
+            print "Unknown type {0} in cfg.".format(ttype)
     except Exception as e:
         print "Error: ", e.message
         return False
