@@ -73,7 +73,7 @@ def getParser(level, minlat=None, maxlat=None, minlon=None,
     return ph5sxml, mng, parser
 
 
-class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
+class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
     def test_main(self):
         # array_multideploy: same station different deploy times
         # => check if network time cover all or only the first 1
@@ -93,9 +93,9 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
                     "2019-09-28T14:29:39|1")
 
 
-class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
+class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
     def setUp(self):
-        super(TestPH5toStationXMLParser, self).setUp()
+        super(TestPH5toStationXMLParser_multideploy, self).setUp()
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
@@ -104,7 +104,7 @@ class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
 
     def tearDown(self):
         self.mng.ph5.close()
-        super(TestPH5toStationXMLParser, self).tearDown()
+        super(TestPH5toStationXMLParser_multideploy, self).tearDown()
 
     def test_get_network_date(self):
         self.parser.add_ph5_stationids()
@@ -139,7 +139,7 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
-                   ["array_ph5tostationxml.kef", "experiment.kef"])
+                   ["array_latlon_err.kef", "experiment.kef"])
 
         self.ph5sxml, self.mng, self.parser = getParser(
             "NETWORK", 34, 40, -111, -105, 36, -107, 0, 3)
