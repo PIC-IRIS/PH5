@@ -3,31 +3,13 @@ Tests for pforma_io
 '''
 import unittest
 import os
-import shutil
-import tempfile
+
 from ph5.utilities import segd2ph5, pforma_io, tabletokef
 from testfixtures import OutputCapture
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
-class TestPforma(unittest.TestCase):
-    def setUp(self):
-        # create tmpdir
-        self.home = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp() + "/"
-
-    def tearDown(self):
-        if self._resultForDoCleanups.wasSuccessful():
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
-        else:
-            errmsg = "%s has FAILED. Inspect files created in %s." \
-                % (self._testMethodName, self.tmpdir)
-            print(errmsg)
-        os.chdir(self.home)
-
+class TestPforma(LogTestCase, TempDirTestCase):
     def test_unite(self):
         """
         Test unite method.
