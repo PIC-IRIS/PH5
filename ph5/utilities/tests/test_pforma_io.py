@@ -6,9 +6,9 @@ import os
 import sys
 
 from mock import patch
+from testfixtures import OutputCapture
 
 from ph5.utilities import segd2ph5, pforma_io, tabletokef
-from testfixtures import OutputCapture
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
@@ -55,13 +55,14 @@ class TestPforma(LogTestCase, TempDirTestCase):
         tabletokef.EX.ph5close()
 
         # check array_t and index_t in Sigma/ are the same as in A/
+        # (not duplicated)
         self.assertEqual(ARRAY_T_A.keys(), ARRAY_T_Sigma.keys())
         array_key = ARRAY_T_A.keys()[0]
-        self.assertDictEqual(ARRAY_T_A[array_key].rows[0],
-                             ARRAY_T_Sigma[array_key].rows[0])
+        self.assertEqual(ARRAY_T_A[array_key].rows[0],
+                         ARRAY_T_Sigma[array_key].rows[0])
 
-        self.assertDictEqual(INDEX_T_A.rows[0],
-                             INDEX_T_Sigma.rows[0])
+        self.assertEqual(INDEX_T_A.rows[0],
+                         INDEX_T_Sigma.rows[0])
 
 
 if __name__ == "__main__":
