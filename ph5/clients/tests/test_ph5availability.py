@@ -3,25 +3,16 @@ unit tests for ph5availability
 """
 
 import unittest
-from ph5.clients import ph5availability
-from ph5.core import ph5api
 import sys
 import os
-import re
+import logging
+
 from mock import patch
-from contextlib import contextmanager
-from StringIO import StringIO
+from testfixtures import OutputCapture, LogCapture
 
-
-@contextmanager
-def captured_output():
-    new_out, new_err = StringIO(), StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
+from ph5.clients import ph5availability
+from ph5.core import ph5api
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -73,42 +64,21 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
     return True
 
 
-class TestPH5Availability(unittest.TestCase):
-
+class TestPH5Availability(LogTestCase, TempDirTestCase):
     def setUp(self):
-        """
-        setup for tests
-        """
+        super(TestPH5Availability, self).setUp()
+        self.ph5test_path = os.path.join(self.home, 'ph5/test_data/ph5')
         self.ph5_object = ph5api.PH5(
-            path='ph5/test_data/ph5',
+            path=self.ph5test_path,
             nickname='master.ph5')
         self.availability = ph5availability.PH5Availability(
             self.ph5_object)
 
-    def assertStrEqual(self, str1, str2):
-        """
-        return True if 2 strings are the same, othewise
-        return the index of the first difference between 2 strings
-        """
-        if str1 == str2:
-            return True
-        else:
-            for i in range(len(str1)):
-                if str1[i] != str2[i]:
-                    errmsg = "The strings are different from %s.\n" % i
-                    if i > 0:
-                        errmsg += "BEFORE:\n\tstr1: '%s'\n\tstr2: '%s'\n" % \
-                            (str1[:i], str2[:i])
-                    errmsg += "Different at:\n\tstr1: '%s'\n\tstr2: '%s'\n"\
-                        "AFTER:\n\tstr1: '%s'\n\tstr2: '%s'" % \
-                        (str1[i], str2[i], str1[i+1:], str2[i+1:])
-                    raise AssertionError(errmsg)
+    def tearDown(self):
+        self.ph5_object.close()
+        super(TestPH5Availability, self).tearDown()
 
     def test_get_slc(self):
-        """
-        test get_slc method
-        """
-
         # should return ALL available
         # station location and channels
         ret = self.availability.get_slc()
@@ -325,9 +295,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual(0, len(ret))
 
     def test_get_availability_extent(self):
-        """
-        test get_availability_extent method
-        """
         # expected to return all extent information
         ret = self.availability.get_availability_extent()
         # There are 10 channels all with data
@@ -504,9 +471,6 @@ class TestPH5Availability(unittest.TestCase):
             '*', '*', '*', None, 1502294460.38)
 
     def test_get_availability(self):
-        """
-        test get_availability method
-        """
         # expected to return all availability information
         ret = self.availability.get_availability()
         # There are 10 channels all with data
@@ -618,10 +582,6 @@ class TestPH5Availability(unittest.TestCase):
                          1502294400.38, 1502294460.38) in ret)
 
     def test_get_availability_percentage(self):
-        """
-        test get_availability_percentage method
-        """
-
         # should return 100% and 0 gaps
         ret = self.availability.get_availability_percentage(
             '500',
@@ -700,9 +660,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual(0, ret[1])
 
     def test_has_data(self):
-        """
-        test has_data method
-        """
         # assumes all for everything
         # should return true
         self.assertTrue(
@@ -868,41 +825,38 @@ class TestPH5Availability(unittest.TestCase):
                 endtime=1741883104))
 
     def test_get_args(self):
-        """
-        test get_args
-        """
-        # NOTE needs much more
-        with self.assertRaises(SystemExit):
-            ph5availability.get_args([])
-        with self.assertRaises(SystemExit):
-            ph5availability.get_args(['-n', 'master.ph5'])
-        with self.assertRaises(SystemExit):
-            ph5availability.get_args(
-                ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5'])
-        # test false args
-        with self.assertRaises(SystemExit):
-            ph5availability.get_args(
-                ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
-                 '-a', '0', '-T'])
+        with OutputCapture():
+            with self.assertRaises(SystemExit):
+                ph5availability.get_args([])
+            with self.assertRaises(SystemExit):
+                ph5availability.get_args(['-n', 'master.ph5'])
+            with self.assertRaises(SystemExit):
+                ph5availability.get_args(
+                    ['-n', 'master.ph5', '-p', self.ph5test_path])
+            # test false args
+            with self.assertRaises(SystemExit):
+                ph5availability.get_args(
+                    ['-n', 'master.ph5', '-p', self.ph5test_path,
+                     '-a', '0', '-T'])
         # test default args
         ret = vars(ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0']))
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0']))
         expect = {
             'array_t_': None, 'format': None, 'start_time': None,
             'output_file': None, 'avail': 0, 'end_time': None,
-            'sta_id_list': [], 'ph5path': 'ph5/test_data/ph5',
+            'sta_id_list': [], 'ph5path': self.ph5test_path,
             'samplerate': False, 'nickname': 'master.ph5', 'sta_list': [],
             'channel': [], 'location': None}
         self.assertDictEqual(ret, expect)
         # test correct args received
         ret = vars(ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-s', '2017-08-09T16:00:00.380000',
              '-e', '2017-08-09T16:01:00.380000', '--station', '500,0407',
              '--station_id', '500,0407', '-l', '00', '-c', 'DP1', '-S',
              '-A', '1', '-F', 't', '-o', 'extent.txt']))
         expect = {
-            'array_t_': 1, 'format': 't', 'ph5path': 'ph5/test_data/ph5',
+            'array_t_': 1, 'format': 't', 'ph5path': self.ph5test_path,
             'output_file': 'extent.txt', 'avail': 0,
             'start_time': '2017-08-09T16:00:00.380000',
             'end_time': '2017-08-09T16:01:00.380000',
@@ -912,47 +866,44 @@ class TestPH5Availability(unittest.TestCase):
         self.assertDictEqual(ret, expect)
 
     def test_analyze_args(self):
-        """
-        test analyze_args method
-        """
         A = self.availability
         # test wrong format channel
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-c', '1 2 3'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format location: len > 2
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-l', 'Oaa'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format location: invalid character
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-l', 'O^'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong format station
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '--station', 'o-g'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # test wrong avail:5
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '5'])
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '5'])
         self.assertRaises(
             ph5availability.PH5AvailabilityError, A.analyze_args, args)
 
         # given -o but avail not 2 or 3
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+            ['-n', 'master.ph5', '-p', self.ph5test_path,
              '-a', '0', '-o', 'test'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -960,7 +911,7 @@ class TestPH5Availability(unittest.TestCase):
 
         # given -o, avail=2 but no format given
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5',
+            ['-n', 'master.ph5', '-p', self.ph5test_path,
              '-a', '2', '-o', 'test'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -968,7 +919,7 @@ class TestPH5Availability(unittest.TestCase):
 
         # test default args
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0'])
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
         self.assertEqual(A.stations, ['*'])
@@ -983,7 +934,7 @@ class TestPH5Availability(unittest.TestCase):
 
         # test wildcard station, location, channel
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '--station', '*', '-l', '*', '-c', '*'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -993,7 +944,7 @@ class TestPH5Availability(unittest.TestCase):
 
         # test wildcard station, location, channel
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '--station_id', '?001', '-l', '??', '-c', 'DP?'])
         ret = A.analyze_args(args)
         self.assertEqual(ret, True)
@@ -1004,7 +955,7 @@ class TestPH5Availability(unittest.TestCase):
         # test args are assigned correctly,
         # a=0, check if SR_included=False, OFILE=None
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '0',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '0',
              '-s', '2017-08-09T16:00:00.380000',
              '-e', '2017-08-09T16:01:00.380000', '--station', '500,0407',
              '-l', '00', '-c', 'DP1', '-S',
@@ -1024,7 +975,7 @@ class TestPH5Availability(unittest.TestCase):
 
         # same args, with avail=2, check if SR_included=True
         args = ph5availability.get_args(
-            ['-n', 'master.ph5', '-p', 'ph5/test_data/ph5', '-a', '2',
+            ['-n', 'master.ph5', '-p', self.ph5test_path, '-a', '2',
              '-S', '-F', 't', '-o', 'extent.txt'])
         ret = A.analyze_args(args)
         self.assertEqual(A.SR_included, True)
@@ -1033,9 +984,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual(A.OFILE.closed, False)
 
     def test_main(self):
-        """
-        test main function
-        """
         # wrong path entered
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
                     'some/bad/path', '-a', '0']
@@ -1045,411 +993,389 @@ class TestPH5Availability(unittest.TestCase):
 
         # test has_data station with data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    self.ph5test_path, '-a', '0', '--station',
                     '500', '--channel', 'DP1']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
+                out.compare("True")
 
         # test has_data station with data all channels
         # expect to return True 3 times, once for each channel
         # master_PH5_file without extension
         testargs = ['ph5availability', '-n', 'master', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    self.ph5test_path, '-a', '0', '--station',
                     '500', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
+                out.compare("True")
 
         # test has_data station with no data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    self.ph5test_path, '-a', '0', '--station',
                     '9576', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'False')
+                out.compare('False')
 
         # test has_data station list data, no data,
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '--station',
+                    self.ph5test_path, '-a', '0', '--station',
                     '9001,91234', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
+                out.compare('True')
 
         # test has_data with start time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '-s',
+                    self.ph5test_path, '-a', '0', '-s',
                     '2017-08-09T16:00:00.380000', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
+                out.compare('True')
 
         # test has_data with end time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '-e',
+                    self.ph5test_path, '-a', '0', '-e',
                     '2019-02-22T15:43:09.000000', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
+                out.compare('True')
 
         # test has_data with time range having data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0',
+                    self.ph5test_path, '-a', '0',
                     '-s', '2019-02-22T15:39:03.000000',
                     '-e', '2019-02-22T15:43:09.000000', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
+                out.compare('True')
 
         # test has_data with time range having no data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0',
+                    self.ph5test_path, '-a', '0',
                     '-s', '2017-08-09T16:01:01.0',
                     '-e', '2018-12-17T22:20:30.0', '--channel', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'False')
+                out.compare('False')
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '0', '-A', '2']
+                    self.ph5test_path, '-a', '0', '-A', '2']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, 'True')
+                out.compare('True')
 
         # ------------------------------------------------------------ #
         # test get_slc with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '1', '--station', '0407']
+                    self.ph5test_path, '-a', '1', '--station', '0407']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = "[('0407', '', 'HHN'), ('0407', '', 'LHN'), "\
-            "('0407', '', 'LOG')]"
-        self.assertEqual(output, expect)
+                out.compare("[('0407', '', 'HHN'), ('0407', '', 'LHN'), "
+                            "('0407', '', 'LOG')]")
 
         # test get_slc with channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '1', '-c', 'LOG']
+                    self.ph5test_path, '-a', '1', '-c', 'LOG']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = "[('0407', '', 'LOG')]"
-        self.assertEqual(output, expect)
+                out.compare("[('0407', '', 'LOG')]")
 
         # test get_slc with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '1',
+                    self.ph5test_path, '-a', '1',
                     '-s', '2019-02-22T15:39:03.000000',
                     '-e', '2019-02-22T15:43:09.000000']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = "[('9001', '', 'DPZ')]"
-        self.assertEqual(output, expect)
+                out.compare("[('9001', '', 'DPZ')]")
 
         # test get_slc with array
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '1', '-A', '2']
+                    self.ph5test_path, '-a', '1', '-A', '2']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = "[('0407', '', 'HHN')]"
-        self.assertEqual(output, expect)
+                out.compare("[('0407', '', 'HHN')]")
 
         # ------------------------------------------------------------ #
         # test get_availability with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '2', '--station', '0407']
+                    self.ph5test_path, '-a', '2', '--station', '0407']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
-             " 2018-12-17T22:20:40.922000Z\n"
-             "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
-             " 2018-12-17T22:20:40.691998Z\n"
-             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-             " 2018-12-17T23:10:05.000000Z")
-        self.assertStrEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
+                    " 2018-12-17T22:20:40.922000Z\n"
+                    "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
+                    " 2018-12-17T22:20:40.691998Z\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # test get_availability with channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '2', '-c', 'LOG']
+                    self.ph5test_path, '-a', '2', '-c', 'LOG']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-             " 2018-12-17T23:10:05.000000Z")
-        self.assertStrEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # test get_availability with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '2',
+                    self.ph5test_path, '-a', '2',
                     '-s', '2018-12-17T23:10:05.0',
                     '-e', '2019-02-22T15:39:03.1']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-             " 2018-12-17T23:10:05.000000Z\n"
-             "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
-             " 2019-02-22T15:39:03.099999Z")
-        self.assertStrEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z\n"
+                    "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+                    " 2019-02-22T15:39:03.099999Z")
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '2', '-A', '4']
+                    self.ph5test_path, '-a', '2', '-A', '4']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-             " 2018-12-17T23:10:05.000000Z")
-        self.assertEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # ------------------------------------------------------------ #
         # test get_availability_extent with station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3', '--station', '9001']
+                    self.ph5test_path, '-a', '3', '--station', '9001']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
-             " 2019-02-22T15:43:09.000000Z")
-        self.assertStrEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+                    " 2019-02-22T15:43:09.000000Z")
 
         # test get_availability_extent with channel
         # if wrong format is stated, still print out tuple result with
         # a warning
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3', '-c', 'DP2', '-F', 'k']
+                    self.ph5test_path, '-a', '3', '-c', 'DP2', '-F', 'k']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = "[('500', '', 'DP2', 1502294400.38, 1502294460.38)]"
-        self.assertStrEqual(output, expect)
+                out.compare(
+                    "[('500', '', 'DP2', 1502294400.38, 1502294460.38)]")
 
         # test get_availability_extent with time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3', '-S',
+                    self.ph5test_path, '-a', '3', '-S',
                     '-s', '2019-02-22T15:39:04.1',
                     '-e', '2019-02-22T15:39:07.1']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q sample-rate                    earliest"
-             "                      latest\n"
-             "AA 9001  -- DPZ         500.0 2019-02-22T15:39:04.099999Z"
-             " 2019-02-22T15:39:07.099999Z")
-        self.assertEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q sample-rate                    earliest"
+                    "                      latest\n"
+                    "AA 9001  -- DPZ         500.0 2019-02-22T15:39:04.099999Z"
+                    " 2019-02-22T15:39:07.099999Z")
 
         # test get_availability_extent with wildcard station, location, channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3',
+                    self.ph5test_path, '-a', '3',
                     '--station', '?001', '-l', '*', '-c', 'DP?']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
-             " 2019-02-22T15:43:09.000000Z")
-        self.assertEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 9001  -- DPZ   2019-02-22T15:39:03.000000Z"
+                    " 2019-02-22T15:43:09.000000Z")
 
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3', '-A', '4']
+                    self.ph5test_path, '-a', '3', '-A', '4']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        expect = \
-            ("#n s     l  c   q                    earliest"
-             "                      latest\n"
-             "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
-             " 2018-12-17T23:10:05.000000Z")
-        self.assertEqual(output, expect)
+                out.compare(
+                    "#n s     l  c   q                    earliest"
+                    "                      latest\n"
+                    "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
+                    " 2018-12-17T23:10:05.000000Z")
 
         # ------------------------------------------------------------ #
         # test get_availability_percentage with station, no channel
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '4', '--station', '9001']
+                    self.ph5test_path, '-a', '4', '--station', '9001']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertStrEqual(output, '')
-
+            with OutputCapture() as out:
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
+                    ph5availability.main()
+                    out.compare('')
+                    self.assertEqual(log.records[0].msg,
+                                     "get_availability_percentage requires "
+                                     "providing exact station/channel.")
         # test get_availability_percentage with channel, no station
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '4', '-c', 'DP2']
+                    self.ph5test_path, '-a', '4', '-c', 'DP2']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertStrEqual(output, '')
+            with OutputCapture() as out:
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
+                    ph5availability.main()
+                    out.compare('')
+                    self.assertEqual(log.records[0].msg,
+                                     "get_availability_percentage requires "
+                                     "providing exact station/channel.")
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '4', '-c', 'DP2',
+                    self.ph5test_path, '-a', '4', '-c', 'DP2',
                     '--station', '*']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertStrEqual(output, '')
+            with OutputCapture() as out:
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
+                    ph5availability.main()
+                    out.compare('')
+                    self.assertEqual(log.records[0].msg,
+                                     "get_availability_percentage requires "
+                                     "providing exact station/channel.")
 
         # test get_availability_percentage with channel, station=*
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '4', '-c', 'DP1',
+                    self.ph5test_path, '-a', '4', '-c', 'DP1',
                     '--station', '500']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertStrEqual(output, '[1.0, 0]')
+                out.compare('[1.0, 0]')
 
         # test get_availability_percentage with station, channel, time
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '4', '--station', '9001',
+                    self.ph5test_path, '-a', '4', '--station', '9001',
                     '-s', '2019-02-22T15:39:03.0', '-c', 'DPZ',
                     '-e', '2019-02-22T15:40:03.0']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = re.sub(r"\(|\)", '', out.getvalue().strip())
-        self.assertStrEqual(output, '[0.11666666666666667, 2]')
+                out.compare('[0.11666666666666667, 2]')
         # test get_availability_percentage with station, channel, time, and
         # array not match with other parameters
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '4', '-A', '3',
+                    self.ph5test_path, '-a', '4', '-A', '3',
                     '--station', '0407', '-c', 'HHN']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
-        self.assertEqual(output, '[0.0, 0]')
+                out.compare('[0.0, 0]')
 
         # ------------------------------------------------------------ #
         # test extent and text format
         # should return 10 channels
         # should match slc_full.txt from test data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3',
+                    self.ph5test_path, '-a', '3',
                     '-F', 't', '-S']
-        with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                ph5availability.main()
-        output = out.getvalue().strip()
-        with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.txt'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertEqual(output, content)
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5availability.main()
+                out.compare(content)
 
         # test extent and geocsv format
         # should return 10 channels
         # should match slc_full_geocsv.csv from test data
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3',
+                    self.ph5test_path, '-a', '3',
                     '-F', 'g', '-S']
-        with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                ph5availability.main()
-        output = out.getvalue().strip()
-        with open('ph5/test_data/metadata/extent_full.csv', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.csv'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(output, content)
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5availability.main()
+                out.compare(content)
 
         # test extent and text format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3',
+                    self.ph5test_path, '-a', '3',
                     '-F', 't', '-S']
-        with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
-                ph5availability.main()
-        output = out.getvalue().strip()
-        with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.txt'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(output, content)
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5availability.main()
+                out.compare(content)
 
+        self.maxDiff = None
         # test extent and sync format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3',
+                    self.ph5test_path, '-a', '3',
                     '-F', 's', '-S']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
+                output = out.captured.strip()
+
         i1 = output.find('\n')
-        with open('ph5/test_data/metadata/extent_full.sync', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.sync'),
+                  'r') as content_file:
             content = content_file.read().strip()
+
         i2 = content.find('\n')
-        self.assertStrEqual(output[i1:], content[i2:])
+        self.assertMultiLineEqual(output[i1:], content[i2:])
 
         # test extent and json format
         testargs = ['ph5availability', '-n', 'master.ph5', '-p',
-                    'ph5/test_data/ph5', '-a', '3',
+                    self.ph5test_path, '-a', '3',
                     '-F', 'j', '-S']
         with patch.object(sys, 'argv', testargs):
-            with captured_output() as (out, err):
+            with OutputCapture() as out:
                 ph5availability.main()
-        output = out.getvalue().strip()
+                output = out.captured.strip()
         i1 = output.find('"datasources"')
-        with open('ph5/test_data/metadata/extent_full.json', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.json'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('"datasources"')
-        self.assertStrEqual(output[i1:], content[i2:])
+        self.assertMultiLineEqual(output[i1:], content[i2:])
 
     def test_convert_time(self):
-        """
-        test convert_time method
-        """
         # convert list with epoch times at 3, 4
         ret = self.availability.convert_time(
             ['500', '', 'DP2', 1502294400.38, 1502294460.38])
@@ -1476,9 +1402,6 @@ class TestPH5Availability(unittest.TestCase):
             ('500', '', 'DP2', 1502294400.38, 1502294460.38))
 
     def test_get_channel(self):
-        """
-        test get_channel method
-        """
         # get channel from station that lacks of info for channel
         ret = self.availability.get_channel({})
         self.assertEqual('DPX', ret)
@@ -1490,9 +1413,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual('LOG', ret)
 
     def test_get_slc_info(self):
-        """
-        test get_slc_info method
-        """
         arrayorder, arraybyid = self.availability.get_array_order_id(
             'Array_t_001')
         st = arraybyid['500'][1][0]
@@ -1528,17 +1448,11 @@ class TestPH5Availability(unittest.TestCase):
             self.availability.get_slc_info, st, '500', '*', '*')
 
     def test_get_start(self):
-        """
-        test get_start method
-        """
         ret = self.availability.get_start(
             {'time/epoch_l': 1502294400, 'time/micro_seconds_i': 380000})
         self.assertEqual(1502294400.38, ret)
 
     def test_get_end(self):
-        """
-        test get_end method
-        """
         # samplerate != 0
         ret = self.availability.get_end(
             {'sample_count_i': 15000}, 1502294400.38, 500)
@@ -1550,9 +1464,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual(1502294400.38, ret)
 
     def test_get_sample_rate(self):
-        """
-        test get_sample_rate method
-        """
         # sample_rate_i != 0
         ret = self.availability.get_sample_rate(
             {'sample_rate_i': 100, 'sample_rate_multiplier_i': 1})
@@ -1564,9 +1475,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual(0, ret)
 
     def test_get_time_das_t(self):
-        """
-        test get_time_das_t method
-        """
         # start=None, end=None; no component, sample_rate
         ret = self.availability.get_time_das_t(
             '3X500', None, None)
@@ -1701,9 +1609,6 @@ class TestPH5Availability(unittest.TestCase):
         self.assertEqual((46500, 7000.0, 4), ret)
 
     def test_get_array_order_id(self):
-        """
-        test get_array_order_id method
-        """
         ret = self.availability.get_array_order_id('Array_t_009')
         self.assertEqual(['9001'], ret[0])
         self.assertTrue(1, len(ret[1]))
@@ -1716,150 +1621,148 @@ class TestPH5Availability(unittest.TestCase):
             'Array_t_010')
 
     def test_get_text_report(self):
-        """
-        test get_text_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_text_report(result).strip()
-        with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.txt'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1,
             include_sample_rate=True)
         ret = self.availability.get_text_report(result).strip()
-        with open('ph5/test_data/metadata/avail_time.txt', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time.txt'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1)
         ret = self.availability.get_text_report(result).strip()
-        with open('ph5/test_data/metadata/avail_time_noSR.txt', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time_noSR.txt'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
     def test_print_report(self):
         self.availability.OFILE = None
-        with captured_output() as (out, err):
+        with OutputCapture() as out:
             self.availability.print_report("this is a text line")
-        output = out.getvalue().strip()
-        self.assertEqual(output, "this is a text line")
+            out.compare("this is a text line")
 
         self.availability.OFILE = open("test", 'w')
-        with captured_output() as (out, err):
+        with OutputCapture() as out:
             self.availability.print_report("this is a text line")
-        output = out.getvalue().strip()
-        self.assertEqual(output, "")
+            out.compare("")
         self.assertTrue(self.availability.OFILE.closed)
         with open('test', 'r') as content_file:
             content = content_file.read().strip()
         self.assertEqual(content, "this is a text line")
-        os.remove('test')
 
     def test_get_geoCSV_report(self):
-        """
-        test get_geoCSV_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_geoCSV_report(result).strip()
-        with open('ph5/test_data/metadata/extent_full.csv', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.csv'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1,
             include_sample_rate=True)
         ret = self.availability.get_geoCSV_report(result).strip()
-        with open('ph5/test_data/metadata/avail_time.csv', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time.csv'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1)
         ret = self.availability.get_geoCSV_report(result).strip()
-        with open('ph5/test_data/metadata/avail_time_noSR.csv', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time_noSR.csv'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
     def test_get_sync_report(self):
-        """
-        test get_sync_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_sync_report(result).strip()
         i1 = ret.find('\n')
-        with open('ph5/test_data/metadata/extent_full.sync', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.sync'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('\n')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1,
             include_sample_rate=True)
         ret = self.availability.get_sync_report(result).strip()
         i1 = ret.find('\n')
-        with open('ph5/test_data/metadata/avail_time.sync', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time.sync'),
+                  'r'
+                  ) as content_file:
             content = content_file.read().strip()
         i2 = content.find('\n')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1)
         ret = self.availability.get_sync_report(result).strip()
         i1 = ret.find('\n')
-        with open('ph5/test_data/metadata/avail_time_noSR.sync', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time_noSR.sync'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('\n')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
     def test_get_json_report(self):
-        """
-        test get_json_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_json_report(result).strip()
         i1 = ret.find('"datasources"')
-        with open('ph5/test_data/metadata/extent_full.json', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.json'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('"datasources"')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1,
             include_sample_rate=True)
         ret = self.availability.get_json_report(result).strip()
         i1 = ret.find('"datasources"')
-        with open('ph5/test_data/metadata/avail_time.json', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time.json'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('"datasources"')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
         result = self.availability.get_availability(
             starttime=1545088205.0, endtime=1550849943.1)
         ret = self.availability.get_json_report(result).strip()
         i1 = ret.find('"datasources"')
-        with open('ph5/test_data/metadata/avail_time_noSR.json', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/avail_time_noSR.json'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('"datasources"')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
         # wrong format result
         result = [('0407', 'LOG', 1545088205.0, 1545088205.0)]
@@ -1869,47 +1772,45 @@ class TestPH5Availability(unittest.TestCase):
             result)
 
     def test_get_report(self):
-        """
-        test get_report method
-        """
         result = self.availability.get_availability_extent(
             include_sample_rate=True)
         ret = self.availability.get_report(result, format='t').strip()
-        with open('ph5/test_data/metadata/extent_full.txt', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.txt'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
         ret = self.availability.get_report(result, format='g').strip()
-        with open('ph5/test_data/metadata/extent_full.csv', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.csv'),
+                  'r') as content_file:
             content = content_file.read().strip()
-        self.assertStrEqual(ret, content)
+        self.assertMultiLineEqual(ret, content)
 
         ret = self.availability.get_report(result, format='s').strip()
         i1 = ret.find('\n')
-        with open('ph5/test_data/metadata/extent_full.sync', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.sync'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('\n')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
         ret = self.availability.get_report(result, format='j').strip()
         i1 = ret.find('"datasources"')
-        with open('ph5/test_data/metadata/extent_full.json', 'r') as \
-                content_file:
+        with open(os.path.join(self.home,
+                               'ph5/test_data/metadata/extent_full.json'),
+                  'r') as content_file:
             content = content_file.read().strip()
         i2 = content.find('"datasources"')
-        self.assertStrEqual(ret[i1:], content[i2:])
+        self.assertMultiLineEqual(ret[i1:], content[i2:])
 
-        ret = self.availability.get_report(result, format='k')
-        self.assertStrEqual(ret, result)
-
-    def tearDown(self):
-        """
-        teardown for tests
-        """
-        self.ph5_object.close()
+        with LogCapture() as log:
+            ret = self.availability.get_report(result, format='k')
+            self.assertEqual(ret, result)
+            self.assertEqual(log.records[0].msg,
+                             "The entered format k is not supported.")
 
 
 if __name__ == "__main__":

@@ -254,7 +254,7 @@ def read_par_file(file):
         flds = string.split(line, ';')
 
         if len(flds) != len(order.keys()):
-            LOGGER.error('Error in parameter file: %s'.format(line))
+            LOGGER.error('Error in parameter file: {}'.format(line))
             return False
 
         par = Par()
