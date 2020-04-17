@@ -73,12 +73,6 @@ class n_i_fix(object):
         self.loaded_resp = []
         self.noloaded_resp = []
         self.last_loaded_n_i = -1
-        """
-        From reponse_t get the list of
-        + original response rows: noloaded_resp
-        + rows created by other resp_load run
-        + the highest n_ilast_loaded_n_i
-        """
         for entry in self.ph5.Response_t['rows']:
             if entry['response_file_das_a'] or entry['response_file_sensor_a']:
                 if not entry['response_file_das_a']:
@@ -137,27 +131,22 @@ class n_i_fix(object):
                 for deployment in station_list:
                     station_len = len(station_list[deployment])
                     for st_num in range(0, station_len):
-                        id_s = station_list[deployment][st_num]['id_s']
-                        sample_rate = station_list[deployment][
-                            st_num]['sample_rate_i']
-                        sample_rate_multiplier = station_list[deployment][
-                            st_num]['sample_rate_multiplier_i']
-                        das_model = station_list[deployment][
-                            st_num]['das/model_s']
+                        station = station_list[deployment][st_num]
+                        id_s = station['id_s']
+                        sample_rate = station['sample_rate_i']
+                        sample_rate_multiplier = station[
+                            'sample_rate_multiplier_i']
+                        das_model = station['das/model_s']
                         das_model = das_model.replace(" ", "")
-                        sensor_model = station_list[deployment][
-                            st_num]['sensor/model_s']
+                        sensor_model = station['sensor/model_s']
                         sensor_model = sensor_model.replace(" ", "")
                         if das_model.startswith("ZLAND"):
                             sensor_model = ""
-                        channel = station_list[deployment][
-                            st_num]['channel_number_i']
-                        serial = station_list[deployment][
-                            st_num]['das/serial_number_s']
-                        pickup = station_list[deployment][
-                            st_num]['pickup_time/epoch_l']
-                        deploy = station_list[deployment][
-                            st_num]['deploy_time/epoch_l']
+                        channel = station['channel_number_i']
+                        serial = station['das/serial_number_s']
+                        pickup = station['pickup_time/epoch_l']
+                        deploy = station['deploy_time/epoch_l']
+                        a_response_n_i = station['response_table_n_i']
 
                         # give warning when das_model="" or sensor_model=""
                         # if das_model is not ZLAND to notice user that this
