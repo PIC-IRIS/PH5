@@ -13,6 +13,7 @@ from testfixtures import OutputCapture, LogCapture
 from ph5.clients import ph5availability
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
+from ph5 import logger
 
 
 def checkTupleAlmostEqualIn(tup, tupList, place):
@@ -67,6 +68,8 @@ def checkFieldsMatch(fieldNames, fieldsList, dictList):
 class TestPH5Availability(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5Availability, self).setUp()
+        # enable propagating to higher loggers
+        logger.propagate = 1
         self.ph5test_path = os.path.join(self.home, 'ph5/test_data/ph5')
         self.ph5_object = ph5api.PH5(
             path=self.ph5test_path,
@@ -76,6 +79,8 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
 
     def tearDown(self):
         self.ph5_object.close()
+        # disable propagating to higher loggers
+        logger.propagate = 0
         super(TestPH5Availability, self).tearDown()
 
     def test_get_slc(self):

@@ -19,8 +19,6 @@ def initialize_ex(nickname, path, editmode=False):
 class LogTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # enable propagating to higher loggers
-        logger.propagate = 1
         # disable writing log to console
         logger.removeHandler(ch)
         # add StringIO handler to prevent message "No handlers could be found"
@@ -30,8 +28,6 @@ class LogTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # disable propagating to higher loggers
-        logger.propagate = 0
         # revert logger handler
         logger.removeHandler(cls.newch)
         logger.addHandler(ch)
