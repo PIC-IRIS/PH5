@@ -36,8 +36,7 @@ class Station(object):
             bit_weight,
             bit_weight_units,
             gain_units,
-            serial,
-            resp_loaded):
+            serial):
         self.id_s = id_s
         self.array = array
         self.channel = channel
@@ -54,7 +53,6 @@ class Station(object):
         self.response_file_das_a = None
         self.response_file_sensor_a = None
         self.serial = serial
-        self.resp_loaded = resp_loaded
 
 
 class n_i_fix(object):
@@ -190,14 +188,22 @@ class n_i_fix(object):
                                     serial, channel, sample_rate,
                                     sample_rate_multiplier))
                             continue
+                        try:
+                            Response_t, resp_loaded = \
+                                self.get_response_t(
+                                    das_model, sensor_model, sample_rate,
+                                    sample_rate_multiplier,
+                                    d_response_n_i, a_response_n_i)
+                        except AttributeError as e:
+                            LOGGER.error(
+                                "Error when processing array {0} "
+                                "station{1} chan{2} spr{3} mspr{4}:{5}".
+                                format(array_name, id_s, channel, sample_rate,
+                                    sample_rate_multiplier, str(e)))
+                            continue
 
-                        Response_t, resp_loaded = \
-                            self.get_response_t(
-                                das_model, sensor_model, sample_rate,
-                                sample_rate_multiplier,
-                                d_response_n_i, a_response_n_i)
-
-                        if Response_t:
+                        response_n_i = None
+                        if Response_t is not None:
                             gain = Response_t['gain/value_i']
                             bit_weight = Response_t['bit_weight/value_d']
                             bit_weight_units = Response_t['bit_weight/units_s']
@@ -226,8 +232,7 @@ class n_i_fix(object):
                                     bit_weight,
                                     bit_weight_units,
                                     gain_units,
-                                    serial,
-                                    resp_loaded))
+                                    serial))
                         except BaseException:
                             LOGGER.error("Couldn't add station.")
                             continue
@@ -255,34 +260,30 @@ class n_i_fix(object):
         s_filename = "/Experiment_g/Responses_g/%s" % s_model.replace(" ", "")
 
         resp = None
-        try:
-            for response_t in self.noloaded_resp:
-                if response_t['n_i'] == d_n_i:
-                    # Look for the matched n_i from original rows to get
-                    # bit_weight and gain to form response_file_das_a
-                    # for the condition when look in the loadeded_resp.
-                    # resp is is the row to return at the end when can't find
-                    # a match row in loaded_resp
-                    resp = response_t
-                    bit_weight = str(response_t['bit_weight/value_d'])
-                    gain = str(response_t['gain/value_i'])
+        for response_t in self.noloaded_resp:
+            if response_t['n_i'] == d_n_i:
+                # Look for the matched n_i from original rows to get
+                # bit_weight and gain to form response_file_das_a
+                # for the condition when look in the loadeded_resp.
+                # resp is is the row to return at the end when can't find
+                # a match row in loaded_resp
+                resp = response_t
+                bit_weight = str(response_t['bit_weight/value_d'])
+                gain = str(response_t['gain/value_i'])
 
-            for response_t in self.loaded_resp:
-                if response_t['n_i'] != a_n_i:
-                    continue
-                b = str(response_t['bit_weight/value_d'])
-                g = str(response_t['gain/value_i'])
-                if b != bit_weight or g != gain:
-                    continue
+        for response_t in self.loaded_resp:
+            if response_t['n_i'] != a_n_i:
+                continue
+            b = str(response_t['bit_weight/value_d'])
+            g = str(response_t['gain/value_i'])
+            if b != bit_weight or g != gain:
+                continue
 
-                if response_t['response_file_das_a'] == d_filename + str(g):
-                    if response_t['response_file_sensor_a'] == s_filename:
-                        return response_t, True
-                    elif response_t['response_file_sensor_a'] == '':
-                        return response_t, True
-
-        except BaseException:
-            return None, False
+            if response_t['response_file_das_a'] == d_filename + str(g):
+                if response_t['response_file_sensor_a'] == s_filename:
+                    return response_t, True
+                elif response_t['response_file_sensor_a'] == '':
+                    return response_t, True
         return resp, False
 
     def update_kefs(self, path, arrays, data):
@@ -547,8 +548,7 @@ class n_i_fix(object):
                  'bit_w': str(station.bit_weight),
                  'bit_w_u': str(station.bit_weight_units),
                  'gain_u': str(station.gain_units),
-                 'n_i': station.response_n_i,
-                 'resp_loaded': station.resp_loaded})
+                 'n_i': station.response_n_i})
 
         unique_list = map(dict, set(tuple(sorted(x.items()))
                                     for x in data_list))
@@ -570,7 +570,7 @@ class n_i_fix(object):
             response_entry = {}
             item = [x['d_model'], x['s_model'], x['s_rate'], x['s_rate_m'],
                     x['gain'], x['bit_w']]
-            if x['resp_loaded']:
+            if x['n_i'] is not None:
                 data_update.append(item + [x['n_i']])
                 continue
             if x['d_model']:
