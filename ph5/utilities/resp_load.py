@@ -174,19 +174,29 @@ class n_i_fix(object):
                                 "{1}.\n".format(serial, channel))
                             break
 
+                        d_response_n_i = None
                         for entry in Das_t:
                             if (entry['sample_rate_i'] == sample_rate and
                                     entry['sample_rate_multiplier_i']
                                     == sample_rate_multiplier and entry[
                                         'channel_number_i'] == channel):
-                                response_n_i = entry['response_table_n_i']
+                                d_response_n_i = entry['response_table_n_i']
                                 receiver_n_i = entry['receiver_table_n_i']
                                 break
+                        if d_response_n_i is None:
+                            LOGGER.warning(
+                                "No DAS table found for das {0} chan {1} - "
+                                "spr {3} - msrpr {4}.\n".format(
+                                    serial, channel, sample_rate,
+                                    sample_rate_multiplier))
+                            continue
 
                         Response_t, resp_loaded = \
                             self.get_response_t(
                                 das_model, sensor_model, sample_rate,
-                                sample_rate_multiplier, response_n_i)
+                                sample_rate_multiplier,
+                                d_response_n_i, a_response_n_i)
+
                         if Response_t:
                             gain = Response_t['gain/value_i']
                             bit_weight = Response_t['bit_weight/value_d']
@@ -223,7 +233,7 @@ class n_i_fix(object):
                             continue
         return stations
 
-    def get_response_t(self, d_model, s_model, s_rate, s_rate_m, n_i):
+    def get_response_t(self, d_model, s_model, s_rate, s_rate_m, d_n_i, a_n_i):
         """
         Receive:
           :para d_model: das_model from array_t
@@ -247,7 +257,7 @@ class n_i_fix(object):
         resp = None
         try:
             for response_t in self.noloaded_resp:
-                if response_t['n_i'] == n_i:
+                if response_t['n_i'] == d_n_i:
                     # Look for the matched n_i from original rows to get
                     # bit_weight and gain to form response_file_das_a
                     # for the condition when look in the loadeded_resp.
@@ -258,6 +268,8 @@ class n_i_fix(object):
                     gain = str(response_t['gain/value_i'])
 
             for response_t in self.loaded_resp:
+                if response_t['n_i'] != a_n_i:
+                    continue
                 b = str(response_t['bit_weight/value_d'])
                 g = str(response_t['gain/value_i'])
                 if b != bit_weight or g != gain:
