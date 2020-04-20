@@ -68,19 +68,37 @@ class n_i_fix(object):
         if not self.ph5.Response_t:
             self.ph5.read_response_t()
 
+        self.all_resp = self.ph5.Response_t['rows']
+        # list of das file names added by metadata
+        self.meta_loaded_das_file = []
         self.loaded_resp = []
         self.noloaded_resp = []
         self.last_loaded_n_i = -1
+
         for entry in self.ph5.Response_t['rows']:
+            if entry['n_i'] == -1:
+                # in metadata, if get no response data, n_i=-1
+                self.loaded_resp.append(entry)
+                continue
             if entry['response_file_das_a'] or entry['response_file_sensor_a']:
                 if not entry['response_file_das_a']:
                     LOGGER.warning("Response_t n_i=%s resonse_file_das_a has "
                                    "been deleted mannually." % entry['n_i'])
                 if (('ZLAND' not in entry['response_file_das_a']) and
                         (not entry['response_file_sensor_a'])):
-                    LOGGER.warning("Response_t n_i=%s resonse_file_sensor_a "
-                                   "has been deleted mannually."
-                                   % entry['n_i'])
+                    das_name_parts = entry['response_file_das_a'].replace(
+                        '/Experiment_g/Responses_g/', '').split('_')
+                    if das_name_parts[1].isdigit():
+                        # format created by resp_load: [dasmodel_sr_srm_g]
+                        # sensor_name should not be ''
+                        LOGGER.warning(
+                            "Response_t n_i=%s resonse_file_sensor_a "
+                            "has been deleted mannually." % entry['n_i'])
+                    else:
+                        # otherwise it created from metadata:
+                        #  [dasmodel_sensmodel_sr_chancode]
+                        self.meta_loaded_das_file.append(
+                            entry['response_file_das_a'])
                 self.loaded_resp.append(entry)
             else:
                 self.noloaded_resp.append(entry)
@@ -257,9 +275,11 @@ class n_i_fix(object):
         """
         d_filename = "/Experiment_g/Responses_g/%s_%s_%s_" % \
             (d_model.replace(" ", ""), s_rate, s_rate_m)
+        d_filename = d_filename.translate(None, ',-=.')
         s_filename = "/Experiment_g/Responses_g/%s" % s_model.replace(" ", "")
-
+        s_filename = s_filename.translate(None, ',-=.')
         resp = None
+        in_noloaded = False
         for response_t in self.noloaded_resp:
             if response_t['n_i'] == d_n_i:
                 # Look for the matched n_i from original rows to get
@@ -270,13 +290,17 @@ class n_i_fix(object):
                 resp = response_t
                 bit_weight = str(response_t['bit_weight/value_d'])
                 gain = str(response_t['gain/value_i'])
+                in_noloaded =True
 
         for response_t in self.loaded_resp:
             if response_t['n_i'] != a_n_i:
                 continue
+            if (response_t['response_file_das_a']
+                  in self.meta_loaded_das_file) or  a_n_i == -1:
+                return response_t, True
             b = str(response_t['bit_weight/value_d'])
             g = str(response_t['gain/value_i'])
-            if b != bit_weight or g != gain:
+            if in_noloaded and (b != bit_weight or g != gain):
                 continue
 
             if response_t['response_file_das_a'] == d_filename + str(g):
@@ -462,9 +486,10 @@ class n_i_fix(object):
                 LOGGER.info("Loaded {0}".format(name))
             else:
                 LOGGER.info("Reload {0}.".format(name))
-        except Exception as e:
+        except tables.NodeError as e:
             if "already has a child" not in str(e):
-                LOGGER.warning("Could not load {0}".format(name))
+                LOGGER.warning("Could not load {0} due to error: {1}".format(
+                    name, str(e)))
             else:
                 if self.reload_resp:
                     self.load_respdata(
@@ -556,13 +581,6 @@ class n_i_fix(object):
                              (i['s_model'], i['d_model'], i['s_rate'],
                               i['s_rate_m'], i['gain'], float(i['bit_w'])))
 
-        # ------------ add existing reponse entries to final_ret --------------
-        # Keep all rows of the original response_t to keep track with
-        # response_table_n_i in das table
-        final_ret = self.noloaded_resp
-        # add the rows that already has resp files
-        final_ret += self.loaded_resp
-
         # ------------ add new response enstries to final_ret -----------------
         # increase n_i by 1 from the last n_i
         n_i = self.last_loaded_n_i + 1
@@ -600,7 +618,7 @@ class n_i_fix(object):
             response_entry['gain/units_s'] = x['gain_u']
 
             response_entry['n_i'] = n_i
-            final_ret.append(response_entry)
+            self.all_resp.append(response_entry)
             data_update.append(item + [n_i])
             n_i += 1
 
@@ -613,7 +631,7 @@ class n_i_fix(object):
         ph5_object.ph5_g_responses.nuke_response_t()
 
         # populate response_t with entries from final_ret
-        for entry in final_ret:
+        for entry in self.all_resp:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
 
