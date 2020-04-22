@@ -304,35 +304,40 @@ class PH5toStationXMLParser(object):
         :param: longitude : the longitude to check against the arguments
             geographic constraints
         """
+        errors = []
         if not -90 <= float(latitude) <= 90:
-            return "Lat %s not in range [-90,90]" % latitude
-        elif not -180 <= float(longitude) <= 180:
-            return "Lon %s not in range [-180,180]" % longitude
-        # if lat/lon box intersection
-        elif not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
-                                               sta_xml_obj.maxlatitude,
-                                               sta_xml_obj.minlongitude,
-                                               sta_xml_obj.maxlongitude,
-                                               latitude,
-                                               longitude):
-            return "Box intersection: Lat %s not in range [%s,%s] "\
-                "or Lon %s not in range [%s,%s]" % \
+            errors.append("Lat %s not in range [-90,90]" % latitude)
+
+        if not -180 <= float(longitude) <= 180:
+            errors.append("Lon %s not in range [-180,180]" % longitude)
+        # check if lat/lon box intersection
+        if not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
+                                             sta_xml_obj.maxlatitude,
+                                             sta_xml_obj.minlongitude,
+                                             sta_xml_obj.maxlongitude,
+                                             latitude,
+                                             longitude):
+            errors.append(
+                "Box intersection: Lat %s not in range [%s,%s] "
+                "or Lon %s not in range [%s,%s]" %
                 (latitude, sta_xml_obj.minlatitude, sta_xml_obj.maxlatitude,
                  longitude, sta_xml_obj.minlongitude, sta_xml_obj.maxlongitude)
+            )
         # check if point/radius intersection
-        elif not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
-                                                 sta_xml_obj.longitude,
-                                                 sta_xml_obj.minradius,
-                                                 sta_xml_obj.maxradius,
-                                                 latitude,
-                                                 longitude):
-            return "lat,lon=%s,%s: radial intersection between a point "\
-                "radius boundary [%s, %s] and a lat/lon point [%s, %s]" % \
+        if not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
+                                               sta_xml_obj.longitude,
+                                               sta_xml_obj.minradius,
+                                               sta_xml_obj.maxradius,
+                                               latitude,
+                                               longitude):
+            errors.append(
+                "lat,lon=%s,%s: radial intersection between a point "
+                "radius boundary [%s, %s] and a lat/lon point [%s, %s]" %
                 (latitude, longitude,
                  sta_xml_obj.minradius, sta_xml_obj.maxradius,
-                 sta_xml_obj.latitude, sta_xml_obj.longitude)
-        else:
-            return True
+                 sta_xml_obj.latitude, sta_xml_obj.longitude))
+
+        return errors
 
     def read_arrays(self, name):
         if name is None:
@@ -690,15 +695,15 @@ class PH5toStationXMLParser(object):
                             station_code = station_entry['seed_station_name_s']
                         else:
                             station_code = sta_id
-                        check_lat_lon = self.is_lat_lon_match(
+                        lat_lon_errs = self.is_lat_lon_match(
                             sta_xml_obj,
                             latitude,
                             longitude)
-                        if isinstance(check_lat_lon, str):
+                        for e in lat_lon_errs:
                             msg = "array %s, station %s, channel %s: %s" % \
-                                (station_code, array_code,
+                                (array_code, station_code,
                                  station_entry['channel_number_i'],
-                                 check_lat_lon)
+                                 e)
                             self.add_uni_errmsg(msg)
                             continue
 
@@ -811,11 +816,11 @@ class PH5toStationXMLParser(object):
                 if not ph5utils.does_pattern_exists(location_patterns,
                                                     loc_code):
                     continue
-                check_lat_lon = self.is_lat_lon_match(
+                lat_lon_errs = self.is_lat_lon_match(
                     sta_xml_obj,
                     latitude,
                     longitude)
-                if isinstance(check_lat_lon, str):
+                if lat_lon_errs != []:
                     continue
                 start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
                 end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
