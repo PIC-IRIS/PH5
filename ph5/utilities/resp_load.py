@@ -288,8 +288,8 @@ class n_i_fix(object):
                 # resp is is the row to return at the end when can't find
                 # a match row in loaded_resp
                 resp = response_t
-                bit_weight = str(response_t['bit_weight/value_d'])
-                gain = str(response_t['gain/value_i'])
+                bit_weight = response_t['bit_weight/value_d']
+                gain = response_t['gain/value_i']
                 in_noloaded =True
 
         for response_t in self.loaded_resp:
@@ -298,8 +298,8 @@ class n_i_fix(object):
             if (response_t['response_file_das_a']
                   in self.meta_loaded_das_file) or  a_n_i == -1:
                 return response_t, True
-            b = str(response_t['bit_weight/value_d'])
-            g = str(response_t['gain/value_i'])
+            b = response_t['bit_weight/value_d']
+            g = response_t['gain/value_i']
             if in_noloaded and (b != bit_weight or g != gain):
                 continue
 
@@ -518,6 +518,7 @@ class n_i_fix(object):
           corresponding to rows withresp_loaded=False
           + n_i will be updated for the rows in the input array_t
         """
+
         ph5table = self.ph5.ph5
 
         # load response files from the paths in input.csv
@@ -566,14 +567,14 @@ class n_i_fix(object):
         data_update = []
         for station in data:
             data_list.append(
-                {'d_model': str(station.das_model),
-                 's_model': str(station.sensor_model),
-                 's_rate': str(station.sample_rate),
-                 's_rate_m': str(station.sample_rate_multiplier),
-                 'gain': str(station.gain),
-                 'bit_w': str(station.bit_weight),
-                 'bit_w_u': str(station.bit_weight_units),
-                 'gain_u': str(station.gain_units),
+                {'d_model': station.das_model,
+                 's_model': station.sensor_model,
+                 's_rate': station.sample_rate,
+                 's_rate_m': station.sample_rate_multiplier,
+                 'gain': station.gain,
+                 'bit_w': station.bit_weight,
+                 'bit_w_u': station.bit_weight_units,
+                 'gain_u': station.gain_units,
                  'n_i': station.response_n_i})
 
         unique_list = map(dict, set(tuple(sorted(x.items()))
@@ -640,12 +641,12 @@ class n_i_fix(object):
             if station.array not in self.array:
                 continue
             for x in data_update:
-                if str(station.das_model) == x[0] and \
-                   str(station.sensor_model) == x[1] and \
-                   str(station.sample_rate) == x[2] and \
-                   str(station.sample_rate_multiplier) == x[3] and \
-                   str(station.gain) == x[4] and \
-                   str(station.bit_weight) == x[5]:
+                if station.das_model == x[0] and \
+                   station.sensor_model == x[1] and \
+                   station.sample_rate == x[2] and \
+                   station.sample_rate_multiplier == x[3] and \
+                   station.gain == x[4] and \
+                   station.bit_weight == x[5]:
                     station.response_n_i = x[6]
                     break
             """
@@ -755,7 +756,8 @@ def main():
         import time
         time.sleep(5)
         fix_n_i.update_kefs(args.ph5path, args.array, new_data)
-    ph5API_object.close()
+        ph5API_object.close()
+
 
 if __name__ == '__main__':
     main()
