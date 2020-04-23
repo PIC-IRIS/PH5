@@ -8,12 +8,13 @@ loads the RESP files and create new array and response kefs
 import sys
 import os
 import argparse
-from ph5 import LOGGING_FORMAT
-from ph5.core import ph5utils, ph5api, experiment, columns
-import tables
 import subprocess
 import logging
 
+import tables
+
+from ph5 import LOGGING_FORMAT
+from ph5.core import ph5utils, ph5api, columns
 
 PROG_VERSION = "2018.268"
 LOGGER = logging.getLogger(__name__)
@@ -217,7 +218,7 @@ class n_i_fix(object):
                                 "Error when processing array {0} "
                                 "station{1} chan{2} spr{3} mspr{4}:{5}".
                                 format(array_name, id_s, channel, sample_rate,
-                                    sample_rate_multiplier, str(e)))
+                                       sample_rate_multiplier, str(e)))
                             continue
 
                         response_n_i = None
@@ -290,13 +291,13 @@ class n_i_fix(object):
                 resp = response_t
                 bit_weight = response_t['bit_weight/value_d']
                 gain = response_t['gain/value_i']
-                in_noloaded =True
+                in_noloaded = True
 
         for response_t in self.loaded_resp:
             if response_t['n_i'] != a_n_i:
                 continue
-            if (response_t['response_file_das_a']
-                  in self.meta_loaded_das_file) or  a_n_i == -1:
+            if (response_t['response_file_das_a'] in self.meta_loaded_das_file
+                    or a_n_i == -1):
                 return response_t, True
             b = response_t['bit_weight/value_d']
             g = response_t['gain/value_i']
@@ -738,7 +739,9 @@ def main():
     if args.array:
         args.array = args.array.split(',')
 
-    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname, editmode=True)
+    ph5API_object = ph5api.PH5(path=args.ph5path,
+                               nickname=args.nickname,
+                               editmode=True)
 
     fix_n_i = n_i_fix(ph5API_object, args.reload_resp, args.skip_response_t,
                       args.array)
@@ -753,8 +756,6 @@ def main():
         if args.skip_response_t:
             ph5API_object.close()
             sys.exit()
-        import time
-        time.sleep(5)
         fix_n_i.update_kefs(args.ph5path, args.array, new_data)
         ph5API_object.close()
 
