@@ -480,12 +480,13 @@ class n_i_fix(object):
         try:
             if not first_load:
                 ph5.remove_node(ph5.root.Experiment_g.Responses_g, name)
+                loaded_list.remove(name)
             ph5.create_array(ph5.root.Experiment_g.Responses_g, name, data)
             loaded_list.append(name)
             if first_load:
                 LOGGER.info("Loaded {0}".format(name))
             else:
-                LOGGER.info("Reload {0}.".format(name))
+                LOGGER.info("Reloaded {0}.".format(name))
         except tables.NodeError as e:
             if "already has a child" not in str(e):
                 LOGGER.warning("Could not load {0} due to error: {1}".format(
@@ -517,7 +518,7 @@ class n_i_fix(object):
           corresponding to rows withresp_loaded=False
           + n_i will be updated for the rows in the input array_t
         """
-        ph5 = tables.open_file(os.path.join(path, nickname), "a")
+        ph5table = self.ph5.ph5
 
         # load response files from the paths in input.csv
         with open(input_csv, "r") as f:
@@ -544,7 +545,8 @@ class n_i_fix(object):
                         if das_data is not None:
                             name = name.replace(" ", "")
                             name = name.translate(None, ',-=.')
-                            self.load_respdata(ph5, name, das_data, loaded_das)
+                            self.load_respdata(
+                                ph5table, name, das_data, loaded_das)
 
                 if len(line_list) >= 6:
                     if line_list[6] == '\n':
@@ -555,9 +557,8 @@ class n_i_fix(object):
                             name = line_list[1].replace(" ", "")
                             name = name.translate(None, ',-=.')
                             self.load_respdata(
-                                ph5, name, sensor_data, loaded_sensor)
+                                ph5table, name, sensor_data, loaded_sensor)
 
-        ph5.close()
         if self.skip_response_t:
             return
 
@@ -623,19 +624,13 @@ class n_i_fix(object):
             n_i += 1
 
         # ---------------------- update response_t ----------------------------
-        ph5_object = experiment.ExperimentGroup(nickname=nickname,
-                                                currentpath=path)
-        ph5_object.ph5open(True)
-        ph5_object.initgroup()
         # delete response_t
-        ph5_object.ph5_g_responses.nuke_response_t()
+        self.ph5.ph5_g_responses.nuke_response_t()
 
         # populate response_t with entries from final_ret
         for entry in self.all_resp:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
-
-        ph5_object.ph5close()
 
         LOGGER.info("response_t.kef written into PH5")
 
@@ -742,14 +737,12 @@ def main():
     if args.array:
         args.array = args.array.split(',')
 
-    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
+    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname, editmode=True)
 
     fix_n_i = n_i_fix(ph5API_object, args.reload_resp, args.skip_response_t,
                       args.array)
 
     data = fix_n_i.create_list()
-
-    ph5API_object.close()
 
     if args.input_csv is None:
         fix_n_i.create_template(data)
@@ -757,11 +750,12 @@ def main():
         new_data = fix_n_i.load_response(
             args.ph5path, args.nickname, data, args.input_csv)
         if args.skip_response_t:
+            ph5API_object.close()
             sys.exit()
         import time
         time.sleep(5)
         fix_n_i.update_kefs(args.ph5path, args.array, new_data)
-
+    ph5API_object.close()
 
 if __name__ == '__main__':
     main()
