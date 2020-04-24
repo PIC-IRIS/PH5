@@ -16,7 +16,7 @@ import tables
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5utils, ph5api, columns
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2020.115"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -612,9 +612,12 @@ class n_i_fix(object):
                 name = '/Experiment_g/' +\
                        'Responses_g/' + sens
                 response_entry['response_file_sensor_a'] = name
-            elif not x['d_model'].startswith('ZLAND'):
+            elif x['d_model'].startswith('ZLAND'):
+                response_entry['response_file_sensor_a'] = ''
+            else:
                 # Skip updating if no s_model and d_model not ZLAND
                 continue
+
             response_entry['bit_weight/value_d'] = x['bit_w']
             response_entry['bit_weight/units_s'] = x['bit_w_u']
             response_entry['gain/value_i'] = x['gain']
