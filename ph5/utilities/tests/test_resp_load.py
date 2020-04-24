@@ -6,12 +6,52 @@ import sys
 import unittest
 import copy
 
+import tables
 from mock import patch
 from testfixtures import LogCapture
 
 from ph5.core import ph5api
 from ph5.utilities import resp_load, segd2ph5, metadatatoph5, obspytoph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
+
+
+class Test_n_i_fix_main(TempDirTestCase, LogTestCase):
+    def test_main(self):
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
+                    os.path.join(self.home, "ph5/test_data/segd/3ch.fcnt")]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        testargs = [
+            'resp_load', '-n', 'master.ph5', '-a', '1,2', '-i',
+            os.path.join(self.home, 'ph5/test_data/metadata/input.csv')]
+        with patch.object(sys, 'argv', testargs):
+                resp_load.main()
+        self.ph5API_object = ph5api.PH5(path='.', nickname='master.ph5')
+        # check array_t
+        self.ph5API_object.read_array_t('Array_t_001')
+        entries = self.ph5API_object.Array_t['Array_t_001']['byid']['500'][1]
+        for a in entries:
+            self.assertEqual(a['response_table_n_i'], 1)
+
+        # check response_t
+        response_t = self.ph5API_object.get_response_t_by_n_i(1)
+        self.assertEqual(response_t['response_file_das_a'],
+                         '/Experiment_g/Responses_g/ZLAND3C_500_1_24')
+
+        # check response data loaded for all response files listed in input.csv
+        try:
+            self.ph5API_object.ph5.get_node('/Experiment_g/Responses_g/',
+                                            'ZLAND3C_500_1_24')
+            self.ph5API_object.ph5.get_node('/Experiment_g/Responses_g/',
+                                            'cmg3t')
+            self.ph5API_object.ph5.get_node('/Experiment_g/Responses_g/',
+                                            'gs11v')
+            self.ph5API_object.ph5.get_node('/Experiment_g/Responses_g/',
+                                            'rt125a_500_1_32')
+            self.ph5API_object.ph5.get_node('/Experiment_g/Responses_g/',
+                                            'rt130_100_1_1')
+        except tables.NoSuchNodeError as e:
+            raise AssertionError(e)
 
 
 class Test_n_i_fix(TempDirTestCase, LogTestCase):
@@ -55,7 +95,7 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
         self.ph5API_object = ph5api.PH5(path='.',
                                         nickname='master.ph5',
                                         editmode=True)
-        self.n_i_fix = resp_load.n_i_fix(self.ph5API_object, False, False,
+        self.n_i_fix = resp_load.n_i_fix(self.ph5API_object, False, True,
                                          ['1', '2', '3', '4'])
 
     def tearDown(self):
@@ -65,8 +105,9 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
     def test_init(self):
         self.assertEqual(self.n_i_fix.array, ['1', '2', '3', '4'])
         self.assertEqual(self.n_i_fix.reload_resp, False)
-        self.assertEqual(self.n_i_fix.skip_response_t, False)
+        self.assertEqual(self.n_i_fix.skip_update_resp, True)
         self.assertEqual(self.n_i_fix.last_loaded_n_i, 2)
+
         # check noloaded_resp
         self.assertEqual(self.n_i_fix.noloaded_resp[0]['n_i'], 0)
         self.assertEqual((self.n_i_fix.noloaded_resp[0]['bit_weight/value_d']),
@@ -160,36 +201,69 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
         # check total entries in response_t
         entries = self.n_i_fix.ph5.Response_t['rows']
         old_entries = copy.copy(entries)
+
+        # skip_update_resp = True
         data = self.n_i_fix.create_list()
         ret = self.n_i_fix.load_response(
             '.', 'master.ph5', data,
             os.path.join(self.home, 'ph5/test_data/metadata/input.csv'))
-        # check array data
-        self.assertEqual(
-            (ret[0].array, ret[0].id_s, ret[0].channel, ret[0].response_n_i),
-            ('1', '500', 1, 3))
-        self.assertEqual(
-            (ret[1].array, ret[1].id_s, ret[1].channel, ret[1].response_n_i),
-            ('1', '500', 2, 3))
-        self.assertEqual(
-            (ret[2].array, ret[2].id_s, ret[2].channel, ret[2].response_n_i),
-            ('1', '500', 3, 3))
-        self.assertEqual(
-            (ret[3].array, ret[3].id_s, ret[3].channel, ret[3].response_n_i),
-            ('2', '0407', 1, 1))
-        self.assertEqual(
-            (ret[4].array, ret[4].id_s, ret[4].channel, ret[4].response_n_i),
-            ('3', '0407', 1, 2))
-        self.assertEqual(
-            (ret[5].array, ret[5].id_s, ret[5].channel, ret[5].response_n_i),
-            ('4', '0407', -2, -1))
 
-        # check response data has one more entry with new n_i created
-        self.assertEqual(len(entries), 5)
+        # no data returned, response_t not changed
+        self.assertEqual(ret, None)
+        self.assertEqual(entries, old_entries)
+        # check response data loaded for all response files listed in input.csv
+        try:
+            self.n_i_fix.ph5.ph5.get_node('/Experiment_g/Responses_g/',
+                                          'ZLAND3C_500_1_24')
+            self.n_i_fix.ph5.ph5.get_node('/Experiment_g/Responses_g/',
+                                          'cmg3t')
+            self.n_i_fix.ph5.ph5.get_node('/Experiment_g/Responses_g/',
+                                          'gs11v')
+            self.n_i_fix.ph5.ph5.get_node('/Experiment_g/Responses_g/',
+                                          'rt125a_500_1_32')
+            self.n_i_fix.ph5.ph5.get_node('/Experiment_g/Responses_g/',
+                                          'rt130_100_1_1')
+        except tables.NoSuchNodeError as e:
+            raise AssertionError(e)
+
+        # skip_update_resp = False
+        new_n_i = self.n_i_fix.last_loaded_n_i + 1
+        self.n_i_fix.skip_update_resp = False
+        ret = self.n_i_fix.load_response(
+            '.', 'master.ph5', data,
+            os.path.join(self.home, 'ph5/test_data/metadata/input.csv'))
+
+        self.assertEqual(self.n_i_fix.last_loaded_n_i, new_n_i)
+        # check array_t
+        self.assertEqual((ret[0].array, ret[0].das_model,
+                          ret[0].channel, ret[0].response_n_i),
+                         ('1', 'ZLAND3C', 1, new_n_i))
+        self.assertEqual((ret[1].array, ret[1].das_model,
+                          ret[1].channel, ret[1].response_n_i),
+                         ('1', 'ZLAND3C', 2, new_n_i))
+        self.assertEqual((ret[2].array, ret[2].das_model,
+                          ret[2].channel, ret[2].response_n_i),
+                         ('1', 'ZLAND3C', 3, new_n_i))
+        self.assertEqual((ret[3].array, ret[3].das_model,
+                          ret[3].channel, ret[3].response_n_i),
+                         ('2', 'NoneQ330', 1, 1))
+        self.assertEqual((ret[4].array, ret[4].das_model,
+                          ret[4].channel, ret[4].response_n_i),
+                         ('3', 'NoneQ330', 1, 2))
+        self.assertEqual((ret[5].array, ret[5].das_model,
+                          ret[5].channel, ret[5].response_n_i),
+                         ('4', 'NoneQ330', -2, -1))
+
+        # check response_t has one more entry
+        # with new n_i increase 1 from last n_i
+        self.assertEqual(len(entries), len(old_entries) + 1)
         self.assertEqual(entries[0:4], old_entries)
-        self. assertEqual(entries[4]['bit_weight/value_d'],
-                          1.880399419308285e-05)
-        self.assertEqual(entries[4]['n_i'], 3)
+        self.assertEqual(entries[4]['n_i'], new_n_i)
+        self.assertAlmostEqual(entries[4]['bit_weight/value_d'],
+                               1.8803994193e-05, 10)
+        self.assertEqual(entries[4]['response_file_das_a'],
+                         '/Experiment_g/Responses_g/ZLAND3C_500_1_24')
+        self.assertEqual(entries[4]['response_file_sensor_a'], '')
 
     def test_load_respdata(self):
         data = self.n_i_fix.read_respdata(
