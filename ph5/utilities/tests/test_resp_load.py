@@ -25,7 +25,7 @@ class Test_n_i_fix_main(TempDirTestCase, LogTestCase):
             'resp_load', '-n', 'master.ph5', '-a', '1,2', '-i',
             os.path.join(self.home, 'ph5/test_data/metadata/input.csv')]
         with patch.object(sys, 'argv', testargs):
-                resp_load.main()
+            resp_load.main()
         self.ph5API_object = ph5api.PH5(path='.', nickname='master.ph5')
         # check array_t
         self.ph5API_object.read_array_t('Array_t_001')
