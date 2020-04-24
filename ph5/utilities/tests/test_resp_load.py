@@ -106,7 +106,7 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
         self.assertEqual(self.n_i_fix.array, ['1', '2', '3', '4'])
         self.assertEqual(self.n_i_fix.reload_resp, False)
         self.assertEqual(self.n_i_fix.skip_update_resp, True)
-        self.assertEqual(self.n_i_fix.last_loaded_n_i, 2)
+        self.assertEqual(self.n_i_fix.last_n_i, 2)
 
         # check noloaded_resp
         self.assertEqual(self.n_i_fix.noloaded_resp[0]['n_i'], 0)
@@ -227,13 +227,13 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
             raise AssertionError(e)
 
         # skip_update_resp = False
-        new_n_i = self.n_i_fix.last_loaded_n_i + 1
+        new_n_i = self.n_i_fix.last_n_i + 1
         self.n_i_fix.skip_update_resp = False
         ret = self.n_i_fix.load_response(
             '.', 'master.ph5', data,
             os.path.join(self.home, 'ph5/test_data/metadata/input.csv'))
 
-        self.assertEqual(self.n_i_fix.last_loaded_n_i, new_n_i)
+        self.assertEqual(self.n_i_fix.last_n_i, new_n_i)
         # check array_t
         self.assertEqual((ret[0].array, ret[0].das_model,
                           ret[0].channel, ret[0].response_n_i),
