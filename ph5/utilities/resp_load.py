@@ -58,11 +58,11 @@ class Station(object):
 
 class n_i_fix(object):
 
-    def __init__(self, ph5API_object, reload_resp, skip_response_t, array=[]):
+    def __init__(self, ph5API_object, reload_resp, skip_update_resp, array=[]):
         self.ph5 = ph5API_object
         self.array = array
         self.reload_resp = reload_resp
-        self.skip_response_t = skip_response_t
+        self.skip_update_resp = skip_update_resp
 
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
@@ -74,7 +74,7 @@ class n_i_fix(object):
         self.meta_loaded_das_file = []
         self.loaded_resp = []
         self.noloaded_resp = []
-        self.last_loaded_n_i = -1
+        self.last_n_i = -1
 
         for entry in self.ph5.Response_t['rows']:
             if entry['n_i'] == -1:
@@ -103,8 +103,8 @@ class n_i_fix(object):
                 self.loaded_resp.append(entry)
             else:
                 self.noloaded_resp.append(entry)
-            if self.last_loaded_n_i < entry['n_i']:
-                self.last_loaded_n_i = entry['n_i']
+            if self.last_n_i < entry['n_i']:
+                self.last_n_i = entry['n_i']
 
     def read_arrays(self, name):
         if name is None:
@@ -203,7 +203,7 @@ class n_i_fix(object):
                         if d_response_n_i is None:
                             LOGGER.warning(
                                 "No DAS table found for das {0} chan {1} - "
-                                "spr {3} - msrpr {4}.\n".format(
+                                "spr {2} - msrpr {3}.\n".format(
                                     serial, channel, sample_rate,
                                     sample_rate_multiplier))
                             continue
@@ -561,7 +561,7 @@ class n_i_fix(object):
                             self.load_respdata(
                                 ph5table, name, sensor_data, loaded_sensor)
 
-        if self.skip_response_t:
+        if self.skip_update_resp:
             return
 
         data_list = []
@@ -586,7 +586,7 @@ class n_i_fix(object):
 
         # ------------ add new response enstries to final_ret -----------------
         # increase n_i by 1 from the last n_i
-        n_i = self.last_loaded_n_i + 1
+        self.last_n_i = n_i = self.last_n_i + 1
         for x in unique_list:
             response_entry = {}
             item = [x['d_model'], x['s_model'], x['s_rate'], x['s_rate_m'],
@@ -706,11 +706,11 @@ def get_args():
 
     parser.add_argument(
         "-s",
-        "--skip_response_t",
+        "--skip_update_resp",
         action="store_true",
         help=("Load response data in response_g "
               "but skip updating response_t."),
-        dest="skip_response_t",
+        dest="skip_update_resp",
         default=False)
 
     args = parser.parse_args()
@@ -746,7 +746,7 @@ def main():
                                nickname=args.nickname,
                                editmode=True)
 
-    fix_n_i = n_i_fix(ph5API_object, args.reload_resp, args.skip_response_t,
+    fix_n_i = n_i_fix(ph5API_object, args.reload_resp, args.skip_update_resp,
                       args.array)
 
     data = fix_n_i.create_list()
@@ -756,7 +756,7 @@ def main():
     else:
         new_data = fix_n_i.load_response(
             args.ph5path, args.nickname, data, args.input_csv)
-        if args.skip_response_t:
+        if args.skip_update_resp:
             ph5API_object.close()
             sys.exit()
         fix_n_i.update_kefs(args.ph5path, args.array, new_data)
