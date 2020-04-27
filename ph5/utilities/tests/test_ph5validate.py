@@ -1,54 +1,22 @@
 '''
-Tests for metadatatoph5
+Tests for ph5validate
 '''
 import unittest
-import logging
-from StringIO import StringIO
-from ph5 import logger, ch
-from ph5.core import ph5api, experiment
+
 from ph5.utilities import ph5validate, texan2ph5, kef2ph5
-import os
-import shutil
-import tempfile
-from contextlib import contextmanager
+from ph5.core import ph5api
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
+    initialize_ex
 
 
-@contextmanager
-def captured_log():
-    capture = StringIO()
-    try:
-        chan = logging.StreamHandler(capture)
-        logger.removeHandler(ch)
-        logger.addHandler(chan)
-        yield capture
-    finally:
-        logger.removeHandler(chan)
-        logger.addHandler(ch)
-
-
-def initialize_ph5(nickname, path, editmode=False):
-    ex = experiment.ExperimentGroup(nickname=nickname, currentpath=path)
-    ex.ph5open(editmode)
-    ex.initgroup()
-    return ex
-
-
-def get_dir():
-    home = os.getcwd()
-    tmpdir = tempfile.mkdtemp()
-    os.chdir(tmpdir)
-    return home, tmpdir
-
-
-class TestPh5Validate(unittest.TestCase):
+class TestPh5Validate(TempDirTestCase, LogTestCase):
     def setUp(self):
-        # create tmpdir
-        self.home, self.tmpdir = get_dir()
+        super(TestPh5Validate, self).setUp()
         kefpath = self.home + "/ph5/test_data/metadata/array_t_9_validate.kef"
         datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
 
         # initiate ph5
-        ex = initialize_ph5("master.ph5", self.tmpdir, True)
+        ex = initialize_ex("master.ph5", self.tmpdir, True)
 
         # add texan data
         texan2ph5.EX = ex
@@ -56,16 +24,14 @@ class TestPh5Validate(unittest.TestCase):
         texan2ph5.FIRST_MINI = 1
         texan2ph5.WINDOWS = None
         texan2ph5.SR = None
-        with captured_log():
-            texan2ph5.process()
+        texan2ph5.process()
 
         # add array table
         kef2ph5.EX = ex
         kef2ph5.KEFFILE = kefpath
         kef2ph5.PH5 = "master.ph5"
         kef2ph5.TRACE = False
-        with captured_log():
-            kef2ph5.populateTables()
+        kef2ph5.populateTables()
 
         try:
             ex.ph5close()
@@ -80,22 +46,8 @@ class TestPh5Validate(unittest.TestCase):
             level="ERROR", outfile="ph5_validate.log")
 
     def tearDown(self):
-        try:
-            self.ph5_object.ph5close()
-        except BaseException:
-            pass
-
-        if self._resultForDoCleanups.wasSuccessful():
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception as e:
-                print("Cannot remove %s due to the error:%s" %
-                      (self.tmpdir, str(e)))
-        else:
-            errmsg = "%s has FAILED. Inspect files created in %s." \
-                % (self._testMethodName, self.tmpdir)
-            print(errmsg)
-        os.chdir(self.home)
+        self.ph5_object.ph5close()
+        super(TestPh5Validate, self).tearDown()
 
     def test_analyze_time(self):
         """
@@ -177,8 +129,7 @@ class TestPh5Validate(unittest.TestCase):
         station['deploy_time/epoch_l'] = 1550850190
         station['pickup_time/epoch_l'] = 1550850191
         DT['time_windows'][2] = (1550850190, 1550850191, '9003')
-        with captured_log():
-            ret = self.ph5validate.check_station_completeness(station)
+        ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
         self.assertIn("No data found for das serial number 12183 during this "
                       "station's time. You may need to reload the raw data "
@@ -189,8 +140,7 @@ class TestPh5Validate(unittest.TestCase):
         station['das/serial_number_s'] = '1218'
         self.ph5validate.das_time[('1218', 1, 500)] = \
             self.ph5validate.das_time[('12183', 1, 500)]
-        with captured_log():
-            ret = self.ph5validate.check_station_completeness(station)
+        ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
