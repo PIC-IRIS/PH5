@@ -2,48 +2,43 @@
 Tests for ph5validate
 '''
 import unittest
+import os
+import sys
 
-from ph5.utilities import ph5validate, texan2ph5, kef2ph5
+from mock import patch
+from testfixtures import OutputCapture
+
+from ph5.utilities import ph5validate, texan2ph5, kef2ph5, initialize_ph5
 from ph5.core import ph5api
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
-    initialize_ex
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
 class TestPh5Validate(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestPh5Validate, self).setUp()
-        kefpath = self.home + "/ph5/test_data/metadata/array_t_9_validate.kef"
-        datapath = self.home + "/ph5/test_data/rt125a/I2183RAW.TRD"
-
-        # initiate ph5
-        ex = initialize_ex("master.ph5", self.tmpdir, True)
-
-        # add texan data
-        texan2ph5.EX = ex
-        texan2ph5.FILES = [datapath]
-        texan2ph5.FIRST_MINI = 1
-        texan2ph5.WINDOWS = None
-        texan2ph5.SR = None
-        texan2ph5.process()
-
-        # add array table
-        kef2ph5.EX = ex
-        kef2ph5.KEFFILE = kefpath
-        kef2ph5.PH5 = "master.ph5"
-        kef2ph5.TRACE = False
-        kef2ph5.populateTables()
-
-        try:
-            ex.ph5close()
-            texan2ph5.EXREC.ph5close()
-        except Exception:
-            pass
+        # create master.ph5
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+        # add data
+        testargs = ['texan2ph5', '-n', 'master.ph5', '-r',
+                    os.path.join(self.home,
+                                 "ph5/test_data/rt125a/I2183RAW.TRD")]
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture():
+                texan2ph5.main()
+        # add metadata
+        testargs = ['kef2ph5', '-n', 'master.ph5', '-k',
+                    os.path.join(
+                        self.home,
+                        "ph5/test_data/metadata/array_t_9_validate.kef")]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
 
         self.ph5_object = ph5api.PH5(
             nickname='master.ph5', path=self.tmpdir)
         self.ph5validate = ph5validate.PH5Validate(
-            self.ph5_object, self.tmpdir,
-            level="ERROR", outfile="ph5_validate.log")
+            self.ph5_object, self.tmpdir, outfile="ph5_validate.log")
 
     def tearDown(self):
         self.ph5_object.ph5close()
@@ -51,8 +46,8 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
 
     def test_analyze_time(self):
         """
-        test analyze_method to see if das_time created has all time and station
-        info. Does it catch the case data exists before or after the whole
+        + check if das_time created has all time and station info
+        + check if it catch the case data exists before or after the whole
         time range?
         """
         self.ph5validate.analyze_time()
