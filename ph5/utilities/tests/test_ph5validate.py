@@ -170,8 +170,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
 
         # check error overlaping
         # => change deploy time of the 3rd station
-        DT['time_windows'][2] = \
-            (1550850090, 1550850187, '9003')
+        DT['time_windows'][2] = (1550850090, 1550850187, '9003')
         ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
         self.assertIn('Overlap time on station(s): 9002, 9003', errors)
@@ -191,8 +190,8 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         # check no data found errors
         station = arraybyid.get('9002')[1][0]
         station['das/serial_number_s'] = '1218'
-        self.ph5validate.das_time[('1218', 1, 500)] = \
-            self.ph5validate.das_time[('12183', 1, 500)]
+        self.ph5validate.das_time[
+            ('1218', 1, 500)] = self.ph5validate.das_time[('12183', 1, 500)]
         ret = self.ph5validate.check_station_completeness(station)
         errors = ret[2]
         self.assertIn("No data found for das serial number 1218. "
