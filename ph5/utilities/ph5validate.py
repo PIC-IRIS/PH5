@@ -36,17 +36,15 @@ class ValidationBlock(object):
         self.error = error
 
     def write_to_log(self, log_file, level):
+        log_file.write(self.heading)
         if self.error and (level == "INFO" or level == "WARNING" or
                            level == "ERROR"):
-            log_file.write(self.heading)
             for e in self.error:
                 log_file.write("ERROR: {}\n".format(e))
         if self.warning and (level == "INFO" or level == "WARNING"):
-            log_file.write(self.heading)
             for w in self.warning:
                 log_file.write("WARNING: {}\n".format(w))
         if self.info and level == "INFO":
-            log_file.write(self.heading)
             for i in self.info:
                 log_file.write("INFO: {}\n".format(i))
 
@@ -299,7 +297,7 @@ class PH5Validate(object):
         if info1 or warning1 or error1 or \
            info2 or warning2 or error2:
             header = ("-=-=-=-=-=-=-=-=-\n"
-                      "Exeriment_t\n"
+                      "Experiment_t\n"
                       "{0} error, {1} warning, {2} info\n"
                       "-=-=-=-=-=-=-=-=-\n"
                       .format(len(error1) + len(error2),
@@ -405,7 +403,7 @@ class PH5Validate(object):
             station['response_table_n_i'])
         if response_t is None:
             error.append("No Response table found. "
-                         "Have you run load_resp yet?")
+                         "Have you run resp_load yet?")
 
         # CHANNEL LOCATION
         if station['location/X/value_d'] == 0:
@@ -473,11 +471,6 @@ class PH5Validate(object):
         if deploy_time == DT['min_deploy_time'][0]:
             try:
                 warning.append(DT['min_deploy_time'][1])
-            except IndexError:
-                pass
-        if pickup_time == DT['max_pickup_time'][0]:
-            try:
-                warning.append(DT['max_pickup_time'][1])
             except IndexError:
                 pass
 
@@ -562,7 +555,6 @@ class PH5Validate(object):
         if not station['das/model_s']:
             warning.append("DAS model is missing. "
                            "Is this correct???")
-
         return info, warning, error
 
     def analyze_time(self):
@@ -575,12 +567,9 @@ class PH5Validate(object):
         * min_deploy_time: [item1, item2]:
           item1: min_deploy_time value
           item2: error message if there is any data before the min deploy
-        * max_pickup_time: [item1, item2]
-          item1: max_deploy_time value
-          item2: error message if there is any data after max deploy
 
         self.das_time will help check_station_completness with:
-        * reporting error outside min_deploy_time, max_pickup_time
+        * reporting error about data exits before the first deploy time
         * check overlaping time
         * correctly check data exist from a station pickup time to the
         next deploy time available
@@ -622,12 +611,8 @@ class PH5Validate(object):
                 warningmsg = "Data exists before deploy time: %s seconds." \
                     % time
                 DT['min_deploy_time'].append(warningmsg)
-
-            if DT['max_pickup_time'][0] < true_pickup:
-                time = int(true_pickup - DT['max_pickup_time'][0])
-                warningmsg = "Data exists after pickup time: %s seconds." \
-                    % time
-                DT['max_pickup_time'].append(warningmsg)
+            # Don't check Data exitsts after pickup time here
+            # it will be check in check_station_completeness
 
     def check_array_t(self):
         LOGGER.info("Validating Array_t")
@@ -851,15 +836,15 @@ def get_args():
     if args.level != "ERROR" and args.level != "WARNING" and \
             args.level != "INFO":
         raise ValueError("Invalid logging level.")
+
     if args.nickname is not None:
         PH5 = args.nickname
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-        LOGGER.error("{0} not found.".format(PH5))
-        sys.exit()
+        raise ValueError("{0} not found.".format(PH5))
     else:
         # Set up logging
         # Write log to file
-        ch = logging.FileHandler(os.path.join('.', "125a2ph5.log"))
+        ch = logging.FileHandler(os.path.join('.', "ph5_validate.log"))
         if args.level == "ERROR":
             ch.setLevel(logging.ERROR)
         elif args.level == "WARNING":
