@@ -628,7 +628,7 @@ def writeINDEX():
 
 def updatePH5(f):
     global EX, EXREC
-    LOGGER.info(":<Processing>: %s" % f)
+    LOGGER.info("Processing: %s..." % f)
     size_of_data = os.path.getsize(f) * 1.250
     try:
         EXREC.ph5close()
