@@ -699,46 +699,47 @@ def update_external_references():
     LOGGER.info("done, {0} nodes recreated.\n".format(n))
 
 
-def process():
-    global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
-    LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))
-    LOGGER.info("{0}".format(sys.argv))
-    if len(FILES) > 0:
-        RESP = Resp(EX.ph5_g_responses)
-        rows, keys = EX.ph5_g_receivers.read_index()
-        INDEX_T = Rows_Keys(rows, keys)
+def main():
+    def prof():
+        global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
 
-    for f in FILES:
-        F = f
-        ma = TRDfileRE.match(f)
-        if ma or OVERIDE:
-            try:
-                if ma:
-                    CURRENT_DAS = int(ma.groups()[0]) + 10000
-                else:
-                    ma = TRDfileREpunt.match(f)
+        get_args()
+
+        initializeExperiment()
+        LOGGER.info("125a2ph5 {0}".format(PROG_VERSION))
+        LOGGER.info("{0}".format(sys.argv))
+        if len(FILES) > 0:
+            RESP = Resp(EX.ph5_g_responses)
+            rows, keys = EX.ph5_g_receivers.read_index()
+            INDEX_T = Rows_Keys(rows, keys)
+
+        for f in FILES:
+            F = f
+            ma = TRDfileRE.match(f)
+            if ma or OVERIDE:
+                try:
                     if ma:
                         CURRENT_DAS = int(ma.groups()[0]) + 10000
                     else:
-                        raise Exception()
-            except BaseException:
-                CURRENT_DAS = None
+                        ma = TRDfileREpunt.match(f)
+                        if ma:
+                            CURRENT_DAS = int(ma.groups()[0]) + 10000
+                        else:
+                            raise Exception()
+                except BaseException:
+                    CURRENT_DAS = None
 
-            updatePH5(f)
-        else:
-            LOGGER.error(f)
-            LOGGER.warning(
-                "Warning: Unrecognized raw file name {0}. Skipping!"
-                .format(f))
-    update_external_references()
+                updatePH5(f)
+            else:
+                LOGGER.error(f)
+                LOGGER.warning(
+                    "Warning: Unrecognized raw file name {0}. Skipping!"
+                    .format(f))
 
-
-def main():
-    get_args()
-    initializeExperiment()
-    process()
-    closePH5()
-    logging.shutdown()
+        update_external_references()
+        closePH5()
+        logging.shutdown()
+    prof()
 
 
 if __name__ == '__main__':
