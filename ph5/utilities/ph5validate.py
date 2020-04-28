@@ -507,7 +507,10 @@ class PH5Validate(object):
                 while check_end < check_start:
                     i += 1
                     check_end = das_time_list[index+i][0] - 1
-
+                try:
+                    self.ph5.forget_das_t(das_serial)
+                except AttributeError:
+                    pass
                 true_start, true_end =\
                     self.ph5.get_extent(das=das_serial,
                                         component=channel_id,
@@ -529,13 +532,7 @@ class PH5Validate(object):
                         warning.append(
                             "Data exists after pickup time: %s seconds."
                             % time)
-                # ------------------------------------------------------------#
-
         except KeyError:
-            try:  # avoid opening too many files
-                self.ph5.forget_das_t(das_serial)
-            except Exception:
-                pass
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
                          .format(str(channel_id)))
@@ -599,6 +596,10 @@ class PH5Validate(object):
             DT['min_deploy_time'] = [DT['time_windows'][0][0]]
             DT['max_pickup_time'] = [max([t[1] for t in DT['time_windows']])]
             # look for data outside time border of each set
+            try:
+                self.ph5.forget_das_t(d)
+            except AttributeError:
+                pass
             true_deploy, true_pickup = self.ph5.get_extent(das=d,
                                                            component=c,
                                                            sample_rate=spr)
