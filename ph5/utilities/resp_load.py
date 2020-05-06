@@ -8,16 +8,104 @@ loads the RESP files and create new array and response kefs
 import sys
 import os
 import argparse
-import subprocess
 import logging
+from datetime import datetime
 
 import tables
+import collections
 
 from ph5 import LOGGING_FORMAT
 from ph5.core import ph5utils, ph5api, columns
+from ph5.utilities import tabletokef
 
-PROG_VERSION = "2020.115"
+PROG_VERSION = "2020.126"
 LOGGER = logging.getLogger(__name__)
+
+
+def write_backup(table, node_path, table_name):
+    """
+    get table with either type tabletokef.Rows_Keys or dict with keys 'rows'
+    and 'keys' to create kef file for backup with format:
+      [table_name]_[YYYY][DOY]_XX.kef
+      XX is the order to distingushed when the same filename is created
+    :param table: data to backup
+    :type table: tabletokef.Rows_Keys or dict with keys 'rows' and 'keys'
+    :param node_path: the path of the node in ph5 structure
+    :type node_path: string
+    :table_name: the name of table to be added
+    :table_name: string
+    """
+    today = datetime.now().timetuple()
+    tt = "{0:04d}{1:03d}".format(today.tm_year, today.tm_yday)
+    prefix = "{0}_{1}".format(table_name, tt)
+    backup_filename = "{0}_00.kef".format(prefix)
+    # Do not overwite existing file
+    i = 1
+    while os.path.exists(backup_filename):
+        backup_filename = "{0}_{1:02d}.kef".format(prefix, i)
+        i += 1
+    LOGGER.info("Writing table backup: " + backup_filename)
+    backup_file = open(backup_filename, 'w')
+    if isinstance(table, tabletokef.Rows_Keys):
+        data = table
+    else:
+        data = tabletokef.Rows_Keys(table['rows'], table['keys'])
+    tabletokef.table_print(node_path, data, backup_file)
+
+
+def keyfunc(d, keys):
+    """"
+    :param d: the dictionary to get values from
+    :type d: dictionary
+    :param keys: the keys of which values need to return
+    :type keys: list of strings
+    :return: a tuple of values of the keys from the dictionary
+    """
+    ret = []
+    for k in keys:
+        ret.append((d[k]))
+    return tuple(ret)
+
+
+def group_list_dict(data, listed_keys):
+    """"
+    :param data: data to be grouped
+    :type data: list of dictionaries
+    :param listed_keys: keys that values will turn into lists
+    :type listed_keys: a list of strings
+    :return: all keys not in listed_keys are group keys, all entries that have
+        the same values for group keys will be grouped into one entry with all
+        values in each listed_key turned into a unique list under new key:
+            a listed_key + 's'
+    :ex: data = [{ka:v1a, kb:v1b, kc:v1c, kd:v1d},
+                 {ka:v1a, kb:v1b, kc:v1c_, kd:v1d},
+                 {ka:v2a, kb:v2b, kc:v2c, kd:v2d },
+                 {ka:v2a, kb:v2b, kc:v2c, kd:v2d_}]
+         listed_keys = [kc, kd]
+         return: [{ka:v1a, kb:v1b, kcs:[v1c, v1c_], kds:[v1d]},
+                  {ka:v2a, kb:v2b, kcs:[v2c], kds:[v2d, v2d_]}
+    """
+    if data == []:
+        LOGGER.error("No Data.")
+        return []
+    # group_keys: all keys that aren't listed_keys
+    group_keys = []
+    for key in data[0].keys():
+        if key not in listed_keys:
+            group_keys.append(key)
+    grouped = collections.defaultdict(list)
+    for item in data:
+        grouped[keyfunc(item, group_keys)].append(item)
+    group_data = []
+    for key, group in grouped.items():
+        data_item = {key: group[0][key] for key in group_keys}
+        for key in listed_keys:
+            data_item[key + 's'] = []
+            for g_item in group:
+                if g_item[key] not in data_item[key + 's']:
+                    data_item[key + 's'].append(g_item[key])
+        group_data.append(data_item)
+    return group_data
 
 
 class Station(object):
@@ -25,7 +113,7 @@ class Station(object):
     def __init__(
             self,
             id_s,
-            array,
+            station,
             channel,
             sample_rate,
             sample_rate_multiplier,
@@ -39,7 +127,7 @@ class Station(object):
             gain_units,
             serial):
         self.id_s = id_s
-        self.array = array
+        self.station_entry = station  # ref to update array's entry
         self.channel = channel
         self.sample_rate = sample_rate
         self.sample_rate_multiplier = sample_rate_multiplier
@@ -58,53 +146,16 @@ class Station(object):
 
 class n_i_fix(object):
 
-    def __init__(self, ph5API_object, reload_resp, skip_update_resp, array=[]):
+    def __init__(self, ph5API_object, reload_resp_data, skip_update_resp,
+                 array=[]):
         self.ph5 = ph5API_object
         self.array = array
-        self.reload_resp = reload_resp
+        self.reload_resp_data = reload_resp_data
         self.skip_update_resp = skip_update_resp
-
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
         if not self.ph5.Response_t:
             self.ph5.read_response_t()
-
-        self.all_resp = self.ph5.Response_t['rows']
-        # list of das file names added by metadata
-        self.meta_loaded_das_file = []
-        self.loaded_resp = []
-        self.noloaded_resp = []
-        self.last_n_i = -1
-
-        for entry in self.ph5.Response_t['rows']:
-            if entry['n_i'] == -1:
-                # in metadata, if get no response data, n_i=-1
-                self.loaded_resp.append(entry)
-                continue
-            if entry['response_file_das_a'] or entry['response_file_sensor_a']:
-                if not entry['response_file_das_a']:
-                    LOGGER.warning("Response_t n_i=%s resonse_file_das_a has "
-                                   "been deleted mannually." % entry['n_i'])
-                if (('ZLAND' not in entry['response_file_das_a']) and
-                        (not entry['response_file_sensor_a'])):
-                    das_name_parts = entry['response_file_das_a'].replace(
-                        '/Experiment_g/Responses_g/', '').split('_')
-                    if das_name_parts[1].isdigit():
-                        # format created by resp_load: [dasmodel_sr_srm_g]
-                        # sensor_name should not be ''
-                        LOGGER.warning(
-                            "Response_t n_i=%s resonse_file_sensor_a "
-                            "has been deleted mannually." % entry['n_i'])
-                    else:
-                        # otherwise it created from metadata:
-                        #  [dasmodel_sensmodel_sr_chancode]
-                        self.meta_loaded_das_file.append(
-                            entry['response_file_das_a'])
-                self.loaded_resp.append(entry)
-            else:
-                self.noloaded_resp.append(entry)
-            if self.last_n_i < entry['n_i']:
-                self.last_n_i = entry['n_i']
 
     def read_arrays(self, name):
         if name is None:
@@ -114,21 +165,6 @@ class n_i_fix(object):
             self.ph5.read_array_t(name)
 
     def create_list(self):
-        """
-        create the list of stations from input array list with additional info
-        from das_t and response_t to help load_response() in creating new
-        n_i(s).
-        The list with new n_i to is also be used to update array_t so its order
-        need to be the same with the original array_t's.
-        Process:
-          + Read each row from array_t
-          + Using that info to read das_t for response_table_n_i
-          + Pass info from array_t and das_t to get_response_t() to identify
-            the corresponding response_t's row and the info about if response
-            file names has been loaded to response_t
-        Return:
-          A list of all the collected info wrapped in Station instances
-        """
         array_names = sorted(self.ph5.Array_t_names)
         stations = []
         for array_name in array_names:
@@ -149,36 +185,35 @@ class n_i_fix(object):
                     station_len = len(station_list[deployment])
                     for st_num in range(0, station_len):
                         station = station_list[deployment][st_num]
-                        id_s = station['id_s']
-                        sample_rate = station['sample_rate_i']
-                        sample_rate_multiplier = station[
-                            'sample_rate_multiplier_i']
-                        das_model = station['das/model_s']
+                        id_s = station_list[deployment][st_num]['id_s']
+                        sample_rate = station_list[deployment][
+                            st_num]['sample_rate_i']
+                        sample_rate_multiplier = station_list[deployment][
+                            st_num]['sample_rate_multiplier_i']
+                        das_model = station_list[deployment][
+                            st_num]['das/model_s']
                         das_model = das_model.replace(" ", "")
-                        sensor_model = station['sensor/model_s']
+                        if das_model.strip() == "":
+                            LOGGER.error(
+                                "No Das model for array %s, station %s" %
+                                (array, id_s))
+                        sensor_model = station_list[deployment][
+                            st_num]['sensor/model_s']
                         sensor_model = sensor_model.replace(" ", "")
                         if das_model.startswith("ZLAND"):
                             sensor_model = ""
-                        channel = station['channel_number_i']
-                        serial = station['das/serial_number_s']
-                        pickup = station['pickup_time/epoch_l']
-                        deploy = station['deploy_time/epoch_l']
-                        a_response_n_i = station['response_table_n_i']
-
-                        # give warning when das_model="" or sensor_model=""
-                        # if das_model is not ZLAND to notice user that this
-                        # station's response_table_n_i will not be updated
-                        if das_model == "":
-                            LOGGER.warning(
-                                "Das Model is empty for %s station %s das %s "
-                                "channel %s => no response_table_n_i updated" %
-                                (array_name, id_s, serial, channel))
-                        if ((not das_model.startswith("ZLAND"))
-                           and sensor_model == ""):
-                            LOGGER.warning(
-                                "Sensor  is empty for %s station %s das %s "
-                                "channel %s => no response_table_n_i updated" %
-                                (array_name, id_s, serial, channel))
+                        elif sensor_model.strip() == "":
+                            LOGGER.error(
+                                "No Sensor model for array %s, station %s" %
+                                (array, id_s))
+                        channel = station_list[deployment][
+                            st_num]['channel_number_i']
+                        serial = station_list[deployment][
+                            st_num]['das/serial_number_s']
+                        pickup = station_list[deployment][
+                            st_num]['pickup_time/epoch_l']
+                        deploy = station_list[deployment][
+                            st_num]['deploy_time/epoch_l']
 
                         self.ph5.read_das_t(
                             serial, deploy, pickup, reread=False)
@@ -190,56 +225,31 @@ class n_i_fix(object):
                                 "No DAS table found for das {0} channel "
                                 "{1}.\n".format(serial, channel))
                             break
-
-                        d_response_n_i = None
                         for entry in Das_t:
                             if (entry['sample_rate_i'] == sample_rate and
                                     entry['sample_rate_multiplier_i']
                                     == sample_rate_multiplier and entry[
                                         'channel_number_i'] == channel):
-                                d_response_n_i = entry['response_table_n_i']
+                                response_n_i = entry['response_table_n_i']
                                 receiver_n_i = entry['receiver_table_n_i']
                                 break
-                        if d_response_n_i is None:
-                            LOGGER.warning(
-                                "No DAS table found for das {0} chan {1} - "
-                                "spr {2} - msrpr {3}.\n".format(
-                                    serial, channel, sample_rate,
-                                    sample_rate_multiplier))
-                            continue
-                        try:
-                            Response_t, resp_loaded = \
-                                self.get_response_t(
-                                    das_model, sensor_model, sample_rate,
-                                    sample_rate_multiplier,
-                                    d_response_n_i, a_response_n_i)
-                        except AttributeError as e:
-                            LOGGER.error(
-                                "Error when processing array {0} "
-                                "station{1} chan{2} spr{3} mspr{4}:{5}".
-                                format(array_name, id_s, channel, sample_rate,
-                                       sample_rate_multiplier, str(e)))
-                            continue
 
-                        response_n_i = None
-                        if Response_t is not None:
+                        Response_t = self.ph5.get_response_t_by_n_i(
+                            response_n_i)
+                        if Response_t:
                             gain = Response_t['gain/value_i']
                             bit_weight = Response_t['bit_weight/value_d']
                             bit_weight_units = Response_t['bit_weight/units_s']
                             gain_units = Response_t['gain/units_s']
-                            if resp_loaded:
-                                response_n_i = Response_t['n_i']
                         else:
                             LOGGER.warning(
                                 "No Response table found for das {0} channel "
                                 "{1}.\n".format(serial, channel))
-
-                        self.ph5.forget_das_t(serial)
                         try:
                             stations.append(
                                 Station(
                                     id_s,
-                                    array,
+                                    station,
                                     channel,
                                     sample_rate,
                                     sample_rate_multiplier,
@@ -256,171 +266,6 @@ class n_i_fix(object):
                             LOGGER.error("Couldn't add station.")
                             continue
         return stations
-
-    def get_response_t(self, d_model, s_model, s_rate, s_rate_m, d_n_i, a_n_i):
-        """
-        Receive:
-          :para d_model: das_model from array_t
-          :para s_model: sensor_model from array_t
-          :para s_rate: sample_rate_i from array_t
-          :para s_rate_m: sample_rate_multiplier_i from array_t
-          :para n_i: response_table_n_i from das_t based on das info in array_t
-        Process:
-          + Look in noloaded_resp for row to return if can't find in
-            loaded_resp and bit_weight, gain according to n_i
-          + Use passed info and found (bit_weight, gain) to look for match row
-            in loaded_resp
-        Return:
-          => loaded_resp row and resp_loaded=True if found in loaded_resp
-          => noloaded_resp row and resp_loaded=False otherwise.
-        """
-        d_filename = "/Experiment_g/Responses_g/%s_%s_%s_" % \
-            (d_model.replace(" ", ""), s_rate, s_rate_m)
-        d_filename = d_filename.translate(None, ',-=.')
-        s_filename = "/Experiment_g/Responses_g/%s" % s_model.replace(" ", "")
-        s_filename = s_filename.translate(None, ',-=.')
-        resp = None
-        in_noloaded = False
-        for response_t in self.noloaded_resp:
-            if response_t['n_i'] == d_n_i:
-                # Look for the matched n_i from original rows to get
-                # bit_weight and gain to form response_file_das_a
-                # for the condition when look in the loadeded_resp.
-                # resp is is the row to return at the end when can't find
-                # a match row in loaded_resp
-                resp = response_t
-                bit_weight = response_t['bit_weight/value_d']
-                gain = response_t['gain/value_i']
-                in_noloaded = True
-
-        for response_t in self.loaded_resp:
-            if response_t['n_i'] != a_n_i:
-                continue
-            if (response_t['response_file_das_a'] in self.meta_loaded_das_file
-                    or a_n_i == -1):
-                return response_t, True
-            b = response_t['bit_weight/value_d']
-            g = response_t['gain/value_i']
-            if in_noloaded and (b != bit_weight or g != gain):
-                continue
-
-            if response_t['response_file_das_a'] == d_filename + str(g):
-                if response_t['response_file_sensor_a'] == s_filename:
-                    return response_t, True
-                elif response_t['response_file_sensor_a'] == '':
-                    return response_t, True
-        return resp, False
-
-    def update_kefs(self, path, arrays, data):
-        for x in arrays:
-            process = subprocess.Popen(
-                "ph5tokef -n master.ph5 -p " +
-                str(path) +
-                " -A " +
-                str(x) +
-                " > array_t_" +
-                str(x) +
-                ".kef",
-                shell=True,
-                stdout=subprocess.PIPE)
-            process.wait()
-        for x in arrays:
-            process = subprocess.Popen(
-                "nuke_table -n master.ph5 -p " +
-                str(path) +
-                " -A " +
-                str(x),
-                shell=True,
-                stdout=subprocess.PIPE)
-            process.wait()
-        for x in arrays:
-            process = subprocess.Popen(
-                "keftoph5 -n master.ph5 -p " +
-                str(path) +
-                " -k array_t_" +
-                str(x) +
-                ".kef",
-                shell=True,
-                stdout=subprocess.PIPE)
-            process.wait()
-        for x in arrays:
-            process = subprocess.Popen(
-                "ph5tokef -n master.ph5 -p " +
-                str(path) +
-                " -A " +
-                str(x) +
-                " > array_t_" +
-                str(x) +
-                ".kef",
-                shell=True,
-                stdout=subprocess.PIPE)
-            process.wait()
-
-        for x in arrays:
-            new_kef = []
-            id_s = None
-            channel = None
-            with open("array_t_" + str(x) + ".kef") as f:
-                kef = f.readlines()
-            for line in kef:
-                if line.startswith("	id_s="):
-                    id_s = int(line[6:])
-                    new_kef.append(line)
-                elif line.startswith("	channel_number_i="):
-                    channel = int(line[18:])
-                    new_kef.append(line)
-
-                elif "response_table_n_i=" in line:
-
-                    for station in data:
-
-                        if int(
-                                station.id_s) == id_s and int(
-                            station.channel) == channel and int(x) ==\
-                                int(station.array):
-                            if station.response_n_i:
-                                new_kef.append(
-                                    "        response_table_n_i=" +
-                                    str(station.response_n_i) + '\n')
-                                break
-                            else:
-                                new_kef.append(
-                                    "        response_table_n_i=0\n")
-                                break
-                elif "receiver_table_n_i=" in line:
-
-                    for station in data:
-
-                        if int(
-                                station.id_s) == id_s and int(
-                            station.channel) == channel and int(x) ==\
-                                int(station.array):
-                            if station.receiver_n_i:
-                                new_kef.append(
-                                    "        receiver_table_n_i=" +
-                                    str(station.receiver_n_i) + '\n')
-                                break
-                            else:
-                                new_kef.append(
-                                    "        receiver_table_n_i=0\n")
-                                break
-                else:
-                    new_kef.append(line)
-            outfile = open("array_t_" + str(x) + ".kef", 'w')
-            file_name = "array_t_" + str(x) + ".kef"
-            for line in new_kef:
-                outfile.write("%s" % line)
-            outfile.close()
-            command = "nuke_table -n master.ph5 -p {0} -A {1}".format(
-                path, str(x))
-            subprocess.call(command, shell=True)
-            import time
-            time.sleep(1)
-            command = "keftoph5 -n master.ph5 -p {1} -k {0}".format(
-                file_name, path)
-            subprocess.call(command, shell=True)
-            time.sleep(0.5)
-            LOGGER.info("array_t_{0} Loaded into PH5".format(str(x)))
 
     def create_template(self, data):
         data_list = []
@@ -450,32 +295,34 @@ class n_i_fix(object):
 
     def read_respdata(self, resp_filename):
         """
-        Receive:
-          :para resp_filename: name of a response file
-        Return
-          List of lines read from the file
-          If cannot read, return None with warning
+        :param resp_filename: name of a response file
+        :return: List of lines read from the file
+            or None with warning if cannot read
         """
         data = None
-        with open(resp_filename, "r") as f:
-            data = f.readlines()
+        try:
+            with open(resp_filename, "r") as f:
+                data = f.readlines()
+        except IOError:
+            LOGGER.warning("%s not exist." % resp_filename)
+            return None
         if data is None:
-            LOGGER.warning("Could not read {0}.".format(resp_filename))
+            LOGGER.warning("Could not read %s." % resp_filename)
         return data
 
     def load_respdata(self, ph5, name, data, loaded_list, first_load=True):
         """
         Receive:
-          :para ph5: table ph5
-          :para name: name of response file in ph5
-              ie. rt130_100_1_1, Hyperion, etc.
-          :para loaded_list: list to track which response_files have been
+          :param ph5: table ph5
+          :param name: name of response file in ph5
+              ie. rt130_100_1_1 (das), Hyperion (sensor), etc.
+          :param loaded_list: list to track which response_files have been
               loaded
-          :para first_load:
+          :param first_load:
                + first_load=True is when trying to load response data
-                 the first time => create new node with the given dataanyway
+                 the first time => create new node with the given data
                + first_load=False is when the first try is failed and reload
-                 response flag (-r) is set, then load_respdata() is recalled
+                 response data flag (-r) is set
                  => remove node before recreating the node with new data
         """
         try:
@@ -493,7 +340,8 @@ class n_i_fix(object):
                 LOGGER.warning("Could not load {0} due to error: {1}".format(
                     name, str(e)))
             else:
-                if self.reload_resp:
+                if self.reload_resp_data:
+                    # -r flag
                     self.load_respdata(
                         ph5, name, data, loaded_list, first_load=False)
                 else:
@@ -501,31 +349,117 @@ class n_i_fix(object):
                         "{0} has been loaded in another resp_load run."
                         .format(name.replace(" ", "")))
 
-    def load_response(self, path, nickname, data, input_csv):
+    def get_resp_file_names(self, x):
+        """
+        return full path response file names for das and sensor
+        return False when requirement for models not met
+        """
+        if x['d_model']:
+            full_das_name = '/Experiment_g/Responses_g/%s_%s_%s_%s' % (
+                x['d_model'].replace(" ", "").translate(None, ',-=.'),
+                x['s_rate'], x['s_rate_m'], x['gain'])
+        else:
+            return False
+
+        if x['s_model']:
+            full_sens_name = '/Experiment_g/Responses_g/' + x[
+                's_model'].replace(" ", "").translate(None, ',-=.')
+
+        elif x['d_model'].startswith('ZLAND'):
+            full_sens_name = ''
+        else:
+            return False
+        return full_das_name, full_sens_name
+
+    def check_metadata_format(self, response_entry, x):
+        """
+        :param response_entry: an entry in response table
+        :type response_entry: dictionary
+        :param x: an entry of unique_list in load_response()
+        :type x: dictionary
+        :return: True if x['d_model'] match and
+                    response_entry['response_file_das_a'] is in metadata format
+                 Otherwise, return False
+        """
+        if not response_entry['response_file_das_a']:
+            # no das response file
+            return False
+
+        das_name_parts = response_entry['response_file_das_a'].replace(
+            '/Experiment_g/Responses_g/', '').split('_')
+        if das_name_parts[0] != x['d_model']:
+            # das model from x not match with das model from file name
+            return False
+        if not das_name_parts[1].isdigit():
+            # format created by resp_load: [dasmodel_sr_srm_g]
+            # format created by metadata: [dasmodel_sensmodel_sr_chancode]
+            return True
+        return False
+
+    def update_array(self, x, new_n_i):
+        """
+        update all entries in x['station_entrys'] with new_n_i
+        """
+        for s_entry in x['station_entrys']:
+            s_entry['response_table_n_i'] = new_n_i
+
+    def check_filenames(self, x, all_resp, response_entry, filenames):
+        """
+        :param x: an entry of unique list in load_response()
+        :param all_resp: dict created from Response_t[rows] with keys are n_i
+        :param response_entry: a response entry with n_i from Das_t
+        :param filenames: (response_file_das_a, response_file_sensor_a) from
+                          x's info
+        :return:
+            x[n_i]: If filenames with response_entry match
+            n_i: If filenames match with response_entry got from n_i in array_t
+            None: Otherwise
+        """
+        # check response_entry with n_i das_t n_i
+        if (filenames[0] == response_entry['response_file_das_a'] and
+                filenames[1] == response_entry['response_file_sensor_a']):
+            return x['n_i']
+        # n_i from das_t won't be changed,
+        # check once more with n_i from array_t
+        # (need if run resp_load multiple times)
+        n_i = x['station_entrys'][0]['response_table_n_i']
+        response_entry = all_resp[n_i]
+        if (filenames[0] == response_entry['response_file_das_a'] and
+                filenames[1] == response_entry['response_file_sensor_a']):
+            return n_i
+        return None
+
+    def load_response(self, backup_path, array_data, input_csv):
         """
         Receive:
-          :para path: path to ph5 file's directory
-          :para nickname: name of ph5 file
-          :para data: list of station based rows created by self.create_list()
-          :para input_csv: csv file that provide response file names for the
-            associated das/sensor models, samplerate, samplerate multiplier,
-            gain
+          :param backup_path: path for backup file
+          :param array_data: list of station based data
+          :param input_csv: csv file that provide response file names for the
+           associated das/sensor model, samplerate, samplerate multiplier, gain
         Process:
           + Read response files from input.csv to load response data into ph5
-          + From para data, get a unique list of sensor model, das model,
-            sample rate, sample rate multiplier, gain, bitweight, resp_loaded
-            for n_i condition checking
-          + In response_t, all existing are kept, n_i will be created
-          corresponding to rows withresp_loaded=False
-          + n_i will be updated for the rows in the input array_t
+          + Create backup for Response_t and array_t(s) and delete them the
+             tables in ph5 structure
+          + From array_data, get a unique list that group same sensor model,
+            das model, sample rate, sample rate multiplier, gain, bitweight and
+            n_i with all station entries of those will be turned into a list
+            Go through the unique list use n_i to get response entry, check if:
+             . match with response file names in entry: update n_i of station
+                entries in list
+             . response entry has no response files filled: fill response file
+                names, and update n_i of station entries in list
+             . otherwise, create new response entry increase 1 from max n_i,
+                update n_i of station entries in list
+          + populate response table and array table with updated response
+            entries and array entries
         """
-
+        # use this instead of open ph5 file as table
         ph5table = self.ph5.ph5
 
         # load response files from the paths in input.csv
-        with open(input_csv, "r") as f:
+        # U in the mode so that \r will be considered as next line
+        with open(input_csv, "rU") as f:
             csv = f.readlines()
-        f.close()
         loaded_das = []
         loaded_sensor = []
         for line in csv:
@@ -542,11 +476,10 @@ class n_i_fix(object):
                         line_list[3] +
                         "_" +
                         line_list[4])
+                    name = name.replace(" ", "").translate(None, ',-=.')
                     if name not in loaded_das:
                         das_data = self.read_respdata(line_list[5].rstrip())
                         if das_data is not None:
-                            name = name.replace(" ", "")
-                            name = name.translate(None, ',-=.')
                             self.load_respdata(
                                 ph5table, name, das_data, loaded_das)
 
@@ -562,106 +495,174 @@ class n_i_fix(object):
                                 ph5table, name, sensor_data, loaded_sensor)
 
         if self.skip_update_resp:
+            # -s flag
             return
 
-        data_list = []
-        data_update = []
-        for station in data:
-            data_list.append(
-                {'d_model': station.das_model,
-                 's_model': station.sensor_model,
-                 's_rate': station.sample_rate,
-                 's_rate_m': station.sample_rate_multiplier,
-                 'gain': station.gain,
-                 'bit_w': station.bit_weight,
-                 'bit_w_u': station.bit_weight_units,
-                 'gain_u': station.gain_units,
-                 'n_i': station.response_n_i})
+        unique_list = []
+        for station in array_data:
+            item = {'d_model': station.das_model,
+                    's_model': station.sensor_model,
+                    's_rate': str(station.sample_rate),
+                    's_rate_m': str(station.sample_rate_multiplier),
+                    'gain': str(station.gain),
+                    'gain_u': station.gain_units,
+                    'bit_w': str(station.bit_weight),
+                    'bit_w_u': station.bit_weight_units,
+                    'n_i': station.response_n_i,
+                    'station_entry': station.station_entry}
+            if item not in unique_list:
+                unique_list.append(item)
 
-        unique_list = map(dict, set(tuple(sorted(x.items()))
-                                    for x in data_list))
-        unique_list = sorted(unique_list, key=lambda i:
-                             (i['s_model'], i['d_model'], i['s_rate'],
-                              i['s_rate_m'], i['gain'], float(i['bit_w'])))
+        # unique_list = group_list_dict(unique_list,
+        # serial is for update das_t    ['station_entry', 'serial'])
+        unique_list = group_list_dict(unique_list, ['station_entry'])
+        # assign global variables in tabletokef
+        tabletokef.EX = self.ph5
+        tabletokef.TABLE_KEY = None
+        tabletokef.PATH = backup_path
+        tabletokef.ARRAY_T = {}
 
-        # ------------ add new response enstries to final_ret -----------------
-        # increase n_i by 1 from the last n_i
-        self.last_n_i = n_i = self.last_n_i + 1
-        for x in unique_list:
-            response_entry = {}
-            item = [x['d_model'], x['s_model'], x['s_rate'], x['s_rate_m'],
-                    x['gain'], x['bit_w']]
-            if x['n_i'] is not None:
-                data_update.append(item + [x['n_i']])
-                continue
-            if x['d_model']:
-                name = str(x['d_model']) + "_" + str(x['s_rate']) + "_" + \
-                    str(x['s_rate_m']) + "_" + str(x['gain'])
-                name_full = '/Experiment_g/' +\
-                            'Responses_g/' + name.replace(" ", "")
-                name_full = name_full.translate(None, ',-=.')
-
-                response_entry['response_file_das_a'] = name_full
-            else:
-                # skip updating if no d_model
-                continue
-
-            if x['s_model']:
-                sens = x['s_model']
-                sens = sens.translate(None, ',-=.')
-                name = '/Experiment_g/' +\
-                       'Responses_g/' + sens
-                response_entry['response_file_sensor_a'] = name
-            elif x['d_model'].startswith('ZLAND'):
-                response_entry['response_file_sensor_a'] = ''
-            else:
-                # Skip updating if no s_model and d_model not ZLAND
-                continue
-
-            response_entry['bit_weight/value_d'] = x['bit_w']
-            response_entry['bit_weight/units_s'] = x['bit_w_u']
-            response_entry['gain/value_i'] = x['gain']
-            response_entry['gain/units_s'] = x['gain_u']
-
-            response_entry['n_i'] = n_i
-            self.all_resp.append(response_entry)
-            data_update.append(item + [n_i])
-            n_i += 1
-
-        # ---------------------- update response_t ----------------------------
-        # delete response_t
+        # backup and delete response_t
+        write_backup(self.ph5.Response_t,
+                     '/Experiment_g/Responses_g/Response_t',
+                     'Response_t')
         self.ph5.ph5_g_responses.nuke_response_t()
 
-        # populate response_t with entries from final_ret
-        for entry in self.all_resp:
+        # backup and delete array_t(s)
+        tabletokef.read_sort_table()
+        tabletokef.read_sort_arrays()
+        for a in self.array:
+            array_name = 'Array_t_%03d' % int(a)
+            if array_name in tabletokef.ARRAY_T.keys():
+                write_backup(tabletokef.ARRAY_T[array_name],
+                             '/Experiment_g/Sorts_g/%s' % array_name,
+                             array_name)
+                self.ph5.ph5_g_sorts.nuke_array_t(int(a))
+
+        """
+        update/add entries in self.ph5.Response_t
+        using update_array() to update station entries of the array
+        """
+        # all_resp: help access response entry through n_i
+        all_resp = {item['n_i']: item for item in self.ph5.Response_t['rows']}
+        # max_n_i: used for new response entry added
+        max_n_i = max(all_resp.keys())
+        # das_update = {}
+        for x in unique_list:
+            if x['n_i'] == -1:
+                # no response signal
+                continue
+            response_entry = all_resp[x['n_i']]
+            if self.check_metadata_format(response_entry, x):
+                # x match with entry created by metadata
+                continue
+            filenames = self.get_resp_file_names(x)
+            if not filenames:
+                continue
+            das_resp_name, sen_resp_name = filenames
+            if response_entry['response_file_das_a'] == '':
+                # n_i haven't been used, use it
+                response_entry['response_file_das_a'] = das_resp_name
+                response_entry['response_file_sensor_a'] = sen_resp_name
+                self.update_array(x, x['n_i'])
+                continue
+
+            n_i = self.check_filenames(x, all_resp, response_entry, filenames)
+            if n_i is not None:
+                # match with n_i created by another resp_load run
+                self.update_array(x, n_i)
+                continue
+
+            # n_i already used, need new entry
+            new_response_entry = {}
+            max_n_i += 1
+            new_response_entry['n_i'] = max_n_i
+            new_response_entry['bit_weight/value_d'] = x['bit_w']
+            new_response_entry['bit_weight/units_s'] = x['bit_w_u']
+            new_response_entry['gain/value_i'] = x['gain']
+            new_response_entry['gain/units_s'] = x['gain_u']
+            new_response_entry['response_file_das_a'] = das_resp_name
+            new_response_entry['response_file_sensor_a'] = sen_resp_name
+            self.ph5.Response_t['rows'].append(new_response_entry)
+            self.update_array(x, max_n_i)
+            LOGGER.info("%s-%s-%s-%s: n_i %s=>%s" %
+                        (x['s_model'], x['d_model'], x['s_rate'],
+                         x['s_rate_m'], x['n_i'], max_n_i))
+            """
+            das_update to update das_t
+            LOGGER.info("%s-%s-%s-%s: n_i %s=>%s: for das: %s" %
+                        (x['s_model'], x['d_model'], x['s_rate'],
+                         x['s_rate_m'], x['n_i'], max_n_i,
+                         ','.join(x['serials'])))
+            for serial in x['serials']:
+                das_entry = {}
+                das_entry['n_i'] = x['n_i']
+                das_entry['new_n_i'] = max_n_i
+                das_entry['s_rate'] = x['s_rate']
+                das_entry['s_rate_m'] = x['s_rate_m']
+                if serial not in das_update:
+                    das_update[serial] = []
+                das_update[serial].append(das_entry)
+                """
+
+        # populate response_t with updated entries in self.ph5.Response_t
+        for entry in self.ph5.Response_t['rows']:
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
 
-        LOGGER.info("response_t.kef written into PH5")
+        LOGGER.info("Update Response_t")
 
-        # --------- update data with new n_i new response_t's entries ---------
-        for station in data:
-            # don't update station.array if not listed in option -a
-            if station.array not in self.array:
+        # populate array_t(s) with updated station entries
+        for a in self.array:
+            array_name = 'Array_t_%03d' % int(a)
+            try:
+                arraybyid = self.ph5.Array_t[array_name]['byid']
+                arrayorder = self.ph5.Array_t[array_name]['order']
+            except KeyError:
+                LOGGER.warning("%s not in ph5." % array_name)
                 continue
-            for x in data_update:
-                if station.das_model == x[0] and \
-                   station.sensor_model == x[1] and \
-                   station.sample_rate == x[2] and \
-                   station.sample_rate_multiplier == x[3] and \
-                   station.gain == x[4] and \
-                   station.bit_weight == x[5]:
-                    station.response_n_i = x[6]
-                    break
-            """
-            true_sr =\
-                float(station.sample_rate) /\
-                float(station.sample_rate_multiplier)
-            if true_sr < 1.0:
-                station.response_n_i = None
-            """
+            ref = self.ph5.ph5_g_sorts.newArraySort(array_name)
+            for ph5_station in arrayorder:
+                station_list = arraybyid.get(ph5_station)
+                for deployment in station_list:
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0, station_len):
+                        station = station_list[deployment][st_num]
+                        columns.populate(ref, station)
+            LOGGER.info("Update %s" % array_name)
 
-        return data
+        """
+        Not update das tables to not mess up with the data submitted to DMC.
+        But ph5api.get_response_t() might return the wrong response entry
+        in the case different (model, sample rate, sample rate multiplier)s
+        share the same index. The PH5 meeting on 5/5/2020 decided that the
+        function though is used in ph5api.cut() but doesn't affect anything.
+        So the code to update das tables will be commented out
+        # update das tables with new n_i if new response entries are created
+        das_to_kef = []
+        for serial in das_update.keys():
+            self.ph5.read_das_t(serial)
+            Das_t = self.ph5.Das_t[serial]
+            datapath = '/Experiment_g/Receivers_g/Das_t_%s/Das_t' % serial
+            for entry in Das_t['rows']:
+                for d in das_update[serial]:
+                    if (entry['sample_rate_i'] == d['s_rate'] and
+                            entry['sample_rate_multiplier_i'] == d['s_rate_m']
+                            and entry['response_table_n_i'] == d['n_i']):
+                        if serial not in das_to_kef:
+                            # backup/delete Das_t before it is updated
+                            write_backup(
+                                Das_t, datapath, 'Das_t_%s' % serial)
+                            self.ph5.ph5_g_receivers.nuke_das_t(serial)
+                            das_to_kef.append(serial)
+                        # up date n_i
+                        entry['response_table_n_i'] = d['new_n_i']
+            # populate das_t with updated entries from Das_t['rows']
+            for entry in Das_t['rows']:
+                self.ph5.ph5_g_receivers.populateDas_t(entry)
+            LOGGER.info("Update Das_t_%s" % serial)
+            self.ph5.forget_das_t(serial)
+        """
 
 
 def get_args():
@@ -700,16 +701,15 @@ def get_args():
         "-r",
         "--reload",
         action="store_true",
-        help=("When need to reload resp files."),
-        dest="reload_resp",
+        help=("When need to reload resp data."),
+        dest="reload_resp_data",
         default=False)
 
     parser.add_argument(
         "-s",
         "--skip_update_resp",
         action="store_true",
-        help=("Load response data in response_g "
-              "but skip updating response_t."),
+        help=("Skip updating response's index and file names."),
         dest="skip_update_resp",
         default=False)
 
@@ -746,7 +746,9 @@ def main():
                                nickname=args.nickname,
                                editmode=True)
 
-    fix_n_i = n_i_fix(ph5API_object, args.reload_resp, args.skip_update_resp,
+    fix_n_i = n_i_fix(ph5API_object,
+                      args.reload_resp_data,
+                      args.skip_update_resp,
                       args.array)
 
     data = fix_n_i.create_list()
@@ -754,13 +756,8 @@ def main():
     if args.input_csv is None:
         fix_n_i.create_template(data)
     else:
-        new_data = fix_n_i.load_response(
-            args.ph5path, args.nickname, data, args.input_csv)
-        if args.skip_update_resp:
-            ph5API_object.close()
-            sys.exit()
-        fix_n_i.update_kefs(args.ph5path, args.array, new_data)
-        ph5API_object.close()
+        fix_n_i.load_response(args.ph5path, data, args.input_csv)
+    ph5API_object.close()
 
 
 if __name__ == '__main__':
