@@ -18,7 +18,7 @@ from ph5 import LOGGING_FORMAT
 from ph5.core import ph5utils, ph5api, columns
 from ph5.utilities import tabletokef
 
-PROG_VERSION = "2020.126"
+PROG_VERSION = "2020.128"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -44,27 +44,13 @@ def write_backup(table, node_path, table_name):
     while os.path.exists(backup_filename):
         backup_filename = "{0}_{1:02d}.kef".format(prefix, i)
         i += 1
-    LOGGER.info("Writing table backup: " + backup_filename)
+    LOGGER.info("Writing table backup: %s." % backup_filename)
     backup_file = open(backup_filename, 'w')
     if isinstance(table, tabletokef.Rows_Keys):
         data = table
     else:
         data = tabletokef.Rows_Keys(table['rows'], table['keys'])
     tabletokef.table_print(node_path, data, backup_file)
-
-
-def keyfunc(d, keys):
-    """"
-    :param d: the dictionary to get values from
-    :type d: dictionary
-    :param keys: the keys of which values need to return
-    :type keys: list of strings
-    :return: a tuple of values of the keys from the dictionary
-    """
-    ret = []
-    for k in keys:
-        ret.append((d[k]))
-    return tuple(ret)
 
 
 def group_list_dict(data, listed_keys):
@@ -85,6 +71,14 @@ def group_list_dict(data, listed_keys):
          return: [{ka:v1a, kb:v1b, kcs:[v1c, v1c_], kds:[v1d]},
                   {ka:v2a, kb:v2b, kcs:[v2c], kds:[v2d, v2d_]}
     """
+
+    def keyfunc(dict, keys):
+        # return a tuple of values of keys from dict
+        ret = []
+        for k in keys:
+            ret.append((dict[k]))
+        return tuple(ret)
+
     if data == []:
         LOGGER.error("No Data.")
         return []
@@ -233,7 +227,10 @@ class n_i_fix(object):
                                 response_n_i = entry['response_table_n_i']
                                 receiver_n_i = entry['receiver_table_n_i']
                                 break
-
+                        if channel == -2:
+                            # in metadata
+                            # channel=-2 for no resp => n_i=-1
+                            response_n_i = -1
                         Response_t = self.ph5.get_response_t_by_n_i(
                             response_n_i)
                         if Response_t:
@@ -310,14 +307,14 @@ class n_i_fix(object):
             LOGGER.warning("Could not read %s." % resp_filename)
         return data
 
-    def load_respdata(self, ph5, name, data, loaded_list, first_load=True):
+    def load_respdata(self, ph5, name, data, checked_list, first_load=True):
         """
         Receive:
           :param ph5: table ph5
           :param name: name of response file in ph5
               ie. rt130_100_1_1 (das), Hyperion (sensor), etc.
-          :param loaded_list: list to track which response_files have been
-              loaded
+          :param checked_list: list to track which response_files have been
+              checked for loading data
           :param first_load:
                + first_load=True is when trying to load response data
                  the first time => create new node with the given data
@@ -325,12 +322,12 @@ class n_i_fix(object):
                  response data flag (-r) is set
                  => remove node before recreating the node with new data
         """
+        if name not in checked_list:
+            checked_list.append(name)
         try:
             if not first_load:
                 ph5.remove_node(ph5.root.Experiment_g.Responses_g, name)
-                loaded_list.remove(name)
             ph5.create_array(ph5.root.Experiment_g.Responses_g, name, data)
-            loaded_list.append(name)
             if first_load:
                 LOGGER.info("Loaded {0}".format(name))
             else:
@@ -343,7 +340,7 @@ class n_i_fix(object):
                 if self.reload_resp_data:
                     # -r flag
                     self.load_respdata(
-                        ph5, name, data, loaded_list, first_load=False)
+                        ph5, name, data, checked_list, first_load=False)
                 else:
                     LOGGER.warning(
                         "{0} has been loaded in another resp_load run."
@@ -496,6 +493,8 @@ class n_i_fix(object):
 
         if self.skip_update_resp:
             # -s flag
+            LOGGER.info("Skip updating response index in response_t "
+                        "and array_t.")
             return
 
         unique_list = []
@@ -512,7 +511,6 @@ class n_i_fix(object):
                     'station_entry': station.station_entry}
             if item not in unique_list:
                 unique_list.append(item)
-
         # unique_list = group_list_dict(unique_list,
         # serial is for update das_t    ['station_entry', 'serial'])
         unique_list = group_list_dict(unique_list, ['station_entry'])
@@ -583,6 +581,7 @@ class n_i_fix(object):
             new_response_entry['gain/units_s'] = x['gain_u']
             new_response_entry['response_file_das_a'] = das_resp_name
             new_response_entry['response_file_sensor_a'] = sen_resp_name
+            new_response_entry['response_file_a'] = ''
             self.ph5.Response_t['rows'].append(new_response_entry)
             self.update_array(x, max_n_i)
             LOGGER.info("%s-%s-%s-%s: n_i %s=>%s" %
@@ -610,7 +609,7 @@ class n_i_fix(object):
             ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
             columns.populate(ref, entry, None)
 
-        LOGGER.info("Update Response_t")
+        LOGGER.info("Update Response_t.")
 
         # populate array_t(s) with updated station entries
         for a in self.array:
@@ -629,7 +628,7 @@ class n_i_fix(object):
                     for st_num in range(0, station_len):
                         station = station_list[deployment][st_num]
                         columns.populate(ref, station)
-            LOGGER.info("Update %s" % array_name)
+            LOGGER.info("Update %s." % array_name)
 
         """
         Not update das tables to not mess up with the data submitted to DMC.
@@ -660,7 +659,7 @@ class n_i_fix(object):
             # populate das_t with updated entries from Das_t['rows']
             for entry in Das_t['rows']:
                 self.ph5.ph5_g_receivers.populateDas_t(entry)
-            LOGGER.info("Update Das_t_%s" % serial)
+            LOGGER.info("Update Das_t_%s." % serial)
             self.ph5.forget_das_t(serial)
         """
 
