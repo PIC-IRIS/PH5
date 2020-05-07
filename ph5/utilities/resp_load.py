@@ -497,29 +497,11 @@ class n_i_fix(object):
                         "and array_t.")
             return
 
-        unique_list = []
-        for station in array_data:
-            item = {'d_model': station.das_model,
-                    's_model': station.sensor_model,
-                    's_rate': str(station.sample_rate),
-                    's_rate_m': str(station.sample_rate_multiplier),
-                    'gain': str(station.gain),
-                    'gain_u': station.gain_units,
-                    'bit_w': str(station.bit_weight),
-                    'bit_w_u': station.bit_weight_units,
-                    'n_i': station.response_n_i,
-                    'station_entry': station.station_entry}
-            if item not in unique_list:
-                unique_list.append(item)
-        # unique_list = group_list_dict(unique_list,
-        # serial is for update das_t    ['station_entry', 'serial'])
-        unique_list = group_list_dict(unique_list, ['station_entry'])
         # assign global variables in tabletokef
         tabletokef.EX = self.ph5
         tabletokef.TABLE_KEY = None
         tabletokef.PATH = backup_path
         tabletokef.ARRAY_T = {}
-
         # backup and delete response_t
         write_backup(self.ph5.Response_t,
                      '/Experiment_g/Responses_g/Response_t',
@@ -536,6 +518,29 @@ class n_i_fix(object):
                              '/Experiment_g/Sorts_g/%s' % array_name,
                              array_name)
                 self.ph5.ph5_g_sorts.nuke_array_t(int(a))
+
+        unique_list = []
+        for station in array_data:
+            if station.receiver_n_i not in [None, '']:
+                station.station_entry[
+                    'receiver_table_n_i'] = station.receiver_n_i
+            else:
+                station.station_entry['receiver_table_n_i'] = 0
+            item = {'d_model': station.das_model,
+                    's_model': station.sensor_model,
+                    's_rate': str(station.sample_rate),
+                    's_rate_m': str(station.sample_rate_multiplier),
+                    'gain': str(station.gain),
+                    'gain_u': station.gain_units,
+                    'bit_w': str(station.bit_weight),
+                    'bit_w_u': station.bit_weight_units,
+                    'n_i': station.response_n_i,
+                    'station_entry': station.station_entry}
+            if item not in unique_list:
+                unique_list.append(item)
+        # unique_list = group_list_dict(unique_list,
+        # serial is for update das_t    ['station_entry', 'serial'])
+        unique_list = group_list_dict(unique_list, ['station_entry'])
 
         """
         update/add entries in self.ph5.Response_t
