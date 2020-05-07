@@ -40,8 +40,8 @@ class Test_n_i_fix_indiv(TempDirTestCase, LogTestCase):
         # check array_t
         self.ph5API_object.read_array_t('Array_t_001')
         entries = self.ph5API_object.Array_t['Array_t_001']['byid']['500'][1]
-        for a in entries:
-            self.assertEqual(a['response_table_n_i'], 0)
+        self.assertEqual(entries[0]['response_table_n_i'], 0)
+        self.assertEqual(entries[0]['receiver_table_n_i'], 1)
 
         # check response_t
         response_t = self.ph5API_object.get_response_t_by_n_i(0)
@@ -190,14 +190,21 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
                     else:
                         self.assertEqual(msg[0:34] + msg[41:], alllogs[i])
 
-        # check used the existing n_i
+        # check response_table_n_i used the existing response_t's n_i
         self.assertEqual(self.n_i_fix.ph5.Array_t['Array_t_001']['byid'][
                              '500'][1][0]['response_table_n_i'],
                          3)
         self.assertEqual(self.n_i_fix.ph5.Array_t['Array_t_001']['byid'][
                              '500'][2][0]['response_table_n_i'],
                          3)
-        # check n_i created by metadata unchanged
+        # check receiver_table_n_i is updated
+        self.assertEqual(self.n_i_fix.ph5.Array_t['Array_t_001']['byid'][
+                             '500'][1][0]['receiver_table_n_i'],
+                         1)
+        self.assertEqual(self.n_i_fix.ph5.Array_t['Array_t_001']['byid'][
+                             '500'][2][0]['receiver_table_n_i'],
+                         2)
+        # check response_table_n_i created by metadata unchanged
         self.assertEqual(self.n_i_fix.ph5.Array_t['Array_t_001']['byid'][
                              '0407'][1][0]['response_table_n_i'],
                          0)
