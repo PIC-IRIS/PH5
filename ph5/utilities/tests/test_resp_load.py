@@ -127,6 +127,7 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
 
     def test_load_response(self):
         # check total entries in response_t
+        self.n_i_fix.ph5.read_response_t()
         entries = self.n_i_fix.ph5.Response_t['rows']
         old_entries = copy.copy(entries)
 
@@ -185,6 +186,7 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
                 if 'kef' not in msg:
                     self.assertEqual(msg, alllogs[i])
                 else:
+                    # remove the time info in kef file name
                     if 'Response' in msg:
                         self.assertEqual(msg[0:33] + msg[40:], alllogs[i])
                     else:
@@ -323,7 +325,6 @@ class Test_n_i_fix_simpleph5object(TempDirTestCase, LogTestCase):
         self.assertEqual(self.n_i_fix.reload_resp_data, False)
         self.assertEqual(self.n_i_fix.skip_update_resp, True)
         self.assertTrue(hasattr(self.n_i_fix.ph5, 'Array_t_names'))
-        self.assertTrue(hasattr(self.n_i_fix.ph5, 'Response_t'))
 
     def test_get_resp_file_names(self):
         x = {'d_model': '', 's_model': 'SMODEL', 's_rate': 100,
@@ -357,7 +358,7 @@ class Test_n_i_fix_simpleph5object(TempDirTestCase, LogTestCase):
         ret = self.n_i_fix.check_metadata_format(response_entry, x)
         self.assertTrue(ret)
 
-        x = {'d_model': 'DMODEL1'}
+        x['d_model'] = 'DMODEL1'
         ret = self.n_i_fix.check_metadata_format(response_entry, x)
         self.assertFalse(ret)
 
