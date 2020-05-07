@@ -148,8 +148,6 @@ class n_i_fix(object):
         self.skip_update_resp = skip_update_resp
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
-        if not self.ph5.Response_t:
-            self.ph5.read_response_t()
 
     def read_arrays(self, name):
         if name is None:
@@ -502,6 +500,8 @@ class n_i_fix(object):
         tabletokef.TABLE_KEY = None
         tabletokef.PATH = backup_path
         tabletokef.ARRAY_T = {}
+        if not self.ph5.Response_t:
+            self.ph5.read_response_t()
         # backup and delete response_t
         write_backup(self.ph5.Response_t,
                      '/Experiment_g/Responses_g/Response_t',
