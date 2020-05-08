@@ -4,41 +4,39 @@ Tests for ph5validate
 import unittest
 import os
 import sys
-import logging
 
 from mock import patch
 from testfixtures import OutputCapture
 
-from ph5.utilities import ph5validate, texan2ph5, kef2ph5, initialize_ph5
+from ph5.utilities import ph5validate, initialize_ph5
 from ph5.core import ph5api
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
-def create_ph5_data(home):
+def create_ph5_data(ph5path, das_sn_list, common_path, kef_path_list):
     # create master.ph5
     testargs = ['initialize_ph5', '-n', 'master.ph5']
     with patch.object(sys, 'argv', testargs):
         initialize_ph5.main()
-    # add data
-    testargs = ['125atoph5', '-n', 'master.ph5', '-r',
-                os.path.join(home, "ph5/test_data/rt125a/I2183RAW.TRD")]
-    with patch.object(sys, 'argv', testargs):
-        with OutputCapture():
-            texan2ph5.main()
-    # add metadata
-    testargs = ['keftoph5', '-n', 'master.ph5', '-k',
-                os.path.join(home,
-                             "ph5/test_data/metadata/array_t_9_validate.kef")]
-    with patch.object(sys, 'argv', testargs):
-        kef2ph5.main()
+
+    ph5 = ph5api.PH5(path=ph5path, nickname='master.ph5', editmode=True)
+    # create nodes for das
+    for sn in das_sn_list:
+        ph5.ph5_g_receivers.newdas(sn)
+    # add metadata from kef
+    kef_to_ph5(ph5path, 'master.ph5', common_path, kef_path_list)
+    # need to close and reopen because the structure can be messed up when
+    # adding data
+    ph5.close()
 
 
 class TestPh5Validate_main(TempDirTestCase, LogTestCase):
-    def setUp(self):
-        super(TestPh5Validate_main, self).setUp()
-        create_ph5_data(self.home)
 
     def test_main(self):
+        create_ph5_data(self.tmpdir, ['12183'],
+                        os.path.join(self.home, 'ph5/test_data'),
+                        ['rt125a/das_t_12183.kef',
+                         'metadata/array_t_9_validate.kef'])
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -77,15 +75,6 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'WARNING: Data exists after pickup time: 2 seconds.\n')
 
     def test_get_args(self):
-        # wrong path
-        testargs = ['ph5_validate', '-n', 'master1.ph5']
-        with patch.object(sys, 'argv', testargs):
-            self.assertRaises(ValueError, ph5validate.get_args)
-        # wrong level
-        testargs = ['ph5_validate', '-n', 'master.ph5', '-l', 'EROR']
-        with patch.object(sys, 'argv', testargs):
-            self.assertRaises(ValueError, ph5validate.get_args)
-        # check values return and LOGGER's params
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -95,20 +84,21 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
         self.assertEqual(ret.outfile, 'ph5_validate.log')
         self.assertEqual(ret.ph5path, self.tmpdir)
         self.assertEqual(ret.verbose, False)
-        self.assertIsInstance(ph5validate.LOGGER.handlers[0],
-                              logging.FileHandler)
-        self.assertEqual(ph5validate.LOGGER.handlers[0].baseFilename,
-                         os.path.join(self.tmpdir, 'ph5_validate.log'))
 
 
 class TestPh5Validate(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestPh5Validate, self).setUp()
-        create_ph5_data(self.home)
+        create_ph5_data(self.tmpdir, ['12183'],
+                        os.path.join(self.home, 'ph5/test_data'),
+                        ['rt125a/das_t_12183.kef',
+                         'metadata/array_t_9_validate.kef'])
+        # need to recreate ph5_object to re-structure data
         self.ph5_object = ph5api.PH5(
             nickname='master.ph5', path=self.tmpdir)
         self.ph5validate = ph5validate.PH5Validate(
-            self.ph5_object, self.tmpdir, outfile="ph5_validate.log")
+            self.ph5_object, self.tmpdir, "WARNING",
+            outfile="ph5_validate.log")
 
     def tearDown(self):
         self.ph5_object.ph5close()
