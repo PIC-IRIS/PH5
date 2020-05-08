@@ -476,10 +476,10 @@ class PH5Validate(object):
         sample_rate = station['sample_rate_i']
         nodata_err = None
         if das_serial not in self.ph5.Das_t:
-            nodata_err = ("No data found for das serial number {0}. You may "
-                          "need to reload the raw data for this station."
-                          ).format(str(das_serial))
-            error.append(nodata_err)
+            error.append("No data found for das serial number {0}. "
+                         "You may need to reload the raw "
+                         "data for this station."
+                         .format(str(das_serial)))
 
         dt = self.das_time[(das_serial, channel_id, sample_rate)]
         # add bound_errors if applicable
@@ -853,26 +853,6 @@ def get_args():
             args.level != "INFO":
         raise ValueError("Invalid logging level.")
 
-    # if args.nickname is not None:
-    #     PH5 = args.nickname
-    # if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
-    #     raise ValueError("{0} not found.".format(PH5))
-    # else:
-    #     # Set up logging
-    #     # Write log to file
-    #     ch = logging.FileHandler(os.path.join('.', "ph5_validate.log"))
-    #     if args.level == "ERROR":
-    #         ch.setLevel(logging.ERROR)
-    #     elif args.level == "WARNING":
-    #         ch.setLevel(logging.WARNING)
-    #     elif args.level == "INFO":
-    #         ch.setLevel(logging.INFO)
-    #     else:
-    #         raise PH5ValidateException("Invalid Level %s" % args.level)
-    #
-    #     formatter = logging.Formatter(LOGGING_FORMAT)
-    #     ch.setFormatter(formatter)
-    #     LOGGER.addHandler(ch)
     if args.verbose is True:
         LOGGER.parent.handlers[0].setLevel(logging.DEBUG)
     return args
