@@ -11,7 +11,6 @@ import logging
 import re
 import sys
 import os
-
 import subprocess
 
 from ph5.core import ph5api
@@ -461,27 +460,26 @@ class PH5Validate(object):
         sample_rate = station['sample_rate_i']
         nodata_err = None
         if das_serial not in self.ph5.Das_t:
-            nodata_err = "No data found for das serial number {0}. "\
-                "You may need to reload the raw data for this station."\
-                .format(str(das_serial))
+            nodata_err = ("No data found for das serial number {0}. You may "
+                          "need to reload the raw data for this station."
+                          ).format(str(das_serial))
             error.append(nodata_err)
 
-        DT = self.das_time[(das_serial, channel_id, sample_rate)]
+        dt = self.das_time[(das_serial, channel_id, sample_rate)]
         # add bound_errors if applicable
-        if deploy_time == DT['min_deploy_time'][0]:
+        if deploy_time == dt['min_deploy_time'][0]:
             try:
-                warning.append(DT['min_deploy_time'][1])
+                warning.append(dt['min_deploy_time'][1])
             except IndexError:
                 pass
 
-        das_time_list = DT['time_windows']
+        das_time_list = dt['time_windows']
 
         index = das_time_list.index((deploy_time, pickup_time, station_id))
 
         overlaps = []
         # check if there is any overlap time for this das
-        for i in range(len(das_time_list)):
-            t = das_time_list[i]
+        for t in das_time_list:
             if ((t[0] <= deploy_time < t[1]) or (t[0] < pickup_time <= t[1])):
                 overlaps.append(t[2])
 
@@ -596,11 +594,11 @@ class PH5Validate(object):
                              stat['id_s']))
 
         for key in self.das_time.keys():
-            DT = self.das_time[key]
-            DT['time_windows'].sort()
+            dt = self.das_time[key]
+            dt['time_windows'].sort()
             d, c, spr = key
-            DT['min_deploy_time'] = [DT['time_windows'][0][0]]
-            DT['max_pickup_time'] = [max([t[1] for t in DT['time_windows']])]
+            dt['min_deploy_time'] = [dt['time_windows'][0][0]]
+            dt['max_pickup_time'] = [max([t[1] for t in dt['time_windows']])]
             # look for data outside time border of each set
             true_deploy, true_pickup = self.ph5.get_extent(das=d,
                                                            component=c,
@@ -609,11 +607,11 @@ class PH5Validate(object):
                 # No data found. But don't give warning here because it
                 #  will be given in check_station_completness
                 continue
-            if true_deploy < DT['min_deploy_time'][0]:
-                time = int(DT['min_deploy_time'][0] - true_deploy)
+            if true_deploy < dt['min_deploy_time'][0]:
+                time = int(dt['min_deploy_time'][0] - true_deploy)
                 warningmsg = "Data exists before deploy time: %s seconds." \
                     % time
-                DT['min_deploy_time'].append(warningmsg)
+                dt['min_deploy_time'].append(warningmsg)
             # Don't check Data exitsts after pickup time here
             # it will be check in check_station_completeness
 
@@ -635,7 +633,6 @@ class PH5Validate(object):
             self.analyze_time()
             array_names = sorted(self.ph5.Array_t_names)
             for array_name in array_names:
-                # self.read_arrays(array_name) # read in analyze_time
                 arraybyid = self.ph5.Array_t[array_name]['byid']
                 arrayorder = self.ph5.Array_t[array_name]['order']
                 for ph5_station in arrayorder:
