@@ -13,7 +13,8 @@ from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
-def create_ph5_data(ph5path, das_sn_list, common_path, kef_path_list):
+def create_ph5_data(ph5path, das_sn_list, common_path, kef_path_list,
+                    need_ph5_return=False):
     # create master.ph5
     testargs = ['initialize_ph5', '-n', 'master.ph5']
     with patch.object(sys, 'argv', testargs):
@@ -25,8 +26,12 @@ def create_ph5_data(ph5path, das_sn_list, common_path, kef_path_list):
         ph5.ph5_g_receivers.newdas(sn)
     # add metadata from kef
     kef_to_ph5(ph5path, 'master.ph5', common_path, kef_path_list)
-    # need to close and reopen because the structure can be messed up when
-    # adding data
+    # need to close and reopen to refresh data
+    if need_ph5_return:
+        ph5.ph5close()
+        ph5.ph5open(False)
+        ph5.initgroup()
+        return ph5
     ph5.close()
 
 
@@ -89,13 +94,11 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
 class TestPh5Validate(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestPh5Validate, self).setUp()
-        create_ph5_data(self.tmpdir, ['12183'],
-                        os.path.join(self.home, 'ph5/test_data'),
-                        ['rt125a/das_t_12183.kef',
-                         'metadata/array_t_9_validate.kef'])
-        # need to recreate ph5_object to re-structure data
-        self.ph5_object = ph5api.PH5(
-            nickname='master.ph5', path=self.tmpdir)
+        self.ph5_object = create_ph5_data(
+            self.tmpdir, ['12183'],
+            os.path.join(self.home, 'ph5/test_data'),
+            ['rt125a/das_t_12183.kef', 'metadata/array_t_9_validate.kef'],
+            need_ph5_return=True)
         self.ph5validate = ph5validate.PH5Validate(
             self.ph5_object, self.tmpdir, "WARNING",
             outfile="ph5_validate.log")
