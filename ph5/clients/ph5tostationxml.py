@@ -705,6 +705,7 @@ class PH5toStationXMLParser(object):
                                  station_entry['channel_number_i'],
                                  e)
                             self.add_uni_errmsg(msg)
+                        if lat_lon_errs != []:
                             continue
 
                         start_date = UTCDateTime(
@@ -721,7 +722,6 @@ class PH5toStationXMLParser(object):
                             # chosen end time before pickup
                             continue
 
-                        obs_channels = []
                         # run channel filters if necessary. we do this
                         # first to avoid creating a station that has no
                         # channels
