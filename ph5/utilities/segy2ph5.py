@@ -78,9 +78,9 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        for l in self.lines:
-            if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
-                return l['n_i']
+        for ln in self.lines:
+            if ln['bit_weight/value_d'] == bw and ln['gain/value_i'] == gain:
+                return ln['n_i']
 
         return -1
 

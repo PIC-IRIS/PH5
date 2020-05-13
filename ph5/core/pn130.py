@@ -1285,10 +1285,10 @@ class PN130:
             self.packet_time_string(p)[2:], p.unit)
         self.SOH.append(s)
         lines = string.split(c.Information, '\r\n')
-        for l in lines:
+        for line in lines:
             try:
-                if l[0] != ' ':
-                    self.SOH.append(l)
+                if line[0] != ' ':
+                    self.SOH.append(line)
             except IndexError:
                 pass
 
@@ -2098,7 +2098,7 @@ if __name__ == "__main__":
             if not p:
                 continue
             events = pn.get_stream_event(s)
-            log = pn.get_logs()
+            logs = pn.get_logs()
             soh = pn.get_soh()
             streams = events.keys()
             for s in streams:
@@ -2149,8 +2149,8 @@ if __name__ == "__main__":
                             first_time, last_time, points)
 
             # Print log
-            for l in log:
-                print l
+            for log in logs:
+                print log
             # Print soh
             for s in soh:
                 print s
