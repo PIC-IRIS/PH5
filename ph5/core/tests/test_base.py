@@ -50,8 +50,8 @@ class LogTestCase(unittest.TestCase):
         return file_logger_handlers
 
     def remove_file_loggers(self):
-        for l, h in self.find_all_file_loggers():
-            l.removeHandler(h)
+        for log, h in self.find_all_file_loggers():
+            log.removeHandler(h)
 
 
 class TempDirTestCase(unittest.TestCase):

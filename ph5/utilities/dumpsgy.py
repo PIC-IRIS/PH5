@@ -301,11 +301,11 @@ def print_extended_header(container):
         print "{2} {0:<20}\t---\t{1}".format(k, eval(what), foffset)
 
 
-def read_trace(n, l, f=5):
+def read_trace(n, length, f=5):
     ret = []
     if PRINT is True:
         for i in range(n):
-            buf = FH.read(l)
+            buf = FH.read(length)
             # IBM floats - 4 byte - Must be big endian
             if f == 1:
                 ret.append(construct.BFloat32(
@@ -341,7 +341,7 @@ def read_trace(n, l, f=5):
                 ret.append(construct.SBInt8("x").parse(buf))
 
     else:
-        FH.read(n * l)
+        FH.read(n * length)
 
     return ret
 
