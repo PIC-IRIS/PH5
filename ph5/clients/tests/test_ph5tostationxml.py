@@ -5,12 +5,15 @@ import unittest
 import os
 import sys
 import logging
+from StringIO import StringIO
 
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
 from ph5.utilities import kef2ph5
 from ph5.clients import ph5tostationxml
+from ph5.clients.ph5tostationxml import lat_err, lon_err, \
+    box_intersection_err, radial_intersection_err
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -86,10 +89,13 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                     '--level', 'network', '-f', 'text']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
+                f = StringIO(ord('\r'))     # hit enter to continue
+                sys.stdin = f
                 ph5tostationxml.main()
+                f.close()
                 output = out.captured.strip().split("\n")
                 self.assertEqual(
-                    output[1],
+                    output[2],
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
 
@@ -133,6 +139,14 @@ class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
 
+def combine_header(st_id, errlist):
+    err_pattern = "array 001, station {0}, channel 1: {1}"
+    err_with_header_list = []
+    for err in errlist:
+        err_with_header_list.append(err_pattern.format(st_id, err))
+    return err_with_header_list
+
+
 class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5toStationXMLParser_latlon, self).setUp()
@@ -146,21 +160,23 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
             "NETWORK", 34, 40, -111, -105, 36, -107, 0, 3)
 
         # errors in array_latlon_err.kef
-        self.errmsgs = [
-            "array 1111, station 001,"
-            " channel 1: Lat -107.0 not in range [-90,90]",
-            "array 1112, station 001, channel 1:"
-            " Lon 182.0 not in range [-180,180]",
-            "array 1113, station 001, channel 1: Box intersection: Lat 70.0"
-            " not in range [34,40] or Lon 100.0 not in range [-111,-105]",
-            "array 1114, station 001, channel 1: Box intersection: Lat 35.0"
-            " not in range [34,40] or Lon 100.0 not in range [-111,-105]",
-            "array 1116, station 001, channel 1: lat,lon=35.0,-111.0:"
-            " radial intersection between a point radius boundary [0, 3]"
-            " and a lat/lon point [36, -107]",
-            "array 1117, station 001, channel 1: lat,lon=40.0,-106.0:"
-            " radial intersection between a point radius boundary [0, 3]"
-            " and a lat/lon point [36, -107]"]
+        self.err_dict = {
+            '1111': [lat_err(-107.0),
+                     box_intersection_err(-107.0, 34, 40, 100.0, -111, -105),
+                     radial_intersection_err(-107.0, 100.0, 0, 3, 36, -107)],
+            '1112': [lon_err(182.0),
+                     box_intersection_err(35.0, 34, 40, 182.0, -111, -105),
+                     radial_intersection_err(35.0, 182.0, 0, 3, 36, -107)],
+            '1113': [box_intersection_err(70.0, 34, 40, 100.0, -111, -105),
+                     radial_intersection_err(70.0, 100.0, 0, 3, 36, -107)],
+            '1114': [box_intersection_err(35.0, 34, 40, 100.0, -111, -105),
+                     radial_intersection_err(35.0, 100.0, 0, 3, 36, -107)],
+            '1116': [radial_intersection_err(35.0, -111.0, 0, 3, 36, -107)],
+            '1117': [radial_intersection_err(40.0, -106.0, 0, 3, 36, -107)]
+        }
+
+        self.errmsgs = [combine_header(st_id, self.err_dict[st_id])
+                        for st_id in sorted(self.err_dict.keys())]
 
     def tearDown(self):
         self.mng.ph5.close()
@@ -168,40 +184,32 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
 
     def test_is_lat_lon_match(self):
         # 1. latitude not in (-90, 90)
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], -107, 100)
-        self.assertEqual(ret, 'Lat -107 not in range [-90,90]')
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], -107., 100.)
+        self.assertEqual(ret, self.err_dict['1111'])
 
         # 2. longitude not in (-180, 180)
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35, 182)
-        self.assertEqual(ret, 'Lon 182 not in range [-180,180]')
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., 182.)
+        self.assertEqual(ret, self.err_dict['1112'])
 
         # 3. latitude not in minlatitude=34 and maxlatitude=40
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 70, 100)
-        self.assertEqual(
-            ret, "Box intersection: Lat 70 not in range [34,40] "
-            "or Lon 100 not in range [-111,-105]")
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 70., 100.)
+        self.assertEqual(ret, self.err_dict['1113'])
 
         # 4. longitude not in minlongitude=-111 and maxlongitude=-105
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35, 100)
-        self.assertEqual(
-            ret, "Box intersection: Lat 35 not in range [34,40] "
-            "or Lon 100 not in range [-111,-105]")
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., 100.)
+        self.assertEqual(ret, self.err_dict['1114'])
 
         # 5. pass all checks
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35, -106)
-        self.assertEqual(ret, True)
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., -106.)
+        self.assertEqual(ret, [])
 
         # 6. longitude got radius intersection
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35, -111)
-        self.assertEqual(
-            ret, "lat,lon=35,-111: radial intersection between a point "
-            "radius boundary [0, 3] and a lat/lon point [36, -107]")
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., -111.)
+        self.assertEqual(ret, self.err_dict['1116'])
 
         # 7. latitude got radius intersection
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 40, -106)
-        self.assertEqual(
-            ret, "lat,lon=40,-106: radial intersection between a point "
-            "radius boundary [0, 3] and a lat/lon point [36, -107]")
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 40., -106.)
+        self.assertEqual(ret, self.err_dict['1117'])
 
     def test_read_station(self):
         self.parser.add_ph5_stationids()
@@ -215,13 +223,8 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             self.parser.create_obs_network()
-
-            self.assertEqual(log.records[0].msg, self.errmsgs[0])
-            self.assertEqual(log.records[1].msg, self.errmsgs[1])
-            self.assertEqual(log.records[2].msg, self.errmsgs[2])
-            self.assertEqual(log.records[3].msg, self.errmsgs[3])
-            self.assertEqual(log.records[4].msg, self.errmsgs[4])
-            self.assertEqual(log.records[5].msg, self.errmsgs[5])
+            for i in range(len(self.errmsgs)):
+                self.assertEqual(log.records[i].msg, self.errmsgs[i])
 
 
 if __name__ == "__main__":
