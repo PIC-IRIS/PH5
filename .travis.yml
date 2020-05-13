@@ -28,7 +28,6 @@ install:
   - conda info -a
   - conda list
   - python setup.py develop
-  - flake8 --version
 
 # before scripts
 before_script:
