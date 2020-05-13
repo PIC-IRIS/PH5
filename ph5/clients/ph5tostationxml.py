@@ -684,6 +684,7 @@ class PH5toStationXMLParser(object):
         return obs_network
 
     def read_stations(self):
+
         all_stations = []
         for sta_xml_obj in self.manager.request_list:
             array_patterns = sta_xml_obj.array_list
@@ -800,6 +801,7 @@ class PH5toStationXMLParser(object):
 
     def read_channels(self, sta_xml_obj, station_entry, deployment,
                       sta_code, array_code):
+
         all_channels = []
         cha_list_patterns = sta_xml_obj.channel_list
         component_list_patterns = sta_xml_obj.component_list
