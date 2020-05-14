@@ -175,8 +175,9 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
             '1117': [radial_intersection_err(40.0, -106.0, 0, 3, 36, -107)]
         }
 
-        self.errmsgs = [combine_header(st_id, self.err_dict[st_id])
-                        for st_id in sorted(self.err_dict.keys())]
+        self.errmsgs = []
+        for st_id in sorted(self.err_dict.keys()):
+            self.errmsgs += combine_header(st_id, self.err_dict[st_id])
 
     def tearDown(self):
         self.mng.ph5.close()
