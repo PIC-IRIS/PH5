@@ -13,7 +13,7 @@ from testfixtures import LogCapture
 
 from ph5.core import ph5api, columns
 from ph5.utilities import resp_load, segd2ph5, metadatatoph5, obspytoph5, \
-    initialize_ph5
+    initialize_ph5, tabletokef
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
@@ -385,8 +385,11 @@ class Test_n_i_fix_simpleph5object(TempDirTestCase, LogTestCase):
         ref = columns.TABLES['/Experiment_g/Responses_g/Response_t']
         columns.populate(ref, response_entry, None)
         self.n_i_fix.ph5.read_response_t()
+        response_t = tabletokef.Rows_Keys(self.n_i_fix.ph5.Response_t['rows'],
+                                          self.n_i_fix.ph5.Response_t['keys'])
+
         with LogCapture() as log:
-            resp_load.write_backup(self.n_i_fix.ph5.Response_t,
+            resp_load.write_backup(response_t,
                                    '/Experiment_g/Responses_g/Response_t',
                                    'Response_t')
             msg = log.records[0].msg

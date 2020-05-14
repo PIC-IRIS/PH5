@@ -44,12 +44,8 @@ def write_backup(table, node_path, table_name):
         backup_filename = "{0}_{1:02d}.kef".format(prefix, i)
         i += 1
     LOGGER.info("Writing table backup: %s." % backup_filename)
-    backup_file = open(backup_filename, 'w')
-    if isinstance(table, tabletokef.Rows_Keys):
-        data = table
-    else:
-        data = tabletokef.Rows_Keys(table['rows'], table['keys'])
-    tabletokef.table_print(node_path, data, backup_file)
+    with open(backup_filename, 'w') as backup_file:
+        tabletokef.table_print(node_path, table, backup_file)
 
 
 def group_list_dict(data, listed_keys):
@@ -501,8 +497,10 @@ class n_i_fix(object):
         tabletokef.ARRAY_T = {}
         if not self.ph5.Response_t:
             self.ph5.read_response_t()
+        response_t = tabletokef.Rows_Keys(self.ph5.Response_t['rows'],
+                                          self.ph5.Response_t['keys'])
         # backup and delete response_t
-        write_backup(self.ph5.Response_t,
+        write_backup(response_t,
                      '/Experiment_g/Responses_g/Response_t',
                      'Response_t')
         self.ph5.ph5_g_responses.nuke_response_t()
@@ -537,8 +535,7 @@ class n_i_fix(object):
                     'station_entry': station.station_entry}
             if item not in unique_list:
                 unique_list.append(item)
-        # unique_list = group_list_dict(unique_list,
-        # serial is for update das_t    ['station_entry', 'serial'])
+
         unique_list = group_list_dict(unique_list, ['station_entry'])
 
         """
@@ -549,7 +546,6 @@ class n_i_fix(object):
         all_resp = {item['n_i']: item for item in self.ph5.Response_t['rows']}
         # max_n_i: used for new response entry added
         max_n_i = max(all_resp.keys())
-        # das_update = {}
         for x in unique_list:
             if x['n_i'] == -1:
                 # no response signal
@@ -591,22 +587,6 @@ class n_i_fix(object):
             LOGGER.info("%s-%s-%s-%s: n_i %s=>%s" %
                         (x['s_model'], x['d_model'], x['s_rate'],
                          x['s_rate_m'], x['n_i'], max_n_i))
-            """
-            das_update to update das_t
-            LOGGER.info("%s-%s-%s-%s: n_i %s=>%s: for das: %s" %
-                        (x['s_model'], x['d_model'], x['s_rate'],
-                         x['s_rate_m'], x['n_i'], max_n_i,
-                         ','.join(x['serials'])))
-            for serial in x['serials']:
-                das_entry = {}
-                das_entry['n_i'] = x['n_i']
-                das_entry['new_n_i'] = max_n_i
-                das_entry['s_rate'] = x['s_rate']
-                das_entry['s_rate_m'] = x['s_rate_m']
-                if serial not in das_update:
-                    das_update[serial] = []
-                das_update[serial].append(das_entry)
-                """
 
         # populate response_t with updated entries in self.ph5.Response_t
         for entry in self.ph5.Response_t['rows']:
@@ -633,39 +613,6 @@ class n_i_fix(object):
                         station = station_list[deployment][st_num]
                         columns.populate(ref, station)
             LOGGER.info("Update %s." % array_name)
-
-        """
-        Not update das tables to not mess up with the data submitted to DMC.
-        But ph5api.get_response_t() might return the wrong response entry
-        in the case different (model, sample rate, sample rate multiplier)s
-        share the same index. The PH5 meeting on 5/5/2020 decided that the
-        function though is used in ph5api.cut() but doesn't affect anything.
-        So the code to update das tables will be commented out
-        # update das tables with new n_i if new response entries are created
-        das_to_kef = []
-        for serial in das_update.keys():
-            self.ph5.read_das_t(serial)
-            Das_t = self.ph5.Das_t[serial]
-            datapath = '/Experiment_g/Receivers_g/Das_t_%s/Das_t' % serial
-            for entry in Das_t['rows']:
-                for d in das_update[serial]:
-                    if (entry['sample_rate_i'] == d['s_rate'] and
-                            entry['sample_rate_multiplier_i'] == d['s_rate_m']
-                            and entry['response_table_n_i'] == d['n_i']):
-                        if serial not in das_to_kef:
-                            # backup/delete Das_t before it is updated
-                            write_backup(
-                                Das_t, datapath, 'Das_t_%s' % serial)
-                            self.ph5.ph5_g_receivers.nuke_das_t(serial)
-                            das_to_kef.append(serial)
-                        # up date n_i
-                        entry['response_table_n_i'] = d['new_n_i']
-            # populate das_t with updated entries from Das_t['rows']
-            for entry in Das_t['rows']:
-                self.ph5.ph5_g_receivers.populateDas_t(entry)
-            LOGGER.info("Update Das_t_%s." % serial)
-            self.ph5.forget_das_t(serial)
-        """
 
 
 def get_args():
