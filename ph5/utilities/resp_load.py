@@ -58,13 +58,13 @@ def group_list_dict(data, listed_keys):
         the same values for group keys will be grouped into one entry with all
         values in each listed_key turned into a unique list under new key:
             a listed_key + 's'
-    :ex: data = [{ka:v1a, kb:v1b, kc:v1c, kd:v1d},
-                 {ka:v1a, kb:v1b, kc:v1c_, kd:v1d},
-                 {ka:v2a, kb:v2b, kc:v2c, kd:v2d },
-                 {ka:v2a, kb:v2b, kc:v2c, kd:v2d_}]
-         listed_keys = [kc, kd]
-         return: [{ka:v1a, kb:v1b, kcs:[v1c, v1c_], kds:[v1d]},
-                  {ka:v2a, kb:v2b, kcs:[v2c], kds:[v2d, v2d_]}
+    :ex: data = [{das:rt130, sr:100, srm:1, st_id:1001},
+                 {das:rt130, sr:1, srm:1, st_id:1003},
+                 {das:rt130, sr:100, srm:1, st_id:1002},
+                 {das:rt130, sr:1, srm:1, st_id:1004},]
+         listed_keys = [st_id]
+         return: [{das:rt130, sr:100, srm:1, st_ids:[1001,1002]},
+                  {das:rt130, sr:1, srm:1, st_ids:[1003,1004]}]
     """
 
     def keyfunc(dict, keys):
