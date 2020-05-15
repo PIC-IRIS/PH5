@@ -347,10 +347,6 @@ def populateExperimentTable():
 def closePH5():
     global EX
     EX.ph5close()
-    try:
-        EXREC.ph5close()
-    except BaseException:
-        pass
 
 
 def window_contained(e):
