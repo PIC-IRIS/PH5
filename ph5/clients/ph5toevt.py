@@ -575,13 +575,13 @@ def gather(args, p5):
                         logs = segyfactory.write_segy_hdr(
                             trace, fh, sf, num_traces)
                         # Write any messages
-                        for l in logs:
-                            LOGGER.info(l)
+                        for log in logs:
+                            LOGGER.info(log)
                     else:
                         # Write trace
                         logs = segyfactory.write_segy(trace, fh, sf)
-                        for l in logs:
-                            LOGGER.info(l)
+                        for log in logs:
+                            LOGGER.info(log)
         # Traces found does not match traces expected
         if i != num_traces and fh:
             # Need to update reel_header

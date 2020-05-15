@@ -1464,8 +1464,8 @@ class TablePanel(QtGui.QMainWindow):
         else:
             currItem.setForeground(QtCore.Qt.black)
             updated = False
-            for l in range(len(self.labels)):
-                if self.updatedTable[r][l] != self.table[r][l]:
+            for i in range(len(self.labels)):
+                if self.updatedTable[r][i] != self.table[r][i]:
                     updated = True
                     break
             if updated is False:
@@ -1536,8 +1536,8 @@ class TablePanel(QtGui.QMainWindow):
                 if currItem.text() == self.table[r][c]:
                     currItem.setForeground(QtCore.Qt.black)
                     updated = False
-                    for l in range(len(self.labels)):
-                        if self.updatedTable[r][l] != self.table[r][l]:
+                    for i in range(len(self.labels)):
+                        if self.updatedTable[r][i] != self.table[r][i]:
                             updated = True
                             break
                     if updated is False:
@@ -1573,8 +1573,8 @@ class TablePanel(QtGui.QMainWindow):
             self.updatedTable[r][c] = self.table[r][c]
             currItem.setForeground(QtCore.Qt.black)
             updated = False
-            for l in range(len(self.labels)):
-                if self.updatedTable[r][l] != self.table[r][l]:
+            for i in range(len(self.labels)):
+                if self.updatedTable[r][i] != self.table[r][i]:
                     updated = True
                     break
             if updated is False:
