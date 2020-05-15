@@ -8,40 +8,19 @@ import sys
 from mock import patch
 from testfixtures import OutputCapture
 
-from ph5.utilities import ph5validate, initialize_ph5
+from ph5.utilities import ph5validate
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
-
-
-def create_ph5_data(ph5path, das_sn_list, common_path, kef_path_list,
-                    need_ph5_return=False):
-    # create master.ph5
-    testargs = ['initialize_ph5', '-n', 'master.ph5']
-    with patch.object(sys, 'argv', testargs):
-        initialize_ph5.main()
-
-    ph5 = ph5api.PH5(path=ph5path, nickname='master.ph5', editmode=True)
-    # create nodes for das
-    for sn in das_sn_list:
-        ph5.ph5_g_receivers.newdas(sn)
-    # add metadata from kef
-    kef_to_ph5(ph5path, 'master.ph5', common_path, kef_path_list)
-    # need to close and reopen to refresh data
-    if need_ph5_return:
-        ph5.ph5close()
-        ph5.ph5open(False)
-        ph5.initgroup()
-        return ph5
-    ph5.close()
 
 
 class TestPh5Validate_main(TempDirTestCase, LogTestCase):
 
     def test_main(self):
-        create_ph5_data(self.tmpdir, ['12183'],
-                        os.path.join(self.home, 'ph5/test_data'),
-                        ['rt125a/das_t_12183.kef',
-                         'metadata/array_t_9_validate.kef'])
+        kef_to_ph5(
+            self.tmpdir, 'master.ph5',
+            os.path.join(self.home, 'ph5/test_data'),
+            ['rt125a/das_t_12183.kef', 'metadata/array_t_9_validate.kef'],
+            das_sn_list=['12183'])
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -94,11 +73,12 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
 class TestPh5Validate(TempDirTestCase, LogTestCase):
     def setUp(self):
         super(TestPh5Validate, self).setUp()
-        self.ph5_object = create_ph5_data(
-            self.tmpdir, ['12183'],
+        kef_to_ph5(
+            self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
             ['rt125a/das_t_12183.kef', 'metadata/array_t_9_validate.kef'],
-            need_ph5_return=True)
+            das_sn_list=['12183'])
+        self.ph5_object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
         self.ph5validate = ph5validate.PH5Validate(
             self.ph5_object, self.tmpdir, "WARNING",
             outfile="ph5_validate.log")
@@ -110,8 +90,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
     def test_analyze_time(self):
         """
         + check if das_time created has all time and station info
-        + check if it catch the case data exists before or after the whole
-        time range?
+        + check if it catch the case data exists before the whole time range
         """
         self.ph5validate.analyze_time()
         self.assertEqual(self.ph5validate.das_time.keys(), [('12183', 1, 500)])
