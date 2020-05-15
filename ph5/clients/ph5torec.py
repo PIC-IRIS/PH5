@@ -487,8 +487,8 @@ def gather(args, p5):
                             logs = segyfactory.write_segy_hdr(
                                 trace, fh, sf, num_traces)
                             # Write any messages
-                            for l in logs:
-                                LOGGER.info(l)
+                            for log in logs:
+                                LOGGER.info(log)
                         except segyfactory.SEGYError as e:
                             LOGGER.error("Header write failure.")
                             sys.exit()
@@ -496,8 +496,8 @@ def gather(args, p5):
                         # Write trace
                         try:
                             logs = segyfactory.write_segy(trace, fh, sf)
-                            for l in logs:
-                                LOGGER.info(l)
+                            for log in logs:
+                                LOGGER.info(log)
                             LOGGER.info('=-' * 40)
                         except segyfactory.SEGYError as e:
                             LOGGER.error("Trace write failure.")
