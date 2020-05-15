@@ -19,7 +19,8 @@ def initialize_ex(nickname, path, editmode=False):
     return ex
 
 
-def kef_to_ph5(ph5path, nickname, kefpath, keflist, ex=None):
+def kef_to_ph5(ph5path, nickname, commonpath, keflist,
+               ex=None, das_sn_list=[]):
     """
     Add kef to ph5file or to experiment (if ex is passed).
     (The task of deleting table before adding the table should happen before
@@ -28,9 +29,9 @@ def kef_to_ph5(ph5path, nickname, kefpath, keflist, ex=None):
 
     :para ph5path: path to ph5 file
     :type ph5path: string
-    :para kefpath: path to kef files
-    :type kefpath: string
-    :para keflist: A list of kef file names
+    :para commonpath: common part of paths to kef files
+    :type commonpath: string
+    :para keflist: A list of different parts of paths to kef files
     :type keflist: list of string
     :para ex: ph5 experiment from caller
     :para ex: ph5 experiment object
@@ -43,12 +44,15 @@ def kef_to_ph5(ph5path, nickname, kefpath, keflist, ex=None):
             kef2ph5.EX = initialize_ex(nickname, ph5path, True)
     else:
         kef2ph5.EX = ex
+    # create nodes for das
+    for sn in das_sn_list:
+        kef2ph5.EX.ph5_g_receivers.newdas(sn)
 
     kef2ph5.PH5 = os.path.join(ph5path, nickname)
     kef2ph5.TRACE = False
 
     for kef in keflist:
-        kef2ph5.KEFFILE = os.path.join(kefpath, kef)
+        kef2ph5.KEFFILE = os.path.join(commonpath, kef)
         kef2ph5.populateTables()
 
     if ex is None:
