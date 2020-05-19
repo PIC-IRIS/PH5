@@ -64,17 +64,16 @@ class Test_n_i_fix_indiv(TempDirTestCase, LogTestCase):
             raise AssertionError(e)
 
     def test_group_list_dict(self):
-        data = [{'ka': 'v1a', 'kb': 'v1b', 'kc': 'v1c', 'kd': 'v1d'},
-                {'ka': 'v1a', 'kb': 'v1b', 'kc': 'v1c_', 'kd': 'v1d'},
-                {'ka': 'v2a', 'kb': 'v2b', 'kc': 'v2c', 'kd': 'v2d'},
-                {'ka': 'v2a', 'kb': 'v2b', 'kc': 'v2c', 'kd': 'v2d_'}]
-        ret = resp_load.group_list_dict(data, ['kc', 'kd'])
+        data = [{'das': 'rt130', 'sr': 100, 'srm': 1, 'st_id': '1001'},
+                {'das': 'rt130', 'sr': 1, 'srm': 1, 'st_id': '1003'},
+                {'das': 'rt130', 'sr': 100, 'srm': 1, 'st_id': '1002'},
+                {'das': 'rt130', 'sr': 1, 'srm': 1, 'st_id': '1004'}]
+        ret = resp_load.group_list_dict(data, ['st_id'])
         self.assertEqual(
             sorted(ret),
-            [{'ka': 'v1a', 'kb': 'v1b',
-              'kcs': ['v1c', 'v1c_'], 'kds': ['v1d']},
-             {'ka': 'v2a', 'kb': 'v2b',
-              'kcs': ['v2c'], 'kds': ['v2d', 'v2d_']}]
+            [{'das': 'rt130', 'sr': 1, 'srm': 1, 'st_ids': ['1003', '1004']},
+             {'das': 'rt130', 'sr': 100, 'srm': 1, 'st_ids': ['1001', '1002']},
+             ]
         )
 
 
