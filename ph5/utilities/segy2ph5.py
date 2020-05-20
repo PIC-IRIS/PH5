@@ -78,9 +78,9 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        for l in self.lines:
-            if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
-                return l['n_i']
+        for ln in self.lines:
+            if ln['bit_weight/value_d'] == bw and ln['gain/value_i'] == gain:
+                return ln['n_i']
 
         return -1
 
@@ -581,7 +581,7 @@ def process_trace(th, bh, rh, eh, tr):
         for t in th:
             keys = sorted(t.keys())
             for k in keys:
-                line = "{1:<80}".format(k, t[k])
+                line = "{0} {1:<80}".format(k, t[k])
                 data.append(line)
 
         EXREC.ph5_g_receivers.newarray(

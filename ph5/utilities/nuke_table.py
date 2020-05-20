@@ -38,8 +38,7 @@ def get_args():
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.usage = ("delete_table --nickname ph5-file-prefix "
-                    "[options]".format(PROG_VERSION))
+    parser.usage = ("delete_table --nickname ph5-file-prefix [options]")
 
     parser.description = ("Initialize a table in a ph5 file. Caution:"
                           "Deletes contents of table!\n\nVersion: {0}"
@@ -180,10 +179,12 @@ def backup(table_type, table_path, table):
         i += 1
     # Exit if we can't write backup kef
     if os.access(os.getcwd(), os.W_OK):
-        LOGGER.info("Writing table backup: {0}.".format(os.path.join(outfile)))
+        LOGGER.info("Writing table backup: {0}."
+                    .format(os.path.join(os.getcwd(), outfile)))
     else:
         LOGGER.error(
-            "Can't write: {0}.\nExiting!".format(os.getcwd(), outfile))
+            "Can't write: {0}.\nExiting!"
+            .format(os.path.join(os.getcwd(), outfile)))
         sys.exit(-3)
     try:
         fh = open(outfile, 'w')
@@ -191,8 +192,8 @@ def backup(table_type, table_path, table):
         fh.close()
     except Exception:
         LOGGER.error(
-            "Failed to save {0}.\ne.message\nExiting!".format(os.getcwd(),
-                                                              outfile))
+            "Failed to save {0}.\ne.message\nExiting!"
+            .format(os.path.join(os.getcwd(), outfile)))
         sys.exit(-4)
 
 

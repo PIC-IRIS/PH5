@@ -93,9 +93,9 @@ class Resp(object):
         self.lines, self.keys = self.t.read_responses()
 
     def match(self, bw, gain):
-        for l in self.lines:
-            if l['bit_weight/value_d'] == bw and l['gain/value_i'] == gain:
-                return l['n_i']
+        for ln in self.lines:
+            if ln['bit_weight/value_d'] == bw and ln['gain/value_i'] == gain:
+                return ln['n_i']
 
         return -1
 
@@ -254,7 +254,7 @@ def read_par_file(file):
         flds = string.split(line, ';')
 
         if len(flds) != len(order.keys()):
-            LOGGER.error('Error in parameter file: %s'.format(line))
+            LOGGER.error('Error in parameter file: {}'.format(line))
             return False
 
         par = Par()

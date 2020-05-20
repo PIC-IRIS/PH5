@@ -12,6 +12,8 @@ dependencies:
  - numpy
  - numexpr
  - pyproj
+ - PySide
+ - pyqt=4
  - psutil
  - obspy
  - vispy
