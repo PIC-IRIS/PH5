@@ -10,12 +10,13 @@ import argparse
 import logging
 import re
 import subprocess
-import os
 import sys
+
 import tables
+
 from ph5.core import ph5api
 
-PROG_VERSION = "2019.29"
+PROG_VERSION = "2020.142"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -329,82 +330,97 @@ class PH5Validate(object):
             validation_blocks.append(vb)
         return validation_blocks
 
-    def check_resp_data(self, path, nickname, name, errors):
+    def check_resp_data(self, ph5table, name, errors):
         """
         Check if response data is loaded for response table's
         response file name
-        :para path: path to ph5 file
-        :para nickname: name of ph5 file
+        :para ph5table: table ph5
         :para name: name of response file
         :para errors: list of errors have been collected for checking
               response_t
         """
-
-        ph5 = tables.open_file(os.path.join(path, nickname), "r")
         try:
-            ph5.get_node(ph5.root.Experiment_g.Responses_g, name)
+            ph5table.get_node(ph5table.root.Experiment_g.Responses_g, name)
         except tables.NoSuchNodeError:
             errmsg = "No response data loaded for %s" % name
             errors.append(errmsg)
             LOGGER.error(errmsg)
 
-        ph5.close()
-
-    def check_resp_file_name(self, Response_t, n_i, station, chan,
-                             dev_type, name_from_array, errors):
+    def check_resp_file_name(self, Response_t, info, ftype,
+                             unique_filenames_n_i, errors):
         """
         Check response file names in response_t and array_t are matched
         :para Response_t: response table
         :para n_i: response_table_n_i
         :para station: station id
         :para chan: channel info
-        :para dev_type: 'das'/'sensor'
+        :para ftype: das/sensor/metadata
         :para name_from_array: response file name formed from info in array_t
         :para errors: list of errors have been collected for checking
                       response_t
         """
-        name_from_response = Response_t['response_file_%s_a' % dev_type]
-        name_from_response_short = name_from_response.split('/')[-1]
-        if (name_from_response_short == ''):
-            if (name_from_array != ''):
+        info['dmodel'] = info['dmodel'].translate(
+            None, ',-=.').replace(' ', '')
+        info['smodel'] = info['smodel'].translate(
+            None, ',-=.').replace(' ', '')
+        if ftype == 'metadata':
+            info_fname = "%(dmodel)s_%(smodel)s_%(spr)s%(cha_code)s" % info
+        elif ftype == 'sensor':
+            info_fname = info['smodel']
+        elif ftype == 'das':
+            info['gain'] = Response_t['gain/value_i']
+            info_fname = "%(dmodel)s_%(spr)s_%(sprm)s_%(gain)s" % info
+
+        n_i = info['n_i']
+        filename_n_i = (info_fname, n_i)
+        if filename_n_i in unique_filenames_n_i:
+            return info_fname
+
+        file_field = 'response_file_das_a'
+        if ftype == 'sensor':
+            file_field = 'response_file_sensor_a'
+        response_fname = Response_t[file_field].split('/')[-1]
+
+        if (response_fname == ''):
+            if (info_fname != ''):
                 errmsg = "Response_t's n_i %s: response_file_%s_a "\
-                    "is required." % (n_i, dev_type)
+                    "is required." % (info['n_i'], ftype)
                 if errmsg not in errors:
                     errors.append(errmsg)
                     LOGGER.error(errmsg)
-                return None
+            return None
         else:
-            if name_from_array != name_from_response_short:
-                errmsg = "%s-%s-response_table_n_i %s: "\
-                    "Response %s file name should be '%s' "\
-                    "while currently is '%s'."\
-                    % (station,
-                       chan,
-                       n_i,
-                       dev_type,
-                       name_from_array,
-                       name_from_response_short)
+            if info_fname != response_fname:
+                if ftype == 'metadata':
+                    return None
+                errmsg = ("{0}-{1}-{2} response_table_n_i {3}: Response {4} "
+                          "file name should be '{5}' while currently is"
+                          " '{6}'.").format(info['array'],
+                                            info['sta'],
+                                            info['cha_id'],
+                                            info['n_i'],
+                                            ftype,
+                                            info_fname,
+                                            response_fname)
                 if errmsg not in errors:
                     errors.append(errmsg)
                     LOGGER.error(errmsg)
                 return None
+        unique_filenames_n_i.append(filename_n_i)
+        return info_fname
 
-        return name_from_response
-
-    def check_response_t(self, resp_check_info, path, nickname):
+    def check_response_t(self, resp_check_info):
         """
-        :para path: path to ph5 file
-        :para nickname: name of ph5 file
-        :para resp_check_info: a list of dict of {n_i, stationid, channel_id,
-        sensor_model/das_model, sample_rate, sample_rate_multiplier):
+        :para resp_check_info: a list of dict of {n_i, sta, cha_id, cha_code,
+                                dmodel, smodel, spr,sprm}
         """
         LOGGER.info("Validating Response_t")
         header = ("-=-=-=-=-=-=-=-=-\n"
                   "Response_t\n"
                   "1 error\n"
                   "-=-=-=-=-=-=-=-=-\n")
-        unique_resp_file_names = []
-        unique_resp_file_names_n_i = []
+        checked_data_files = []
+        unique_filenames_n_i = []
         self.ph5.read_response_t()
         errors = []
         for info in resp_check_info:
@@ -415,34 +431,33 @@ class PH5Validate(object):
                     errors.append(errmsg)
                     LOGGER.error(errmsg)
                 continue
-
-            model = info['model'].translate(None, ',-=.').replace(" ", "")
-            if len(info) == 4:
-                # check sensor
-                resp_name_from_info = model
-                dev_type = 'sensor'
-
-            else:
-                # check das
-                resp_name_from_info = "%s_%s_%s_%s" % \
-                    (model, info['spr'], info['sprm'],
-                     Response_t['gain/value_i'])
-                dev_type = 'das'
-            if ((resp_name_from_info, info['n_i']) in
-                    unique_resp_file_names_n_i):
+            if info['n_i'] == -1:
+                # metadata no response signal
                 continue
-            unique_resp_file_names_n_i.append((resp_name_from_info,
-                                               info['n_i']))
-            resp_name_in_response_t = self.check_resp_file_name(
-                Response_t, info['n_i'], info['sta'], info['chan'],
-                dev_type, resp_name_from_info, errors)
 
-            if resp_name_in_response_t in unique_resp_file_names:
+            # check resp file from metadata
+            respfile = self.check_resp_file_name(
+                Response_t, info, 'metadata', unique_filenames_n_i, errors)
+            if respfile is not None:
+                # resp file is metadata type => don't need to check other types
+                if respfile not in checked_data_files:
+                    self.check_resp_data(self.ph5.ph5, respfile, errors)
+                    checked_data_files.append(respfile)
                 continue
-            unique_resp_file_names.append(resp_name_in_response_t)
-            if resp_name_in_response_t is not None:
-                self.check_resp_data(path, nickname,
-                                     resp_name_from_info, errors)
+
+            # check das
+            respfile = self.check_resp_file_name(
+                Response_t, info, 'das', unique_filenames_n_i, errors)
+            if (respfile is not None) and (respfile not in checked_data_files):
+                self.check_resp_data(self.ph5.ph5, respfile, errors)
+                checked_data_files.append(respfile)
+
+            # check sensor
+            respfile = self.check_resp_file_name(
+                Response_t, info, 'sensor', unique_filenames_n_i, errors)
+            if (respfile is not None) and (respfile not in checked_data_files):
+                self.check_resp_data(self.ph5.ph5, respfile, errors)
+                checked_data_files.append(respfile)
 
         # check for duplicated n_i
         n_i_list = [e['n_i'] for e in self.ph5.Response_t['rows']]
@@ -453,10 +468,7 @@ class PH5Validate(object):
                 ','.join(map(str, dup_indexes))
             LOGGER.error(errmsg)
             errors.append(errmsg)
-        if errors != []:
-            return [ValidationBlock(heading=header, error=errors)]
-        else:
-            return []
+        return [ValidationBlock(heading=header, error=errors)]
 
     def check_station_completeness(self, station):
         """
@@ -684,25 +696,25 @@ class PH5Validate(object):
                             station = station_list[deployment][st_num]
                             station_id = station['id_s']
                             channel_id = station['channel_number_i']
+                            cha_code = (station['seed_band_code_s'] +
+                                        station['seed_instrument_code_s'] +
+                                        station['seed_orientation_code_s'])
                             resp_n_i = station['response_table_n_i']
                             das_model = station['das/model_s']
+                            if das_model.startswith("ZLAND"):
+                                sensor_model = ''
+                            else:
+                                sensor_model = station['sensor/model_s']
                             item = {'n_i': resp_n_i,
+                                    'array': array_name,
                                     'sta': station_id,
-                                    'chan': channel_id,
-                                    'model': das_model,
+                                    'cha_id': channel_id,
+                                    'cha_code': cha_code,
+                                    'dmodel': das_model,
+                                    'smodel': sensor_model,
                                     'spr': station['sample_rate_i'],
                                     'sprm': station['sample_rate_multiplier_i']
                                     }
-                            if item not in resp_check_info:
-                                resp_check_info.append(item)
-
-                            sensor_model = '' \
-                                if das_model.startswith("ZLAND") \
-                                else station['sensor/model_s']
-                            item = {'n_i': resp_n_i,
-                                    'sta': station_id,
-                                    'chan': channel_id,
-                                    'model': sensor_model}
                             if item not in resp_check_info:
                                 resp_check_info.append(item)
 
@@ -917,8 +929,8 @@ def main():
         validation_blocks.extend(ph5validate.check_experiment_t())
         vb_array, resp_check_info = ph5validate.check_array_t()
         validation_blocks.extend(vb_array)
-        validation_blocks.extend(ph5validate.check_response_t(
-            resp_check_info, args.ph5path, args.nickname))
+        print("resp_check_info:", resp_check_info)
+        validation_blocks.extend(ph5validate.check_response_t(resp_check_info))
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
