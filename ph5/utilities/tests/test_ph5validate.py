@@ -192,6 +192,12 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
             self.assertEqual(ret[0].error, self.errors)
             for i in range(len(log.records)):
                 self.assertEqual(log.records[i].msg, self.errors[i])
+            self.assertEqual(ret[0].heading,
+                             "-=-=-=-=-=-=-=-=-\n"
+                             "Response_t\n"
+                             "2 error, 0 warning, 0 info\n"
+                             "-=-=-=-=-=-=-=-=-\n"
+                             )
 
 
 if __name__ == "__main__":

@@ -350,12 +350,11 @@ class PH5Validate(object):
                              unique_filenames_n_i, errors):
         """
         Check response file names in response_t and array_t are matched
-        :para Response_t: response table
-        :para n_i: response_table_n_i
-        :para station: station id
-        :para chan: channel info
-        :para ftype: das/sensor/metadata
-        :para name_from_array: response file name formed from info in array_t
+        :para Response_t: response table as a dicionary
+        :para info: station's info as a dictionary
+        :para ftype: one of the strings: das/sensor/metadata
+        :para unique_filenames_n_i: the list to keep track of (filename, n_i)s
+                that have been checked
         :para errors: list of errors have been collected for checking
                       response_t
         """
@@ -412,12 +411,12 @@ class PH5Validate(object):
     def check_response_t(self, resp_check_info):
         """
         :para resp_check_info: a list of dict of {n_i, sta, cha_id, cha_code,
-                                dmodel, smodel, spr,sprm}
+                                                  dmodel, smodel, spr, sprm}
         """
         LOGGER.info("Validating Response_t")
         header = ("-=-=-=-=-=-=-=-=-\n"
                   "Response_t\n"
-                  "1 error\n"
+                  "%s error, 0 warning, 0 info\n"
                   "-=-=-=-=-=-=-=-=-\n")
         checked_data_files = []
         unique_filenames_n_i = []
@@ -468,6 +467,7 @@ class PH5Validate(object):
                 ','.join(map(str, dup_indexes))
             LOGGER.error(errmsg)
             errors.append(errmsg)
+        header %= len(errors)
         return [ValidationBlock(heading=header, error=errors)]
 
     def check_station_completeness(self, station):
