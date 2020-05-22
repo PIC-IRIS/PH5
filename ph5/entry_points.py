@@ -122,7 +122,7 @@ class CommandList():
                            'at start of experiment.',
                            type=EntryPointTypes.INGESTION),
                 EntryPoint('125atoph5',
-                           'ph5.utilities.125a2ph5:main',
+                           'ph5.utilities.texan2ph5:main',
                            'Allows the user to add Texan '
                            'raw data to the PH5 file.',
                            type=EntryPointTypes.INGESTION),

@@ -46,10 +46,14 @@ ph5.clients.ph5tostationxml
  * Remove the report number from the alternateCode value in the network StationXML element
  * Round latitude and longitude to 6 decimal places in stationxml to match SEED maximum
  * Round elevation to 1 decimal place in stationxml to match SEED maximum
+ * fix incorrectly retrieving network time
 ph5.clients.ph5availability
  * New client for returning timeseries availability information
 ph5.utilities.ph5validate
  * add data time checking
+ * fig incorrectly detecting data between different deploy/pickup times
+ph5.utilities.test.test_ph5validate
+ * unittest for ph5validate
 ph5.utilities.sort_kef_gen.py
  * add -o option for file output
 ph5.utilities.time_kef_gen.py
@@ -65,6 +69,7 @@ ph5.utilities.seg2toph5
  * Make compatible for pforma
 ph5.utilities.pforma_io
  * add seg2 to pforma
+ * fix bug that duplicate index_t and array_t when copy tables from A/master.ph5 to Sigma/master.ph5
 ph5.utilities.125atoph5
  * fix pforma support after LOGGER change
 ph5.utilities.130toph5
@@ -98,6 +103,7 @@ ph5.core.test.test_base
  * use TempDirTestCase to handle temporary directory that keeps ph5 and log files created in unittests, this directory will be deleted if test successful or remained if test failed
  * use LogTestCase to disable log to be written to console in unittests, remove all handlers created in unittests except the one to capture log messages
  * add initialize_ex for creating ph5 experiment object
+ * add kef_to_ph5 to add metadata table, including das_t, from kef file to ph5
 ph5.clients.test.test_ph5availability
  * Unittest: Stop sending log to screen; Apply testfixtures to capture output and log; Apply tmpdir from test_base; Use os.path.join for path
 ph5.core.tests.test_segd2ph5
