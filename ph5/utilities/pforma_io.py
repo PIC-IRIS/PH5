@@ -194,7 +194,7 @@ class FormaIO():
         '''
             Run conversion commands in a subprocess
             cmds -> A dictionary of families that point to a list of commands.
-                    cmds['B']['125a2ph5 -n master.ph5 ...', '1302ph5 -n
+                    cmds['B']['texan2ph5 -n master.ph5 ...', '1302ph5 -n
                      master.ph5 ...']
             x -> The sequence of the current command executing in
              the list in cmds.

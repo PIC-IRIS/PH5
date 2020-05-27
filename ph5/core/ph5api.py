@@ -950,7 +950,11 @@ class PH5(experiment.ExperimentGroup):
 
     def forget_das_t(self, das):
         node = self.ph5_g_receivers.getdas_g(das)
-        node.umount()
+        try:
+            node.umount()
+        except NoSuchNodeError:
+            # when no minixxx.ph5 is used
+            pass
         if das in self.Das_t:
             del self.Das_t[das]
 
