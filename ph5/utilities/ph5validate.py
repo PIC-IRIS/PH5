@@ -330,7 +330,7 @@ class PH5Validate(object):
 
     def check_response_t(self, resp_check_info):
         """
-        :para resp_check_info: a list of dict of {n_i, sta, cha_id, cha_code,
+        :param resp_check_info: a list of dict of {n_i, sta, cha_id, cha_code,
                                                   dmodel, smodel, spr, sprm}
         """
         LOGGER.info("Validating Response_t")
@@ -348,15 +348,7 @@ class PH5Validate(object):
                                 checked_data_files, errors, LOGGER)
 
         check_resp_unique_n_i(self.ph5, errors, LOGGER)
-        # # check for duplicated n_i
-        # n_i_list = [e['n_i'] for e in self.ph5.Response_t['rows']]
-        # dup_indexes = set([i for i in n_i_list
-        #                    if n_i_list.count(i) > 1])
-        # if len(dup_indexes) != 0:
-        #     errmsg = "Response_t n_i duplicated: %s" % \
-        #         ','.join(map(str, dup_indexes))
-        #     LOGGER.error(errmsg)
-        #     errors.append(errmsg)
+
         header %= len(errors)
         return [ValidationBlock(heading=header, error=errors)]
 

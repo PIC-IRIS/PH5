@@ -13,6 +13,7 @@ from ph5.utilities import ph5validate
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
+
 class TestPH5Validate_response(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5Validate_response, self).setUp()
@@ -55,7 +56,6 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
     def tearDown(self):
         self.ph5API_object.close()
         super(TestPH5Validate_response, self).tearDown()
-
 
     def test_check_array_t(self):
         with LogCapture() as log:
