@@ -745,15 +745,13 @@ class PH5(experiment.ExperimentGroup):
             self.read_response_t()
 
         try:
-            response_t = self.Response_t['rows'][n_i]
-            if response_t['n_i'] != n_i:
-                for response_t in self.Response_t['rows']:
-                    if response_t['n_i'] == n_i:
-                        break
+            for response_t in self.Response_t['rows']:
+                if response_t['n_i'] == n_i:
+                    return response_t
         except BaseException:
-            response_t = None
+            return None
 
-        return response_t
+        return None
 
     def read_das_g_names(self):
         '''   Read Das_g names
