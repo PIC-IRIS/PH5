@@ -20,6 +20,7 @@ import pickle
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
+from ph5.utilities.validation import check_response_info, check_resp_unique_n_i
 
 PROG_VERSION = '2019.63'
 LOGGER = logging.getLogger(__name__)
@@ -288,6 +289,12 @@ class PH5toStationXMLParser(object):
         self.response_table_n_i = None
         self.receiver_table_n_i = None
         self.total_number_stations = 0
+        self.unique_errmsg = []
+        self.checked_data_files = {}
+        self.unique_filenames_n_i = []
+        self.all_response_table_n_i_s = []
+        self.manager.ph5.read_response_t()
+        check_resp_unique_n_i(self.manager.ph5, self.unique_errmsg, None)
 
     def is_lat_lon_match(self, sta_xml_obj, latitude, longitude):
         """
@@ -404,26 +411,35 @@ class PH5toStationXMLParser(object):
         else:
             return
 
-    def get_response_inv(self, obs_channel):
-
+    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id, spr, spr_m):
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
+        info = {'n_i': self.response_table_n_i,
+                'array': a_id,
+                'sta': sta_id,
+                'cha_id': cha_id,
+                'cha_code': obs_channel.code,
+                'dmodel': obs_channel.data_logger.model,
+                'smodel': obs_channel.sensor.model,
+                'spr': spr,
+                'sprm': spr_m,
+                }
+        if info['dmodel'].startswith("ZLAND"):
+            info['smodel'] = ''
+        check_info = check_response_info(
+            info, self.manager.ph5, self.unique_filenames_n_i,
+            self.checked_data_files, self.unique_errmsg, None)
+
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
-            self.manager.ph5.read_response_t()
-            Response_t = \
-                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
-            if Response_t:
-                response_file_das_a_name = Response_t.get(
-                    'response_file_das_a', None)
-                response_file_sensor_a_name = Response_t.get(
-                    'response_file_sensor_a', None)
-            else:
-                LOGGER.error('Response table not found')
+            if not check_info:
                 return Response()
+
+            response_file_das_a_name, response_file_sensor_a_name = check_info
+
             # parse datalogger response
             if response_file_das_a_name:
                 response_file_das_a = \
@@ -498,6 +514,13 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
+        for msg in self.unique_errmsg:
+            LOGGER.error(msg)
+
+        if len(self.all_response_table_n_i_s) == 1:
+            LOGGER.warning("Only one response_table_n_i=%s in array_t. "
+                           "Check if it requires more."
+                           % self.all_response_table_n_i_s[0])
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -871,8 +894,14 @@ class PH5toStationXMLParser(object):
                     # read response and add it to obspy channel inventory
                     self.response_table_n_i = \
                         station_entry['response_table_n_i']
-                    obs_channel.response = \
-                        self.get_response_inv(obs_channel)
+                    if (self.response_table_n_i not in
+                       self.all_response_table_n_i_s):
+                        self.all_response_table_n_i_s.append(
+                            self.response_table_n_i)
+                    obs_channel.response = self.get_response_inv(
+                            obs_channel, array_code, sta_code, c_id,
+                            station_entry['sample_rate_i'],
+                            station_entry['sample_rate_multiplier_i'])
 
                     all_channels.append(obs_channel)
         return all_channels
