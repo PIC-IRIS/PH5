@@ -173,6 +173,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             ret = validation.check_resp_file_name(
                 Response_t, info, 'das', [],
                 errors, logger, 'NoneQ330_NoneCMG3T_200HHN')
+            self.assertIsNone(ret)
             self.assertEqual(log.records[0].msg, self.errors[2])
 
         # n_i=0: ZLAND's response_das_file_name: 'ZLAND3C_500_1_24'
