@@ -16,8 +16,10 @@ def check_resp_data(ph5table, name, errors, logger):
     Check if response data is loaded for the response filename
     :para ph5table: table ph5
     :para name: response filename
-    para errors: list of errors
-    param logger: logger of the caller
+    :para errors: list of errors
+    :param logger: logger of the caller
+    :return: True if node
+             False if node not exist
     """
     try:
         ph5table.get_node(ph5table.root.Experiment_g.Responses_g, name)
@@ -33,13 +35,19 @@ def check_resp_file_name(Response_t, info, ftype, unique_filenames_n_i,
     """
     Check response file name in response_t matches with info from station entry
     :param Response_t: response entry according to info[n_i]
-    param info: info needed from each station:
+    :param info: info needed from each station:
             dict {n_i, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
     :param ftype: one of the strings: das/sensor/metadata
     :param unique_filenames_n_i: list of tupples (resp filename, n_i) to help
         not check the info if already checked
-    para errors: list of errors
-    param logger: logger of the caller
+    :para errors: list of errors
+    :param logger: logger of the caller
+    :return:
+      respname, resppath if info and response's path match
+      if info and response's path not match:
+        if ftype=metadata: return respname, None to have the name in metadata
+            format for the error message later if needed
+        else: return None
     """
     info['dmodel'] = info['dmodel'].translate(
         None, ',-=.').replace(' ', '')
@@ -99,24 +107,28 @@ def check_response_info(info, ph5, unique_filenames_n_i, checked_data_files,
     Check in response info for each station entry if the response filenames are
     correct (das filename created by metadata or das/sensor filename
     created by resp_load) and the response data are loaded.
-    param info: info needed from each station:
+    :param info: info needed from each station:
             dict {n_i, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
-    param ph5: ph5 object
-    param unique_filenames_n_i: list of tupples (resp filename, n_i) to help
+    :param ph5: ph5 object
+    :param unique_filenames_n_i: list of tupples (resp filename, n_i) to help
         not check the info if already checked
-    param checked_data_files: list of resp filename of which data have been
+    :param checked_data_files: diction of resp filename of which data have been
         check for being loaded
-    param errors: list of errors
-    param logger: logger of the caller
+    :param errors: list of errors
+    :param logger: logger of the caller
+    :return:
+        False if no response data loaded
+        (d_path, s_path) in which d_path and s_path are response paths for
+            das or sensor if loaded or None if none is loaded
     """
     Response_t = ph5.get_response_t_by_n_i(info['n_i'])
     if Response_t is None:
         errmsg = "No response entry for n_i=%s." % info['n_i']
         addError(errmsg, errors, logger)
-        return
+        return False
     if info['n_i'] == -1:
         # metadata no response signal
-        return
+        return False
 
     # check resp file from metadata
     m_ret = check_resp_file_name(
@@ -128,12 +140,12 @@ def check_response_info(info, ph5, unique_filenames_n_i, checked_data_files,
             if m_file not in checked_data_files.keys():
                 if check_resp_data(ph5.ph5, m_file, errors, logger):
                     checked_data_files[m_file] = True
-                    return (m_path, '')
+                    return (m_path, None)
                 else:
                     checked_data_files[m_file] = False
                     return False
             if checked_data_files[m_file]:
-                return (m_path, '')
+                return (m_path, None)
             else:
                 return False
 
@@ -142,7 +154,7 @@ def check_response_info(info, ph5, unique_filenames_n_i, checked_data_files,
         Response_t, info, 'sensor', unique_filenames_n_i, errors, logger)
     if s_ret is not None:
         s_file, s_path = s_ret
-        if s_file not in checked_data_files:
+        if s_file not in checked_data_files.keys():
             if check_resp_data(ph5.ph5, s_file, errors, logger):
                 checked_data_files[s_file] = True
             else:
@@ -159,7 +171,7 @@ def check_response_info(info, ph5, unique_filenames_n_i, checked_data_files,
         Response_t, info, 'das', unique_filenames_n_i, errors, logger, m_file)
     if ret is not None:
         d_file, d_path = ret
-        if d_file not in checked_data_files:
+        if d_file not in checked_data_files.keys():
             if check_resp_data(ph5.ph5, d_file, errors, logger):
                 checked_data_files[d_file] = True
                 return (d_path, s_path)
