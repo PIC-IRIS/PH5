@@ -47,11 +47,13 @@ ph5.clients.ph5tostationxml
  * Round latitude and longitude to 6 decimal places in stationxml to match SEED maximum
  * Round elevation to 1 decimal place in stationxml to match SEED maximum
  * fix incorrectly retrieving network time
+ * checking response table's issue: filename, data, duplication
 ph5.clients.ph5availability
  * New client for returning timeseries availability information
 ph5.utilities.ph5validate
  * add data time checking
- * fig incorrectly detecting data between different deploy/pickup times
+ * fix incorrectly detecting data between different deploy/pickup times
+ * add checking response table's issue: filename, data, duplication
 ph5.utilities.test.test_ph5validate
  * unittest for ph5validate
 ph5.utilities.sort_kef_gen.py
@@ -108,6 +110,9 @@ ph5.clients.test.test_ph5availability
  * Unittest: Stop sending log to screen; Apply testfixtures to capture output and log; Apply tmpdir from test_base; Use os.path.join for path
 ph5.core.tests.test_segd2ph5
  * Unittest: Stop sending log to screen; Apply tmpdir from test_base; Use os.path.join for path
+ph5.utilities.validation
+ * common functions for ph5validate and ph5tostationxml
+ * functions for checking response filename, data, duplication
 
 v4.1.2:
 ph5.utilities.ph5validate
