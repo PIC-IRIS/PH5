@@ -10,8 +10,9 @@ from StringIO import StringIO
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.clients.ph5tostationxml import lat_err, lon_err, \
-    box_intersection_err, radial_intersection_err
+from ph5.clients import ph5tostationxml
+from ph5.clients.ph5tostationxml import box_intersection_err,\
+    radial_intersection_err
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
@@ -122,10 +123,10 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
 
         # errors in array_latlon_err.kef
         self.err_dict = {
-            '1111': [lat_err(-107.0),
+            '1111': ["Channel latitude -107.0 not in range [-90,90]",
                      box_intersection_err(-107.0, 34, 40, 100.0, -111, -105),
                      radial_intersection_err(-107.0, 100.0, 0, 3, 36, -107)],
-            '1112': [lon_err(182.0),
+            '1112': ["Channel longitude 182.0 not in range [-180,180]",
                      box_intersection_err(35.0, 34, 40, 182.0, -111, -105),
                      radial_intersection_err(35.0, 182.0, 0, 3, 36, -107)],
             '1113': [box_intersection_err(70.0, 34, 40, 100.0, -111, -105),
@@ -145,32 +146,50 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
         super(TestPH5toStationXMLParser_latlon, self).tearDown()
 
     def test_is_lat_lon_match(self):
+        station = {'location/X/units_s': 'degrees',
+                   'location/Y/units_s': 'degrees',
+                   'location/Z/value_d': 1403,
+                   'location/Z/units_s': 'm'}
         # 1. latitude not in (-90, 90)
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], -107., 100.)
+        station['location/Y/value_d'] = -107.0
+        station['location/X/value_d'] = 100.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, self.err_dict['1111'])
 
         # 2. longitude not in (-180, 180)
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., 182.)
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = 182.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, self.err_dict['1112'])
 
         # 3. latitude not in minlatitude=34 and maxlatitude=40
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 70., 100.)
+        station['location/Y/value_d'] = 70.0
+        station['location/X/value_d'] = 100.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, self.err_dict['1113'])
 
         # 4. longitude not in minlongitude=-111 and maxlongitude=-105
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., 100.)
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = 100.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, self.err_dict['1114'])
 
         # 5. pass all checks
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., -106.)
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = -106.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, [])
 
         # 6. longitude got radius intersection
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 35., -111.)
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = -111.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, self.err_dict['1116'])
 
         # 7. latitude got radius intersection
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], 40., -106.)
+        station['location/Y/value_d'] = 40.0
+        station['location/X/value_d'] = -106.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
         self.assertEqual(ret, self.err_dict['1117'])
 
     def test_read_station(self):

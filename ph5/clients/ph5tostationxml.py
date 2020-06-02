@@ -9,6 +9,8 @@ import argparse
 import fnmatch
 import multiprocessing
 import logging
+import pickle
+
 from datetime import datetime
 from obspy.core import inventory
 from obspy import read_inventory  # NOQA
@@ -16,21 +18,13 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 from obspy.core.inventory.response import Response
 from obspy.io.xseed.core import _is_resp
-import pickle
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
+from ph5.utilities.validation import check_lat_lon_elev
 
 PROG_VERSION = '2019.63'
 LOGGER = logging.getLogger(__name__)
-
-
-def lat_err(lat):
-    return "Lat %s not in range [-90,90]" % lat
-
-
-def lon_err(lon):
-    return "Lon %s not in range [-180,180]" % lon
 
 
 def box_intersection_err(lat, minlat, maxlat, lon, minlon, maxlon):
@@ -316,7 +310,7 @@ class PH5toStationXMLParser(object):
         if errmsg not in self.unique_errmsg:
             self.unique_errmsg.append(errmsg)
 
-    def is_lat_lon_match(self, sta_xml_obj, latitude, longitude):
+    def is_lat_lon_match(self, sta_xml_obj, station):
         """
         Checks if the given latitude/longitude matches geographic query
         constraints
@@ -326,11 +320,9 @@ class PH5toStationXMLParser(object):
             geographic constraints
         """
         errors = []
-        if not -90 <= float(latitude) <= 90:
-            errors.append(lat_err(latitude))
-
-        if not -180 <= float(longitude) <= 180:
-            errors.append(lon_err(longitude))
+        latitude = float(station['location/Y/value_d'])
+        longitude = float(station['location/X/value_d'])
+        check_lat_lon_elev(station, errors)
         # check if lat/lon box intersection
         if not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
                                              sta_xml_obj.maxlatitude,
@@ -712,10 +704,8 @@ class PH5toStationXMLParser(object):
                             station_code = station_entry['seed_station_name_s']
                         else:
                             station_code = sta_id
-                        lat_lon_errs = self.is_lat_lon_match(
-                            sta_xml_obj,
-                            latitude,
-                            longitude)
+                        lat_lon_errs = self.is_lat_lon_match(sta_xml_obj,
+                                                             station_entry)
                         for e in lat_lon_errs:
                             msg = "array %s, station %s, channel %s: %s" % \
                                 (array_code, station_code,
@@ -834,10 +824,8 @@ class PH5toStationXMLParser(object):
                 if not ph5utils.does_pattern_exists(location_patterns,
                                                     loc_code):
                     continue
-                lat_lon_errs = self.is_lat_lon_match(
-                    sta_xml_obj,
-                    latitude,
-                    longitude)
+                lat_lon_errs = self.is_lat_lon_match(sta_xml_obj,
+                                                     station_entry)
                 if lat_lon_errs != []:
                     continue
                 start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
