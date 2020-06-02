@@ -197,14 +197,15 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
     def test_read_station(self):
         self.parser.add_ph5_stationids()
         self.parser.read_stations()
-        self.assertEqual(self.parser.unique_errmsg, self.errmsgs)
+        for i in range(len(self.errmsgs)):
+            self.assertEqual(self.parser.unique_errors[i][0], self.errmsgs[i])
 
     def test_create_obs_network(self):
         self.parser.manager.ph5.read_experiment_t()
         self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
         self.parser.add_ph5_stationids()
         with LogCapture() as log:
-            log.setLevel(logging.ERROR)
+            log.setLevel(logging.WARNING)
             self.parser.create_obs_network()
             for i in range(len(self.errmsgs)):
                 self.assertEqual(log.records[i].msg, self.errmsgs[i])
