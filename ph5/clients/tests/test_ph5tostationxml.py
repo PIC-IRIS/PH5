@@ -120,7 +120,8 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
                    ["array_latlon_err.kef", "experiment.kef"])
 
         self.ph5sxml, self.mng, self.parser = getParser(
-            "NETWORK", 34, 40, -111, -105, 36, -107, 0, 3)
+            self.tmpdir, 'master.ph5', "NETWORK",
+            34, 40, -111, -105, 36, -107, 0, 3)
 
         # errors in array_latlon_err.kef
         self.err_dict = {
