@@ -16,7 +16,7 @@ from ph5.clients.ph5tostationxml import box_intersection_err,\
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
-def getParser(level, minlat=None, maxlat=None, minlon=None,
+def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
               maxlon=None, lat=None, lon=None, minrad=None, maxrad=None):
     ph5sxml = [ph5tostationxml.PH5toStationXMLRequest(
         minlatitude=minlat,
@@ -30,8 +30,8 @@ def getParser(level, minlat=None, maxlat=None, minlon=None,
     )]
     mng = ph5tostationxml.PH5toStationXMLRequestManager(
         sta_xml_obj_list=ph5sxml,
-        ph5path=".",
-        nickname="master.ph5",
+        ph5path=ph5path,
+        nickname=nickname,
         level=level,
         format="TEXT"
     )
@@ -69,7 +69,8 @@ class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
                    ["array_multi_deploy.kef", "experiment.kef"])
-        self.ph5sxml, self.mng, self.parser = getParser("NETWORK")
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, 'master.ph5', 'NETWORK')
 
     def tearDown(self):
         self.mng.ph5.close()

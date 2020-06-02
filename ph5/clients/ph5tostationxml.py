@@ -21,7 +21,7 @@ from obspy.io.xseed.core import _is_resp
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
-from ph5.utilities.validation import check_lat_lon_elev
+from ph5.utilities import validation
 
 PROG_VERSION = '2019.63'
 LOGGER = logging.getLogger(__name__)
@@ -312,17 +312,17 @@ class PH5toStationXMLParser(object):
 
     def is_lat_lon_match(self, sta_xml_obj, station):
         """
-        Checks if the given latitude/longitude matches geographic query
-        constraints
-        :param: latitude : the latitude to check against the arguments
-            geographic constraints
-        :param: longitude : the longitude to check against the arguments
-            geographic constraints
+        Checks if the given station's latitude/longitude matches geographic
+        query constraints and the completeness of latitude/longitude/elevation
+        :param: sta_xml_obj : a PH5toStationXMLRequest object for checking
+            lat/lon box intersection and point/radius intersection
+        :param: station : a station entry of latitude, longitude and elevation
+            to be checked
         """
         errors = []
         latitude = float(station['location/Y/value_d'])
         longitude = float(station['location/X/value_d'])
-        check_lat_lon_elev(station, errors)
+        validation.check_lat_lon_elev(station, errors)
         # check if lat/lon box intersection
         if not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
                                              sta_xml_obj.maxlatitude,
@@ -824,6 +824,7 @@ class PH5toStationXMLParser(object):
                 if not ph5utils.does_pattern_exists(location_patterns,
                                                     loc_code):
                     continue
+
                 lat_lon_errs = self.is_lat_lon_match(sta_xml_obj,
                                                      station_entry)
                 if lat_lon_errs != []:

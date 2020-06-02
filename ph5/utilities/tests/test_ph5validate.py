@@ -128,8 +128,8 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         arraybyid = self.ph5validate.ph5.Array_t['Array_t_009']['byid']
         DT = self.ph5validate.das_time[('12183', 1, 500)]
 
-        #
-        # check warning Data exist before min_deploy_time
+        # check lon/lat not in range
+        # check warning data exist before min_deploy_time
         station = arraybyid.get('9001')[1][0]
         station['location/X/value_d'] = 190.0
         station['location/X/units_s'] = 'degrees'
@@ -145,6 +145,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
                           'Channel latitude -100.0 not in range [-90,90]',
                           'Data exists before deploy time: 7 seconds.'])
 
+        # check lon/lat = 0, no units, no elevation value
         # check warning data after pickup time
         station = arraybyid.get('9002')[1][0]
         station['location/X/value_d'] = 0
