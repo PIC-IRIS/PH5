@@ -647,7 +647,7 @@ class PH5Validate(object):
         info = []
         warning = []
         error = []
-        track_duplicated = []
+        track_repeated = []
         if not self.ph5.Array_t_names:
             header = ("-=-=-=-=-=-=-=-=-\n"
                       "Array_t\n"
@@ -680,11 +680,11 @@ class PH5Validate(object):
                                 item = (station_id, channel_id,
                                         station['deploy_time/epoch_l'],
                                         station['pickup_time/epoch_l'])
-                                if item in track_duplicated:
-                                    # avoid duplication message repeated
+                                if item in track_repeated:
+                                    # skip creating vb for repeated station
                                     continue
                                 else:
-                                    track_duplicated.append(item)
+                                    track_repeated.append(item)
 
                             if info or warning or error:
                                 header = ("-=-=-=-=-=-=-=-=-\n"
