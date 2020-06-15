@@ -303,12 +303,7 @@ class PH5toStationXMLParser(object):
         self.response_table_n_i = None
         self.receiver_table_n_i = None
         self.total_number_stations = 0
-        self.unique_errors = []
-
-    def add_uni_err(self, error):
-        # prevent repeating errmsg
-        if error not in self.unique_errors:
-            self.unique_errors.append(error)
+        self.unique_errors = set()
 
     def is_lat_lon_match(self, sta_xml_obj, station):
         """
@@ -524,7 +519,8 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
-        for errmsg, logtype in self.unique_errors:
+        unique_errors = sorted(list(self.unique_errors))
+        for errmsg, logtype in unique_errors:
             if logtype == 'error':
                 LOGGER.error(errmsg)
             else:
@@ -717,7 +713,7 @@ class PH5toStationXMLParser(object):
                                 (array_code, station_code,
                                  station_entry['channel_number_i'],
                                  e)
-                            self.add_uni_err((msg, 'warning'))
+                            self.unique_errors.add((msg, 'warning'))
                         if lat_lon_errs != []:
                             continue
 
