@@ -74,6 +74,22 @@ class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
                          ['Response_t n_i(s) duplicated: 1,3,6'])
 
 
+class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_no_experiment, self).tearDown()
+
+    def test_read_networks(self):
+        kef_to_ph5(self.tmpdir, 'master.ph5', '', [])
+        self.ph5sxml, self.mng, self.parser = getParser(
+            '.', 'master.ph5', "NETWORK")
+        with LogCapture() as log:
+            ret = self.parser.read_networks()
+            self.assertIsNone(ret)
+            self.assertEqual(log.records[0].msg,
+                             'No experiment_t in ./master.ph5')
+
+
 class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5toStationXMLParser_multideploy, self).setUp()
@@ -107,7 +123,7 @@ class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
     def test_read_networks(self):
-        ret = self.parser.read_networks('.')
+        ret = self.parser.read_networks()
         self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
         self.assertEqual(ret.end_date.isoformat(), '2019-09-28T14:29:39')
         self.assertEqual(ret.code, 'AA')

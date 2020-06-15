@@ -403,8 +403,8 @@ class PH5toStationXMLParser(object):
                 station.channels = []
         return network
 
-    def get_network(self, path):
-        network = self.read_networks(path)
+    def get_network(self):
+        network = self.read_networks()
         if network:
             network = self.trim_to_level(network)
             return network
@@ -636,9 +636,12 @@ class PH5toStationXMLParser(object):
 
         return obs_channel
 
-    def read_networks(self, path):
+    def read_networks(self):
         self.manager.ph5.read_experiment_t()
         self.experiment_t = self.manager.ph5.Experiment_t['rows']
+        if self.experiment_t == []:
+            LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
+            return
 
         # read network codes and compare to network list
         network_patterns = []
@@ -938,7 +941,7 @@ def execute(path, args_dict_list, nickname, level, out_format):
                                                     format=out_format
                                                   )
     ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
-    return ph5sxmlparser.get_network(path)
+    return ph5sxmlparser.get_network()
 
 
 def execute_unpack(args):

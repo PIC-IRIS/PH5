@@ -54,6 +54,7 @@ ph5.utilities.ph5validate
  * add data time checking
  * fix incorrectly detecting data between different deploy/pickup times
  * add checking response table's issue: filename, data, duplication
+ * detecting repeated stations
 ph5.utilities.test.test_ph5validate
  * unittest for ph5validate
 ph5.utilities.sort_kef_gen.py
@@ -129,6 +130,7 @@ ph5.clients.ph5torec
  * new utility
 -ph5.utilities.ph5tostationxml
  * Fixed bug causing arrays with same station id_s to be filtered out
+ * add descriptive error message and skip master with no experiment
 -ph5.utilities.kefedit
  Fixed not being able to save directly to PH5 (issue #193)
 -ph5.clients.ph5view

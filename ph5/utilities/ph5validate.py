@@ -11,6 +11,7 @@ import logging
 import re
 import subprocess
 import sys
+import copy
 
 from ph5.core import ph5api
 from ph5.utilities.validation import check_response_info, check_resp_unique_n_i
@@ -515,7 +516,16 @@ class PH5Validate(object):
             except IndexError:
                 pass
 
-        das_time_list = dt['time_windows']
+        das_time_list = copy.copy(dt['time_windows'])
+
+        # check for duplicates:
+        item = (deploy_time, pickup_time, station_id)
+        dups = [i for i, x in enumerate(das_time_list) if x == item]
+        if len(dups) > 1:
+            warning.append("Station %s [%s, %s] is repeated %s time(s)" %
+                           (station_id, deploy_time, pickup_time, len(dups)-1))
+            # delete all duplicates except for the last one
+            del das_time_list[dups[0]:dups[-1]]
 
         index = das_time_list.index((deploy_time, pickup_time, station_id))
 
@@ -664,6 +674,7 @@ class PH5Validate(object):
         info = []
         warning = []
         error = []
+        track_repeated = []
         if not self.ph5.Array_t_names:
             header = ("-=-=-=-=-=-=-=-=-\n"
                       "Array_t\n"
@@ -713,6 +724,17 @@ class PH5Validate(object):
                                                  str(channel_id)))
                             info, warning, error = \
                                 self.check_station_completeness(station)
+
+                            if any("repeated" in w for w in warning):
+                                item = (station_id, channel_id,
+                                        station['deploy_time/epoch_l'],
+                                        station['pickup_time/epoch_l'])
+                                if item in track_repeated:
+                                    # skip creating vb for repeated station
+                                    continue
+                                else:
+                                    track_repeated.append(item)
+
                             if info or warning or error:
                                 header = ("-=-=-=-=-=-=-=-=-\n"
                                           "Station {0} Channel {1}\n"
