@@ -4,12 +4,35 @@ Tests for ph5tostationxml
 import unittest
 import os
 import sys
-from mock import patch
 
-from testfixtures import OutputCapture
+from mock import patch
+from testfixtures import OutputCapture, LogCapture
 
 from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
+
+
+def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
+              maxlon=None, lat=None, lon=None, minrad=None, maxrad=None):
+    ph5sxml = [ph5tostationxml.PH5toStationXMLRequest(
+        minlatitude=minlat,
+        maxlatitude=maxlat,
+        minlongitude=minlon,
+        maxlongitude=maxlon,
+        latitude=lat,
+        longitude=lon,
+        minradius=minrad,
+        maxradius=maxrad
+    )]
+    mng = ph5tostationxml.PH5toStationXMLRequestManager(
+        sta_xml_obj_list=ph5sxml,
+        ph5path=ph5path,
+        nickname=nickname,
+        level=level,
+        format="TEXT"
+    )
+    parser = ph5tostationxml.PH5toStationXMLParser(mng)
+    return ph5sxml, mng, parser
 
 
 class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
@@ -30,6 +53,22 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
                     output[1],
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
+
+
+class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_no_experiment, self).tearDown()
+
+    def test_read_networks(self):
+        kef_to_ph5(self.tmpdir, 'master.ph5', '', [])
+        self.ph5sxml, self.mng, self.parser = getParser(
+            '.', 'master.ph5', "NETWORK")
+        with LogCapture() as log:
+            ret = self.parser.read_networks()
+            self.assertIsNone(ret)
+            self.assertEqual(log.records[0].msg,
+                             'No experiment_t in ./master.ph5')
 
 
 class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
@@ -85,7 +124,7 @@ class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
     def test_read_networks(self):
-        ret = self.parser.read_networks('.')
+        ret = self.parser.read_networks()
         self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
         self.assertEqual(ret.end_date.isoformat(), '2019-09-28T14:29:39')
         self.assertEqual(ret.code, 'AA')
