@@ -519,8 +519,7 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
-        unique_errors = sorted(list(self.unique_errors))
-        for errmsg, logtype in unique_errors:
+        for errmsg, logtype in sorted(list(self.unique_errors)):
             if logtype == 'error':
                 LOGGER.error(errmsg)
             else:
