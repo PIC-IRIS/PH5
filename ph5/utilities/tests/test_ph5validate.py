@@ -216,11 +216,14 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         self.assertEqual(
             warnings,
             ['No station description found.',
-             'Channel longitude 190.0 not in range [-180,180]',
-             'Channel latitude -100.0 not in range [-90,90]',
              'Data exists before deploy time: 7 seconds.',
              'Station 9001 [1550849950, 1550850034] is repeated 3 time(s)'])
-
+        errors = ret[2]
+        self.assertEqual(
+            errors,
+            ['No Response table found. Have you run resp_load yet?',
+             'Channel longitude 190.0 not in range [-180,180]',
+             'Channel latitude -100.0 not in range [-90,90]'])
         # check lon/lat = 0, no units, no elevation value
         # check warning data after pickup time
         station = arraybyid.get('9002')[1][0]
@@ -235,13 +238,17 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         self.assertEqual(
             warnings,
             ['No station description found.',
+             'Data exists after pickup time: 36 seconds.'])
+        errors = ret[2]
+        self.assertEqual(
+            errors,
+            ['No Response table found. Have you run resp_load yet?',
              'Channel longitude seems to be 0. Is this correct???',
              'No Station location/X/units_s value found.',
              'Channel latitude seems to be 0. Is this correct???',
              'No Station location/Y/units_s value found.',
              'No Channel location/Z/value_d value found.',
-             'No Station location/Z/units_s value found.',
-             'Data exists after pickup time: 36 seconds.'])
+             'No Station location/Z/units_s value found.'])
 
         # check error overlaping
         # => change deploy time of the 3rd station
