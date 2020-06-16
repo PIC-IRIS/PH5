@@ -423,7 +423,7 @@ class PH5Validate(object):
                          "Have you run resp_load yet?")
 
         # CHANNEL LOCATION
-        validation.check_lat_lon_elev(station, warning)
+        validation.check_lat_lon_elev(station, error)
 
         # CHANNEL DEPLOY/PICKUP
         deploy_time = station['deploy_time/epoch_l']
