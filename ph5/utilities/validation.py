@@ -130,6 +130,7 @@ def check_response_info(info, ph5, unique_filenames_n_i, checked_data_files,
         # metadata no response signal
         return False
 
+    m_file = None
     # check resp file from metadata
     m_ret = check_resp_file_name(
         Response_t, info, 'metadata', unique_filenames_n_i, errors, logger)
