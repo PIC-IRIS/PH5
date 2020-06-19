@@ -82,7 +82,6 @@ def read_soh(das_group):
     '''
     P5.ph5_g_receivers.setcurrent(das_group)
     soh = P5.ph5_g_receivers.read_soh()
-
     return soh
 
 
@@ -130,14 +129,13 @@ def parse_soh(soh_buf):
 def process_soh(soh):
     '''   Parse TO's and FROM's
     '''
-    tos = []
-    fos = []
+    to_froms = []
     soh_array_names = list(soh.keys())
     for soh_array_name in soh_array_names:
         soh_buf = soh[soh_array_name]
-        tos, fos = parse_soh(soh_buf)
+        to_froms.append(parse_soh(soh_buf))
 
-    return tos, fos
+    return to_froms
 
 
 def parse_tos_froms(tos, fos):
@@ -243,18 +241,20 @@ def main():
     for d in dass:
         das = d[6:]
         soh = read_soh(dasGroups[d])
-        tos, fos = process_soh(soh)
-        clock = parse_tos_froms(tos, fos)
-        print_kef(das, clock)
-        if clock[0] is None:
+        to_froms = process_soh(soh)
+        count_cor = 0
+        for tos, fos in to_froms:
+            clock = parse_tos_froms(tos, fos)
+            print_kef(das, clock)
+            if clock[0] is not None:
+                stats[0].append(das)
+                stats[1].append(clock[0])
+                stats[2].append(clock[1])
+                stats[3].append(clock[2])
+                stats[4].append(clock[3])
+                count_cor += 1
+        if count_cor == 0:
             no_cor.append(das)
-            continue
-        else:
-            stats[0].append(das)
-            stats[1].append(clock[0])
-            stats[2].append(clock[1])
-            stats[3].append(clock[2])
-            stats[4].append(clock[3])
 
     if ARGS.clock_report:
         report(stats, no_cor)
