@@ -14,7 +14,6 @@ import sys
 import copy
 
 from ph5.core import ph5api
-from ph5.utilities import validation
 
 PROG_VERSION = "2020.136"
 LOGGER = logging.getLogger(__name__)
@@ -423,7 +422,30 @@ class PH5Validate(object):
                          "Have you run resp_load yet?")
 
         # CHANNEL LOCATION
-        validation.check_lat_lon_elev(station, error)
+        if station['location/X/value_d'] == 0:
+            warning.append("Channel location/X/value_d "
+                           "'longitude' seems to be 0. "
+                           "Is this correct???")
+
+        if station['location/X/units_s'] is None:
+            warning.append("No Station location/X/units_s value "
+                           "found.")
+
+        if station['location/Y/value_d'] == 0:
+            warning.append("Channel location/Y/value_d "
+                           "'latitude' seems to be 0. "
+                           "Is this correct???")
+
+        if station['location/Y/units_s'] is None:
+            warning.append("No Station location/Y/units_s value "
+                           "found.")
+
+        if not station['location/Z/value_d']:
+            warning.append("No Channel location/Z/value_d value")
+
+        if station['location/Z/units_s'] is None:
+            warning.append("No Station location/Z/units_s value "
+                           "found.")
 
         # CHANNEL DEPLOY/PICKUP
         deploy_time = station['deploy_time/epoch_l']
