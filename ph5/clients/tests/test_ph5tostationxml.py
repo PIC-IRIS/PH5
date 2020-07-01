@@ -5,7 +5,6 @@ import unittest
 import os
 import sys
 import logging
-from StringIO import StringIO
 
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
@@ -51,13 +50,10 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                     '--level', 'network', '-f', 'text']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
-                f = StringIO(ord('\r'))     # hit enter to continue
-                sys.stdin = f
                 ph5tostationxml.main()
-                f.close()
                 output = out.captured.strip().split("\n")
                 self.assertEqual(
-                    output[2],
+                    output[1],
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
 
