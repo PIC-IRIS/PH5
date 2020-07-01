@@ -1041,10 +1041,6 @@ def main():
         if not inv:
             raise NoDataError("Request resulted in no data.")
 
-        raw_input('Check logs for errors. Please keep in mind that the '
-                  'entries with errors will not be displayed in the result.'
-                  '\nHit Enter/Return to continue.')
-
         if out_format == "STATIONXML":
             inv.write(args.outfile,
                       format='STATIONXML',
