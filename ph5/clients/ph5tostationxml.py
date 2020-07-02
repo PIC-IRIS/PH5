@@ -18,6 +18,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 from obspy.core.inventory.response import Response
 from obspy.io.xseed.core import _is_resp
+from obspy.core.util.obspy_types import FloatWithUncertaintiesFixedUnit
 
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
@@ -25,6 +26,22 @@ from ph5.utilities import validation
 
 PROG_VERSION = '2019.63'
 LOGGER = logging.getLogger(__name__)
+
+
+class LatLonWrapper(FloatWithUncertaintiesFixedUnit):
+    unit = "DEGREES"
+
+    def __init__(self, value):
+        self.datum = None
+        super(LatLonWrapper, self).__init__(value)
+
+
+class ElevWrapper(FloatWithUncertaintiesFixedUnit):
+    unit = "METERS"
+
+    def __init__(self, value):
+        self.datum = None
+        super(ElevWrapper, self).__init__(value)
 
 
 def box_intersection_err(lat, minlat, maxlat, lon, minlon, maxlon):
@@ -315,9 +332,12 @@ class PH5toStationXMLParser(object):
             to be checked
         """
         errors = []
+        warnings = []
+        validation.check_lat_lon_elev(station, errors, warnings)
+        """
+        comment out according to alissa request
         latitude = float(station['location/Y/value_d'])
         longitude = float(station['location/X/value_d'])
-        validation.check_lat_lon_elev(station, errors)
         # check if lat/lon box intersection
         if not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
                                              sta_xml_obj.maxlatitude,
@@ -339,8 +359,8 @@ class PH5toStationXMLParser(object):
                 latitude, longitude,
                 sta_xml_obj.minradius, sta_xml_obj.maxradius,
                 sta_xml_obj.latitude, sta_xml_obj.longitude))
-
-        return errors
+        """
+        return errors, warnings
 
     def read_arrays(self, name):
         if name is None:
@@ -548,12 +568,24 @@ class PH5toStationXMLParser(object):
     def create_obs_station(self, sta_code, start_date, end_date, sta_longitude,
                            sta_latitude, sta_elevation, creation_date,
                            termination_date, site_name):
-        obs_station = inventory.Station(sta_code,
-                                        latitude=round(sta_latitude, 6),
-                                        longitude=round(sta_longitude, 6),
-                                        start_date=start_date,
-                                        end_date=end_date,
-                                        elevation=round(sta_elevation, 1))
+        try:
+            obs_station = inventory.Station(sta_code,
+                                            latitude=round(sta_latitude, 6),
+                                            longitude=round(sta_longitude, 6),
+                                            start_date=start_date,
+                                            end_date=end_date,
+                                            elevation=round(sta_elevation, 1))
+        except ValueError:
+            # bypass to create obs_station
+            obs_station = inventory.Station(sta_code,
+                                            latitude=0,
+                                            longitude=0,
+                                            start_date=start_date,
+                                            end_date=end_date,
+                                            elevation=0)
+            obs_station._latitude = LatLonWrapper(sta_latitude)
+            obs_station._longitude = LatLonWrapper(sta_longitude)
+            obs_station._elevation = ElevWrapper(sta_elevation)
         obs_station.site = inventory.Site(name=(site_name if site_name
                                                 else sta_code))
         obs_station.creation_date = creation_date
@@ -571,15 +603,26 @@ class PH5toStationXMLParser(object):
                            azimuth, dip, sensor_manufacturer, sensor_model,
                            sensor_serial, das_manufacturer, das_model,
                            das_serial):
+        try:
+            obs_channel = inventory.Channel(
+                                            code=cha_code,
+                                            location_code=loc_code,
+                                            latitude=round(cha_latitude, 6),
+                                            longitude=round(cha_longitude, 6),
+                                            elevation=round(cha_elevation, 1),
+                                            depth=0)
+        except ValueError:
+            # bypass to create obs_channel
+            obs_channel = inventory.Channel(code=cha_code,
+                                            location_code=loc_code,
+                                            latitude=0,
+                                            longitude=0,
+                                            elevation=0,
+                                            depth=0)
+            obs_channel._latitude = LatLonWrapper(cha_latitude)
+            obs_channel._longitude = LatLonWrapper(cha_longitude)
+            obs_channel._elevation = ElevWrapper(cha_elevation)
 
-        obs_channel = inventory.Channel(
-                                        code=cha_code,
-                                        location_code=loc_code,
-                                        latitude=round(cha_latitude, 6),
-                                        longitude=round(cha_longitude, 6),
-                                        elevation=round(cha_elevation, 1),
-                                        depth=0
-                                            )
         obs_channel.start_date = start_date
         obs_channel.end_date = end_date
         obs_channel.sample_rate = sample_rate
@@ -705,17 +748,19 @@ class PH5toStationXMLParser(object):
                             station_code = station_entry['seed_station_name_s']
                         else:
                             station_code = sta_id
-                        lat_lon_errs = self.is_lat_lon_match(sta_xml_obj,
-                                                             station_entry)
-                        for e in lat_lon_errs:
-                            msg = "array %s, station %s, channel %s: %s" % \
-                                (array_code, station_code,
-                                 station_entry['channel_number_i'],
-                                 e)
+                        errs, warns = self.is_lat_lon_match(sta_xml_obj,
+                                                            station_entry)
+                        header = "array %s, station %s, channel %s: " % \
+                                 (array_code, station_code,
+                                  station_entry['channel_number_i'])
+                        for e in errs:
+                            msg = header + str(e)
+                            self.unique_errors.add((msg, 'error'))
+                        for e in warns:
+                            msg = header + str(e)
                             self.unique_errors.add((msg, 'warning'))
-                        if lat_lon_errs != []:
-                            continue
-
+                        # if errs != [] or warns != []:
+                        #     continue
                         start_date = UTCDateTime(
                                         station_entry['deploy_time/epoch_l'])
                         end_date = UTCDateTime(
@@ -826,10 +871,10 @@ class PH5toStationXMLParser(object):
                                                     loc_code):
                     continue
 
-                lat_lon_errs = self.is_lat_lon_match(sta_xml_obj,
-                                                     station_entry)
-                if lat_lon_errs != []:
-                    continue
+                # lat_lon_errs = self.is_lat_lon_match(sta_xml_obj,
+                #                                      station_entry)
+                # if lat_lon_errs != []:
+                #     continue
                 start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
                 end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
 
