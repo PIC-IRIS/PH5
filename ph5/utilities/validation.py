@@ -7,6 +7,8 @@ def check_lat_lon_elev(station, errors, warnings):
     if station['location/X/value_d'] == 0:
         warnings.append("Channel longitude seems to be 0. Is this correct???")
     if station['location/X/value_d'] in [None, '']:
+        # this will not happen
+        # if change in kef will be added to array as 0.0
         errors.append("No Channel longitude value found.")
     else:
         try:
@@ -20,8 +22,6 @@ def check_lat_lon_elev(station, errors, warnings):
                           % station['location/X/value_d'])
 
     if station['location/X/units_s'] in [None, '']:
-        # this will not happen
-        # if change in kef will be added to array as 0.0
         warnings.append("No Station location/X/units_s value found.")
 
     if station['location/Y/value_d'] == 0:
@@ -40,12 +40,12 @@ def check_lat_lon_elev(station, errors, warnings):
                           % station['location/Y/value_d'])
 
     if station['location/Y/units_s'] in [None, '']:
-        # this will not happen
-        # if change in kef will be added to array as 0.0
         warnings.append("No Station location/Y/units_s value found.")
 
     if station['location/Z/value_d'] in [None, '']:
+        # this will not happen
+        # if change in kef will be added to array as 0.0
         errors.append("No Channel location/Z/value_d value found.")
 
     if station['location/Z/units_s'] in [None, '']:
-        errors.append("No Station location/Z/units_s value found.")
+        warnings.append("No Station location/Z/units_s value found.")
