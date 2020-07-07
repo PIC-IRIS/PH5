@@ -36,9 +36,9 @@ def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
     return ph5sxml, mng, parser
 
 
-class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
-    def test_main(self):
-        # array_multideploy: same station different deploy times
+class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
+    def test_main_multideploy(self):
+        # array_multideploy.kef: same station different deploy times
         # => check if network time cover all or only the first 1
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
@@ -54,6 +54,28 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                     output[1],
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
+
+    def test_main_location(self):
+        # array_latlon_err.kef: station 1111-1117
+        # errors on 1111,1112
+        # suppose to not skip errors stations but have xml entries for all
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ["array_latlon_err.kef", "experiment.kef"])
+        testargs = ['ph5tostationxml', '-n', 'master',
+                    '--level', 'CHANNEL', '-f', 'text']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5tostationxml.main()
+                output = out.captured.strip().split("\n")
+        self.assertEqual(output[1].split("|")[1], '1111')
+        self.assertEqual(output[2].split("|")[1], '1112')
+        self.assertEqual(output[3].split("|")[1], '1113')
+        self.assertEqual(output[4].split("|")[1], '1114')
+        self.assertEqual(output[5].split("|")[1], '1115')
+        self.assertEqual(output[6].split("|")[1], '1116')
+        self.assertEqual(output[7].split("|")[1], '1117')
 
 
 class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
@@ -120,9 +142,9 @@ def combine_header(st_id, errlist):
     return err_with_header_list
 
 
-class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
+class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
     def setUp(self):
-        super(TestPH5toStationXMLParser_latlon, self).setUp()
+        super(TestPH5toStationXMLParser_location, self).setUp()
 
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
@@ -155,7 +177,7 @@ class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
 
     def tearDown(self):
         self.mng.ph5.close()
-        super(TestPH5toStationXMLParser_latlon, self).tearDown()
+        super(TestPH5toStationXMLParser_location, self).tearDown()
 
     def test_is_lat_lon_match(self):
         station = {'location/X/units_s': 'degrees',
