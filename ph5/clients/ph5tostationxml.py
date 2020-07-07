@@ -18,30 +18,13 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 from obspy.core.inventory.response import Response
 from obspy.io.xseed.core import _is_resp
-from obspy.core.util.obspy_types import FloatWithUncertaintiesFixedUnit
-
+from obspy.core.inventory.util import Distance
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.utilities import validation
 
 PROG_VERSION = '2019.63'
 LOGGER = logging.getLogger(__name__)
-
-
-class LatLonWrapper(FloatWithUncertaintiesFixedUnit):
-    unit = "DEGREES"
-
-    def __init__(self, value):
-        self.datum = None
-        super(LatLonWrapper, self).__init__(value)
-
-
-class ElevWrapper(FloatWithUncertaintiesFixedUnit):
-    unit = "METERS"
-
-    def __init__(self, value):
-        self.datum = None
-        super(ElevWrapper, self).__init__(value)
 
 
 def box_intersection_err(lat, minlat, maxlat, lon, minlon, maxlon):
@@ -583,9 +566,9 @@ class PH5toStationXMLParser(object):
                                             start_date=start_date,
                                             end_date=end_date,
                                             elevation=0)
-            obs_station._latitude = LatLonWrapper(sta_latitude)
-            obs_station._longitude = LatLonWrapper(sta_longitude)
-            obs_station._elevation = ElevWrapper(sta_elevation)
+            obs_station._latitude = Distance(sta_latitude, unit="DEGREES")
+            obs_station._longitude = Distance(sta_longitude, unit="DEGREES")
+            obs_station._elevation = Distance(sta_elevation, unit="METERS")
         obs_station.site = inventory.Site(name=(site_name if site_name
                                                 else sta_code))
         obs_station.creation_date = creation_date
@@ -619,9 +602,9 @@ class PH5toStationXMLParser(object):
                                             longitude=0,
                                             elevation=0,
                                             depth=0)
-            obs_channel._latitude = LatLonWrapper(cha_latitude)
-            obs_channel._longitude = LatLonWrapper(cha_longitude)
-            obs_channel._elevation = ElevWrapper(cha_elevation)
+            obs_channel._latitude = Distance(cha_latitude, unit="DEGREES")
+            obs_channel._longitude = Distance(cha_longitude, unit="DEGREES")
+            obs_channel._elevation = Distance(cha_elevation, unit="METERS")
 
         obs_channel.start_date = start_date
         obs_channel.end_date = end_date
