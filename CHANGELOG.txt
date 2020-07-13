@@ -1,4 +1,8 @@
 Master:
+docs
+ * Added inital compiled verison.  Use docsrc for changes.
+docsrc
+ * Added reStructuredText documentation for file format.
 ph5
  * fixed errors in entry_points.py that prevented apps from executing.
  * fixed: seg2toph5, ph5toevt. 
