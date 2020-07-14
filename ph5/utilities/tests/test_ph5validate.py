@@ -247,8 +247,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         errors = ret[2]
         self.assertEqual(
             errors,
-            ['No Response table found. Have you run resp_load yet?',
-             'No Channel location/Z/value_d value found.'])
+            ['No Response table found. Have you run resp_load yet?'])
 
         # check error overlaping
         # => change deploy time of the 3rd station
