@@ -11,6 +11,7 @@ from testfixtures import OutputCapture, LogCapture
 
 from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
+from ph5.utilities import initialize_ph5
 
 
 def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
@@ -56,6 +57,10 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
                     "2019-09-28T14:29:39|1")
 
     def test_main_location(self):
+        args = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', args):
+            with OutputCapture():
+                initialize_ph5.main()
         # array_latlon_err.kef: station 1111-1117
         # errors on 1111,1112
         # suppose to not skip errors stations but have xml entries for all
