@@ -303,7 +303,7 @@ class PH5toStationXMLParser(object):
         :param: latitude : the given latitude
         :param: longitude : the given longitude
         """
-        # if lat/lon box intersection
+        # check if lat/lon box intersection
         if not ph5utils.is_rect_intersection(sta_xml_obj.minlatitude,
                                              sta_xml_obj.maxlatitude,
                                              sta_xml_obj.minlongitude,
