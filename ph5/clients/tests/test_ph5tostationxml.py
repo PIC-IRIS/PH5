@@ -62,8 +62,9 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
             with OutputCapture():
                 initialize_ph5.main()
         # array_latlon_err.kef: station 1111-1117
-        # errors on 1111,1112
-        # suppose to not skip errors stations but have xml entries for all
+        # out of range on 1111,1112
+        # no unit for Y (latitude): 1114
+        # no value for Z: 1115
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
@@ -74,13 +75,25 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
             with OutputCapture() as out:
                 ph5tostationxml.main()
                 output = out.captured.strip().split("\n")
-        self.assertEqual(output[1].split("|")[1], '1111')
-        self.assertEqual(output[2].split("|")[1], '1112')
-        self.assertEqual(output[3].split("|")[1], '1113')
-        self.assertEqual(output[4].split("|")[1], '1114')
-        self.assertEqual(output[5].split("|")[1], '1115')
-        self.assertEqual(output[6].split("|")[1], '1116')
-        self.assertEqual(output[7].split("|")[1], '1117')
+        self.assertEqual(output[1].split("|")[1], '1113')
+        self.assertEqual(output[2].split("|")[1], '1114')
+        self.assertEqual(output[3].split("|")[1], '1115')
+        self.assertEqual(output[4].split("|")[1], '1116')
+        self.assertEqual(output[5].split("|")[1], '1117')
+
+        # excess box intersection on 1113, 1114
+        # excess radius intersection on 1116, 1117
+        testargs = ['ph5tostationxml', '-n', 'master',
+                    '--level', 'CHANNEL', '-f', 'text',
+                    '--minlat', '34', '--maxlat', '40',
+                    '--minlon', '-111', '--maxlon', '-105',
+                    '--latitude', '36', '--longitude', '-107',
+                    '--minradius', '0', '--maxradius', '3']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5tostationxml.main()
+                output = out.captured.strip().split("\n")
+        self.assertEqual(output[1].split("|")[1], '1115')
 
 
 class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
@@ -163,79 +176,54 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
         # errors in array_latlon_err.kef
         self.err_dict = {
             '1111': ["Channel latitude -107.0 not in range [-90,90]"],
-            #          box_intersection_err(-107.0, 34, 40, 100.0, -111, -105),
-            #          radial_intersection_err(-107.0, 100.0, 0, 3, 36, -107)],
             '1112': ["Channel longitude 182.0 not in range [-180,180]"],
-            #          box_intersection_err(35.0, 34, 40, 182.0, -111, -105),
-            #          radial_intersection_err(35.0, 182.0, 0, 3, 36, -107)],
-            # '1113': [box_intersection_err(70.0, 34, 40, 100.0, -111, -105),
-            #          radial_intersection_err(70.0, 100.0, 0, 3, 36, -107)],
-            # '1114': [box_intersection_err(35.0, 34, 40, 100.0, -111, -105),
-            #          radial_intersection_err(35.0, 100.0, 0, 3, 36, -107)],
-            # '1116': [radial_intersection_err(35.0, -111.0, 0, 3, 36, -107)],
-            # '1117': [radial_intersection_err(40.0, -106.0, 0, 3, 36, -107)]
+        }
+        self.warn_dict = {
+            '1114': ["No Station location/Y/units_s value found."],
+            '1115': ["Channel elevation seems to be 0. Is this correct???"]
         }
 
         self.errmsgs = []
         for st_id in sorted(self.err_dict.keys()):
             self.errmsgs += combine_header(st_id, self.err_dict[st_id])
 
+        self.warnmsgs = []
+        for st_id in sorted(self.warn_dict.keys()):
+            self.warnmsgs += combine_header(st_id, self.warn_dict[st_id])
+
     def tearDown(self):
         self.mng.ph5.close()
         super(TestPH5toStationXMLParser_location, self).tearDown()
 
-    def test_is_lat_lon_match(self):
-        station = {'location/X/units_s': 'degrees',
-                   'location/Y/units_s': 'degrees',
-                   'location/Z/value_d': 1403,
-                   'location/Z/units_s': 'm'}
-        # 1. latitude not in (-90, 90)
-        station['location/Y/value_d'] = -107.0
-        station['location/X/value_d'] = 100.0
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        self.assertEqual(ret, (self.err_dict['1111'], []))
+    def test_check_intersection(self):
+        # latitude not in minlatitude=34 and maxlatitude=40
+        ret = self.parser.check_intersection(self.ph5sxml[0], 70, 100)
+        self.assertFalse(ret)
 
-        # 2. longitude not in (-180, 180)
-        station['location/Y/value_d'] = 35.0
-        station['location/X/value_d'] = 182.0
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        self.assertEqual(ret, (self.err_dict['1112'], []))
+        # longitude not in minlongitude=-111 and maxlongitude=-105
+        ret = self.parser.check_intersection(self.ph5sxml[0], 35, 100)
+        self.assertFalse(ret)
 
-        # # 3. latitude not in minlatitude=34 and maxlatitude=40
-        # station['location/Y/value_d'] = 70.0
-        # station['location/X/value_d'] = 100.0
-        # ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        # self.assertEqual(ret, self.err_dict['1113'])
-        #
-        # # 4. longitude not in minlongitude=-111 and maxlongitude=-105
-        # station['location/Y/value_d'] = 35.0
-        # station['location/X/value_d'] = 100.0
-        # ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        # self.assertEqual(ret, self.err_dict['1114'])
+        # passed
+        ret = self.parser.check_intersection(self.ph5sxml[0], 35, -106)
+        self.assertTrue(ret)
 
-        # 5. pass all checks
-        station['location/Y/value_d'] = 35.0
-        station['location/X/value_d'] = -106.0
-        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        self.assertEqual(ret, ([], []))
-        #
-        # # 6. longitude got radius intersection
-        # station['location/Y/value_d'] = 35.0
-        # station['location/X/value_d'] = -111.0
-        # ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        # self.assertEqual(ret, self.err_dict['1116'])
-        #
-        # # 7. latitude got radius intersection
-        # station['location/Y/value_d'] = 40.0
-        # station['location/X/value_d'] = -106.0
-        # ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
-        # self.assertEqual(ret, self.err_dict['1117'])
+        # longitude excess radius intersection
+        ret = self.parser.check_intersection(self.ph5sxml[0], 35, -111)
+        self.assertFalse(ret)
+
+        # latitude excess radius intersection
+        ret = self.parser.check_intersection(self.ph5sxml[0], 40, -106)
+        self.assertFalse(ret)
 
     def test_read_station(self):
         self.parser.add_ph5_stationids()
-        self.parser.read_stations()
-        warningset = set([(err, 'error') for err in self.errmsgs])
-        self.assertEqual(warningset, self.parser.unique_errors)
+        ret = self.parser.read_stations()
+        issueset = set([(err, 'error') for err in self.errmsgs] +
+                       [(warn, 'warning') for warn in self.warnmsgs])
+        self.assertEqual(issueset, self.parser.unique_errors)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0].code, '1115')
 
     def test_create_obs_network(self):
         self.parser.manager.ph5.read_experiment_t()
@@ -243,9 +231,12 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
         self.parser.add_ph5_stationids()
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
-            self.parser.create_obs_network()
+            ret = self.parser.create_obs_network()
             self.assertEqual(set(rec.msg for rec in log.records),
-                             set(self.errmsgs))
+                             set(self.errmsgs + self.warnmsgs))
+            self.assertEqual(ret.code, 'AA')
+            self.assertEqual(len(ret), 1)
+            self.assertEqual(ret.stations[0].code, '1115')
 
 
 if __name__ == "__main__":
