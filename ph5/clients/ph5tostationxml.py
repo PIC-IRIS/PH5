@@ -18,6 +18,7 @@ from obspy.core.util import AttribDict
 from obspy.core import UTCDateTime
 from obspy.core.inventory.response import Response
 from obspy.io.xseed.core import _is_resp
+
 from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.utilities import validation
@@ -311,12 +312,12 @@ class PH5toStationXMLParser(object):
                                              longitude):
             return False
         # check if point/radius intersection
-        elif not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
-                                                 sta_xml_obj.longitude,
-                                                 sta_xml_obj.minradius,
-                                                 sta_xml_obj.maxradius,
-                                                 latitude,
-                                                 longitude):
+        if not ph5utils.is_radial_intersection(sta_xml_obj.latitude,
+                                               sta_xml_obj.longitude,
+                                               sta_xml_obj.minradius,
+                                               sta_xml_obj.maxradius,
+                                               latitude,
+                                               longitude):
             return False
         return True
 
@@ -549,13 +550,15 @@ class PH5toStationXMLParser(object):
                            azimuth, dip, sensor_manufacturer, sensor_model,
                            sensor_serial, das_manufacturer, das_model,
                            das_serial):
+
         obs_channel = inventory.Channel(
                                         code=cha_code,
                                         location_code=loc_code,
                                         latitude=round(cha_latitude, 6),
                                         longitude=round(cha_longitude, 6),
                                         elevation=round(cha_elevation, 1),
-                                        depth=0)
+                                        depth=0
+        )
 
         obs_channel.start_date = start_date
         obs_channel.end_date = end_date
@@ -695,9 +698,8 @@ class PH5toStationXMLParser(object):
                             self.unique_errors.add((msg, 'warning'))
                         if errors != []:
                             continue
-                        ret = self.check_intersection(sta_xml_obj, latitude,
-                                                      longitude)
-                        if not ret:
+                        if not self.check_intersection(sta_xml_obj, latitude,
+                                                       longitude):
                             continue
                         start_date = UTCDateTime(
                                         station_entry['deploy_time/epoch_l'])

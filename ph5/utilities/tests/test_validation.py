@@ -41,7 +41,7 @@ class TestValidation(unittest.TestCase):
                    'location/X/units_s': '',
                    'location/Y/value_d': 0,
                    'location/Y/units_s': None,
-                   'location/Z/value_d': None,
+                   'location/Z/value_d': 0,
                    'location/Z/units_s': None}
         errors, warnings = validation.check_lat_lon_elev(station)
         self.assertEqual(errors, [])
@@ -51,6 +51,7 @@ class TestValidation(unittest.TestCase):
              'No Station location/X/units_s value found.',
              'Channel latitude seems to be 0. Is this correct???',
              'No Station location/Y/units_s value found.',
+             'Channel elevation seems to be 0. Is this correct???',
              'No Station location/Z/units_s value found.'])
 
 
