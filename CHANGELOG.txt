@@ -38,6 +38,9 @@ ph5.core.experiment
  * fix fast offset_table reading (issue #280)
 ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
+ph5.utilities.validation
+ * keep common validation for both ph5tostationxml and ph5validate
+ * Check for location errors and warnings
 ph5.clients.ph5tostationxml
  * Limit number of asynchronous processes
  * Remove storage format from the sxml channel level to be compatible with sxml version 1.1
@@ -47,12 +50,16 @@ ph5.clients.ph5tostationxml
  * Round latitude and longitude to 6 decimal places in stationxml to match SEED maximum
  * Round elevation to 1 decimal place in stationxml to match SEED maximum
  * fix incorrectly retrieving network time
+ * Entry that is excess intersection will not be logged and will not be included in xml
+ * Entry that has location out of range will be logged as error and will not be included in xml
+ * Entry that has location value=0 or no location unit will be logged as warning and will be included in xml
 ph5.clients.ph5availability
  * New client for returning timeseries availability information
 ph5.utilities.ph5validate
  * add data time checking
  * fix incorrectly detecting data between different deploy/pickup times
  * detecting repeated stations
+ * move checking for location errors and warnings to validation
 ph5.utilities.test.test_ph5validate
  * unittest for ph5validate
 ph5.utilities.sort_kef_gen.py
