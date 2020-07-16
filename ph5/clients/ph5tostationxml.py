@@ -559,7 +559,6 @@ class PH5toStationXMLParser(object):
                                         elevation=round(cha_elevation, 1),
                                         depth=0
                                             )
-
         obs_channel.start_date = start_date
         obs_channel.end_date = end_date
         obs_channel.sample_rate = sample_rate
