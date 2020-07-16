@@ -3,7 +3,9 @@ common functions for validation
 """
 
 
-def check_lat_lon_elev(station, errors, warnings):
+def check_lat_lon_elev(station):
+    errors = []
+    warnings = []
     if station['location/X/value_d'] == 0:
         warnings.append("Channel longitude seems to be 0. Is this correct???")
     if not -180 <= float(station['location/X/value_d']) <= 180:
@@ -24,3 +26,4 @@ def check_lat_lon_elev(station, errors, warnings):
         warnings.append("Channel elevation seems to be 0. Is this correct???")
     if station['location/Z/units_s'] in [None, '']:
         warnings.append("No Station location/Z/units_s value found.")
+    return errors, warnings
