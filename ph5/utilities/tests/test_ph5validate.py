@@ -202,8 +202,15 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         arraybyid = self.ph5validate.ph5.Array_t['Array_t_009']['byid']
         DT = self.ph5validate.das_time[('12183', 1, 500)]
 
-        # check warning before min_deploy_time
+        # check lon/lat not in range
+        # check warning data exist before min_deploy_time
         station = arraybyid.get('9001')[1][0]
+        station['location/X/value_d'] = 190.0
+        station['location/X/units_s'] = 'degrees'
+        station['location/Y/value_d'] = -100.0
+        station['location/Y/units_s'] = 'degrees'
+        station['location/Z/value_d'] = 1403
+        station['location/Z/units_s'] = 'm'
         ret = self.ph5validate.check_station_completeness(station)
         warnings = ret[1]
         self.assertEqual(
@@ -211,12 +218,37 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
             ['No station description found.',
              'Data exists before deploy time: 7 seconds.',
              'Station 9001 [1550849950, 1550850034] is repeated 3 time(s)'])
-
+        errors = ret[2]
+        self.assertEqual(
+            errors,
+            ['No Response table found. Have you run resp_load yet?',
+             'Channel longitude 190.0 not in range [-180,180]',
+             'Channel latitude -100.0 not in range [-90,90]'])
+        # check lon/lat = 0, no units, no elevation value
         # check warning data after pickup time
         station = arraybyid.get('9002')[1][0]
+        station['location/X/value_d'] = 0
+        station['location/X/units_s'] = ''
+        station['location/Y/value_d'] = 0
+        station['location/Y/units_s'] = None
+        station['location/Z/value_d'] = None
+        station['location/Z/units_s'] = ''
         ret = self.ph5validate.check_station_completeness(station)
         warnings = ret[1]
-        self.assertIn('Data exists after pickup time: 36 seconds.', warnings)
+        self.assertEqual(
+            warnings,
+            ['No station description found.',
+             'Data exists after pickup time: 36 seconds.'])
+        errors = ret[2]
+        self.assertEqual(
+            errors,
+            ['No Response table found. Have you run resp_load yet?',
+             'Channel longitude seems to be 0. Is this correct???',
+             'No Station location/X/units_s value found.',
+             'Channel latitude seems to be 0. Is this correct???',
+             'No Station location/Y/units_s value found.',
+             'No Channel location/Z/value_d value found.',
+             'No Station location/Z/units_s value found.'])
 
         # check error overlaping
         # => change deploy time of the 3rd station
