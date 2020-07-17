@@ -82,6 +82,7 @@ def read_soh(das_group):
     '''
     P5.ph5_g_receivers.setcurrent(das_group)
     soh = P5.ph5_g_receivers.read_soh()
+
     return soh
 
 
