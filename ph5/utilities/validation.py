@@ -73,8 +73,14 @@ def check_resp_file_name(Response_t, info, ftype, unique_filenames_n_i,
 
     if (response_fname == ''):
         if (info_fname != '' and ftype != 'metadata'):
-            errmsg = ("Response_t n_i=%s: response_file_%s_a is '' "
-                      "while %s model exists." % (info['n_i'], ftype, ftype))
+            errmsg = ("{0}-{1}-{2} response_table_n_i {3}: "
+                      "response_file_{4}_a is blank while {5} model "
+                      "exists.").format(info['array'],
+                                        info['sta'],
+                                        info['cha_id'],
+                                        info['n_i'],
+                                        ftype,
+                                        ftype)
             addError(errmsg, errors, logger)
         return None
     else:
@@ -82,7 +88,8 @@ def check_resp_file_name(Response_t, info, ftype, unique_filenames_n_i,
             if ftype == 'metadata':
                 return info_fname, None
             info['m_file'] = ''
-            if ftype == 'das' and Response_t['response_file_sensor_a'] == '':
+            if (ftype == 'das' and info['smodel'] != '' and
+              Response_t['response_file_sensor_a'] == ''):
                 info['m_file'] = " or '%s'" % m_file
             errmsg = ("{0}-{1}-{2} response_table_n_i {3}: Response {4} "
                       "file name should be '{5}'{6} instead of '{7}'."
