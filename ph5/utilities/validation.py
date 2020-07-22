@@ -89,7 +89,7 @@ def check_resp_file_name(Response_t, info, ftype, unique_filenames_n_i,
                 return info_fname, None
             info['m_file'] = ''
             if (ftype == 'das' and info['smodel'] != '' and
-              Response_t['response_file_sensor_a'] == ''):
+                    Response_t['response_file_sensor_a'] == ''):
                 info['m_file'] = " or '%s'" % m_file
             errmsg = ("{0}-{1}-{2} response_table_n_i {3}: Response {4} "
                       "file name should be '{5}'{6} instead of '{7}'."
