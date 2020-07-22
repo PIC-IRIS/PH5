@@ -292,7 +292,6 @@ class PH5toStationXMLParser(object):
         self.unique_errmsg = []
         self.checked_data_files = {}
         self.unique_filenames_n_i = []
-        self.all_response_table_n_i_s = []
         self.manager.ph5.read_response_t()
         check_resp_unique_n_i(self.manager.ph5, self.unique_errmsg, None)
 
@@ -517,10 +516,6 @@ class PH5toStationXMLParser(object):
         for msg in self.unique_errmsg:
             LOGGER.error(msg)
 
-        if len(self.all_response_table_n_i_s) == 1:
-            LOGGER.warning("Only one response_table_n_i=%s in array_t. "
-                           "Check if it requires more."
-                           % self.all_response_table_n_i_s[0])
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -642,7 +637,17 @@ class PH5toStationXMLParser(object):
         if self.experiment_t == []:
             LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
             return
-
+        if (self.manager.level.upper() == "RESPONSE" or
+                self.manager.level.upper() == "CHANNEL"):
+            resp_load_already = False
+            for entry in self.manager.ph5.Response_t:
+                if entry['response_file_das_a'] != '':
+                    resp_load_already = True
+                    break
+            if not resp_load_already:
+                LOGGER.error("All response file names are blank in response "
+                             "table. Check if resp_load has been run.")
+                return
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
@@ -897,10 +902,6 @@ class PH5toStationXMLParser(object):
                     # read response and add it to obspy channel inventory
                     self.response_table_n_i = \
                         station_entry['response_table_n_i']
-                    if (self.response_table_n_i not in
-                       self.all_response_table_n_i_s):
-                        self.all_response_table_n_i_s.append(
-                            self.response_table_n_i)
                     obs_channel.response = self.get_response_inv(
                             obs_channel, array_code, sta_code, c_id,
                             station_entry['sample_rate_i'],
