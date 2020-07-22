@@ -640,7 +640,7 @@ class PH5toStationXMLParser(object):
         if (self.manager.level.upper() == "RESPONSE" or
                 self.manager.level.upper() == "CHANNEL"):
             resp_load_already = False
-            for entry in self.manager.ph5.Response_t:
+            for entry in self.manager.ph5.Response_t['rows']:
                 if entry['response_file_das_a'] != '':
                     resp_load_already = True
                     break
