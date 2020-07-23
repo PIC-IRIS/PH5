@@ -294,6 +294,13 @@ class PH5toStationXMLParser(object):
         self.unique_filenames_n_i = []
         self.manager.ph5.read_response_t()
         check_resp_unique_n_i(self.manager.ph5, self.unique_errmsg, None)
+        if (self.manager.level.upper() == "RESPONSE" or
+                self.manager.level.upper() == "CHANNEL"):
+            self.resp_load_already = False
+            for entry in self.manager.ph5.Response_t['rows']:
+                if entry['response_file_das_a'] != '':
+                    self.resp_load_already = True
+                    break
 
     def is_lat_lon_match(self, sta_xml_obj, latitude, longitude):
         """
@@ -411,6 +418,8 @@ class PH5toStationXMLParser(object):
             return
 
     def get_response_inv(self, obs_channel, a_id, sta_id, cha_id, spr, spr_m):
+        if not self.resp_load_already:
+            return Response()
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
@@ -516,6 +525,9 @@ class PH5toStationXMLParser(object):
         for msg in self.unique_errmsg:
             LOGGER.error(msg)
 
+        if not self.resp_load_already:
+            LOGGER.error("All response file names are blank in response "
+                         "table. Check if resp_load has been run.")
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
@@ -637,17 +649,6 @@ class PH5toStationXMLParser(object):
         if self.experiment_t == []:
             LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
             return
-        if (self.manager.level.upper() == "RESPONSE" or
-                self.manager.level.upper() == "CHANNEL"):
-            resp_load_already = False
-            for entry in self.manager.ph5.Response_t['rows']:
-                if entry['response_file_das_a'] != '':
-                    resp_load_already = True
-                    break
-            if not resp_load_already:
-                LOGGER.error("All response file names are blank in response "
-                             "table. Check if resp_load has been run.")
-                return
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
