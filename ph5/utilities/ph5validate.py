@@ -354,6 +354,16 @@ class PH5Validate(object):
         checked_data_files = {}
         unique_filenames_n_i = []
         self.ph5.read_response_t()
+        resp_load_already = False
+        for entry in self.ph5.Response_t['rows']:
+            if entry['response_file_das_a'] != '':
+                resp_load_already = True
+                break
+        if not resp_load_already:
+            errors = ["All response file names are blank in response "
+                      "table. Check if resp_load has been run."]
+            return [ValidationBlock(heading=header, error=errors)]
+
         errors = []
         for info in resp_check_info:
             # check file name and response data loaded
