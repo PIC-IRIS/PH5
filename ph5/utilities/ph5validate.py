@@ -362,6 +362,7 @@ class PH5Validate(object):
         if not resp_load_already:
             errors = ["All response file names are blank in response "
                       "table. Check if resp_load has been run."]
+            header %= len(errors)
             return [ValidationBlock(heading=header, error=errors)]
 
         errors = []
