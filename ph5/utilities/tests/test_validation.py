@@ -5,13 +5,15 @@ Tests for validation
 import unittest
 import os
 import logging
+import sys
 
+from mock import patch
 from testfixtures import LogCapture
 
 from ph5.core import ph5api
 from ph5 import logger
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
-from ph5.utilities import validation
+from ph5.utilities import validation, segd2ph5
 
 
 class TestValidation_response(LogTestCase, TempDirTestCase):
@@ -279,6 +281,30 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             validation.check_resp_unique_n_i(
                 self.ph5API_object, errors, logger)
             self.assertEqual(errors, ['Response_t n_i(s) duplicated: 2'])
+
+    def test_check_resp_load(self):
+        self.ph5API_object.read_response_t()
+        resp_load_already = validation.check_resp_load(
+            self.ph5API_object.Response_t, [], None)
+        self.assertTrue(resp_load_already)
+
+
+class TestValidation_resp_load_not_run(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.ph5.close()
+        super(TestValidation_resp_load_not_run, self).tearDown()
+
+    def test_check_resp_load(self):
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5 = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
+        self.ph5.read_response_t()
+        resp_load_already = validation.check_resp_load(
+            self.ph5.Response_t, [], None)
+        self.assertFalse(resp_load_already)
 
 
 if __name__ == "__main__":
