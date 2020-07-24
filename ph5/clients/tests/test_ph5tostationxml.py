@@ -9,6 +9,7 @@ import sys
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
+from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5
 from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
@@ -184,8 +185,8 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertEqual(
             self.parser.unique_errmsg,
             ["No response entry for n_i=7.",
-             "Response_t n_i=6: response_file_sensor_a is '' while sensor "
-             "model exists.",
+             "003-0407-1 response_table_n_i 6: response_file_sensor_a is "
+             "blank while sensor model exists.",
              "003-0407-1 response_table_n_i 6: Response das file name should "
              "be 'rt125a_100_1_1' or 'rt125a_gs11v_100DPZ' instead of "
              "'NoneQ330_NoneCMG3T_100LHN'.",
@@ -220,8 +221,8 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             '8001'][2][0]['sensor/model_s'] = 'cmg_3t'
 
         errors = ["No response entry for n_i=0.",
-                  "Response_t n_i=5: response_file_sensor_a is '' while "
-                  "sensor model exists.",
+                  "002-0407-1 response_table_n_i 5: response_file_sensor_a is "
+                  "blank while sensor model exists.",
                   "002-0407-1 response_table_n_i 5: Response das file name "
                   "should be 'NoneQ330_200_1_1' or 'NoneQ330_NoneCMG3T_200HHN'"
                   " instead of 'NoneQ330_CMG3T_200HHN'.",
@@ -241,6 +242,39 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             self.parser.create_obs_network()
         for i in range(len(log.records)):
             self.assertEqual(log.records[i].msg, errors[i])
+
+
+class TestPH5toStationXMLParser_resp_load_not_run(
+        LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_resp_load_not_run, self).tearDown()
+
+    def test_create_obs_network(self):
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+        testargs = ['keftoph5', '-n', 'master.ph5', '-k',
+                    os.path.join(self.home,
+                                 'ph5/test_data/metadata/experiment.kef')]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, "master.ph5", "CHANNEL")
+        self.parser.manager.ph5.read_experiment_t()
+        self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
+        self.parser.add_ph5_stationids()
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            self.parser.create_obs_network()
+        self.assertEqual(log.records[0].msg,
+                         'All response file names are blank in response table.'
+                         ' Check if resp_load has been run.')
 
 
 if __name__ == "__main__":
