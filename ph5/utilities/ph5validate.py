@@ -14,7 +14,7 @@ import sys
 import copy
 
 from ph5.core import ph5api
-from ph5.utilities.validation import check_response_info, check_resp_unique_n_i
+from ph5.utilities import validation
 
 PROG_VERSION = "2020.142"
 
@@ -354,24 +354,22 @@ class PH5Validate(object):
         checked_data_files = {}
         unique_filenames_n_i = []
         self.ph5.read_response_t()
-        resp_load_already = False
-        for entry in self.ph5.Response_t['rows']:
-            if entry['response_file_das_a'] != '':
-                resp_load_already = True
-                break
-        if not resp_load_already:
-            errors = ["All response file names are blank in response "
-                      "table. Check if resp_load has been run."]
+        errors = []
+        if not validation.check_resp_load(
+                self.ph5.Response_t, errors, LOGGER):
             header %= len(errors)
             return [ValidationBlock(heading=header, error=errors)]
 
-        errors = []
         for info in resp_check_info:
             # check file name and response data loaded
-            check_response_info(info, self.ph5, unique_filenames_n_i,
-                                checked_data_files, errors, LOGGER)
+            validation.check_response_info(info,
+                                           self.ph5,
+                                           unique_filenames_n_i,
+                                           checked_data_files,
+                                           errors,
+                                           LOGGER)
 
-        check_resp_unique_n_i(self.ph5, errors, LOGGER)
+        validation.check_resp_unique_n_i(self.ph5, errors, LOGGER)
 
         header %= len(errors)
         return [ValidationBlock(heading=header, error=errors)]
