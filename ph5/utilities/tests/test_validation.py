@@ -198,6 +198,17 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
                           ('ZLAND3C_500_1_24', 0)])
         self.assertEqual(errors, self.errors)
 
+        Response_t['response_file_das_a'] = ''
+        errors = []
+        unique_filenames_n_i = []
+        with LogCapture() as log:
+            ret = validation.check_resp_file_name(
+                Response_t, info, 'das', unique_filenames_n_i, errors, logger)
+            errmsg = ('001-500-3 response_table_n_i 0: response_file_das_a '
+                      'is blank while das model exists.')
+            self.assertEqual(log.records[0].msg, errmsg)
+            self.assertEqual(errors, [errmsg])
+
     def test_check_response_info(self):
         self.ph5API_object.read_response_t()
         unique_filenames_n_i = []
