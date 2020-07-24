@@ -9,7 +9,7 @@ import logging
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import ph5validate
+from ph5.utilities import ph5validate, segd2ph5
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
@@ -325,6 +325,34 @@ class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
                       errors)
+
+
+class TestPH5Validate_resp_load_not_run(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5Validate_resp_load_not_run, self).tearDown()
+
+    def test_check_response_t(self):
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5API_object = ph5api.PH5(path=self.tmpdir,
+                                        nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(
+            self.ph5API_object, '.', 'WARNING', 'ph5_validate.log')
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.ph5validate.check_response_t([])
+            self.assertEqual(
+                ret[0].error,
+                ['All response file names are blank in response table. '
+                 'Check if resp_load has been run.'])
+            self.assertEqual(
+                log.records[0].msg,
+                'All response file names are blank in response table. '
+                'Check if resp_load has been run.')
 
 
 if __name__ == "__main__":
