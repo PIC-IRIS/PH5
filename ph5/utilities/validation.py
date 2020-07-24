@@ -72,7 +72,7 @@ def check_resp_file_name(Response_t, info, ftype, unique_filenames_n_i,
         return info_fname, Response_t[file_field]
 
     if (response_fname == ''):
-        if (info_fname != '' and ftype != 'metadata'):
+        if (info_fname != ''):
             errmsg = ("{0}-{1}-{2} response_table_n_i {3}: "
                       "response_file_{4}_a is blank while {5} model "
                       "exists.").format(info['array'],
