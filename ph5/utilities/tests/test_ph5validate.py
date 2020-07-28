@@ -19,8 +19,7 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
         super(TestPH5Validate_response, self).setUp()
         ph5path = os.path.join(self.home, "ph5/test_data/ph5")
         self.ph5API_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
-        self.ph5validate = ph5validate.PH5Validate(
-            self.ph5API_object, '.', 'WARNING', 'ph5_validate.log')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, '.')
         self.resp_check_info = [
             {'n_i': 0, 'array': '001', 'sta': '500',
              'cha_code': 'DP1', 'spr': 500, 'sprm': 1, 'cha_id': 1,
@@ -93,13 +92,15 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
 
 
 class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
-
-    def test_main(self):
+    def setUp(self):
+        super(TestPh5Validate_main_detect_data, self).setUp()
         kef_to_ph5(
             self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
             ['rt125a/das_t_12183.kef', 'metadata/array_t_9_validate.kef'],
             das_sn_list=['12183'])
+
+    def test_main(self):
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -161,8 +162,7 @@ class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
             das_sn_list=['12183'])
         self.ph5_object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
         self.ph5validate = ph5validate.PH5Validate(
-            self.ph5_object, self.tmpdir, "WARNING",
-            outfile="ph5_validate.log")
+            self.ph5_object, self.tmpdir)
 
     def tearDown(self):
         self.ph5_object.ph5close()
@@ -372,8 +372,7 @@ class TestPH5Validate_resp_load_not_run(LogTestCase, TempDirTestCase):
             segd2ph5.main()
         self.ph5API_object = ph5api.PH5(path=self.tmpdir,
                                         nickname='master.ph5')
-        self.ph5validate = ph5validate.PH5Validate(
-            self.ph5API_object, '.', 'WARNING', 'ph5_validate.log')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, '.')
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             ret = self.ph5validate.check_response_t([])

@@ -10,9 +10,11 @@ import argparse
 import logging
 import re
 import subprocess
+import os
 import sys
 import copy
 
+from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api
 from ph5.utilities import validation
 
@@ -53,31 +55,13 @@ class PH5ValidateException(Exception):
 
 
 class PH5Validate(object):
-    def __init__(self, ph5API_object, ph5path,
-                 level, outfile):
+    def __init__(self, ph5API_object, ph5path):
         self.ph5 = ph5API_object
         self.path = ph5path
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
         if not self.ph5.Experiment_t:
             self.ph5.read_experiment_t()
-        if level == "ERROR":
-            logging.basicConfig(filename=outfile,
-                                format='%(levelname)s: %(message)s',
-                                filemode='w',
-                                level=logging.ERROR)
-        elif level == "WARNING":
-            logging.basicConfig(filename=outfile,
-                                format='%(levelname)s: %(message)s',
-                                filemode='w',
-                                level=logging.WARNING)
-        elif level == "INFO":
-            logging.basicConfig(filename=outfile,
-                                format='%(levelname)s: %(message)s',
-                                filemode='w',
-                                level=logging.INFO)
-        else:
-            raise PH5ValidateException("Invalid Level %s" % level)
 
     def read_arrays(self, name):
         if name is None:
@@ -921,8 +905,32 @@ def get_args():
             args.level != "INFO":
         raise ValueError("Invalid logging level.")
 
-    if args.verbose is True:
-        LOGGER.parent.handlers[0].setLevel(logging.DEBUG)
+    outfile = 'ph5_validate.log' if args.outfile is None else args.outfile
+    PH5 = args.nickname
+    if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
+        LOGGER.error("{0} not found.".format(PH5))
+        sys.exit()
+    else:
+        # Set up logging
+        # Write log to file
+        ch = logging.FileHandler(os.path.join('.', outfile))
+        ch.setLevel(logging.INFO)
+        if args.verbose is True:
+            ch.setLevel(logging.DEBUG)
+        # Add formatter
+        formatter = logging.Formatter(LOGGING_FORMAT)
+        ch.setFormatter(formatter)
+        LOGGER.addHandler(ch)
+        level = args.level.upper()
+        if level == "ERROR":
+            LOGGER.setLevel(logging.ERROR)
+        elif level == "WARNING":
+            LOGGER.setLevel(logging.WARNING)
+        elif level == "INFO":
+            LOGGER.setLevel(logging.INFO)
+        else:
+            raise PH5ValidateException("Invalid Level %s" % level)
+
     return args
 
 
@@ -931,9 +939,7 @@ def main():
         args = get_args()
         ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
         ph5validate = PH5Validate(ph5API_object,
-                                  args.ph5path,
-                                  args.level.upper(),
-                                  args.outfile)
+                                  args.ph5path)
         validation_blocks = []
         validation_blocks.extend(ph5validate.check_experiment_t())
         vb_array, resp_check_info = ph5validate.check_array_t()
