@@ -1,4 +1,5 @@
 '''
+<<<<<<< HEAD
 Tests for validation
 '''
 
@@ -67,7 +68,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         super(TestValidation_response, self).tearDown()
 
     def test_check_resp_data(self):
-        errors = []
+        errors = set()
         # data has been loaded for response file rt130_100_1_1
         with LogCapture() as log:
             validation.check_resp_data(
@@ -94,11 +95,13 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.assertEqual(log.records[0].msg,
                          'No response data loaded for cmg.')
 
-        self.assertEqual(errors, ['No response data loaded for rt130_200_1_1.',
-                                  'No response data loaded for cmg.'])
+        self.assertEqual(
+            errors,
+            {('No response data loaded for rt130_200_1_1.', 'error'),
+             ('No response data loaded for cmg.', 'error')})
 
     def test_check_resp_file_name(self):
-        errors = []
+        errors = set()
         unique_filenames_n_i = []
         self.ph5API_object.read_response_t()
 
@@ -198,10 +201,10 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
                          [('rt125a_500_1_32', 4), ('gs11v', 4),
                           ('NoneQ330_NoneCMG3T_200HHN', 5),
                           ('ZLAND3C_500_1_24', 0)])
-        self.assertEqual(errors, self.errors)
+        self.assertEqual(errors, {(err, 'error') for err in self.errors})
 
         Response_t['response_file_das_a'] = ''
-        errors = []
+        errors = set()
         unique_filenames_n_i = []
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
@@ -209,20 +212,20 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             errmsg = ('001-500-3 response_table_n_i 0: response_file_das_a '
                       'is blank while das model exists.')
             self.assertEqual(log.records[0].msg, errmsg)
-            self.assertEqual(errors, [errmsg])
+            self.assertEqual(errors, {(errmsg, 'error')})
 
     def test_check_response_info(self):
         self.ph5API_object.read_response_t()
         unique_filenames_n_i = []
         checked_data_files = {}
-        errors = []
+        errors = set()
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             validation.check_response_info(
                 self.resp_check_info[9], self.ph5API_object,
                 unique_filenames_n_i,
                 checked_data_files, errors, logger)
-            self.assertEqual(errors, [])
+            self.assertEqual(errors, set())
             self.assertEqual(log.records, [])
 
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
@@ -240,11 +243,13 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             validation.check_response_info(
                 info, self.ph5API_object, unique_filenames_n_i,
                 checked_data_files, errors, logger)
-            self.assertEqual(errors, chckerrors)
+            self.assertEqual(
+                errors,
+                {(errmsg, 'error') for errmsg in chckerrors})
             for i in range(len(log.records)):
                 self.assertEqual(log.records[i].msg, chckerrors[i])
 
-        errors = []
+        errors = set()
         response_t = self.ph5API_object.get_response_t_by_n_i(1)
         response_t['response_file_das_a'] = 'rt130_200_1_1'
         info = next(item for item in self.resp_check_info if item["n_i"] == 1)
@@ -254,12 +259,13 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             validation.check_response_info(
                 info, self.ph5API_object, unique_filenames_n_i,
                 checked_data_files, errors, logger)
-            self.assertEqual(errors,
-                             ['No response data loaded for rt130_200_1_1.'])
+            self.assertEqual(
+                errors,
+                {('No response data loaded for rt130_200_1_1.', 'error')})
             self.assertEqual(log.records[0].msg,
                              'No response data loaded for rt130_200_1_1.')
 
-        errors = []
+        errors = set()
         info['n_i'] = 8
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
@@ -267,7 +273,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
                 info, self.ph5API_object, unique_filenames_n_i,
                 checked_data_files, errors, logger)
             self.assertEqual(errors,
-                             ['No response entry for n_i=8.'])
+                             {('No response entry for n_i=8.', 'error')})
             self.assertEqual(log.records[0].msg,
                              'No response entry for n_i=8.')
 
@@ -275,12 +281,13 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.ph5API_object.read_response_t()
         response_t = self.ph5API_object.get_response_t_by_n_i(1)
         response_t['n_i'] = 2
-        errors = []
+        errors = set()
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             validation.check_resp_unique_n_i(
-                self.ph5API_object, errors, logger)
-            self.assertEqual(errors, ['Response_t n_i(s) duplicated: 2'])
+                self.ph5API_object, errors)
+        self.assertEqual(errors,
+                         {('Response_t n_i(s) duplicated: 2', 'error')})
 
     def test_check_resp_load(self):
         self.ph5API_object.read_response_t()
@@ -303,8 +310,70 @@ class TestValidation_resp_load_not_run(LogTestCase, TempDirTestCase):
         self.ph5 = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
         self.ph5.read_response_t()
         resp_load_already = validation.check_resp_load(
-            self.ph5.Response_t, [], None)
+            self.ph5.Response_t, set(), None)
         self.assertFalse(resp_load_already)
+
+
+class TestValidation_location(unittest.TestCase):
+    def test_check_lat_lon_elev(self):
+        station = {'location/X/value_d': 100.0,
+                   'location/X/units_s': 'degrees',
+                   'location/Y/value_d': 70.0,
+                   'location/Y/units_s': 'degrees',
+                   'location/Z/value_d': 1047,
+                   'location/Z/units_s': 'm'}
+        warnings = []
+        validation.check_lat_lon_elev(station, warnings)
+        self.assertEqual(warnings, [])
+
+        station = {'location/X/value_d': 190.0,
+                   'location/X/units_s': '',
+                   'location/Y/value_d': -100.0,
+                   'location/Y/units_s': '',
+                   'location/Z/value_d': '',
+                   'location/Z/units_s': ''}
+        validation.check_lat_lon_elev(station, warnings)
+        self.assertEqual(warnings,
+                         ['Channel longitude 190.0 not in range [-180,180]',
+                          'No Station location/X/units_s value found.',
+                          'Channel latitude -100.0 not in range [-90,90]',
+                          'No Station location/Y/units_s value found.',
+                          'No Channel location/Z/value_d value found.',
+                          'No Station location/Z/units_s value found.'])
+
+        warnings = []
+        station = {'location/X/value_d': 'ABC',
+                   'location/X/units_s': '',
+                   'location/Y/value_d': '',
+                   'location/Y/units_s': '',
+                   'location/Z/value_d': '',
+                   'location/Z/units_s': ''}
+        validation.check_lat_lon_elev(station, warnings)
+        self.assertEqual(
+            warnings,
+            ['Channel longitude ABC is not a number.',
+             'No Station location/X/units_s value found.',
+             'No Channel latitude value found.',
+             'No Station location/Y/units_s value found.',
+             'No Channel location/Z/value_d value found.',
+             'No Station location/Z/units_s value found.'])
+
+        warnings = []
+        station = {'location/X/value_d': 0,
+                   'location/X/units_s': None,
+                   'location/Y/value_d': None,
+                   'location/Y/units_s': None,
+                   'location/Z/value_d': None,
+                   'location/Z/units_s': None}
+        validation.check_lat_lon_elev(station, warnings)
+        self.assertEqual(
+            warnings,
+            ['Channel longitude seems to be 0. Is this correct???',
+             'No Station location/X/units_s value found.',
+             'No Channel latitude value found.',
+             'No Station location/Y/units_s value found.',
+             'No Channel location/Z/value_d value found.',
+             'No Station location/Z/units_s value found.'])
 
 
 if __name__ == "__main__":

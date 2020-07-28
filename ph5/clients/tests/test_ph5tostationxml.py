@@ -2,15 +2,17 @@
 Tests for ph5tostationxml
 '''
 import unittest
-import logging
 import os
 import sys
+import logging
 
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
 from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5
 from ph5.clients import ph5tostationxml
+from ph5.clients.ph5tostationxml import box_intersection_err,\
+    radial_intersection_err
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
@@ -37,15 +39,15 @@ def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
     return ph5sxml, mng, parser
 
 
-class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
+class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
     def tearDown(self):
         try:
             self.mng.ph5.close()
         except AttributeError:
             pass
-        super(TestPH5toStationXMLParser, self).tearDown()
+        super(TestPH5toStationXMLParser_main_multideploy, self).tearDown()
 
-    def test_main_multideploy(self):
+    def test_main(self):
         # array_multideploy: same station different deploy times
         # => check if network time cover all or only the first 1
         kef_to_ph5(self.tmpdir,
@@ -71,8 +73,9 @@ class TestPH5toStationXMLParser(LogTestCase, TempDirTestCase):
                    ['response_t_dup_n_i.kef'])
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, 'master.ph5', 'NETWORK')
-        self.assertEqual(self.parser.unique_errmsg,
-                         ['Response_t n_i(s) duplicated: 1,3,6'])
+        self.assertEqual(
+            self.parser.unique_errors,
+            {('Response_t n_i(s) duplicated: 1,3,6', 'error')})
 
 
 class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
@@ -183,8 +186,8 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             obs_channel, a_id='009', sta_id='9001', cha_id=1, spr=200, spr_m=1)
 
         self.assertEqual(
-            self.parser.unique_errmsg,
-            ["No response entry for n_i=7.",
+            set(errmsg for errmsg, logtype in self.parser.unique_errors),
+            {"No response entry for n_i=7.",
              "003-0407-1 response_table_n_i 6: response_file_sensor_a is "
              "blank while sensor model exists.",
              "003-0407-1 response_table_n_i 6: Response das file name should "
@@ -194,7 +197,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
              "should be 'cmg_3t' instead of 'gs11v'.",
              "009-9001-1 response_table_n_i 4: Response das file name should "
              "be 'rt125a_200_1_32' instead of 'rt125a_500_1_32'.",
-             "No response data loaded for gs11."])
+             "No response data loaded for gs11."})
 
     def test_create_obs_network(self):
         # modify response_t to produce errors:
@@ -220,7 +223,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.mng.ph5.Array_t['Array_t_008']['byid'][
             '8001'][2][0]['sensor/model_s'] = 'cmg_3t'
 
-        errors = ["No response entry for n_i=0.",
+        errors = {"No response entry for n_i=0.",
                   "002-0407-1 response_table_n_i 5: response_file_sensor_a is "
                   "blank while sensor model exists.",
                   "002-0407-1 response_table_n_i 5: Response das file name "
@@ -236,21 +239,18 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                   "008-8001-2 response_table_n_i 2: Response das file name "
                   "should be 'rt130_100_1_1' instead of 'rt130_10_1_1'.",
                   "No response entry for n_i=3.",
-                  "No response entry for n_i=4."]
+                  "No response entry for n_i=4."}
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             self.parser.create_obs_network()
-        for i in range(len(log.records)):
-            self.assertEqual(log.records[i].msg, errors[i])
+            self.assertEqual(set(rec.msg for rec in log.records),
+                             set(errors))
 
 
 class TestPH5toStationXMLParser_resp_load_not_run(
         LogTestCase, TempDirTestCase):
-    def tearDown(self):
-        self.mng.ph5.close()
-        super(TestPH5toStationXMLParser_resp_load_not_run, self).tearDown()
-
-    def test_create_obs_network(self):
+    def setUp(self):
+        super(TestPH5toStationXMLParser_resp_load_not_run, self).setUp()
         testargs = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', testargs):
             initialize_ph5.main()
@@ -266,15 +266,134 @@ class TestPH5toStationXMLParser_resp_load_not_run(
             segd2ph5.main()
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, "master.ph5", "CHANNEL")
+
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_resp_load_not_run, self).tearDown()
+
+    def test_create_obs_network(self):
         self.parser.manager.ph5.read_experiment_t()
         self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
         self.parser.add_ph5_stationids()
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             self.parser.create_obs_network()
-        self.assertEqual(log.records[0].msg,
-                         'All response file names are blank in response table.'
-                         ' Check if resp_load has been run.')
+            self.assertEqual(log.records[0].msg,
+                             'All response file names are blank in response '
+                             'table. Check if resp_load has been run.')
+
+
+def combine_header(st_id, errlist):
+    err_pattern = "array 001, station {0}, channel 1: {1}"
+    err_with_header_list = []
+    for err in errlist:
+        err_with_header_list.append(err_pattern.format(st_id, err))
+    return err_with_header_list
+
+
+class TestPH5toStationXMLParser_latlon(LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(TestPH5toStationXMLParser_latlon, self).setUp()
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ["array_latlon_err.kef", "experiment.kef"])
+
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, 'master.ph5', "NETWORK",
+            34, 40, -111, -105, 36, -107, 0, 3)
+
+        # errors in array_latlon_err.kef
+        self.err_dict = {
+            '1111': ["Channel latitude -107.0 not in range [-90,90]",
+                     box_intersection_err(-107.0, 34, 40, 100.0, -111, -105),
+                     radial_intersection_err(-107.0, 100.0, 0, 3, 36, -107)],
+            '1112': ["Channel longitude 182.0 not in range [-180,180]",
+                     box_intersection_err(35.0, 34, 40, 182.0, -111, -105),
+                     radial_intersection_err(35.0, 182.0, 0, 3, 36, -107)],
+            '1113': [box_intersection_err(70.0, 34, 40, 100.0, -111, -105),
+                     radial_intersection_err(70.0, 100.0, 0, 3, 36, -107)],
+            '1114': [box_intersection_err(35.0, 34, 40, 100.0, -111, -105),
+                     radial_intersection_err(35.0, 100.0, 0, 3, 36, -107)],
+            '1116': [radial_intersection_err(35.0, -111.0, 0, 3, 36, -107)],
+            '1117': [radial_intersection_err(40.0, -106.0, 0, 3, 36, -107)]
+        }
+
+        self.errmsgs = []
+        for st_id in sorted(self.err_dict.keys()):
+            self.errmsgs += combine_header(st_id, self.err_dict[st_id])
+
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_latlon, self).tearDown()
+
+    def test_is_lat_lon_match(self):
+        station = {'location/X/units_s': 'degrees',
+                   'location/Y/units_s': 'degrees',
+                   'location/Z/value_d': 1403,
+                   'location/Z/units_s': 'm'}
+        # 1. latitude not in (-90, 90)
+        station['location/Y/value_d'] = -107.0
+        station['location/X/value_d'] = 100.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, self.err_dict['1111'])
+
+        # 2. longitude not in (-180, 180)
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = 182.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, self.err_dict['1112'])
+
+        # 3. latitude not in minlatitude=34 and maxlatitude=40
+        station['location/Y/value_d'] = 70.0
+        station['location/X/value_d'] = 100.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, self.err_dict['1113'])
+
+        # 4. longitude not in minlongitude=-111 and maxlongitude=-105
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = 100.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, self.err_dict['1114'])
+
+        # 5. pass all checks
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = -106.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, [])
+
+        # 6. longitude got radius intersection
+        station['location/Y/value_d'] = 35.0
+        station['location/X/value_d'] = -111.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, self.err_dict['1116'])
+
+        # 7. latitude got radius intersection
+        station['location/Y/value_d'] = 40.0
+        station['location/X/value_d'] = -106.0
+        ret = self.parser.is_lat_lon_match(self.ph5sxml[0], station)
+        self.assertEqual(ret, self.err_dict['1117'])
+
+    def test_read_station(self):
+        self.parser.add_ph5_stationids()
+        self.parser.read_stations()
+        warningset = {(err, 'warning') for err in self.errmsgs}
+        warningset.add(('All response file names are blank in response table.'
+                        ' Check if resp_load has been run.', 'error'))
+        self.assertEqual(self.parser.unique_errors,
+                         warningset)
+
+    def test_create_obs_network(self):
+        self.parser.manager.ph5.read_experiment_t()
+        self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
+        self.parser.add_ph5_stationids()
+        with LogCapture() as log:
+            log.setLevel(logging.WARNING)
+            self.parser.create_obs_network()
+            self.errmsgs.append('All response file names are blank in response'
+                                ' table. Check if resp_load has been run.')
+            self.assertEqual(set(rec.msg for rec in log.records),
+                             set(self.errmsgs))
 
 
 if __name__ == "__main__":
