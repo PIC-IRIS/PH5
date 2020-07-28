@@ -1,0 +1,24 @@
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 0.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = 90.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = Z
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 0.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = 0.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = N
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 90.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = 0.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = E
+/Experiment_g/Receivers_g/Receiver_t
+        orientation/azimuth/value_f = 0.0
+        orientation/azimuth/units_s = degrees
+        orientation/dip/value_f = -90.0
+        orientation/dip/units_s = degrees
+        orientation/description_s = Z
