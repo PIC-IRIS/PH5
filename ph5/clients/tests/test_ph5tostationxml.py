@@ -251,21 +251,20 @@ class TestPH5toStationXMLParser_resp_load_not_run(
         LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5toStationXMLParser_resp_load_not_run, self).setUp()
-        testargs = ['initialize_ph5', '-n', 'master.ph5']
-        with patch.object(sys, 'argv', testargs):
-            initialize_ph5.main()
-        testargs = ['keftoph5', '-n', 'master.ph5', '-k',
-                    os.path.join(self.home,
-                                 'ph5/test_data/metadata/experiment.kef')]
-        with patch.object(sys, 'argv', testargs):
-            kef2ph5.main()
         testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
                     os.path.join(self.home,
                                  'ph5/test_data/segd/3ch.fcnt')]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ["receiver_t.kef", "experiment.kef"])
+
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, "master.ph5", "CHANNEL")
+
+
 
     def tearDown(self):
         self.mng.ph5.close()
