@@ -9,7 +9,7 @@ import logging
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5
+from ph5.utilities import segd2ph5
 from ph5.clients import ph5tostationxml
 from ph5.clients.ph5tostationxml import box_intersection_err,\
     radial_intersection_err
@@ -263,7 +263,6 @@ class TestPH5toStationXMLParser_resp_load_not_run(
 
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, "master.ph5", "CHANNEL")
-
 
 
     def tearDown(self):
