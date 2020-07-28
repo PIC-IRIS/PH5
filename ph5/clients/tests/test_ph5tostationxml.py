@@ -264,7 +264,6 @@ class TestPH5toStationXMLParser_resp_load_not_run(
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, "master.ph5", "CHANNEL")
 
-
     def tearDown(self):
         self.mng.ph5.close()
         super(TestPH5toStationXMLParser_resp_load_not_run, self).tearDown()
