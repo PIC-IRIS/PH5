@@ -381,10 +381,7 @@ class ObspytoPH5(object):
                             das['array_name_data_a'], data, dtype='|S1',
                             description=None)
                     else:
-                        if isinstance(data[0], int):
-                            data_type = 'int32'
-                        else:
-                            data_type = 'float32'
+                        data_type = data[0].__class__.__name__
                         mini_handle.ph5_g_receivers.newarray(
                             das['array_name_data_a'], data, dtype=data_type,
                             description=None)
