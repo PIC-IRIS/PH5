@@ -1283,7 +1283,11 @@ class PH5(experiment.ExperimentGroup):
                     das_t.append(d)
         # adjust the number of data samples as to not over extend the
         # cut_stop_fepoch
-        calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
+        if data is None:
+            return [Trace(np.array([]), start_fepoch, 0., 0, sample_rate,
+                          None, None, das_t, None, None, clock=clock)]
+        else:
+            calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
 
         # calculate number of overextending samples
         num_overextend_samples = int(math.floor(calc_stop_fepoch -
