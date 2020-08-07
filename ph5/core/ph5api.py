@@ -833,14 +833,13 @@ class PH5(experiment.ExperimentGroup):
                 das.append(row_dict)
 
         else:
-            #for row in tbl:
-             for row in tbl.where(
-                  '(channel_number_i == '
-                  + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
-                  + str(start_epoch) +
-                  '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                  '&(epoch_i+micro_seconds_i/1000000<='
-                  + str(stop_epoch) + ')'):
+            for row in tbl.where(
+                 '(channel_number_i == '
+                 + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                 + str(start_epoch) +
+                 '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                 '&(epoch_i+micro_seconds_i/1000000<='
+                 + str(stop_epoch) + ')'):
                 row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
                             'array_name_data_a': row['array_name_data_a'],
                             'array_name_event_a': row['array_name_event_a'],
@@ -1131,10 +1130,10 @@ class PH5(experiment.ExperimentGroup):
                 chan,
                 Das_t)
             return cuts
-        #
+
         # We shift the samples to match the requested start
         # time to apply the time correction
-        #
+
         clock = Clock()
         if apply_time_correction:
             Time_t = self.get_time_t(das)
@@ -1176,7 +1175,7 @@ class PH5(experiment.ExperimentGroup):
             if window_start_fepoch0 is None:
                 window_start_fepoch0 = window_start_fepoch
             # Number of samples in window
-            window_samples = d['sample_count_i'] 
+            window_samples = d['sample_count_i']
             # Window stop epoch
             window_stop_fepoch = window_start_fepoch + (window_samples / sr)
 
