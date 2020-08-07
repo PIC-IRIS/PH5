@@ -770,7 +770,6 @@ class PH5(experiment.ExperimentGroup):
                     sample_rate=None,
                     sample_rate_multiplier=1):
         ''' Uses queries to get data from specific das table'''
-
         das_g = "Das_g_{0}".format(das)
         try:
             node = self.ph5_g_receivers.getdas_g(das)
@@ -834,18 +833,14 @@ class PH5(experiment.ExperimentGroup):
                 das.append(row_dict)
 
         else:
-            for row in tbl.where(
-                    '(channel_number_i == '
-                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
-                    + str(start_epoch) +
-                    '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                    '&(epoch_i+micro_seconds_i/1000000<='
-                    + str(stop_epoch) + ')&(sample_rate_i==' +
-                    str(sample_rate) +
-                    ')&(sample_rate_multiplier_i==' +
-                    str(sample_rate_multiplier) + ')'
-            ):
-
+            #for row in tbl:
+             for row in tbl.where(
+                  '(channel_number_i == '
+                  + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                  + str(start_epoch) +
+                  '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                  '&(epoch_i+micro_seconds_i/1000000<='
+                  + str(stop_epoch) + ')'):
                 row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
                             'array_name_data_a': row['array_name_data_a'],
                             'array_name_event_a': row['array_name_event_a'],
@@ -868,7 +863,6 @@ class PH5(experiment.ExperimentGroup):
                             'time_table_n_i': row['time_table_n_i']
                             }
                 das.append(row_dict)
-
         return das
 
     def read_das_t(self, das, start_epoch=None, stop_epoch=None, reread=True):
@@ -1128,7 +1122,6 @@ class PH5(experiment.ExperimentGroup):
             Das_t = filter_das_t(self.Das_t[das]['rows'], chan)
         else:
             Das_t = das_t
-
         if sample_rate == 0 or chan == -2:
             LOGGER.info("calling textural_cut")
             cuts = self.textural_cut(
@@ -1138,7 +1131,6 @@ class PH5(experiment.ExperimentGroup):
                 chan,
                 Das_t)
             return cuts
-
         #
         # We shift the samples to match the requested start
         # time to apply the time correction
@@ -1184,7 +1176,7 @@ class PH5(experiment.ExperimentGroup):
             if window_start_fepoch0 is None:
                 window_start_fepoch0 = window_start_fepoch
             # Number of samples in window
-            window_samples = d['sample_count_i']
+            window_samples = d['sample_count_i'] 
             # Window stop epoch
             window_stop_fepoch = window_start_fepoch + (window_samples / sr)
 
@@ -1309,7 +1301,6 @@ class PH5(experiment.ExperimentGroup):
                       None,  # receiver_t
                       None,  # response_t
                       clock=clock)
-
         traces.append(trace)
         if das_t:
             receiver_t = self.get_receiver_t(das_t[0])

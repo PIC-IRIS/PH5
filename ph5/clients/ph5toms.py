@@ -146,7 +146,6 @@ class PH5toMSeed(object):
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  reduction_velocity=-1., notimecorrect=False,
                  restricted=[], format='MSEED', cut_len=86400):
-
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.reqtype = reqtype.upper()
         self.array = array
@@ -517,7 +516,6 @@ class PH5toMSeed(object):
 
             if not das:
                 return
-
             das = [x for x in das]
             Das_tf = next(iter(das or []), None)
             if Das_tf is None:
@@ -525,7 +523,6 @@ class PH5toMSeed(object):
             else:
                 das_t_start = (float(Das_tf['time/epoch_l']) +
                                float(Das_tf['time/micro_seconds_i']) / 1000000)
-
             if float(das_t_start) > float(stc.starttime):
                 start_time = das_t_start
 
@@ -533,10 +530,9 @@ class PH5toMSeed(object):
                 start_time = stc.starttime
 
             nt = stc.notimecorrect
-
-            if stc.sample_rate > 0:
+            if Das_tf['sample_rate_i'] > 0:
                 actual_sample_rate = float(
-                    stc.sample_rate) / float(stc.sample_rate_multiplier)
+                    Das_tf['sample_rate_i']) / float(Das_tf['sample_rate_multiplier_i'])
             else:
                 actual_sample_rate = 0
 
@@ -546,6 +542,7 @@ class PH5toMSeed(object):
                                       chan=stc.component,
                                       sample_rate=actual_sample_rate,
                                       apply_time_correction=nt, das_t=das)
+              
             else:
                 traces = self.ph5.textural_cut(stc.das,
                                                start_time,
@@ -1171,7 +1168,6 @@ def main():
         sys.exit(-1)
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
-
     if args.array:
         args.array = args.array.split(',')
     if args.sta_id_list:
