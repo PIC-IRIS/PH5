@@ -831,31 +831,32 @@ def get_args():
 
     args = parser.parse_args()
 
-    outfile = 'ph5_validate.log' if args.outfile is None else args.outfile
+    outfile = args.outfile
     PH5 = args.nickname
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
         LOGGER.error("{0} not found.".format(PH5))
         sys.exit()
+
+    # Set up logging
+    # Write log to file
+    ch = logging.FileHandler(outfile)
+
+    if args.verbose is True:
+        ch.setLevel(logging.DEBUG)
     else:
-        # Set up logging
-        # Write log to file
-        ch = logging.FileHandler(os.path.join('.', outfile))
-        ch.setLevel(logging.INFO)
-        if args.verbose is True:
-            ch.setLevel(logging.DEBUG)
-        # Add formatter
-        formatter = logging.Formatter(LOGGING_FORMAT)
-        ch.setFormatter(formatter)
-        LOGGER.addHandler(ch)
         level = args.level.upper()
         if level == "ERROR":
-            LOGGER.setLevel(logging.ERROR)
+            ch.setLevel(logging.ERROR)
         elif level == "WARNING":
-            LOGGER.setLevel(logging.WARNING)
+            ch.setLevel(logging.WARNING)
         elif level == "INFO":
-            LOGGER.setLevel(logging.INFO)
+            ch.setLevel(logging.INFO)
         else:
             raise PH5ValidateException("Invalid Logging Level %s" % level)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
 
     return args
 
@@ -872,8 +873,7 @@ def main():
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
-                vb.write_to_log(log_file,
-                                args.level)
+                vb.write_to_log(log_file, args.level.upper())
         ph5API_object.close()
         sys.stdout.write("\nWarnings, Errors and suggestions "
                          "written to logfile: %s\n" % args.outfile)

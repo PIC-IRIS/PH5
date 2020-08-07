@@ -24,6 +24,16 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             das_sn_list=['12183'])
 
     def test_main(self):
+        # test invalid level
+        testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
+                    '-l', 'WARN']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                ph5validate.main()
+                self.assertEqual(log.records[0].msg.message,
+                                 'Invalid Logging Level WARN')
+
+        # test WARNING level
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -62,6 +72,38 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'ERROR: No Response table found. Have you run resp_load yet?\n'
             'WARNING: No station description found.\n'
             'WARNING: Data exists after pickup time: 2 seconds.\n')
+
+        # test error level (lower case)
+        testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
+                    '-l', 'error']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture():
+                ph5validate.main()
+        with open('ph5_validate.log') as f:
+            all_logs = f.read().split("-=-=-=-=-=-=-=-=-\n")
+
+        self.assertEqual(
+            all_logs[2],
+            'ERROR: Experiment_t does not exist. '
+            'run experiment_t_gen to create table\n')
+        self.assertEqual(
+            all_logs[3],
+            'Station 9001 Channel 1\n1 error, 3 warning, 0 info\n')
+        self.assertEqual(
+            all_logs[4],
+            'ERROR: No Response table found. Have you run resp_load yet?\n')
+        self.assertEqual(
+            all_logs[5],
+            'Station 9002 Channel 1\n1 error, 2 warning, 0 info\n')
+        self.assertEqual(
+            all_logs[6],
+            'ERROR: No Response table found. Have you run resp_load yet?\n')
+        self.assertEqual(
+            all_logs[7],
+            'Station 9003 Channel 1\n1 error, 2 warning, 0 info\n')
+        self.assertEqual(
+            all_logs[8],
+            'ERROR: No Response table found. Have you run resp_load yet?\n')
 
     def test_get_args(self):
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
