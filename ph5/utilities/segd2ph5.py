@@ -177,7 +177,7 @@ def get_args():
                        action='store_true', default=False)
 
     oparser.add_option("-M", "--num_mini", dest="num_mini",
-                       help=("Create a given number of miniPH5 files."
+                       help=("Create a given number of miniPH5 files. "
                              "Ex: -M 38"),
                        metavar="num_mini", type='int', default=None)
 
@@ -188,7 +188,7 @@ def get_args():
 
     oparser.add_option("-F", "--from_mini", dest="from_mini",
                        help=("The index to continue miniPH5_xxxxx.ph5 file "
-                             "from. Do not associate with num_mini."
+                             "from. Do not associate with num_mini. "
                              "Ex: -F 25"),
                        metavar="from_mini", type='int', default=None)
 
