@@ -531,8 +531,9 @@ class PH5toMSeed(object):
 
             nt = stc.notimecorrect
             if Das_tf['sample_rate_i'] > 0:
-                actual_sample_rate = float(
-                    Das_tf['sample_rate_i']) / float(Das_tf['sample_rate_multiplier_i'])
+                actual_sample_rate = \
+                    float(Das_tf['sample_rate_i']) / \
+                    float(Das_tf['sample_rate_multiplier_i'])
             else:
                 actual_sample_rate = 0
 
@@ -542,7 +543,7 @@ class PH5toMSeed(object):
                                       chan=stc.component,
                                       sample_rate=actual_sample_rate,
                                       apply_time_correction=nt, das_t=das)
-              
+
             else:
                 traces = self.ph5.textural_cut(stc.das,
                                                start_time,
