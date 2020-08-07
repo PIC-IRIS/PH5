@@ -19,7 +19,7 @@ from ph5.core import experiment, columns, segdreader
 from ph5 import LOGGING_FORMAT
 from pyproj import Proj, transform
 
-PROG_VERSION = "2019.252"
+PROG_VERSION = "2020.218"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
@@ -144,7 +144,7 @@ def read_infile(infile):
 
 def get_args():
     global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND,\
-        MANUFACTURERS_CODE
+        MANUFACTURERS_CODE, FROM_MINI
 
     TSPF = False
 
@@ -184,6 +184,11 @@ def get_args():
                        help="The index of the first miniPH5_xxxxx.ph5 file.",
                        metavar="first_mini", type='int', default=1)
 
+    oparser.add_option("-F", "--from_mini", dest="from_mini",
+                       help=("The index to continue miniPH5_xxxxx.ph5 file. "
+                             "Not associated with num_mini."),
+                       metavar="from_mini", type='int', default=None)
+
     oparser.add_option("-c", "--combine", dest="combine",
                        help="Combine this number if SEG-D traces to one\
                         PH5 trace.",
@@ -206,6 +211,7 @@ def get_args():
 
     EVERY = options.all_events
     NUM_MINI = options.num_mini
+    FROM_MINI = options.from_mini
     FIRST_MINI = options.first_mini
     UTM = options.utm_zone
     TSPF = options.texas_spc
@@ -227,6 +233,11 @@ def get_args():
     else:
         raise Exception("No outfile (PH5) given.\n")
 
+    # from_mini and num_mini must not coexist
+    if (NUM_MINI is not None) and (FROM_MINI is not None):
+        raise Exception("Option NUM_MINI and option FROM_MINI must not be "
+                        "used at the same time.")
+    # first_mini will be ignore if from_mini is used
     setLogger()
 
 
@@ -370,6 +381,25 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(das)
     newestfile = ''
+    lastcheck_mini = -1
+    if FROM_MINI is not None:
+        for index_t in INDEX_T_DAS.rows:
+            mh = miniPH5RE.match(index_t['external_file_name_s'])
+            lastcheck_mini = int(mh.groups()[0])
+            if index_t['serial_number_s'] != das:
+                continue
+            if lastcheck_mini >= FROM_MINI:
+                newestfile = sstripp(index_t['external_file_name_s'])
+                size_of_exrec = os.path.getsize(newestfile + '.ph5')
+                if (size_of_data + size_of_exrec) <= MAX_PH5_BYTES:
+                    return openPH5(newestfile)
+        if lastcheck_mini < FROM_MINI:
+            n = FROM_MINI
+        else:
+            n = lastcheck_mini + 1
+        newestfile = "miniPH5_{0:05d}".format(n)
+        return openPH5(newestfile)
+
     #   Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T_DAS.rows:
@@ -966,6 +996,15 @@ def utmcsptolatlon(northing, easting):
     return lat, lon
 
 
+def getHighestMini(index_t_das):
+    n = 0
+    for index_t in index_t_das.rows:
+        mh = miniPH5RE.match(index_t['external_file_name_s'])
+        if n < int(mh.groups()[0]):
+            n = int(mh.groups()[0])
+    return n
+
+
 def main():
     import time
     then = time.time()
@@ -973,7 +1012,7 @@ def main():
 
     def prof():
         global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
-            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
+            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND, FROM_MINI
 
         MINIPH5 = None
         ARRAY_T = {}
@@ -1030,7 +1069,13 @@ def main():
             INDEX_T_DAS = Rows_Keys(rows, keys)
             rows, keys = EX.ph5_g_maps.read_index()
             INDEX_T_MAP = Rows_Keys(rows, keys)
-
+            if FROM_MINI is not None:
+                highestMini = getHighestMini(INDEX_T_DAS)
+                if FROM_MINI < highestMini:
+                    LOGGER.error("FROM_MINI must be greater than %s, "
+                                 "the highest mini file in ph5." % highestMini)
+                    EX.ph5close()
+                    return 1
         for f in FILES:
             F = f
             traces = []
