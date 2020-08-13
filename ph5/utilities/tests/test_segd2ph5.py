@@ -10,22 +10,35 @@ from mock import patch
 from testfixtures import LogCapture
 
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader
+from ph5.core import segdreader, ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
 
-def create_fcntlist_file(home):
-    segd_dir = os.path.join(home, "ph5/test_data/segd/")
+def create_fcntlist_file(home, namestart=''):
+    """
+    create file that keep the path of fcnt file under 'ph5/test_data/segd'
+    of which name start with parameter 'namestart'
+    """
+    segd_dir = os.path.join(home, 'ph5/test_data/segd/')
     # create list file
-    list_file = open('fcnt_list', "w")
+    list_file = open('fcnt_list', 'w')
     fileList = os.listdir(segd_dir)
     s = ""
     for f in fileList:
-        if f.endswith(".fcnt") and f.startswith("1111"):
+        if f.endswith('.fcnt') and f.startswith(namestart):
             s += segd_dir + f + "\n"
     list_file.write(s)
     list_file.close()
+
+
+def das_in_mini(testcase, mininame):
+    """ get list of all das names from minifile """
+    ph5API_object = ph5api.PH5(path=testcase.tmpdir, nickname=mininame)
+    ph5API_object.read_das_g_names()
+    ret = ph5API_object.Das_g_names.keys()
+    ph5API_object.ph5close()
+    return ret
 
 
 class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
@@ -56,19 +69,29 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
 
     def test_get_args(self):
         # error when -M and -F is used at the same time
-        testargs = ['ph5_validate', '-n', 'master.ph5', '-r',
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
                     os.path.join(self.home,
                                  'ph5/test_data/segd/3ch.fcnt'),
                     '-M', '5', '-F', '3']
         with patch.object(sys, 'argv', testargs):
             self.assertRaisesRegexp(
                 Exception,
-                "Option NUM_MINI and option FROM_MINI must not be "
-                "used at the same time.",
+                'Option -M and option -F must not be used at the same time.',
+                segd2ph5.get_args)
+
+        # error when -O is used without -F
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt'),
+                    '-O']
+        with patch.object(sys, 'argv', testargs):
+            self.assertRaisesRegexp(
+                Exception,
+                'Option -O must be associated with option -F.',
                 segd2ph5.get_args)
 
         # -M
-        testargs = ['ph5_validate', '-n', 'master.ph5', '-r',
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
                     os.path.join(self.home,
                                  'ph5/test_data/segd/3ch.fcnt'),
                     '-M', '5']
@@ -77,18 +100,28 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
         self.assertEqual(segd2ph5.NUM_MINI, 5)
 
         # -F
-        testargs = ['ph5_validate', '-n', 'master.ph5', '-r',
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
                     os.path.join(self.home,
                                  'ph5/test_data/segd/3ch.fcnt'),
                     '-F', '5']
         with patch.object(sys, 'argv', testargs):
             segd2ph5.get_args()
         self.assertEqual(segd2ph5.FROM_MINI, 5)
+        self.assertEqual(segd2ph5.ONE_PER_MINI, False)
+
+        # -F -O
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt'),
+                    '-F', '5', '-O']
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.get_args()
+        self.assertEqual(segd2ph5.FROM_MINI, 5)
+        self.assertEqual(segd2ph5.ONE_PER_MINI, True)
 
     def test_main_from_mini(self):
         """ test main() with -F option """
-
-        create_fcntlist_file(self.home)
+        create_fcntlist_file(self.home, '1111')
         # reset MAX_PH5_BYTES to allow MB for a mini file only
         # check 2 mini file is created start from FROM_MINI
         segd2ph5.MAX_PH5_BYTES = 1024 * 1024 * 1.5
@@ -96,7 +129,7 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 
-        ph5set = {f for f in os.listdir(self.tmpdir) if f.endswith(".ph5")}
+        ph5set = {f for f in os.listdir(self.tmpdir) if f.endswith('.ph5')}
         self.assertEqual(ph5set,
                          {'miniPH5_00003.ph5', 'miniPH5_00004.ph5',
                           'master.ph5'})
@@ -110,8 +143,8 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
                 log.setLevel(logging.ERROR)
                 segd2ph5.main()
                 self.assertEqual(log.records[0].msg,
-                                 "FROM_MINI must be greater than 4, "
-                                 "the highest mini file in ph5.")
+                                 'FROM_MINI must be greater than 4, '
+                                 'the highest mini file in ph5.')
 
         testargs = ['segdtoph5', '-n', 'master.ph5', '-F', '6', '-r',
                     os.path.join(self.home,
@@ -120,10 +153,45 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 
-        ph5set = {f for f in os.listdir(self.tmpdir) if f.endswith(".ph5")}
+        ph5set = {f for f in os.listdir(self.tmpdir) if f.endswith('.ph5')}
         self.assertEqual(ph5set,
                          {'miniPH5_00003.ph5', 'miniPH5_00004.ph5',
                           'miniPH5_00006.ph5', 'master.ph5'})
+        self.assertEqual(das_in_mini(self, 'miniPH5_00003.ph5'),
+                         ['Das_g_1X1111'])
+        self.assertEqual(das_in_mini(self, 'miniPH5_00004.ph5'),
+                         ['Das_g_1X1111'])
+        self.assertEqual(das_in_mini(self, 'miniPH5_00006.ph5'),
+                         ['Das_g_3X500'])
+
+    def test_main_from_mini_with_one_per_mini(self):
+        # fcnt_list has 2 das, -F and -O option
+        # => each das's data in a separate minifile
+        create_fcntlist_file(self.home)
+        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list', '-F', '3',
+                    '-O']
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        ph5set = {f for f in os.listdir(self.tmpdir) if f.endswith('.ph5')}
+        self.assertEqual(ph5set,
+                         {'miniPH5_00003.ph5', 'miniPH5_00004.ph5',
+                          'master.ph5'})
+        self.assertEqual(das_in_mini(self, 'miniPH5_00003.ph5'),
+                         ['Das_g_1X1111'])
+        self.assertEqual(das_in_mini(self, 'miniPH5_00004.ph5'),
+                         ['Das_g_3X500'])
+
+    def test_main_from_mini_without_one_per_mini(self):
+        # fcnt_list has 2 das, -F option without -O
+        # => all das's data in one minifile
+        create_fcntlist_file(self.home)
+        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list', '-F', '3']
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        ph5set = {f for f in os.listdir(self.tmpdir) if f.endswith('.ph5')}
+        self.assertEqual(ph5set, {'miniPH5_00003.ph5', 'master.ph5'})
+        self.assertEqual(das_in_mini(self, 'miniPH5_00003.ph5'),
+                         ['Das_g_1X1111', 'Das_g_3X500'])
 
 
 class TestSegDtoPH5_closeEX(TempDirTestCase, LogTestCase):
@@ -134,7 +202,7 @@ class TestSegDtoPH5_closeEX(TempDirTestCase, LogTestCase):
     def test_main_diff_deploy(self):
         # add fcnt data of the same das in the same array but with different
         # deploytime
-        create_fcntlist_file(self.home)
+        create_fcntlist_file(self.home, '1111')
 
         # add segD to ph5
         testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list']
@@ -283,7 +351,6 @@ class TestSegDtoPH5_closeEX(TempDirTestCase, LogTestCase):
                 self.assertEqual(segd2ph5.RESP.lines[0][k], response[k])
 
     def test_get_current_data_only(self):
-        segd2ph5.MAX_PH5_BYTES = 1024 * 1024 * 2
         testargs = ['segdtoph5', '-n', 'master', '-r',
                     os.path.join(self.home,
                                  'ph5/test_data/segd/1111.0.0.fcnt'),
@@ -294,30 +361,44 @@ class TestSegDtoPH5_closeEX(TempDirTestCase, LogTestCase):
         self.EX = segd2ph5.EX
         rows, keys = segd2ph5.EX.ph5_g_receivers.read_index()
         segd2ph5.INDEX_T_DAS = segd2ph5.Rows_Keys(rows, keys)
-
-        # current FROM_MINI < miniPH5_00003.ph5 that has current das
-        # size of data + size of miniPH5_00003.ph5 < MAX_PH5_BYTES
-        # => save to miniPH5_00003.ph5
         segd2ph5.EXREC = segd2ph5.openPH5('miniPH5_00003.ph5')
+
+        # FROM_MINI < miniPH5_00003.ph5 whose das is different from
+        # current das
+        # size of data + size of miniPH5_00003.ph5 < MAX_PH5_BYTES
+        # not using -O
+        # => save to current mini: miniPH5_00003.ph5
+        segd2ph5.FROM_MINI = 2
+        segd2ph5.ONE_PER_MINI = False
+        segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '3X500')
+        self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00003.ph5')
+
+        # FROM_MINI < miniPH5_00003.ph5 whose das is different from
+        # current das
+        # size of data + size of miniPH5_00003.ph5 < MAX_PH5_BYTES
+        # using -)
+        # => save to miniPH5_00004.ph5 (last+1)
+        segd2ph5.FROM_MINI = 2
+        segd2ph5.ONE_PER_MINI = True
+        segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '3X500')
+        self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00004.ph5')
+
+        segd2ph5.MAX_PH5_BYTES = 1024 * 1024 * 2
+        # FROM_MINI < miniPH5_00003.ph5 whose das is current das
+        # size of data + size of miniPH5_00003.ph5 < MAX_PH5_BYTES
+        # => save to current mini: miniPH5_00003.ph5
         segd2ph5.FROM_MINI = 2
         segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '1X1111')
         self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00003.ph5')
 
-        # current FROM_MINI < miniPH5_00003.ph5 that is different from
-        # current das
-        # => save to miniPH5_00004.ph5 (last+1)
-        segd2ph5.FROM_MINI = 2
-        segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '3X500')
-        self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00004.ph5')
-
-        # current FROM_MINI < miniPH5_00003.ph5 that has current das
+        # FROM_MINI < miniPH5_00003.ph5 whose das is current das
         # size of data + size of miniPH5_00003.ph5 > MAX_PH5_BYTES
         # => save to miniPH5_00004.ph5 (last+1)
         segd2ph5.FROM_MINI = 2
         segd2ph5.EXREC = segd2ph5.get_current_data_only(2183348, '1X1111')
         self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00004.ph5')
 
-        # current FROM_MINI > last mini file
+        # FROM_MINI > last mini file
         # => save to miniPH5_00005.ph5 (FROM_MINI)
         segd2ph5.FROM_MINI = 5
         segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '1X1111')

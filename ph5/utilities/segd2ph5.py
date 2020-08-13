@@ -144,7 +144,7 @@ def read_infile(infile):
 
 def get_args():
     global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND,\
-        MANUFACTURERS_CODE, FROM_MINI
+        MANUFACTURERS_CODE, FROM_MINI, ONE_PER_MINI
 
     TSPF = False
 
@@ -192,6 +192,12 @@ def get_args():
                              "Ex: -F 25"),
                        metavar="from_mini", type='int', default=None)
 
+    oparser.add_option("-O", "--onepermini", action="store_true",
+                       dest="one_per_mini",
+                       help=("Only allow one das in a miniPH5_xxxxx.ph5 file. "
+                             "Use with option -F only."),
+                       default=False, metavar="one_per_mini")
+
     oparser.add_option("-c", "--combine", dest="combine",
                        help="Combine this number if SEG-D traces to one\
                         PH5 trace.",
@@ -212,6 +218,7 @@ def get_args():
     FILES = []
     PH5 = None
 
+    ONE_PER_MINI = options.one_per_mini
     EVERY = options.all_events
     NUM_MINI = options.num_mini
     FROM_MINI = options.from_mini
@@ -238,8 +245,11 @@ def get_args():
 
     # from_mini and num_mini must not coexist
     if (NUM_MINI is not None) and (FROM_MINI is not None):
-        raise Exception("Option NUM_MINI and option FROM_MINI must not be "
-                        "used at the same time.")
+        raise Exception('Option -M and option -F must not be '
+                        'used at the same time.')
+
+    if ONE_PER_MINI and (FROM_MINI is None):
+        raise Exception('Option -O must be associated with option -F.')
     # first_mini will be ignore if from_mini is used
     setLogger()
 
@@ -389,7 +399,7 @@ def get_current_data_only(size_of_data, das=None):
         for index_t in INDEX_T_DAS.rows:
             mh = miniPH5RE.match(index_t['external_file_name_s'])
             lastcheck_mini = int(mh.groups()[0])
-            if index_t['serial_number_s'] != das:
+            if ONE_PER_MINI and index_t['serial_number_s'] != das:
                 continue
             if lastcheck_mini >= FROM_MINI:
                 newestfile = sstripp(index_t['external_file_name_s'])
@@ -1015,7 +1025,8 @@ def main():
 
     def prof():
         global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
-            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND, FROM_MINI
+            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND,\
+            FROM_MINI, ONE_PER_MINI
 
         MINIPH5 = None
         ARRAY_T = {}
