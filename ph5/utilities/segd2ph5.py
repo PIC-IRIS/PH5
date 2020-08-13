@@ -188,7 +188,7 @@ def get_args():
 
     oparser.add_option("-F", "--from_mini", dest="from_mini",
                        help=("The index to continue miniPH5_xxxxx.ph5 file "
-                             "from. Do not associate with num_mini. "
+                             "from. Do not associate with option -M. "
                              "Ex: -F 25"),
                        metavar="from_mini", type='int', default=None)
 
