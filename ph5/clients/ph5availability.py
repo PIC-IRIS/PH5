@@ -384,10 +384,18 @@ class PH5Availability(object):
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
-
-                        ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
-                        ph5_sample_rate = self.get_sample_rate(st)
+                        Das_t = self.ph5.query_das_t(
+                            ph5_das,
+                            chan = channel_number,
+                            start_epoch=st['deploy_time/epoch_l'],
+                            stop_epoch=st['pickup_time/epoch_l'],
+                            sample_rate = st['sample_rate_i'])
+                        for das in Das_t:
+                            if (das['sample_rate_i'] == st['sample_rate_i']):
+                                ph5_sample_rate = das['sample_rate_i']
+                        if(ph5_sample_rate != st['sample_rate_i']):
+                            raise ValueError("Sample rate mismatch between DAS and Array tables.")
 
                         earliest, latest = self.ph5.get_extent(
                             ph5_das, ph5_channum, ph5_sample_rate,
@@ -473,8 +481,17 @@ class PH5Availability(object):
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
-                        ph5_sample_rate = self.get_sample_rate(st)
-
+                        Das_t = self.ph5.query_das_t(
+                            ph5_das,
+                            chan=ph5_channum,
+                            start_epoch=st['deploy_time/epoch_l'],
+                            stop_epoch=st['pickup_time/epoch_l'],
+                            sample_rate = st['sample_rate_i'])
+                        for das in Das_t:
+                            if (das['sample_rate_i'] == st['sample_rate_i']):
+                                ph5_sample_rate = das['sample_rate_i']
+                        if(ph5_sample_rate != st['sample_rate_i']):
+                            raise ValueError("Sample rate mismatch between DAS and Array tables.")
                         times = self.ph5.get_availability(
                             ph5_das, ph5_sample_rate, ph5_channum,
                             starttime, endtime)
