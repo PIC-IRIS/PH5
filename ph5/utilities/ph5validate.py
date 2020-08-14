@@ -672,11 +672,12 @@ class PH5Validate(object):
                                 stop_epoch=station['pickup_time/epoch_l'])
                             for das in Das_t:
                                 if(station['sample_rate_i'] !=
-                                    das['sample_rate_i']):
+                                   das['sample_rate_i']):
                                     error.append('Array sample rate '
-                                                 + station['sample_rate_i'] 
-                                                 +' != Das sample rate '
-                                                 + das['sample_rate_i'])
+                                                 + str(
+                                                    station['sample_rate_i'])
+                                                 + ' != Das sample rate '
+                                                 + str(das['sample_rate_i']))
 
                             if info or warning or error:
                                 header = ("-=-=-=-=-=-=-=-=-\n"
