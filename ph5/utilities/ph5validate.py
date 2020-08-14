@@ -646,6 +646,7 @@ class PH5Validate(object):
                         station_len = len(station_list[deployment])
                         for st_num in range(0, station_len):
                             station = station_list[deployment][st_num]
+                            ph5_das = station['das/serial_number_s']
                             station_id = station['id_s']
                             channel_id = station['channel_number_i']
                             LOGGER.debug("Validating Station {0} Channel {1}"
@@ -663,6 +664,18 @@ class PH5Validate(object):
                                     continue
                                 else:
                                     track_repeated.append(item)
+                            # Pull the das table using the array table
+                            Das_t = self.ph5.query_das_t(
+                                ph5_das,
+                                chan=channel_id,
+                                start_epoch=station['deploy_time/epoch_l'],
+                                stop_epoch=station['pickup_time/epoch_l'])
+                            for das in Das_t:
+                                if(station['sample_rate_i'] !=
+                                    das['sample_rate_i']):
+                                    error.append('Array sample != '
+                                                 +'Das sample rate' + ph5_das
+                                                 + station_id)
 
                             if info or warning or error:
                                 header = ("-=-=-=-=-=-=-=-=-\n"
