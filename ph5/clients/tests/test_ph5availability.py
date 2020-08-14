@@ -1201,7 +1201,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                 out.compare(
                     "#n s     l  c   q sample-rate                    earliest"
                     "                      latest\n"
-                    "AA 9001  -- DPZ           500 2019-02-22T15:39:04.099999Z"
+                    "AA 9001  -- DPZ         500.0 2019-02-22T15:39:04.099999Z"
                     " 2019-02-22T15:39:07.099999Z")
 
         # test get_availability_extent with wildcard station, location, channel
@@ -1672,6 +1672,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                                'ph5/test_data/metadata/extent_full.csv'),
                   'r') as content_file:
             content = content_file.read().strip()
+            
         self.assertMultiLineEqual(ret, content)
 
         result = self.availability.get_availability(

@@ -391,7 +391,7 @@ class PH5Availability(object):
                         samplerate_return = None
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
-                            chan = ph5_channum,
+                            chan=ph5_channum,
                             start_epoch=ph5_start_epoch,
                             stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
@@ -399,7 +399,7 @@ class PH5Availability(object):
                             earliest, latest = self.ph5.get_extent(
                                 ph5_das, ph5_channum, ph5_sample_rate,
                                 starttime, endtime)
-                            if das['sample_rate_i']==st['sample_rate_i'] :
+                            if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
                             if earliest is None or latest is None:
                                 continue
@@ -416,12 +416,13 @@ class PH5Availability(object):
                                    earliest, latest)
                         else:
                             if samplerate_return is not None:
-                               tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                   earliest, latest, samplerate_return) 
+                                tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                       earliest, latest,
+                                       float(samplerate_return))
                             else:
                                 tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                       earliest, latest, ph5_sample_rate)
-
+                                       earliest, latest, float(ph5_sample_rate)
+                                       )
                         availability_extents.append(tup)
 
         return availability_extents
@@ -498,17 +499,19 @@ class PH5Availability(object):
                             start_epoch=ph5_start_epoch,
                             stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
-                            # Sample rates must first be compared than 
+                            # Sample rates must first be compared than
                             ph5_sample_rate = das['sample_rate_i']
                             times = self.ph5.get_availability(
                                 ph5_das, ph5_sample_rate, ph5_channum,
                                 starttime, endtime)
+                            if das['sample_rate_i'] == st['sample_rate_i']:
+                                samplerate_return = das['sample_rate_i']
                             if times is None:
                                 continue
-                        # The first if time is none needs to be repeated for the
-                        # DAS loop the second needs to be repeated for the sta 
-                        # loop
-                        if times is None: 
+                        # The first if time is none needs to be repeated for
+                        # the DAS loop the second needs to be repeated for the
+                        # sta loop
+                        if times is None:
                             continue
                         for T in times:
                             start = T[1] if T[1] > starttime \
@@ -518,14 +521,18 @@ class PH5Availability(object):
                             if T[1] is None or T[2] is None:
                                 return None
                             if include_sample_rate:
-                                if(T[0] is None):
+                                if samplerate_return is not None:
                                     availability.append((
                                         ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, ph5_sample_rate))
+                                        start, end, float(samplerate_return)))
+                                elif(T[0] is None):
+                                    availability.append((
+                                        ph5_seed_station, ph5_loc, ph5_channel,
+                                        start, end, float(ph5_sample_rate)))
                                 else:
                                     availability.append((
                                         ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, T[0]))
+                                        start, end, float(T[0])))
                             else:
                                 availability.append((
                                     ph5_seed_station, ph5_loc, ph5_channel,
