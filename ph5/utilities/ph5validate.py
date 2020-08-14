@@ -829,27 +829,23 @@ def get_args():
         help="Verbose logging.")
 
     args = parser.parse_args()
-
     outfile = args.outfile
     PH5 = args.nickname
     if not os.path.exists(PH5) and not os.path.exists(PH5 + '.ph5'):
         LOGGER.error("{0} not found.".format(PH5))
         sys.exit()
-
+    if args.verbose is True:
+        LOGGER.parent.handlers[0].setLevel(logging.DEBUG)
     # Set up logging
     # Write log to file
     ch = logging.FileHandler(outfile)
-
-    if args.verbose is True:
-        ch.setLevel(logging.DEBUG)
-    else:
-        level = args.level
-        if level == "ERROR":
-            ch.setLevel(logging.ERROR)
-        elif level == "WARNING":
-            ch.setLevel(logging.WARNING)
-        elif level == "INFO":
-            ch.setLevel(logging.INFO)
+    level = args.level
+    if level == "ERROR":
+        ch.setLevel(logging.ERROR)
+    elif level == "WARNING":
+        ch.setLevel(logging.WARNING)
+    elif level == "INFO":
+        ch.setLevel(logging.INFO)
     LOGGER.addHandler(ch)
 
     return args
