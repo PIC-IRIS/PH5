@@ -28,10 +28,13 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARN']
         with patch.object(sys, 'argv', testargs):
-            with LogCapture() as log:
-                ph5validate.main()
-                self.assertEqual(log.records[0].msg.message,
-                                 'Invalid Logging Level WARN')
+            with OutputCapture() as out:
+                self.assertRaises(SystemExit, ph5validate.main)
+                output = out.captured.strip().split('\n')
+        self.assertEqual(
+            output[1],
+            "ph5_validate: error: argument -l/--level: invalid choice: "
+            "'WARN' (choose from 'ERROR', 'WARNING', 'INFO')")
 
         # test WARNING level
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
@@ -73,9 +76,9 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'WARNING: No station description found.\n'
             'WARNING: Data exists after pickup time: 2 seconds.\n')
 
-        # test error level (lower case)
+        # test ERROR level
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
-                    '-l', 'error']
+                    '-l', 'ERROR']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture():
                 ph5validate.main()
@@ -106,6 +109,17 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'ERROR: No Response table found. Have you run resp_load yet?\n')
 
     def test_get_args(self):
+        testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
+                    '-l', 'WARN']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                self.assertRaises(SystemExit, ph5validate.get_args)
+        output = out.captured.strip().split('\n')
+        self.assertEqual(
+            output[1],
+            "ph5_validate: error: argument -l/--level: invalid choice: "
+            "'WARN' (choose from 'ERROR', 'WARNING', 'INFO')")
+
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):

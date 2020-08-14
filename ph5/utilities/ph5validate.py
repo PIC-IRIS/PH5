@@ -817,7 +817,7 @@ def get_args():
 
     parser.add_argument(
         "-l", "--level", action="store", default="WARNING",
-        type=str, metavar="level",
+        type=str, metavar="level", choices=('ERROR', 'WARNING', 'INFO'),
         help=("Level of logging detail. Choose from ERROR, WARNING, or INFO"))
 
     parser.add_argument("-o", "--outfile", action="store",
@@ -844,15 +844,14 @@ def get_args():
     if args.verbose is True:
         ch.setLevel(logging.DEBUG)
     else:
-        level = args.level.upper()
+        level = args.level
         if level == "ERROR":
             ch.setLevel(logging.ERROR)
         elif level == "WARNING":
             ch.setLevel(logging.WARNING)
         elif level == "INFO":
             ch.setLevel(logging.INFO)
-        else:
-            raise PH5ValidateException("Invalid Logging Level %s" % level)
+
     # Add formatter
     formatter = logging.Formatter(LOGGING_FORMAT)
     ch.setFormatter(formatter)
@@ -873,7 +872,7 @@ def main():
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
-                vb.write_to_log(log_file, args.level.upper())
+                vb.write_to_log(log_file, args.level)
         ph5API_object.close()
         sys.stdout.write("\nWarnings, Errors and suggestions "
                          "written to logfile: %s\n" % args.outfile)
