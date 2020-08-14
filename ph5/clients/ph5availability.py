@@ -384,34 +384,43 @@ class PH5Availability(object):
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
+                        ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
+                        ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_stop_epoch = st['pickup_time/epoch_l']
+                        samplerate_return = None
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
-                            chan = channel_number,
-                            start_epoch=st['deploy_time/epoch_l'],
-                            stop_epoch=st['pickup_time/epoch_l'],
-                            sample_rate = st['sample_rate_i'])
+                            chan = ph5_channum,
+                            start_epoch=ph5_start_epoch,
+                            stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
-                            if (das['sample_rate_i'] == st['sample_rate_i']):
-                                ph5_sample_rate = das['sample_rate_i']
-                        if(ph5_sample_rate != st['sample_rate_i']):
-                            raise ValueError("Sample rate mismatch between DAS and Array tables.")
-
-                        earliest, latest = self.ph5.get_extent(
-                            ph5_das, ph5_channum, ph5_sample_rate,
-                            starttime, endtime)
+                            ph5_sample_rate = das['sample_rate_i']
+                            earliest, latest = self.ph5.get_extent(
+                                ph5_das, ph5_channum, ph5_sample_rate,
+                                starttime, endtime)
+                            if das['sample_rate_i']==st['sample_rate_i'] :
+                                samplerate_return = das['sample_rate_i']
+                            if earliest is None or latest is None:
+                                continue
                         if earliest is None:
                             continue
                         if starttime is not None and earliest < starttime:
                             earliest = starttime
                         if endtime is not None and endtime < latest:
                             latest = endtime
+                        if earliest is None or latest is None:
+                            return None
                         if not include_sample_rate:
                             tup = (ph5_seed_station, ph5_loc, ph5_channel,
                                    earliest, latest)
                         else:
-                            tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                   earliest, latest, ph5_sample_rate)
+                            if samplerate_return is not None:
+                               tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                   earliest, latest, samplerate_return) 
+                            else:
+                                tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                       earliest, latest, ph5_sample_rate)
 
                         availability_extents.append(tup)
 
@@ -481,31 +490,42 @@ class PH5Availability(object):
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
+                        ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_stop_epoch = st['pickup_time/epoch_l']
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
                             chan=ph5_channum,
-                            start_epoch=st['deploy_time/epoch_l'],
-                            stop_epoch=st['pickup_time/epoch_l'],
-                            sample_rate = st['sample_rate_i'])
+                            start_epoch=ph5_start_epoch,
+                            stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
-                            if (das['sample_rate_i'] == st['sample_rate_i']):
-                                ph5_sample_rate = das['sample_rate_i']
-                        if(ph5_sample_rate != st['sample_rate_i']):
-                            raise ValueError("Sample rate mismatch between DAS and Array tables.")
-                        times = self.ph5.get_availability(
-                            ph5_das, ph5_sample_rate, ph5_channum,
-                            starttime, endtime)
-                        if times is None:
+                            # Sample rates must first be compared than 
+                            ph5_sample_rate = das['sample_rate_i']
+                            times = self.ph5.get_availability(
+                                ph5_das, ph5_sample_rate, ph5_channum,
+                                starttime, endtime)
+                            if times is None:
+                                continue
+                        # The first if time is none needs to be repeated for the
+                        # DAS loop the second needs to be repeated for the sta 
+                        # loop
+                        if times is None: 
                             continue
                         for T in times:
                             start = T[1] if T[1] > starttime \
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
                                 or endtime is None else endtime
+                            if T[1] is None or T[2] is None:
+                                return None
                             if include_sample_rate:
-                                availability.append((
-                                    ph5_seed_station, ph5_loc, ph5_channel,
-                                    start, end, T[0]))
+                                if(T[0] is None):
+                                    availability.append((
+                                        ph5_seed_station, ph5_loc, ph5_channel,
+                                        start, end, ph5_sample_rate))
+                                else:
+                                    availability.append((
+                                        ph5_seed_station, ph5_loc, ph5_channel,
+                                        start, end, T[0]))
                             else:
                                 availability.append((
                                     ph5_seed_station, ph5_loc, ph5_channel,
@@ -825,6 +845,8 @@ class PH5Availability(object):
         header += "|earliest|latest"
 
         s = ""
+        if result is None:
+            return None
         for r in result:
             r = list(r)
             r = self.convert_time(r)

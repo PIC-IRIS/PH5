@@ -800,7 +800,7 @@ class PH5(experiment.ExperimentGroup):
         if not stop_epoch:
             stop_epoch = 32509613590
 
-        if sample_rate == 0:
+        if sample_rate == 0 or sample_rate is None:
             for row in tbl.where(
                     '(channel_number_i == '
                     + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
@@ -808,7 +808,6 @@ class PH5(experiment.ExperimentGroup):
                     ')&(epoch_i+micro_seconds_i/1000000<='
                     + str(stop_epoch) + ')'
             ):
-
                 row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
                             'array_name_data_a': row['array_name_data_a'],
                             'array_name_event_a': row['array_name_event_a'],

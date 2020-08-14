@@ -510,9 +510,7 @@ class PH5toMSeed(object):
         for stc in station_to_cut_segments:
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
-                                       stc.endtime,
-                                       stc.sample_rate,
-                                       stc.sample_rate_multiplier)
+                                       stc.endtime)
 
             if not das:
                 return

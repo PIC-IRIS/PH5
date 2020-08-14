@@ -299,22 +299,21 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         ret = self.availability.get_availability_extent()
         # There are 10 channels all with data
         # so expect 10 entries
-        
         self.assertEqual(10, len(ret))
         self.assertTrue(('9001', '', 'DPZ',
-                         1550849943.0, 1550850189.0) in ret)
+                         1550849943, 1550850189) in ret)
         self.assertTrue(('8001', '', 'HL1',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HL2',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HLZ',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'HHN', 1545085230.917, 1545085240.92), ret, 2))
+            ('0407', '', 'HHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'LHN', 1545085230.681998, 1545085240.69), ret, 2))
+            ('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
-                         1545088205.0, 1545088205.0) in ret)
+                         1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
                          1502294400.38, 1502294460.38) in ret)
         self.assertTrue(('500', '', 'DP2',
@@ -335,7 +334,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(1, len(ret))
         # expected entry
         self.assertTrue(('9001', '', 'DPZ',
-                         1550849943.0, 1550850189.0) in ret)
+                         1550849943, 1550850189) in ret)
 
         # same request but with sample rate included
         ret = self.availability.get_availability_extent(
@@ -350,7 +349,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertEqual(1, len(ret))
         # expected entry with sample_rate included
         self.assertTrue(('9001', '', 'DPZ',
-                         1550849943.0, 1550850189.0,
+                         1550849943, 1550850189,
                          500.0) in ret)
         #                 250.0) in ret)
 
@@ -365,7 +364,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # within time range was requested
         self.assertEqual(1, len(ret))
         self.assertTrue(('0407', '', 'LOG',
-                         1545088205.0, 1545088205.0) in ret)
+                         1545088205, 1545088205) in ret)
 
         # Check LOG channel with sample rate
         ret = self.availability.get_availability_extent(
@@ -379,7 +378,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # within time range was requested
         self.assertEqual(1, len(ret))
         self.assertTrue(('0407', '', 'LOG',
-                         1545088205.0, 1545088205.0, 0.0) in ret)
+                         1545088205, 1545088205, 0.0) in ret)
 
         # get all DPZ channels
         ret = self.availability.get_availability_extent(
@@ -408,19 +407,19 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # so expect 10 entries
         self.assertEqual(10, len(ret))
         self.assertTrue(('9001', '', 'DPZ',
-                         1550849943.0, 1550850189.0) in ret)
+                         1550849943, 1550850189) in ret)
         self.assertTrue(('8001', '', 'HL1',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HL2',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HLZ',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'HHN', 1545085230.917, 1545085240.92), ret, 2))
+            ('0407', '', 'HHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'LHN', 1545085230.681998, 1545085240.69), ret, 2))
+            ('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
-                         1545088205.0, 1545088205.0) in ret)
+                         1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
                          1502294400.38, 1502294460.38) in ret)
         self.assertTrue(('500', '', 'DP2',
@@ -478,35 +477,35 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         # but 9001 has 8 gaps so expect 18 entries
         self.assertEqual(18, len(ret))
         self.assertTrue(('9001', '', 'DPZ',
-                         1550849943.0, 1550849949.0) in ret)
+                         1550849943, 1550849949) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550849973.0, 1550849974.0) in ret)
+                         1550849973, 1550849974) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850003.0, 1550850009.0) in ret)
+                         1550850003, 1550850009) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850033.0, 1550850034.0) in ret)
+                         1550850033, 1550850034) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850060.0, 1550850068.0) in ret)
+                         1550850060, 1550850068) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850093.0, 1550850094.0) in ret)
+                         1550850093, 1550850094) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850123.0, 1550850129.0) in ret)
+                         1550850123, 1550850129) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850153.0, 1550850154.0) in ret)
+                         1550850153, 1550850154) in ret)
         self.assertTrue(('9001', '', 'DPZ',
-                         1550850183.0, 1550850189.0) in ret)
+                         1550850183, 1550850189) in ret)
         self.assertTrue(('8001', '', 'HL1',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HL2',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(('8001', '', 'HLZ',
-                         1463568480.0, 1463568517.88) in ret)
+                         1463568480, 1463568517.88) in ret)
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'HHN', 1545085230.917, 1545085240.92), ret, 2))
+            ('0407', '', 'HHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'LHN', 1545085230.681998, 1545085240.69), ret, 2))
+            ('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
-                         1545088205.0, 1545088205) in ret)
+                         1545088205, 1545088205) in ret)
         self.assertTrue(('500', '', 'DP1',
                          1502294400.38, 1502294460.38) in ret)
         self.assertTrue(('500', '', 'DP2',
@@ -1121,8 +1120,8 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                 out.compare(
                     "#n s     l  c   q                    earliest"
                     "                      latest\n"
-                    "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
-                    " 2018-12-17T22:20:40.922000Z\n"
+                    "AA 0407  -- HHN   2018-12-17T22:20:30.681998Z"
+                    " 2018-12-17T22:20:40.691998Z\n"
                     "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
                     " 2018-12-17T22:20:40.691998Z\n"
                     "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"
@@ -1781,14 +1780,12 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                   'r') as content_file:
             content = content_file.read().strip()
         self.assertMultiLineEqual(ret, content)
-        
-        result = self.availability.get_availability_extent(
-            include_sample_rate=True)
+
         ret = self.availability.get_report(result, format='g').strip()
         with open(os.path.join(self.home,
                                'ph5/test_data/metadata/extent_full.csv'),
                   'r') as content_file:
-            content = content_file.read().strip() 
+            content = content_file.read().strip()
         self.assertMultiLineEqual(ret, content)
 
         ret = self.availability.get_report(result, format='s').strip()
