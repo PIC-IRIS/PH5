@@ -14,7 +14,6 @@ import os
 import sys
 import copy
 
-from ph5 import LOGGING_FORMAT
 from ph5.core import ph5api
 from ph5.utilities import validation
 
@@ -851,10 +850,6 @@ def get_args():
             ch.setLevel(logging.WARNING)
         elif level == "INFO":
             ch.setLevel(logging.INFO)
-
-    # Add formatter
-    formatter = logging.Formatter(LOGGING_FORMAT)
-    ch.setFormatter(formatter)
     LOGGER.addHandler(ch)
 
     return args
@@ -872,7 +867,8 @@ def main():
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
-                vb.write_to_log(log_file, args.level)
+                vb.write_to_log(log_file,
+                                args.level)
         ph5API_object.close()
         sys.stdout.write("\nWarnings, Errors and suggestions "
                          "written to logfile: %s\n" % args.outfile)
