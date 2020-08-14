@@ -1672,7 +1672,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                                'ph5/test_data/metadata/extent_full.csv'),
                   'r') as content_file:
             content = content_file.read().strip()
-            
         self.assertMultiLineEqual(ret, content)
 
         result = self.availability.get_availability(
