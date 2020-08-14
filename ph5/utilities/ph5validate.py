@@ -673,9 +673,10 @@ class PH5Validate(object):
                             for das in Das_t:
                                 if(station['sample_rate_i'] !=
                                     das['sample_rate_i']):
-                                    error.append('Array sample != '
-                                                 +'Das sample rate' + ph5_das
-                                                 + station_id)
+                                    error.append('Array sample rate '
+                                                 + station['sample_rate_i'] 
+                                                 +' != Das sample rate '
+                                                 + das['sample_rate_i'])
 
                             if info or warning or error:
                                 header = ("-=-=-=-=-=-=-=-=-\n"
