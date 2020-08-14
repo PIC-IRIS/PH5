@@ -218,7 +218,7 @@ class TestPH5API(LogTestCase):
         self.assertEqual(channel[0]['seed_orientation_code_s'], '1')
         self.assertEqual(channel[0]['receiver_table_n_i'], 1)
         # there is no n_i=7 in response_t
-        self.assertEqual(channel[0]['response_table_n_i'], 7)
+        self.assertEqual(channel[0]['response_table_n_i'], 2)
         self.assertEqual(channel[0]['channel_number_i'], 2)
 
         # array shouldn't have station 0407
@@ -940,7 +940,7 @@ class TestPH5API(LogTestCase):
         self.assertEqual(1317166976,
                          traces[0].data[0])
         # should match sample 4999 in array 005
-        self.assertEqual(-123947064,
+        self.assertEqual(-122580344,
                          traces[0].data[-1])
 
     def test_get_extent(self):
