@@ -62,9 +62,9 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
             with OutputCapture():
                 initialize_ph5.main()
         # array_latlon_err.kef: station 1111-1117
-        # out of range on 1111,1112
-        # no unit for Y (latitude): 1114
-        # no value for Z: 1115
+        #                       out of range on 1111,1112
+        #                       no unit for Y (latitude): 1114
+        #                       no value for Z: 1115
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
@@ -167,17 +167,15 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
             self.tmpdir, 'master.ph5', "NETWORK",
             34, 40, -111, -105, 36, -107, 0, 3)
 
-        # errors in array_latlon_err.kef
-        self.errmsgs = [
-            "array 001, station 1111, channel 1: "
-            "Channel latitude -107.0 not in range [-90,90]",
-            "array 001, station 1112, channel 1: "
-            "Channel longitude 182.0 not in range [-180,180]"]
-        self.warnmsgs = [
-            "array 001, station 1114, channel 1: "
-            "No Station location/Y/units_s value found.",
-            "array 001, station 1115, channel 1: "
-            "Channel elevation seems to be 0. Is this correct???"]
+        # errors and warnings in array_latlon_err.kef
+        self.errmsgs = ["array 001, station 1111, channel 1: "
+                        "Channel latitude -107.0 not in range [-90,90]",
+                        "array 001, station 1112, channel 1: "
+                        "Channel longitude 182.0 not in range [-180,180]"]
+        self.warnmsgs = ["array 001, station 1114, channel 1: "
+                         "No Station location/Y/units_s value found.",
+                         "array 001, station 1115, channel 1: "
+                         "Channel elevation seems to be 0. Is this correct???"]
 
     def tearDown(self):
         self.mng.ph5.close()
