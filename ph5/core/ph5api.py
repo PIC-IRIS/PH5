@@ -1286,8 +1286,7 @@ class PH5(experiment.ExperimentGroup):
         if data is None:
             return [Trace(np.array([]), start_fepoch, 0., 0, sample_rate,
                           None, None, das_t, None, None, clock=clock)]
-        else:
-            calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
+        calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
 
         # calculate number of overextending samples
         num_overextend_samples = int(math.floor(calc_stop_fepoch -
@@ -1298,10 +1297,6 @@ class PH5(experiment.ExperimentGroup):
             data = data[0:samples_to_cut]
 
         # Done reading all the traces catch the last bit
-        if data is None:
-            return [Trace(np.array([]), start_fepoch, 0., 0, sample_rate,
-                          None, None, das_t, None, None, clock=clock)]
-
         trace = Trace(data,
                       trace_start_fepoch,
                       0,  # time_correction_ms
