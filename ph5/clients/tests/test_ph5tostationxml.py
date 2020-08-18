@@ -75,6 +75,7 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
             with OutputCapture() as out:
                 ph5tostationxml.main()
                 output = out.captured.strip().split("\n")
+        self.assertEqual(len(output), 6)
         self.assertEqual(output[1].split("|")[1], '1113')
         self.assertEqual(output[2].split("|")[1], '1114')
         self.assertEqual(output[3].split("|")[1], '1115')
@@ -93,6 +94,7 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
             with OutputCapture() as out:
                 ph5tostationxml.main()
                 output = out.captured.strip().split("\n")
+        self.assertEqual(len(output), 2)
         self.assertEqual(output[1].split("|")[1], '1115')
 
 
