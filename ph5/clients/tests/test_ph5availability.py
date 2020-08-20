@@ -309,7 +309,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'HHN', 1545085230.681998, 1545085240.691998), ret, 2))
+            ('0407', '', 'HHN', 1545085230.917, 1545085240.9220002), ret, 2))
         self.assertTrue(checkTupleAlmostEqualIn(
             ('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
@@ -415,7 +415,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'HHN', 1545085230.681998, 1545085240.691998), ret, 2))
+            ('0407', '', 'HHN', 1545085230.917, 1545085240.9220002), ret, 2))
         self.assertTrue(checkTupleAlmostEqualIn(
             ('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
@@ -501,7 +501,7 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
         self.assertTrue(('8001', '', 'HLZ',
                          1463568480, 1463568517.88) in ret)
         self.assertTrue(checkTupleAlmostEqualIn(
-            ('0407', '', 'HHN', 1545085230.681998, 1545085240.691998), ret, 2))
+            ('0407', '', 'HHN', 1545085230.917, 1545085240.9220002), ret, 2))
         self.assertTrue(checkTupleAlmostEqualIn(
             ('0407', '', 'LHN', 1545085230.681998, 1545085240.691998), ret, 2))
         self.assertTrue(('0407', '', 'LOG',
@@ -1120,8 +1120,8 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                 out.compare(
                     "#n s     l  c   q                    earliest"
                     "                      latest\n"
-                    "AA 0407  -- HHN   2018-12-17T22:20:30.681998Z"
-                    " 2018-12-17T22:20:40.691998Z\n"
+                    "AA 0407  -- HHN   2018-12-17T22:20:30.917000Z"
+                    " 2018-12-17T22:20:40.922000Z\n"
                     "AA 0407  -- LHN   2018-12-17T22:20:30.681998Z"
                     " 2018-12-17T22:20:40.691998Z\n"
                     "AA 0407  -- LOG   2018-12-17T23:10:05.000000Z"

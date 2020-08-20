@@ -330,7 +330,7 @@ class PH5Availability(object):
                                 include_sample_rate=False):
         """
         Get a list of tuples [(station, location, channel,
-        earliest, latest)] containing data extent info for time series
+        early, latest)] containing data extent info for time series
         included in PH5.
         :type station: str
         :param station: Station code of requested data (e.g. "ANMO").
@@ -347,7 +347,7 @@ class PH5Availability(object):
         :param endtime: End of requested time window as epoch in seconds
         :rtype: list(tuple(str, str, str, str, float, float))
         :returns: A list of tuples [(station, location, channel,
-            earliest, latest)...] containing data extent info for time series
+            early, latest)...] containing data extent info for time series
             included in PH5 archive
 
         NOTE! ph5api as a get_extent() method that works on the channel level.
@@ -385,43 +385,46 @@ class PH5Availability(object):
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5_das = st['das/serial_number_s']
-                        ph5_channum = st['channel_number_i']
+                        channum = st['channel_number_i']
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         samplerate_return = None
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
-                            chan=ph5_channum,
+                            chan=channum,
                             start_epoch=ph5_start_epoch,
                             stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
-                            ph5_sample_rate = das['sample_rate_i']
-                            earliest, latest = self.ph5.get_extent(
-                                ph5_das, ph5_channum, ph5_sample_rate,
-                                starttime, endtime)
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
-                            if earliest is None or latest is None:
+                                psr = das['sample_rate_i']
+                                early, latest = self.ph5.get_extent(ph5_das,
+                                                                    channum,
+                                                                    psr,
+                                                                    starttime,
+                                                                    endtime
+                                                                    )
+                            if early is None or latest is None:
                                 continue
-                        if earliest is None:
+                        if early is None:
                             continue
-                        if starttime is not None and earliest < starttime:
-                            earliest = starttime
+                        if starttime is not None and early < starttime:
+                            early = starttime
                         if endtime is not None and endtime < latest:
                             latest = endtime
-                        if earliest is None or latest is None:
+                        if early is None or latest is None:
                             return None
                         if not include_sample_rate:
                             tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                   earliest, latest)
+                                   early, latest)
                         else:
                             if samplerate_return is not None:
                                 tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                       earliest, latest,
+                                       early, latest,
                                        float(samplerate_return))
                             else:
                                 tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                       earliest, latest, float(ph5_sample_rate)
+                                       early, latest, float(psr)
                                        )
                         availability_extents.append(tup)
 
@@ -500,12 +503,12 @@ class PH5Availability(object):
                             stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
                             # Sample rates must first be compared than
-                            ph5_sample_rate = das['sample_rate_i']
-                            times = self.ph5.get_availability(
-                                ph5_das, ph5_sample_rate, ph5_channum,
-                                starttime, endtime)
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
+                                ph5_sample_rate = das['sample_rate_i']
+                                times = self.ph5.get_availability(
+                                        ph5_das, ph5_sample_rate, ph5_channum,
+                                        starttime, endtime)
                             if times is None:
                                 continue
                         # The first if time is none needs to be repeated for
