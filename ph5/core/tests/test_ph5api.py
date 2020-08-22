@@ -912,7 +912,7 @@ class TestPH5API(LogTestCase):
             self.assertEqual(0.0, trace.time_correction_ms)
             self.assertEqual(500, trace.sample_rate)
             self.assertEqual('int', trace.ttype)
-        
+
         # Check for a exception with a cut in the gap
         throwexception = False
         try:
@@ -923,7 +923,7 @@ class TestPH5API(LogTestCase):
                                             None,
                                             False,
                                             das_t=das_t)
-        except:
+        except Exception:
             throwexception = True
         self.assertFalse(throwexception, 'Throw None type exception')
 
