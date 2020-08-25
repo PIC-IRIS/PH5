@@ -176,27 +176,27 @@ def get_args():
                        help="Locations are in texas state plane coordinates.",
                        action='store_true', default=False)
 
-    oparser.add_option("-M", "--num_mini", dest="num_mini",
+    oparser.add_option("-M", "--num_mini",
                        help=("Create a given number of miniPH5 files. "
                              "Ex: -M 38"),
-                       metavar="num_mini", type='int', default=None)
+                       type='int', default=None)
 
-    oparser.add_option("-S", "--first_mini", dest="first_mini",
+    oparser.add_option("-S", "--first_mini",
                        help=("The index of the first miniPH5_xxxxx.ph5 file "
                              "of all. Ex: -S 5"),
-                       metavar="first_mini", type='int', default=1)
+                       type='int', default=1)
 
-    oparser.add_option("-F", "--from_mini", dest="from_mini",
+    oparser.add_option("-F", "--from_mini",
                        help=("The index to continue miniPH5_xxxxx.ph5 file "
                              "from. Do not associate with option -M. "
                              "Ex: -F 25"),
-                       metavar="from_mini", type='int', default=None)
+                       type='int', default=None)
 
     oparser.add_option("-O", "--onepermini", action="store_true",
                        dest="one_per_mini",
                        help=("Only allow one das in a miniPH5_xxxxx.ph5 file. "
                              "Use with option -F only."),
-                       default=False, metavar="one_per_mini")
+                       default=False)
 
     oparser.add_option("-c", "--combine", dest="combine",
                        help="Combine this number if SEG-D traces to one\
@@ -243,13 +243,10 @@ def get_args():
     else:
         raise Exception("No outfile (PH5) given.\n")
 
-    # from_mini and num_mini must not coexist
-    if (NUM_MINI is not None) and (FROM_MINI is not None):
-        raise Exception('Option -M and option -F must not be '
-                        'used at the same time.')
-
-    if ONE_PER_MINI and (FROM_MINI is None):
-        raise Exception('Option -O must be associated with option -F.')
+    if options.num_mini and options.from_mini:
+        oparser.error("options -M and option -F are mutually exclusive.")
+    if options.one_per_mini and not options.from_mini:
+        oparser.error("option -O must include option -F.")
     # first_mini will be ignore if from_mini is used
     setLogger()
 
@@ -1089,7 +1086,7 @@ def main():
                     LOGGER.error("FROM_MINI must be greater than %s, "
                                  "the highest mini file in ph5." % highestMini)
                     EX.ph5close()
-                    return 1
+                    sys.exit()
         for f in FILES:
             F = f
             traces = []

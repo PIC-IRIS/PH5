@@ -7,7 +7,7 @@ import unittest
 import logging
 
 from mock import patch
-from testfixtures import LogCapture
+from testfixtures import LogCapture, OutputCapture
 
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import segdreader, ph5api
@@ -74,10 +74,10 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
                                  'ph5/test_data/segd/3ch.fcnt'),
                     '-M', '5', '-F', '3']
         with patch.object(sys, 'argv', testargs):
-            self.assertRaisesRegexp(
-                Exception,
-                'Option -M and option -F must not be used at the same time.',
-                segd2ph5.get_args)
+            with OutputCapture():
+                self.assertRaises(
+                    SystemExit,
+                    segd2ph5.get_args)
 
         # error when -O is used without -F
         testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
@@ -85,10 +85,10 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
                                  'ph5/test_data/segd/3ch.fcnt'),
                     '-O']
         with patch.object(sys, 'argv', testargs):
-            self.assertRaisesRegexp(
-                Exception,
-                'Option -O must be associated with option -F.',
-                segd2ph5.get_args)
+            with OutputCapture():
+                self.assertRaises(
+                    SystemExit,
+                    segd2ph5.get_args)
 
         # -M
         testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
@@ -141,7 +141,7 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
         with patch.object(sys, 'argv', testargs):
             with LogCapture() as log:
                 log.setLevel(logging.ERROR)
-                segd2ph5.main()
+                self.assertRaises(SystemExit, segd2ph5.main)
                 self.assertEqual(log.records[0].msg,
                                  'FROM_MINI must be greater than 4, '
                                  'the highest mini file in ph5.')
