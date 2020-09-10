@@ -244,9 +244,11 @@ def get_args():
         raise Exception("No outfile (PH5) given.\n")
 
     if options.num_mini and options.from_mini:
-        oparser.error("options -M and option -F are mutually exclusive.")
-    if options.one_per_mini and not options.from_mini:
-        oparser.error("option -O must include option -F.")
+        oparser.error("argument -M/--num_mini and argument -F/--from_mini "
+                      "are mutually exclusive.")
+    if options.one_per_mini and options.from_mini is None:
+        oparser.error("argument -O/--onepermini and argument -F/--from_mini "
+                      "must go together.")
     # first_mini will be ignore if from_mini is used
     setLogger()
 
