@@ -1012,8 +1012,7 @@ def main():
 
     def prof():
         global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
-            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND,\
-            FROM_MINI
+            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND, FROM_MINI
 
         MINIPH5 = None
         ARRAY_T = {}
