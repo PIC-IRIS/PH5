@@ -37,7 +37,8 @@ class ObspytoPH5(object):
     def __init__(self, ph5_object,
                  ph5_path,
                  num_mini=None,
-                 first_mini=None):
+                 first_mini=None,
+                 from_mini=None):
         """
         :type class: ph5.core.experiment
         :param ph5_object:
@@ -46,6 +47,7 @@ class ObspytoPH5(object):
         self.ph5_path = ph5_path
         self.num_mini = num_mini
         self.first_mini = first_mini
+        self.from_mini = from_mini
         self.mini_size_max = 26843545600
         self.verbose = False
         self.array_names = self.ph5.ph5_g_sorts.names()
@@ -149,6 +151,13 @@ class ObspytoPH5(object):
             exrec.ph5close()
         return mini_map
 
+    def get_highest_mini(self, minis):
+        highest = 0
+        for x in minis:
+            if x[0] >= highest:
+                highest = x[0]
+        return highest
+
     def toph5(self, file_tuple):
         """
         Takes a tuple (file_name or obspy stream, type)
@@ -173,6 +182,7 @@ class ObspytoPH5(object):
 
         # gets mapping of whats dases each minifile contains
         minis = self.mini_map(existing_minis)
+        largest = self.get_highest_mini(minis)
 
         # check if we are opening a file or have an obspy stream
         if isinstance(file_tuple[0], str):
@@ -213,25 +223,32 @@ class ObspytoPH5(object):
                     LOGGER.info("No data for trace {0}...skipping".format(
                         trace.stats.channel))
                     continue
-            if not existing_minis:
-                current_mini = self.first_mini
+            if self.from_mini is not None:
+                data_size = os.path.getsize(file_tuple[0])
+                # only use largest of mini if it is created after from_mini
+                current_mini = max(self.from_mini, largest)
+                try:
+                    current_file_size = self.get_size_mini(current_mini)
+                except OSError:
+                    current_file_size = 0
+                if (current_file_size + data_size) > self.mini_size_max:
+                    current_mini += 1
             else:
-                current_mini = None
-                for mini in minis:
-                    for entry in das_station_map:
-                        if (entry['serial'] in mini[1] and
-                                entry['station'] == trace.stats.station):
-                            current_mini = mini[0]
-                    if not current_mini:
-                        largest = 0
-                        for x in minis:
-                            if x[0] >= largest:
-                                largest = x[0]
-                        if (self.get_size_mini(largest) <
-                                self.mini_size_max):
-                            current_mini = largest
-                        else:
-                            current_mini = largest + 1
+                if not existing_minis:
+                    current_mini = self.first_mini
+                else:
+                    current_mini = None
+                    for mini in minis:
+                        for entry in das_station_map:
+                            if (entry['serial'] in mini[1] and
+                                    entry['station'] == trace.stats.station):
+                                current_mini = mini[0]
+                        if not current_mini:
+                            if (self.get_size_mini(largest) <
+                                    self.mini_size_max):
+                                current_mini = largest
+                            else:
+                                current_mini = largest + 1
             # iterate through das_station_map
             for entry in das_station_map:
                 time_t = {}
@@ -492,14 +509,23 @@ def get_args(args):
         metavar="directory")
 
     parser.add_argument(
-        "-M", "--num_mini", dest="num_mini",
-        help="Create a given number of miniPH5  files.",
-        metavar="num_mini", type=int, default=None)
+        "-S", "--first_mini",
+        help="The index of the first miniPH5_xxxxx.ph5 file of all. Ex: -S 5",
+        type=int, default=1)
 
-    parser.add_argument(
-        "-S", "--first_mini", dest="first_mini",
-        help="The index of the first miniPH5_xxxxx.ph5 file.",
-        metavar="first_mini", type=int, default=1)
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
+        "-M", "--num_mini",
+        help="Create a given number of miniPH5 files. Ex: -M 38",
+        type=int, default=None)
+
+    group.add_argument(
+        "-F", "--from_mini",
+        help=("The index to continue miniPH5_xxxxx.ph5 file "
+              "from. Do not associate with option -M. "
+              "Ex: -F 25"),
+        type=int, default=None)
 
     parser.add_argument(
         "-V", "--verbose", dest="verbose",
@@ -591,10 +617,17 @@ def main():
     ph5_object.ph5open(True)
     ph5_object.initgroup()
     obs = ObspytoPH5(ph5_object, args.ph5path,
-                     args.num_mini, args.first_mini)
+                     args.num_mini, args.first_mini, args.from_mini)
     if args.verbose:
         obs.verbose = True
-    obs.get_minis(args.ph5path)
+    existing_minis = obs.get_minis(args.ph5path)
+    minis = obs.mini_map(existing_minis)
+    highest_mini = obs.get_highest_mini(minis)
+    if args.from_mini is not None and args.from_mini < highest_mini:
+        LOGGER.error("FROM_MINI must be greater than %s, "
+                     "the highest mini file in ph5." % highest_mini)
+        ph5_object.ph5close()
+        sys.exit()
     if args.num_mini:
         total = 0
         for entry in valid_files:
