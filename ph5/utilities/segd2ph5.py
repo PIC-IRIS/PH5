@@ -144,7 +144,7 @@ def read_infile(infile):
 
 def get_args():
     global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND,\
-        MANUFACTURERS_CODE, FROM_MINI, ONE_PER_MINI
+        MANUFACTURERS_CODE, FROM_MINI
 
     TSPF = False
 
@@ -192,12 +192,6 @@ def get_args():
                              "Ex: -F 25"),
                        type='int', default=None)
 
-    oparser.add_option("-O", "--onepermini", action="store_true",
-                       dest="one_per_mini",
-                       help=("Only allow one das in a miniPH5_xxxxx.ph5 file. "
-                             "Use with option -F only."),
-                       default=False)
-
     oparser.add_option("-c", "--combine", dest="combine",
                        help="Combine this number if SEG-D traces to one\
                         PH5 trace.",
@@ -218,7 +212,6 @@ def get_args():
     FILES = []
     PH5 = None
 
-    ONE_PER_MINI = options.one_per_mini
     EVERY = options.all_events
     NUM_MINI = options.num_mini
     FROM_MINI = options.from_mini
@@ -246,9 +239,6 @@ def get_args():
     if options.num_mini and options.from_mini:
         oparser.error("argument -M/--num_mini and argument -F/--from_mini "
                       "are mutually exclusive.")
-    if options.one_per_mini and options.from_mini is None:
-        oparser.error("argument -O/--onepermini and argument -F/--from_mini "
-                      "must go together.")
     # first_mini will be ignore if from_mini is used
     setLogger()
 
@@ -398,8 +388,6 @@ def get_current_data_only(size_of_data, das=None):
         for index_t in INDEX_T_DAS.rows:
             mh = miniPH5RE.match(index_t['external_file_name_s'])
             lastcheck_mini = int(mh.groups()[0])
-            if ONE_PER_MINI and index_t['serial_number_s'] != das:
-                continue
             if lastcheck_mini >= FROM_MINI:
                 newestfile = sstripp(index_t['external_file_name_s'])
                 size_of_exrec = os.path.getsize(newestfile + '.ph5')
@@ -1025,7 +1013,7 @@ def main():
     def prof():
         global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
             ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND,\
-            FROM_MINI, ONE_PER_MINI
+            FROM_MINI
 
         MINIPH5 = None
         ARRAY_T = {}
