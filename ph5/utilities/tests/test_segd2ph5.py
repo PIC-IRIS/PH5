@@ -10,9 +10,9 @@ from mock import patch
 from testfixtures import LogCapture, OutputCapture
 
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader, ph5api
+from ph5.core import segdreader
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
-    initialize_ex
+    initialize_ex, das_in_mini
 
 
 def create_fcntlist_file(home, namestart=''):
@@ -30,15 +30,6 @@ def create_fcntlist_file(home, namestart=''):
             s += segd_dir + f + "\n"
     list_file.write(s)
     list_file.close()
-
-
-def das_in_mini(testcase, mininame):
-    """ get list of all das names from minifile """
-    ph5API_object = ph5api.PH5(path=testcase.tmpdir, nickname=mininame)
-    ph5API_object.read_das_g_names()
-    ret = ph5API_object.Das_g_names.keys()
-    ph5API_object.ph5close()
-    return ret
 
 
 class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
@@ -135,11 +126,11 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
         self.assertEqual(ph5set,
                          {'miniPH5_00003.ph5', 'miniPH5_00004.ph5',
                           'miniPH5_00006.ph5', 'master.ph5'})
-        self.assertEqual(das_in_mini(self, 'miniPH5_00003.ph5'),
+        self.assertEqual(das_in_mini(self.tmpdir, 'miniPH5_00003.ph5'),
                          ['Das_g_1X1111'])
-        self.assertEqual(das_in_mini(self, 'miniPH5_00004.ph5'),
+        self.assertEqual(das_in_mini(self.tmpdir, 'miniPH5_00004.ph5'),
                          ['Das_g_1X1111'])
-        self.assertEqual(das_in_mini(self, 'miniPH5_00006.ph5'),
+        self.assertEqual(das_in_mini(self.tmpdir, 'miniPH5_00006.ph5'),
                          ['Das_g_3X500'])
 
 
