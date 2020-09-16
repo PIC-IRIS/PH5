@@ -237,7 +237,6 @@ class TestPH5API(LogTestCase):
 
         # no array 5
         self.assertFalse('Array_t_005' in self.ph5API_object.Array_t_names)
-
     def test_index_t(self):
         """
         Test reading of index table and checking contents
@@ -461,7 +460,7 @@ class TestPH5API(LogTestCase):
         self.assertEqual(keys, self.ph5API_object.Response_t['keys'])
 
         # check an entry to make sure it is what we expect
-        self.assertAlmostEqual(1.880399419308285e-05,
+        self.assertAlmostEqual(1.88039941931e-05,
                                self.ph5API_object.Response_t['rows'][0]
                                ['bit_weight/value_d'],
                                16)

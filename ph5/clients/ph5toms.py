@@ -146,6 +146,7 @@ class PH5toMSeed(object):
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  reduction_velocity=-1., notimecorrect=False,
                  restricted=[], format='MSEED', cut_len=86400):
+
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.reqtype = reqtype.upper()
         self.array = array
@@ -511,7 +512,6 @@ class PH5toMSeed(object):
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
                                        stc.endtime)
-
             if not das:
                 return
             das = [x for x in das]
@@ -526,15 +526,15 @@ class PH5toMSeed(object):
 
             else:
                 start_time = stc.starttime
-
             nt = stc.notimecorrect
-            if Das_tf['sample_rate_i'] > 0:
-                actual_sample_rate = \
-                    float(Das_tf['sample_rate_i']) / \
-                    float(Das_tf['sample_rate_multiplier_i'])
+            if Das_tf['sample_rate_i'] == stc.sample_rate:
+                if Das_tf['sample_rate_i'] > 0:
+                    actual_sample_rate = float(
+                        stc.sample_rate) / float(stc.sample_rate_multiplier)
+                else:
+                    actual_sample_rate = 0
             else:
-                actual_sample_rate = 0
-
+                continue
             if stc.sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
                                       stc.endtime,
@@ -872,7 +872,6 @@ class PH5toMSeed(object):
 
     def create_cut_list(self):
         cuts_generator = []
-
         experiment_t = self.ph5.Experiment_t['rows']
 
         try:
@@ -1001,9 +1000,11 @@ class PH5toMSeed(object):
 
     def process_all(self):
         cuts = self.create_cut_list()
+        print('TETS TEST')
         if cuts:
             for cut in cuts:
                 self.ph5.clear()
+                print(type(cut))
                 stream = self.create_trace(cut)
                 if stream is not None:
                     yield stream
@@ -1167,6 +1168,7 @@ def main():
         sys.exit(-1)
 
     ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
+
     if args.array:
         args.array = args.array.split(',')
     if args.sta_id_list:

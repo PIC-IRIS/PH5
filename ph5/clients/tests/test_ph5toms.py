@@ -5,6 +5,8 @@ Tests for ph5toms
 import unittest
 from ph5.clients.ph5toms import StationCut, PH5toMSeed
 import copy
+from ph5.core import ph5api
+import os
 
 
 class RestrictedRequest(object):
@@ -202,6 +204,19 @@ class TestPH5toMSeed(unittest.TestCase):
         result = PH5toMSeed.get_nonrestricted_segments(
             station_to_cut_list, restricted_list)
         self.assertEqual(result[0].__dict__, expected.__dict__)
+
+    def test_create_trace(self):
+
+        ph5API_object = ph5api.PH5(
+            path=os.path.join(os.getcwd(), 'ph5/test_data/ph5'),
+            nickname='master.ph5')
+        ph5toms = PH5toMSeed(ph5API_object)
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+        for cut in cuts:
+            trace = ph5toms.create_trace(cut)
+            if trace is not None:
+                self.assertEqual(trace[0].stats.sampling_rate, cut.sample_rate)
 
 
 if __name__ == "__main__":
