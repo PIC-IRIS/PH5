@@ -624,7 +624,7 @@ def main():
     minis = obs.mini_map(existing_minis)
     highest_mini = obs.get_highest_mini(minis)
     if args.from_mini is not None and args.from_mini < highest_mini:
-        LOGGER.error("FROM_MINI must be greater than %s, "
+        LOGGER.error("FROM_MINI must be greater than or equal to %s, "
                      "the highest mini file in ph5." % highest_mini)
         ph5_object.ph5close()
         sys.exit()
