@@ -1072,8 +1072,9 @@ def main():
             if FROM_MINI is not None:
                 highestMini = getHighestMini(INDEX_T_DAS)
                 if FROM_MINI < highestMini:
-                    LOGGER.error("FROM_MINI must be greater than %s, "
-                                 "the highest mini file in ph5." % highestMini)
+                    LOGGER.error(
+                        "FROM_MINI must be greater than or equal to %s, "
+                        "the highest mini file in ph5." % highestMini)
                     EX.ph5close()
                     sys.exit()
         for f in FILES:
