@@ -8,8 +8,17 @@ from StringIO import StringIO
 from testfixtures import OutputCapture
 
 from ph5 import logger, ch
-from ph5.core import experiment
+from ph5.core import experiment, ph5api
 from ph5.utilities import kef2ph5
+
+
+def das_in_mini(ph5dir, mininame):
+    """ get list of all das names from minifile """
+    ph5API_object = ph5api.PH5(ph5dir, nickname=mininame)
+    ph5API_object.read_das_g_names()
+    ret = ph5API_object.Das_g_names.keys()
+    ph5API_object.ph5close()
+    return ret
 
 
 def initialize_ex(nickname, path, editmode=False):
