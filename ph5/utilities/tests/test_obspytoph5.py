@@ -225,6 +225,34 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual('../miniseed/0407LOG.ms',
                          ret[1]['raw_file_name_s'])
 
+        # test from_mini=3, data will be added to mini 3
+        # load LHN CH
+        # need to use relative path '../miniseed/0407LHN.ms' because das_t's
+        # 'raw_file_name_s will be chopped off if the path's length is greater
+        # than 32
+        self.obs.from_mini = 3
+        entry = "../miniseed/0407LHN.ms"
+        message, index_t = self.obs.toph5((entry, 'MSEED'))
+        self.assertTrue('done', message)
+        self.assertTrue(1, len(index_t))
+        for e in index_t:
+            index_t_full.append(e)
+        if len(self.obs.time_t) > 0:
+            for entry in self.obs.time_t:
+                self.obs.ph5.ph5_g_receivers.populateTime_t_(entry)
+        for entry in index_t_full:
+            self.obs.ph5.ph5_g_receivers.populateIndex_t(entry)
+        self.obs.update_external_references(index_t_full)
+        self.assertTrue(os.path.isfile("master.ph5"))
+        self.assertTrue(os.path.isfile("miniPH5_00003.ph5"))
+
+        node = self.obs.ph5.ph5_g_receivers.getdas_g('5553')
+        self.obs.ph5.ph5_g_receivers.setcurrent(node)
+        ret, das_keys = self.obs.ph5.ph5_g_receivers.read_das()
+        self.assertEqual(keys, das_keys)
+        self.assertEqual('../miniseed/0407LHN.ms',
+                         ret[0]['raw_file_name_s'])
+
     def test_main(self):
         testargs = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', testargs):
@@ -262,7 +290,7 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(das_in_mini(self.tmpdir, 'miniPH5_00004.ph5'),
                          ['Das_g_5553'])
 
-        # use FROM_MINI=4 < Highest_mini=1
+        # use FROM_MINI=4 < Highest_mini=1 => error
         testargs = ['obspytoph5', '-n', 'master.ph5', '-f',
                     os.path.join(self.home,
                                  'ph5/test_data/miniseed', '0407LHN.ms'),
