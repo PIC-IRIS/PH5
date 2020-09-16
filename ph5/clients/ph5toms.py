@@ -1000,11 +1000,9 @@ class PH5toMSeed(object):
 
     def process_all(self):
         cuts = self.create_cut_list()
-        print('TETS TEST')
         if cuts:
             for cut in cuts:
                 self.ph5.clear()
-                print(type(cut))
                 stream = self.create_trace(cut)
                 if stream is not None:
                     yield stream
