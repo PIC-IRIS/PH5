@@ -111,9 +111,10 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
             with LogCapture() as log:
                 log.setLevel(logging.ERROR)
                 self.assertRaises(SystemExit, segd2ph5.main)
-                self.assertEqual(log.records[0].msg,
-                                 'FROM_MINI must be greater than 4, '
-                                 'the highest mini file in ph5.')
+                self.assertEqual(
+                    log.records[0].msg,
+                    'FROM_MINI must be greater than or equal to 4, '
+                    'the highest mini file in ph5.')
 
         testargs = ['segdtoph5', '-n', 'master.ph5', '-F', '6', '-r',
                     os.path.join(self.home,
