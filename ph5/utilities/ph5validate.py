@@ -646,7 +646,6 @@ class PH5Validate(object):
                         station_len = len(station_list[deployment])
                         for st_num in range(0, station_len):
                             station = station_list[deployment][st_num]
-                            ph5_das = station['das/serial_number_s']
                             station_id = station['id_s']
                             channel_id = station['channel_number_i']
                             LOGGER.debug("Validating Station {0} Channel {1}"

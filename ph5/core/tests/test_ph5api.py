@@ -237,6 +237,7 @@ class TestPH5API(LogTestCase):
 
         # no array 5
         self.assertFalse('Array_t_005' in self.ph5API_object.Array_t_names)
+
     def test_index_t(self):
         """
         Test reading of index table and checking contents
