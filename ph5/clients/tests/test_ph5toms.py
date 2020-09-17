@@ -116,7 +116,7 @@ class TestPH5CUT(unittest.TestCase):
                                 reduction_velocity=-1,
                                 notimecorrect=True,
                                 format='MSEED')
-        self.ph5cut_object.read_array_t_names() 
+        self.ph5cut_object.read_array_t_names()
         array_names = sorted(self.ph5cut_object.Array_t_names)
         self.ph5cut_object.read_array_t('Array_t_001')
         keys = ['id_s', 'location/X/value_d', 'location/X/units_s',
@@ -178,6 +178,7 @@ class TestPH5CUT(unittest.TestCase):
                                              + ' 0response_n_i: 1shot_id:'
                                              + ' Noneshot_lat: Noneshot_lng:'
                                              + ' Noneshot_elevation: None')
+
 
 class TestPH5toMSeed(unittest.TestCase):
     def test_get_nonrestricted_segments(self):
