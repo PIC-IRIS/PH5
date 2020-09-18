@@ -248,15 +248,12 @@ class TestObspytoPH5_float32(TempDirTestCase, LogTestCase):
         entry = os.path.join(self.datapath, '05743.SS..GHZ.148')
         message, index_t = self.obs.toph5((entry, 'MSEED'))
 
-        index_t_full = list()
-        for e in index_t:
-            index_t_full.append(e)
         if len(self.obs.time_t) > 0:
             for entry in self.obs.time_t:
                 self.obs.ph5.ph5_g_receivers.populateTime_t_(entry)
-        for entry in index_t_full:
+        for entry in index_t:
             self.obs.ph5.ph5_g_receivers.populateIndex_t(entry)
-        self.obs.update_external_references(index_t_full)
+        self.obs.update_external_references(index_t)
         data_node = self.ph5_object.ph5.get_node(
             '/Experiment_g/Receivers_g/Das_g_05743',
             'Data_a_00001',
