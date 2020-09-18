@@ -4,6 +4,7 @@ Tests for obspytoph5
 import os
 import sys
 import unittest
+import numpy
 
 from mock import patch
 from testfixtures import OutputCapture
@@ -204,6 +205,61 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
                          ret[0]['raw_file_name_s'])
         self.assertEqual('../miniseed/0407LOG.ms',
                          ret[1]['raw_file_name_s'])
+
+        # check data type added to ph5 is numpy.int32
+        data_node = self.obs.ph5.ph5_g_receivers.find_trace_ref('Data_a_00001')
+        data = data_node.read()
+        self.assertIsInstance(data[0], numpy.int32)
+
+
+class TestObspytoPH5_float32(TempDirTestCase, LogTestCase):
+    """check data type added to ph5 is numpy.float32"""
+
+    def setUp(self):
+        super(TestObspytoPH5_float32, self).setUp()
+        self.datapath = os.path.join(self.home,
+                                     'ph5/test_data/miniseed_float32')
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    os.path.join(self.datapath, 'SmartSolo_05473.xml')]
+        with patch.object(sys, 'argv', testargs):
+            metadatatoph5.main()
+
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestObspytoPH5_float32, self).tearDown()
+
+    def test_main(self):
+        testargs = ['mstoph5', '-n', 'master.ph5', '-f',
+                    os.path.join(self.datapath, '05743.SS..GHZ.148')]
+        with patch.object(sys, 'argv', testargs):
+            obspytoph5.main()
+        self.ph5_object = initialize_ex('master.ph5', self.tmpdir, False)
+        data_node = self.ph5_object.ph5.get_node(
+            '/Experiment_g/Receivers_g/Das_g_05743',
+            'Data_a_00001',
+            'Array')
+        data = data_node.read()
+        self.assertIsInstance(data[0], numpy.float32)
+
+    def test_test_to_ph5(self):
+        self.ph5_object = initialize_ex('master.ph5', self.tmpdir, True)
+        self.obs = obspytoph5.ObspytoPH5(self.ph5_object, self.tmpdir, 1, 1)
+
+        entry = os.path.join(self.datapath, '05743.SS..GHZ.148')
+        message, index_t = self.obs.toph5((entry, 'MSEED'))
+
+        if len(self.obs.time_t) > 0:
+            for entry in self.obs.time_t:
+                self.obs.ph5.ph5_g_receivers.populateTime_t_(entry)
+        for entry in index_t:
+            self.obs.ph5.ph5_g_receivers.populateIndex_t(entry)
+        self.obs.update_external_references(index_t)
+        data_node = self.ph5_object.ph5.get_node(
+            '/Experiment_g/Receivers_g/Das_g_05743',
+            'Data_a_00001',
+            'Array')
+        data = data_node.read()
+        self.assertIsInstance(data[0], numpy.float32)
 
 
 if __name__ == "__main__":
