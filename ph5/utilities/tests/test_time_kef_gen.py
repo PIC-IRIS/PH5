@@ -52,14 +52,9 @@ class TestTimeKefGen(TempDirTestCase, LogTestCase):
             initialize_ph5.main()
         ph5 = ph5api.PH5(path='.', nickname='master.ph5', editmode=True)
         ph5.ph5_g_receivers.newdas('12537')
-        for k in self.soh.keys():
-            name = k
-            data = []
-            for s in self.soh[k]:
-                data.append(s)
-            ph5.ph5_g_receivers.newarray(
-                name, data, description="Texan State of Health"
-            )
+        for name, data in self.soh.items():
+            ph5.ph5_g_receivers.newarray(name, data,
+                                         description="Texan State of Health")
         ph5.close()
         slope_d = ['4.93494e-09', '-4.67895e-08', '-3.61306e-08']
         offset_d = ['0.000806093', '-0.01614', '-0.015794']
@@ -83,14 +78,11 @@ class TestTimeKefGen(TempDirTestCase, LogTestCase):
     def test_process_soh(self):
         to_froms = time_kef_gen.process_soh(self.soh)
         self.assertEqual(len(to_froms), 3)
-        i = 0
-        for k in self.soh.keys():
-            parseSOH = time_kef_gen.parse_soh(self.soh[k])
-            self.assertEqual(
-                0,
-                timedoy.compare(to_froms[i][0][0][0], parseSOH[0][0][0]))
+        for i, (_, val) in enumerate(self.soh.items()):
+            parseSOH = time_kef_gen.parse_soh(val)
+            self.assertEqual(0, timedoy.compare(to_froms[i][0][0][0],
+                                                parseSOH[0][0][0]))
             self.assertEqual(to_froms[i][0][0][1], parseSOH[0][0][1])
-            i += 1
 
 
 if __name__ == "__main__":
