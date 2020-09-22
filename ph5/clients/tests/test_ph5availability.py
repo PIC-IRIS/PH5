@@ -72,11 +72,9 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
                                      nickname='master.ph5')
         self.availability = ph5availability.PH5Availability(self.ph5_object)
 
-
     def tearDown(self):
         self.ph5_object.close()
         super(TestPH5Availability, self).tearDown()
-
 
     def test_get_slc(self):
         # should return ALL available

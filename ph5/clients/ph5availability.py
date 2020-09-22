@@ -355,6 +355,8 @@ class PH5Availability(object):
 
         """
         availability_extents = []
+        sr_mismatch = False
+        empty_times = True
         self.SR_included = include_sample_rate
         if starttime or endtime:
             if not (starttime and endtime):
@@ -404,9 +406,31 @@ class PH5Availability(object):
                                                                     starttime,
                                                                     endtime
                                                                     )
-                            if early is None or latest is None:
+                                empty_times = False
+                            else:
                                 continue
-                        if early is None:
+                        if empty_times is True:
+                            for i, das in enumerate(Das_t):
+                                # Checks to see if all DAS tables have same SR
+                                sr_prev = Das_t[i-1]['sample_rate_i']
+                                if das['sample_rate_i'] != sr_prev:
+                                    sr_mismatch = True
+                            if sr_mismatch is True:
+                                LOGGER.error('DAS and Array Table sample' +
+                                             ' rates do not match, DAS table' +
+                                             ' sample rates do not match.' +
+                                             ' Data must be updated.')
+                            else:
+                                # Uses SR if consistent
+                                samplerate_return = das['sample_rate_i']
+                                psr = das['sample_rate_i']
+                                early, latest = self.ph5.get_extent(ph5_das,
+                                                                    channum,
+                                                                    psr,
+                                                                    starttime,
+                                                                    endtime
+                                                                    )
+                        if early is None or latest is None:
                             continue
                         if starttime is not None and early < starttime:
                             early = starttime
@@ -466,6 +490,9 @@ class PH5Availability(object):
         method that works on the channel level. Leverage this
         """
         availability = []
+        times = []
+        sr_mismatch = False
+        empty_times = True
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
 
@@ -505,15 +532,35 @@ class PH5Availability(object):
                             # Sample rates must first be compared than
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
-                                ph5_sample_rate = das['sample_rate_i']
-                                times = self.ph5.get_availability(
-                                        ph5_das, ph5_sample_rate, ph5_channum,
-                                        starttime, endtime)
-                            if times is None:
+                                ph5_sr = das['sample_rate_i']
+                                times = self.ph5.get_availability(ph5_das,
+                                                                  ph5_sr,
+                                                                  ph5_channum,
+                                                                  starttime,
+                                                                  endtime)
+                                empty_times = False
+                            else:
                                 continue
-                        # The first if time is none needs to be repeated for
-                        # the DAS loop the second needs to be repeated for the
-                        # sta loop
+                        if empty_times is True:
+                            for i, das in enumerate(Das_t):
+                                # Checks to see if all DAS tables have same SR
+                                sr_prev = Das_t[i-1]['sample_rate_i']
+                                if das['sample_rate_i'] != sr_prev:
+                                    sr_mismatch = True
+                            if sr_mismatch is True:
+                                LOGGER.error('DAS and Array Table sample' +
+                                             ' rates do not match, DAS table' +
+                                             ' sample rates do not match.' +
+                                             ' Data must be updated.')
+                            else:
+                                # Uses SR if consistent
+                                samplerate_return = das['sample_rate_i']
+                                ph5_sr = das['sample_rate_i']
+                                times = self.ph5.get_availability(ph5_das,
+                                                                  ph5_sr,
+                                                                  ph5_channum,
+                                                                  starttime,
+                                                                  endtime)
                         if times is None:
                             continue
                         for T in times:
@@ -531,7 +578,7 @@ class PH5Availability(object):
                                 elif(T[0] is None):
                                     availability.append((
                                         ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(ph5_sample_rate)))
+                                        start, end, float(ph5_sr)))
                                 else:
                                     availability.append((
                                         ph5_seed_station, ph5_loc, ph5_channel,
