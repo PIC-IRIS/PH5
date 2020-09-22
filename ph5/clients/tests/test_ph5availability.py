@@ -68,15 +68,15 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5Availability, self).setUp()
         self.ph5test_path = os.path.join(self.home, 'ph5/test_data/ph5')
-        self.ph5_object = ph5api.PH5(
-            path=self.ph5test_path,
-            nickname='master.ph5')
-        self.availability = ph5availability.PH5Availability(
-            self.ph5_object)
+        self.ph5_object = ph5api.PH5(path=self.ph5test_path,
+                                     nickname='master.ph5')
+        self.availability = ph5availability.PH5Availability(self.ph5_object)
+
 
     def tearDown(self):
         self.ph5_object.close()
         super(TestPH5Availability, self).tearDown()
+
 
     def test_get_slc(self):
         # should return ALL available
@@ -979,7 +979,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
              '-S', '-F', 't', '-o', 'extent.txt'])
         ret = A.analyze_args(args)
         self.assertEqual(A.SR_included, True)
-        self.assertIsInstance(A.OFILE, file)
         self.assertEqual(A.OFILE.name, 'extent.txt')
         self.assertEqual(A.OFILE.closed, False)
 
@@ -1811,6 +1810,19 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             self.assertEqual(ret, result)
             self.assertEqual(log.records[0].msg,
                              "The entered format k is not supported.")
+
+    def test_check_samplerate(self):
+        self.ph5test_srpath = os.path.join(self.home,
+                                           'ph5/test_data/samplerate')
+        self.ph5_sr = ph5api.PH5(path=self.ph5test_srpath,
+                                 nickname='master.ph5')
+        self.sr_availability = ph5availability.PH5Availability(self.ph5_sr)
+        ret = self.sr_availability.get_availability(station='10075',
+                                                    channel='*',
+                                                    starttime=None,
+                                                    endtime=None,
+                                                    include_sample_rate=False)
+        self.assertEqual(6, len(ret))
 
 
 if __name__ == "__main__":
