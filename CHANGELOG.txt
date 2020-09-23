@@ -59,6 +59,7 @@ ph5.utilities.sort_kef_gen.py
  * add -o option for file output
 ph5.utilities.time_kef_gen.py
  * add -o option for file output
+ * fix bug getting only the last to_froms of all soh for a das
 ph5.utilities.tabletokef.py
  * add -o option for file output
 ph5.utilities.report_gen
@@ -90,6 +91,7 @@ ph5.utilities.tests.test_obspytoph5
 ph5.core.tests.test_ph5api
  * unit tests for ph5api; Stop sending log to screen;
 ph5.core.ph5api
+ * skip ph5api cut traces that return no data. logic previously embedded in code but line 1302 is duplicated onto 1287 to prevent error from being thrown
  * fix ph5api cut sometimes returns too many samples (issue #298)
  * fix for get_availability returning incomplete results
 ph5.entry_points

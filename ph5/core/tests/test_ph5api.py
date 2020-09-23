@@ -912,6 +912,20 @@ class TestPH5API(LogTestCase):
             self.assertEqual(500, trace.sample_rate)
             self.assertEqual('int', trace.ttype)
 
+        # Check for a exception with a cut in the gap
+        throwexception = False
+        try:
+            traces = self.ph5API_object.cut('12183',
+                                            1550849950,
+                                            1550849974,
+                                            1,
+                                            None,
+                                            False,
+                                            das_t=das_t)
+        except Exception:
+            throwexception = True
+        self.assertFalse(throwexception, 'Throw None type exception')
+
         # check nodes since they don't star on even seconds\
         # read actual data no time correction
         traces = self.ph5API_object.cut('3X500',
