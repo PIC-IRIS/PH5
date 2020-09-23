@@ -1,0 +1,400 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.0">
+  <Source/>
+  <Module>Nexus.2018.142.beta</Module>
+  <ModuleURI>www.passcal.nmt.edu</ModuleURI>
+  <Created>2020-07-27T18:54:39.499480Z</Created>
+  <Network code="SS" endDate="2020-05-27T17:00:10.209500Z" startDate="2020-05-27T16:59:59.605000Z">
+    <Station code="05743" endDate="2020-05-27T17:00:10.209500Z" startDate="2020-05-27T16:59:59.605000Z">
+      <Latitude unit="DEGREES">12.0</Latitude>
+      <Longitude unit="DEGREES">123.0</Longitude>
+      <Elevation unit="METERS">25.0</Elevation>
+      <Site>
+        <Name>A station</Name>
+        <Description></Description>
+      </Site>
+      <CreationDate>2020-07-27T18:54:44.148747Z</CreationDate>
+      <Channel code="GHZ" endDate="2020-05-27T17:00:10.209500Z" locationCode="" startDate="2020-05-27T16:59:59.605000Z">
+        <Latitude unit="DEGREES">0.0</Latitude>
+        <Longitude unit="DEGREES">0.0</Longitude>
+        <Elevation unit="METERS">0.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">-90.0</Dip>
+        <SampleRate>2000.0</SampleRate>
+        <Sensor>
+          <Type>DT-SOLO geophone, 5 Hz, Rc=1850 Ohms, Rs=43000 Ohms, 76.6 V/m/s</Type>
+          <SerialNumber>05743</SerialNumber>
+        </Sensor>
+        <DataLogger>
+          <Type>SmartSolo IGU-16, 18 dB gain, 2000 sps, linear phase final filters, low cut off</Type>
+          <SerialNumber>05743</SerialNumber>
+        </DataLogger>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>612626.859521</Value>
+            <Frequency>50.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>Velocity in Meters per Second</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>Digital Counts</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros>
+              <InputUnits>
+                <Name>M/S</Name>
+                <Description>Velocity in Meters per Second</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+                <Description>Volts</Description>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>1.0</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">50.0</NormalizationFrequency>
+              <Zero number="0">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Zero number="1">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real minusError="-22.2111" plusError="-22.2111">-22.2111</Real>
+                <Imaginary minusError="-22.2178" plusError="-22.2178">-22.2178</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real minusError="-22.2111" plusError="-22.2111">-22.2111</Real>
+                <Imaginary minusError="22.2178" plusError="22.2178">22.2178</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>76.6</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <StageGain>
+              <Value>8.0</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+                <Description>Volts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>1.0</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">64000.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1000.0</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="4">
+            <Coefficients>
+              <InputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>0.005859375</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>-0.04882813</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.2929688</Numerator>
+              <Numerator>0.5</Numerator>
+              <Numerator>0.2929688</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>-0.04882813</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.005859375</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">64000.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>7.8125e-05</Delay>
+              <Correction>7.8125e-05</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="5">
+            <Coefficients>
+              <InputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>-0.001304626</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.01237476</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>-0.06054676</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.2994766</Numerator>
+              <Numerator>0.5</Numerator>
+              <Numerator>0.2994766</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>-0.06054676</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.01237476</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>-0.001304626</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">32000.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.00021875</Delay>
+              <Correction>0.00021875</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="6">
+            <Coefficients>
+              <InputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>-5.4396e-07</Numerator>
+              <Numerator>-6.512617e-06</Numerator>
+              <Numerator>-3.46346e-05</Numerator>
+              <Numerator>-0.0001203195</Numerator>
+              <Numerator>-0.0003075982</Numerator>
+              <Numerator>-0.0006030802</Numerator>
+              <Numerator>-0.0008946577</Numerator>
+              <Numerator>-0.0008844193</Numerator>
+              <Numerator>-0.0001356398</Numerator>
+              <Numerator>0.001674734</Numerator>
+              <Numerator>0.004323334</Numerator>
+              <Numerator>0.006656155</Numerator>
+              <Numerator>0.006642243</Numerator>
+              <Numerator>0.002187747</Numerator>
+              <Numerator>-0.007356522</Numerator>
+              <Numerator>-0.01964052</Numerator>
+              <Numerator>-0.02876521</Numerator>
+              <Numerator>-0.0266206</Numerator>
+              <Numerator>-0.006129408</Numerator>
+              <Numerator>0.03479149</Numerator>
+              <Numerator>0.09056336</Numerator>
+              <Numerator>0.1483677</Numerator>
+              <Numerator>0.1920953</Numerator>
+              <Numerator>0.2083953</Numerator>
+              <Numerator>0.1920953</Numerator>
+              <Numerator>0.1483677</Numerator>
+              <Numerator>0.09056336</Numerator>
+              <Numerator>0.03479149</Numerator>
+              <Numerator>-0.006129408</Numerator>
+              <Numerator>-0.0266206</Numerator>
+              <Numerator>-0.02876521</Numerator>
+              <Numerator>-0.01964052</Numerator>
+              <Numerator>-0.007356522</Numerator>
+              <Numerator>0.002187747</Numerator>
+              <Numerator>0.006642243</Numerator>
+              <Numerator>0.006656155</Numerator>
+              <Numerator>0.004323334</Numerator>
+              <Numerator>0.001674734</Numerator>
+              <Numerator>-0.0001356398</Numerator>
+              <Numerator>-0.0008844193</Numerator>
+              <Numerator>-0.0008946577</Numerator>
+              <Numerator>-0.0006030802</Numerator>
+              <Numerator>-0.0003075982</Numerator>
+              <Numerator>-0.0001203195</Numerator>
+              <Numerator>-3.46346e-05</Numerator>
+              <Numerator>-6.512617e-06</Numerator>
+              <Numerator>-5.4396e-07</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.0</Numerator>
+              <Numerator>0.0</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">16000.0</InputSampleRate>
+              <Factor>4</Factor>
+              <Offset>0</Offset>
+              <Delay>0.00159375</Delay>
+              <Correction>0.00159375</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="7">
+            <Coefficients>
+              <InputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>Digital Counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>-9.833262e-07</Numerator>
+              <Numerator>-3.218158e-06</Numerator>
+              <Numerator>-5.587081e-07</Numerator>
+              <Numerator>1.848206e-05</Numerator>
+              <Numerator>4.985166e-05</Numerator>
+              <Numerator>5.52674e-05</Numerator>
+              <Numerator>-1.981551e-06</Numerator>
+              <Numerator>-7.943339e-05</Numerator>
+              <Numerator>-6.168137e-05</Numerator>
+              <Numerator>7.911306e-05</Numerator>
+              <Numerator>0.0001639473</Numerator>
+              <Numerator>2.592405e-06</Numerator>
+              <Numerator>-0.0002541973</Numerator>
+              <Numerator>-0.0001903258</Numerator>
+              <Numerator>0.0002492583</Numerator>
+              <Numerator>0.0004572988</Numerator>
+              <Numerator>-5.621348e-05</Numerator>
+              <Numerator>-0.0007016777</Numerator>
+              <Numerator>-0.0003771577</Numerator>
+              <Numerator>0.0007533992</Numerator>
+              <Numerator>0.001004378</Numerator>
+              <Numerator>-0.000421832</Numerator>
+              <Numerator>-0.001639652</Numerator>
+              <Numerator>-0.0004177795</Numerator>
+              <Numerator>0.00196485</Numerator>
+              <Numerator>0.001722542</Numerator>
+              <Numerator>-0.001603351</Numerator>
+              <Numerator>-0.003204585</Numerator>
+              <Numerator>0.0002586073</Numerator>
+              <Numerator>0.004323834</Numerator>
+              <Numerator>0.002114732</Numerator>
+              <Numerator>-0.004383117</Numerator>
+              <Numerator>-0.005164019</Numerator>
+              <Numerator>0.002727374</Numerator>
+              <Numerator>0.008081049</Numerator>
+              <Numerator>0.0009899785</Numerator>
+              <Numerator>-0.009684921</Numerator>
+              <Numerator>-0.006545391</Numerator>
+              <Numerator>0.008657658</Numerator>
+              <Numerator>0.01297369</Numerator>
+              <Numerator>-0.003892579</Numerator>
+              <Numerator>-0.01855205</Numerator>
+              <Numerator>-0.005132255</Numerator>
+              <Numerator>0.02094588</Numerator>
+              <Numerator>0.01806857</Numerator>
+              <Numerator>-0.0174175</Numerator>
+              <Numerator>-0.03360529</Numerator>
+              <Numerator>0.004779226</Numerator>
+              <Numerator>0.04962616</Numerator>
+              <Numerator>0.02198189</Numerator>
+              <Numerator>-0.06360375</Numerator>
+              <Numerator>-0.07849698</Numerator>
+              <Numerator>0.07314216</Numerator>
+              <Numerator>0.3086033</Numerator>
+              <Numerator>0.4233947</Numerator>
+              <Numerator>0.3086033</Numerator>
+              <Numerator>0.07314216</Numerator>
+              <Numerator>-0.07849698</Numerator>
+              <Numerator>-0.06360375</Numerator>
+              <Numerator>0.02198189</Numerator>
+              <Numerator>0.04962616</Numerator>
+              <Numerator>0.004779226</Numerator>
+              <Numerator>-0.03360529</Numerator>
+              <Numerator>-0.0174175</Numerator>
+              <Numerator>0.01806857</Numerator>
+              <Numerator>0.02094588</Numerator>
+              <Numerator>-0.005132255</Numerator>
+              <Numerator>-0.01855205</Numerator>
+              <Numerator>-0.003892579</Numerator>
+              <Numerator>0.01297369</Numerator>
+              <Numerator>0.008657658</Numerator>
+              <Numerator>-0.006545391</Numerator>
+              <Numerator>-0.009684921</Numerator>
+              <Numerator>0.0009899785</Numerator>
+              <Numerator>0.008081049</Numerator>
+              <Numerator>0.002727374</Numerator>
+              <Numerator>-0.005164019</Numerator>
+              <Numerator>-0.004383117</Numerator>
+              <Numerator>0.002114732</Numerator>
+              <Numerator>0.004323834</Numerator>
+              <Numerator>0.0002586073</Numerator>
+              <Numerator>-0.003204585</Numerator>
+              <Numerator>-0.001603351</Numerator>
+              <Numerator>0.001722542</Numerator>
+              <Numerator>0.00196485</Numerator>
+              <Numerator>-0.0004177795</Numerator>
+              <Numerator>-0.001639652</Numerator>
+              <Numerator>-0.000421832</Numerator>
+              <Numerator>0.001004378</Numerator>
+              <Numerator>0.0007533992</Numerator>
+              <Numerator>-0.0003771577</Numerator>
+              <Numerator>-0.0007016777</Numerator>
+              <Numerator>-5.621348e-05</Numerator>
+              <Numerator>0.0004572988</Numerator>
+              <Numerator>0.0002492583</Numerator>
+              <Numerator>-0.0001903258</Numerator>
+              <Numerator>-0.0002541973</Numerator>
+              <Numerator>2.592405e-06</Numerator>
+              <Numerator>0.0001639473</Numerator>
+              <Numerator>7.911306e-05</Numerator>
+              <Numerator>-6.168137e-05</Numerator>
+              <Numerator>-7.943339e-05</Numerator>
+              <Numerator>-1.981551e-06</Numerator>
+              <Numerator>5.52674e-05</Numerator>
+              <Numerator>4.985166e-05</Numerator>
+              <Numerator>1.848206e-05</Numerator>
+              <Numerator>-5.587081e-07</Numerator>
+              <Numerator>-3.218158e-06</Numerator>
+              <Numerator>-9.833262e-07</Numerator>
+              <Numerator>0.0</Numerator>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">4000.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.013625</Delay>
+              <Correction>0.013625</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>50.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

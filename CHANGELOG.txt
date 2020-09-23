@@ -1,15 +1,15 @@
 Master:
 ph5
  * fixed errors in entry_points.py that prevented apps from executing.
- * fixed: seg2toph5, ph5toevt. 
- * Deleted: ph5view (doesn't compile, was a W.I.P. left to wither) 
+ * fixed: seg2toph5, ph5toevt.
+ * Deleted: ph5view (doesn't compile, was a W.I.P. left to wither)
  * made pep8 compliant
  * update all modules to use a standardized logger (issue #213)
- * cleanup comments and remove commented out code (issue #216) 
+ * cleanup comments and remove commented out code (issue #216)
  * replace deprecated optparse with argparse module.
  * update ph5 to better install c requirements
 ph5.utilities.ph5
- * add helpfile to utilities folder. Have not added pointer in setup.py as yet. 
+ * add helpfile to utilities folder. Have not added pointer in setup.py as yet.
  * Typing ph5 shows user the choices for help information.
  * Usage: ph5 pforma (lists info about pforma)https://github.com/PIC-IRIS/PH5/pull/new/helpfile
 ph5.clients.ph5toms
@@ -66,6 +66,7 @@ ph5.utilities.sort_kef_gen.py
  * add -o option for file output
 ph5.utilities.time_kef_gen.py
  * add -o option for file output
+ * fix bug getting only the last to_froms of all soh for a das
 ph5.utilities.tabletokef.py
  * add -o option for file output
 ph5.utilities.report_gen
@@ -97,11 +98,12 @@ ph5.utilities.tests.test_obspytoph5
 ph5.core.tests.test_ph5api
  * unit tests for ph5api; Stop sending log to screen;
 ph5.core.ph5api
+ * skip ph5api cut traces that return no data. logic previously embedded in code but line 1302 is duplicated onto 1287 to prevent error from being thrown
  * fix ph5api cut sometimes returns too many samples (issue #298)
  * fix for get_availability returning incomplete results
 ph5.entry_points
- * creates a dictionary, keys are names of scripts, 
-      values are (1) simple description, 
+ * creates a dictionary, keys are names of scripts,
+      values are (1) simple description,
       (2) entry points for use by setup.
 ph5.help
  * calls entry_points to print the short descriptions in alpha-order.
@@ -268,7 +270,7 @@ v4.0.2
 
 v4.0.1
 - ph5.clients.ph5tostationxml
-  * updated to work with latest obspy response code 
+  * updated to work with latest obspy response code
 
 v4.0.0
 - Initial Release
