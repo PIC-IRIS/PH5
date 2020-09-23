@@ -529,7 +529,7 @@ class PH5Availability(object):
                             start_epoch=ph5_start_epoch,
                             stop_epoch=ph5_stop_epoch)
                         for das in Das_t:
-                            # Sample rates must first be compared than
+                            # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
                                 ph5_sr = das['sample_rate_i']
@@ -543,11 +543,13 @@ class PH5Availability(object):
                                 continue
                         if empty_times is True:
                             for i, das in enumerate(Das_t):
+                                # IF DAS.SR != Array.SR, USe DAS.SR if match
                                 # Checks to see if all DAS tables have same SR
                                 sr_prev = Das_t[i-1]['sample_rate_i']
                                 if das['sample_rate_i'] != sr_prev:
                                     sr_mismatch = True
                             if sr_mismatch is True:
+                                # Else throw warning and fail
                                 LOGGER.error('DAS and Array Table sample' +
                                              ' rates do not match, DAS table' +
                                              ' sample rates do not match.' +

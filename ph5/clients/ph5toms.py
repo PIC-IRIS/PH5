@@ -508,6 +508,8 @@ class PH5toMSeed(object):
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments(
             [station_to_cut], self.restricted)
         obspy_stream = Stream()
+        sr_mismatch = False
+        empty_times = True
         for stc in station_to_cut_segments:
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
@@ -527,15 +529,39 @@ class PH5toMSeed(object):
             else:
                 start_time = stc.starttime
             nt = stc.notimecorrect
-            if Das_tf['sample_rate_i'] == stc.sample_rate:
-                if Das_tf['sample_rate_i'] > 0:
-                    actual_sample_rate = float(
-                        stc.sample_rate) / float(stc.sample_rate_multiplier)
+            for das_inst in das:
+                # Does Array.sr == DAS.sr? If so use sr
+                if das_inst['sample_rate_i'] == stc.sample_rate:
+                    if das_inst['sample_rate_i'] > 0:
+                        actual_sample_rate = float(stc.sample_rate) /\
+                                             float(stc.sample_rate_multiplier)
+                        empty_times = False
+                    else:
+                        actual_sample_rate = 0
+                        empty_times = False
                 else:
-                    actual_sample_rate = 0
-            else:
-                continue
-            if stc.sample_rate != 0:
+                    continue
+            if empty_times is True:
+                for i, das_inst in enumerate(das):
+                    # Checks to see if all DAS tables have same SR
+                    sr_prev = das[i-1]['sample_rate_i']
+                    if das_inst['sample_rate_i'] != sr_prev:
+                        sr_mismatch = True
+                if sr_mismatch is True:
+                    # Else fail with error
+                    LOGGER.error('DAS and Array Table sample' +
+                                 ' rates do not match, DAS table' +
+                                 ' sample rates do not match.' +
+                                 ' Data must be updated.')
+                else:
+                    # Uses SR if consistent
+                    das_sr = das_inst['sample_rate_i']
+                    das_srm = das_inst['sample_rate_multiplier_i']
+                    if das_inst['sample_rate_i'] > 0:
+                        actual_sample_rate = float(das_sr) / float(das_srm)
+                    else:
+                        actual_sample_rate = 0
+            if actual_sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
                                       stc.endtime,
                                       chan=stc.component,
