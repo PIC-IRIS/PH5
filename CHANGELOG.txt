@@ -53,6 +53,7 @@ ph5.utilities.ph5validate
  * add data time checking
  * fix incorrectly detecting data between different deploy/pickup times
  * detecting repeated stations
+ * correct logging to be the same as other tools
 ph5.utilities.test.test_ph5validate
  * unittest for ph5validate
 ph5.utilities.sort_kef_gen.py
