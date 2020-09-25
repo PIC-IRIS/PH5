@@ -816,12 +816,13 @@ def get_args():
 
     parser.add_argument(
         "-l", "--level", action="store", default="WARNING",
-        type=str, metavar="level", choices=('ERROR', 'WARNING', 'INFO'),
+        type=str, choices=('ERROR', 'WARNING', 'INFO'),
         help=("Level of logging detail. Choose from ERROR, WARNING, or INFO"))
 
     parser.add_argument("-o", "--outfile", action="store",
                         default="ph5_validate.log", type=str,
-                        metavar="outfile",
+                        help=("Path to outfile where logging details are. "
+                              "Default is ph5_validate.log.")
                         )
 
     parser.add_argument(
