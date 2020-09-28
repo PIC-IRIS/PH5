@@ -164,7 +164,7 @@ def get_args():
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
     '''
-    global FILES, PH5, SR, WINDOWS, OVERIDE, NUM_MINI, FIRST_MINI
+    global FILES, PH5, SR, WINDOWS, OVERIDE, NUM_MINI, FIRST_MINI, FROM_MINI
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -185,15 +185,29 @@ def get_args():
     parser.add_argument("-n", "--nickname", dest="outfile",
                         help="The ph5 file prefix (experiment nick name).",
                         metavar="output_file_prefix")
-    parser.add_argument("-M", "--num_mini", dest="num_mini",
-                        help="Create given number of miniPH5_xxxxx.ph5 files.",
-                        metavar="num_mini", type=int, default=None)
-    parser.add_argument("-S", "--first_mini", dest="first_mini",
-                        help="The index of the first miniPH5_xxxxx.ph5 file.",
-                        metavar="first_mini", type=int, default=1)
     parser.add_argument("-s", "--samplerate", dest="samplerate",
                         help="Extract only data at given sample rate.",
                         metavar="samplerate")
+    parser.add_argument(
+        "-S", "--first_mini",
+        help=("The index of the first miniPH5_xxxxx.ph5 file of all. "
+              "Ex: -S 5"),
+        type=int, default=1)
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
+        "-M", "--num_mini",
+        help=("Create a given number miniPH5_xxxxx.ph5 files. "
+              "Recommend using when creating a new PH5. Ex: -M 38"),
+        type=int, default=None)
+    group.add_argument(
+        "-F", "--from_mini",
+        help=("The index to continue miniPH5_xxxxx.ph5 file "
+              "from. Do not associate with option -M. "
+              "Ex: -F 25"),
+        type=int, default=None)
+
     parser.add_argument("-w", "--windows_file", dest="windows_file",
                         help=("File containing list of time windows to "
                               "process. Window start time Window length, "
@@ -214,6 +228,7 @@ def get_args():
     SR = args.samplerate
     NUM_MINI = args.num_mini
     FIRST_MINI = args.first_mini
+    FROM_MINI = args.from_mini
 
     if args.infile is not None:
         read_infile(args.infile)
@@ -554,6 +569,23 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(CURRENT_DAS)
     newestfile = ''
+    lastcheck_mini = -1
+    if FROM_MINI is not None:
+        for index_t in INDEX_T.rows:
+            mh = miniPH5RE.match(index_t['external_file_name_s'])
+            lastcheck_mini = int(mh.groups()[0])
+            if lastcheck_mini >= FROM_MINI:
+                newestfile = sstripp(index_t['external_file_name_s'])
+                size_of_exrec = os.path.getsize(newestfile + '.ph5')
+                if (size_of_data + size_of_exrec) <= MAX_PH5_BYTES:
+                    return openPH5(newestfile)
+        if lastcheck_mini < FROM_MINI:
+            n = FROM_MINI
+        else:
+            n = lastcheck_mini + 1
+        newestfile = "miniPH5_{0:05d}".format(n)
+        return openPH5(newestfile)
+
     # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T.rows:
@@ -703,9 +735,19 @@ def update_external_references():
     LOGGER.info("done, {0} nodes recreated.\n".format(n))
 
 
+def get_highest_mini(index_t_das):
+    n = 0
+    for index_t in index_t_das.rows:
+        mh = miniPH5RE.match(index_t['external_file_name_s'])
+        if n < int(mh.groups()[0]):
+            n = int(mh.groups()[0])
+    return n
+
+
 def main():
     def prof():
-        global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F
+        global PH5, KEFFILE, FILES, DEPFILE, RESP, INDEX_T, CURRENT_DAS, F,\
+            FROM_MINI
 
         get_args()
 
@@ -716,6 +758,14 @@ def main():
             RESP = Resp(EX.ph5_g_responses)
             rows, keys = EX.ph5_g_receivers.read_index()
             INDEX_T = Rows_Keys(rows, keys)
+            if FROM_MINI is not None:
+                highestMini = get_highest_mini(INDEX_T)
+                if FROM_MINI < highestMini:
+                    LOGGER.error(
+                        "FROM_MINI must be greater than or equal to %s, "
+                        "the highest mini file in ph5." % highestMini)
+                    EX.ph5close()
+                    sys.exit()
 
         for f in FILES:
             F = f
