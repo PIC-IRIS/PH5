@@ -107,7 +107,7 @@ def get_args():
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
     '''
-    global FILES, PH5, SR, NUM_MINI, FIRST_MINI, PATH
+    global FILES, PH5, SR, NUM_MINI, FIRST_MINI, PATH, FROM_MINI
 
     parser = argparse.ArgumentParser()
     parser.usage = "Version %s seg2toph5 [--help][--raw raw_file |\
@@ -121,12 +121,27 @@ def get_args():
     parser.add_argument("-n", "--nickname", dest="outfile",
                         help="The ph5 file prefix (experiment nick name).",
                         metavar="output_file_prefix")
-    parser.add_argument("-M", "--num_mini", dest="num_mini",
-                        help="Create a given number of miniPH5  files.",
-                        metavar="num_mini", type=int, default=None)
-    parser.add_argument("-S", "--first_mini", dest="first_mini",
-                        help="The index of the first miniPH5_xxxxx.ph5 file.",
-                        metavar="first_mini", type=int, default=1)
+
+    parser.add_argument(
+        "-S", "--first_mini",
+        help=("The index of the first miniPH5_xxxxx.ph5 file of all. "
+              "Ex: -S 5"),
+        type=int, default=1)
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
+        "-M", "--num_mini",
+        help=("Create a given number miniPH5_xxxxx.ph5 files. "
+              "Recommend using when creating a new PH5. Ex: -M 38"),
+        type=int, default=None)
+    group.add_argument(
+        "-F", "--from_mini",
+        help=("The index to continue miniPH5_xxxxx.ph5 file "
+              "from. Do not associate with option -M. "
+              "Ex: -F 25"),
+        type=int, default=None)
+
     parser.add_argument("-s", "--samplerate", dest="samplerate",
                         help="Extract only data at given sample rate.",
                         metavar="samplerate")
@@ -140,6 +155,7 @@ def get_args():
     PH5 = None
     SR = args.samplerate
     NUM_MINI = args.num_mini
+    FROM_MINI = args.from_mini
     FIRST_MINI = args.first_mini
 
     if args.infile is not None:
@@ -208,6 +224,23 @@ def get_current_data_only(size_of_data, das=None):
 
     das = str(CURRENT_DAS)
     newestfile = ''
+    lastcheck_mini = -1
+    if FROM_MINI is not None:
+        for index_t in INDEX_T_DAS.rows:
+            mh = miniPH5RE.match(index_t['external_file_name_s'])
+            lastcheck_mini = int(mh.groups()[0])
+            if lastcheck_mini >= FROM_MINI:
+                newestfile = sstripp(index_t['external_file_name_s'])
+                size_of_exrec = os.path.getsize(newestfile + '.ph5')
+                if (size_of_data + size_of_exrec) <= MAX_PH5_BYTES:
+                    return openPH5(newestfile)
+        if lastcheck_mini < FROM_MINI:
+            n = FROM_MINI
+        else:
+            n = lastcheck_mini + 1
+        newestfile = "miniPH5_{0:05d}".format(n)
+        return openPH5(newestfile)
+
     # Get the most recent data only PH5 file or match DAS serialnumber
     n = 0
     for index_t in INDEX_T_DAS.rows:
@@ -522,8 +555,17 @@ def getLOG(Das):
     return log_array, name
 
 
+def get_highest_mini(index_t_das):
+    n = 0
+    for index_t in index_t_das.rows:
+        mh = miniPH5RE.match(index_t['external_file_name_s'])
+        if n < int(mh.groups()[0]):
+            n = int(mh.groups()[0])
+    return n
+
+
 def main():
-    global F, RESP, INDEX_T_DAS
+    global F, RESP, INDEX_T_DAS, FROM_MINI
     get_args()
     import time
     then = time.time()
@@ -535,7 +577,14 @@ def main():
         Resp(EX.ph5_g_responses)
         rows, keys = EX.ph5_g_receivers.read_index()
         INDEX_T_DAS = Rows_Keys(rows, keys)
-
+        if FROM_MINI is not None:
+            highestMini = get_highest_mini(INDEX_T_DAS)
+            if FROM_MINI < highestMini:
+                LOGGER.error(
+                    "FROM_MINI must be greater than or equal to %s, "
+                    "the highest mini file in ph5." % highestMini)
+                EX.ph5close()
+                sys.exit()
     for f in FILES:
         F = f
         sys.stdout.write(":<Processing>: {0}\n".format(f))
@@ -567,6 +616,11 @@ def main():
         sys.stdout.write(":<Finished>: {0}\n".format(f))
         sys.stdout.flush()
     seconds = time.time() - then
+    try:
+        EX.ph5close()
+        EXREC.ph5close()
+    except Exception as e:
+        LOGGER.warning("{0}\n".format("".join(e.message)))
     print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
     LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
 
