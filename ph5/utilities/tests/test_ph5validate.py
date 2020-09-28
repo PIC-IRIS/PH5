@@ -15,13 +15,28 @@ from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
 class TestPh5Validate_main(TempDirTestCase, LogTestCase):
-
-    def test_main(self):
+    def setUp(self):
+        super(TestPh5Validate_main, self).setUp()
         kef_to_ph5(
             self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
             ['rt125a/das_t_12183.kef', 'metadata/array_t_9_validate.kef'],
             das_sn_list=['12183'])
+
+    def test_main(self):
+        # test invalid level
+        testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
+                    '-l', 'WARN']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                self.assertRaises(SystemExit, ph5validate.main)
+                output = out.captured.strip().split('\n')
+        self.assertEqual(
+            output[1],
+            "ph5_validate: error: argument -l/--level: invalid choice: "
+            "'WARN' (choose from 'ERROR', 'WARNING', 'INFO')")
+
+        # test WARNING level
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -61,7 +76,50 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'WARNING: No station description found.\n'
             'WARNING: Data exists after pickup time: 2 seconds.\n')
 
+        # test ERROR level
+        testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
+                    '-l', 'ERROR']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture():
+                ph5validate.main()
+        with open('ph5_validate.log') as f:
+            all_logs = f.read().split("-=-=-=-=-=-=-=-=-\n")
+
+        self.assertEqual(
+            all_logs[2],
+            'ERROR: Experiment_t does not exist. '
+            'run experiment_t_gen to create table\n')
+        self.assertEqual(
+            all_logs[3],
+            'Station 9001 Channel 1\n1 error, 3 warning, 0 info\n')
+        self.assertEqual(
+            all_logs[4],
+            'ERROR: No Response table found. Have you run resp_load yet?\n')
+        self.assertEqual(
+            all_logs[5],
+            'Station 9002 Channel 1\n1 error, 2 warning, 0 info\n')
+        self.assertEqual(
+            all_logs[6],
+            'ERROR: No Response table found. Have you run resp_load yet?\n')
+        self.assertEqual(
+            all_logs[7],
+            'Station 9003 Channel 1\n1 error, 2 warning, 0 info\n')
+        self.assertEqual(
+            all_logs[8],
+            'ERROR: No Response table found. Have you run resp_load yet?\n')
+
     def test_get_args(self):
+        testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
+                    '-l', 'WARN']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                self.assertRaises(SystemExit, ph5validate.get_args)
+        output = out.captured.strip().split('\n')
+        self.assertEqual(
+            output[1],
+            "ph5_validate: error: argument -l/--level: invalid choice: "
+            "'WARN' (choose from 'ERROR', 'WARNING', 'INFO')")
+
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
                     '-l', 'WARNING']
         with patch.object(sys, 'argv', testargs):
@@ -83,8 +141,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
             das_sn_list=['12183'])
         self.ph5_object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
         self.ph5validate = ph5validate.PH5Validate(
-            self.ph5_object, self.tmpdir, "WARNING",
-            outfile="ph5_validate.log")
+            self.ph5_object, self.tmpdir)
 
     def tearDown(self):
         self.ph5_object.ph5close()
