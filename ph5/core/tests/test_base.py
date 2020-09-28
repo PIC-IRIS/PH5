@@ -12,6 +12,27 @@ from ph5.core import experiment, ph5api
 from ph5.utilities import kef2ph5
 
 
+def create_list_file(home, ext, datapath, namestart=''):
+    """
+    create file that keep the path of data files
+     under 'ph5/test_data/[datapath]'
+    of which name start with parameter 'namestart'
+    """
+    data_dir = os.path.join(home, 'ph5/test_data/%s/' % datapath)
+    filename = '%s_list' % ext
+    # create list file
+    list_file = open(filename, 'w')
+    fileList = os.listdir(data_dir)
+    s = ""
+    for f in fileList:
+        if f.endswith('.%s' % ext) and f.startswith(namestart):
+            print('')
+            s += data_dir + f + "\n"
+    list_file.write(s)
+    list_file.close()
+    return filename
+
+
 def das_in_mini(ph5dir, mininame):
     """ get list of all das names from minifile """
     ph5API_object = ph5api.PH5(ph5dir, nickname=mininame)
