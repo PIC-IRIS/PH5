@@ -176,15 +176,16 @@ def get_args():
                        help="Locations are in texas state plane coordinates.",
                        action='store_true', default=False)
 
-    oparser.add_option("-M", "--num_mini",
-                       help=("Create a given number of miniPH5 files. "
-                             "Ex: -M 38"),
-                       type='int', default=None)
-
     oparser.add_option("-S", "--first_mini",
                        help=("The index of the first miniPH5_xxxxx.ph5 file "
                              "of all. Ex: -S 5"),
                        type='int', default=1)
+
+    oparser.add_option("-M", "--num_mini",
+                       help=("Create a given number of miniPH5 files. "
+                             "Recommend using when creating a new PH5. "
+                             "Ex: -M 38"),
+                       type='int', default=None)
 
     oparser.add_option("-F", "--from_mini",
                        help=("The index to continue miniPH5_xxxxx.ph5 file "
@@ -996,7 +997,7 @@ def utmcsptolatlon(northing, easting):
     return lat, lon
 
 
-def getHighestMini(index_t_das):
+def get_highest_mini(index_t_das):
     n = 0
     for index_t in index_t_das.rows:
         mh = miniPH5RE.match(index_t['external_file_name_s'])
@@ -1070,7 +1071,7 @@ def main():
             rows, keys = EX.ph5_g_maps.read_index()
             INDEX_T_MAP = Rows_Keys(rows, keys)
             if FROM_MINI is not None:
-                highestMini = getHighestMini(INDEX_T_DAS)
+                highestMini = get_highest_mini(INDEX_T_DAS)
                 if FROM_MINI < highestMini:
                     LOGGER.error(
                         "FROM_MINI must be greater than or equal to %s, "

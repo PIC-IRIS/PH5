@@ -12,29 +12,16 @@ from testfixtures import LogCapture, OutputCapture
 from ph5.utilities import segd2ph5, tabletokef
 from ph5.core import segdreader
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
-    initialize_ex, das_in_mini
-
-
-def create_fcntlist_file(home, namestart=''):
-    """
-    create file that keep the path of fcnt file under 'ph5/test_data/segd'
-    of which name start with parameter 'namestart'
-    """
-    segd_dir = os.path.join(home, 'ph5/test_data/segd/')
-    # create list file
-    list_file = open('fcnt_list', 'w')
-    fileList = os.listdir(segd_dir)
-    s = ""
-    for f in fileList:
-        if f.endswith('.fcnt') and f.startswith(namestart):
-            s += segd_dir + f + "\n"
-    list_file.write(s)
-    list_file.close()
+    initialize_ex, das_in_mini, create_list_file
 
 
 class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestSegDtoPH5_noclose, self).setUp()
+        self.MAX_PH5_BYTES = segd2ph5.MAX_PH5_BYTES
+
     def tearDown(self):
-        segd2ph5.MAX_PH5_BYTES = 1073741824 * 100.
+        segd2ph5.MAX_PH5_BYTES = self.MAX_PH5_BYTES
         super(TestSegDtoPH5_noclose, self).tearDown()
 
     def test_bit_weights(self):
@@ -48,14 +35,14 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
         self.assertAlmostEqual(LSB24, segd2ph5.LSB_MAP[24], places=6)
         self.assertAlmostEqual(LSB36, segd2ph5.LSB_MAP[36], places=6)
 
-    def test_getHighestMini(self):
+    def test_get_highest_mini(self):
         index_t_das_rows = [{'external_file_name_s': './miniPH5_00003.ph5'},
                             {'external_file_name_s': './miniPH5_00010.ph5'},
                             {'external_file_name_s': './miniPH5_00001.ph5'},
                             {'external_file_name_s': './miniPH5_00009.ph5'},
                             {'external_file_name_s': './miniPH5_00007.ph5'}]
         index_t_das = segd2ph5.Rows_Keys(index_t_das_rows)
-        ret = segd2ph5.getHighestMini(index_t_das)
+        ret = segd2ph5.get_highest_mini(index_t_das)
         self.assertEqual(ret, 10)
 
     def test_get_args(self):
@@ -90,11 +77,11 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
 
     def test_main_from_mini(self):
         """ test main() with -F option """
-        create_fcntlist_file(self.home, '1111')
+        filename = create_list_file(self.home, 'fcnt', 'segd', '1111')
         # reset MAX_PH5_BYTES to allow MB for a mini file only
         # check 2 mini file is created start from FROM_MINI
         segd2ph5.MAX_PH5_BYTES = 1024 * 1024 * 1.5
-        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list', '-F', '3']
+        testargs = ['segdtoph5', '-n', 'master', '-f', filename, '-F', '3']
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 
@@ -136,17 +123,22 @@ class TestSegDtoPH5_noclose(TempDirTestCase, LogTestCase):
 
 
 class TestSegDtoPH5_closeEX(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestSegDtoPH5_closeEX, self).setUp()
+        self.MAX_PH5_BYTES = segd2ph5.MAX_PH5_BYTES
+
     def tearDown(self):
+        segd2ph5.MAX_PH5_BYTES = self.MAX_PH5_BYTES
         self.EX.ph5close()
         super(TestSegDtoPH5_closeEX, self).tearDown()
 
     def test_main_diff_deploy(self):
         # add fcnt data of the same das in the same array but with different
         # deploytime
-        create_fcntlist_file(self.home, '1111')
+        filename = create_list_file(self.home, 'fcnt', 'segd', '1111')
 
         # add segD to ph5
-        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list']
+        testargs = ['segdtoph5', '-n', 'master', '-f', filename]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 
@@ -306,19 +298,12 @@ class TestSegDtoPH5_closeEX(TempDirTestCase, LogTestCase):
 
         # FROM_MINI < miniPH5_00003.ph5
         # size of data + size of miniPH5_00003.ph5 < MAX_PH5_BYTES
-        # => save to current mini: miniPH5_00003.ph5
+        # => save to last mini: miniPH5_00003.ph5
         segd2ph5.FROM_MINI = 2
         segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '3X500')
         self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00003.ph5')
 
         segd2ph5.MAX_PH5_BYTES = 1024 * 1024 * 2
-        # FROM_MINI < miniPH5_00003.ph5 whose das is current das
-        # size of data + size of miniPH5_00003.ph5 < MAX_PH5_BYTES
-        # => save to current mini: miniPH5_00003.ph5
-        segd2ph5.FROM_MINI = 2
-        segd2ph5.EXREC = segd2ph5.get_current_data_only(1083348, '1X1111')
-        self.assertEqual(segd2ph5.EXREC.filename, './miniPH5_00003.ph5')
-
         # FROM_MINI < miniPH5_00003.ph5
         # size of data + size of miniPH5_00003.ph5 > MAX_PH5_BYTES
         # => save to miniPH5_00004.ph5 (last+1)
