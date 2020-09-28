@@ -21,15 +21,13 @@ def create_list_file(home, ext, datapath, namestart=''):
     data_dir = os.path.join(home, 'ph5/test_data/%s/' % datapath)
     filename = '%s_list' % ext
     # create list file
-    list_file = open(filename, 'w')
-    fileList = os.listdir(data_dir)
-    s = ""
-    for f in fileList:
-        if f.endswith('.%s' % ext) and f.startswith(namestart):
-            print('')
-            s += data_dir + f + "\n"
-    list_file.write(s)
-    list_file.close()
+    with open(filename, 'w') as list_file:
+        fileList = os.listdir(data_dir)
+        s = ""
+        for f in fileList:
+            if f.endswith('.%s' % ext) and f.startswith(namestart):
+                s += data_dir + f + "\n"
+        list_file.write(s)
     return filename
 
 
