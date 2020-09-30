@@ -518,7 +518,8 @@ def get_args(args):
 
     group.add_argument(
         "-M", "--num_mini",
-        help="Create a given number of miniPH5 files. Ex: -M 38",
+        help="Create a given number of miniPH5 files. "
+             "Recommend using when creating a new PH5. Ex: -M 38",
         type=int, default=None)
 
     group.add_argument(
