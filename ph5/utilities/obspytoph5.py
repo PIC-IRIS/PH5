@@ -381,8 +381,9 @@ class ObspytoPH5(object):
                             das['array_name_data_a'], data, dtype='|S1',
                             description=None)
                     else:
+                        data_type = data[0].__class__.__name__
                         mini_handle.ph5_g_receivers.newarray(
-                            das['array_name_data_a'], data, dtype='int32',
+                            das['array_name_data_a'], data, dtype=data_type,
                             description=None)
                     mini_handle.ph5_g_receivers.populateDas_t(das)
 
