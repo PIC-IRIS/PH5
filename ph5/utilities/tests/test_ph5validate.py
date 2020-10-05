@@ -295,17 +295,16 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         self.assertEqual(
             warnings,
             ['No station description found.',
-             'Data exists after pickup time: 36 seconds.'])
-        errors = ret[2]
-        self.assertEqual(
-            errors,
-            ['No Response table found. Have you run resp_load yet?',
              'Channel longitude seems to be 0. Is this correct???',
              'No Station location/X/units_s value found.',
              'Channel latitude seems to be 0. Is this correct???',
              'No Station location/Y/units_s value found.',
-             'No Channel location/Z/value_d value found.',
-             'No Station location/Z/units_s value found.'])
+             'No Station location/Z/units_s value found.',
+             'Data exists after pickup time: 36 seconds.'])
+        errors = ret[2]
+        self.assertEqual(
+            errors,
+            ['No Response table found. Have you run resp_load yet?'])
 
         # check error overlaping
         # => change deploy time of the 3rd station

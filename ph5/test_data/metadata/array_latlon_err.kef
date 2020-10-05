@@ -130,7 +130,7 @@
 	location/X/value_d=100
 	location/X/units_s=degrees
 	location/Y/value_d=35
-	location/Y/units_s=degrees
+	location/Y/units_s=
 	location/Z/value_d=1407.5
 	location/Z/units_s=unknown
 	location/coordinate_system_s=geographic
@@ -172,7 +172,7 @@
 	location/X/units_s=degrees
 	location/Y/value_d=35
 	location/Y/units_s=degrees
-	location/Z/value_d=1407.5
+	location/Z/value_d=
 	location/Z/units_s=unknown
 	location/coordinate_system_s=geographic
 	location/projection_s=WGS84
