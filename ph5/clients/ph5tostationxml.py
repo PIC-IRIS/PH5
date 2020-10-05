@@ -103,47 +103,47 @@ def get_args():
     parser.add_argument("--level", action="store", default="channel",
                         help=("Specify level of detail using network, "
                               "station, channel,or response"),
-                        type=str, dest="level", metavar="level")
+                        type=str, metavar="level")
 
     parser.add_argument("--minlat", action="store",
                         help=("Limit to stations with a latitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, dest="minlat", metavar="minlat")
+                        type=float, metavar="minlat")
 
     parser.add_argument("--maxlat", action="store",
                         help=("Limit to stations with a latitude smaller than "
                               "or equal to the specified maximum."),
-                        type=float, dest="maxlat", metavar="maxlat")
+                        type=float, metavar="maxlat")
 
     parser.add_argument("--minlon", action="store",
                         help=("Limit to stations with a longitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, dest="minlon", metavar="minlon")
+                        type=float, metavar="minlon")
 
     parser.add_argument("--maxlon", action="store",
                         help=("Limit to stations with a longitude smaller "
                               "than or equal to the specified maximum."),
-                        type=float, dest="maxlon", metavar="maxlon")
+                        type=float, metavar="maxlon")
 
     parser.add_argument("--latitude", action="store",
                         help=("Specify the central latitude point for a "
                               "radial geographic constraint."),
-                        type=float, dest="latitude", metavar="latitude")
+                        type=float, metavar="latitude")
 
     parser.add_argument("--longitude", action="store",
                         help=("Specify the central longitude point for a "
                               "radial geographic constraint."),
-                        type=float, dest="longitude", metavar="longitude")
+                        type=float, metavar="longitude")
 
     parser.add_argument("--minradius", action="store",
                         help=("Specify minimum distance from the geographic "
                               "point defined by latitude and longitude."),
-                        type=float, dest="minradius", metavar="minradius")
+                        type=float, metavar="minradius")
 
     parser.add_argument("--maxradius", action="store",
                         help=("Specify maximum distance from the geographic "
                               "point defined by latitude and longitude."),
-                        type=float, dest="maxradius", metavar="maxradius")
+                        type=float, metavar="maxradius")
 
     parser.add_argument("--uri", action="store", default="",
                         type=str, metavar="uri")
