@@ -547,20 +547,23 @@ class PH5toMSeed(object):
                     sr_prev = das[i-1]['sample_rate_i']
                     if das_inst['sample_rate_i'] != sr_prev:
                         sr_mismatch = True
-                if sr_mismatch is True:
-                    # Else fail with error
-                    LOGGER.error('DAS and Array Table sample' +
-                                 ' rates do not match, DAS table' +
-                                 ' sample rates do not match.' +
-                                 ' Data must be updated.')
-                else:
-                    # Uses SR if consistent
-                    das_sr = das_inst['sample_rate_i']
-                    das_srm = das_inst['sample_rate_multiplier_i']
-                    if das_inst['sample_rate_i'] > 0:
-                        actual_sample_rate = float(das_sr) / float(das_srm)
+                try:
+                    if sr_mismatch is True:
+                        # Else fail with error
+                        LOGGER.error('DAS and Array Table sample' +
+                                     ' rates do not match, DAS table' +
+                                     ' sample rates do not match.' +
+                                     ' Data must be updated.')
                     else:
-                        actual_sample_rate = 0
+                        # Uses SR if consistent
+                        das_sr = das_inst['sample_rate_i']
+                        das_srm = das_inst['sample_rate_multiplier_i']
+                        if das_inst['sample_rate_i'] > 0:
+                            actual_sample_rate = float(das_sr) / float(das_srm)
+                        else:
+                            actual_sample_rate = 0
+                except(UnboundLocalError):
+                    continue
             if actual_sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
                                       stc.endtime,

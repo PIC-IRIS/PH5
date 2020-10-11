@@ -1809,19 +1809,6 @@ class TestPH5Availability(LogTestCase, TempDirTestCase):
             self.assertEqual(log.records[0].msg,
                              "The entered format k is not supported.")
 
-    def test_check_samplerate(self):
-        self.ph5test_srpath = os.path.join(self.home,
-                                           'ph5/test_data/samplerate')
-        self.ph5_sr = ph5api.PH5(path=self.ph5test_srpath,
-                                 nickname='master.ph5')
-        self.sr_availability = ph5availability.PH5Availability(self.ph5_sr)
-        ret = self.sr_availability.get_availability(station='10075',
-                                                    channel='*',
-                                                    starttime=None,
-                                                    endtime=None,
-                                                    include_sample_rate=False)
-        self.assertEqual(6, len(ret))
-
 
 if __name__ == "__main__":
     unittest.main()
