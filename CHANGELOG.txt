@@ -77,6 +77,7 @@ ph5.utilities.dumpfair
 ph5.utilities.seg2toph5
  * fix bug missing variable
  * Make compatible for pforma
+ * Add flag -r/--raw
 ph5.utilities.pforma_io
  * add seg2 to pforma
  * fix bug that duplicate index_t and array_t when copy tables from A/master.ph5 to Sigma/master.ph5
@@ -90,6 +91,7 @@ ph5.clients.ph5toevt
  * fix info level logging and remove global variables
 ph5.utilities.obspytoph5
  * new tool for loading obspy data in to ph5
+ * change -f to -r, -l to -f to be consistent with other ingestion commands
 ph5.utilities.metadatatoph5
  * new tool for loading stationxml and dataless SEED
 ph5.utilities.tests.test_metadatatoph5
