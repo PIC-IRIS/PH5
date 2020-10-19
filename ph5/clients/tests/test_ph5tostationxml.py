@@ -172,10 +172,6 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
                         "Channel latitude -107.0 not in range [-90,90]",
                         "array 001, station 1112, channel 1: "
                         "Channel longitude 182.0 not in range [-180,180]"]
-        self.warnmsgs = ["array 001, station 1114, channel 1: "
-                         "No Station location/Y/units_s value found.",
-                         "array 001, station 1115, channel 1: "
-                         "Channel elevation seems to be 0. Is this correct???"]
 
     def tearDown(self):
         self.mng.ph5.close()
@@ -205,8 +201,7 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
     def test_read_station(self):
         self.parser.add_ph5_stationids()
         ret = self.parser.read_stations()
-        issueset = set([(err, 'error') for err in self.errmsgs] +
-                       [(warn, 'warning') for warn in self.warnmsgs])
+        issueset = set([(err, 'error') for err in self.errmsgs])
         self.assertEqual(issueset, self.parser.unique_errors)
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0].code, '1115')
@@ -219,7 +214,7 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
             log.setLevel(logging.WARNING)
             ret = self.parser.create_obs_network()
             self.assertEqual(set(rec.msg for rec in log.records),
-                             set(self.errmsgs + self.warnmsgs))
+                             set(self.errmsgs))
             self.assertEqual(ret.code, 'AA')
             self.assertEqual(len(ret), 1)
             self.assertEqual(ret.stations[0].code, '1115')
