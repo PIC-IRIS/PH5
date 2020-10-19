@@ -337,5 +337,29 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
                       errors)
 
 
+class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestPh5Validate_currPH5, self).setUp()
+        ph5path = os.path.join(self.home, 'ph5/test_data/ph5')
+        self.ph5_object = ph5api.PH5(
+            path=ph5path, nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(
+            self.ph5_object, ph5path)
+
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestPh5Validate_currPH5, self).tearDown()
+
+    def test_check_experiment_t(self):
+        experiment_t = self.ph5_object.Experiment_t['rows']
+        experiment_t[0]['net_code_s'] = ''
+        info, warning, error = \
+            self.ph5validate.check_experiment_t_completeness(experiment_t)
+
+        self.assertIn('Network code was not found: '
+                      'A 2 character network code is required.',
+                      error)
+
+
 if __name__ == "__main__":
     unittest.main()
