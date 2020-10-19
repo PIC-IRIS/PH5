@@ -142,7 +142,7 @@ class PH5Validate(object):
                          .format(reportnum_code))
 
         if not experiment_t[0]['nickname_s']:
-            warning.append("Nickname was not found: "
+            error.append("Nickname was not found: "
                            "It is suggested you include a nickname "
                            "for your experiment")
 
