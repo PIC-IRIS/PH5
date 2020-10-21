@@ -405,20 +405,20 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
         das_time[('12183', 1, -1)] = das_time[('12183', 1, 500)]
         station['sample_rate_i'] = -1
         inf, warn, err = self.ph5validate.check_station_completeness(station)
-        self.assertIn("Sample rate = -1 which is not accepted.",
+        self.assertIn("Sample rate = -1 not positive.",
                       err)
 
         # sample_rate_multiplier_i isn't a integer => error
         station['sample_rate_i'] = 500
         station['sample_rate_multiplier_i'] = 1.1
         inf, warn, err = self.ph5validate.check_station_completeness(station)
-        self.assertIn("Sample rate multiplier = 1.1 while it must be an"
+        self.assertIn("Sample rate multiplier = 1.1 is not an"
                       " integer greater than 1.",
                       err)
         # sample_rate_multiplier_i<1 => error
         station['sample_rate_multiplier_i'] = 0
         inf, warn, err = self.ph5validate.check_station_completeness(station)
-        self.assertIn("Sample rate multiplier = 0 while it must be an integer "
+        self.assertIn("Sample rate multiplier = 0 is not an integer "
                       "greater than 1.",
                       err)
 

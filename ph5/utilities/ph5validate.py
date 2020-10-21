@@ -395,7 +395,7 @@ class PH5Validate(object):
                          "required.")
 
         if station['sample_rate_i'] < 0:
-            error.append("Sample rate = %s which is not accepted." %
+            error.append("Sample rate = %s not positive." %
                          station['sample_rate_i'])
         elif station['sample_rate_i'] == 0:
             warning.append("Sample rate seems to be 0. Is this correct???")
@@ -404,7 +404,7 @@ class PH5Validate(object):
                 station['sample_rate_multiplier_i'])
                 or station['sample_rate_multiplier_i'] < 1):
             error.append("Sample rate multiplier = %s "
-                         "while it must be an integer greater than 1."
+                         "is not an integer greater than 1."
                          % station['sample_rate_multiplier_i'])
 
         response_t = self.ph5.get_response_t_by_n_i(
@@ -721,7 +721,7 @@ class PH5Validate(object):
             warning.append("Event description is missing.")
         # EVENT LOCATION
         # removed check for coordinate_system_s, projection_s,
-        # projection_s value, ellipsoid_s value, description_s value
+        # projection_s , ellipsoid_s , description_s
         # because they are not required and most of PIs do not fill them out
         if event['location/X/value_d'] == 0:
             error.append("Event location/X/value_d "
