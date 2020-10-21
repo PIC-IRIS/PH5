@@ -107,7 +107,7 @@ def get_args():
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
     '''
-    global FILES, PH5, SR, NUM_MINI, FIRST_MINI, PATH
+    global FILES, PH5, NUM_MINI, FIRST_MINI, PATH
 
     parser = argparse.ArgumentParser()
     parser.usage = "Version %s seg2toph5 [--help][--raw raw_file |\
@@ -136,9 +136,6 @@ def get_args():
                         help=("The index of the first miniPH5_xxxxx.ph5 "
                               "file of all. Ex: -S 5"),
                         metavar="first_mini", type=int, default=1)
-    parser.add_argument("-s", "--samplerate", dest="samplerate",
-                        help="Extract only data at given sample rate.",
-                        metavar="samplerate")
     parser.add_argument("-p",
                         help="Do print",
                         dest="doprint",
@@ -147,7 +144,6 @@ def get_args():
 
     FILES = []
     PH5 = None
-    SR = args.samplerate
     NUM_MINI = args.num_mini
     FIRST_MINI = args.first_mini
 
