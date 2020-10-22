@@ -521,7 +521,6 @@ class PH5toStationXMLParser(object):
                 LOGGER.error(errmsg)
             else:
                 LOGGER.warning(errmsg)
-
         if obs_stations:
             obs_network = inventory.Network(
                 self.experiment_t[0]['net_code_s'])
