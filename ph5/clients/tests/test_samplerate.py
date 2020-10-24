@@ -9,64 +9,17 @@ from ph5.clients import ph5availability
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 from ph5.clients.ph5toms import PH5toMSeed
-
-
-def checkTupleAlmostEqualIn(tup, tupList, place):
-    """
-    check if a tuple in a list of tuples in which float items only
-    need to be almost equal
-    :type tup: tuple
-    :param tup: tuple to be checked
-    :type tupList: list of tuples
-    :para tupList: list of tuples that tup need to be check with
-    :place: decimal places to round the values to compare
-    """
-    for T in tupList:
-        length = len(tup)
-        if length != len(T):
-            continue
-        for i in range(length):
-            if type(tup[i]) is float:
-                if round(tup[i], place) != round(T[i], place):
-                    break
-            else:
-                if tup[i] != T[i]:
-                    break
-            if i == length - 1:
-                return True
-    return False
-
-
-def checkFieldsMatch(fieldNames, fieldsList, dictList):
-    """
-    check if given fieldslist match the dict dictList at field fieldNames
-    :type fieldsName: list of str
-    :param fieldsName: list of field names that their values are to be compared
-       with items in dictList
-    :type fieldsList: list of tuple
-    :para fieldsList: list of tuple of fields' values
-    :type dictList: list of dictionary
-    :para dictList: list of dictionary to be compared with
-    """
-    if len(fieldsList) != len(dictList):
-        return False
-    for d in dictList:
-        arow = ()
-        for i in range(len(fieldNames)):
-            arow += (d[fieldNames[i]], )
-        if arow not in fieldsList:
-            return False
-        fieldsList.remove(arow)
-    return True
+from testfixtures import LogCapture
 
 
 class TestPH5AvailabilitySampleRate(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5AvailabilitySampleRate, self).setUp()
+
         self.ph5test_path_sr = os.path.join(self.home,
-                                            'ph5/test_data/samplerate')
+                                            'ph5/test_data/ph5/samplerate')
         self.ph5_sr = ph5api.PH5(path=self.ph5test_path_sr,
-                                 nickname='master.ph5')
+                                 nickname='master_samplerate.ph5')
         self.sr_avail = ph5availability.PH5Availability(self.ph5_sr)
 
     def tearDown_sr(self):
@@ -100,6 +53,24 @@ class TestPH5AvailabilitySampleRate(LogTestCase, TempDirTestCase):
         self.assertEqual(3, len(ret2))
         self.assertEqual(500.0, ret2[0][5])
         self.ph5_sr.close()
+
+    def test_availability_error(self):
+        self.ph5_path_eror = os.path.join(self.home,
+                                          'ph5/test_data/ph5/samplerate/error')
+        self.ph5_sr_error = ph5api.PH5(path=self.ph5_path_eror,
+                                       nickname='master_samplerate_error.ph5')
+        self.avail_error = ph5availability.PH5Availability(self.ph5_sr_error)
+        with LogCapture() as log:
+            self.avail_error.get_availability(station='10075',
+                                              channel='*',
+                                              starttime=None,
+                                              endtime=None,
+                                              include_sample_rate=True)
+        self.assertEqual(log[2][2], 'DAS and Array Table sample rates do'
+                                    + ' not match, DAS table sample rates'
+                                    + ' do not match. Data must be'
+                                    + ' updated.')
+        self.ph5_sr_error.close()
 
 
 if __name__ == "__main__":

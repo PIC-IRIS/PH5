@@ -220,9 +220,9 @@ class TestPH5toMSeed(unittest.TestCase):
 
     def test_mismatch_sample_rate(self):
         self.ph5test_srpath = os.path.join(os.getcwd(),
-                                           'ph5/test_data/samplerate')
+                                           'ph5/test_data/ph5/samplerate')
         self.ph5_sr = ph5api.PH5(path=self.ph5test_srpath,
-                                 nickname='master.ph5')
+                                 nickname='master_samplerate.ph5')
         ph5toms = PH5toMSeed(self.ph5_sr)
         ph5toms.process_all()
         cuts = ph5toms.create_cut_list()
@@ -230,6 +230,7 @@ class TestPH5toMSeed(unittest.TestCase):
             trace = ph5toms.create_trace(cut)
             if trace is not None:
                 self.assertEqual(trace[0].stats.station, '10075')
+        self.ph5_sr.close()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,126 @@
+#
+#	Wed Oct 21 23:25:10 2020	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Sorts_g/Array_t_004
+	id_s=10075
+	location/X/value_d=-106.36501
+	location/X/units_s=degrees
+	location/Y/value_d=33.50311
+	location/Y/units_s=degrees
+	location/Z/value_d=1441.0
+	location/Z/units_s=m
+	location/coordinate_system_s=
+	location/projection_s=
+	location/ellipsoid_s=
+	location/description_s=
+	deploy_time/ascii_s=Mon Aug 27 00:00:00 2012
+	deploy_time/epoch_l=1346025600
+	deploy_time/micro_seconds_i=0
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Fri Aug 31 23:59:59 2012
+	pickup_time/epoch_l=1346457599
+	pickup_time/micro_seconds_i=0
+	pickup_time/type_s=BOTH
+	das/serial_number_s=9297
+	das/model_s=rt130
+	das/manufacturer_s=Reftek
+	das/notes_s=
+	sensor/serial_number_s=
+	sensor/model_s=L22
+	sensor/manufacturer_s=Sercel
+	sensor/notes_s=
+	description_s=
+	seed_band_code_s=G
+	sample_rate_i=1000
+	sample_rate_multiplier_i=1
+	seed_instrument_code_s=H
+	seed_orientation_code_s=Z
+	seed_location_code_s=
+	seed_station_name_s=10075
+	channel_number_i=1
+	receiver_table_n_i=2
+	response_table_n_i=41
+
+#   Table row 2
+/Experiment_g/Sorts_g/Array_t_004
+	id_s=10075
+	location/X/value_d=-106.36501
+	location/X/units_s=degrees
+	location/Y/value_d=33.50311
+	location/Y/units_s=degrees
+	location/Z/value_d=1441.0
+	location/Z/units_s=m
+	location/coordinate_system_s=
+	location/projection_s=
+	location/ellipsoid_s=
+	location/description_s=
+	deploy_time/ascii_s=Mon Aug 27 00:00:00 2012
+	deploy_time/epoch_l=1346025600
+	deploy_time/micro_seconds_i=0
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Fri Aug 31 23:59:59 2012
+	pickup_time/epoch_l=1346457599
+	pickup_time/micro_seconds_i=0
+	pickup_time/type_s=BOTH
+	das/serial_number_s=9297
+	das/model_s=rt130
+	das/manufacturer_s=Reftek
+	das/notes_s=
+	sensor/serial_number_s=
+	sensor/model_s=L22
+	sensor/manufacturer_s=Sercel
+	sensor/notes_s=
+	description_s=
+	seed_band_code_s=G
+	sample_rate_i=1000
+	sample_rate_multiplier_i=1
+	seed_instrument_code_s=H
+	seed_orientation_code_s=1
+	seed_location_code_s=
+	seed_station_name_s=10075
+	channel_number_i=2
+	receiver_table_n_i=2
+	response_table_n_i=41
+
+#   Table row 3
+/Experiment_g/Sorts_g/Array_t_004
+	id_s=10075
+	location/X/value_d=-106.36501
+	location/X/units_s=degrees
+	location/Y/value_d=33.50311
+	location/Y/units_s=degrees
+	location/Z/value_d=1441.0
+	location/Z/units_s=m
+	location/coordinate_system_s=
+	location/projection_s=
+	location/ellipsoid_s=
+	location/description_s=
+	deploy_time/ascii_s=Mon Aug 27 00:00:00 2012
+	deploy_time/epoch_l=1346025600
+	deploy_time/micro_seconds_i=0
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Fri Aug 31 23:59:59 2012
+	pickup_time/epoch_l=1346457599
+	pickup_time/micro_seconds_i=0
+	pickup_time/type_s=BOTH
+	das/serial_number_s=9297
+	das/model_s=rt130
+	das/manufacturer_s=Reftek
+	das/notes_s=
+	sensor/serial_number_s=
+	sensor/model_s=L22
+	sensor/manufacturer_s=Sercel
+	sensor/notes_s=
+	description_s=
+	seed_band_code_s=G
+	sample_rate_i=1000
+	sample_rate_multiplier_i=1
+	seed_instrument_code_s=H
+	seed_orientation_code_s=2
+	seed_location_code_s=
+	seed_station_name_s=10075
+	channel_number_i=3
+	receiver_table_n_i=2
+	response_table_n_i=41
+
