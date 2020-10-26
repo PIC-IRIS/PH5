@@ -7,6 +7,7 @@ from ph5.clients.ph5toms import StationCut, PH5toMSeed
 import copy
 from ph5.core import ph5api
 import os
+from testfixtures import LogCapture
 
 
 class RestrictedRequest(object):
@@ -226,10 +227,12 @@ class TestPH5toMSeed(unittest.TestCase):
         ph5toms = PH5toMSeed(self.ph5_sr)
         ph5toms.process_all()
         cuts = ph5toms.create_cut_list()
-        for cut in cuts:
-            trace = ph5toms.create_trace(cut)
-            if trace is not None:
-                self.assertEqual(trace[0].stats.station, '10075')
+        with LogCapture() as log:
+            for cut in cuts:
+                trace = ph5toms.create_trace(cut)
+                if trace is not None:
+                    self.assertEqual(trace[0].stats.station, '10075')
+        self.assertIsNotNone(log)
         self.ph5_sr.close()
 
 

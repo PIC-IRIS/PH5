@@ -555,9 +555,13 @@ class PH5toMSeed(object):
                                      ' sample rates do not match.' +
                                      ' Data must be updated.')
                     else:
-                        # Uses SR if consistent
+                        # Uses DAS SR if consistent
                         das_sr = das_inst['sample_rate_i']
                         das_srm = das_inst['sample_rate_multiplier_i']
+                        LOGGER.warning('Using sample rate from' +
+                                       ' DAS Table. Sample rates' +
+                                       ' in DAS and Array tables' +
+                                       ' are not consistent.')
                         if das_inst['sample_rate_i'] > 0:
                             actual_sample_rate = float(das_sr) / float(das_srm)
                         else:

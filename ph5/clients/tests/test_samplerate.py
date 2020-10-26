@@ -37,12 +37,14 @@ class TestPH5AvailabilitySampleRate(LogTestCase, TempDirTestCase):
         self.ph5_sr.close()
 
     def test_availability_samplerate(self):
-        ret = self.sr_avail.get_availability(station='10075',
-                                             channel='*',
-                                             starttime=None,
-                                             endtime=None,
-                                             include_sample_rate=True)
+        with LogCapture() as log:
+            ret = self.sr_avail.get_availability(station='10075',
+                                                 channel='*',
+                                                 starttime=None,
+                                                 endtime=None,
+                                                 include_sample_rate=True)
         self.assertEqual(6, len(ret))
+        self.assertIsNotNone(log)
         # Checks the sample rate of the test data set
         self.assertEqual(500.0, ret[0][5])
         ret2 = self.sr_avail.get_availability_extent(station='10075',
@@ -52,6 +54,12 @@ class TestPH5AvailabilitySampleRate(LogTestCase, TempDirTestCase):
                                                      include_sample_rate=True)
         self.assertEqual(3, len(ret2))
         self.assertEqual(500.0, ret2[0][5])
+        with LogCapture() as log2:
+            ret2 = self.sr_avail.get_availability_extent(station='10075',
+                                                         channel='*',
+                                                         starttime=None,
+                                                         endtime=None)
+        self.assertIsNotNone(log2)
         self.ph5_sr.close()
 
     def test_availability_error(self):
@@ -60,16 +68,16 @@ class TestPH5AvailabilitySampleRate(LogTestCase, TempDirTestCase):
         self.ph5_sr_error = ph5api.PH5(path=self.ph5_path_eror,
                                        nickname='master_samplerate_error.ph5')
         self.avail_error = ph5availability.PH5Availability(self.ph5_sr_error)
-        with LogCapture() as log:
+        with LogCapture() as log_error:
             self.avail_error.get_availability(station='10075',
                                               channel='*',
                                               starttime=None,
                                               endtime=None,
                                               include_sample_rate=True)
-        self.assertEqual(log[2][2], 'DAS and Array Table sample rates do'
-                                    + ' not match, DAS table sample rates'
-                                    + ' do not match. Data must be'
-                                    + ' updated.')
+        self.assertEqual(log_error[2][2], 'DAS and Array Table sample rates do'
+                         + ' not match, DAS table sample rates'
+                         + ' do not match. Data must be'
+                         + ' updated.')
         self.ph5_sr_error.close()
 
 

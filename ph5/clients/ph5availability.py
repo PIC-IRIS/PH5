@@ -19,6 +19,7 @@ from ph5.core import ph5api, ph5utils, timedoy
 PROG_VERSION = '2020.282'
 LOGGER = logging.getLogger(__name__)
 
+
 f_id = {'sta': 0, 'loc': 1, 'chan': 2,
         'earliest': 3, 'latest': 4, 'sRate': 5}
 
@@ -427,6 +428,10 @@ class PH5Availability(object):
                                     # Uses SR if consistent
                                     samplerate_return = das['sample_rate_i']
                                     psr = das['sample_rate_i']
+                                    LOGGER.warning('Using sample rate from' +
+                                                   ' DAS Table. Sample rates' +
+                                                   ' in DAS and Array tables' +
+                                                   ' are not consistent.')
                                     early, end = self.ph5.get_extent(ph5das,
                                                                      chanum,
                                                                      psr,
@@ -565,6 +570,10 @@ class PH5Availability(object):
                                     # Uses SR if consistent
                                     samplerate_return = das['sample_rate_i']
                                     ph5_sr = das['sample_rate_i']
+                                    LOGGER.warning('Using sample rate from' +
+                                                   ' DAS Table. Sample rates' +
+                                                   ' in DAS and Array tables' +
+                                                   ' are not consistent.')
                                     time = self.ph5.get_availability(ph5_das,
                                                                      ph5_sr,
                                                                      channum,
