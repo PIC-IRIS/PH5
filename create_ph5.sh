@@ -39,5 +39,5 @@ keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/Expirement_Sample
 keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/Receiver_SampleRate.kef -p ../error
 mstoph5 -n master_samplerate_error.ph5 -f ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
 keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
-
+cd ../../
 echo "Finished creating test PH5"
