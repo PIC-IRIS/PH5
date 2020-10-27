@@ -1,0 +1,83 @@
+#
+#	Thu May  7 20:12:27 2020	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Responses_g/Response_t
+	n_i=0
+	bit_weight/value_d=1.88039941931e-05
+	bit_weight/units_s=mV/count
+	gain/units_s=dB
+	gain/value_i=24
+	response_file_a=
+	response_file_das_a=
+	response_file_sensor_a=
+#   Table row 2
+/Experiment_g/Responses_g/Response_t
+	n_i=1
+	bit_weight/value_d=1.584
+	bit_weight/units_s=uV/count
+	gain/units_s=
+	gain/value_i=1
+	response_file_a=
+	response_file_das_a=
+	response_file_sensor_a=
+#   Table row 3
+/Experiment_g/Responses_g/Response_t
+	n_i=1
+	bit_weight/value_d=1.586
+	bit_weight/units_s=uV/count
+	gain/units_s=
+	gain/value_i=1
+	response_file_a=
+	response_file_das_a=
+	response_file_sensor_a=
+#   Table row 4
+/Experiment_g/Responses_g/Response_t
+	n_i=3
+	bit_weight/value_d=1.585
+	bit_weight/units_s=uV/count
+	gain/units_s=
+	gain/value_i=1
+	response_file_a=
+	response_file_das_a=
+	response_file_sensor_a=
+#   Table row 5
+/Experiment_g/Responses_g/Response_t
+	n_i=3
+	bit_weight/value_d=5.96046447754e-08
+	bit_weight/units_s=volts/count
+	gain/units_s=
+	gain/value_i=32
+	response_file_a=
+	response_file_das_a=
+	response_file_sensor_a=
+#   Table row 6
+/Experiment_g/Responses_g/Response_t
+	n_i=6
+	bit_weight/value_d=0.0
+	bit_weight/units_s=
+	gain/units_s=
+	gain/value_i=1
+	response_file_a=
+	response_file_das_a=/Experiment_g/Responses_g/NoneQ330_NoneCMG3T_200HHN
+	response_file_sensor_a=
+#   Table row 7
+/Experiment_g/Responses_g/Response_t
+	n_i=6
+	bit_weight/value_d=0.0
+	bit_weight/units_s=
+	gain/units_s=
+	gain/value_i=1
+	response_file_a=
+	response_file_das_a=/Experiment_g/Responses_g/NoneQ330_NoneCMG3T_100LHN
+	response_file_sensor_a=
+#   Table row 8
+/Experiment_g/Responses_g/Response_t
+	n_i=-1
+	bit_weight/value_d=0.0
+	bit_weight/units_s=
+	gain/units_s=
+	gain/value_i=0
+	response_file_a=
+	response_file_das_a=
+	response_file_sensor_a=
