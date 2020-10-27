@@ -57,10 +57,8 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
         super(TestPH5Validate_response, self).tearDown()
 
     def test_check_array_t(self):
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            vb_array, resp_check_info = self.ph5validate.check_array_t()
-            self.assertEqual(resp_check_info, self.resp_check_info)
+        vb_array, resp_check_info = self.ph5validate.check_array_t()
+        self.assertEqual(resp_check_info, self.resp_check_info)
 
     def test_check_response_t(self):
         with LogCapture() as log:

@@ -281,10 +281,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         response_t = self.ph5API_object.get_response_t_by_n_i(1)
         response_t['n_i'] = 2
         errors = set()
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            validation.check_resp_unique_n_i(
-                self.ph5API_object, errors)
+        validation.check_resp_unique_n_i(self.ph5API_object, errors)
         self.assertEqual(errors,
                          {('Response_t n_i(s) duplicated: 2', 'error')})
 
