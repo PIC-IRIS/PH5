@@ -151,15 +151,19 @@ def get_args():
     from optparse import OptionParser
     oparser = OptionParser()
 
-    oparser.usage = "Version: {0} Usage: segd2ph5 [options]".format(
+    oparser.usage = "Version: {0} Usage: segdtoph5 [options]".format(
         PROG_VERSION)
+    oparser.epilog = ("Notice: Data of a Das can't be stored in more than one "
+                      "mini file.")
 
     oparser.add_option("-r", "--raw", dest="rawfile",
                        help="Fairfield SEG-D v1.6 file.", metavar="raw_file")
 
-    oparser.add_option("-f", action="store", dest="infile", type="string",
+    oparser.add_option("-f", "--file",
+                       action="store", dest="infile", type="string",
                        help="File containing list of Fairfield SEG-D\
-                        v1.6 file names.")
+                        v1.6 file names.",
+                       metavar="file_list_file")
 
     oparser.add_option("-n", "--nickname", dest="outfile",
                        help="The ph5 file prefix (experiment nick name).",
@@ -176,12 +180,14 @@ def get_args():
                        help="Locations are in texas state plane coordinates.",
                        action='store_true', default=False)
 
-    oparser.add_option("-M", "--num_mini", dest="num_mini",
-                       help="Create a given number of miniPH5 files.",
+    oparser.add_option("-M", "--num_mini",
+                       help=("Create a given number of miniPH5 files."
+                             " Ex: -M 38"),
                        metavar="num_mini", type='int', default=None)
 
-    oparser.add_option("-S", "--first_mini", dest="first_mini",
-                       help="The index of the first miniPH5_xxxxx.ph5 file.",
+    oparser.add_option("-S", "--first_mini",
+                       help=("The index of the first miniPH5_xxxxx.ph5 "
+                             "file of all. Ex: -S 5"),
                        metavar="first_mini", type='int', default=1)
 
     oparser.add_option("-c", "--combine", dest="combine",
@@ -200,6 +206,9 @@ def get_args():
                        type='int', default=FAIRFIELD)
 
     options, args = oparser.parse_args()
+
+    if options.rawfile and options.infile:
+        oparser.error("argument -f/--file: not allowed with argument -r/--raw")
 
     FILES = []
     PH5 = None
