@@ -3,11 +3,14 @@ Tests for ph5toms
 '''
 
 import unittest
-from ph5.clients.ph5toms import StationCut, PH5toMSeed
 import copy
-from ph5.core import ph5api
 import os
+
 from testfixtures import LogCapture
+
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
+from ph5.core import ph5api
+from ph5.clients.ph5toms import StationCut, PH5toMSeed
 
 
 class RestrictedRequest(object):
@@ -206,7 +209,7 @@ class TestPH5toMSeed(unittest.TestCase):
         self.assertEqual(result[0].__dict__, expected.__dict__)
 
 
-class TestPH5toMSeed_samplerate(unittest.TestCase):
+class TestPH5toMSeed_samplerate(LogTestCase, TempDirTestCase):
     def tearDown(self):
         self.ph5_object.close()
         super(TestPH5toMSeed_samplerate, self).tearDown()
@@ -214,7 +217,7 @@ class TestPH5toMSeed_samplerate(unittest.TestCase):
     def test_create_trace(self):
 
         self.ph5_object = ph5api.PH5(
-            path=os.path.join(os.getcwd(), 'ph5/test_data/ph5'),
+            path=os.path.join(self.home, 'ph5/test_data/ph5'),
             nickname='master.ph5')
         ph5toms = PH5toMSeed(self.ph5_object)
         ph5toms.process_all()
@@ -225,7 +228,7 @@ class TestPH5toMSeed_samplerate(unittest.TestCase):
                 self.assertEqual(trace[0].stats.sampling_rate, cut.sample_rate)
 
     def test_mismatch_sample_rate(self):
-        self.ph5test_srpath = os.path.join(os.getcwd(),
+        self.ph5test_srpath = os.path.join(self.home,
                                            'ph5/test_data/ph5/samplerate')
         self.ph5_object = ph5api.PH5(path=self.ph5test_srpath,
                                      nickname='master_samplerate.ph5')
@@ -237,7 +240,7 @@ class TestPH5toMSeed_samplerate(unittest.TestCase):
                 trace = ph5toms.create_trace(cut)
                 if trace is not None:
                     self.assertEqual(trace[0].stats.station, '10075')
-        self.assertIsNotNone(log)
+            self.assertIsNotNone(log)
 
 
 if __name__ == "__main__":
