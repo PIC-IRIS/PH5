@@ -33,7 +33,6 @@ def get_restricted_request_testcase(st, et):
 
 
 class TestPH5toMSeed(unittest.TestCase):
-
     def test_get_nonrestricted_segments(self):
         """
         Tests get_nonrestricted_segments()
@@ -206,12 +205,18 @@ class TestPH5toMSeed(unittest.TestCase):
             station_to_cut_list, restricted_list)
         self.assertEqual(result[0].__dict__, expected.__dict__)
 
+
+class TestPH5toMSeed_samplerate(unittest.TestCase):
+    def tearDown(self):
+        self.ph5_object.close()
+        super(TestPH5toMSeed_samplerate, self).tearDown()
+
     def test_create_trace(self):
 
-        ph5API_object = ph5api.PH5(
+        self.ph5_object = ph5api.PH5(
             path=os.path.join(os.getcwd(), 'ph5/test_data/ph5'),
             nickname='master.ph5')
-        ph5toms = PH5toMSeed(ph5API_object)
+        ph5toms = PH5toMSeed(self.ph5_object)
         ph5toms.process_all()
         cuts = ph5toms.create_cut_list()
         for cut in cuts:
@@ -222,9 +227,9 @@ class TestPH5toMSeed(unittest.TestCase):
     def test_mismatch_sample_rate(self):
         self.ph5test_srpath = os.path.join(os.getcwd(),
                                            'ph5/test_data/ph5/samplerate')
-        self.ph5_sr = ph5api.PH5(path=self.ph5test_srpath,
-                                 nickname='master_samplerate.ph5')
-        ph5toms = PH5toMSeed(self.ph5_sr)
+        self.ph5_object = ph5api.PH5(path=self.ph5test_srpath,
+                                     nickname='master_samplerate.ph5')
+        ph5toms = PH5toMSeed(self.ph5_object)
         ph5toms.process_all()
         cuts = ph5toms.create_cut_list()
         with LogCapture() as log:
@@ -233,7 +238,6 @@ class TestPH5toMSeed(unittest.TestCase):
                 if trace is not None:
                     self.assertEqual(trace[0].stats.station, '10075')
         self.assertIsNotNone(log)
-        self.ph5_sr.close()
 
 
 if __name__ == "__main__":
