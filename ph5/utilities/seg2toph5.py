@@ -107,29 +107,35 @@ def get_args():
            -M   create a specific number of miniPH5 files
            -S   First index of miniPH5_xxxxx.ph5
     '''
-    global FILES, PH5, SR, NUM_MINI, FIRST_MINI, PATH
+    global FILES, PH5, NUM_MINI, FIRST_MINI, PATH
 
     parser = argparse.ArgumentParser()
     parser.usage = "Version %s seg2toph5 [--help][--raw raw_file |\
-     --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
+        --file file_list_file] --nickname output_file_prefix" % PROG_VERSION
     parser.description = "Read data in SEG-2 revision 1 (StrataVisor)\
-     into ph5 format."
-    parser.add_argument("-f", "--file", dest="infile",
-                        help=("File containing list of absolute paths "
-                              "to SEG-2 file."),
-                        metavar="file_list_file")
+        into ph5 format."
+    parser.epilog = "Notice: Data of a Das can't be stored in more than one \
+        mini file."
+
+    file_group = parser.add_mutually_exclusive_group()
+    file_group.add_argument("-r", "--raw", dest="rawfile",
+                            help="SEG-2 raw file", metavar="raw_file")
+    file_group.add_argument("-f", "--file", dest="infile",
+                            help=("File containing list of absolute paths "
+                                  "to SEG-2 file."),
+                            metavar="file_list_file")
+
     parser.add_argument("-n", "--nickname", dest="outfile",
                         help="The ph5 file prefix (experiment nick name).",
                         metavar="output_file_prefix")
-    parser.add_argument("-M", "--num_mini", dest="num_mini",
-                        help="Create a given number of miniPH5  files.",
+    parser.add_argument("-M", "--num_mini",
+                        help=("Create a given number of miniPH5 files."
+                              " Ex: -M 38"),
                         metavar="num_mini", type=int, default=None)
-    parser.add_argument("-S", "--first_mini", dest="first_mini",
-                        help="The index of the first miniPH5_xxxxx.ph5 file.",
+    parser.add_argument("-S", "--first_mini",
+                        help=("The index of the first miniPH5_xxxxx.ph5 "
+                              "file of all. Ex: -S 5"),
                         metavar="first_mini", type=int, default=1)
-    parser.add_argument("-s", "--samplerate", dest="samplerate",
-                        help="Extract only data at given sample rate.",
-                        metavar="samplerate")
     parser.add_argument("-p",
                         help="Do print",
                         dest="doprint",
@@ -138,12 +144,14 @@ def get_args():
 
     FILES = []
     PH5 = None
-    SR = args.samplerate
     NUM_MINI = args.num_mini
     FIRST_MINI = args.first_mini
 
     if args.infile is not None:
         read_infile(args.infile)
+
+    elif args.rawfile is not None:
+        FILES.append(args.rawfile)
 
     if args.outfile is not None:
         PH5 = args.outfile
