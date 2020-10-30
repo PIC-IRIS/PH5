@@ -464,7 +464,9 @@ def get_args(args):
     parser = argparse.ArgumentParser(
             description='Takes data files and converts to PH5',
             usage=('Version: {0} mstoph5 --nickname="Master_PH5_file" '
-                   '[options]'.format(PROG_VERSION))
+                   '[options]'.format(PROG_VERSION)),
+            epilog=("Notice: Data of a Das can't be stored in more than one "
+                    "mini file.")
             )
     parser.add_argument(
         "-n", "--nickname", action="store",
@@ -474,16 +476,17 @@ def get_args(args):
         "-p", "--ph5path", action="store", default=".",
         type=str, metavar="ph5_path")
 
-    parser.add_argument(
+    file_group = parser.add_mutually_exclusive_group()
+    file_group.add_argument(
+        "-r", "--raw", dest="rawfile",
+        default=None,
+        help="Minissed file",
+        metavar="miniseed_file")
+
+    file_group.add_argument(
         "-f", "--file", dest="infile",
         default=None,
-        help="Data file...minissed file",
-        metavar="file_file")
-
-    parser.add_argument(
-        "-l", "--list", dest="inlist",
-        default=None,
-        help="list of data files with full path",
+        help="File containing list of miniseed file names with full path.",
         metavar="file_list_file")
 
     parser.add_argument(
@@ -494,12 +497,13 @@ def get_args(args):
 
     parser.add_argument(
         "-M", "--num_mini", dest="num_mini",
-        help="Create a given number of miniPH5  files.",
+        help="Create a given number of miniPH5  files. Ex: -M 38",
         metavar="num_mini", type=int, default=None)
 
     parser.add_argument(
         "-S", "--first_mini", dest="first_mini",
-        help="The index of the first miniPH5_xxxxx.ph5 file.",
+        help=("The index of the first miniPH5_xxxxx.ph5 "
+              "file of all. Ex: -S 5"),
         metavar="first_mini", type=int, default=1)
 
     parser.add_argument(
@@ -547,18 +551,18 @@ def main():
                     .format(ph5file))
     # Produce list of valid files from file, list, and dirs
     valid_files = list()
-    if args.infile:
-        if _is_mseed(args.infile):
+    if args.rawfile:
+        if _is_mseed(args.rawfile):
             LOGGER.info("{0} is a valid miniSEED file. "
-                        "Adding to process list.".format(args.infile))
-            valid_files.append((args.infile, 'MSEED'))
+                        "Adding to process list.".format(args.rawfile))
+            valid_files.append((args.rawfile, 'MSEED'))
         else:
             LOGGER.info("{0} is a  NOT valid miniSEED file.".format(
-                args.infile))
+                args.rawfile))
 
-    if args.inlist:
+    if args.infile:
         LOGGER.info("Checking list...")
-        with open(args.inlist) as f:
+        with open(args.infile) as f:
             content = f.readlines()
         for line in content:
             if os.path.isfile(line.rstrip()):
