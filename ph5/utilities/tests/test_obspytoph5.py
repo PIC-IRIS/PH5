@@ -7,10 +7,9 @@ import unittest
 import numpy
 
 from mock import patch
-from testfixtures import OutputCapture
+from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import obspytoph5
-from ph5.utilities import metadatatoph5
+from ph5.utilities import obspytoph5, metadatatoph5, initialize_ph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -252,6 +251,26 @@ class TestObspytoPH5_float32(TempDirTestCase, LogTestCase):
             'Array')
         data = data_node.read()
         self.assertIsInstance(data[0], numpy.float32)
+
+
+class TestObspytoPH5_option(TempDirTestCase, LogTestCase):
+    def test_main(self):
+        testargs = ['initialize_ph5', '-n', 'master']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        # check using flag -f for miniseed file
+        testargs = ['mstoph5', '-n', 'master', '-f',
+                    os.path.join(self.home,
+                                 'ph5/test_data/miniseed/0407HHN.ms')]
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                with self.assertRaises(SystemExit):
+                    obspytoph5.main()
+                self.assertEqual(
+                    log.records[0].msg,
+                    "The given list file is a miniseed file. "
+                    "You have been confused between two option -r and -f.")
 
 
 if __name__ == "__main__":

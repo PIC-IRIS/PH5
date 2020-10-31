@@ -560,6 +560,14 @@ def main():
             LOGGER.info("{0} is a  NOT valid miniSEED file.".format(
                 args.rawfile))
 
+    try:
+        if _is_mseed(args.infile):
+            LOGGER.error("The given list file is a miniseed file. You have "
+                         "been confused between two option -r and -f.")
+            sys.exit()
+    except TypeError:
+        pass
+
     if args.infile:
         LOGGER.info("Checking list...")
         with open(args.infile) as f:
