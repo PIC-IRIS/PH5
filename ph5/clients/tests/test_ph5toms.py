@@ -232,7 +232,7 @@ class TestPH5toMSeed_samplerate(LogTestCase, TempDirTestCase):
         ph5test_srpath = os.path.join(self.home,
                                       'ph5/test_data/ph5/samplerate')
         self.ph5_object = ph5api.PH5(path=ph5test_srpath,
-                                     nickname='master_samplerate.ph5')
+                                     nickname='master.ph5')
         ph5toms = PH5toMSeed(self.ph5_object)
         ph5toms.process_all()
         cuts = ph5toms.create_cut_list()
