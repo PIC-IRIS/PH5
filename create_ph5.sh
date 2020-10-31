@@ -1,5 +1,6 @@
 #!/bin/bash
 echo "Making test PH5!"
+rm -rf ph5/test_data/ph5
 cd ph5/test_data/
 mkdir ph5
 cd ph5
@@ -20,24 +21,19 @@ sort_kef_gen -n master.ph5 -a > ../metadata/sort_t.kef
 keftoph5 -n master -k ../metadata/sort_t.kef
 geo_kef_gen -n master.ph5 > ../metadata/offset_t.kef
 keftoph5 -n master -k ../metadata/offset_t.kef
+
 mkdir samplerate
 cd samplerate
-keftoph5 -n master_samplerate.ph5 -k ../../samplerate/all_arrays.kef -p ../samplerate
-keftoph5 -n master_samplerate.ph5 -k ../../samplerate/Expirement_SampleRate.kef -p ../samplerate
-keftoph5 -n master_samplerate.ph5 -k ../../samplerate/Receiver_SampleRate.kef -p ../samplerate
-mstoph5 -n master_samplerate.ph5 -r ../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
-mstoph5 -n master_samplerate.ph5 -r ../../samplerate/8H.10075..GH1.2012-08-31T17.52.00.ms
-mstoph5 -n master_samplerate.ph5 -r ../../samplerate/8H.10075..GH2.2012-08-27T23.01.00.ms
-mstoph5 -n master_samplerate.ph5 -r ../../samplerate/8H.10075..GH2.2012-08-31T17.52.00.ms
-mstoph5 -n master_samplerate.ph5 -r ../../samplerate/8H.10075..GHZ.2012-08-27T23.01.00.ms
-mstoph5 -n master_samplerate.ph5 -r ../../samplerate/8H.10075..GHZ.2012-08-31T17.52.00.ms
-keftoph5 -n master_samplerate.ph5 -k ../../samplerate/Das_SampleRate.kef
 mkdir error
+keftoph5 -n master.ph5 -k ../../samplerate/all_arrays.kef
+keftoph5 -n master.ph5 -k ../../samplerate/Expirement_SampleRate.kef
+keftoph5 -n master.ph5 -k ../../samplerate/Receiver_SampleRate.kef
+cp master.ph5 error
+mstoph5 -n master.ph5 -d ../../samplerate
+keftoph5 -n master.ph5 -k ../../samplerate/Das_SampleRate.kef
+
 cd error
-keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/all_arrays.kef -p ../error
-keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/Expirement_SampleRate.kef -p ../error
-keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/Receiver_SampleRate.kef -p ../error
-mstoph5 -n master_samplerate_error.ph5 -r ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
-keftoph5 -n master_samplerate_error.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
-cd ../../
+mstoph5 -n master.ph5 -r ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
+keftoph5 -n master.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
+
 echo "Finished creating test PH5"
