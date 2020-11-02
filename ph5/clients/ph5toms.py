@@ -554,6 +554,7 @@ class PH5toMSeed(object):
                                      ' rates do not match, DAS table' +
                                      ' sample rates do not match.' +
                                      ' Data must be updated.')
+                        return
                     else:
                         # Uses DAS SR if consistent
                         das_sr = das_inst['sample_rate_i']

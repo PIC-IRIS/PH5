@@ -424,6 +424,7 @@ class PH5Availability(object):
                                                  ' table sample rates do not' +
                                                  ' match. Data must be'
                                                  ' updated.')
+                                    return
                                 else:
                                     # Uses SR if consistent
                                     samplerate_return = das['sample_rate_i']
@@ -566,6 +567,7 @@ class PH5Availability(object):
                                                  ' table sample rates do not' +
                                                  ' match. Data must be'
                                                  ' updated.')
+                                    return
                                 else:
                                     # Uses SR if consistent
                                     samplerate_return = das['sample_rate_i']
