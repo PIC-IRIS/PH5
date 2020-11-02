@@ -1873,11 +1873,11 @@ class TestPH5AvailabilitySampleRate_error(LogTestCase, TempDirTestCase):
                                               starttime=None,
                                               endtime=None,
                                               include_sample_rate=True)
-        self.assertEqual(log_error.records[2].msg,
-                         'DAS and Array Table sample rates do'
-                         ' not match, DAS table sample rates'
-                         ' do not match. Data must be'
-                         ' updated.')
+            self.assertEqual(log_error.records[1].msg,
+                             'DAS and Array Table sample rates do'
+                             ' not match, DAS table sample rates'
+                             ' do not match. Data must be'
+                             ' updated.')
         self.ph5_sr_error.close()
 
 
