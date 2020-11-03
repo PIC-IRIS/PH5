@@ -28,6 +28,8 @@
 	seed_band_code_s = H
 	seed_instrument_code_s = L
 	seed_orientation_code_s = Z
+	seed_location_code_s=01
+
 #   1
 /Experiment_g/Sorts_g/Array_t_008
 	sensor/model_s = cmg-3t

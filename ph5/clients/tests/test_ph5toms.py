@@ -5,6 +5,9 @@ Tests for ph5toms
 import unittest
 from ph5.clients.ph5toms import StationCut, PH5toMSeed
 import copy
+import os
+from ph5.core import ph5api
+from ph5.clients.ph5availability import PH5Availability
 
 
 class RestrictedRequest(object):
@@ -29,8 +32,155 @@ def get_restricted_request_testcase(st, et):
                              starttime=st, endtime=et)
 
 
-class TestPH5toMSeed(unittest.TestCase):
+class TestPH5CUT(unittest.TestCase):
 
+    def setUp(self):
+        super(TestPH5CUT, self).setUp()
+        self.home = os.getcwd()
+        self.ph5cut_object = ph5api.PH5(
+            path=os.path.join(self.home, 'ph5/test_data/ph5'),
+            nickname='master.ph5')
+
+    def tearDown(self):
+        self.ph5cut_object.close()
+        super(TestPH5CUT, self).tearDown()
+
+    def test_load_ph5(self):
+        """
+        Tries to load the PH5 test file.
+        Checks if it is an instance of ph5.core.ph5api.PH5
+        """
+        self.assertTrue(isinstance(self.ph5cut_object, ph5api.PH5))
+        self.assertTrue(self.ph5cut_object.ph5.isopen)
+
+    def test_experiment_t(self):
+        """
+        check reading of experiment table
+        """
+
+        # experiment table is initally empty
+        self.assertIsNone(self.ph5cut_object.Experiment_t)
+        # load experiment table and it shouldn't be empty
+
+        self.ph5cut_object.read_experiment_t()
+        self.assertIsNotNone(self.ph5cut_object.Experiment_t)
+
+        # keys should match
+        keys = ['experiment_id_s', 'net_code_s', 'nickname_s', 'longname_s',
+                'PIs_s', 'institutions_s', 'north_west_corner/X/value_d',
+                'north_west_corner/X/units_s', 'north_west_corner/Y/value_d',
+                'north_west_corner/Y/units_s', 'north_west_corner/Z/value_d',
+                'north_west_corner/Z/units_s',
+                'north_west_corner/coordinate_system_s',
+                'north_west_corner/projection_s',
+                'north_west_corner/ellipsoid_s',
+                'north_west_corner/description_s',
+                'south_east_corner/X/value_d', 'south_east_corner/X/units_s',
+                'south_east_corner/Y/value_d', 'south_east_corner/Y/units_s',
+                'south_east_corner/Z/value_d', 'south_east_corner/Z/units_s',
+                'south_east_corner/coordinate_system_s',
+                'south_east_corner/projection_s',
+                'south_east_corner/ellipsoid_s',
+                'south_east_corner/description_s', 'summary_paragraph_s',
+                'time_stamp/ascii_s', 'time_stamp/epoch_l',
+                'time_stamp/micro_seconds_i', 'time_stamp/type_s']
+        self.assertEqual(keys, self.ph5cut_object.Experiment_t['keys'])
+
+        # expect only one row in experiment table
+        self.assertEqual(1, len(self.ph5cut_object.Experiment_t['rows']))
+
+        # make sure experiment table matches what we think it should
+        experiment_t = self.ph5cut_object.Experiment_t['rows']
+        experiment_t[0]['net_code_s']
+        self.assertEqual(experiment_t[0]['net_code_s'], 'AA')
+        self.assertEqual(experiment_t[0]['experiment_id_s'], '99-999')
+        self.assertEqual(experiment_t[0]['nickname_s'], 'PH5 Test')
+        self.assertEqual(experiment_t[0]['longname_s'], 'PH5 TEST SET')
+        self.assertEqual(experiment_t[0]['PIs_s'], 'Derick Hess')
+        self.assertEqual(experiment_t[0]['institutions_s'], 'PASSCAL')
+
+        ph5availability = PH5Availability(self.ph5cut_object)
+        ph5tomseed = PH5toMSeed(self.ph5cut_object, out_dir=".",
+                                reqtype="FDSN", netcode=None,
+                                station=[], station_id=[],
+                                channel=[], location=['01'],
+                                component=[],
+                                array=None, shotline=[],
+                                eventnumbers=[], length=None,
+                                starttime=None, stoptime=None,
+                                offset=None, das_sn=None,
+                                use_deploy_pickup=True,
+                                decimation=None,
+                                sample_rate_keep=None,
+                                doy_keep=None, stream=False,
+                                reduction_velocity=-1,
+                                notimecorrect=True,
+                                format='MSEED')
+        self.ph5cut_object.read_array_t_names()
+        array_names = sorted(self.ph5cut_object.Array_t_names)
+        self.ph5cut_object.read_array_t('Array_t_001')
+        keys = ['id_s', 'location/X/value_d', 'location/X/units_s',
+                'location/Y/value_d', 'location/Y/units_s',
+                'location/Z/value_d', 'location/Z/units_s',
+                'location/coordinate_system_s', 'location/projection_s',
+                'location/ellipsoid_s', 'location/description_s',
+                'deploy_time/ascii_s', 'deploy_time/epoch_l',
+                'deploy_time/micro_seconds_i', 'deploy_time/type_s',
+                'pickup_time/ascii_s', 'pickup_time/epoch_l',
+                'pickup_time/micro_seconds_i', 'pickup_time/type_s',
+                'das/serial_number_s', 'das/model_s', 'das/manufacturer_s',
+                'das/notes_s', 'sensor/serial_number_s', 'sensor/model_s',
+                'sensor/manufacturer_s', 'sensor/notes_s', 'description_s',
+                'seed_band_code_s', 'sample_rate_i',
+                'sample_rate_multiplier_i', 'seed_instrument_code_s',
+                'seed_orientation_code_s', 'seed_location_code_s',
+                'seed_station_name_s', 'channel_number_i',
+                'receiver_table_n_i', 'response_table_n_i']
+
+        self.assertEqual(keys,
+                         self.ph5cut_object.Array_t['Array_t_001']['keys'])
+
+        # Block to get the table names from the array table
+        for array_name in array_names:
+            self.ph5cut_object.read_array_t(array_name)
+            arraybyid = self.ph5cut_object.Array_t[array_name]['byid']
+            arrayorder = self.ph5cut_object.Array_t[array_name]['order']
+
+            for ph5_station in arrayorder:
+                station_list = arraybyid.get(ph5_station)
+                for deployment in station_list:
+                    station_len = len(station_list[deployment])
+                    for st_num in range(0, station_len):
+                        st = station_list[deployment][st_num]
+                        ret = ph5availability.get_slc_info(st, '*', '*', '*')
+                        if ret == -1:
+                            continue
+                        ph5_seed_station, ph5_loc, ph5_channel = ret
+                        cuts = ph5tomseed.create_cut_list()
+                        for cut in cuts:
+                            self.assertEqual(str(cut),
+                                             'net_code: AAexperiment_id:'
+                                             + ' 99-999station:'
+                                             + ' 8001seed_station:'
+                                             + ' 8001array_code: 008location:'
+                                             + ' 01seed_channel: HLZcomponent:'
+                                             + ' 1das: 9EEFdas_manufacturer:'
+                                             + ' reftekdas_model:'
+                                             + ' rt130sensor_type:'
+                                             + ' guralp cmg-3tstarttime:'
+                                             + ' 1463568480.0endtime:'
+                                             + ' 1463568540.0sample_rate:'
+                                             + ' 100sample_rate_multiplier:'
+                                             + ' 1notimecorrect: Truelatitude:'
+                                             + ' 34.154673longitude:'
+                                             + ' -106.916169elev:'
+                                             + ' 1403.0receiver_n_i:'
+                                             + ' 0response_n_i: 1shot_id:'
+                                             + ' Noneshot_lat: Noneshot_lng:'
+                                             + ' Noneshot_elevation: None')
+
+
+class TestPH5toMSeed(unittest.TestCase):
     def test_get_nonrestricted_segments(self):
         """
         Tests get_nonrestricted_segments()

@@ -140,6 +140,7 @@ class PH5toMSeed(object):
 
     def __init__(self, ph5API_object, out_dir=".", reqtype="FDSN",
                  netcode=None, station=[], station_id=[], channel=[],
+                 location=[],
                  component=[], array=[], shotline=None, eventnumbers=None,
                  length=None, starttime=None, stoptime=None, offset=None,
                  das_sn=None, use_deploy_pickup=False, decimation=None,
@@ -161,6 +162,7 @@ class PH5toMSeed(object):
         self.sample_rate_list = sample_rate_keep
         self.doy_keep = doy_keep
         self.channel = channel
+        self.location = location
         self.netcode = netcode
         self.length = length
         self.out_dir = out_dir
@@ -531,7 +533,6 @@ class PH5toMSeed(object):
 
             else:
                 start_time = stc.starttime
-
             nt = stc.notimecorrect
 
             if stc.sample_rate > 0:
@@ -539,7 +540,6 @@ class PH5toMSeed(object):
                     stc.sample_rate) / float(stc.sample_rate_multiplier)
             else:
                 actual_sample_rate = 0
-
             if stc.sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
                                       stc.endtime,
@@ -693,6 +693,10 @@ class PH5toMSeed(object):
             cha_patterns = self.channel
             if not ph5utils.does_pattern_exists(cha_patterns, seed_channel):
                 return
+        if self.location:
+            loc_list = self.location
+            if not ph5utils.does_pattern_exists(loc_list, location):
+                return
         if self.das_sn and self.das_sn != das:
             return
 
@@ -729,7 +733,6 @@ class PH5toMSeed(object):
                     ph5api.fepoch(deploy, deploy_micro)
                 )
                 station_cut_times.append(sct)
-
         for sct in station_cut_times:
             start_fepoch = sct.time
             if self.reqtype == "SHOT" or self.reqtype == "RECEIVER":
@@ -957,7 +960,6 @@ class PH5toMSeed(object):
                         else:
                             seed_station = station_list[
                                 deployment][st_num]['id_s']
-
                         if self.station:
                             sta_patterns = self.station
                             if not ph5utils.does_pattern_exists(sta_patterns,
@@ -1050,6 +1052,13 @@ def get_args():
         type=str, dest="channel",
         help="Comma separated list of SEED channels to extract",
         metavar="channel",
+        default=[])
+
+    parser.add_argument(
+        "--location", action="store",
+        type=str, dest="location",
+        help="Comma separated list of SEED locations to extract",
+        metavar="location",
         default=[])
 
     parser.add_argument(
@@ -1188,6 +1197,8 @@ def main():
         args.component = args.component.split(',')
     if args.channel:
         args.channel = args.channel.split(',')
+    if args.location:
+        args.location = args.location.split(',')
 
     args.reqtype = args.reqtype.upper()
     args.format = args.format.upper()
@@ -1207,7 +1218,8 @@ def main():
         ph5ms = PH5toMSeed(ph5API_object, out_dir=args.out_dir,
                            reqtype=args.reqtype, netcode=args.network,
                            station=args.sta_list, station_id=args.sta_id_list,
-                           channel=args.channel, component=args.component,
+                           channel=args.channel, location=args.location,
+                           component=args.component,
                            array=args.array, shotline=args.shotline,
                            eventnumbers=args.eventnumbers, length=args.length,
                            starttime=args.start_time, stoptime=args.stop_time,
