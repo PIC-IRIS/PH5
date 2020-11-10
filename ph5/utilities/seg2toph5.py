@@ -252,14 +252,11 @@ def get_current_data_only(size_of_data, das=None):
 
 
 def update_external_references():
-    global EX, INDEX_T_DAS
-
     LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
-        i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
 
@@ -282,7 +279,6 @@ def update_external_references():
     for i in INDEX_T_MAP.rows:
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
-        i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
 
@@ -577,6 +573,11 @@ def main():
     seconds = time.time() - then
     print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
     LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
+    try:
+        EX.ph5close()
+        EXREC.ph5close()
+    except AttributeError:
+        pass
 
 
 if __name__ == '__main__':
