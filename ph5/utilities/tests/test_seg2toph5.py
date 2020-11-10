@@ -51,23 +51,31 @@ class TestSeg2toPH5_main(TempDirTestCase, LogTestCase):
             with OutputCapture():
                 with LogCapture():
                     seg2toph5.main()
-
         self.ph5object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
-        node = self.ph5object.ph5.get_node("/Experiment_g/Maps_g/")
+
         target_p1 = 'miniPH5_00001.ph5:/Experiment_g/Maps_g/'
+        targets = [target_p1 + n for n in data_nodes]
+
+        node = self.ph5object.ph5.get_node("/Experiment_g/Maps_g/")
         i = 0
+        ret_targets = []
         for n in self.ph5object.ph5.list_nodes(node):
             if hasattr(n, 'target'):
-                self.assertEqual(n.target, target_p1 + data_nodes[i])
+                ret_targets.append(n.target)
                 i += 1
+        self.assertEqual(ret_targets, targets)
+
+        target_p1 = 'miniPH5_00001.ph5:/Experiment_g/Receivers_g/'
+        targets = [target_p1 + n for n in data_nodes]
 
         node = self.ph5object.ph5.get_node("/Experiment_g/Receivers_g/")
-        target_p1 = 'miniPH5_00001.ph5:/Experiment_g/Receivers_g/'
         i = 0
+        ret_targets = []
         for n in self.ph5object.ph5.list_nodes(node):
             if hasattr(n, 'target'):
-                self.assertEqual(n.target, target_p1 + data_nodes[i])
+                ret_targets.append(n.target)
                 i += 1
+        self.assertEqual(ret_targets, targets)
 
     def test_update_external_references(self):
         self.ph5object = seg2toph5.EX = \

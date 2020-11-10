@@ -576,7 +576,7 @@ def main():
     try:
         EX.ph5close()
         EXREC.ph5close()
-    except AttributeError:
+    except NameError:
         pass
 
 
