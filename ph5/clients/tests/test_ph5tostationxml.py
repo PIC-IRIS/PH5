@@ -56,6 +56,28 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
 
+
+    def test_main_created_time_format(self):
+        # array_multideploy.kef: same station different deploy times
+        # => check if network time cover all or only the first 1
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ["array_multi_deploy.kef", "experiment.kef"])
+        testargs = ['ph5tostationxml', '-n', 'master',
+                    '--level', 'network', '-f', 'stationxml']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5tostationxml.main()
+                output = out.captured.strip().split("\n")
+                with open('/export/home/field/ph5.txt', 'w') as fp:
+                    fp.write(out.captured.strip())
+                self.assertEqual(
+                    output[1],
+                    "AA|PH5 TEST SET|2019-06-29T18:08:33|"
+                    "2019-09-28T14:29:39|1")
+
+
     def test_main_location(self):
         args = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', args):
