@@ -947,12 +947,11 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
         networks = [n for n in results if n is not None]
 
         if networks:
-            fmt = '%Y-%m-%dT%H:%M:%S.%f'
             inv = inventory.Inventory(
                                         networks=networks,
                                         source="PIC-PH5",
                                         sender="IRIS-PASSCAL-DMC-PH5",
-                                        created=datetime.now().strftime(fmt),
+                                        created=UTCDateTime.now(),
                                         module=("PH5 WEB SERVICE: metadata "
                                                 "| version: 1"),
                                         module_uri=uri)
