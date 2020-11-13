@@ -13,6 +13,8 @@ from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 from ph5.utilities import initialize_ph5
 
+from obspy.core.utcdatetime import UTCDateTime
+
 
 def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
               maxlon=None, lat=None, lon=None, minrad=None, maxrad=None):
@@ -70,12 +72,12 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
             with OutputCapture() as out:
                 ph5tostationxml.main()
                 output = out.captured.strip().split("\n")
-                with open('/export/home/field/ph5.txt', 'w') as fp:
-                    fp.write(out.captured.strip())
-                self.assertEqual(
-                    output[1],
-                    "AA|PH5 TEST SET|2019-06-29T18:08:33|"
-                    "2019-09-28T14:29:39|1")
+                timestr = output[6].split('>')[1].split('<')[0]
+                time = UTCDateTime(timestr)
+                convstr = str(time)
+
+                self.assertIn('T', timestr)
+                self.assertEqual(timestr, convstr)
 
 
     def test_main_location(self):
