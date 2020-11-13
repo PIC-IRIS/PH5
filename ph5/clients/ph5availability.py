@@ -401,7 +401,8 @@ class PH5Availability(object):
                             start_epoch=ph5_start_epoch,
                             stop_epoch=ph5_stop_epoch,
                             sample_rate=ph5_sample_rate,
-                            sample_rate_multiplier=ph5_multiplier)
+                            sample_rate_multiplier=ph5_multiplier,
+                            check_samplerate=False)
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
@@ -546,7 +547,8 @@ class PH5Availability(object):
                             start_epoch=ph5_start_epoch,
                             stop_epoch=ph5_stop_epoch,
                             sample_rate=ph5_sample_rate,
-                            sample_rate_multiplier=ph5_multiplier)
+                            sample_rate_multiplier=ph5_multiplier,
+                            check_samplerate=False)
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:

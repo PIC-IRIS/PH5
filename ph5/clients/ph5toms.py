@@ -515,7 +515,8 @@ class PH5toMSeed(object):
                                        stc.starttime,
                                        stc.endtime,
                                        stc.sample_rate,
-                                       stc.sample_rate_multiplier)
+                                       stc.sample_rate_multiplier,
+                                       check_samplerate=False)
             if not das:
                 return
             das = [x for x in das]

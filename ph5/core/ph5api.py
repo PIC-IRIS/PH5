@@ -766,7 +766,8 @@ class PH5(experiment.ExperimentGroup):
                     start_epoch=None,
                     stop_epoch=None,
                     sample_rate=None,
-                    sample_rate_multiplier=1):
+                    sample_rate_multiplier=1,
+                    check_samplerate=True):
         ''' Uses queries to get data from specific das table'''
         das_g = "Das_g_{0}".format(das)
         try:
@@ -828,7 +829,7 @@ class PH5(experiment.ExperimentGroup):
                             'time_table_n_i': row['time_table_n_i']
                             }
                 das.append(row_dict)
-        else:
+        elif check_samplerate is False:
             for row in tbl.where(
                  '(channel_number_i == '
                  + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000 >= '
@@ -859,6 +860,41 @@ class PH5(experiment.ExperimentGroup):
                             'time_table_n_i': row['time_table_n_i']
                             }
                 das.append(row_dict)
+        else:
+            for row in tbl.where(
+                '(channel_number_i == '
+                + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                + str(start_epoch) +
+                '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                '&(epoch_i+micro_seconds_i/1000000<='
+                + str(stop_epoch) + ')&(sample_rate_i==' +
+                str(sample_rate) +
+                ')&(sample_rate_multiplier_i==' +
+                str(sample_rate_multiplier) + ')'
+            ):
+                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
+                            'array_name_data_a': row['array_name_data_a'],
+                            'array_name_event_a': row['array_name_event_a'],
+                            'array_name_log_a': row['array_name_log_a'],
+                            'channel_number_i': row['channel_number_i'],
+                            'event_number_i': row['event_number_i'],
+                            'raw_file_name_s': row['raw_file_name_s'],
+                            'receiver_table_n_i': row['receiver_table_n_i'],
+                            'response_table_n_i': row['response_table_n_i'],
+                            'sample_count_i': row['sample_count_i'],
+                            'sample_rate_i': row['sample_rate_i'],
+                            'sample_rate_multiplier_i':
+                                row['sample_rate_multiplier_i'],
+                            'stream_number_i': row['stream_number_i'],
+                            'time/ascii_s': row['time/ascii_s'],
+                            'time/epoch_l': row['time/epoch_l'],
+                            'time/micro_seconds_i':
+                                row['time/micro_seconds_i'],
+                            'time/type_s': row['time/type_s'],
+                            'time_table_n_i': row['time_table_n_i']
+                            }
+                das.append(row_dict)
+
         return das
 
     def read_das_t(self, das, start_epoch=None, stop_epoch=None, reread=True):
