@@ -835,10 +835,7 @@ class PH5(experiment.ExperimentGroup):
                  + str(start_epoch) +
                  '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
                  '&(epoch_i+micro_seconds_i/1000000 <= '
-                 + str(stop_epoch) + ')&(sample_rate_i == '
-                 + str(sample_rate)
-                 + ')&(sample_rate_multiplier_i == '
-                 + str(sample_rate_multiplier) + ')'
+                 + str(stop_epoch) + ')'
                  ):
                 row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
                             'array_name_data_a': row['array_name_data_a'],

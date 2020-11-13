@@ -392,12 +392,16 @@ class PH5Availability(object):
                         chanum = st['channel_number_i']
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_sample_rate = st['sample_rate_i']
+                        ph5_multiplier = st['sample_rate_multiplier_i']
                         samplerate_return = None
                         Das_t = self.ph5.query_das_t(
                             ph5das,
                             chan=chanum,
                             start_epoch=ph5_start_epoch,
-                            stop_epoch=ph5_stop_epoch)
+                            stop_epoch=ph5_stop_epoch,
+                            sample_rate=ph5_sample_rate,
+                            sample_rate_multiplier=ph5_multiplier)
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
@@ -534,11 +538,15 @@ class PH5Availability(object):
                         channum = st['channel_number_i']
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_sample_rate = st['sample_rate_i']
+                        ph5_multiplier = st['sample_rate_multiplier_i']
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
                             chan=channum,
                             start_epoch=ph5_start_epoch,
-                            stop_epoch=ph5_stop_epoch)
+                            stop_epoch=ph5_stop_epoch,
+                            sample_rate=ph5_sample_rate,
+                            sample_rate_multiplier=ph5_multiplier)
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
