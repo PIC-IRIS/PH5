@@ -11,7 +11,6 @@ import multiprocessing
 import logging
 import pickle
 
-from datetime import datetime
 from obspy.core import inventory
 from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
