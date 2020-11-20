@@ -67,13 +67,19 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
                    ["array_multi_deploy.kef", "experiment.kef"])
         testargs = ['ph5tostationxml', '-n', 'master',
                     '--level', 'network', '-f', 'stationxml']
+
+        try:
+            from obspy.io.stationxml.core import _format_time as fmt
+        except (ImportError, AttributeError) as e:
+            fmt = UTCDateTime.__str__
+
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5tostationxml.main()
                 output = out.captured.strip().split("\n")
                 timestr = output[6].split('>')[1].split('<')[0]
                 time = UTCDateTime(timestr)
-                convstr = str(time)
+                convstr = fmt(time)
 
                 self.assertIn('T', timestr)
                 self.assertEqual(timestr, convstr)
