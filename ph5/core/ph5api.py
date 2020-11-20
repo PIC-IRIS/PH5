@@ -788,11 +788,7 @@ class PH5(experiment.ExperimentGroup):
         sample_rate_multiplier_i = \
             tbl.cols.sample_rate_multiplier_i  # noqa
         sample_rate_i = tbl.cols.sample_rate_i  # noqa
-        epoch_i = epoch_i
-        micro_seconds_i = micro_seconds_i
-        sample_count_i = sample_count_i
-        sample_rate_multiplier_i = sample_rate_multiplier_i
-        sample_rate_i = sample_rate_i
+
         das = []
         if not start_epoch:
             start_epoch = 0
@@ -832,18 +828,29 @@ class PH5(experiment.ExperimentGroup):
                 das.append(row_dict)
 
         else:
+            # In Experiment.py.ReceiversGroup.read_das(),
+            # sample_rate_multiplier_i is set to 1 if its value is 0.
+            # To be consistent with that query_das_t need to treat
+            # sample_rate_multiplier_i that equals to 0 as if it equals to 1
             for row in tbl.where(
                     '(channel_number_i == '
-                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000<='
+                    + str(stop_epoch) + ')&(sample_rate_i==' + str(sample_rate)
+                    + ')&( ((sample_rate_multiplier_i!=0)&'
+                    + '(epoch_i+micro_seconds_i/1000000>='
                     + str(start_epoch) +
                     '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                    '&(epoch_i+micro_seconds_i/1000000<='
-                    + str(stop_epoch) + ')&(sample_rate_i==' +
-                    str(sample_rate) +
-                    ')&(sample_rate_multiplier_i==' +
-                    str(sample_rate_multiplier) + ')'
+                    + '&(sample_rate_multiplier_i=='
+                    + str(sample_rate_multiplier)
+                    + ')) | ( (sample_rate_multiplier_i==0)&'
+                    + '(epoch_i+micro_seconds_i/1000000>='
+                    + str(start_epoch) +
+                    '-sample_count_i/sample_rate_i/1)'
+                    + '&(1==' + str(sample_rate_multiplier) + ')) )'
             ):
 
+                srm = row['sample_rate_multiplier_i']
+                srm = srm if srm != 0 else 1
                 row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
                             'array_name_data_a': row['array_name_data_a'],
                             'array_name_event_a': row['array_name_event_a'],
@@ -855,8 +862,7 @@ class PH5(experiment.ExperimentGroup):
                             'response_table_n_i': row['response_table_n_i'],
                             'sample_count_i': row['sample_count_i'],
                             'sample_rate_i': row['sample_rate_i'],
-                            'sample_rate_multiplier_i':
-                                row['sample_rate_multiplier_i'],
+                            'sample_rate_multiplier_i': srm,
                             'stream_number_i': row['stream_number_i'],
                             'time/ascii_s': row['time/ascii_s'],
                             'time/epoch_l': row['time/epoch_l'],
