@@ -70,7 +70,7 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
 
         try:
             from obspy.io.stationxml.core import _format_time as fmt
-        except (ImportError, AttributeError) as e:
+        except ImportError:
             fmt = UTCDateTime.__str__
 
         with patch.object(sys, 'argv', testargs):
