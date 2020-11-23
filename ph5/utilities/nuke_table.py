@@ -195,6 +195,7 @@ def backup(table_type, table_path, table):
             "Failed to save {0}.\ne.message\nExiting!"
             .format(os.path.join(os.getcwd(), outfile)))
         sys.exit(-4)
+    return outfile
 
 
 def exclaim(n):
