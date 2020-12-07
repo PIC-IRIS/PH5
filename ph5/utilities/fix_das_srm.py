@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 
-from ph5.core import ph5api
+from ph5.core import ph5api, experiment
 from ph5.utilities import nuke_table, kef2ph5 as K2T, tabletokef as T2K
 from ph5 import LOGGING_FORMAT
 
@@ -70,7 +70,7 @@ def set_logger():
     LOGGER.addHandler(ch)
 
 
-def delete_das(ex, das_sn):
+def delete_das(ph5object, das_sn):
     """
     Delete das table with serial number das_sn from ex
     :param ex: experiment where the das table will be deleted (experiment)
@@ -80,31 +80,35 @@ def delete_das(ex, das_sn):
     T2K.LOGGER = LOGGER
     nuke_table.LOGGER = LOGGER
     T2K.init_local()
-    T2K.EX = ex
+    T2K.EX = ph5object
     nuke_table.NO_BACKUP = False
     table_type = 'Das_t_{0}'.format(das_sn)
-    T2K.DAS_TABLE = das_sn
-    T2K.read_receivers(das_sn)
-    if das_sn in T2K.DAS_T.keys():
-        backupfile = nuke_table.backup(
-            table_type,
-            '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das_sn),
-            T2K.DAS_T[das_sn])
-        ex.ph5_g_receivers.nuke_das_t(das_sn)
-        LOGGER.info('Nuke/Experiment_g/Receivers_g/Das_g_%s/Das_t.' % das_sn)
+    das = ph5object.ph5_g_receivers.getdas_g(das_sn)
+    if das is None:
+        raise Exception(1, 'DAS %s not exist.' % das_sn)
+    ph5object.ph5_g_receivers.setcurrent(das)
+    das, das_keys = experiment.read_table(
+        ph5object.ph5_g_receivers.current_t_das)
+    DAS_T = T2K.Rows_Keys(das, das_keys)
+    backupfile = nuke_table.backup(
+        table_type,
+        '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das_sn),
+        DAS_T)
+    ph5object.ph5_g_receivers.nuke_das_t(das_sn)
+    LOGGER.info('Nuke /Experiment_g/Receivers_g/Das_g_%s/Das_t.' % das_sn)
     return backupfile
 
 
-def fix_srm_in_kef(startfilename, fixedfilename):
+def fix_srm_in_kef(startfilepath, fixedfilepath):
     """
     Correct sample rate multiplier (srm) in das table kef file:
         + replace srm=0 with srm=1
         + add srm=1 for each data row if there is no srm
-    :param startfilename: name of kef file for das table (str)
-    :param fixedfilename: name of kef file in which srms are fixed (str)
+    :param startfilepath: name of kef file for das table (str)
+    :param fixedfilepath: name of kef file in which srms are fixed (str)
     """
-    startfile = open(startfilename, 'r')
-    fixedfile = open(fixedfilename, 'w')
+    startfile = open(startfilepath, 'r')
+    fixedfile = open(fixedfilepath, 'w')
     content = startfile.read()
     # occurrences of sample rate multiplier
     srm_occ = [i for i in range(len(content))
@@ -126,25 +130,25 @@ def fix_srm_in_kef(startfilename, fixedfilename):
     startfile.close()
     fixedfile.close()
     LOGGER.info('Fix Sample Rate Multiplier in %s and save in %s.'
-                % (startfilename, fixedfilename))
+                % (startfilepath, fixedfilepath))
 
 
-def add_fixed_table(ex, ph5, fixedfilename):
+def add_fixed_table(ex, ph5, fixedfilepath):
     """
     Add fixed kef file to ex in which table has been removed.
     The fixed kef file will be deleted after added to ex.
     :param ex: experiment where the das table has been deleted (experiment)
     :param ph5: name of the processed ph5 file (str)
-    :param fixedfilename: name of the fixed kef file to be added
+    :param fixedfilepath: name of the fixed kef file to be added
         to the experiment (str)
     """
     K2T.LOGGER = LOGGER
     K2T.EX = ex
-    K2T.KEFFILE = fixedfilename
+    K2T.KEFFILE = fixedfilepath
     K2T.TRACE = False
     K2T.PH5 = ph5
     K2T.populateTables()
-    os.unlink(fixedfilename)
+    os.unlink(fixedfilepath)
 
 
 def process_das(ex, ph5, das_sn):
@@ -156,11 +160,11 @@ def process_das(ex, ph5, das_sn):
     :param das_sn: serial number of das table of which srm need
         to be corrected (str)
     """
-    fixedfilename = 'fixed.kef'
+    fixedfilepath = 'fixed.kef'
     LOGGER.info('>>> Processing Das: %s' % das_sn)
     backupfile = delete_das(ex, das_sn)
-    fix_srm_in_kef(backupfile, fixedfilename)
-    add_fixed_table(ex, ph5, fixedfilename)
+    fix_srm_in_kef(backupfile, fixedfilepath)
+    add_fixed_table(ex, ph5, fixedfilepath)
 
 
 def main():
