@@ -212,6 +212,7 @@ class PH5toMSeed(object):
     def filenamemseed_gen(self, stream):
 
         s = stream.traces[0].stats
+        print(s)
         new_start = s.starttime.isoformat()
         try:
             rounded = ph5utils.roundSeconds(

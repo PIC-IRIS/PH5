@@ -36,4 +36,13 @@ cd error
 mstoph5 -n master.ph5 -r ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
 keftoph5 -n master.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
 
+cd ../../
+mkdir availability
+cd availability
+keftoph5 -n master.ph5 -k ../../availability/Availability_all_arrays.kef
+keftoph5 -n master.ph5 -k ../../availability/Expirement_Availability.kef
+keftoph5 -n master.ph5 -k ../../availability/Receiver_Availability.kef
+mstoph5 -n master.ph5 -d ../../availability
+keftoph5 -n master.ph5 -k ../../availability/Das_Availability.kef
+
 echo "Finished creating test PH5"
