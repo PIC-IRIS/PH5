@@ -160,7 +160,7 @@ ph5.clients.ph5torec
  * print to stdout by default
  -ph5.clients.ph5toms
  * Add ph5toms support for the web service GeoCSV timeseries data format.
-
+ * Pull sample rate directly from DAS tables rather than PH5toMSeed.get_nonrestricted_segments. Allows ph5toms to work with data which != 100 Hz
 v4.1.1:
 -ph5.clients.ph5toexml
  * Fix case where station does not have a key of 1

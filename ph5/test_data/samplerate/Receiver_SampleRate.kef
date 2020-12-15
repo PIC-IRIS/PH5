@@ -1,0 +1,27 @@
+#
+#	Fri Oct 23 22:49:33 2020	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Receivers_g/Receiver_t
+	orientation/azimuth/value_f=0.0
+	orientation/azimuth/units_s=degrees
+	orientation/dip/value_f=90.0
+	orientation/dip/units_s=degrees
+	orientation/description_s=Z
+
+#   Table row 2
+/Experiment_g/Receivers_g/Receiver_t
+	orientation/azimuth/value_f=0.0
+	orientation/azimuth/units_s=degrees
+	orientation/dip/value_f=0.0
+	orientation/dip/units_s=degrees
+	orientation/description_s=N
+
+#   Table row 3
+/Experiment_g/Receivers_g/Receiver_t
+	orientation/azimuth/value_f=90.0
+	orientation/azimuth/units_s=degrees
+	orientation/dip/value_f=0.0
+	orientation/dip/units_s=degrees
+	orientation/description_s=E
+
