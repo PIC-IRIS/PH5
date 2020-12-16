@@ -36,4 +36,23 @@ cd error
 mstoph5 -n master.ph5 -r ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
 keftoph5 -n master.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
 
+cd ../../
+mkdir response_table_n_i
+cd response_table_n_i
+pwd
+initialize_ph5 -n master.ph5
+metadatatoph5 -n master.ph5 -f ../../metadata/station.xml
+mstoph5 -n master.ph5 -d ../../miniseed/
+keftoph5 -n master.ph5 -k ../../metadata/experiment.kef
+resp_load -n master.ph5 -a 1,8,9 -i ../../metadata/input.csv
+time_kef_gen -n master.ph5 -o ../../metadata/time.kef
+keftoph5 -n master.ph5 -k ../../metadata/time.kef
+keftoph5 -n master -k ../../metadata/event_t.kef
+sort_kef_gen -n master.ph5 -a > ../../metadata/sort_t.kef
+keftoph5 -n master -k ../../metadata/sort_t.kef
+geo_kef_gen -n master.ph5 > ../../metadata/offset_t.kef
+keftoph5 -n master -k ../../metadata/offset_t.kef
+nuke_table -n master.ph5 --all_arrays
+keftoph5 -n master.ph5 -k ../../response_table_n_i/Response_ni_all_arrays.kef
+
 echo "Finished creating test PH5"
