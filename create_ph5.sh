@@ -41,10 +41,9 @@ mkdir response_table_n_i
 cd response_table_n_i
 pwd
 initialize_ph5 -n master.ph5
-metadatatoph5 -n master.ph5 -f ../../metadata/station.xml
-mstoph5 -n master.ph5 -d ../../miniseed/
+metadatatoph5 -n master.ph5 -f ../../response_table_n_i/station_response.xml
+mstoph5 -n master.ph5 -d ../../response_table_n_i/miniseed/
 keftoph5 -n master.ph5 -k ../../metadata/experiment.kef
-resp_load -n master.ph5 -a 1,8,9 -i ../../metadata/input.csv
 time_kef_gen -n master.ph5 -o ../../metadata/time.kef
 keftoph5 -n master.ph5 -k ../../metadata/time.kef
 keftoph5 -n master -k ../../metadata/event_t.kef

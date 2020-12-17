@@ -1,5 +1,5 @@
 #
-#	Wed Dec 16 23:23:58 2020	ph5 version: 4.1.2
+#	Thu Dec 17 22:11:56 2020	ph5 version: 4.1.2
 #
 #   Table row 1
 /Experiment_g/Sorts_g/Array_t_001
@@ -43,7 +43,7 @@
 	response_table_n_i=0
 
 #
-#	Wed Dec 16 23:23:58 2020	ph5 version: 4.1.2
+#	Thu Dec 17 22:11:56 2020	ph5 version: 4.1.2
 #
 #   Table row 1
 /Experiment_g/Sorts_g/Array_t_002
@@ -84,49 +84,5 @@
 	seed_station_name_s=0407
 	channel_number_i=1
 	receiver_table_n_i=1
-	response_table_n_i=1_breakTest
-
-#
-#	Wed Dec 16 23:23:58 2020	ph5 version: 4.1.2
-#
-#   Table row 1
-/Experiment_g/Sorts_g/Array_t_003
-	id_s=0407
-	location/X/value_d=94.88888
-	location/X/units_s=degrees
-	location/Y/value_d=73.77777
-	location/Y/units_s=degrees
-	location/Z/value_d=90.0
-	location/Z/units_s=m
-	location/coordinate_system_s=
-	location/projection_s=
-	location/ellipsoid_s=
-	location/description_s=
-	deploy_time/ascii_s=2018-12-17T23:10:03
-	deploy_time/epoch_l=1545088203
-	deploy_time/micro_seconds_i=0
-	deploy_time/type_s=BOTH
-	pickup_time/ascii_s=2019-01-14T18:12:05
-	pickup_time/epoch_l=1547489525
-	pickup_time/micro_seconds_i=0
-	pickup_time/type_s=BOTH
-	das/serial_number_s=5553
-	das/model_s=None Q330
-	das/manufacturer_s=None
-	das/notes_s=None
-	sensor/serial_number_s=None
-	sensor/model_s=None CMG-3T
-	sensor/manufacturer_s=None
-	sensor/notes_s=None CMG-3T/None Q330
-	description_s=
-	seed_band_code_s=L
-	sample_rate_i=0
-	sample_rate_multiplier_i=1
-	seed_instrument_code_s=O
-	seed_orientation_code_s=G
-	seed_location_code_s=
-	seed_station_name_s=0407
-	channel_number_i=-2
-	receiver_table_n_i=1
-	response_table_n_i=-1
+	response_table_n_i=TEST_FAIL
 
