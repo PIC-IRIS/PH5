@@ -396,5 +396,28 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
             self.assertEqual(ret.stations[0].code, '1115')
 
 
+class TestPH5toStationXML_Response_NI_MISMATCH(LogTestCase, TempDirTestCase):
+    def test_Response_NI_MISMATCH(self):
+        # Uncomment line 401 and comment line 402 to prove test
+        # datapath = '../../test_data/ph5/'
+        datapath = '../../test_data/ph5/response_table_n_i'
+        self.ph5_path_eror = os.path.join(self.home,
+                                          datapath)
+        self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_eror,
+                                                        "master.ph5",
+                                                        "RESPONSE")
+        self.parser.add_ph5_stationids()
+        station = self.parser.read_stations()
+        self.assertEqual(len(station[0].channels[0].
+                         response._get_overall_sensitivity_and_gain()), 2)
+        try:
+            station[0].channels[1].response._get_overall_sensitivity_and_gain()
+        except IndexError:
+            self.mng.ph5.close()
+            self.fail("Response information is not present"
+                      + " in output stationxml.")
+        self.mng.ph5.close()
+
+
 if __name__ == "__main__":
     unittest.main()
