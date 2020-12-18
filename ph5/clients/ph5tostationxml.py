@@ -23,7 +23,7 @@ from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.utilities import validation
 
-PROG_VERSION = '2019.63'
+PROG_VERSION = 'Rollback.Temp.2020.353'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -103,47 +103,47 @@ def get_args():
     parser.add_argument("--level", action="store", default="channel",
                         help=("Specify level of detail using network, "
                               "station, channel,or response"),
-                        type=str, metavar="level")
+                        type=str, dest="level", metavar="level")
 
     parser.add_argument("--minlat", action="store",
                         help=("Limit to stations with a latitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, metavar="minlat")
+                        type=float, dest="minlat", metavar="minlat")
 
     parser.add_argument("--maxlat", action="store",
                         help=("Limit to stations with a latitude smaller than "
                               "or equal to the specified maximum."),
-                        type=float, metavar="maxlat")
+                        type=float, dest="maxlat", metavar="maxlat")
 
     parser.add_argument("--minlon", action="store",
                         help=("Limit to stations with a longitude larger than "
                               "or equal to the specified minimum."),
-                        type=float, metavar="minlon")
+                        type=float, dest="minlon", metavar="minlon")
 
     parser.add_argument("--maxlon", action="store",
                         help=("Limit to stations with a longitude smaller "
                               "than or equal to the specified maximum."),
-                        type=float, metavar="maxlon")
+                        type=float, dest="maxlon", metavar="maxlon")
 
     parser.add_argument("--latitude", action="store",
                         help=("Specify the central latitude point for a "
                               "radial geographic constraint."),
-                        type=float, metavar="latitude")
+                        type=float, dest="latitude", metavar="latitude")
 
     parser.add_argument("--longitude", action="store",
                         help=("Specify the central longitude point for a "
                               "radial geographic constraint."),
-                        type=float, metavar="longitude")
+                        type=float, dest="longitude", metavar="longitude")
 
     parser.add_argument("--minradius", action="store",
                         help=("Specify minimum distance from the geographic "
                               "point defined by latitude and longitude."),
-                        type=float, metavar="minradius")
+                        type=float, dest="minradius", metavar="minradius")
 
     parser.add_argument("--maxradius", action="store",
                         help=("Specify maximum distance from the geographic "
                               "point defined by latitude and longitude."),
-                        type=float, metavar="maxradius")
+                        type=float, dest="maxradius", metavar="maxradius")
 
     parser.add_argument("--uri", action="store", default="",
                         type=str, metavar="uri")
@@ -295,13 +295,6 @@ class PH5toStationXMLParser(object):
         self.receiver_table_n_i = None
         self.total_number_stations = 0
         self.unique_errors = set()
-        self.checked_data_files = {}
-        self.unique_filenames_n_i = []
-        self.manager.ph5.read_response_t()
-        validation.check_resp_unique_n_i(
-            self.manager.ph5, self.unique_errors, None)
-        self.resp_load_already = validation.check_resp_load(
-            self.manager.ph5.Response_t, self.unique_errors, None)
 
     def check_intersection(self, sta_xml_obj, latitude, longitude):
         """
@@ -411,37 +404,26 @@ class PH5toStationXMLParser(object):
         else:
             return
 
-    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id, spr, spr_m):
-        if not self.resp_load_already:
-            return Response()
+    def get_response_inv(self, obs_channel):
+
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
-        info = {'n_i': self.response_table_n_i,
-                'array': a_id,
-                'sta': sta_id,
-                'cha_id': cha_id,
-                'cha_code': obs_channel.code,
-                'dmodel': obs_channel.data_logger.model,
-                'smodel': obs_channel.sensor.model,
-                'spr': spr,
-                'sprm': spr_m,
-                }
-        if info['dmodel'].startswith("ZLAND"):
-            info['smodel'] = ''
-        check_info = validation.check_response_info(
-            info, self.manager.ph5, self.unique_filenames_n_i,
-            self.checked_data_files, self.unique_errors, None)
-
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
-            if not check_info:
+            self.manager.ph5.read_response_t()
+            Response_t = \
+                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
+            if Response_t:
+                response_file_das_a_name = Response_t.get(
+                    'response_file_das_a', None)
+                response_file_sensor_a_name = Response_t.get(
+                    'response_file_sensor_a', None)
+            else:
+                LOGGER.error('Response table not found')
                 return Response()
-
-            response_file_das_a_name, response_file_sensor_a_name = check_info
-
             # parse datalogger response
             if response_file_das_a_name:
                 response_file_das_a = \
@@ -642,6 +624,7 @@ class PH5toStationXMLParser(object):
         if self.experiment_t == []:
             LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
             return
+
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
@@ -899,10 +882,8 @@ class PH5toStationXMLParser(object):
                     # read response and add it to obspy channel inventory
                     self.response_table_n_i = \
                         station_entry['response_table_n_i']
-                    obs_channel.response = self.get_response_inv(
-                            obs_channel, array_code, sta_code, c_id,
-                            station_entry['sample_rate_i'],
-                            station_entry['sample_rate_multiplier_i'])
+                    obs_channel.response = \
+                        self.get_response_inv(obs_channel)
 
                     all_channels.append(obs_channel)
         return all_channels
