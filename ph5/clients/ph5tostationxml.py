@@ -147,6 +147,10 @@ def get_args():
 
     parser.add_argument("--uri", action="store", default="",
                         type=str, metavar="uri")
+
+    parser.add_argument("-E", "--emp_resp", action='store', default=False,
+                        help='Print out Empty Response for debugging',
+                        type=bool)
     args = parser.parse_args()
     return args
 
@@ -175,7 +179,7 @@ class PH5toStationXMLRequest(object):
                  minlatitude=None, maxlatitude=None, minlongitude=None,
                  maxlongitude=None, latitude=None, longitude=None,
                  minradius=None, maxradius=None, start_time=None,
-                 end_time=None):
+                 end_time=None, emp_resp=None):
 
         self.network_list = network_list
         self.reportnum_list = reportnum_list
@@ -195,6 +199,7 @@ class PH5toStationXMLRequest(object):
         self.maxradius = maxradius
         self.start_time = start_time
         self.end_time = end_time
+        self.emp_resp = emp_resp
         self.ph5_station_id_list = []  # updated by PH5toStationXMLParser
 
         # assign default values
@@ -296,12 +301,9 @@ class PH5toStationXMLParser(object):
         self.total_number_stations = 0
         self.unique_errors = set()
         self.checked_data_files = {}
-        self.unique_filenames_n_i = []
         self.manager.ph5.read_response_t()
         validation.check_resp_unique_n_i(
             self.manager.ph5, self.unique_errors, None)
-        self.resp_load_already = validation.check_resp_load(
-            self.manager.ph5.Response_t, self.unique_errors, None)
 
     def check_intersection(self, sta_xml_obj, latitude, longitude):
         """
@@ -411,9 +413,9 @@ class PH5toStationXMLParser(object):
         else:
             return
 
-    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id, spr, spr_m):
-        if not self.resp_load_already:
-            return Response()
+    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id,
+                         spr, spr_m, emp_resp):
+
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
@@ -431,15 +433,18 @@ class PH5toStationXMLParser(object):
                 }
         if info['dmodel'].startswith("ZLAND"):
             info['smodel'] = ''
-        check_info = validation.check_response_info(
-            info, self.manager.ph5, self.unique_filenames_n_i,
-            self.checked_data_files, self.unique_errors, None)
-
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
-            if not check_info:
-                return Response()
+            check_info = validation.check_response_info(
+                info, self.manager.ph5,
+                self.checked_data_files, self.unique_errors, None)
 
+            if check_info[0] is False:
+                if emp_resp:
+                    self.unique_errors.add((check_info[1], 'error'))
+                    return Response()
+                else:
+                    raise PH5toStationXMLError(check_info[1])
             response_file_das_a_name, response_file_sensor_a_name = check_info
 
             # parse datalogger response
@@ -663,6 +668,11 @@ class PH5toStationXMLParser(object):
                                     self.experiment_t[0]['experiment_id_s']):
             self.manager.ph5.close()
             return
+
+        resp_load_already = validation.check_resp_load(
+            self.manager.ph5.Response_t, self.unique_errors, None)
+        if not resp_load_already:
+            raise PH5toStationXMLError(resp_load_already)
 
         # update requests list to include ph5 station ids
         self.add_ph5_stationids()
@@ -902,7 +912,8 @@ class PH5toStationXMLParser(object):
                     obs_channel.response = self.get_response_inv(
                             obs_channel, array_code, sta_code, c_id,
                             station_entry['sample_rate_i'],
-                            station_entry['sample_rate_multiplier_i'])
+                            station_entry['sample_rate_multiplier_i'],
+                            sta_xml_obj.emp_resp)
 
                     all_channels.append(obs_channel)
         return all_channels
@@ -927,7 +938,8 @@ def execute(path, args_dict_list, nickname, level, out_format):
                             maxradius=args_dict.get('maxradius'),
                             minradius=args_dict.get('minradius'),
                             start_time=args_dict.get('start_time'),
-                            end_time=args_dict.get('end_time')
+                            end_time=args_dict.get('end_time'),
+                            emp_resp=args_dict.get('emp_resp')
                             )
                for args_dict in args_dict_list]
 
