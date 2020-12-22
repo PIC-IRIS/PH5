@@ -331,30 +331,32 @@ class PH5Validate(object):
             "check will be ceased to process.")
         header = ("-=-=-=-=-=-=-=-=-\n"
                   "Response_t\n"
-                  "%s error, 0 warning, 0 info\n"
+                  "%s error, %s warning, 0 info\n"
                   "-=-=-=-=-=-=-=-=-\n")
         checked_data_files = {}
-        unique_filenames_n_i = []
         self.ph5.read_response_t()
         errors = set()
         if not validation.check_resp_load(
                 self.ph5.Response_t, errors, LOGGER):
-            header %= len(errors)
+            header %= (len(errors), 0)
             return [ValidationBlock(heading=header, error=errors)]
 
         for info in resp_check_info:
             # check file name and response data loaded
-            validation.check_response_info(info,
-                                           self.ph5,
-                                           unique_filenames_n_i,
-                                           checked_data_files,
-                                           errors,
-                                           None)
+            check_info = validation.check_response_info(info,
+                                                        self.ph5,
+                                                        checked_data_files,
+                                                        errors,
+                                                        None)
+            if check_info[0] is False:
+                errors.add((check_info[1], 'error'))
 
         validation.check_resp_unique_n_i(self.ph5, errors, LOGGER)
 
-        header %= len(errors)
-        return [ValidationBlock(heading=header, error=errors)]
+        err = [e[0] for e in errors if e[1] == 'error']
+        warn = [w[0] for w in errors if w[1] == 'warning']
+        header %= (len(err), len(warn))
+        return [ValidationBlock(heading=header, error=err, warning=warn)]
 
     def check_station_completeness(self, station):
         """
