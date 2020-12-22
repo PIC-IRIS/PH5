@@ -61,30 +61,29 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
         self.assertEqual(resp_check_info, self.resp_check_info)
 
     def test_check_response_t(self):
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            ret = self.ph5validate.check_response_t(self.resp_check_info)
-            self.assertEqual(ret[0].error, set())
-            self.assertEqual(log.records, [])
-
         self.resp_check_info[9]['spr'] = 100
         self.resp_check_info[9]['smodel'] = 'cmg3t'
 
-        errors = [
-            "009-9001-1 response_table_n_i 4: Response sensor file name "
-            "should be 'cmg3t' instead of 'gs11v'.",
-            "009-9001-1 response_table_n_i 4: Response das file name should "
-            "be 'rt125a_100_1_32' instead of 'rt125a_500_1_32'."]
+        errors = {'array 004, station 0407, channel -2, response_table_n_i -1:'
+                  ' Metadata response with n_i=-1 has no response data.'}
+        warnings = {
+            "array 009, station 9001, channel 1, response_table_n_i 4: "
+            "response_file_sensor_a 'gs11v' is inconsistence with "
+            "model(s) cmg3t.",
+            "array 009, station 9001, channel 1, response_table_n_i 4: "
+            "response_file_das_a 'rt125a_500_1_32' is inconsistence with "
+            "model(s) 'cmg3t' and 'rt125a'; sr=100 srm=1 gain=32 'cha=DPZ'."}
         with LogCapture() as log:
-            log.setLevel(logging.ERROR)
+            log.setLevel(logging.WARNING)
             ret = self.ph5validate.check_response_t(self.resp_check_info)
-            self.assertEqual(ret[0].error, {(err, 'error') for err in errors})
-            for i in range(len(log.records)):
-                self.assertEqual(log.records[i].msg, errors[i])
+            self.assertEqual(set(ret[0].error), errors)
+            self.assertEqual(set(ret[0].warning), warnings)
+            # check_response_t only print logs to file, not stdout
+            self.assertEqual(len(log.records), 0)
             self.assertEqual(ret[0].heading,
                              "-=-=-=-=-=-=-=-=-\n"
                              "Response_t\n"
-                             "2 error, 0 warning, 0 info\n"
+                             "1 error, 2 warning, 0 info\n"
                              "-=-=-=-=-=-=-=-=-\n"
                              )
 
@@ -431,8 +430,8 @@ class TestPH5Validate_resp_load_not_run(LogTestCase, TempDirTestCase):
             ret = self.ph5validate.check_response_t([])
             self.assertEqual(
                 ret[0].error,
-                {('All response file names are blank in response table. '
-                  'Check if resp_load has been run.', 'error')})
+                ['All response file names are blank in response table. '
+                 'Check if resp_load has been run.'])
             self.assertEqual(
                 log.records[0].msg,
                 'All response file names are blank in response table. '
