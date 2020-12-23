@@ -148,9 +148,8 @@ def get_args():
     parser.add_argument("--uri", action="store", default="",
                         type=str, metavar="uri")
 
-    parser.add_argument("-E", "--emp_resp", action='store', default=False,
-                        help='Print out Empty Response for debugging',
-                        type=bool)
+    parser.add_argument("-E", "--emp_resp", action='store_true', default=False,
+                        help='Print out Empty Response for debugging')
     args = parser.parse_args()
     return args
 
