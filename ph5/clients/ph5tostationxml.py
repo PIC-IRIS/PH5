@@ -100,9 +100,11 @@ def get_args():
                               "time format"),
                         type=str, dest="end_time", metavar="end_time")
 
-    parser.add_argument("--level", action="store", default="channel",
-                        help=("Specify level of detail using network, "
-                              "station, channel,or response"),
+    parser.add_argument("--level", action="store", default="RESPONSE",
+                        help=("Specify level of detail using NETWORK, "
+                              "STATION, CHANNEL, or RESPONSE."
+                              " Default: RESPONSE"),
+                        choices=('NETWORK', 'STATION', 'CHANNEL', 'RESPONSE'),
                         type=str, metavar="level")
 
     parser.add_argument("--minlat", action="store",

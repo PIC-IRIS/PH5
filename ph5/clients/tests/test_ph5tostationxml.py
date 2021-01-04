@@ -57,7 +57,7 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                    ["array_multi_deploy.kef", "experiment.kef",
                     "response_t.kef"])
         testargs = ['ph5tostationxml', '-n', 'master',
-                    '--level', 'network', '-f', 'text']
+                    '--level', 'NETWORK', '-f', 'text']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5tostationxml.main()
@@ -131,10 +131,6 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
 
 
 class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
-    def tearDown(self):
-        self.mng.ph5.close()
-        super(TestPH5toStationXMLParser_no_experiment, self).tearDown()
-
     def test_read_networks(self):
         kef_to_ph5(self.tmpdir, 'master.ph5', '', [])
         self.ph5sxml, self.mng, self.parser = getParser(
@@ -144,6 +140,35 @@ class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
             self.assertIsNone(ret)
             self.assertEqual(log.records[0].msg,
                              'No experiment_t in ./master.ph5')
+        self.mng.ph5.close()
+
+    def test_get_args(self):
+        # check default level
+        testargs = ['ph5tostationxml', '-n', 'master.ph5']
+        with OutputCapture() as out:
+            with patch.object(sys, 'argv', testargs):
+                args = ph5tostationxml.get_args()
+                self.assertEqual(args.level, 'RESPONSE')
+
+        # check setting a level
+        testargs = ['ph5tostationxml', '-n', 'master.ph5',
+                    '--level', 'CHANNEL']
+        with OutputCapture() as out:
+            with patch.object(sys, 'argv', testargs):
+                args = ph5tostationxml.get_args()
+                self.assertEqual(args.level, 'CHANNEL')
+
+        # wrong level
+        testargs = ['ph5tostationxml', '-n', 'master.ph5', '--level', 'CHAN']
+        with OutputCapture() as out:
+            with patch.object(sys, 'argv', testargs):
+                with self.assertRaises(SystemExit):
+                    ph5tostationxml.get_args()
+            self.assertEqual(
+                out.captured.split('\n')[1],
+                "ph5tostationxml: error: argument --level: "
+                "invalid choice: 'CHAN' "
+                "(choose from 'NETWORK', 'STATION', 'CHANNEL', 'RESPONSE')")
 
 
 class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
