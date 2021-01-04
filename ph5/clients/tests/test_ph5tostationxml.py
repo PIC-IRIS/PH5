@@ -213,6 +213,17 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
     def test_get_response_inv(self):
         # emp_resp = False => throw error if no resp data to return
 
+        # n_i=-1
+        self.parser.response_table_n_i = -1
+        with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
+            self.parser.get_response_inv(
+                self.obs_channel, a_id='004', sta_id='0407',
+                cha_id=-2, spr=0, spr_m=1, emp_resp=False)
+        self.assertEqual(
+            contxt.exception.message,
+            'array 004, station 0407, channel -2, response_table_n_i -1: '
+            'Metadata response with n_i=-1 has no response data.')
+
         # No response entry for n_i=7
         self.parser.response_table_n_i = 7
         with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
