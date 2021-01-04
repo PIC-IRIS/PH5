@@ -61,11 +61,18 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
         self.assertEqual(resp_check_info, self.resp_check_info)
 
     def test_check_response_t(self):
+        errors = {'array 004, station 0407, channel -2, response_table_n_i -1:'
+                  ' Metadata response with n_i=-1 has no response data.'}
+        with LogCapture() as log:
+            log.setLevel(logging.WARNING)
+            ret = self.ph5validate.check_response_t(self.resp_check_info)
+            self.assertEqual(set(ret[0].error), errors)
+            self.assertEqual(set(ret[0].warning), set())
+            self.assertEqual(log.records, [])
+
         self.resp_check_info[9]['spr'] = 100
         self.resp_check_info[9]['smodel'] = 'cmg3t'
 
-        errors = {'array 004, station 0407, channel -2, response_table_n_i -1:'
-                  ' Metadata response with n_i=-1 has no response data.'}
         warnings = {
             "array 009, station 9001, channel 1, response_table_n_i 4: "
             "response_file_sensor_a 'gs11v' is inconsistence with "
