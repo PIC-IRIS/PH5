@@ -327,9 +327,9 @@ class TestValidation_no_response_filename(LogTestCase, TempDirTestCase):
         has_response_file = validation.check_has_response_filename(
             self.ph5.Response_t, set(), None)
         self.assertEqual(has_response_file,
-                         "Response table does not contain any response file names. "
-                         "Check if resp_load has been run or if metadatatoph5 input "
-                         "contained response information.")
+                         "Response table does not contain any response file "
+                         "names. Check if resp_load has been run or if "
+                         "metadatatoph5 input contained response information.")
 
 
 class TestValidation_location(unittest.TestCase):

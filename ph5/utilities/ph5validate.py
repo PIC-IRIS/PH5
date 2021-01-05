@@ -337,7 +337,7 @@ class PH5Validate(object):
         self.ph5.read_response_t()
         errors = set()
         if validation.check_has_response_filename(
-                self.ph5.Response_t, errors, LOGGER)is not True:
+                self.ph5.Response_t, errors, LOGGER) is not True:
             header %= (len(errors), 0)
             err = [e[0] for e in errors if e[1] == 'error']
             return [ValidationBlock(heading=header, error=err)]
