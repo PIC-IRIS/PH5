@@ -670,10 +670,10 @@ class PH5toStationXMLParser(object):
             self.manager.ph5.close()
             return
 
-        resp_load_already = validation.check_resp_load(
+        has_response_file = validation.check_has_response_filename(
             self.manager.ph5.Response_t, self.unique_errors, None)
-        if not resp_load_already:
-            raise PH5toStationXMLError(resp_load_already)
+        if has_response_file is not True:
+            raise PH5toStationXMLError(has_response_file)
 
         # update requests list to include ph5 station ids
         self.add_ph5_stationids()
@@ -1068,9 +1068,9 @@ def main():
                          "Formats are STATIONXML, KML, SACPZ, and TEXT.")
             sys.exit()
     except NoDataError as err:
-        LOGGER.info(err.message)
+        LOGGER.info(err.message + "\n\nNO STATIONXML FILE CREATED.\n")
     except Exception as err:
-        LOGGER.error(err.message)
+        LOGGER.error(err.message + "\n\nNO STATIONXML FILE CREATED.\n")
 
 
 if __name__ == '__main__':

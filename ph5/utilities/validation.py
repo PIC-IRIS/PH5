@@ -189,13 +189,14 @@ def check_resp_unique_n_i(ph5, errors, logger=None):
         addLog(errmsg, errors, logger)
 
 
-def check_resp_load(response_t, errors, logger):
-    # check if resp_load already run for the ph5
-    for entry in response_t['rows']:
+def check_has_response_filename(Response_t, errors, logger):
+    # check if Response table contain any response file name
+    for entry in Response_t['rows']:
         if entry['response_file_das_a'] != '':
             return True
-    errmsg = ("All response file names are blank in response "
-              "table. Check if resp_load has been run.")
+    errmsg = ("Response table does not contain any response file names. "
+              "Check if resp_load has been run or if metadatatoph5 input "
+              "contained response information.")
     addLog(errmsg, errors, logger)
     return errmsg
 

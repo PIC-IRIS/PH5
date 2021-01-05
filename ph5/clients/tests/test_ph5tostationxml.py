@@ -396,10 +396,10 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                  })
 
 
-class TestPH5toStationXMLParser_resp_load_not_run(
+class TestPH5toStationXMLParser_no_resp_filename(
         LogTestCase, TempDirTestCase):
     def setUp(self):
-        super(TestPH5toStationXMLParser_resp_load_not_run, self).setUp()
+        super(TestPH5toStationXMLParser_no_resp_filename, self).setUp()
         testargs = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', testargs):
             initialize_ph5.main()
@@ -418,15 +418,16 @@ class TestPH5toStationXMLParser_resp_load_not_run(
 
     def tearDown(self):
         self.mng.ph5.close()
-        super(TestPH5toStationXMLParser_resp_load_not_run, self).tearDown()
+        super(TestPH5toStationXMLParser_no_resp_filename, self).tearDown()
 
     def test_read_networks(self):
         with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
             self.parser.read_networks()
             self.assertEqual(
                 contxt.exception.message,
-                'All response file names are blank in response '
-                'table. Check if resp_load has been run.')
+                "Response table does not contain any response file names. "
+                "Check if resp_load has been run or if metadatatoph5 input "
+                "contained response information.")
 
 
 class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):

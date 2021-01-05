@@ -336,10 +336,11 @@ class PH5Validate(object):
         checked_data_files = {}
         self.ph5.read_response_t()
         errors = set()
-        if not validation.check_resp_load(
-                self.ph5.Response_t, errors, LOGGER):
+        if validation.check_has_response_filename(
+                self.ph5.Response_t, errors, LOGGER)is not True:
             header %= (len(errors), 0)
-            return [ValidationBlock(heading=header, error=errors)]
+            err = [e[0] for e in errors if e[1] == 'error']
+            return [ValidationBlock(heading=header, error=err)]
 
         for info in resp_check_info:
             # check file name and response data loaded

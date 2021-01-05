@@ -304,19 +304,19 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.assertEqual(errors,
                          {('Response_t n_i(s) duplicated: 2', 'error')})
 
-    def test_check_resp_load(self):
+    def test_check_has_response_filename(self):
         self.ph5API_object.read_response_t()
-        resp_load_already = validation.check_resp_load(
+        has_response_file = validation.check_has_response_filename(
             self.ph5API_object.Response_t, [], None)
-        self.assertTrue(resp_load_already)
+        self.assertTrue(has_response_file)
 
 
-class TestValidation_resp_load_not_run(LogTestCase, TempDirTestCase):
+class TestValidation_no_response_filename(LogTestCase, TempDirTestCase):
     def tearDown(self):
         self.ph5.close()
-        super(TestValidation_resp_load_not_run, self).tearDown()
+        super(TestValidation_no_response_filename, self).tearDown()
 
-    def test_check_resp_load(self):
+    def test_check_has_response_filename(self):
         testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
                     os.path.join(self.home,
                                  'ph5/test_data/segd/3ch.fcnt')]
@@ -324,11 +324,12 @@ class TestValidation_resp_load_not_run(LogTestCase, TempDirTestCase):
             segd2ph5.main()
         self.ph5 = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
         self.ph5.read_response_t()
-        resp_load_already = validation.check_resp_load(
+        has_response_file = validation.check_has_response_filename(
             self.ph5.Response_t, set(), None)
-        self.assertEqual(resp_load_already,
-                         'All response file names are blank in response table.'
-                         ' Check if resp_load has been run.')
+        self.assertEqual(has_response_file,
+                         "Response table does not contain any response file names. "
+                         "Check if resp_load has been run or if metadatatoph5 input "
+                         "contained response information.")
 
 
 class TestValidation_location(unittest.TestCase):

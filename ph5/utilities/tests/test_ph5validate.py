@@ -418,10 +418,10 @@ class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
                       errors)
 
 
-class TestPH5Validate_resp_load_not_run(LogTestCase, TempDirTestCase):
+class TestPH5Validate_no_response_filename(LogTestCase, TempDirTestCase):
     def tearDown(self):
         self.ph5API_object.close()
-        super(TestPH5Validate_resp_load_not_run, self).tearDown()
+        super(TestPH5Validate_no_response_filename, self).tearDown()
 
     def test_check_response_t(self):
         testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
@@ -437,12 +437,14 @@ class TestPH5Validate_resp_load_not_run(LogTestCase, TempDirTestCase):
             ret = self.ph5validate.check_response_t([])
             self.assertEqual(
                 ret[0].error,
-                ['All response file names are blank in response table. '
-                 'Check if resp_load has been run.'])
+                ["Response table does not contain any response file names. "
+                 "Check if resp_load has been run or if metadatatoph5 input "
+                 "contained response information."])
             self.assertEqual(
                 log.records[0].msg,
-                'All response file names are blank in response table. '
-                'Check if resp_load has been run.')
+                "Response table does not contain any response file names. "
+                "Check if resp_load has been run or if metadatatoph5 input "
+                "contained response information.")
 
 
 if __name__ == "__main__":
