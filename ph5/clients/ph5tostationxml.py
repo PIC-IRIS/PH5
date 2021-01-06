@@ -152,12 +152,6 @@ def get_args():
 
     parser.add_argument("-E", "--emp_resp", action='store_true', default=False,
                         help='Print out Empty Response for debugging')
-
-    parser.add_argument("-T", "--top_paths_only", action='store_true',
-                        default=False,
-                        help='Only look at the top paths in the list. Not '
-                             'looking into sub-paths.')
-
     args = parser.parse_args()
     return args
 
@@ -1045,8 +1039,6 @@ def main():
                 for fname in fileList:
                     if fname == nickname:
                         paths.append(dirName)
-                if args_dict.get('top_paths_only'):
-                    break
 
         args_dict_list = [args_dict]
         out_format = args_dict.get('out_format').upper()
