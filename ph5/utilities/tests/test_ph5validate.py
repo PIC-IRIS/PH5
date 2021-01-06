@@ -76,10 +76,11 @@ class TestPH5Validate_response(LogTestCase, TempDirTestCase):
         warnings = {
             "array 009, station 9001, channel 1, response_table_n_i 4: "
             "response_file_sensor_a 'gs11v' is inconsistence with "
-            "model(s) cmg3t.",
+            "sensor_model cmg3t.",
             "array 009, station 9001, channel 1, response_table_n_i 4: "
             "response_file_das_a 'rt125a_500_1_32' is inconsistence with "
-            "model(s) 'cmg3t' and 'rt125a'; sr=100 srm=1 gain=32 'cha=DPZ'."}
+            "sensor_model='cmg3t' and das_model='rt125a'; "
+            "sr=100 srm=1 gain=32 'cha=DPZ'."}
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
             ret = self.ph5validate.check_response_t(self.resp_check_info)

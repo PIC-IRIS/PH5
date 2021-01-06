@@ -56,13 +56,13 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.errors = [
             "array 009, station 9001, channel 1, response_table_n_i 4: "
             "response_file_das_a 'rt125a_500_1_32' is inconsistence with "
-            "model(s) 'rt125a'; sr=100 srm=1 gain=32.",
+            "das_model='rt125a'; sr=100 srm=1 gain=32.",
             "array 009, station 9001, channel 1, response_table_n_i 4: "
-            "response_file_sensor_a 'gs11v' is inconsistence with model(s) "
-            "cmg3t.",
+            "response_file_sensor_a 'gs11v' is inconsistence with "
+            "sensor_model cmg3t.",
             "array 002, station 0407, channel 1, response_table_n_i 5: "
             "response_file_das_a 'NoneQ330_CMG3T_200HHN' is inconsistence "
-            "with model(s) 'NoneCMG3T' and 'NoneQ330';"
+            "with sensor_model='NoneCMG3T' and das_model='NoneQ330';"
             " sr=200 srm=1 gain=1 'cha=HHN'."]
 
     def tearDown(self):
@@ -259,10 +259,11 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         chckerrors = set(
             ["array 009, station 9001, channel 1, response_table_n_i 4: "
              "response_file_das_a 'rt125a_500_1_32' is inconsistence with "
-             "model(s) 'cmg3t' and 'rt125a'; sr=100 srm=1 gain=32 'cha=DPZ'.",
+             "sensor_model='cmg3t' and das_model='rt125a'; "
+             "sr=100 srm=1 gain=32 'cha=DPZ'.",
              "array 009, station 9001, channel 1, response_table_n_i 4: "
-             "response_file_sensor_a 'gs11v' is inconsistence with model(s) "
-             "cmg3t."])
+             "response_file_sensor_a 'gs11v' is inconsistence with "
+             "sensor_model cmg3t."])
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
         with LogCapture() as log:
             log.setLevel(logging.WARNING)

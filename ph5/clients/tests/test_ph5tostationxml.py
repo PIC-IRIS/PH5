@@ -273,9 +273,9 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             contxt.exception.message,
             'array 009, station 9001, channel 1, response_table_n_i 4: '
             'No response data loaded for gs11.')
-        self.parser.unique_errors = set()
 
-        # wrong response das file name
+        self.parser.unique_errors = set()
+        # wrong response das file name (spr=200><500 in filename)
         # wrong response sensor name
         self.obs_channel.sensor.model = 'cmg_3t'
         response_t['response_file_sensor_a'] = \
@@ -285,18 +285,29 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             cha_id=1, spr=200, spr_m=1, emp_resp=False)
         self.assertIsInstance(response, Response)
         self.assertIsNotNone(response.instrument_sensitivity)
+        self.assertEqual(
+            self.parser.unique_errors,
+            set([("array 009, station 9001, channel 1, response_table_n_i 4: "
+                  "response_file_das_a 'rt125a_500_1_32' is inconsistence "
+                  "with sensor_model='cmg3t' and das_model='rt125a';"
+                  " sr=200 srm=1 gain=32 'cha=DPZ'.",
+                  'warning'),
+                 ("array 009, station 9001, channel 1, response_table_n_i 4: "
+                  "response_file_sensor_a 'gs11v' is inconsistence with "
+                  "sensor_model cmg3t.",
+                  'warning')
+                 ]))
 
+        self.parser.unique_errors = set()
         # sensor model exist but no response sensor filename
-        # wrong response das file name either by resp_load or metadata
-        # while no response sensor file name
+        # wrong response das file name (chan=DPZ><LHN, dmodel=rt125a><NoneQ330)
         self.parser.response_table_n_i = 6
-        self.obs_channel.sensor.model = 'gs11v'
+        self.obs_channel.sensor.model = 'NoneCMG3T'
         response = self.parser.get_response_inv(
             self.obs_channel, a_id='003', sta_id='0407',
             cha_id=1, spr=100, spr_m=1, emp_resp=False)
         self.assertIsInstance(response, Response)
         self.assertIsNotNone(response.instrument_sensitivity)
-
         self.assertEqual(
             self.parser.unique_errors,
             set([("array 003, station 0407, channel 1, response_table_n_i 6: "
@@ -304,17 +315,8 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                   "warning"),
                  ("array 003, station 0407, channel 1, response_table_n_i 6: "
                   "response_file_das_a 'NoneQ330_NoneCMG3T_100LHN' is "
-                  "inconsistence with model(s) 'gs11v' and 'rt125a'; "
-                  "sr=100 srm=1 gain=1 'cha=DPZ'.",
-                  'warning'),
-                 ("array 009, station 9001, channel 1, response_table_n_i 4: "
-                  "response_file_das_a 'rt125a_500_1_32' is inconsistence "
-                  "with model(s) 'cmg3t' and 'rt125a';"
-                  " sr=200 srm=1 gain=32 'cha=DPZ'.",
-                  'warning'),
-                 ("array 009, station 9001, channel 1, response_table_n_i 4: "
-                  "response_file_sensor_a 'gs11v' is inconsistence with "
-                  "model(s) cmg3t.",
+                  "inconsistence with sensor_model='NoneCMG3T' and "
+                  "das_model='rt125a'; sr=100 srm=1 gain=1 'cha=DPZ'.",
                   'warning')
                  ]))
 
@@ -375,16 +377,17 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                 set(rec.msg for rec in log.records),
                 {"array 002, station 0407, channel 1, response_table_n_i 5: "
                  "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is "
-                 "inconsistence with model(s) 'CMG' and 'NoneQ330';"
-                 " sr=200 srm=1 gain=1 'cha=HHN'.",
+                 "inconsistence with sensor_model='CMG' and "
+                 "das_model='NoneQ330'; sr=200 srm=1 gain=1 'cha=HHN'.",
                  "array 008, station 8001, channel 1, response_table_n_i 1: "
                  "response_file_das_a 'rt130_100_1_1' is inconsistence with "
-                 "model(s) 'cmg3t' and 'rt130'; sr=10 srm=1 gain=1 'cha=HLZ'.",
+                 "sensor_model='cmg3t' and das_model='rt130'; "
+                 "sr=10 srm=1 gain=1 'cha=HLZ'.",
                  'array 001, station 500, channel 1: Channel elevation seems '
                  'to be 0. Is this correct???',
                  "array 008, station 8001, channel 2, response_table_n_i 2: "
                  "response_file_sensor_a 'cmg3t' is inconsistence with "
-                 "model(s) CMS.",
+                 "sensor_model CMS.",
                  'array 001, station 500, channel 3: Channel elevation seems '
                  'to be 0. Is this correct???',
                  'array 004, station 0407, channel -2, response_table_n_i -1: '
