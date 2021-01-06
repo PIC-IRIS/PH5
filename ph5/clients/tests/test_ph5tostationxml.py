@@ -329,7 +329,13 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             cha_id=1, spr=50, spr_m=1, emp_resp=True)
         self.assertIsInstance(response, Response)
         self.assertIsNone(response.instrument_sensitivity)
+        self.assertEqual(
+            self.parser.unique_errors,
+            set([("array 009, station 9001, channel 1, response_table_n_i 7: "
+                  "response_t has no entry for n_i=7", "error")])
+        )
 
+        self.parser.unique_errors = set()
         # no response data for gs11 (only for gs11v)
         self.parser.response_table_n_i = 4
         response_t = self.mng.ph5.get_response_t_by_n_i(4)
@@ -342,9 +348,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertIsNone(response.instrument_sensitivity)
         self.assertEqual(
             self.parser.unique_errors,
-            set([("array 009, station 9001, channel 1, response_table_n_i 7: "
-                  "response_t has no entry for n_i=7", "error"),
-                 ("array 009, station 9001, channel 1, response_table_n_i 4: "
+            set([("array 009, station 9001, channel 1, response_table_n_i 4: "
                   "No response data loaded for gs11.", "error")])
         )
 
