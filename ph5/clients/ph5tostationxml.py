@@ -422,20 +422,21 @@ class PH5toStationXMLParser(object):
         datalogger_keys = [obs_channel.data_logger.manufacturer,
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
-        info = {'n_i': self.response_table_n_i,
-                'array': a_id,
-                'sta': sta_id,
-                'cha_id': cha_id,
-                'cha_code': obs_channel.code,
-                'dmodel': obs_channel.data_logger.model,
-                'smodel': obs_channel.sensor.model,
-                'spr': spr,
-                'sprm': spr_m,
-                }
-        if info['dmodel'].startswith("ZLAND"):
-            info['smodel'] = ''
+
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
+            info = {'n_i': self.response_table_n_i,
+                    'array': a_id,
+                    'sta': sta_id,
+                    'cha_id': cha_id,
+                    'cha_code': obs_channel.code,
+                    'dmodel': obs_channel.data_logger.model,
+                    'smodel': obs_channel.sensor.model,
+                    'spr': spr,
+                    'sprm': spr_m,
+                    }
+            if info['dmodel'].startswith("ZLAND"):
+                info['smodel'] = ''
             check_info = validation.check_response_info(
                 info, self.manager.ph5,
                 self.checked_data_files, self.unique_errors, None)
