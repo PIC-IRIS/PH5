@@ -101,14 +101,14 @@ def check_resp_file_name(Response_t, info, header, ftype,
         if ftype == 'das':
             models = ''
             if m_file is not None:
-                models += "'%(smodel)s' and "
-            models += "'%(dmodel)s'; sr=%(spr)s srm=%(sprm)s gain=%(gain)s"
+                models += "sensor_model='%(smodel)s' and "
+            models += "das_model='%(dmodel)s'; sr=%(spr)s srm=%(sprm)s gain=%(gain)s"
             if m_file is not None:
                 models += " 'cha=%(cha_code)s'"
         if ftype == 'sensor':
-            models = "%(smodel)s"
-        errmsg = ("{0}response_file_{1}_a '{2}' is inconsistence with model(s)"
-                  " {3}.").format(header,
+            models = "sensor_model %(smodel)s"
+        errmsg = ("{0}response_file_{1}_a '{2}' is inconsistence with "
+                  "{3}.").format(header,
                                   ftype,
                                   std_response_fname,
                                   models % info)
