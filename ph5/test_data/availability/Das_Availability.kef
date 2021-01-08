@@ -12,7 +12,7 @@
 	raw_file_name_s=
 	receiver_table_n_i=0
 	response_table_n_i=21
-	sample_count_i=8000
+	sample_count_i=1000
 	sample_rate_i=500
 	sample_rate_multiplier_i=1
 	stream_number_i=1
@@ -33,7 +33,7 @@
 	raw_file_name_s=
 	receiver_table_n_i=1
 	response_table_n_i=29
-	sample_count_i=90000
+	sample_count_i=500
 	sample_rate_i=500
 	sample_rate_multiplier_i=1
 	stream_number_i=1
