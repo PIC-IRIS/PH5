@@ -216,10 +216,9 @@ class CommandList():
                            'ph5.utilities.fix_3chan_texan:main',
                            'For fixing 3-channel Texan data.',
                            type=EntryPointTypes.ALL),
-                EntryPoint('fix_das_srm',
-                           'ph5.utilities.fix_das_srm:main',
-                           'For fixing non-exist or value 0 '
-                           'sample rate multiplier',
+                EntryPoint('fix_srm',
+                           'ph5.utilities.fix_srm:main',
+                           'For fixing sample rate multiplier=0.',
                            type=EntryPointTypes.ALL),
                 EntryPoint('index_offset_t',
                            'ph5.utilities.index_offset_t:main',
