@@ -482,7 +482,7 @@ def read_receivers(das=None):
         EX.ph5_g_receivers.setcurrent(g)
 
         # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
-        das, das_keys = EX.ph5_g_receivers.read_das()
+        das, das_keys = EX.ph5_g_receivers.read_das(ignore_srm0=True)
         rowskeys = Rows_Keys(das, das_keys)
         DAS_T[d] = rowskeys
 
