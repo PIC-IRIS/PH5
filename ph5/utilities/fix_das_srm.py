@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 import logging
+import tables
 
 from ph5.core import ph5api, experiment
 from ph5.utilities import nuke_table, kef2ph5 as K2T, tabletokef as T2K
@@ -15,17 +16,14 @@ PROG_VERSION = '2020.325'
 LOGGER = logging.getLogger(__name__)
 
 
-#
-# Read Command line arguments
-#
 def get_args():
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.usage = ("fix_das_srm --nickname ph5-file-prefix [options]")
+    parser.usage = ("fix_srm --nickname ph5-file-prefix [options]")
 
-    parser.description = ("Fix Das table(s) with no sample rate multiplier or "
-                          "sample rate multiplier 0. \nVersion: {0}"
+    parser.description = ("Change sample rate multiplier=0 to 1 in"
+                          "Das table(s) or Array table(s). \nVersion: {0}"
                           .format(PROG_VERSION))
 
     parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
@@ -48,12 +46,34 @@ def get_args():
                        help=r"Fix sample_rate_multiplier_i in Das table"
                             "\n/Experiment_g/Receivers_g/Das_g_[das]/Das_t.")
 
+    group.add_argument("--all_arrays", dest='all_arrays', action='store_true',
+                       default=False,
+                       help=r"Fix sample_rate_multiplier_i in all Array "
+                            "table\n /Experiment_g/Sorts_g/Array_t_xxx .")
+
+    group.add_argument("-A", "--Array_t_", dest="array_t_", metavar="n",
+                       help=r"Fix sample_rate_multiplier_i in Array table"
+                            "\n /Experiment_g/Sorts_g/Array_t_[n].",
+                       type=int)
+
+    group.add_argument("--all", dest='all', action='store_true',
+                       default=False,
+                       help=r"Fix sample_rate_multiplier_i in all Das tables"
+                            "\n/Experiment_g/Receivers_g/Das_g_xxx/Das_t."
+                            "\n and all Array tables"
+                            "\n /Experiment_g/Sorts_g/Array_t_xxx.")
+
     args = parser.parse_args()
     ph5 = args.ph5_file_prefix
     path = args.ph5_path
     all_das = args.all_das
-    das_table = args.das_t_
-    return ph5, path, all_das, das_table
+    das_sn = args.das_t_
+    all_array = args.all_arrays
+    array_id = args.array_t_
+    if args.all:
+        all_array = True
+        all_das = True
+    return ph5, path, all_das, das_sn, all_array, array_id
 
 
 def set_logger():
@@ -62,7 +82,7 @@ def set_logger():
     """
 
     # set filehandler
-    ch = logging.FileHandler("fix_das_srm.log")
+    ch = logging.FileHandler("fix_srm.log")
     ch.setLevel(logging.INFO)
     # Add formatter
     formatter = logging.Formatter(LOGGING_FORMAT)
@@ -70,36 +90,64 @@ def set_logger():
     LOGGER.addHandler(ch)
 
 
-def delete_das(ph5object, das_sn):
-    """
-    Delete das table with serial number das_sn from ex
-    :param ex: experiment where the das table will be deleted (experiment)
-    :param das_sn: serial number to specify das table to delete (str)
-    :return backupfile: name of the kef file to backup the deleted table
-    """
+def init_T2K(ph5object):
     T2K.LOGGER = LOGGER
     nuke_table.LOGGER = LOGGER
     T2K.init_local()
     T2K.EX = ph5object
     nuke_table.NO_BACKUP = False
-    table_type = 'Das_t_{0}'.format(das_sn)
+
+
+def delete_das(ph5object, das_name):
+    """
+    Delete das table identified by das_name from ph5object
+    :param ph5object: ph5 object where the das table will be deleted
+    :param das_name: das_name to identify das table to delete (str)
+    :return backupfile: name of the kef file to backup the deleted table (str)
+    """
+    das_sn = das_name.replace("Das_t_", "")
     das = ph5object.ph5_g_receivers.getdas_g(das_sn)
     if das is None:
-        raise Exception(1, 'DAS %s not exist.' % das_sn)
+        raise Exception('DAS %s not exist.' % das_sn)
     ph5object.ph5_g_receivers.setcurrent(das)
     das, das_keys = experiment.read_table(
         ph5object.ph5_g_receivers.current_t_das)
-    DAS_T = T2K.Rows_Keys(das, das_keys)
+    das_t = T2K.Rows_Keys(das, das_keys)
+    datapath = '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das_sn)
     backupfile = nuke_table.backup(
-        table_type,
-        '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das_sn),
-        DAS_T)
+        das_name,
+        datapath,
+        das_t)
     ph5object.ph5_g_receivers.nuke_das_t(das_sn)
-    LOGGER.info('Nuke /Experiment_g/Receivers_g/Das_g_%s/Das_t.' % das_sn)
-    return backupfile
+
+    LOGGER.info('Nuke {0}.'.format(datapath))
+    return backupfile, datapath
 
 
-def fix_srm_in_kef(startfilepath, fixedfilepath):
+def delete_array(ph5object, array_name):
+    """
+    Delete all array tables identified by array_id from ph5object
+    :param ph5object: ph5 object where the das table will be deleted
+    :param array_id: serial number to specify das table to delete (int)
+    :return backupfile: name of the kef file to backup the deleted table(str)
+    """
+    array_id = int(array_name.replace('Array_t_', ''))
+    try:
+        array, array_keys = ph5object.ph5_g_sorts.read_arrays(array_name)
+    except tables.exceptions.NoSuchNodeError:
+        raise Exception('Array %s not exist.' % array_name)
+    array_t = T2K.Rows_Keys(array, array_keys)
+    datapath = '/Experiment_g/Sorts_g/{0}'.format(array_name)
+    backupfile = nuke_table.backup(
+        array_name,
+        datapath,
+        array_t)
+    ph5object.ph5_g_sorts.nuke_array_t(array_id)
+    LOGGER.info('Nuke {0}'.format(datapath))
+    return backupfile, datapath
+
+
+def fix_srm_in_kef(startfilepath, fixedfilepath, datapath):
     """
     Correct sample rate multiplier (srm) in das table kef file:
         + replace srm=0 with srm=1
@@ -122,9 +170,8 @@ def fix_srm_in_kef(startfilepath, fixedfilepath):
         # due to some error, sample rate is missing in Das_t
         # => add one after each row header
         content = content.replace(
-            '/Experiment_g/Receivers_g/Das_g_1X1111/Das_t',
-            '/Experiment_g/Receivers_g/Das_g_1X1111/Das_t'
-            '\n\tsample_rate_multiplier_i=1')
+            datapath,
+            '{0}\n\tsample_rate_multiplier_i=1'.format(datapath))
 
     fixedfile.write(content)
     startfile.close()
@@ -151,39 +198,60 @@ def add_fixed_table(ex, ph5, fixedfilepath):
     os.unlink(fixedfilepath)
 
 
-def process_das(ex, ph5, das_sn):
+def process(ex, ph5, das_name=None, array_name=None):
     """
-    Correct srm in a das specified by das_sn.
-    :param ex: experiment where the das table's srm need to be corrected
-        (experiment)
+    Correct srm in a das identified by das_sn or
+     in an array identify by array_id.
+    :param ph5object: ph5object where the das table's srm need to be corrected
     :param ph5: name of the being processed ph5 file (str)
-    :param das_sn: serial number of das table of which srm need
+    :param das_name: name of das table of which srm need
+        to be corrected (str)
+    :param array_name: name of array tabel of which srm need
         to be corrected (str)
     """
     fixedfilepath = 'fixed.kef'
-    LOGGER.info('>>> Processing Das: %s' % das_sn)
-    backupfile = delete_das(ex, das_sn)
-    fix_srm_in_kef(backupfile, fixedfilepath)
+
+    if das_name is not None:
+        LOGGER.info('>>> Processing Das: %s' % das_name)
+        backupfile, datapath = delete_das(ex, das_name)
+    else:
+        LOGGER.info('>>> Processing Array: %s' % array_name)
+        backupfile, datapath = delete_array(ex, array_name)
+    fix_srm_in_kef(backupfile, fixedfilepath, datapath)
     add_fixed_table(ex, ph5, fixedfilepath)
 
 
 def main():
-    ph5, path, all_das, das_sn = get_args()
+    ph5, path, all_das, das_sn, all_array, array_id = get_args()
 
     set_logger()
     ph5object = ph5api.PH5(path=path, nickname=ph5, editmode=True)
-    LOGGER.info("fix_das_srm {0}".format(PROG_VERSION))
+    LOGGER.info("fix_srm {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
-    if das_sn:
-        # fix given das table
-        process_das(ph5object, ph5, das_sn)
-    else:
-        # fix all das tables
-        ph5object.read_das_g_names()
-        das_sn_list = [d.replace("Das_g_", "")
-                       for d in ph5object.Das_g_names.keys()]
-        for das_sn in das_sn_list:
-            process_das(ph5object, ph5, das_sn)
+    init_T2K(ph5object)
+    try:
+        if das_sn is not None:
+            das_name = 'Das_t_{0}'.format(das_sn)
+            # fix given das table
+            process(ph5object, ph5, das_name=das_name)
+        if array_id is not None:
+            array_name = 'Array_t_{0:03d}'.format(array_id)
+            # fix given array table
+            process(ph5object, ph5, array_name=array_name)
+        if all_das:
+            # fix all das tables
+            ph5object.read_das_g_names()
+            for das_g_name in ph5object.Das_g_names.keys():
+                das_t_name = das_g_name.replace('Das_g_', 'Das_t_')
+                process(ph5object, ph5, das_name=das_t_name)
+        if all_array:
+            # fix all array tables
+            ph5object.ph5_g_sorts.read_sorts()
+            for array_name in ph5object.ph5_g_sorts.names():
+                process(ph5object, ph5, array_name=array_name)
+    except Exception as e:
+        LOGGER.error(e.message)
+
     ph5object.close()
 
 
