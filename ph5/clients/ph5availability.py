@@ -14,7 +14,8 @@ import datetime as dt
 import time
 from uuid import uuid4
 from argparse import RawTextHelpFormatter
-from ph5.core import ph5api, ph5utils, timedoy
+
+from ph5.core import ph5api, ph5utils, timedoy, experiment
 
 PROG_VERSION = '2020.282'
 LOGGER = logging.getLogger(__name__)
@@ -212,13 +213,16 @@ class PH5Availability(object):
                 raise PH5AvailabilityError(
                     "get_time_das_t requires component when "
                     "sample_rate is given")
-
-            Das_t = self.ph5.query_das_t(
-                das,
-                chan=component,
-                start_epoch=s,
-                stop_epoch=e,
-                sample_rate=sample_rate)
+            try:
+                Das_t = self.ph5.query_das_t(
+                    das,
+                    chan=component,
+                    start_epoch=s,
+                    stop_epoch=e,
+                    sample_rate=sample_rate)
+            except ph5api.APIError as err:
+                LOGGER.error(err.msg)
+                return -1
             if not Das_t:
                 LOGGER.warning(
                     "No Das table found for %s %s for "
@@ -227,7 +231,10 @@ class PH5Availability(object):
                 return -1
         else:
             # include all channelnum and sample_rate
-            self.ph5.read_das_t(das, s, e, reread=False)
+            try:
+                self.ph5.read_das_t(das, s, e, reread=False)
+            except experiment.HDF5InteractionError as err:
+                LOGGER.error(err.msg)
             if das not in self.ph5.Das_t:
                 LOGGER.warning("No Das table found for %s %s"
                                % (das, rangestr))
@@ -393,16 +400,20 @@ class PH5Availability(object):
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
-                        ph5_multiplier = st['sample_rate_multiplier_i']
+                        ph5_multiplier = self.get_srm(st)
                         samplerate_return = None
-                        Das_t = self.ph5.query_das_t(
-                            ph5das,
-                            chan=chanum,
-                            start_epoch=ph5_start_epoch,
-                            stop_epoch=ph5_stop_epoch,
-                            sample_rate=ph5_sample_rate,
-                            sample_rate_multiplier=ph5_multiplier,
-                            check_samplerate=False)
+                        try:
+                            Das_t = self.ph5.query_das_t(
+                                ph5das,
+                                chan=chanum,
+                                start_epoch=ph5_start_epoch,
+                                stop_epoch=ph5_stop_epoch,
+                                sample_rate=ph5_sample_rate,
+                                sample_rate_multiplier=ph5_multiplier,
+                                check_samplerate=False)
+                        except ph5api.APIError as err:
+                            LOGGER.error(err.msg)
+                            continue
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
@@ -540,15 +551,19 @@ class PH5Availability(object):
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
-                        ph5_multiplier = st['sample_rate_multiplier_i']
-                        Das_t = self.ph5.query_das_t(
-                            ph5_das,
-                            chan=channum,
-                            start_epoch=ph5_start_epoch,
-                            stop_epoch=ph5_stop_epoch,
-                            sample_rate=ph5_sample_rate,
-                            sample_rate_multiplier=ph5_multiplier,
-                            check_samplerate=False)
+                        ph5_multiplier = self.get_srm(st)
+                        try:
+                            Das_t = self.ph5.query_das_t(
+                                ph5_das,
+                                chan=channum,
+                                start_epoch=ph5_start_epoch,
+                                stop_epoch=ph5_stop_epoch,
+                                sample_rate=ph5_sample_rate,
+                                sample_rate_multiplier=ph5_multiplier,
+                                check_samplerate=False)
+                        except ph5api.APIError as err:
+                            LOGGER.error(err.msg)
+                            continue
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
@@ -633,11 +648,22 @@ class PH5Availability(object):
             duration = 0
         return start + duration
 
+    def get_srm(self, st):
+        """
+        PN3 format of PH5 has no sample_rate_multiplier_i.
+        Reading this format should return 1 as value for this key.
+        """
+        try:
+            return float(st['sample_rate_multiplier_i'])
+        except KeyError:
+            # old data has no sample_rate_multiplier_i, assign 1 for it
+            return 1
+
     def get_sample_rate(self, st):
         if st['sample_rate_i'] == 0:
             return 0
-        return float(st['sample_rate_i']) / \
-            float(st['sample_rate_multiplier_i'])
+
+        return float(st['sample_rate_i']) / self.get_srm(st)
 
     def get_sampleNos_gapOverlap(self, das_t, earliest, latest, start, end,
                                  sample_rate, st):
@@ -1238,6 +1264,8 @@ def main():
         availability.process_all()
 
     except ph5api.APIError as err:
+        LOGGER.error(err.msg)
+    except experiment.HDF5InteractionError as err:
         LOGGER.error(err.msg)
     except PH5AvailabilityError as err:
         LOGGER.error(str(err))
