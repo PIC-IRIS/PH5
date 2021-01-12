@@ -677,13 +677,12 @@ class ReceiversGroup:
 
         return name[-1]
 
-    def read_das(self):
+    def read_das(self, ignore_srm0=False):
         '''   Read DAS table   '''
         def cmp_epoch(a, b):
             return int(a['time/epoch_l']) - int(b['time/epoch_l'])
 
         ret = []
-        keys = None
         ret_read, keys = read_table(self.current_t_das)
         if ret_read is not None:
             ret_read.sort(cmp=cmp_epoch)
@@ -696,8 +695,15 @@ class ReceiversGroup:
         for r in ret_read:
             if 'sample_rate_multiplier_i' not in r:
                 r['sample_rate_multiplier_i'] = 1
-            elif r['sample_rate_multiplier_i'] == 0:
-                r['sample_rate_multiplier_i'] = 1
+                keys += ['sample_rate_multiplier_i']
+            elif not ignore_srm0 and r['sample_rate_multiplier_i'] == 0:
+                # ignore srm==0 for tabletokef and nuke_table
+                errmsg = ("%s, channel %s has sample_rate_multiplier_i(s) "
+                          "with values 0. "
+                          "Run fix_das_srm to fix those values in that Das."
+                          % (self.current_t_das._v_parent._v_name,
+                             r['channel_number_i']))
+                raise HDF5InteractionError(7, errmsg)
 
             ret.append(r)
 
