@@ -105,7 +105,7 @@ def get_args():
                               "STATION, CHANNEL, or RESPONSE."
                               " Default: RESPONSE"),
                         choices=('NETWORK', 'STATION', 'CHANNEL', 'RESPONSE'),
-                        type=str, metavar="level")
+                        type=str.upper, metavar="level")
 
     parser.add_argument("--minlat", action="store",
                         help=("Limit to stations with a latitude larger than "
