@@ -317,18 +317,6 @@ class PH5Validate(object):
                                                   dmodel, smodel, spr, sprm}
         """
         LOGGER.info("Validating Response_t")
-        LOGGER.info(
-            "NOTICE: The procedure of error checking for response table is "
-            "getting the models and response_table_n_i from station entry in "
-            "array table, from that response_table_n_i look for the "
-            "corresponding n_i in response table and check if the "
-            "response_file_das/response_a match with either metadatatoph5 "
-            "format (dasModel_sensorModel_sampleRate_channelCode) or "
-            "resp_load format (dasModel_sampleRate_sampleRateMultiplier_gain)"
-            "; then, last, check if the response data have been added for "
-            "those response file names.\n"
-            "If error happens for the check on a response file, the following "
-            "check will be ceased to process.")
         header = ("-=-=-=-=-=-=-=-=-\n"
                   "Response_t\n"
                   "%s error, %s warning, 0 info\n"
