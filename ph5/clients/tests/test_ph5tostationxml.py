@@ -57,7 +57,7 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                    ["array_multi_deploy.kef", "experiment.kef",
                     "response_t.kef"])
         testargs = ['ph5tostationxml', '-n', 'master',
-                    '--level', 'NETWORK', '-f', 'text']
+                    '--level', 'network', '-f', 'text']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5tostationxml.main()
