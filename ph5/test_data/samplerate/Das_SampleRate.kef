@@ -1,0 +1,129 @@
+#
+#	Wed Oct 21 23:34:38 2020	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Receivers_g/Das_g_9297/Das_t
+	array_name_SOH_a=SOH_a_0001
+	array_name_data_a=Data_a_0001
+	array_name_event_a=
+	array_name_log_a=Log_a_0001
+	channel_number_i=1
+	event_number_i=56
+	raw_file_name_s=
+	receiver_table_n_i=0
+	response_table_n_i=21
+	sample_count_i=90000
+	sample_rate_i=500
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Mon Aug 27 23:01:00 2012
+	time/epoch_l=1346108460
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 2
+/Experiment_g/Receivers_g/Das_g_9297/Das_t
+	array_name_SOH_a=SOH_a_0001
+	array_name_data_a=Data_a_0002
+	array_name_event_a=
+	array_name_log_a=Log_a_0001
+	channel_number_i=2
+	event_number_i=56
+	raw_file_name_s=
+	receiver_table_n_i=1
+	response_table_n_i=29
+	sample_count_i=90000
+	sample_rate_i=500
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Mon Aug 27 23:01:00 2012
+	time/epoch_l=1346108460
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 3
+/Experiment_g/Receivers_g/Das_g_9297/Das_t
+	array_name_SOH_a=SOH_a_0001
+	array_name_data_a=Data_a_0003
+	array_name_event_a=
+	array_name_log_a=Log_a_0001
+	channel_number_i=3
+	event_number_i=56
+	raw_file_name_s=
+	receiver_table_n_i=2
+	response_table_n_i=29
+	sample_count_i=90000
+	sample_rate_i=500
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Mon Aug 27 23:01:00 2012
+	time/epoch_l=1346108460
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 4
+/Experiment_g/Receivers_g/Das_g_9297/Das_t
+	array_name_SOH_a=SOH_a_0001
+	array_name_data_a=Data_a_0004
+	array_name_event_a=
+	array_name_log_a=Log_a_0001
+	channel_number_i=1
+	event_number_i=147
+	raw_file_name_s=
+	receiver_table_n_i=0
+	response_table_n_i=21
+	sample_count_i=90000
+	sample_rate_i=500
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Fri Aug 31 17:52:00 2012
+	time/epoch_l=1346435520
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 5
+/Experiment_g/Receivers_g/Das_g_9297/Das_t
+	array_name_SOH_a=SOH_a_0001
+	array_name_data_a=Data_a_0005
+	array_name_event_a=
+	array_name_log_a=Log_a_0001
+	channel_number_i=2
+	event_number_i=147
+	raw_file_name_s=
+	receiver_table_n_i=1
+	response_table_n_i=29
+	sample_count_i=90000
+	sample_rate_i=500
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Fri Aug 31 17:52:00 2012
+	time/epoch_l=1346435520
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 6
+/Experiment_g/Receivers_g/Das_g_9297/Das_t
+	array_name_SOH_a=SOH_a_0001
+	array_name_data_a=Data_a_0006
+	array_name_event_a=
+	array_name_log_a=Log_a_0001
+	channel_number_i=3
+	event_number_i=147
+	raw_file_name_s=
+	receiver_table_n_i=2
+	response_table_n_i=29
+	sample_count_i=90000
+	sample_rate_i=500
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Fri Aug 31 17:52:00 2012
+	time/epoch_l=1346435520
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+

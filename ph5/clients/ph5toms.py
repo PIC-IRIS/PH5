@@ -508,16 +508,17 @@ class PH5toMSeed(object):
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments(
             [station_to_cut], self.restricted)
         obspy_stream = Stream()
+        sr_mismatch = False
+        empty_times = True
         for stc in station_to_cut_segments:
             das = self.ph5.query_das_t(stc.das, stc.component,
                                        stc.starttime,
                                        stc.endtime,
                                        stc.sample_rate,
-                                       stc.sample_rate_multiplier)
-
+                                       stc.sample_rate_multiplier,
+                                       check_samplerate=False)
             if not das:
                 return
-
             das = [x for x in das]
             Das_tf = next(iter(das or []), None)
             if Das_tf is None:
@@ -525,27 +526,59 @@ class PH5toMSeed(object):
             else:
                 das_t_start = (float(Das_tf['time/epoch_l']) +
                                float(Das_tf['time/micro_seconds_i']) / 1000000)
-
             if float(das_t_start) > float(stc.starttime):
                 start_time = das_t_start
 
             else:
                 start_time = stc.starttime
-
             nt = stc.notimecorrect
-
-            if stc.sample_rate > 0:
-                actual_sample_rate = float(
-                    stc.sample_rate) / float(stc.sample_rate_multiplier)
-            else:
-                actual_sample_rate = 0
-
-            if stc.sample_rate != 0:
+            for das_inst in das:
+                # Does Array.sr == DAS.sr? If so use sr
+                if das_inst['sample_rate_i'] == stc.sample_rate:
+                    if das_inst['sample_rate_i'] > 0:
+                        actual_sample_rate = float(stc.sample_rate) /\
+                                             float(stc.sample_rate_multiplier)
+                        empty_times = False
+                    else:
+                        actual_sample_rate = 0
+                        empty_times = False
+                else:
+                    continue
+            if empty_times is True:
+                for i, das_inst in enumerate(das):
+                    # Checks to see if all DAS tables have same SR
+                    sr_prev = das[i-1]['sample_rate_i']
+                    if das_inst['sample_rate_i'] != sr_prev:
+                        sr_mismatch = True
+                try:
+                    if sr_mismatch is True:
+                        # Else fail with error
+                        LOGGER.error('DAS and Array Table sample' +
+                                     ' rates do not match, DAS table' +
+                                     ' sample rates do not match.' +
+                                     ' Data must be updated.')
+                        return
+                    else:
+                        # Uses DAS SR if consistent
+                        das_sr = das_inst['sample_rate_i']
+                        das_srm = das_inst['sample_rate_multiplier_i']
+                        LOGGER.warning('Using sample rate from' +
+                                       ' DAS Table. Sample rates' +
+                                       ' in DAS and Array tables' +
+                                       ' are not consistent.')
+                        if das_inst['sample_rate_i'] > 0:
+                            actual_sample_rate = float(das_sr) / float(das_srm)
+                        else:
+                            actual_sample_rate = 0
+                except(UnboundLocalError):
+                    continue
+            if actual_sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
                                       stc.endtime,
                                       chan=stc.component,
                                       sample_rate=actual_sample_rate,
                                       apply_time_correction=nt, das_t=das)
+
             else:
                 traces = self.ph5.textural_cut(stc.das,
                                                start_time,
@@ -876,7 +909,6 @@ class PH5toMSeed(object):
 
     def create_cut_list(self):
         cuts_generator = []
-
         experiment_t = self.ph5.Experiment_t['rows']
 
         try:

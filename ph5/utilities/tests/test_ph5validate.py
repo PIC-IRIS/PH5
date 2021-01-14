@@ -9,14 +9,89 @@ import logging
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import ph5validate
+from ph5.utilities import ph5validate, segd2ph5
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
-class TestPh5Validate_main(TempDirTestCase, LogTestCase):
+class TestPH5Validate_response(LogTestCase, TempDirTestCase):
     def setUp(self):
-        super(TestPh5Validate_main, self).setUp()
+        super(TestPH5Validate_response, self).setUp()
+        ph5path = os.path.join(self.home, "ph5/test_data/ph5")
+        self.ph5API_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, '.')
+        self.resp_check_info = [
+            {'n_i': 0, 'array': '001', 'sta': '500',
+             'cha_code': 'DP1', 'spr': 500, 'sprm': 1, 'cha_id': 1,
+             'smodel': '', 'dmodel': 'ZLAND 3C'},
+            {'n_i': 0, 'array': '001', 'sta': '500',
+             'cha_code': 'DP2', 'spr': 500, 'sprm': 1, 'cha_id': 2,
+             'smodel': '', 'dmodel': 'ZLAND 3C'},
+            {'n_i': 0, 'array': '001', 'sta': '500',
+             'cha_code': 'DPZ', 'spr': 500, 'sprm': 1, 'cha_id': 3,
+             'smodel': '', 'dmodel': 'ZLAND 3C'},
+            {'n_i': 5, 'array': '002', 'sta': '0407',
+             'cha_code': 'HHN', 'spr': 200, 'sprm': 1, 'cha_id': 1,
+             'smodel': 'None CMG-3T', 'dmodel': 'None Q330'},
+            {'n_i': 6, 'array': '003', 'sta': '0407',
+             'cha_code': 'LHN', 'spr': 100, 'sprm': 1, 'cha_id': 1,
+             'smodel': 'None CMG-3T', 'dmodel': 'None Q330'},
+            {'n_i': -1, 'array': '004', 'sta': '0407',
+             'cha_code': 'LOG', 'spr': 0, 'sprm': 1, 'cha_id': -2,
+             'smodel': 'None CMG-3T', 'dmodel': 'None Q330'},
+            {'n_i': 1, 'array': '008', 'sta': '8001',
+             'cha_code': 'HLZ', 'spr': 100, 'sprm': 1, 'cha_id': 1,
+             'smodel': 'cmg-3t', 'dmodel': 'rt130'},
+            {'n_i': 2, 'array': '008', 'sta': '8001',
+             'cha_code': 'HL1', 'spr': 100, 'sprm': 1, 'cha_id': 2,
+             'smodel': 'cmg-3t', 'dmodel': 'rt130'},
+            {'n_i': 3, 'array': '008', 'sta': '8001',
+             'cha_code': 'HL2', 'spr': 100, 'sprm': 1, 'cha_id': 3,
+             'smodel': 'cmg-3t', 'dmodel': 'rt130'},
+            {'n_i': 4, 'array': '009', 'sta': '9001',
+             'cha_code': 'DPZ', 'spr': 500, 'sprm': 1, 'cha_id': 1,
+             'smodel': 'gs11v', 'dmodel': 'rt125a'}]
+
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5Validate_response, self).tearDown()
+
+    def test_check_array_t(self):
+        vb_array, resp_check_info = self.ph5validate.check_array_t()
+        self.assertEqual(resp_check_info, self.resp_check_info)
+
+    def test_check_response_t(self):
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.ph5validate.check_response_t(self.resp_check_info)
+            self.assertEqual(ret[0].error, set())
+            self.assertEqual(log.records, [])
+
+        self.resp_check_info[9]['spr'] = 100
+        self.resp_check_info[9]['smodel'] = 'cmg3t'
+
+        errors = [
+            "009-9001-1 response_table_n_i 4: Response sensor file name "
+            "should be 'cmg3t' instead of 'gs11v'.",
+            "009-9001-1 response_table_n_i 4: Response das file name should "
+            "be 'rt125a_100_1_32' instead of 'rt125a_500_1_32'."]
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.ph5validate.check_response_t(self.resp_check_info)
+            self.assertEqual(ret[0].error, {(err, 'error') for err in errors})
+            for i in range(len(log.records)):
+                self.assertEqual(log.records[i].msg, errors[i])
+            self.assertEqual(ret[0].heading,
+                             "-=-=-=-=-=-=-=-=-\n"
+                             "Response_t\n"
+                             "2 error, 0 warning, 0 info\n"
+                             "-=-=-=-=-=-=-=-=-\n"
+                             )
+
+
+class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestPh5Validate_main_detect_data, self).setUp()
         kef_to_ph5(
             self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
@@ -131,9 +206,9 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
         self.assertEqual(ret.verbose, False)
 
 
-class TestPh5Validate(TempDirTestCase, LogTestCase):
+class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TestPh5Validate, self).setUp()
+        super(TestPh5Validate_detect_data, self).setUp()
         kef_to_ph5(
             self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
@@ -145,7 +220,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
 
     def tearDown(self):
         self.ph5_object.ph5close()
-        super(TestPh5Validate, self).tearDown()
+        super(TestPh5Validate_detect_data, self).tearDown()
 
     def test_check_array_t(self):
         """
@@ -153,7 +228,7 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         """
         with LogCapture() as log:
             log.setLevel(logging.INFO)
-            vb = self.ph5validate.check_array_t()
+            vb, resp_check_info = self.ph5validate.check_array_t()
 
         self.assertEqual(log.records[0].msg, "Validating Array_t")
 
@@ -335,6 +410,33 @@ class TestPh5Validate(TempDirTestCase, LogTestCase):
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
                       errors)
+
+
+class TestPH5Validate_resp_load_not_run(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5Validate_resp_load_not_run, self).tearDown()
+
+    def test_check_response_t(self):
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5API_object = ph5api.PH5(path=self.tmpdir,
+                                        nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, '.')
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.ph5validate.check_response_t([])
+            self.assertEqual(
+                ret[0].error,
+                {('All response file names are blank in response table. '
+                  'Check if resp_load has been run.', 'error')})
+            self.assertEqual(
+                log.records[0].msg,
+                'All response file names are blank in response table. '
+                'Check if resp_load has been run.')
 
 
 if __name__ == "__main__":

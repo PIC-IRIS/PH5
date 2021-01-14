@@ -7,10 +7,9 @@ import unittest
 import numpy
 
 from mock import patch
-from testfixtures import OutputCapture
+from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import obspytoph5
-from ph5.utilities import metadatatoph5
+from ph5.utilities import obspytoph5, metadatatoph5, initialize_ph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -20,16 +19,16 @@ class TestObspytoPH5_main(TempDirTestCase, LogTestCase):
         super(TestObspytoPH5_main, self).setUp()
         self.station_xml_path = os.path.join(
             self.home, 'ph5/test_data/metadata/station.xml')
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    self.station_xml_path]
+        with patch.object(sys, 'argv', testargs):
+            metadatatoph5.main()
 
     def tearDown(self):
         self.ph5_object.ph5close()
         super(TestObspytoPH5_main, self).tearDown()
 
     def test_main1(self):
-        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    self.station_xml_path]
-        with patch.object(sys, 'argv', testargs):
-            metadatatoph5.main()
 
         # need to use relative path '../miniseed/' because das_t's
         # 'raw_file_name_s will be chopped off if the path's length is greater
@@ -58,15 +57,11 @@ class TestObspytoPH5_main(TempDirTestCase, LogTestCase):
                          ret[1]['raw_file_name_s'])
 
     def test_main2(self):
-        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    self.station_xml_path]
-        with patch.object(sys, 'argv', testargs):
-            metadatatoph5.main()
 
         # need to use relative path '../miniseed/' because das_t's
         # 'raw_file_name_s will be chopped off if the path's length is greater
         # than 32
-        testargs = ['obspytoph5', '-n', 'master.ph5', '-f',
+        testargs = ['obspytoph5', '-n', 'master.ph5', '-r',
                     '../miniseed/0407HHN.ms']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
@@ -88,10 +83,6 @@ class TestObspytoPH5_main(TempDirTestCase, LogTestCase):
                          ret[0]['raw_file_name_s'])
 
     def test_main3(self):
-        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
-                    self.station_xml_path]
-        with patch.object(sys, 'argv', testargs):
-            metadatatoph5.main()
 
         with open("test_list", "w") as f:
             # need to use relative path '../miniseed/0407HHN.ms' because
@@ -99,7 +90,7 @@ class TestObspytoPH5_main(TempDirTestCase, LogTestCase):
             # length is greater than 32
             f.write("../miniseed/0407HHN.ms")
         # first need to run obspytoph5
-        testargs = ['obspytoph5', '-n', 'master.ph5', '-l',
+        testargs = ['obspytoph5', '-n', 'master.ph5', '-f',
                     'test_list']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
@@ -141,10 +132,10 @@ class TestObspytoPH5(TempDirTestCase, LogTestCase):
             with self.assertRaises(SystemExit):
                 obspytoph5.get_args([])
 
-        ret = obspytoph5.get_args(['-n', 'master.ph5', '-f', 'test.ms',
+        ret = obspytoph5.get_args(['-n', 'master.ph5', '-r', 'test.ms',
                                    '-V'])
         self.assertEqual(ret.nickname, 'master.ph5')
-        self.assertEqual(ret.infile, 'test.ms')
+        self.assertEqual(ret.rawfile, 'test.ms')
         self.assertEqual(ret.ph5path, '.')
         self.assertTrue(ret.verbose)
 
@@ -229,7 +220,7 @@ class TestObspytoPH5_float32(TempDirTestCase, LogTestCase):
         super(TestObspytoPH5_float32, self).tearDown()
 
     def test_main(self):
-        testargs = ['mstoph5', '-n', 'master.ph5', '-f',
+        testargs = ['mstoph5', '-n', 'master.ph5', '-r',
                     os.path.join(self.datapath, '05743.SS..GHZ.148')]
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
@@ -260,6 +251,26 @@ class TestObspytoPH5_float32(TempDirTestCase, LogTestCase):
             'Array')
         data = data_node.read()
         self.assertIsInstance(data[0], numpy.float32)
+
+
+class TestObspytoPH5_option(TempDirTestCase, LogTestCase):
+    def test_main(self):
+        testargs = ['initialize_ph5', '-n', 'master']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        # check using flag -f for miniseed file
+        testargs = ['mstoph5', '-n', 'master', '-f',
+                    os.path.join(self.home,
+                                 'ph5/test_data/miniseed/0407HHN.ms')]
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                with self.assertRaises(SystemExit):
+                    obspytoph5.main()
+                self.assertEqual(
+                    log.records[0].msg,
+                    "The given list file is a miniseed file. "
+                    "You have been confused between two option -r and -f.")
 
 
 if __name__ == "__main__":

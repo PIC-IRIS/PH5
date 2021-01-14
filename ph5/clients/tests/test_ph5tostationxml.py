@@ -9,9 +9,9 @@ import logging
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
+from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5
 from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
-from ph5.utilities import initialize_ph5
 
 from obspy.core.utcdatetime import UTCDateTime
 
@@ -39,9 +39,16 @@ def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
     return ph5sxml, mng, parser
 
 
-class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
-    def test_main_multideploy(self):
-        # array_multideploy.kef: same station different deploy times
+class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        try:
+            self.mng.ph5.close()
+        except AttributeError:
+            pass
+        super(TestPH5toStationXMLParser_main_multideploy, self).tearDown()
+
+    def test_main(self):
+        # array_multideploy: same station different deploy times
         # => check if network time cover all or only the first 1
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
@@ -57,6 +64,7 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
                     output[1],
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
+
 
     def test_main_created_time_format(self):
         # array_multideploy.kef: same station different deploy times
@@ -83,6 +91,18 @@ class TestPH5toStationXMLParser_main(LogTestCase, TempDirTestCase):
 
                 self.assertIn('T', timestr)
                 self.assertEqual(timestr, convstr)
+
+    def test_init_response_duplication(self):
+        # response_t_dup_n_i.kef has n_i= 1,3,6 duplicated
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ['response_t_dup_n_i.kef'])
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, 'master.ph5', 'NETWORK')
+        self.assertEqual(
+            self.parser.unique_errors,
+            {('Response_t n_i(s) duplicated: 1,3,6', 'error')})
 
     def test_main_location(self):
         args = ['initialize_ph5', '-n', 'master.ph5']
@@ -182,10 +202,158 @@ class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
 
+class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(TestPH5toStationXMLParser_response, self).setUp()
+        ph5path = os.path.join(self.home, "ph5/test_data/ph5")
+        self.ph5sxml, self.mng, self.parser = getParser(
+            ph5path, "master.ph5", "CHANNEL")
+
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_response, self).tearDown()
+
+    def test_get_response_inv(self):
+        obs_channel = self.parser.create_obs_channel(
+            sta_code='9001', loc_code='', cha_code='DPZ',
+            start_date='2019-02-22T15:39',
+            end_date='2019-02-22T15:44',
+            cha_longitude=-106.906169, cha_latitude=34.054673,
+            cha_elevation=1403.0,
+            cha_component=1, receiver_id='9001', array_code='009',
+            sample_rate=500.0, sample_rate_ration=500.0,
+            azimuth=0.0, dip=90.0, sensor_manufacturer='geospace',
+            sensor_model='gs11v', sensor_serial='',
+            das_manufacturer='reftek', das_model='rt125a', das_serial='12183'
+        )
+
+        # No response entry for n_i=7
+        self.parser.response_table_n_i = 7
+        self.parser.get_response_inv(
+            obs_channel, a_id='009', sta_id='9001', cha_id=1, spr=50, spr_m=1)
+
+        # sensor model exist but no response sensor filename
+        # wrong response das file name either by resp_load or metadata
+        # while no response sensor file name
+        self.parser.response_table_n_i = 6
+        self.parser.get_response_inv(
+            obs_channel, a_id='003', sta_id='0407', cha_id=1, spr=100, spr_m=1)
+
+        # wrong response das file name
+        # wrong response sensor name
+        obs_channel.sensor.model = 'cmg_3t'
+        self.parser.response_table_n_i = 4
+        self.parser.get_response_inv(
+            obs_channel, a_id='009', sta_id='9001', cha_id=1, spr=200, spr_m=1)
+
+        # no response data for gs11 (only for gs11v)
+        response_t = self.mng.ph5.get_response_t_by_n_i(4)
+        response_t['response_file_sensor_a'] = '/Experiment_g/Responses_g/gs11'
+        obs_channel.sensor.model = 'gs11'
+        self.parser.get_response_inv(
+            obs_channel, a_id='009', sta_id='9001', cha_id=1, spr=200, spr_m=1)
+
+        self.assertEqual(
+            set(errmsg for errmsg, logtype in self.parser.unique_errors),
+            {"No response entry for n_i=7.",
+             "003-0407-1 response_table_n_i 6: response_file_sensor_a is "
+             "blank while sensor model exists.",
+             "003-0407-1 response_table_n_i 6: Response das file name should "
+             "be 'rt125a_100_1_1' or 'rt125a_gs11v_100DPZ' instead of "
+             "'NoneQ330_NoneCMG3T_100LHN'.",
+             "009-9001-1 response_table_n_i 4: Response sensor file name "
+             "should be 'cmg_3t' instead of 'gs11v'.",
+             "009-9001-1 response_table_n_i 4: Response das file name should "
+             "be 'rt125a_200_1_32' instead of 'rt125a_500_1_32'.",
+             "No response data loaded for gs11."})
+
+    def test_create_obs_network(self):
+        # modify response_t to produce errors:
+        # remove n_i=0,6,-1,3,4
+        # n_i=1: sensor resp:cmg3t=>gs11v das resp:rt130_100_1_1=>rt130_200_1_1
+        # n_1=2: das resp: rt130_100_1_1=>rt130_10_1_1
+        #      sensor resp:cmg3t=>cmg_3t and array's sensor model:cmg3t=>cmg_3t
+        # n_i=5: das resp:NoneQ330_NoneCMG3T_200HHN=>NoneQ330_CMG3T_200HHN
+        self.mng.ph5.Response_t['rows'] = [
+            {'n_i': 1, 'gain/value_i': 1,
+             'response_file_das_a': '/Experiment_g/Responses_g/rt130_200_1_1',
+             'response_file_sensor_a': '/Experiment_g/Responses_g/gs11v'},
+            {'n_i': 2, 'gain/value_i': 1,
+             'response_file_das_a': '/Experiment_g/Responses_g/rt130_10_1_1',
+             'response_file_sensor_a': '/Experiment_g/Responses_g/cmg_3t'},
+            {'n_i': 5, 'gain/value_i': 1,
+             'response_file_das_a':
+                 '/Experiment_g/Responses_g/NoneQ330_CMG3T_200HHN',
+             'response_file_sensor_a': ''}]
+        self.parser.manager.ph5.read_experiment_t()
+        self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
+        self.parser.add_ph5_stationids()
+        self.mng.ph5.Array_t['Array_t_008']['byid'][
+            '8001'][2][0]['sensor/model_s'] = 'cmg_3t'
+
+        errors = {"No response entry for n_i=0.",
+                  "002-0407-1 response_table_n_i 5: response_file_sensor_a is "
+                  "blank while sensor model exists.",
+                  "002-0407-1 response_table_n_i 5: Response das file name "
+                  "should be 'NoneQ330_200_1_1' or 'NoneQ330_NoneCMG3T_200HHN'"
+                  " instead of 'NoneQ330_CMG3T_200HHN'.",
+                  "No response entry for n_i=6.",
+                  "No response entry for n_i=-1.",
+                  "008-8001-1 response_table_n_i 1: Response sensor file name "
+                  "should be 'cmg3t' instead of 'gs11v'.",
+                  "008-8001-1 response_table_n_i 1: Response das file name "
+                  "should be 'rt130_100_1_1' instead of 'rt130_200_1_1'.",
+                  "No response data loaded for cmg_3t.",
+                  "008-8001-2 response_table_n_i 2: Response das file name "
+                  "should be 'rt130_100_1_1' instead of 'rt130_10_1_1'.",
+                  "No response entry for n_i=3.",
+                  "No response entry for n_i=4."}
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            self.parser.create_obs_network()
+            self.assertEqual(set(rec.msg for rec in log.records),
+                             set(errors))
+
+
+class TestPH5toStationXMLParser_resp_load_not_run(
+        LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(TestPH5toStationXMLParser_resp_load_not_run, self).setUp()
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+        testargs = ['keftoph5', '-n', 'master.ph5', '-k',
+                    os.path.join(self.home,
+                                 'ph5/test_data/metadata/experiment.kef')]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, "master.ph5", "CHANNEL")
+
+    def tearDown(self):
+        self.mng.ph5.close()
+        super(TestPH5toStationXMLParser_resp_load_not_run, self).tearDown()
+
+    def test_create_obs_network(self):
+        self.parser.manager.ph5.read_experiment_t()
+        self.parser.experiment_t = self.parser.manager.ph5.Experiment_t['rows']
+        self.parser.add_ph5_stationids()
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            self.parser.create_obs_network()
+            self.assertEqual(log.records[0].msg,
+                             'All response file names are blank in response '
+                             'table. Check if resp_load has been run.')
+
+
 class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5toStationXMLParser_location, self).setUp()
-
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
@@ -233,6 +401,8 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
     def test_read_station(self):
         self.parser.add_ph5_stationids()
         ret = self.parser.read_stations()
+        self.errmsgs.append('All response file names are blank in response '
+                            'table. Check if resp_load has been run.')
         issueset = set([(err, 'error') for err in self.errmsgs] +
                        [(warn, 'warning') for warn in self.warnmsgs])
         self.assertEqual(issueset, self.parser.unique_errors)
@@ -246,6 +416,8 @@ class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
             ret = self.parser.create_obs_network()
+            self.errmsgs.append('All response file names are blank in response'
+                                ' table. Check if resp_load has been run.')
             self.assertEqual(set(rec.msg for rec in log.records),
                              set(self.errmsgs + self.warnmsgs))
             self.assertEqual(ret.code, 'AA')

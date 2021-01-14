@@ -149,7 +149,6 @@ class TestPH5API(LogTestCase):
         self.assertEqual(channel[0]['seed_instrument_code_s'], 'P')
         self.assertEqual(channel[0]['seed_orientation_code_s'], 'Z')
         self.assertEqual(channel[0]['receiver_table_n_i'], 0)
-        # in response_t n_i=0 for model ZLAND3C
         self.assertEqual(channel[0]['response_table_n_i'], 0)
         self.assertEqual(channel[0]['channel_number_i'], 3)
 

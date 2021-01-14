@@ -294,6 +294,13 @@ class PH5toStationXMLParser(object):
         self.receiver_table_n_i = None
         self.total_number_stations = 0
         self.unique_errors = set()
+        self.checked_data_files = {}
+        self.unique_filenames_n_i = []
+        self.manager.ph5.read_response_t()
+        validation.check_resp_unique_n_i(
+            self.manager.ph5, self.unique_errors, None)
+        self.resp_load_already = validation.check_resp_load(
+            self.manager.ph5.Response_t, self.unique_errors, None)
 
     def check_intersection(self, sta_xml_obj, latitude, longitude):
         """
@@ -403,26 +410,37 @@ class PH5toStationXMLParser(object):
         else:
             return
 
-    def get_response_inv(self, obs_channel):
-
+    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id, spr, spr_m):
+        if not self.resp_load_already:
+            return Response()
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
+        info = {'n_i': self.response_table_n_i,
+                'array': a_id,
+                'sta': sta_id,
+                'cha_id': cha_id,
+                'cha_code': obs_channel.code,
+                'dmodel': obs_channel.data_logger.model,
+                'smodel': obs_channel.sensor.model,
+                'spr': spr,
+                'sprm': spr_m,
+                }
+        if info['dmodel'].startswith("ZLAND"):
+            info['smodel'] = ''
+        check_info = validation.check_response_info(
+            info, self.manager.ph5, self.unique_filenames_n_i,
+            self.checked_data_files, self.unique_errors, None)
+
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
-            self.manager.ph5.read_response_t()
-            Response_t = \
-                self.manager.ph5.get_response_t_by_n_i(self.response_table_n_i)
-            if Response_t:
-                response_file_das_a_name = Response_t.get(
-                    'response_file_das_a', None)
-                response_file_sensor_a_name = Response_t.get(
-                    'response_file_sensor_a', None)
-            else:
-                LOGGER.error('Response table not found')
+            if not check_info:
                 return Response()
+
+            response_file_das_a_name, response_file_sensor_a_name = check_info
+
             # parse datalogger response
             if response_file_das_a_name:
                 response_file_das_a = \
@@ -623,7 +641,6 @@ class PH5toStationXMLParser(object):
         if self.experiment_t == []:
             LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
             return
-
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
@@ -881,8 +898,10 @@ class PH5toStationXMLParser(object):
                     # read response and add it to obspy channel inventory
                     self.response_table_n_i = \
                         station_entry['response_table_n_i']
-                    obs_channel.response = \
-                        self.get_response_inv(obs_channel)
+                    obs_channel.response = self.get_response_inv(
+                            obs_channel, array_code, sta_code, c_id,
+                            station_entry['sample_rate_i'],
+                            station_entry['sample_rate_multiplier_i'])
 
                     all_channels.append(obs_channel)
         return all_channels
