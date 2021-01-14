@@ -108,7 +108,7 @@ def check_resp_file_name(Response_t, info, header, ftype,
                 models += " 'cha=%(cha_code)s'"
         if ftype == 'sensor':
             models = "sensor_model %(smodel)s"
-        errmsg = ("{0}response_file_{1}_a '{2}' is inconsistence with "
+        errmsg = ("{0}response_file_{1}_a '{2}' is inconsistent with "
                   "{3}.").format(header,
                                  ftype,
                                  std_response_fname,
@@ -141,7 +141,7 @@ def check_response_info(info, ph5, checked_data_files, errors, logger):
                                                  info['cha_id'],
                                                  info['n_i'])
     if Response_t is None:
-        errmsg = ("%sresponse_t has no entry for n_i=%s"
+        errmsg = ("%sResponse_t has no entry for n_i=%s"
                   % (header, info['n_i']))
         return False, errmsg
     if info['n_i'] == -1:

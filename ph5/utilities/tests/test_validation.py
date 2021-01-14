@@ -55,13 +55,13 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
              'smodel': 'gs11v', 'dmodel': 'rt125a'}]
         self.errors = [
             "array 009, station 9001, channel 1, response_table_n_i 4: "
-            "response_file_das_a 'rt125a_500_1_32' is inconsistence with "
+            "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
             "das_model='rt125a'; sr=100 srm=1 gain=32.",
             "array 009, station 9001, channel 1, response_table_n_i 4: "
-            "response_file_sensor_a 'gs11v' is inconsistence with "
+            "response_file_sensor_a 'gs11v' is inconsistent with "
             "sensor_model cmg3t.",
             "array 002, station 0407, channel 1, response_table_n_i 5: "
-            "response_file_das_a 'NoneQ330_CMG3T_200HHN' is inconsistence "
+            "response_file_das_a 'NoneQ330_CMG3T_200HHN' is inconsistent "
             "with sensor_model='NoneCMG3T' and das_model='NoneQ330';"
             " sr=200 srm=1 gain=1 'cha=HHN'."]
 
@@ -258,11 +258,11 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         info['smodel'] = 'cmg3t'
         chckerrors = set(
             ["array 009, station 9001, channel 1, response_table_n_i 4: "
-             "response_file_das_a 'rt125a_500_1_32' is inconsistence with "
+             "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
              "sensor_model='cmg3t' and das_model='rt125a'; "
              "sr=100 srm=1 gain=32 'cha=DPZ'.",
              "array 009, station 9001, channel 1, response_table_n_i 4: "
-             "response_file_sensor_a 'gs11v' is inconsistence with "
+             "response_file_sensor_a 'gs11v' is inconsistent with "
              "sensor_model cmg3t."])
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
         with LogCapture() as log:
@@ -294,7 +294,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.assertEqual(ret,
                          (False, 'array 008, station 8001, channel 1,'
                                  ' response_table_n_i 8: '
-                                 'response_t has no entry for n_i=8'))
+                                 'Response_t has no entry for n_i=8'))
 
     def test_check_response_unique_n_i(self):
         self.ph5API_object.read_response_t()

@@ -258,7 +258,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertEqual(
             contxt.exception.message,
             'array 009, station 9001, channel 1, response_table_n_i 7: '
-            'response_t has no entry for n_i=7')
+            'Response_t has no entry for n_i=7')
 
         # no response data for gs11 (only for gs11v)
         self.parser.response_table_n_i = 4
@@ -288,12 +288,12 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertEqual(
             self.parser.unique_errors,
             set([("array 009, station 9001, channel 1, response_table_n_i 4: "
-                  "response_file_das_a 'rt125a_500_1_32' is inconsistence "
+                  "response_file_das_a 'rt125a_500_1_32' is inconsistent "
                   "with sensor_model='cmg3t' and das_model='rt125a';"
                   " sr=200 srm=1 gain=32 'cha=DPZ'.",
                   'warning'),
                  ("array 009, station 9001, channel 1, response_table_n_i 4: "
-                  "response_file_sensor_a 'gs11v' is inconsistence with "
+                  "response_file_sensor_a 'gs11v' is inconsistent with "
                   "sensor_model cmg3t.",
                   'warning')
                  ]))
@@ -315,7 +315,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                   "warning"),
                  ("array 003, station 0407, channel 1, response_table_n_i 6: "
                   "response_file_das_a 'NoneQ330_NoneCMG3T_100LHN' is "
-                  "inconsistence with sensor_model='NoneCMG3T' and "
+                  "inconsistent with sensor_model='NoneCMG3T' and "
                   "das_model='rt125a'; sr=100 srm=1 gain=1 'cha=DPZ'.",
                   'warning')
                  ]))
@@ -332,7 +332,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertEqual(
             self.parser.unique_errors,
             set([("array 009, station 9001, channel 1, response_table_n_i 7: "
-                  "response_t has no entry for n_i=7", "error")])
+                  "Response_t has no entry for n_i=7", "error")])
         )
 
         self.parser.unique_errors = set()
@@ -381,16 +381,16 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                 set(rec.msg for rec in log.records),
                 {"array 002, station 0407, channel 1, response_table_n_i 5: "
                  "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is "
-                 "inconsistence with sensor_model='CMG' and "
+                 "inconsistent with sensor_model='CMG' and "
                  "das_model='NoneQ330'; sr=200 srm=1 gain=1 'cha=HHN'.",
                  "array 008, station 8001, channel 1, response_table_n_i 1: "
-                 "response_file_das_a 'rt130_100_1_1' is inconsistence with "
+                 "response_file_das_a 'rt130_100_1_1' is inconsistent with "
                  "sensor_model='cmg3t' and das_model='rt130'; "
                  "sr=10 srm=1 gain=1 'cha=HLZ'.",
                  'array 001, station 500, channel 1: Channel elevation seems '
                  'to be 0. Is this correct???',
                  "array 008, station 8001, channel 2, response_table_n_i 2: "
-                 "response_file_sensor_a 'cmg3t' is inconsistence with "
+                 "response_file_sensor_a 'cmg3t' is inconsistent with "
                  "sensor_model CMS.",
                  'array 001, station 500, channel 3: Channel elevation seems '
                  'to be 0. Is this correct???',
