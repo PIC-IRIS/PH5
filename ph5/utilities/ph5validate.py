@@ -311,41 +311,24 @@ class PH5Validate(object):
             validation_blocks.append(vb)
         return validation_blocks
 
-    def check_response_t(self, resp_check_info):
+    def check_response_t(self):
         """
-        :param resp_check_info: a list of dict of {n_i, sta, cha_id, cha_code,
-                                                  dmodel, smodel, spr, sprm}
+        This function only checks for general response errors.
+        Response's errors for each station are checked in check_array_t()
         """
         LOGGER.info("Validating Response_t")
         header = ("-=-=-=-=-=-=-=-=-\n"
                   "Response_t\n"
-                  "%s error, %s warning, 0 info\n"
+                  "%s error, 0 warning, 0 info\n"
                   "-=-=-=-=-=-=-=-=-\n")
-        checked_data_files = {}
         self.ph5.read_response_t()
         errors = set()
-        if validation.check_has_response_filename(
-                self.ph5.Response_t, errors, LOGGER) is not True:
-            header %= (len(errors), 0)
-            err = [e[0] for e in errors if e[1] == 'error']
-            return [ValidationBlock(heading=header, error=err)]
-
-        for info in resp_check_info:
-            # check file name and response data loaded
-            check_info = validation.check_response_info(info,
-                                                        self.ph5,
-                                                        checked_data_files,
-                                                        errors,
-                                                        None)
-            if check_info[0] is False:
-                errors.add((check_info[1], 'error'))
-
+        validation.check_has_response_filename(
+            self.ph5.Response_t, errors, LOGGER)
         validation.check_resp_unique_n_i(self.ph5, errors, LOGGER)
-
         err = [e[0] for e in errors if e[1] == 'error']
-        warn = [w[0] for w in errors if w[1] == 'warning']
-        header %= (len(err), len(warn))
-        return [ValidationBlock(heading=header, error=err, warning=warn)]
+        header = header % len(err)
+        return [ValidationBlock(heading=header, error=err)]
 
     def check_station_completeness(self, station):
         """
@@ -643,10 +626,7 @@ class PH5Validate(object):
     def check_array_t(self):
         LOGGER.info("Validating Array_t")
         validation_blocks = []
-        resp_check_info = []
-        info = []
-        warning = []
-        error = []
+        checked_data_files = {}
         track_repeated = []
         if not self.ph5.Array_t_names:
             header = ("-=-=-=-=-=-=-=-=-\n"
@@ -679,18 +659,18 @@ class PH5Validate(object):
                                 sensor_model = ''
                             else:
                                 sensor_model = station['sensor/model_s']
-                            item = {'n_i': resp_n_i,
-                                    'array': array_name[8:],
-                                    'sta': station_id,
-                                    'cha_id': channel_id,
-                                    'cha_code': cha_code,
-                                    'dmodel': das_model,
-                                    'smodel': sensor_model,
-                                    'spr': station['sample_rate_i'],
-                                    'sprm': station['sample_rate_multiplier_i']
-                                    }
-                            if item not in resp_check_info:
-                                resp_check_info.append(item)
+                            errors = set()
+                            resp_info = {
+                                'n_i': resp_n_i,
+                                'array': array_name[8:],
+                                'sta': station_id,
+                                'cha_id': channel_id,
+                                'cha_code': cha_code,
+                                'dmodel': das_model,
+                                'smodel': sensor_model,
+                                'spr': station['sample_rate_i'],
+                                'sprm': station['sample_rate_multiplier_i']
+                            }
 
                             LOGGER.debug("Validating Station {0} Channel {1}"
                                          .format(str(station_id),
@@ -698,6 +678,18 @@ class PH5Validate(object):
                             info, warning, error = \
                                 self.check_station_completeness(station)
 
+                            check_info = validation.check_response_info(
+                                resp_info,
+                                self.ph5,
+                                checked_data_files,
+                                errors,
+                                None)
+                            if check_info[0] is False:
+                                errors.add((check_info[1], 'error'))
+                            error += [': '.join(e[0].split(': ')[1:])
+                                      for e in errors if e[1] == 'error']
+                            warning += [': '.join(w[0].split(': ')[1:])
+                                        for w in errors if w[1] == 'warning']
                             if any("repeated" in w for w in warning):
                                 item = (station_id, channel_id,
                                         station['deploy_time/epoch_l'],
@@ -724,7 +716,7 @@ class PH5Validate(object):
                                                      warning=warning,
                                                      error=error)
                                 validation_blocks.append(vb)
-        return validation_blocks,  resp_check_info
+        return validation_blocks
 
     def check_event_t_completeness(self, event):
         """
@@ -920,9 +912,8 @@ def main():
                                   args.ph5path)
         validation_blocks = []
         validation_blocks.extend(ph5validate.check_experiment_t())
-        vb_array, resp_check_info = ph5validate.check_array_t()
-        validation_blocks.extend(vb_array)
-        validation_blocks.extend(ph5validate.check_response_t(resp_check_info))
+        validation_blocks.extend(ph5validate.check_array_t())
+        validation_blocks.extend(ph5validate.check_response_t())
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
