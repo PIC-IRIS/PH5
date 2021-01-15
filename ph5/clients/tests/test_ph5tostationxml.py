@@ -65,7 +65,6 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
 
-
     def test_main_created_time_format(self):
         # array_multideploy.kef: same station different deploy times
         # => check if network time cover all or only the first 1
