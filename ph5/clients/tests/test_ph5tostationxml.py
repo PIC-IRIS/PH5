@@ -75,7 +75,8 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
         kef_to_ph5(self.tmpdir,
                    'master.ph5',
                    os.path.join(self.home, "ph5/test_data/metadata"),
-                   ["array_multi_deploy.kef", "experiment.kef"])
+                   ["array_multi_deploy.kef", "experiment.kef",
+                    "response_t.kef"])
         testargs = ['ph5tostationxml', '-n', 'master',
                     '--level', 'network', '-f', 'stationxml']
 
