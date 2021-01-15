@@ -11,7 +11,6 @@ import multiprocessing
 import logging
 import pickle
 
-from datetime import datetime
 from obspy.core import inventory
 from obspy import read_inventory  # NOQA
 from obspy.core.util import AttribDict
@@ -985,7 +984,7 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
                                         networks=networks,
                                         source="PIC-PH5",
                                         sender="IRIS-PASSCAL-DMC-PH5",
-                                        created=datetime.now(),
+                                        created=UTCDateTime.now(),
                                         module=("PH5 WEB SERVICE: metadata "
                                                 "| version: 1"),
                                         module_uri=uri)
