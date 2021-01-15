@@ -13,6 +13,8 @@ from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5
 from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
+from obspy.core.utcdatetime import UTCDateTime
+
 
 def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
               maxlon=None, lat=None, lon=None, minrad=None, maxrad=None):
@@ -62,6 +64,32 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                     output[1],
                     "AA|PH5 TEST SET|2019-06-29T18:08:33|"
                     "2019-09-28T14:29:39|1")
+
+    def test_main_created_time_format(self):
+        # array_multideploy.kef: same station different deploy times
+        # => check if network time cover all or only the first 1
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ["array_multi_deploy.kef", "experiment.kef"])
+        testargs = ['ph5tostationxml', '-n', 'master',
+                    '--level', 'network', '-f', 'stationxml']
+
+        try:
+            from obspy.io.stationxml.core import _format_time as fmt
+        except ImportError:
+            fmt = UTCDateTime.__str__
+
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5tostationxml.main()
+                output = out.captured.strip().split("\n")
+                timestr = output[6].split('>')[1].split('<')[0]
+                time = UTCDateTime(timestr)
+                convstr = fmt(time)
+
+                self.assertIn('T', timestr)
+                self.assertEqual(timestr, convstr)
 
     def test_init_response_duplication(self):
         # response_t_dup_n_i.kef has n_i= 1,3,6 duplicated
