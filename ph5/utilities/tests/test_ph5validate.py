@@ -20,6 +20,7 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
     def setUp(self):
         super(TestPH5Validate_response_info, self).setUp()
         # copy ph5 data and tweak sensor model and sample rate in array 9
+        # to test for inconsistencies between filenames and info
         orgph5path = os.path.join(self.home, "ph5/test_data/ph5")
         shutil.copy(os.path.join(orgph5path, 'master.ph5'),
                     os.path.join(self.tmpdir, 'master.ph5'))
@@ -48,6 +49,10 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
         super(TestPH5Validate_response_info, self).tearDown()
 
     def test_check_array_t(self):
+        # change response_file_sensor_a to
+        # test for No response data loaded for gs11
+        response_t = self.ph5validate.ph5.get_response_t_by_n_i(4)
+        response_t['response_file_sensor_a'] = '/Experiment_g/Responses_g/gs11'
         with LogCapture():
             ret = self.ph5validate.check_array_t()
         for r in ret:
@@ -55,7 +60,7 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
                                  "Station 9001 Channel 1\n"
-                                 "1 error, 3 warning, 0 info\n"
+                                 "2 error, 3 warning, 0 info\n"
                                  "-=-=-=-=-=-=-=-=-\n"
                                  )
                 # this error causes by changing samplerate
@@ -63,16 +68,18 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                     r.error,
                     ["No data found for das serial number 12183 during "
                      "this station's time. You may need to reload the "
-                     "raw data for this station."])
+                     "raw data for this station.",
+                     'No response data loaded for gs11.'])
                 self.assertEqual(
                     r.warning,
                     ['No station description found.',
-                     "response_file_sensor_a 'gs11v' is inconsistent with "
-                     "sensor_model cmg3t.",
                      "response_file_das_a 'rt125a_500_1_32' is "
                      "inconsistent with sensor_model='cmg3t' and "
                      "das_model='rt125a'; sr=100 srm=1 gain=32 '"
-                     "cha=DPZ'."])
+                     "cha=DPZ'.",
+                     "response_file_sensor_a 'gs11' is inconsistent with "
+                     "sensor_model cmg3t."
+                     ])
             if 'Station 0407 Channel -2' in r.heading:
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
