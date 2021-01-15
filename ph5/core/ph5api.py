@@ -791,14 +791,12 @@ class PH5(experiment.ExperimentGroup):
             srm0rows = [row for row in
                         tbl.where('sample_rate_multiplier_i==0')]
             if len(srm0rows) > 0:
-
-                errmsg = (
-                        "%s, channel %s has %s sample_rate_multiplier_i(s) "
-                        "with values 0. "
-                        "Run fix_das_srm to fix those values in that Das."
-                        % (tbl._v_parent._v_name,
-                           srm0rows[0]['sample_rate_multiplier_i'],
-                           len(srm0rows)))
+                errmsg = ("%s, channel %s has %s sample_rate_multiplier_i(s) "
+                          "with values 0. "
+                          "Run fix_srm to fix those values in that Das."
+                          % (tbl._v_parent._v_name,
+                             srm0rows[0]['sample_rate_multiplier_i'],
+                             len(srm0rows)))
                 raise APIError(-1, errmsg)
 
         epoch_i = tbl.cols.time.epoch_l  # noqa
