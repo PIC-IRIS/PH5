@@ -143,7 +143,7 @@ def delete_array(ph5object, array_name):
         datapath,
         array_t)
     ph5object.ph5_g_sorts.nuke_array_t(array_id)
-    LOGGER.info('Nuke {0}'.format(datapath))
+    LOGGER.info('Nuke {0}.'.format(datapath))
     return backupfile, datapath
 
 
