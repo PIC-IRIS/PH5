@@ -685,7 +685,8 @@ class PH5Validate(object):
                                 errors,
                                 None)
                             if check_info[0] is False:
-                                errors.add((check_info[1], 'error'))
+                                for errmsg in check_info[1]:
+                                    errors.add((errmsg, 'error'))
                             error += [': '.join(e[0].split(': ')[1:])
                                       for e in errors if e[1] == 'error']
                             warning += [': '.join(w[0].split(': ')[1:])

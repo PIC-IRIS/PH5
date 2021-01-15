@@ -443,10 +443,11 @@ class PH5toStationXMLParser(object):
 
             if check_info[0] is False:
                 if emp_resp:
-                    self.unique_errors.add((check_info[1], 'error'))
+                    for errmsg in check_info[1]:
+                        self.unique_errors.add((errmsg, 'error'))
                     return Response()
                 else:
-                    raise PH5toStationXMLError(check_info[1])
+                    raise PH5toStationXMLError('\n'.join(check_info[1]))
             response_file_das_a_name, response_file_sensor_a_name = check_info
 
             # parse datalogger response

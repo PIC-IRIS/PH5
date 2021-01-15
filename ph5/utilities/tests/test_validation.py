@@ -284,17 +284,17 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         ret = validation.check_response_info(
             info, self.ph5API_object, checked_data_files, errors, logger)
         self.assertEqual(ret,
-                         (False, 'array 008, station 8001, channel 1, '
-                                 'response_table_n_i 1: No response data '
-                                 'loaded for rt130_200_1_1.'))
+                         (False, ['array 008, station 8001, channel 1, '
+                                  'response_table_n_i 1: No response data '
+                                  'loaded for rt130_200_1_1.']))
 
         info['n_i'] = 8
         ret = validation.check_response_info(
                 info, self.ph5API_object, checked_data_files, errors, logger)
         self.assertEqual(ret,
-                         (False, 'array 008, station 8001, channel 1,'
-                                 ' response_table_n_i 8: '
-                                 'Response_t has no entry for n_i=8'))
+                         (False, ['array 008, station 8001, channel 1, '
+                                  'response_table_n_i 8: '
+                                  'Response_t has no entry for n_i=8']))
 
     def test_check_response_unique_n_i(self):
         self.ph5API_object.read_response_t()

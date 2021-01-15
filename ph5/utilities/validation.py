@@ -17,15 +17,13 @@ def check_resp_data(ph5table, path, header, checked_data_files):
     """
     Check if response data is loaded for the response filename
     :para ph5table: table ph5
-    :para name: response filename
-    :para errors: list of errors
-    :param logger: logger of the caller
-    :return: True if node
-             False if node not exist
+    :para path: path filled in the response file name of response_t (str)
+    :para header: string of array-station-channel-response_table_n_i to help
+        users identify where the problem belong to (str)
+    :param checked_data_files: set of resp filenames that check_response_info()
+        has run for it
+    :return: raise Exception if there is no response data
     """
-    if path == '':
-        return
-
     name = path.split('/')[-1]
     if name in checked_data_files.keys():
         if checked_data_files[name] != '':
@@ -50,15 +48,19 @@ def check_resp_file_name(Response_t, info, header, ftype,
     :param Response_t: response entry according to info[n_i]
     :param info: info needed from each station:
             dict {n_i, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
+    :para header: string of array-station-channel-response_table_n_i to help
+        user identify where the problem belong to (str)
     :param ftype: one of the strings: das/sensor/metadata
     :para errors: list of errors
     :param logger: logger of the caller
+    :param m_file: name of metadata from previous check to add to error message
+        in das check if needed
     :return:
-      respname, resppath if info and response's path match
-      if info and response's path not match:
-        if ftype=metadata: return respname, None to have the name in metadata
-            format for the error message later if needed
-        else: return None
+      True, std_info_fname: if pass all check
+      False, None: if response filename not match with info
+      False, std_info_fname: if metadata response file name not match with
+       info, std_info_fname needed for using in error message in das checking
+       in the next step
     """
     info['dmodel'] = info['dmodel'].translate(None, ',-=._ ')
     info['smodel'] = info['smodel'].translate(None, ',-=._ ')
@@ -125,14 +127,15 @@ def check_response_info(info, ph5, checked_data_files, errors, logger):
     :param info: info needed from each station:
             dict {n_i, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
     :param ph5: ph5 object
-    :param checked_data_files: set of resp filenames that check_resp_data() has
-        run for it
-    :param errors: list of errors
+    :param checked_data_files: set of resp filenames that check_response_info()
+        has run for it
+    :param errors: list of errors from caller
     :param logger: logger of the caller
     :return:
-        False if no response data loaded
+        False, list of error messages if no response data loaded
         (d_path, s_path) in which d_path and s_path are response paths for
-            das or sensor if loaded or None if none is loaded
+            das or sensor if response data are loaded for the file name stated
+            in response table
     """
     Response_t = ph5.get_response_t_by_n_i(info['n_i'])
     header = ("array {0}, station {1}, channel {2}, "
@@ -143,12 +146,12 @@ def check_response_info(info, ph5, checked_data_files, errors, logger):
     if Response_t is None:
         errmsg = ("%sResponse_t has no entry for n_i=%s"
                   % (header, info['n_i']))
-        return False, errmsg
+        return False, [errmsg]
     if info['n_i'] == -1:
         # metadata no response signal
         errmsg = ("%sMetadata response with n_i=-1 has no response data."
                   % header)
-        return False, errmsg
+        return False, [errmsg]
 
     d_file = None
     s_file = ''
@@ -166,16 +169,24 @@ def check_response_info(info, ph5, checked_data_files, errors, logger):
 
     das_resp_path = Response_t['response_file_das_a']
     sens_resp_path = Response_t['response_file_sensor_a']
-    try:
-        if das_resp_path == '':
-            errmsg = "%sresponse_file_das_a is blank." % header
-            return False, errmsg
-        check_resp_data(ph5.ph5, das_resp_path, header, checked_data_files)
-        if s_file is not None:
+    data_errors = []
+
+    if das_resp_path == '':
+        errmsg = "%sresponse_file_das_a is blank." % header
+        data_errors.append(errmsg)
+    else:
+        try:
+            check_resp_data(ph5.ph5, das_resp_path, header, checked_data_files)
+        except Exception as e:
+            data_errors.append(str(e))
+    if sens_resp_path != '':
+        try:
             check_resp_data(ph5.ph5, sens_resp_path, header,
                             checked_data_files)
-    except Exception as e:
-        return False, str(e)
+        except Exception as e:
+            data_errors.append(str(e))
+    if data_errors != []:
+        return False, data_errors
     return das_resp_path, sens_resp_path
 
 
