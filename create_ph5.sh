@@ -36,4 +36,13 @@ cd error
 mstoph5 -n master.ph5 -r ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.ms
 keftoph5 -n master.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
 
+cd ../..
+mkdir sampleratemultiplier0
+cd sampleratemultiplier0
+initialize_ph5 -n master.ph5
+keftoph5 -n master.ph5 -k ../../metadata/experiment.kef
+segdtoph5 -n master.ph5 -r ../../segd/1111.0.0.fcnt
+echo "y" | delete_table -n master.ph5 -D 1X1111
+keftoph5 -n master.ph5 -k ../../metadata/Das_t_1X1111.0.0_SRM0.kef
+
 echo "Finished creating test PH5"
