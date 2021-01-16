@@ -8,6 +8,7 @@ ph5toexml.py.
 # version: 2019.032
 # author: Lan Dam
 # add inday_breakup() function
+# Dave Thomas added UTM / Lat Long routines,consolidated all pyproj here
 
 import fnmatch
 from datetime import datetime, timedelta
@@ -15,8 +16,10 @@ from obspy.geodetics import locations2degrees
 from ph5.core.timedoy import epoch2passcal, passcal2epoch, TimeDOY, TimeError
 import time
 import re
+from pyproj import Transformer, Geod
+import math
 
-PROG_VERSION = "2019.81"
+PROG_VERSION = "2020.091"
 
 
 class PH5Response(object):
@@ -66,6 +69,105 @@ class PH5ResponseManager(object):
             if set(sensor_keys) == set(ph5_resp.sensor_keys) and \
                set(datalogger_keys) == set(ph5_resp.datalogger_keys):
                 return ph5_resp.n_i
+
+
+def lat_lon_to_utm(lat, lon):
+    epsg_wgs84 = "EPSG:4326"
+    if lat < 0.0:
+        epsgroot = "327"
+        hemisphere = 'S'
+    elif lat >= 0.0:
+        epsgroot = "326"
+        hemisphere = 'N'
+    utm_zone = int(math.floor((float(lon) + 180.)/6.0) % 60) + 1
+    epsg_utm = "EPSG:" + epsgroot + str(utm_zone)
+    transformer = Transformer.from_crs(epsg_wgs84,
+                                       epsg_utm,
+                                       always_xy=False)
+    easting, northing = transformer.transform(lat, lon)
+    return (northing, easting, utm_zone, hemisphere)
+
+
+def lat_lon_elev_to_utm(lat, lon, elev):
+    northing, easting, utm_zone, hemisphere = lat_lon_to_utm(lat, lon)
+    return (northing, easting, elev)
+
+
+def utm_to_lat_lon(northing, easting, hemisphere, zone):
+    epsg_wgs84 = "EPSG:4326"
+    if hemisphere == "S":
+        epsgroot = "327"
+    elif hemisphere == "N":
+        epsgroot = "326"
+    epsg_utm = "EPSG:" + epsgroot + str(zone)
+    transformer = Transformer.from_crs(epsg_utm, epsg_wgs84, always_xy=False)
+    lat, lon = transformer.transform(float(easting), float(northing))
+    return (lat, lon)
+
+
+def tspc_lat_lon(northing, easting):
+    # Texas State Plane Coords, in US FEET
+    epsg_wgs84 = "EPSG:4326"
+    epsg_sp4202 = "EPSG:2276"
+    transformer = Transformer.from_crs(epsg_sp4202, epsg_wgs84,
+                                       always_xy=False)
+    lat, lon = transformer.transform(easting, northing)
+    return (lat, lon)
+
+
+def lat_lon_to_geod(lat0, lon0, lat1, lon1, scalar=1.0):
+    # Return azimuth, back azimuth, geodetic distance
+    ELLIPSOID = 'WGS84'
+    config = "+ellps={0}".format(ELLIPSOID)
+    g = Geod(config)
+    az, baz, dist = g.inv(lon0, lat0, lon1, lat1)
+    if dist > 0.0:
+        dist /= scalar
+    return az, baz, dist
+
+
+def lat_lon_to_ups_south(lat, lon):
+    # Universal Polar Stereographic, southern hemisphere
+    epsg_wgs84 = "EPSG:4326"
+    epsg_ups_south = "EPSG:32761"
+    transformer = Transformer.from_crs(epsg_wgs84,
+                                       epsg_ups_south,
+                                       always_xy=False)
+    northing, easting = transformer.transform(lat, lon)
+    return (northing, easting)
+
+
+def lat_lon_to_ups_north(lat, lon):
+    # Universal Polar Stereographic, northern hemisphere
+    epsg_wgs84 = "EPSG:4326"
+    epsg_ups_north = "EPSG:32661"
+    transformer = Transformer.from_crs(epsg_wgs84,
+                                       epsg_ups_north,
+                                       always_xy=False)
+    northing, easting = transformer.transform(lat, lon)
+    return (northing, easting)
+
+
+def ups_south_to_lat_lon(northing, easting):
+    # Universal Polar Stereogaphic, southern hemisphere
+    epsg_wgs84 = "EPSG:4326"
+    epsg_ups_south = "EPSG:32761"
+    transformer = Transformer.from_crs(epsg_ups_south,
+                                       epsg_wgs84,
+                                       always_xy=False)
+    lat, lon = transformer.transform(northing, easting)
+    return (lat, lon)
+
+
+def ups_north_to_lat_lon(northing, easting):
+    # Universal Polar Stereogaphic, northern hemisphere
+    epsg_wgs84 = "EPSG:4326"
+    epsg_ups_north = "EPSG:32661"
+    transformer = Transformer.from_crs(epsg_ups_north,
+                                       epsg_wgs84,
+                                       always_xy=False)
+    lat, lon = transformer.transform(northing, easting)
+    return (lat, lon)
 
 
 """

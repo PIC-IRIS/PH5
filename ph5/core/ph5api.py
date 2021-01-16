@@ -11,11 +11,10 @@ import time
 import re
 import numpy as np
 import math
-from pyproj import Geod
-from ph5.core import columns, experiment, timedoy
+from ph5.core import columns, experiment, timedoy, ph5utils
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2019.93'
+PROG_VERSION = '2020.091'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -329,6 +328,7 @@ class PH5(experiment.ExperimentGroup):
             LOGGER.warning("Couldn't get offset.")
             return {}
         try:
+            UNITS = 'm'
             if sta_line in self.Array_t and evt_line in self.Event_t:
                 array_t = self.Array_t[sta_line]['byid'][sta_id][c]
                 event_t = self.Event_t[evt_line]['byid'][evt_id]
@@ -336,11 +336,12 @@ class PH5(experiment.ExperimentGroup):
                 lat0 = array_t[0]['location/Y/value_d']
                 lon1 = event_t['location/X/value_d']
                 lat1 = event_t['location/Y/value_d']
-                az, baz, dist = run_geod(lat0, lon0, lat1, lon1)
+                az, baz, dist = ph5utils.lat_lon_to_geod(lat0, lon0,
+                                                         lat1, lon1,
+                                                         FACTS_M[UNITS])
         except Exception as e:
             LOGGER.warning("Couldn't get offset. {0}".format(repr(e)))
             return {}
-
         return {'event_id_s': evt_id, 'receiver_id_s': sta_id,
                 'azimuth/value_f': az, 'azimuth/units_s': 'degrees',
                 'offset/value_d': dist, 'offset/units_s': 'm'}
@@ -1641,23 +1642,6 @@ def by_id(rows, key='id_s', secondary_key=None, unique_key=True):
                 byid[Id].append(r)
 
     return byid, order
-
-
-def run_geod(lat0, lon0, lat1, lon1):
-    UNITS = 'm'
-    ELLIPSOID = 'WGS84'
-
-    config = "+ellps={0}".format(ELLIPSOID)
-
-    g = Geod(config)
-
-    az, baz, dist = g.inv(lon0, lat0, lon1, lat1)
-
-    if dist:
-        dist /= FACTS_M[UNITS]
-
-    # Return list containing azimuth, back azimuth, distance
-    return az, baz, dist
 
 
 def rect(r, w, deg=0):
