@@ -698,11 +698,10 @@ class ReceiversGroup:
                 keys += ['sample_rate_multiplier_i']
             elif not ignore_srm0 and r['sample_rate_multiplier_i'] == 0:
                 # ignore srm==0 for tabletokef and nuke_table
-                errmsg = ("%s, channel %s has sample_rate_multiplier_i(s) "
+                errmsg = ("%s has sample_rate_multiplier_i(s) "
                           "with values 0. "
                           "Run fix_srm to fix those values in that Das."
-                          % (self.current_t_das._v_parent._v_name,
-                             r['channel_number_i']))
+                          % (self.current_t_das._v_parent._v_name))
                 raise HDF5InteractionError(7, errmsg)
 
             ret.append(r)
