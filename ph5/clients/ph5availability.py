@@ -213,16 +213,13 @@ class PH5Availability(object):
                 raise PH5AvailabilityError(
                     "get_time_das_t requires component when "
                     "sample_rate is given")
-            try:
-                Das_t = self.ph5.query_das_t(
-                    das,
-                    chan=component,
-                    start_epoch=s,
-                    stop_epoch=e,
-                    sample_rate=sample_rate)
-            except ph5api.APIError as err:
-                LOGGER.error(err.msg)
-                return -1
+
+            Das_t = self.ph5.query_das_t(
+                das,
+                chan=component,
+                start_epoch=s,
+                stop_epoch=e,
+                sample_rate=sample_rate)
             if not Das_t:
                 LOGGER.warning(
                     "No Das table found for %s %s for "
@@ -231,10 +228,7 @@ class PH5Availability(object):
                 return -1
         else:
             # include all channelnum and sample_rate
-            try:
-                self.ph5.read_das_t(das, s, e, reread=False)
-            except experiment.HDF5InteractionError as err:
-                LOGGER.error(err.msg)
+            self.ph5.read_das_t(das, s, e, reread=False)
             if das not in self.ph5.Das_t:
                 LOGGER.warning("No Das table found for %s %s"
                                % (das, rangestr))
@@ -295,7 +289,7 @@ class PH5Availability(object):
             containing information on what streams are included in PH5 archive.
         """
         slc = []
-
+        errors = set()
         array_names = sorted(self.ph5.Array_t_names)
         for array_name in array_names:
             if self.array is not None:
@@ -325,13 +319,18 @@ class PH5Availability(object):
                         tup = (ph5_seed_station,
                                ph5_loc, ph5_channel)
                         if tup not in slc:
-                            ret = self.get_time_das_t(
-                                ph5_das, starttime, endtime,
-                                ph5_channum, ph5_sample_rate)
+                            try:
+                                ret = self.get_time_das_t(
+                                    ph5_das, starttime, endtime,
+                                    ph5_channum, ph5_sample_rate)
+                            except Exception as err:
+                                errors.add(err.msg)
+                                continue
                             if ret == -1:
                                 continue
                             slc.append(tup)
-
+        for err in errors:
+            LOGGER.error(err)
         return slc
 
     def get_availability_extent(self, station='*', location='*',
@@ -372,7 +371,7 @@ class PH5Availability(object):
                 raise ValueError("if start or end, both are required")
 
         array_names = sorted(self.ph5.Array_t_names)
-
+        errors = set()
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -412,7 +411,7 @@ class PH5Availability(object):
                                 sample_rate_multiplier=ph5_multiplier,
                                 check_samplerate=False)
                         except ph5api.APIError as err:
-                            LOGGER.error(err.msg)
+                            errors.add(err.msg)
                             continue
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
@@ -478,7 +477,8 @@ class PH5Availability(object):
                                        early, end, float(psr)
                                        )
                         availability_extents.append(tup)
-
+        for err in errors:
+            LOGGER.error(err)
         return availability_extents
 
     def get_availability(self, station='*', location='*',
@@ -522,7 +522,7 @@ class PH5Availability(object):
         empty_times = True
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
-
+        errors = set()
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -562,7 +562,7 @@ class PH5Availability(object):
                                 sample_rate_multiplier=ph5_multiplier,
                                 check_samplerate=False)
                         except ph5api.APIError as err:
-                            LOGGER.error(err.msg)
+                            errors.add(err.msg)
                             continue
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
@@ -634,7 +634,8 @@ class PH5Availability(object):
                                 availability.append((
                                     ph5_seed_station, ph5_loc, ph5_channel,
                                     start, end))
-
+        for err in errors:
+            LOGGER.error(err)
         return availability
 
     def get_start(self, das_t):
@@ -832,7 +833,7 @@ class PH5Availability(object):
             station, location, channel, starttime, endtime.
         """
         array_names = sorted(self.ph5.Array_t_names)
-
+        errors = set()
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -856,17 +857,19 @@ class PH5Availability(object):
 
                         ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
-
-                        if channel == "*":
-                            ret = self.get_time_das_t(
-                                ph5_das, starttime, endtime)
-                        else:
-                            ph5_sample_rate = self.get_sample_rate(st)
-                            ph5_sample_rate = self.get_sample_rate(st)
-                            ret = self.get_time_das_t(
-                                ph5_das, starttime, endtime,
-                                component=ph5_channum,
-                                sample_rate=ph5_sample_rate)
+                        try:
+                            if channel == "*":
+                                ret = self.get_time_das_t(
+                                    ph5_das, starttime, endtime)
+                            else:
+                                ph5_sample_rate = self.get_sample_rate(st)
+                                ret = self.get_time_das_t(
+                                    ph5_das, starttime, endtime,
+                                    component=ph5_channum,
+                                    sample_rate=ph5_sample_rate)
+                        except Exception as err:
+                            errors.add(err.msg)
+                            continue
                         if ret == -1:
                             continue
                         ph5_earliest, ph5_latest, das_t = ret
@@ -881,7 +884,8 @@ class PH5Availability(object):
                                 if ref.nrows > 0:
                                     return True
                         self.ph5.forget_das_t(ph5_das)
-
+        for err in errors:
+            LOGGER.error(err)
         return False
 
     def print_report(self, text):
