@@ -5,12 +5,15 @@ Tests for ph5toms
 import unittest
 import copy
 import os
+import sys
 
+from mock import patch
 from testfixtures import LogCapture
 
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 from ph5.core import ph5api
 from ph5.clients.ph5toms import StationCut, PH5toMSeed
+from ph5.clients import ph5toms
 
 
 class RestrictedRequest(object):
@@ -242,6 +245,78 @@ class TestPH5toMSeed_samplerate(LogTestCase, TempDirTestCase):
                 if trace is not None:
                     self.assertEqual(trace[0].stats.station, '10075')
         self.assertIsNotNone(log)
+
+
+class TestPH5toMSeed_srm(TempDirTestCase, LogTestCase):
+    '''
+    Test sample_rate_multiplier=0 or missing
+    '''
+    def tearDown(self):
+        try:
+            self.ph5_object.ph5close()
+        except AttributeError:
+            pass
+        super(TestPH5toMSeed_srm, self).tearDown()
+
+    def test_create_trace_srm0(self):
+        # sample_rate_multiplier_i=0
+        # => create_cut raise error from query_das_t
+
+        ph5path = os.path.join(self.home,
+                               'ph5/test_data/ph5/sampleratemultiplier0')
+        self.ph5_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
+        ph5toms = PH5toMSeed(self.ph5_object,
+                             starttime='2019-06-29T18:03:13.000000',
+                             component='1')
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+
+        with self.assertRaises(ph5api.APIError) as context:
+            for cut in cuts:
+                ph5toms.create_trace(cut)
+                self.assertEqual(context.exception.errno, -1)
+                self.assertEqual(
+                    context.exception.msg,
+                    'Das_g_1X1111 has 9 sample_rate_multiplier_i(s) with '
+                    'values 0. '
+                    'Run fix_das_srm to fix those values in that Das.')
+
+    def test_create_trace_nosrm(self):
+        # no sample_rate_multiplier_i
+        # => create_cut return all 3 traces with sample_rate_multiplier_i=1
+        # for each channel
+
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/')
+        self.ph5_object = ph5api.PH5(path=nosrmpath, nickname='master.ph5')
+        ph5toms = PH5toMSeed(self.ph5_object,
+                             starttime='2019-06-29T18:03:13.000000')
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+        trace_count = 0
+        for cut in cuts:
+            trace = ph5toms.create_trace(cut)
+            if trace is not None:
+                self.assertEqual(trace[0].stats.station, '1111')
+                self.assertEqual(len(trace.traces), 3)
+                trace_count += 1
+        self.assertEqual(trace_count, 3)  # for 3 channels
+
+    def test_main_nosrm(self):
+        # sample_rate_multiplier_i missing
+        # Three ms files will be created after running ph5toms.
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/')
+        testargs = ['ph5toms', '-n', 'master.ph5', '-p', nosrmpath,
+                    '--station', '1111']
+        with patch.object(sys, 'argv', testargs):
+            ph5toms.main()
+
+        fileList = sorted(os.listdir(self.tmpdir))
+        self.assertEqual(fileList,
+                         ['AA.1111..GP1.2019-07-04T16.00.00.ms',
+                          'AA.1111..GP2.2019-07-04T16.00.00.ms',
+                          'AA.1111..GPZ.2019-07-04T16.00.00.ms'])
 
 
 if __name__ == "__main__":
