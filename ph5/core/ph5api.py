@@ -807,7 +807,6 @@ class PH5(experiment.ExperimentGroup):
         micro_seconds_i = micro_seconds_i
         sample_count_i = sample_count_i
         sample_rate_i = sample_rate_i
-
         das = []
         if not start_epoch:
             start_epoch = 0
