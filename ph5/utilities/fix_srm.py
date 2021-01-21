@@ -102,7 +102,8 @@ def delete_das(ph5object, das_name):
     """
     Delete das table identified by das_name from ph5object
     :param ph5object: ph5 object where the das table will be deleted
-    :param das_name: das_name to identify das table to delete (str)
+    :param das_name: das_name to identify das table to delete.
+            Ex: 'Das_t_1X1111'
     :return backupfile: name of the kef file to backup the deleted table (str)
     """
     das_sn = das_name.replace("Das_t_", "")
@@ -121,14 +122,15 @@ def delete_das(ph5object, das_name):
     ph5object.ph5_g_receivers.nuke_das_t(das_sn)
 
     LOGGER.info('Nuke {0}.'.format(datapath))
-    return backupfile, datapath
+    return backupfile
 
 
 def delete_array(ph5object, array_name):
     """
     Delete all array tables identified by array_id from ph5object
     :param ph5object: ph5 object where the das table will be deleted
-    :param array_id: serial number to specify das table to delete (int)
+    :param array_name: das_name to identify das table to delete.
+            Ex: 'Array_t_001'
     :return backupfile: name of the kef file to backup the deleted table(str)
     """
     array_id = int(array_name.replace('Array_t_', ''))
@@ -144,10 +146,10 @@ def delete_array(ph5object, array_name):
         array_t)
     ph5object.ph5_g_sorts.nuke_array_t(array_id)
     LOGGER.info('Nuke {0}.'.format(datapath))
-    return backupfile, datapath
+    return backupfile
 
 
-def fix_srm_in_kef(startfilepath, fixedfilepath, datapath):
+def fix_srm_in_kef(startfilepath, fixedfilepath):
     """
     Correct sample rate multiplier (srm) in das table kef file:
         + replace srm=0 with srm=1
@@ -160,24 +162,19 @@ def fix_srm_in_kef(startfilepath, fixedfilepath, datapath):
     content = startfile.read()
     # occurrences of sample rate multiplier
     srm_occ = [i for i in range(len(content))
-               if content.startswith('sample_rate_multiplier_i', i)]
+               if content.startswith('sample_rate_multiplier_i=0', i)]
 
     if len(srm_occ) > 0:
         # there are sample rate multipliers in kef file
         content = content.replace('sample_rate_multiplier_i=0',
                                   'sample_rate_multiplier_i=1')
-    else:
-        # due to some error, sample rate is missing in Das_t
-        # => add one after each row header
-        content = content.replace(
-            datapath,
-            '{0}\n\tsample_rate_multiplier_i=1'.format(datapath))
 
     fixedfile.write(content)
     startfile.close()
     fixedfile.close()
-    LOGGER.info('Fix Sample Rate Multiplier in %s and save in %s.'
-                % (startfilepath, fixedfilepath))
+    LOGGER.info('Convert %s sample_rate_multiplier_i=0 to 1'
+                ' in %s and save in %s.'
+                % (len(srm_occ), startfilepath, fixedfilepath))
 
 
 def add_fixed_table(ex, ph5, fixedfilepath):
@@ -213,11 +210,11 @@ def process(ex, ph5, das_name=None, array_name=None):
 
     if das_name is not None:
         LOGGER.info('>>> Processing Das: %s' % das_name)
-        backupfile, datapath = delete_das(ex, das_name)
+        backupfile = delete_das(ex, das_name)
     else:
         LOGGER.info('>>> Processing Array: %s' % array_name)
-        backupfile, datapath = delete_array(ex, array_name)
-    fix_srm_in_kef(backupfile, fixedfilepath, datapath)
+        backupfile = delete_array(ex, array_name)
+    fix_srm_in_kef(backupfile, fixedfilepath)
     add_fixed_table(ex, ph5, fixedfilepath)
 
 
