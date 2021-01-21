@@ -785,6 +785,7 @@ class PH5(experiment.ExperimentGroup):
         col_srm_exist = True
         try:
             sample_rate_multiplier_i = tbl.cols.sample_rate_multiplier_i  # noqa
+            sample_rate_multiplier_i = sample_rate_multiplier_i
         except AttributeError:
             col_srm_exist = False
         if col_srm_exist:
@@ -802,6 +803,10 @@ class PH5(experiment.ExperimentGroup):
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
         sample_count_i = tbl.cols.sample_count_i  # noqa
         sample_rate_i = tbl.cols.sample_rate_i  # noqa
+        epoch_i = epoch_i
+        micro_seconds_i = micro_seconds_i
+        sample_count_i = sample_count_i
+        sample_rate_i = sample_rate_i
 
         das = []
         if not start_epoch:
