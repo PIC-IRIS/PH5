@@ -217,7 +217,7 @@ class TestFixSRM_srm0PH5file(TempDirTestCase, LogTestCase):
         smr0daskef = os.path.join(
             self.home, 'ph5/test_data/metadata/Das_t_1X1111.0.0_SRM0.kef')
         smr0arraykef = os.path.join(
-            self.home, 'ph5/test_data/metadata/Array_t_001_smr0.kef')
+            self.home, 'ph5/test_data/metadata/Array_t_001_SMR0.kef')
         segdpath = os.path.join(self.home, 'ph5/test_data/segd/1111.0.0.fcnt')
         create_testPH5_from_segd(segdpath)
         remove_table_from_PH5('-D', '1X1111')
