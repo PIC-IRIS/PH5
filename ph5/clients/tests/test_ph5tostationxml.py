@@ -10,7 +10,8 @@ from obspy.core.inventory.response import Response
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5, resp_load
+from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5,\
+    resp_load, nuke_table
 from ph5.clients import ph5tostationxml
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
@@ -447,25 +448,31 @@ class TestPH5toStationXMLParser_gen_resp_issue(
             self.tmpdir, "master.ph5", "CHANNEL")
         with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
             self.parser.read_networks()
-            self.assertEqual(
-                contxt.exception.message,
-                "Response table does not contain any response file names. "
-                "Check if resp_load has been run or if metadatatoph5 input "
-                "contained response information.")
+        self.assertEqual(
+            contxt.exception.message,
+            "Response table does not contain any response file names. "
+            "Check if resp_load has been run or if metadatatoph5 input "
+            "contained response information.")
 
     def test_read_networks_response_duplication(self):
         # response_t_dup_n_i.kef has n_i= 1,3,6 duplicated
-        kef_to_ph5(self.tmpdir,
-                   'master.ph5',
-                   os.path.join(self.home, "ph5/test_data/metadata"),
-                   ['response_t_dup_n_i.kef'])
+        testargs = ['delete_table', '-n', 'master.ph5', '-R']
+        with patch.object(sys, 'argv', testargs):
+            nuke_table.main()
+
+        kefpath = os.path.join(self.home,
+                               'ph5/test_data/metadata/response_t_dup_n_i.kef')
+        testargs = ['keftoph5', '-n', 'master.ph5', '-k', kefpath]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
+
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, 'master.ph5', 'NETWORK')
         with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
             self.parser.read_networks()
-            self.assertEqual(
-                str(contxt.exception),
-                'Response_t n_i(s) duplicated: 1,3,6')
+        self.assertEqual(
+            contxt.exception.message,
+            'Response_t n_i(s) duplicated: 1,3,6')
 
 
 class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
