@@ -96,18 +96,6 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                 self.assertIn('T', timestr)
                 self.assertEqual(timestr, convstr)
 
-    def test_init_response_duplication(self):
-        # response_t_dup_n_i.kef has n_i= 1,3,6 duplicated
-        kef_to_ph5(self.tmpdir,
-                   'master.ph5',
-                   os.path.join(self.home, "ph5/test_data/metadata"),
-                   ['response_t_dup_n_i.kef'])
-        self.ph5sxml, self.mng, self.parser = getParser(
-            self.tmpdir, 'master.ph5', 'NETWORK')
-        self.assertEqual(
-            self.parser.unique_errors,
-            {('Response_t n_i(s) duplicated: 1,3,6', 'error')})
-
     def test_main_location(self):
         args = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', args):
@@ -432,10 +420,10 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                  })
 
 
-class TestPH5toStationXMLParser_no_resp_filename(
+class TestPH5toStationXMLParser_gen_resp_issue(
         LogTestCase, TempDirTestCase):
     def setUp(self):
-        super(TestPH5toStationXMLParser_no_resp_filename, self).setUp()
+        super(TestPH5toStationXMLParser_gen_resp_issue, self).setUp()
         testargs = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', testargs):
             initialize_ph5.main()
@@ -449,14 +437,14 @@ class TestPH5toStationXMLParser_no_resp_filename(
                                  'ph5/test_data/segd/3ch.fcnt')]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
-        self.ph5sxml, self.mng, self.parser = getParser(
-            self.tmpdir, "master.ph5", "CHANNEL")
 
     def tearDown(self):
         self.mng.ph5.close()
-        super(TestPH5toStationXMLParser_no_resp_filename, self).tearDown()
+        super(TestPH5toStationXMLParser_gen_resp_issue, self).tearDown()
 
-    def test_read_networks(self):
+    def test_read_networks_no_resp_filename(self):
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, "master.ph5", "CHANNEL")
         with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
             self.parser.read_networks()
             self.assertEqual(
@@ -464,6 +452,20 @@ class TestPH5toStationXMLParser_no_resp_filename(
                 "Response table does not contain any response file names. "
                 "Check if resp_load has been run or if metadatatoph5 input "
                 "contained response information.")
+
+    def test_read_networks_response_duplication(self):
+        # response_t_dup_n_i.kef has n_i= 1,3,6 duplicated
+        kef_to_ph5(self.tmpdir,
+                   'master.ph5',
+                   os.path.join(self.home, "ph5/test_data/metadata"),
+                   ['response_t_dup_n_i.kef'])
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, 'master.ph5', 'NETWORK')
+        with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
+            self.parser.read_networks()
+            self.assertEqual(
+                str(contxt.exception),
+                'Response_t n_i(s) duplicated: 1,3,6')
 
 
 class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):

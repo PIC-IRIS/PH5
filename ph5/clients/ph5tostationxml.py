@@ -302,8 +302,6 @@ class PH5toStationXMLParser(object):
         self.unique_errors = set()
         self.checked_data_files = {}
         self.manager.ph5.read_response_t()
-        validation.check_resp_unique_n_i(
-            self.manager.ph5, self.unique_errors, None)
 
     def check_intersection(self, sta_xml_obj, latitude, longitude):
         """
@@ -670,6 +668,11 @@ class PH5toStationXMLParser(object):
                                     self.experiment_t[0]['experiment_id_s']):
             self.manager.ph5.close()
             return
+
+        unique_resp = validation.check_resp_unique_n_i(
+            self.manager.ph5, self.unique_errors, None)
+        if unique_resp is not True:
+            raise PH5toStationXMLError(unique_resp)
 
         has_response_file = validation.check_has_response_filename(
             self.manager.ph5.Response_t, self.unique_errors, None)
