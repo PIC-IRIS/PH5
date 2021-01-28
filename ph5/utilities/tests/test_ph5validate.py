@@ -60,26 +60,31 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
                                  "Station 9001 Channel 1\n"
-                                 "2 error, 3 warning, 0 info\n"
+                                 "4 error, 1 warning, 0 info\n"
                                  "-=-=-=-=-=-=-=-=-\n"
                                  )
                 # this error causes by changing samplerate
+                errors = [
+                    "No data found for das serial number 12183 during "
+                    "this station's time. You may need to reload the "
+                    "raw data for this station.",
+                    'Response_t[4]:No response data loaded for gs11.',
+                    "Response_t[4]:response_file_das_a 'rt125a_500_1_32' is "
+                    "incomplete or inconsistent with "
+                    "Array_t_009:sensor_model=cmg3t "
+                    "Array_t_009:das_model=rt125a Array_t_009:sr=100 "
+                    "Array_t_009:srm=1 Array_t_009:gain=32 "
+                    "Array_t_009:cha=DPZ. Please check with format "
+                    "[das_model]_[sr]_[srm]_[gain] or "
+                    "[das_model]_[sensor_model]_[sr][cha].",
+                    "Response_t[4]:response_file_sensor_a 'gs11' is "
+                    "inconsistent with Array_t_009:sensor_model=cmg3t."]
                 self.assertEqual(
-                    r.error,
-                    ["No data found for das serial number 12183 during "
-                     "this station's time. You may need to reload the "
-                     "raw data for this station.",
-                     'No response data loaded for gs11.'])
+                    set(r.error),
+                    set(errors))
                 self.assertEqual(
                     r.warning,
-                    ['No station description found.',
-                     "response_file_das_a 'rt125a_500_1_32' is "
-                     "inconsistent with sensor_model='cmg3t' and "
-                     "das_model='rt125a'; sr=100 srm=1 gain=32 '"
-                     "cha=DPZ'.",
-                     "response_file_sensor_a 'gs11' is inconsistent with "
-                     "sensor_model cmg3t."
-                     ])
+                    ['No station description found.'])
             if 'Station 0407 Channel -2' in r.heading:
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
@@ -89,7 +94,8 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                                  )
                 self.assertEqual(
                     r.error,
-                    ['Metadata response with n_i=-1 has no response data.'])
+                    ['Response_t[-1]:'
+                     'Metadata response with n_i=-1 has no response data.'])
                 # sample rate for station 0407 in array 4 is 0
                 self.assertEqual(
                     r.warning,

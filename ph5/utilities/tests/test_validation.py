@@ -54,16 +54,23 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
              'cha_code': 'DPZ', 'spr': 500, 'sprm': 1, 'cha_id': 1,
              'smodel': 'gs11v', 'dmodel': 'rt125a'}]
         self.errors = [
-            "array 009, station 9001, channel 1, response_table_n_i 4: "
-            "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
-            "das_model='rt125a'; sr=100 srm=1 gain=32.",
-            "array 009, station 9001, channel 1, response_table_n_i 4: "
+            "array 009, station 9001, channel 1: Response_t[4]:"
+            "response_file_das_a 'rt125a_500_1_32' is incomplete or "
+            "inconsistent with Array_t_009:sensor_model=gs11v "
+            "Array_t_009:das_model=rt125a Array_t_009:sr=100 "
+            "Array_t_009:srm=1 Array_t_009:gain=32 Array_t_009:cha=DPZ. "
+            "Please check with format [das_model]_[sr]_[srm]_[gain] or "
+            "[das_model]_[sensor_model]_[sr][cha].",
+            "array 009, station 9001, channel 1: Response_t[4]:"
             "response_file_sensor_a 'gs11v' is inconsistent with "
-            "sensor_model cmg3t.",
-            "array 002, station 0407, channel 1, response_table_n_i 5: "
-            "response_file_das_a 'NoneQ330_CMG3T_200HHN' is inconsistent "
-            "with sensor_model='NoneCMG3T' and das_model='NoneQ330';"
-            " sr=200 srm=1 gain=1 'cha=HHN'."]
+            "Array_t_009:sensor_model=cmg3t.",
+            "array 002, station 0407, channel 1: Response_t[5]:"
+            "response_file_das_a 'NoneQ330_CMG3T_200HHN' is incomplete or "
+            "inconsistent with Array_t_002:sensor_model=NoneCMG3T "
+            "Array_t_002:das_model=NoneQ330 Array_t_002:sr=200 "
+            "Array_t_002:srm=1 Array_t_002:gain=1 Array_t_002:cha=HHN. "
+            "Please check with format [das_model]_[sr]_[srm]_[gain] or "
+            "[das_model]_[sensor_model]_[sr][cha]."]
 
     def tearDown(self):
         self.ph5API_object.close()
@@ -71,54 +78,58 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
 
     def test_check_resp_data(self):
         checked_data_files = {}
-        header = "array 008, station 8001, channel 1, response_table_n_i 1: "
+        header = "array 008, station 8001, channel 1: "
         # data has been loaded for response file rt130_100_1_1
         validation.check_resp_data(
             self.ph5API_object.ph5,
             '/Experiment_g/Responses_g/rt130_100_1_1',
-            header, checked_data_files)
+            header, checked_data_files, 1)
         self.assertEqual(checked_data_files,
                          {'rt130_100_1_1': ''})
 
         # data has NOT been loaded for response file rt130_200_1_1
-        self.assertRaisesRegexp(
-            Exception,
-            '%sNo response data loaded for rt130_200_1_1.' % header,
-            validation.check_resp_data,
-            self.ph5API_object.ph5,
-            '/Experiment_g/Responses_g/rt130_200_1_1',
-            header, checked_data_files)
-
+        with self.assertRaises(Exception) as contxt:
+            validation.check_resp_data(
+                self.ph5API_object.ph5,
+                '/Experiment_g/Responses_g/rt130_200_1_1',
+                header, checked_data_files, 1)
+        self.assertEqual(
+            contxt.exception.message,
+            ('%sResponse_t[1]:No response data loaded for '
+             'rt130_200_1_1.' % header))
         self.assertEqual(
             checked_data_files,
-            {'rt130_200_1_1': '%sNo response data loaded for rt130_200_1_1.'
-                % header,
+            {'rt130_200_1_1': ('%sResponse_t[1]:No response data loaded for '
+                               'rt130_200_1_1.' % header),
              'rt130_100_1_1': ''})
 
         # data has been loaded for response file cmg3t
         validation.check_resp_data(
             self.ph5API_object.ph5,
             '/Experiment_g/Responses_g/cmg3t',
-            header, checked_data_files)
+            header, checked_data_files, 1)
         self.assertEqual(
             checked_data_files,
-            {'rt130_200_1_1': '%sNo response data loaded for rt130_200_1_1.'
-                % header,
+            {'rt130_200_1_1': ('%sResponse_t[1]:No response data loaded for '
+                               'rt130_200_1_1.' % header),
              'rt130_100_1_1': '', 'cmg3t': ''})
 
         # data has NOT been loaded for response file cmg
-        self.assertRaisesRegexp(
-            Exception,
-            '%sNo response data loaded for cmg.' % header,
-            validation.check_resp_data,
-            self.ph5API_object.ph5,
-            '/Experiment_g/Responses_g/cmg',
-            header, checked_data_files)
+        with self.assertRaises(Exception) as contxt:
+            validation.check_resp_data(
+                self.ph5API_object.ph5,
+                '/Experiment_g/Responses_g/cmg',
+                header, checked_data_files, 1)
+        self.assertEqual(
+            contxt.exception.message,
+            '%sResponse_t[1]:No response data loaded for cmg.' % header)
+
         self.assertEqual(
             checked_data_files,
-            {'rt130_200_1_1': '%sNo response data loaded for rt130_200_1_1.'
-                % header,
-             'cmg': '%sNo response data loaded for cmg.' % header,
+            {'rt130_200_1_1': ('%sResponse_t[1]:No response data loaded for '
+                               'rt130_200_1_1.' % header),
+             'cmg': ('%sResponse_t[1]:No response data loaded for cmg.'
+                     % header),
              'rt130_100_1_1': '', 'cmg3t': ''})
 
     def test_check_resp_file_name(self):
@@ -127,20 +138,19 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
 
         Response_t = self.ph5API_object.get_response_t_by_n_i(4)
         info = self.resp_check_info[9]
-        header = "array 009, station 9001, channel 1, response_table_n_i 4: "
+        header = "array 009, station 9001, channel 1: "
         # n_i=4: respfile wasn't created by metadata
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'metadata', errors, logger)
-            self.assertEqual(ret, (False, 'rt125a_gs11v_500DPZ'))
+            self.assertFalse(ret)
             self.assertEqual(log.records, [])
 
         # n_i=4 response_das_file_name is 'rt125a_500_1_32'
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'das', errors, logger)
-            self.assertEqual(ret,
-                             (True, 'rt125a_500_1_32'))
+            self.assertTrue(ret)
             # run twice to check unique_filenames_n_i not duplicate
             validation.check_resp_file_name(
                 Response_t, info, header, 'das', errors, logger)
@@ -152,14 +162,14 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             log.setLevel(logging.WARNING)
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'das', errors, logger)
-            self.assertEqual(ret, (False, None))
+            self.assertFalse(ret)
             self.assertEqual(log.records[0].msg, self.errors[0])
 
         # n_i=4: response_sensor_file_name is 'gs11v'
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'sensor', errors, logger)
-            self.assertEqual(ret, (True, 'gs11v'))
+            self.assertTrue(ret)
             self.assertEqual(log.records, [])
 
         # n_i=4: response_sensor_file_name isn't 'cmg3t'
@@ -168,19 +178,18 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             log.setLevel(logging.WARNING)
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'sensor', errors, logger)
-        self.assertEqual(ret, (False, None))
+        self.assertFalse(ret)
         self.assertEqual(log.records[0].msg, self.errors[1])
 
         # n_i=5 respfile created by metadata 'NoneQ330_NoneCMG3T_200HHN'
         Response_t = self.ph5API_object.get_response_t_by_n_i(5)
         info = self.resp_check_info[3]
-        header = "array 002, station 0407, channel 1, response_table_n_i 5: "
+
+        header = "array 002, station 0407, channel 1: "
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'metadata', errors, logger)
-            self.assertEqual(
-                ret,
-                (True, 'NoneQ330_NoneCMG3T_200HHN'))
+            self.assertTrue(ret)
             self.assertEqual(log.records, [])
 
         # n_i=5 das model mismatch
@@ -190,12 +199,12 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             ret = validation.check_resp_file_name(
                 Response_t, info, header,
                 'metadata', errors, logger)
-            self.assertEqual(ret, (False, 'NoneQ330_NoneCMG3T_200HHN'))
+            self.assertFalse(ret)
 
             ret = validation.check_resp_file_name(
                 Response_t, info, header,
-                'das', errors, logger, ret[1])
-            self.assertEqual(ret, (False, None))
+                'das', errors, logger)
+            self.assertEqual(ret, False)
             self.assertEqual(log.records[0].msg, self.errors[2])
 
         # n_i=0: ZLAND's response_das_file_name: 'ZLAND3C_500_1_24'
@@ -207,14 +216,11 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'das', errors, logger)
-            self.assertEqual(ret,
-                             (True, 'ZLAND3C_500_1_24'))
+            self.assertTrue(ret)
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'sensor', errors, logger)
-            self.assertEqual(ret, (True, ''))
+            self.assertTrue(ret)
             self.assertEqual(log.records, [])
-
-        self.assertEqual(errors, {(err, 'warning') for err in self.errors})
 
         # n_i=0: ZLAND's response_das_file_name: 'ZLAND3C_500_1_24'
         #        ZLAND's response_sensor_file_name: ''
@@ -224,19 +230,20 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'das', errors, logger)
-            self.assertEqual(ret,
-                             (True, 'ZLAND3C_500_1_24'))
+            self.assertTrue(ret)
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'sensor', errors, logger)
-            self.assertEqual(ret, (True, ''))
+            self.assertTrue(ret)
             self.assertEqual(log.records, [])
 
+        # response_file_das_a is blank but not log as error here
+        # because it will return false for ph5tostationxml to throw err
         Response_t['response_file_das_a'] = ''
         errors = set()
         with LogCapture() as log:
             ret = validation.check_resp_file_name(
                 Response_t, info, header, 'das', errors, logger)
-            self.assertEqual(ret, (False, None))
+            self.assertFalse(ret)
             self.assertEqual(log.records, [])
 
     def test_check_response_info(self):
@@ -257,13 +264,16 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         info['spr'] = 100
         info['smodel'] = 'cmg3t'
         chckerrors = set(
-            ["array 009, station 9001, channel 1, response_table_n_i 4: "
-             "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
-             "sensor_model='cmg3t' and das_model='rt125a'; "
-             "sr=100 srm=1 gain=32 'cha=DPZ'.",
-             "array 009, station 9001, channel 1, response_table_n_i 4: "
+            ["array 009 station 9001, channel 1: Response_t[4]:"
+             "response_file_das_a 'rt125a_500_1_32' is incomplete or "
+             "inconsistent with Array_t_009:sensor_model=cmg3t "
+             "Array_t_009:das_model=rt125a Array_t_009:sr=100 "
+             "Array_t_009:srm=1 Array_t_009:gain=32 Array_t_009:cha=DPZ. "
+             "Please check with format [das_model]_[sr]_[srm]_[gain] or "
+             "[das_model]_[sensor_model]_[sr][cha].",
+             "array 009 station 9001, channel 1: Response_t[4]:"
              "response_file_sensor_a 'gs11v' is inconsistent with "
-             "sensor_model cmg3t."])
+             "Array_t_009:sensor_model=cmg3t."])
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
@@ -273,7 +283,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
                                    '/Experiment_g/Responses_g/gs11v'))
             self.assertEqual(
                 errors,
-                {(errmsg, 'warning') for errmsg in chckerrors})
+                {(errmsg, 'error') for errmsg in chckerrors})
             self.assertEqual({r.msg for r in log.records},
                              chckerrors)
 
@@ -283,17 +293,16 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         info['spr'] = 200
         ret = validation.check_response_info(
             info, self.ph5API_object, checked_data_files, errors, logger)
-        self.assertEqual(ret,
-                         (False, ['array 008, station 8001, channel 1, '
-                                  'response_table_n_i 1: No response data '
-                                  'loaded for rt130_200_1_1.']))
+        self.assertEqual(
+            ret,
+            (False, ['array 008 station 8001, channel 1: Response_t[1]:'
+                     'No response data loaded for rt130_200_1_1.']))
 
         info['n_i'] = 8
         ret = validation.check_response_info(
                 info, self.ph5API_object, checked_data_files, errors, logger)
         self.assertEqual(ret,
-                         (False, ['array 008, station 8001, channel 1, '
-                                  'response_table_n_i 8: '
+                         (False, ['array 008 station 8001, channel 1: '
                                   'Response_t has no entry for n_i=8']))
 
     def test_check_response_unique_n_i(self):
