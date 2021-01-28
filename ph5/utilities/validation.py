@@ -101,7 +101,7 @@ def check_resp_file_name(Response_t, info, header, ftype, errors, logger):
                       "Array_t_%(array)s:cha=%(cha_code)s. "
                       "Please check with format "
                       "[das_model]_[sr]_[srm]_[gain] or "
-                      "[das_model]_[sensor_model]_[sr][cha].")
+                      "[das_model]_[sensor_model]_[sr][cha]")
         if ftype == 'sensor':
             models = ("inconsistent with "
                       "Array_t_%(array)s:sensor_model=%(smodel)s")
