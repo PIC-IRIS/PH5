@@ -306,12 +306,9 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertEqual(
             self.parser.unique_errors,
             set([("array 009 station 9001, channel 1: Response_t[4]:"
-                  "response_file_das_a 'rt125a_500_1_32' is incomplete or "
-                  "inconsistent with Array_t_009:sensor_model=cmg3t "
-                  "Array_t_009:das_model=rt125a Array_t_009:sr=200 "
-                  "Array_t_009:srm=1 Array_t_009:gain=32 Array_t_009:cha=DPZ. "
-                  "Please check with format [das_model]_[sr]_[srm]_[gain] or "
-                  "[das_model]_[sensor_model]_[sr][cha].", 'error'),
+                  "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
+                  "Array_t_009:sr=200. Please check with format "
+                  "[das_model]_[sr]_[srm]_[gain].", 'error'),
                  ("array 009 station 9001, channel 1: Response_t[4]:"
                   "response_file_sensor_a 'gs11v' is inconsistent with "
                   "Array_t_009:sensor_model=cmg3t.", 'error')
@@ -329,16 +326,10 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         self.assertIsNotNone(response.instrument_sensitivity)
         self.assertEqual(
             self.parser.unique_errors,
-            set([('array 003 station 0407, channel 1: Response_t[6]:'
-                  'response_file_sensor_a is blank while sensor model exists.',
-                  'error'),
-                 ("array 003 station 0407, channel 1: Response_t[6]:"
+            set([("array 003 station 0407, channel 1: Response_t[6]:"
                   "response_file_das_a 'NoneQ330_NoneCMG3T_100LHN' is "
-                  "incomplete or inconsistent with "
-                  "Array_t_003:sensor_model=NoneCMG3T "
-                  "Array_t_003:das_model=rt125a Array_t_003:sr=100 "
-                  "Array_t_003:srm=1 Array_t_003:gain=1 Array_t_003:cha=DPZ. "
-                  "Please check with format [das_model]_[sr]_[srm]_[gain] or "
+                  "inconsistent with Array_t_003:das_model=rt125a. "
+                  "Please check with format "
                   "[das_model]_[sensor_model]_[sr][cha].", 'error')
                  ]))
 
@@ -403,19 +394,12 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                 set(rec.msg for rec in log.records),
                 {"array 002 station 0407, channel 1: Response_t[5]:"
                  "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is "
-                 "incomplete or inconsistent with "
-                 "Array_t_002:sensor_model=CMG "
-                 "Array_t_002:das_model=NoneQ330 Array_t_002:sr=200 "
-                 "Array_t_002:srm=1 Array_t_002:gain=1 Array_t_002:cha=HHN. "
-                 "Please check with format [das_model]_[sr]_[srm]_[gain] or "
-                 "[das_model]_[sensor_model]_[sr][cha].",
+                 "inconsistent with Array_t_002:sensor_model=CMG. Please "
+                 "check with format [das_model]_[sensor_model]_[sr][cha].",
                  "array 008 station 8001, channel 1: Response_t[1]:"
-                 "response_file_das_a 'rt130_100_1_1' is incomplete or "
-                 "inconsistent with Array_t_008:sensor_model=cmg3t "
-                 "Array_t_008:das_model=rt130 Array_t_008:sr=10 "
-                 "Array_t_008:srm=1 Array_t_008:gain=1 Array_t_008:cha=HLZ. "
-                 "Please check with format [das_model]_[sr]_[srm]_[gain] or "
-                 "[das_model]_[sensor_model]_[sr][cha].",
+                 "response_file_das_a 'rt130_100_1_1' is inconsistent with "
+                 "Array_t_008:sr=10. Please check with format "
+                 "[das_model]_[sr]_[srm]_[gain].",
                  'array 001, station 500, channel 1: Channel elevation seems '
                  'to be 0. Is this correct???',
                  "array 008 station 8001, channel 2: Response_t[2]:"
@@ -426,9 +410,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                  'array 004 station 0407, channel -2: Response_t[-1]:'
                  'Metadata response with n_i=-1 has no response data.',
                  'array 001, station 500, channel 2: Channel elevation seems '
-                 'to be 0. Is this correct???',
-                 'array 002 station 0407, channel 1: Response_t[5]:'
-                 'response_file_sensor_a is blank while sensor model exists.'
+                 'to be 0. Is this correct???'
                  })
 
 

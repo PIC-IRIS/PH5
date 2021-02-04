@@ -70,13 +70,8 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                     "raw data for this station.",
                     'Response_t[4]:No response data loaded for gs11.',
                     "Response_t[4]:response_file_das_a 'rt125a_500_1_32' is "
-                    "incomplete or inconsistent with "
-                    "Array_t_009:sensor_model=cmg3t "
-                    "Array_t_009:das_model=rt125a Array_t_009:sr=100 "
-                    "Array_t_009:srm=1 Array_t_009:gain=32 "
-                    "Array_t_009:cha=DPZ. Please check with format "
-                    "[das_model]_[sr]_[srm]_[gain] or "
-                    "[das_model]_[sensor_model]_[sr][cha].",
+                    "inconsistent with Array_t_009:sr=100. Please check with "
+                    "format [das_model]_[sr]_[srm]_[gain].",
                     "Response_t[4]:response_file_sensor_a 'gs11' is "
                     "inconsistent with Array_t_009:sensor_model=cmg3t."]
                 self.assertEqual(
