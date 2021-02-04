@@ -2,6 +2,23 @@
 common functions for validation
 """
 import tables
+import re
+
+
+ERRORS = {'smodel': "Array_t_%(array)s:sensor_model=%(smodel)s",
+          'dmodel': "Array_t_%(array)s:das_model=%(dmodel)s",
+          'spr': "Array_t_%(array)s:sr=%(spr)s",
+          'sprm': "Array_t_%(array)s:srm=%(sprm)s",
+          'gain': "Array_t_%(array)s:gain=%(gain)s"}
+
+
+def combine_errors(check_fail, incomplete_errmsg, info):
+    parts_errmsg = ''
+    if check_fail != set():
+        parts_errmsg = "inconsistent with " + ' '.join(
+            [ERRORS[k] for k in check_fail])
+    errmsg = ' or '.join([incomplete_errmsg, parts_errmsg % info])
+    return errmsg.strip(" or ")
 
 
 def addLog(errmsg, unique_errors, logger=None, logType='error'):
@@ -43,76 +60,196 @@ def check_resp_data(ph5table, path, header, checked_data_files, n_i):
     return
 
 
-def check_resp_file_name(Response_t, info, header, ftype, errors, logger):
+def check_metadatatoph5_format(Response_t, info, header, errors, logger):
     """
-    Check response file name in response_t matches with info from station entry
+    Check response_file_das_a in response_t matches with info from
+     station entry
     :param Response_t: response entry according to info[n_i]
     :param info: info needed from each station:
             dict {n_i, array, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
     :para header: string of array-station-channel to help user identify where
             the problem belong to (str)
-    :param ftype: one of the strings: das/sensor/metadata
     :para errors: list of errors
     :param logger: logger of the caller
-    :return: True: if pass all check
-             False: if response filename not match with info
+    :return:
+        if there are more than 3 parts return False
+        if all (3) parts pass checks return True
+        if 2 parts pass checks, decide that this is created from metadatatoph5
+            return True and log as error
+        if less than 2 parts pass checks return incomplete_errmsg, m_check_fail
+            to be included if check for resp_load format also failed.
     """
-    info['dmodel'] = info['dmodel'].translate(None, ',-=._ ')
-    info['smodel'] = info['smodel'].translate(None, ',-=._ ')
-    if ftype == 'metadata':
-        std_info_fname = "%(dmodel)s_%(smodel)s_%(spr)s%(cha_code)s" % info
-        info_fname = std_info_fname.replace('_', '').lower()
-    elif ftype == 'sensor':
-        std_info_fname = info['smodel']
-        info_fname = std_info_fname.lower()
-    elif ftype == 'das':
-        info['gain'] = Response_t['gain/value_i']
-        std_info_fname = "%(dmodel)s_%(spr)s_%(sprm)s_%(gain)s" % info
-        info_fname = std_info_fname.replace('_', '').lower()
-
-    file_field = 'response_file_das_a'
-    if ftype == 'sensor':
-        file_field = 'response_file_sensor_a'
-    std_response_fname = Response_t[file_field].split('/')[-1]
-    response_fname = std_response_fname.replace('_', '').lower()
-
-    if info_fname == response_fname:
+    if Response_t['response_file_das_a'] == '':
+        # blank response_file_das_a return False in check_response_info
+        # to throw error
         return True
-
-    if response_fname == '':
-        if ftype == 'sensor':
-            # for das and metadata, blank info_fname will return False
-            # in check_response_info
-            errmsg = ("%sResponse_t[%s]:response_file_sensor_a is blank while "
-                      "%s model exists." % (header, info['n_i'], ftype))
-            addLog(errmsg, errors, logger, logType='error')
+    response_fname = Response_t['response_file_das_a'].split('/')[-1]
+    parts = response_fname.split('_')
+    if len(parts) > 3:
         return False
-    else:
-        if ftype == 'metadata':
-            # return std_info_fname to continue checking
-            return False
-        if ftype == 'das':
-            models = ("incomplete or inconsistent with "
-                      "Array_t_%(array)s:sensor_model=%(smodel)s "
-                      "Array_t_%(array)s:das_model=%(dmodel)s "
-                      "Array_t_%(array)s:sr=%(spr)s "
-                      "Array_t_%(array)s:srm=%(sprm)s "
-                      "Array_t_%(array)s:gain=%(gain)s "
-                      "Array_t_%(array)s:cha=%(cha_code)s. "
+    incomplete_errmsg = ''
+    if len(parts) < 3:
+        incomplete_errmsg = "incomplete"
+    count_corr_parts = 0
+    m_check_fail = set()
+    try:
+        if parts[0] == info['dmodel']:
+            count_corr_parts += 1
+        else:
+            m_check_fail.add('dmodel')
+        if parts[1] == info['smodel']:
+            count_corr_parts += 1
+        else:
+            m_check_fail.add('smodel')
+        sr = re.split(r'(\d+)', parts[2])[1]
+        if sr == str(int(info['spr'])):
+            count_corr_parts += 1
+        else:
+            m_check_fail.add('spr')
+    except IndexError:
+        pass
+    if count_corr_parts >= 2:
+        # at least 2 parts correct, decide this is created from resp_load
+        if m_check_fail != set([]) or incomplete_errmsg != '':
+            errmsg = combine_errors(m_check_fail, incomplete_errmsg, info)
+            errmsg = ("{0}Response_t[{1}]:response_file_das_a '{2}' is {3}. "
                       "Please check with format "
-                      "[das_model]_[sr]_[srm]_[gain] or "
-                      "[das_model]_[sensor_model]_[sr][cha]")
-        if ftype == 'sensor':
-            models = ("inconsistent with "
-                      "Array_t_%(array)s:sensor_model=%(smodel)s")
-        errmsg = ("{0}Response_t[{1}]:response_file_{2}_a '{3}' is {4}."
+                      "[das_model]_[sensor_model]_[sr][cha]."
+                      ).format(header,
+                               info['n_i'],
+                               response_fname,
+                               errmsg)
+            addLog(errmsg, errors, logger, logType='error')
+        return True
+    else:
+        # if less than 2 parts correct, return checks to be included if check
+        # for resp_load format also failed.
+        return incomplete_errmsg, m_check_fail
+
+
+def check_das_resp_load_format(Response_t, info, header, errors, logger,
+                               m_check_ret):
+    """
+     Check response_file_das_a in response_t matches with info from
+      station entry
+     :param Response_t: response entry according to info[n_i]
+     :param info: info needed from each station:
+            dict {n_i, array, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
+     :param header: string of array-station-channel to help user identify where
+             the problem belong to (str)
+     :param errors: list of errors
+     :param logger: logger of the caller
+     :param m_check_ret: if incomplete_errmsg, parts_errmsg are return
+        from check_metadatatoph5_format, they will be included if this check
+        is also failed
+     :log as error  and return for the following cases:
+        + more than 4 parts
+        + if 3 parts corrects, decide this is created from resp_load so
+            errmsg only includes resp_load's checks and format
+        + if less than 3 parts corrects, cannot decide this is created from
+            resp_load or metadatatoph5, so errmsg includes resp_load's
+            checks and formats and metadatatoph5's if m_check_ret!=True
+     """
+    if Response_t['response_file_das_a'] == '':
+        # blank response_file_das_a return False in check_response_info
+        # to throw error
+        return True
+    info['gain'] = Response_t['gain/value_i']
+    response_fname = Response_t['response_file_das_a'].split('/')[-1]
+    r_format = "[das_model]_[sr]_[srm]_[gain]"
+    m_format = "[das_model]_[sensor_model]_[sr][cha]"
+    parts = response_fname.split('_')
+    if len(parts) > 4:
+        errmsg = ("%sResponse_t[%s]:response_file_das_a '%s' has too many "
+                  "parts. Please check with format %s or %s"
+                  % (header, info['n_i'], response_fname, m_format, r_format))
+        addLog(errmsg, errors, logger, logType='error')
+        return
+    incomplete_errmsg = ''
+    if len(parts) < 4:
+        incomplete_errmsg = "incomplete"
+    count_corr_parts = 0
+    r_check_fail = set()
+    try:
+        if parts[0] == info['dmodel']:
+            count_corr_parts += 1
+        else:
+            r_check_fail.add('dmodel')
+        if parts[1] == str(int(info['spr'])):
+            count_corr_parts += 1
+        else:
+            r_check_fail.add('spr')
+        if parts[2] == str(int(info['sprm'])):
+            count_corr_parts += 1
+        else:
+            r_check_fail.add('sprm')
+        if parts[3] == str(int(info['gain'])):
+            count_corr_parts += 1
+        else:
+            r_check_fail.add('gain')
+    except IndexError:
+        pass
+
+    if r_check_fail != set([]) or incomplete_errmsg != '':
+        errmsg = combine_errors(r_check_fail, incomplete_errmsg, info)
+        if count_corr_parts >= 3 or m_check_ret is False:
+            # at least 3 parts correct, decide this is created from resp_load
+            errmsg = ("{0}Response_t[{1}]:response_file_das_a '{2}' is {3}. "
+                      "Please check with format {4}."
+                      ).format(header,
+                               info['n_i'],
+                               response_fname,
+                               errmsg.strip(),
+                               r_format)
+        else:
+            # if less than 3 parts correct, include the check and format
+            # of checking metadatatoph5 format to error message
+            if incomplete_errmsg != 'incomplete':
+                incomplete_errmsg = m_check_ret[0]
+            for c in m_check_ret[1]:
+                r_check_fail.add(c)
+            errmsg = combine_errors(r_check_fail, incomplete_errmsg, info)
+            errmsg = ("{0}Response_t[{1}]:response_file_das_a {2} is {3}. "
+                      "Please check with format {4} or {5}."
+                      ).format(header,
+                               info['n_i'],
+                               response_fname,
+                               errmsg.strip(),
+                               r_format,
+                               m_format)
+        addLog(errmsg, errors, logger, logType='error')
+
+
+def check_sensor(Response_t, info, header, errors, logger):
+    """
+     Check response_file_sensor_a in response_t matches with info from
+      station entry
+     :param Response_t: response entry according to info[n_i]
+     :param info: info needed from each station:
+            dict {n_i, array, sta, cha_id, cha_code, dmodel, smodel, spr, sprm}
+     :para header: string of array-station-channel to help user identify where
+             the problem belong to (str)
+     :para errors: list of errors
+     :param logger: logger of the caller
+     :Log as error for 2 cases:
+        response_file_sensor_a is blank while sensor model exists.
+        response_file_sensor_a not match with sensor model
+     """
+    response_fname = Response_t['response_file_sensor_a'].split('/')[-1]
+    if info['smodel'] != '' and response_fname == '':
+        errmsg = ("%sResponse_t[%s]:response_file_sensor_a is blank while "
+                  "sensor model exists." % (header, info['n_i']))
+        addLog(errmsg, errors, logger, logType='error')
+        return
+    if info['smodel'] != response_fname:
+        errmsg = ("{0}Response_t[{1}]:response_file_sensor_a '{2}' is "
+                  "inconsistent with {3}."
                   ).format(header,
                            info['n_i'],
-                           ftype,
-                           std_response_fname,
-                           models % info)
+                           response_fname,
+                           ERRORS['smodel'] % info)
         addLog(errmsg, errors, logger, logType='error')
-        return False
+        return
 
 
 def check_response_info(info, ph5, checked_data_files, errors, logger):
@@ -147,17 +284,17 @@ def check_response_info(info, ph5, checked_data_files, errors, logger):
                   "response data." % header)
         return False, [errmsg]
 
-    # check resp file from metadata
-    ret = check_resp_file_name(
-        Response_t, info, header, 'metadata', errors, logger)
-    if not ret:
-        # check sensor
-        check_resp_file_name(
-            Response_t, info, header, 'sensor', errors, logger)
+    info['dmodel'] = info['dmodel'].translate(None, ' ,/-=._')
+    info['smodel'] = info['smodel'].translate(None, ' ,/-=._')
+    m_check_ret = check_metadatatoph5_format(
+        Response_t, info, header, errors, logger)
 
-        # check das
-        check_resp_file_name(
-            Response_t, info, header, 'das', errors, logger)
+    if m_check_ret is not True:
+        check_sensor(
+            Response_t, info, header, errors, logger)
+
+        check_das_resp_load_format(
+            Response_t, info, header, errors, logger, m_check_ret)
 
     das_resp_path = Response_t['response_file_das_a']
     sens_resp_path = Response_t['response_file_sensor_a']
