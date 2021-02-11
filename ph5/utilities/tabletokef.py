@@ -104,7 +104,7 @@ def get_args():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, \
         EVENT_TABLE, ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, \
         RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, TABLE_KEY, INDEX_TABLE, \
-        M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS, OFILE
+        M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS, OFILE, IGNORE_SRM
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -208,11 +208,17 @@ def get_args():
                         help="The kef output file to be saved at.",
                         metavar="output_file", default=None)
 
+    parser.add_argument("-i", "--ignore_srm", action="store_true",
+                        default=False,
+                        help=("Ignore checking sample_rate_multiplier_i "
+                              "in Array_t or Das_t"))
+
     args = parser.parse_args()
 
     PH5 = args.ph5_file_prefix
     PATH = args.ph5_path
     DEBUG = args.debug
+    IGNORE_SRM = args.ignore_srm
     EXPERIMENT_TABLE = args.experiment_t
     SORT_TABLE = args.sort_t
     if args.offset_t_ is not None:
@@ -407,7 +413,7 @@ def read_sort_table():
     SORT_T = rowskeys
 
 
-def read_sort_arrays():
+def read_sort_arrays(ignore_srm=False):
     '''   Read /Experiment_t/Sorts_g/Array_t_[n]   '''
     global EX, ARRAY_T
 
@@ -415,8 +421,11 @@ def read_sort_arrays():
     # (these are also in Sort_t)
     names = EX.ph5_g_sorts.names()
     for n in names:
-        arrays, array_keys = EX.ph5_g_sorts.read_arrays(n)
-
+        try:
+            arrays, array_keys = EX.ph5_g_sorts.read_arrays(n, ignore_srm)
+        except experiment.HDF5InteractionError as e:
+            LOGGER.error(e.msg)
+            return
         rowskeys = Rows_Keys(arrays, array_keys)
         # We key this on the name since there can be multiple arrays
         ARRAY_T[n] = rowskeys
@@ -456,7 +465,7 @@ def read_m_index_table():
     M_INDEX_T = Rows_Keys(rows, keys)
 
 
-def read_receivers(das=None):
+def read_receivers(das=None, ignore_srm=False):
     '''   Read tables and arrays (except wiggles) in Das_g_[sn]   '''
     global EX, DAS_T, RECEIVER_T, DASS, SOH_A
 
@@ -482,7 +491,11 @@ def read_receivers(das=None):
         EX.ph5_g_receivers.setcurrent(g)
 
         # Read /Experiment_g/Receivers_g/Das_g_[sn]/Das_t
-        das, das_keys = EX.ph5_g_receivers.read_das(ignore_srm0=True)
+        try:
+            das, das_keys = EX.ph5_g_receivers.read_das(ignore_srm)
+        except experiment.HDF5InteractionError as e:
+            LOGGER.error(e.msg)
+            return
         rowskeys = Rows_Keys(das, das_keys)
         DAS_T[d] = rowskeys
 
@@ -602,7 +615,7 @@ def main():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
         EVENT_TABLE, \
         ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, RECEIVER_TABLE, DAS_TABLE,\
-        TIME_TABLE, INDEX_TABLE
+        TIME_TABLE, INDEX_TABLE, IGNORE_SRM
 
     init_local()
 
@@ -651,7 +664,7 @@ def main():
         if not SORT_T:
             read_sort_table()
 
-        read_sort_arrays()
+        read_sort_arrays(ignore_srm=IGNORE_SRM)
         arrays = ARRAY_T.keys()
         for a in arrays:
             n = int(string.split(a, '_')[2])
@@ -661,7 +674,7 @@ def main():
         if not SORT_T:
             read_sort_table()
 
-        read_sort_arrays()
+        read_sort_arrays(ignore_srm=IGNORE_SRM)
         arrays = ARRAY_T.keys()
         for a in arrays:
             table_print("/Experiment_g/Sorts_g/" + a, ARRAY_T[a])
@@ -679,7 +692,7 @@ def main():
         table_print("/Experiment_g/Receivers_g/Receiver_t", RECEIVER_T)
 
     if DAS_TABLE:
-        read_receivers(DAS_TABLE)
+        read_receivers(DAS_TABLE, IGNORE_SRM)
         dass = DAS_T.keys()
         for d in dass:
             table_print("/Experiment_g/Receivers_g/Das_g_" +
