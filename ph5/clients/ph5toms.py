@@ -1272,6 +1272,8 @@ def main():
         LOGGER.error("{0}".format(err.message))
     except ph5api.APIError as err:
         LOGGER.error(err.msg)
+    except experiment.HDF5InteractionError as err:
+        LOGGER.error(err.msg)
 
     ph5API_object.close()
 
