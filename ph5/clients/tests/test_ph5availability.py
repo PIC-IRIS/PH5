@@ -1881,120 +1881,89 @@ class TestPH5AvailabilitySampleRate_error(LogTestCase, TempDirTestCase):
         self.ph5_sr_error.close()
 
 
-class TestPH5Availability_SRM0(LogTestCase, TempDirTestCase):
-    '''
-    test sample_rate_multiplier_i=0
-    => error will be logged once for each das that has srm=0
-    '''
-    def setUp(self):
-        super(TestPH5Availability_SRM0, self).setUp()
-        ph5path = os.path.join(self.home,
-                               'ph5/test_data/ph5/sampleratemultiplier0')
-        self.ph5_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
-        self.avail = ph5availability.PH5Availability(self.ph5_object)
+class TestPH5Availability_SMR(LogTestCase, TempDirTestCase):
+    def assert_main(self, testargs, errmsg):
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.ERROR)
+                ph5availability.main()
+        self.assertEqual(len(log.records), 1)
+        self.assertEqual(log.records[0].msg, errmsg)
 
-    def tearDown(self):
-        self.ph5_object.ph5close()
-        super(TestPH5Availability_SRM0, self).tearDown()
-
-    def test_get_availability(self):
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            self.avail.get_availability(station='1111',
-                                        channel='GP1',
-                                        starttime=None,
-                                        endtime=None,
-                                        include_sample_rate=True)
-            self.assertEqual(
-                log.records[0].msg,
-                'Das_g_1X1111 has 9 '
-                'sample_rate_multiplier_i(s) with values 0. '
-                'Run fix_srm to fix those values in that Das.')
-
-    def test_get_availability_extent(self):
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            self.avail.get_availability_extent(station='1111',
-                                               channel='GP1',
-                                               starttime=None,
-                                               endtime=None,
-                                               include_sample_rate=True)
-            self.assertEqual(
-                log.records[0].msg,
-                'Das_g_1X1111 has 9 '
-                'sample_rate_multiplier_i(s) with values 0. '
-                'Run fix_srm to fix those values in that Das.')
-
-    def test_get_slc(self):
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            self.avail.get_slc(station='1111',
-                               channel='GP1',
-                               starttime=None,
-                               endtime=None,
-                               include_sample_rate=True)
-            self.assertEqual(len(log.records), 1)
-            self.assertEqual(
-                log.records[0].msg,
-                'Das_g_1X1111 has 9'
-                ' sample_rate_multiplier_i(s) with values 0.'
-                ' Run fix_srm to fix those values in that Das.')
-
-    def test_has_data(self):
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            self.avail.has_data(station='1111',
-                                channel='GP1',
-                                starttime=None,
-                                endtime=None,
-                                include_sample_rate=True)
-            self.assertEqual(
-                log.records[0].msg,
-                'Das_g_1X1111 has 9 '
-                'sample_rate_multiplier_i(s) with values 0. '
-                'Run fix_srm to fix those values in that Das.')
-
-        with LogCapture() as log:
-            log.setLevel(logging.ERROR)
-            self.avail.has_data(station='1111',
-                                channel='*',
-                                starttime=None,
-                                endtime=None,
-                                include_sample_rate=True)
-            self.assertEqual(len(log.records), 1)
-            self.assertEqual(
-                    log.records[0].msg,
-                    'Das_g_1X1111 has '
-                    'sample_rate_multiplier_i(s) with values 0. '
-                    'Run fix_srm to fix those values in that Das.')
-
-
-class TestPH5Availability_No_SMR(LogTestCase, TempDirTestCase):
-    '''
-    test column sample_rate_multiplier_i missing,
-    das querying will consider its value 1
-    '''
-    def test_main(self):
+    def test_main_no_srm(self):
+        '''
+        test column sample_rate_multiplier_i missing
+        '''
+        # Both Array_t and Das_t missing srm, but Array_t will be checked first
+        # get_array_order_id() will throw error when it reads array
         nosrmpath = os.path.join(self.home,
-                                 'ph5/test_data/ph5_no_srm/')
+                                 'ph5/test_data/ph5_no_srm/array_das')
         testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
                     '-a', '2', '--station', '1111']
-        with patch.object(sys, 'argv', testargs):
-            with OutputCapture() as out:
-                ph5availability.main()
-                output = out.captured.strip().split('\n')
-        self.assertEqual(
-            output[1],
-            'AA 1111  -- GP1   2019-07-04T16:00:00.329998Z '
-            '2019-07-04T16:01:30.329998Z')
-        self.assertEqual(
-            output[2],
-            'AA 1111  -- GP2   2019-07-04T16:00:00.329998Z '
-            '2019-07-04T16:01:30.329998Z')
-        self.assertEqual(
-            output[3],
-            'AA 1111  -- GPZ   2019-07-04T16:00:00.329998Z '
-            '2019-07-04T16:01:30.329998Z')
+        self.assert_main(
+            testargs,
+            'Array_t_001 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Only Das_t missing srm (this doesn't happen in reality but need to
+        # test to see if it works)
+
+        # query_das_t() inside get_availability will throw error
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # get_time_das_t() inside has_data will throw error
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '0']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_main_srm0(self):
+        '''
+        test column sample_rate_multiplier_i=0,
+        '''
+        # Both Array_t and Das_t missing srm, but Array_t will be checked first
+        # get_array_order_id() will throw error when it reads array
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/array_das')
+
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Array_t_001 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Only Das_t missing srm (this doesn't happen in reality but need to
+        # test to see if it works)
+
+        # query_das_t() inside get_availability will throw error
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # get_time_das_t() inside has_data will throw error
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '0']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
 
 
 if __name__ == "__main__":
