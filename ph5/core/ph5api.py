@@ -782,22 +782,24 @@ class PH5(experiment.ExperimentGroup):
                                     'Das_t')
         except NoSuchNodeError:
             return []
-        col_srm_exist = True
         try:
             sample_rate_multiplier_i = tbl.cols.sample_rate_multiplier_i  # noqa
             sample_rate_multiplier_i = sample_rate_multiplier_i
         except AttributeError:
-            col_srm_exist = False
-        if col_srm_exist:
-            srm0rows = [row for row in
-                        tbl.where('sample_rate_multiplier_i==0')]
-            if len(srm0rows) > 0:
-                errmsg = ("%s has %s sample_rate_multiplier_i(s) "
-                          "with values 0. "
-                          "Run fix_srm to fix those values in that Das."
-                          % (tbl._v_parent._v_name,
-                             len(srm0rows)))
-                raise APIError(-1, errmsg)
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "missing. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
+            raise APIError(-1, errmsg)
+
+        srm0rows = [row for row in
+                    tbl.where('sample_rate_multiplier_i==0')]
+        if len(srm0rows) > 0:
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "with value 0. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
+            raise APIError(-1, errmsg)
 
         epoch_i = tbl.cols.time.epoch_l  # noqa
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
@@ -822,47 +824,27 @@ class PH5(experiment.ExperimentGroup):
                     + str(stop_epoch) + ')'
             )
         elif check_samplerate is False:
-            if col_srm_exist is True:
-                numexprstr = (
-                     '(channel_number_i == '
-                     + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000 >= '
-                     + str(start_epoch) +
-                     '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                     '&(epoch_i+micro_seconds_i/1000000 <= '
-                     + str(stop_epoch) + ')'
-                     )
-            else:
-                numexprstr = (
-                        '(channel_number_i == '
-                        + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000 >= '
-                        + str(start_epoch) +
-                        '-sample_count_i/sample_rate_i/1)'
-                        '&(epoch_i+micro_seconds_i/1000000 <= '
-                        + str(stop_epoch) + ')'
-                )
+            numexprstr = (
+                 '(channel_number_i == '
+                 + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000 >= '
+                 + str(start_epoch) +
+                 '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                 '&(epoch_i+micro_seconds_i/1000000 <= '
+                 + str(stop_epoch) + ')'
+                 )
         else:
-            if col_srm_exist is True:
-                numexprstr = (
-                    '(channel_number_i == '
-                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
-                    + str(start_epoch) +
-                    '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                    '&(epoch_i+micro_seconds_i/1000000<='
-                    + str(stop_epoch) + ')&(sample_rate_i==' +
-                    str(sample_rate) +
-                    ')&(sample_rate_multiplier_i==' +
-                    str(sample_rate_multiplier) + ')'
-                )
-            else:
-                numexprstr = (
-                        '(channel_number_i == '
-                        + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
-                        + str(start_epoch) +
-                        '-sample_count_i/sample_rate_i/1)'
-                        '&(epoch_i+micro_seconds_i/1000000<='
-                        + str(stop_epoch) + ')&(sample_rate_i==' +
-                        str(sample_rate) + ')'
-                )
+            numexprstr = (
+                '(channel_number_i == '
+                + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                + str(start_epoch) +
+                '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                '&(epoch_i+micro_seconds_i/1000000<='
+                + str(stop_epoch) + ')&(sample_rate_i==' +
+                str(sample_rate) +
+                ')&(sample_rate_multiplier_i==' +
+                str(sample_rate_multiplier) + ')'
+            )
+
         for row in tbl.where(numexprstr):
             row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
                         'array_name_data_a': row['array_name_data_a'],
@@ -876,8 +858,7 @@ class PH5(experiment.ExperimentGroup):
                         'sample_count_i': row['sample_count_i'],
                         'sample_rate_i': row['sample_rate_i'],
                         'sample_rate_multiplier_i':
-                            row['sample_rate_multiplier_i']
-                            if col_srm_exist else 1,
+                            row['sample_rate_multiplier_i'],
                         'stream_number_i': row['stream_number_i'],
                         'time/ascii_s': row['time/ascii_s'],
                         'time/epoch_l': row['time/epoch_l'],

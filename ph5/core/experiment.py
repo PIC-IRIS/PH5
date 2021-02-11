@@ -30,6 +30,32 @@ time.tzset()
 externalLinkRE = re.compile(".*ExternalLink.*")
 
 
+def check_srm_valid(rows, keys, tablename, ignore_srm=False):
+    """
+    giving error when the table have sample_rate_multiplier_i=0
+    or missing (pn3)
+    :param rows: rows of the table (list of dicts)
+    :param keys: keys of the table (list of string)
+    :param tablename: name of the table (string)
+    :param ignore_srm: flag to ignore checking srm when it is True (boolean)
+    """
+    if ignore_srm:
+        return
+    if 'sample_rate_multiplier_i' not in keys:
+        errmsg = ("%s has sample_rate_multiplier_i "
+                  "missing. Please run fix_srm to fix "
+                  "sample_rate_multiplier_i for PH5 data."
+                  % tablename)
+        raise HDF5InteractionError(7, errmsg)
+    for r in rows:
+        if r['sample_rate_multiplier_i'] == 0:
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "with value 0. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tablename)
+            raise HDF5InteractionError(7, errmsg)
+
+
 class HDF5InteractionError (Exception):
     def __init__(self, errno, msg):
         self.args = (errno, msg)
@@ -308,7 +334,7 @@ class SortsGroup:
 
         return ret, keys
 
-    def read_arrays(self, array_name):
+    def read_arrays(self, array_name, ignore_srm=False):
         try:
             node = self.ph5_t_array[array_name]
         except KeyError:
@@ -319,7 +345,7 @@ class SortsGroup:
             self.ph5_t_array[array_name] = node
 
         ret, keys = read_table(node)
-
+        check_srm_valid(ret, keys, array_name, ignore_srm)
         return ret, keys
 
     def index_offset_table(self, name='Offset_t', level=9, weight='full'):
@@ -677,35 +703,21 @@ class ReceiversGroup:
 
         return name[-1]
 
-    def read_das(self, ignore_srm0=False):
+    def read_das(self, ignore_srm=False):
         '''   Read DAS table   '''
         def cmp_epoch(a, b):
             return int(a['time/epoch_l']) - int(b['time/epoch_l'])
 
-        ret = []
-        ret_read, keys = read_table(self.current_t_das)
-        if ret_read is not None:
-            ret_read.sort(cmp=cmp_epoch)
+        ret, keys = read_table(self.current_t_das)
+        if ret is not None:
+            ret.sort(cmp=cmp_epoch)
         else:
-            return ret, keys
-        # We look through each Das_t line and make sure it has the column
-        # sample_rate_multiplier_i and if it is missing we set it to 1.
-        # This column was added after data had been archived without it
-        # at the DMC.
-        for r in ret_read:
-            if 'sample_rate_multiplier_i' not in r:
-                r['sample_rate_multiplier_i'] = 1
-                keys += ['sample_rate_multiplier_i']
-            elif not ignore_srm0 and r['sample_rate_multiplier_i'] == 0:
-                # ignore srm==0 for tabletokef and nuke_table
-                errmsg = ("%s has sample_rate_multiplier_i(s) "
-                          "with values 0. "
-                          "Run fix_srm to fix those values in that Das."
-                          % (self.current_t_das._v_parent._v_name))
-                raise HDF5InteractionError(7, errmsg)
+            return [], keys
 
-            ret.append(r)
-
+        check_srm_valid(
+            ret, keys,
+            self.current_t_das._v_parent._v_name.replace('Das_g', 'Das_t'),
+            ignore_srm)
         return ret, keys
 
     def read_receiver(self):
