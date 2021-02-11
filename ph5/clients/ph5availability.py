@@ -42,7 +42,6 @@ class PH5Availability(object):
         :type  :class core.ph5api
         :param object containg PH5 instance
         TODO: ADD ALL PARAMATERS NEEDED
-
         """
         self.ph5 = ph5API_object
         if not self.ph5.Array_t_names:
@@ -289,7 +288,7 @@ class PH5Availability(object):
             containing information on what streams are included in PH5 archive.
         """
         slc = []
-        errors = set()
+
         array_names = sorted(self.ph5.Array_t_names)
         for array_name in array_names:
             if self.array is not None:
@@ -319,18 +318,13 @@ class PH5Availability(object):
                         tup = (ph5_seed_station,
                                ph5_loc, ph5_channel)
                         if tup not in slc:
-                            try:
-                                ret = self.get_time_das_t(
-                                    ph5_das, starttime, endtime,
-                                    ph5_channum, ph5_sample_rate)
-                            except Exception as err:
-                                errors.add(err.msg)
-                                continue
+                            ret = self.get_time_das_t(
+                                ph5_das, starttime, endtime,
+                                ph5_channum, ph5_sample_rate)
                             if ret == -1:
                                 continue
                             slc.append(tup)
-        for err in errors:
-            LOGGER.error(err)
+
         return slc
 
     def get_availability_extent(self, station='*', location='*',
@@ -357,10 +351,8 @@ class PH5Availability(object):
         :returns: A list of tuples [(station, location, channel,
             early, end)...] containing data extent info for time series
             included in PH5 archive
-
         NOTE! ph5api as a get_extent() method that works on the channel level.
         Leverage this
-
         """
         availability_extents = []
         sr_mismatch = False
@@ -371,7 +363,7 @@ class PH5Availability(object):
                 raise ValueError("if start or end, both are required")
 
         array_names = sorted(self.ph5.Array_t_names)
-        errors = set()
+
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -399,20 +391,16 @@ class PH5Availability(object):
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
-                        ph5_multiplier = self.get_srm(st)
+                        ph5_multiplier = st['sample_rate_multiplier_i']
                         samplerate_return = None
-                        try:
-                            Das_t = self.ph5.query_das_t(
-                                ph5das,
-                                chan=chanum,
-                                start_epoch=ph5_start_epoch,
-                                stop_epoch=ph5_stop_epoch,
-                                sample_rate=ph5_sample_rate,
-                                sample_rate_multiplier=ph5_multiplier,
-                                check_samplerate=False)
-                        except ph5api.APIError as err:
-                            errors.add(err.msg)
-                            continue
+                        Das_t = self.ph5.query_das_t(
+                            ph5das,
+                            chan=chanum,
+                            start_epoch=ph5_start_epoch,
+                            stop_epoch=ph5_stop_epoch,
+                            sample_rate=ph5_sample_rate,
+                            sample_rate_multiplier=ph5_multiplier,
+                            check_samplerate=False)
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
@@ -477,8 +465,7 @@ class PH5Availability(object):
                                        early, end, float(psr)
                                        )
                         availability_extents.append(tup)
-        for err in errors:
-            LOGGER.error(err)
+
         return availability_extents
 
     def get_availability(self, station='*', location='*',
@@ -512,7 +499,6 @@ class PH5Availability(object):
         :returns: A list of tuples [(station, location, channel,
             earliest, latest)...] representing contiguous time spans for
             selected channels and time ranges.
-
         NOTE! ph5api as a get_availability()
         method that works on the channel level. Leverage this
         """
@@ -522,7 +508,7 @@ class PH5Availability(object):
         empty_times = True
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
-        errors = set()
+
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -551,19 +537,15 @@ class PH5Availability(object):
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
-                        ph5_multiplier = self.get_srm(st)
-                        try:
-                            Das_t = self.ph5.query_das_t(
-                                ph5_das,
-                                chan=channum,
-                                start_epoch=ph5_start_epoch,
-                                stop_epoch=ph5_stop_epoch,
-                                sample_rate=ph5_sample_rate,
-                                sample_rate_multiplier=ph5_multiplier,
-                                check_samplerate=False)
-                        except ph5api.APIError as err:
-                            errors.add(err.msg)
-                            continue
+                        ph5_multiplier = st['sample_rate_multiplier_i']
+                        Das_t = self.ph5.query_das_t(
+                            ph5_das,
+                            chan=channum,
+                            start_epoch=ph5_start_epoch,
+                            stop_epoch=ph5_stop_epoch,
+                            sample_rate=ph5_sample_rate,
+                            sample_rate_multiplier=ph5_multiplier,
+                            check_samplerate=False)
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
@@ -634,8 +616,7 @@ class PH5Availability(object):
                                 availability.append((
                                     ph5_seed_station, ph5_loc, ph5_channel,
                                     start, end))
-        for err in errors:
-            LOGGER.error(err)
+
         return availability
 
     def get_start(self, das_t):
@@ -649,22 +630,11 @@ class PH5Availability(object):
             duration = 0
         return start + duration
 
-    def get_srm(self, st):
-        """
-        PN3 format of PH5 has no sample_rate_multiplier_i.
-        Reading this format should return 1 as value for this key.
-        """
-        try:
-            return float(st['sample_rate_multiplier_i'])
-        except KeyError:
-            # old data has no sample_rate_multiplier_i, assign 1 for it
-            return 1
-
     def get_sample_rate(self, st):
         if st['sample_rate_i'] == 0:
             return 0
-
-        return float(st['sample_rate_i']) / self.get_srm(st)
+        return float(st['sample_rate_i']) / \
+            float(st['sample_rate_multiplier_i'])
 
     def get_sampleNos_gapOverlap(self, das_t, earliest, latest, start, end,
                                  sample_rate, st):
@@ -675,7 +645,6 @@ class PH5Availability(object):
         latest: latest time of traces in das_t
         all the parameters are already processed before sending to
         get_sampleNos_gapOverlap() => no need to check or calc. again
-
         return:
            + expected_sampleNo: number of samples expected for the time range
            + sampleNo: number of samples recorded for the time range
@@ -833,7 +802,7 @@ class PH5Availability(object):
             station, location, channel, starttime, endtime.
         """
         array_names = sorted(self.ph5.Array_t_names)
-        errors = set()
+
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -857,19 +826,17 @@ class PH5Availability(object):
 
                         ph5_das = st['das/serial_number_s']
                         ph5_channum = st['channel_number_i']
-                        try:
-                            if channel == "*":
-                                ret = self.get_time_das_t(
-                                    ph5_das, starttime, endtime)
-                            else:
-                                ph5_sample_rate = self.get_sample_rate(st)
-                                ret = self.get_time_das_t(
-                                    ph5_das, starttime, endtime,
-                                    component=ph5_channum,
-                                    sample_rate=ph5_sample_rate)
-                        except Exception as err:
-                            errors.add(err.msg)
-                            continue
+
+                        if channel == "*":
+                            ret = self.get_time_das_t(
+                                ph5_das, starttime, endtime)
+                        else:
+                            ph5_sample_rate = self.get_sample_rate(st)
+                            ph5_sample_rate = self.get_sample_rate(st)
+                            ret = self.get_time_das_t(
+                                ph5_das, starttime, endtime,
+                                component=ph5_channum,
+                                sample_rate=ph5_sample_rate)
                         if ret == -1:
                             continue
                         ph5_earliest, ph5_latest, das_t = ret
@@ -884,8 +851,7 @@ class PH5Availability(object):
                                 if ref.nrows > 0:
                                     return True
                         self.ph5.forget_das_t(ph5_das)
-        for err in errors:
-            LOGGER.error(err)
+
         return False
 
     def print_report(self, text):
