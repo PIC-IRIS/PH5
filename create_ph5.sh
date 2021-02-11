@@ -39,10 +39,17 @@ keftoph5 -n master.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
 cd ../..
 mkdir sampleratemultiplier0
 cd sampleratemultiplier0
+mkdir array_das   # both tables have sample_rate_multiplier_i=0
+mkdir das         # das table sample_rate_multiplier_i=0
+cd array_das
 initialize_ph5 -n master.ph5
-keftoph5 -n master.ph5 -k ../../metadata/experiment.kef
-segdtoph5 -n master.ph5 -r ../../segd/1111.0.0.fcnt
+keftoph5 -n master.ph5 -k ../../../metadata/experiment.kef
+segdtoph5 -n master.ph5 -r ../../../segd/1111.0.0.fcnt
+cp master.ph5 ../das/
 echo "y" | delete_table -n master.ph5 -D 1X1111
-keftoph5 -n master.ph5 -k ../../metadata/Das_t_1X1111.0.0_SRM0.kef
+keftoph5 -n master.ph5 -k ../../../metadata/Das_t_1X1111.0.0_SRM0.kef
+echo "y" | delete_table -n master.ph5 -A 1
+keftoph5 -n master.ph5 -k ../../../metadata/Array_t_001_SMR0.kef
+cp mini* ../das/
 
 echo "Finished creating test PH5"
