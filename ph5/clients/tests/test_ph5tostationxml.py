@@ -307,11 +307,11 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             self.parser.unique_errors,
             set([("array 009 station 9001, channel 1: Response_t[4]:"
                   "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
-                  "Array_t_009:sr=200. Please check with format "
+                  "Array_t_009:sr=200. Please check with resp_load format "
                   "[das_model]_[sr]_[srm]_[gain].", 'error'),
                  ("array 009 station 9001, channel 1: Response_t[4]:"
                   "response_file_sensor_a 'gs11v' is inconsistent with "
-                  "Array_t_009:sensor_model=cmg3t.", 'error')
+                  "Array_t_009:sensor_model=cmg_3t.", 'error')
                  ]))
 
         self.parser.unique_errors = set()
@@ -329,8 +329,9 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             set([("array 003 station 0407, channel 1: Response_t[6]:"
                   "response_file_das_a 'NoneQ330_NoneCMG3T_100LHN' is "
                   "inconsistent with Array_t_003:das_model=rt125a. "
-                  "Please check with format "
-                  "[das_model]_[sensor_model]_[sr][cha].", 'error')
+                  "Please check with metadatatoph5 format "
+                  "[das_model]_[sensor_model]_[sr][cha] "
+                  "(check doesn't include [cha]).", 'error')
                  ]))
 
     def test_get_response_inv_emp_resp(self):
@@ -395,10 +396,12 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                 {"array 002 station 0407, channel 1: Response_t[5]:"
                  "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is "
                  "inconsistent with Array_t_002:sensor_model=CMG. Please "
-                 "check with format [das_model]_[sensor_model]_[sr][cha].",
+                 "check with metadatatoph5 format "
+                 "[das_model]_[sensor_model]_[sr][cha] "
+                 "(check doesn't include [cha]).",
                  "array 008 station 8001, channel 1: Response_t[1]:"
                  "response_file_das_a 'rt130_100_1_1' is inconsistent with "
-                 "Array_t_008:sr=10. Please check with format "
+                 "Array_t_008:sr=10. Please check with resp_load format "
                  "[das_model]_[sr]_[srm]_[gain].",
                  'array 001, station 500, channel 1: Channel elevation seems '
                  'to be 0. Is this correct???',

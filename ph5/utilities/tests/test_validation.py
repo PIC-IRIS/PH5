@@ -99,6 +99,10 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
 
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
         header = "array 009, station 9001, channel 1: "
+        info['dmodel_no_special_char'] = info['dmodel'].translate(None,
+                                                                  ' ,/-=._')
+        info['smodel_no_special_char'] = info['smodel'].translate(None,
+                                                                  ' ,/-=._')
 
         # n_i=4: response_file_das_a has more than parts
         # => for sure not created by metadatatoph5
@@ -115,8 +119,10 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         # => return True, no err logged
         Response_t = self.ph5API_object.get_response_t_by_n_i(5)
         info = next(item for item in self.resp_check_info if item["n_i"] == 5)
-        info['dmodel'] = info['dmodel'].translate(None, ' ,/-=._')
-        info['smodel'] = info['smodel'].translate(None, ' ,/-=._')
+        info['dmodel_no_special_char'] = info['dmodel'].translate(None,
+                                                                  ' ,/-=._')
+        info['smodel_no_special_char'] = info['smodel'].translate(None,
+                                                                  ' ,/-=._')
         header = "array 002, station 0407, channel 1: "
         with LogCapture() as log:
             ret = validation.check_metadatatoph5_format(
@@ -133,8 +139,9 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             '/Experiment_g/Responses_g/NoneQ330_CMG3T_200HHN'
         err = ("array 002, station 0407, channel 1: Response_t[5]:"
                "response_file_das_a 'NoneQ330_CMG3T_200HHN' is inconsistent "
-               "with Array_t_002:sensor_model=NoneCMG3T. Please "
-               "check with format [das_model]_[sensor_model]_[sr][cha].")
+               "with Array_t_002:sensor_model=None CMG-3T. Please check with "
+               "metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
+               "(check doesn't include [cha]).")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             ret = validation.check_metadatatoph5_format(
@@ -178,7 +185,9 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             '/Experiment_g/Responses_g/NoneQ330_NoneCMG3T'
         err = ("array 002, station 0407, channel 1: Response_t[5]:"
                "response_file_das_a 'NoneQ330_NoneCMG3T' is incomplete. "
-               "Please check with format [das_model]_[sensor_model]_[sr][cha]."
+               "Please check with metadatatoph5 format "
+               "[das_model]_[sensor_model]_[sr][cha] "
+               "(check doesn't include [cha])."
                )
         with LogCapture() as log:
             ret = validation.check_metadatatoph5_format(
@@ -196,9 +205,10 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             'RT130_L28LB45Hz270VmsRc395OhmsRs2490Ohms_500DH2')
         info['smodel'] = ('L-28LB, 4.5 Hz, 27.0 V/m/s, '
                           'Rc=395 Ohms, Rs=2490 Ohms')
-        info['dmodel'] = 'RT130'
+        info['dmodel'] = info['dmodel_no_special_char'] = 'RT130'
         info['spr'] = 500
-        info['smodel'] = info['smodel'].translate(None, ' ,/-=._')
+        info['smodel_no_special_char'] = info['smodel'].translate(None,
+                                                                  ' ,/-=._')
         with LogCapture() as log:
             ret = validation.check_metadatatoph5_format(
                 Response_t, info, header, errors, logger)
@@ -211,6 +221,8 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.ph5API_object.read_response_t()
         Response_t = self.ph5API_object.get_response_t_by_n_i(4)
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
+        info['dmodel_no_special_char'] = info['dmodel'].translate(None,
+                                                                  ' ,/-=._')
         header = "array 009, station 9001, channel 1: "
 
         # n_i=4 response_das_file_name is 'rt125a_500_1_32'
@@ -224,7 +236,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         info['spr'] = 100
         err = ("array 009, station 9001, channel 1: Response_t[4]:"
                "response_file_das_a 'rt125a_500_1_32' is inconsistent "
-               "with Array_t_009:sr=100. Please check with format "
+               "with Array_t_009:sr=100. Please check with resp_load format "
                "[das_model]_[sr]_[srm]_[gain].")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
@@ -236,19 +248,20 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         Response_t = self.ph5API_object.get_response_t_by_n_i(5)
         info = next(item for item in self.resp_check_info if item["n_i"] == 5)
         header = "array 002, station 0407, channel 1: "
-        info['dmodel'] = info['dmodel'].translate(None, ' ,/-=._')
-        info['smodel'] = info['smodel'].translate(None, ' ,/-=._')
+        info['dmodel_no_special_char'] = info['dmodel'].translate(None,
+                                                                  ' ,/-=._')
         # n_i=5 sensor model and sample rate mismatch
         errors = set()
         Response_t['response_file_das_a'] = \
             '/Experiment_g/Responses_g/NoneQ330_CMG3T_100HHN'
-        err = ('array 002, station 0407, channel 1: Response_t[5]:'
-               'response_file_das_a NoneQ330_CMG3T_100HHN is incomplete or '
-               'inconsistent with '
-               'Array_t_002:sr=200 Array_t_002:sensor_model=NoneCMG3T '
-               'Array_t_002:srm=1. Please check with format '
-               '[das_model]_[sr]_[srm]_[gain] or '
-               '[das_model]_[sensor_model]_[sr][cha].')
+        err = ("array 002, station 0407, channel 1: Response_t[5]:"
+               "response_file_das_a NoneQ330_CMG3T_100HHN is incomplete or "
+               "inconsistent with "
+               "Array_t_002:sr=200 Array_t_002:sensor_model=None CMG-3T "
+               "Array_t_002:srm=1. Please check with resp_load format "
+               "[das_model]_[sr]_[srm]_[gain] or metadatatoph5 format "
+               "[das_model]_[sensor_model]_[sr][cha] "
+               "(check doesn't include [cha]).")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             validation.check_das_resp_load_format(
@@ -264,12 +277,14 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         errors = set()
         Response_t['response_file_das_a'] = \
             '/Experiment_g/Responses_g/NoneQ330_CMG3T'
-        err = ('array 002, station 0407, channel 1: '
-               'Response_t[5]:response_file_das_a NoneQ330_CMG3T is '
-               'incomplete or inconsistent with Array_t_002:sr=200 '
-               'Array_t_002:sensor_model=NoneCMG3T. '
-               'Please check with format [das_model]_[sr]_[srm]_[gain] or '
-               '[das_model]_[sensor_model]_[sr][cha].')
+        err = ("array 002, station 0407, channel 1: "
+               "Response_t[5]:response_file_das_a NoneQ330_CMG3T is "
+               "incomplete or inconsistent with Array_t_002:sr=200 "
+               "Array_t_002:sensor_model=None CMG-3T. "
+               "Please check with resp_load format "
+               "[das_model]_[sr]_[srm]_[gain] or metadatatoph5 format "
+               "[das_model]_[sensor_model]_[sr][cha] "
+               "(check doesn't include [cha]).")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             validation.check_das_resp_load_format(
@@ -295,6 +310,8 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         self.ph5API_object.read_response_t()
         Response_t = self.ph5API_object.get_response_t_by_n_i(4)
         info = next(item for item in self.resp_check_info if item["n_i"] == 4)
+        info['smodel_no_special_char'] = info['smodel'].translate(None,
+                                                                  ' ,/-=._')
         header = "array 009, station 9001, channel 1: "
         # n_i=4: response_sensor_file_name is 'gs11v'
         with LogCapture() as log:
@@ -305,7 +322,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             self.assertEqual(errors, set([]))
 
         # n_i=4: response_sensor_file_name isn't 'cmg3t'
-        info['smodel'] = 'cmg3t'
+        info['smodel'] = info['smodel_no_special_char'] = 'cmg3t'
         err = ("array 009, station 9001, channel 1: Response_t[4]:"
                "response_file_sensor_a 'gs11v' is inconsistent with "
                "Array_t_009:sensor_model=cmg3t.")
@@ -320,7 +337,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         errors = set()
         # n_i=4: response_sensor_file_name='', smodel=''
         Response_t['response_file_sensor_a'] = ''
-        info['smodel'] = ''
+        info['smodel'] = info['smodel_no_special_char'] = ''
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
             ret = validation.check_sensor(
@@ -379,7 +396,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         chckerrors = set(
             ["array 009 station 9001, channel 1: Response_t[4]:"
              "response_file_das_a 'rt125a_500_1_32' is inconsistent with "
-             "Array_t_009:sr=100. Please check with format "
+             "Array_t_009:sr=100. Please check with resp_load format "
              "[das_model]_[sr]_[srm]_[gain].",
              "array 009 station 9001, channel 1: Response_t[4]:"
              "response_file_sensor_a 'gs11v' is inconsistent with "
@@ -403,8 +420,9 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         chckerrors = set(
             ["array 002 station 0407, channel 1: Response_t[5]:"
              "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is inconsistent "
-             "with Array_t_002:das_model=Q330. Please check with format "
-             "[das_model]_[sensor_model]_[sr][cha]."])
+             "with Array_t_002:das_model=Q330. Please check with "
+             "metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
+             "(check doesn't include [cha])."])
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
             ret = validation.check_response_info(

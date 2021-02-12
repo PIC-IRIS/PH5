@@ -93,11 +93,11 @@ def check_metadatatoph5_format(Response_t, info, header, errors, logger):
     count_corr_parts = 0
     m_check_fail = set()
     try:
-        if parts[0] == info['dmodel']:
+        if parts[0] == info['dmodel_no_special_char']:
             count_corr_parts += 1
         else:
             m_check_fail.add('dmodel')
-        if parts[1] == info['smodel']:
+        if parts[1] == info['smodel_no_special_char']:
             count_corr_parts += 1
         else:
             m_check_fail.add('smodel')
@@ -113,8 +113,9 @@ def check_metadatatoph5_format(Response_t, info, header, errors, logger):
         if m_check_fail != set([]) or incomplete_errmsg != '':
             errmsg = combine_errors(m_check_fail, incomplete_errmsg, info)
             errmsg = ("{0}Response_t[{1}]:response_file_das_a '{2}' is {3}. "
-                      "Please check with format "
-                      "[das_model]_[sensor_model]_[sr][cha]."
+                      "Please check with metadatatoph5 format "
+                      "[das_model]_[sensor_model]_[sr][cha] "
+                      "(check doesn't include [cha])."
                       ).format(header,
                                info['n_i'],
                                response_fname,
@@ -156,8 +157,9 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
         return True
     info['gain'] = Response_t['gain/value_i']
     response_fname = Response_t['response_file_das_a'].split('/')[-1]
-    r_format = "[das_model]_[sr]_[srm]_[gain]"
-    m_format = "[das_model]_[sensor_model]_[sr][cha]"
+    r_format = "resp_load format [das_model]_[sr]_[srm]_[gain]"
+    m_format = ("metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
+                "(check doesn't include [cha])")
     parts = response_fname.split('_')
     if len(parts) > 4:
         errmsg = ("%sResponse_t[%s]:response_file_das_a '%s' has too many "
@@ -171,7 +173,7 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
     count_corr_parts = 0
     r_check_fail = set()
     try:
-        if parts[0] == info['dmodel']:
+        if parts[0] == info['dmodel_no_special_char']:
             count_corr_parts += 1
         else:
             r_check_fail.add('dmodel')
@@ -195,7 +197,7 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
         if count_corr_parts >= 3 or m_check_ret is False:
             # at least 3 parts correct, decide this is created from resp_load
             errmsg = ("{0}Response_t[{1}]:response_file_das_a '{2}' is {3}. "
-                      "Please check with format {4}."
+                      "Please check with {4}."
                       ).format(header,
                                info['n_i'],
                                response_fname,
@@ -210,7 +212,7 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
                 r_check_fail.add(c)
             errmsg = combine_errors(r_check_fail, incomplete_errmsg, info)
             errmsg = ("{0}Response_t[{1}]:response_file_das_a {2} is {3}. "
-                      "Please check with format {4} or {5}."
+                      "Please check with {4} or {5}."
                       ).format(header,
                                info['n_i'],
                                response_fname,
@@ -241,7 +243,7 @@ def check_sensor(Response_t, info, header, errors, logger):
                   "sensor model exists." % (header, info['n_i']))
         addLog(errmsg, errors, logger, logType='error')
         return
-    if info['smodel'] != response_fname:
+    if info['smodel_no_special_char'] != response_fname:
         errmsg = ("{0}Response_t[{1}]:response_file_sensor_a '{2}' is "
                   "inconsistent with {3}."
                   ).format(header,
@@ -284,8 +286,8 @@ def check_response_info(info, ph5, checked_data_files, errors, logger):
                   "response data." % header)
         return False, [errmsg]
 
-    info['dmodel'] = info['dmodel'].translate(None, ' ,/-=._')
-    info['smodel'] = info['smodel'].translate(None, ' ,/-=._')
+    info['dmodel_no_special_char'] = info['dmodel'].translate(None, ' ,/-=._')
+    info['smodel_no_special_char'] = info['smodel'].translate(None, ' ,/-=._')
     m_check_ret = check_metadatatoph5_format(
         Response_t, info, header, errors, logger)
 
