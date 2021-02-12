@@ -40,7 +40,7 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
         ph5path = os.path.join(self.home, srm0path)
         testargs1 = ['tabletokef', '-n', 'master.ph5', '-p', ph5path]
 
-        # Array_t, check srm
+        # Array_t, check srm and got error
         testargs2 = ['-A', '1']
         self.assert_main_error(testargs1 + testargs2,
                                'Array_t_001', 'with value 0')
@@ -49,7 +49,7 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
         self.assert_main(testargs1 + testargs2,
                          '/Experiment_g/Sorts_g/Array_t_001',
                          row_total=3, srm_total=3)
-        # Das_t, check srm
+        # Das_t, check srm and got error
         testargs2 = ['-D', '1X1111']
         self.assert_main_error(testargs1 + testargs2,
                                'Das_t_1X1111', 'with value 0')
@@ -64,7 +64,7 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
         ph5path = os.path.join(self.home, nosrmpath)
         testargs1 = ['tabletokef', '-n', 'master.ph5', '-p', ph5path]
 
-        # Array_t, check srm
+        # Array_t, check srm and got error
         testargs2 = ['-A', '1']
         self.assert_main_error(testargs1 + testargs2,
                                'Array_t_001', 'missing')
@@ -73,7 +73,7 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
         self.assert_main(testargs1 + testargs2,
                          '/Experiment_g/Sorts_g/Array_t_001',
                          row_total=3, srm_total=0)
-        # Das_t, check srm
+        # Das_t, check srm and got error
         testargs2 = ['-D', '1X1111']
         self.assert_main_error(testargs1 + testargs2,
                                'Das_t_1X1111', 'missing')

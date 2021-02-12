@@ -102,8 +102,8 @@ def reformat_das_t(ph5object, das_sn, ph5, path):
         'Das_t',
         columns.Data, expectedrows=1000)
     exrec.ph5close()
-    # close and re-open ph5object to update the changes happening
-    # on exrec, NOT on ph5object
+    # The changes have happened on exrec, NOT on ph5object.
+    # Now need to close and re-open ph5object to update all those changes.
     ph5object.close()
     ph5object = ph5api.PH5(path=path, nickname=ph5, editmode=True)
 
@@ -147,8 +147,8 @@ def delete_das(ph5object, das_name, ph5, path):
 
 def delete_array(ph5object, array_name):
     """
-    Delete all array tables identified by array_name from ph5object
-    :param ph5object: ph5 object where the das table will be deleted
+    Delete array table identified by array_name from ph5object
+    :param ph5object: ph5 object where the array table will be deleted
     :param array_name: string to identify array table to be deleted.
             Ex: 'Array_t_001'
     :return
@@ -185,7 +185,7 @@ def fix_srm_in_kef(startfilepath, fixedfilepath, datapath):
     startfile = open(startfilepath, 'r')
     fixedfile = open(fixedfilepath, 'w')
     content = startfile.read()
-    # occurrences of sample rate multiplier
+    # occurrences of sample_rate_multiplier_i
     srm_occ = [i for i in range(len(content))
                if content.startswith('sample_rate_multiplier_i=0', i)]
 
