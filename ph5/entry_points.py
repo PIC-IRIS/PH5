@@ -218,7 +218,7 @@ class CommandList():
                            type=EntryPointTypes.ALL),
                 EntryPoint('fix_srm',
                            'ph5.utilities.fix_srm:main',
-                           'For fixing sample rate multiplier=0.',
+                           'For fixing sample_rate_multiplier_i=0 or missing.',
                            type=EntryPointTypes.ALL),
                 EntryPoint('index_offset_t',
                            'ph5.utilities.index_offset_t:main',
