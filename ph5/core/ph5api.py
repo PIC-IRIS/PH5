@@ -792,9 +792,7 @@ class PH5(experiment.ExperimentGroup):
                       % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
             raise APIError(-1, errmsg)
 
-        srm0rows = [row for row in
-                    tbl.where('sample_rate_multiplier_i==0')]
-        if len(srm0rows) > 0:
+        if len(list(tbl.where('sample_rate_multiplier_i==0'))) > 0:
             errmsg = ("%s has sample_rate_multiplier_i "
                       "with value 0. Please run fix_srm to fix "
                       "sample_rate_multiplier_i for PH5 data."
@@ -906,9 +904,6 @@ class PH5(experiment.ExperimentGroup):
         rows_keep = []
         rows = []
         rk = {}
-        # read_das() already give error for srm < 0
-        # and give value 1 for no srm
-        # => don't need to check srm under this line
         rows, keys = self.ph5_g_receivers.read_das()
         self.Das_t_full[das] = {'rows': rows, 'keys': keys}
         if stop_epoch is not None and start_epoch is not None:
