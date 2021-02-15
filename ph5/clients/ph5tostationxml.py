@@ -7,6 +7,7 @@ import io
 import os
 import argparse
 import fnmatch
+
 import logging
 import pickle
 
@@ -151,6 +152,11 @@ def get_args():
     parser.add_argument("-E", "--emp_resp", action='store_true', default=False,
                         help='Print out Empty Response for debugging')
 
+    parser.add_argument("--stationxml_on_error", action='store_true',
+                        default=False,
+                        help='Output stationxml even if bug is '
+                             'present in data.')
+
     args = parser.parse_args()
     return args
 
@@ -231,7 +237,8 @@ class PH5toStationXMLRequestManager(object):
     ph5 api instance
     """
 
-    def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format):
+    def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format,
+                 stationxml_on_error):
         self.request_list = sta_xml_obj_list
         self.ph5 = ph5api.PH5(path=ph5path, nickname=nickname)
         self.iris_custom_ns = "http://www.iris.edu/xml/station/1/"
@@ -240,6 +247,7 @@ class PH5toStationXMLRequestManager(object):
         self.nickname = nickname
         self._obs_stations = {}
         self._obs_channels = {}
+        self.stationxml_on_error = stationxml_on_error
 
     def get_station_key(self, station_code, start_date, end_date,
                         sta_longitude, sta_latitude, sta_elevation, site_name):
@@ -444,7 +452,9 @@ class PH5toStationXMLParser(object):
                         self.unique_errors.add((errmsg, 'error'))
                     return Response()
                 else:
-                    raise PH5toStationXMLError('\n'.join(check_info[1]))
+                    raise PH5toStationXMLError(
+                        '\n'.join(check_info[1])
+                        + "\n\nNO STATIONXML FILE CREATED.\n")
             response_file_das_a_name, response_file_sensor_a_name = check_info
 
             # parse datalogger response
@@ -521,9 +531,11 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
+        has_error = False
         for errmsg, logtype in sorted(list(self.unique_errors)):
             if logtype == 'error':
                 LOGGER.error(errmsg)
+                has_error = True
             else:
                 LOGGER.warning(errmsg)
         if obs_stations:
@@ -543,6 +555,10 @@ class PH5toStationXMLParser(object):
                 })
             obs_network.extra = extra
             obs_network.stations = obs_stations
+            if has_error:
+                if self.manager.stationxml_on_error:
+                    return obs_network
+                return
             return obs_network
         else:
             return
@@ -949,12 +965,12 @@ def execute(path, args_dict_list, nickname, level, out_format):
                for args_dict in args_dict_list]
 
     ph5sxmlmanager = PH5toStationXMLRequestManager(
-                                                    sta_xml_obj_list=ph5sxml,
-                                                    ph5path=path,
-                                                    nickname=nickname,
-                                                    level=level,
-                                                    format=out_format
-                                                  )
+        sta_xml_obj_list=ph5sxml,
+        ph5path=path,
+        nickname=nickname,
+        level=level,
+        format=out_format,
+        stationxml_on_error=args_dict.get('stationxml_on_error'))
     ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
     return ph5sxmlparser.get_network()
 
@@ -964,13 +980,13 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
     networks = []
     if paths:
         for path in paths:
-            LOGGER.info("Checking %s" % os.path.join(path, nickname))
             try:
+                LOGGER.info("Checking %s" % os.path.join(path, nickname))
                 n = execute(path,
-                                 args_dict_list,
-                                 nickname,
-                                 level,
-                                 out_format)
+                            args_dict_list,
+                            nickname,
+                            level,
+                            out_format)
                 networks.append(n)
                 LOGGER.info("STATIONXML DATA CREATED FOR %s" %
                             os.path.join(path, nickname))
@@ -990,6 +1006,7 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
                                         module_uri=uri)
             return inv
         else:
+            LOGGER.info("NO STATIONXML FILE CREATED.")
             return
     else:
         raise PH5toStationXMLError("No PH5 experiments were found "
