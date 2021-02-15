@@ -7,7 +7,6 @@ import io
 import os
 import argparse
 import fnmatch
-import multiprocessing
 import logging
 import pickle
 
@@ -151,6 +150,7 @@ def get_args():
 
     parser.add_argument("-E", "--emp_resp", action='store_true', default=False,
                         help='Print out Empty Response for debugging')
+
     args = parser.parse_args()
     return args
 
@@ -645,8 +645,8 @@ class PH5toStationXMLParser(object):
         self.manager.ph5.read_experiment_t()
         self.experiment_t = self.manager.ph5.Experiment_t['rows']
         if self.experiment_t == []:
-            LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
-            return
+            PH5toStationXMLError("No experiment_t in %s"
+                                 % self.manager.ph5.filename)
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
@@ -959,28 +959,25 @@ def execute(path, args_dict_list, nickname, level, out_format):
     return ph5sxmlparser.get_network()
 
 
-def execute_unpack(args):
-    return execute(*args)
-
-
 def run_ph5_to_stationxml(paths, nickname, out_format,
-                          level, uri, args_dict_list,
-                          pool_size=5):
-    results = []
+                          level, uri, args_dict_list):
+    networks = []
     if paths:
-        arguments = []
         for path in paths:
-            arguments.append((path,
-                             args_dict_list,
-                             nickname,
-                             level,
-                             out_format))
-
-        pool = multiprocessing.Pool(processes=pool_size)
-        results = pool.map(execute_unpack, arguments)
-        pool.terminate()
-
-        networks = [n for n in results if n is not None]
+            LOGGER.info("Checking %s" % os.path.join(path, nickname))
+            try:
+                n = execute(path,
+                                 args_dict_list,
+                                 nickname,
+                                 level,
+                                 out_format)
+                networks.append(n)
+                LOGGER.info("STATIONXML DATA CREATED FOR %s" %
+                            os.path.join(path, nickname))
+            except PH5toStationXMLError as e:
+                LOGGER.error(e.message)
+                LOGGER.info("NO STATIONXML DATA CREATED FOR %s" %
+                            os.path.join(path, nickname))
 
         if networks:
             inv = inventory.Inventory(
@@ -1072,9 +1069,9 @@ def main():
                          "Formats are STATIONXML, KML, SACPZ, and TEXT.")
             sys.exit()
     except NoDataError as err:
-        LOGGER.info(err.message + "\n\nNO STATIONXML FILE CREATED.\n")
+        LOGGER.info(err.message)
     except Exception as err:
-        LOGGER.error(err.message + "\n\nNO STATIONXML FILE CREATED.\n")
+        LOGGER.error(err.message)
 
 
 if __name__ == '__main__':
