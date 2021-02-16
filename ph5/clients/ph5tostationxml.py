@@ -452,9 +452,7 @@ class PH5toStationXMLParser(object):
                         self.unique_errors.add((errmsg, 'error'))
                     return Response()
                 else:
-                    raise PH5toStationXMLError(
-                        '\n'.join(check_info[1])
-                        + "\n\nNO STATIONXML FILE CREATED.\n")
+                    raise PH5toStationXMLError('\n'.join(check_info[1]))
             response_file_das_a_name, response_file_sensor_a_name = check_info
 
             # parse datalogger response
@@ -661,8 +659,8 @@ class PH5toStationXMLParser(object):
         self.manager.ph5.read_experiment_t()
         self.experiment_t = self.manager.ph5.Experiment_t['rows']
         if self.experiment_t == []:
-            PH5toStationXMLError("No experiment_t in %s"
-                                 % self.manager.ph5.filename)
+            raise PH5toStationXMLError("No experiment_t in %s"
+                                       % self.manager.ph5.filename)
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
