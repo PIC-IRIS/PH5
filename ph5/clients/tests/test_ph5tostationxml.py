@@ -37,7 +37,8 @@ def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
         ph5path=ph5path,
         nickname=nickname,
         level=level,
-        format="TEXT"
+        format="TEXT",
+        stationxml_on_error=True
     )
     parser = ph5tostationxml.PH5toStationXMLParser(mng)
     return ph5sxml, mng, parser
@@ -119,8 +120,17 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
             with OutputCapture() as out:
                 resp_load.main()
 
+        # There are errors in ph5 so there is no stationxml created
         testargs = ['ph5tostationxml', '-n', 'master',
                     '--level', 'CHANNEL', '-f', 'text']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture() as out:
+                ph5tostationxml.main()
+                output = out.captured.strip().split("\n")
+        self.assertEqual(len(output), 1)
+
+        # use flag --stationxml_on_error to create stationxml on error
+        testargs += ['--stationxml_on_error']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5tostationxml.main()
@@ -139,7 +149,8 @@ class TestPH5toStationXMLParser_main_multideploy(LogTestCase, TempDirTestCase):
                     '--minlat', '34', '--maxlat', '40',
                     '--minlon', '-111', '--maxlon', '-105',
                     '--latitude', '36', '--longitude', '-107',
-                    '--minradius', '0', '--maxradius', '3']
+                    '--minradius', '0', '--maxradius', '3',
+                    '--stationxml_on_error']
         with patch.object(sys, 'argv', testargs):
             with OutputCapture() as out:
                 ph5tostationxml.main()
@@ -153,11 +164,11 @@ class TestPH5toStationXMLParser_no_experiment(LogTestCase, TempDirTestCase):
         kef_to_ph5(self.tmpdir, 'master.ph5', '', [])
         self.ph5sxml, self.mng, self.parser = getParser(
             '.', 'master.ph5', "NETWORK")
-        with LogCapture() as log:
-            ret = self.parser.read_networks()
-            self.assertIsNone(ret)
-            self.assertEqual(log.records[0].msg,
-                             'No experiment_t in ./master.ph5')
+        with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
+            self.parser.read_networks()
+            self.assertEqual(
+                contxt.exception.message,
+                'No experiment_t in ./master.ph5')
         self.mng.ph5.close()
 
     def test_get_args(self):
