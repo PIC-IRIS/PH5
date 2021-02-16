@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2019.65'
+PROG_VERSION = '2021.47'
 LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 

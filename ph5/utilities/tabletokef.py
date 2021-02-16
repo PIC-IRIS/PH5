@@ -17,7 +17,7 @@ from ph5.core import experiment
 
 # Timeseries are stored as numpy arrays
 
-PROG_VERSION = '2019.036'
+PROG_VERSION = '2021.047'
 LOGGER = logging.getLogger(__name__)
 
 
