@@ -979,15 +979,19 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
     if paths:
         for path in paths:
             try:
-                LOGGER.info("Checking %s" % os.path.join(path, nickname))
+                LOGGER.info("CHECKING %s" % os.path.join(path, nickname))
                 n = execute(path,
                             args_dict_list,
                             nickname,
                             level,
                             out_format)
-                networks.append(n)
-                LOGGER.info("STATIONXML DATA CREATED FOR %s" %
-                            os.path.join(path, nickname))
+                if n is None:
+                    LOGGER.info("NO STATIONXML DATA CREATED FOR %s" %
+                                os.path.join(path, nickname))
+                else:
+                    networks.append(n)
+                    LOGGER.info("STATIONXML DATA CREATED FOR %s" %
+                                os.path.join(path, nickname))
             except PH5toStationXMLError as e:
                 LOGGER.error(e.message)
                 LOGGER.info("NO STATIONXML DATA CREATED FOR %s" %
@@ -1003,9 +1007,6 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
                                                 "| version: 1"),
                                         module_uri=uri)
             return inv
-        else:
-            LOGGER.info("NO STATIONXML FILE CREATED.")
-            return
     else:
         raise PH5toStationXMLError("No PH5 experiments were found "
                                    "under path(s) {0}".format(paths))
