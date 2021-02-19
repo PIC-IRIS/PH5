@@ -10,6 +10,7 @@ ph5
  * cleanup comments and remove commented out code (issue #216)
  * replace deprecated optparse with argparse module.
  * update ph5 to better install c requirements
+ * Add fix_srm command to change srm values from 0 to 1 or add srm=1 in case that column is missing in das tables or array tables.
 ph5.utilities.ph5
  * add helpfile to utilities folder. Have not added pointer in setup.py as yet.
  * Typing ph5 shows user the choices for help information.
@@ -38,6 +39,7 @@ ph5.utilities.segdtoph5
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
  * fix fast offset_table reading (issue #280)
+ * fix read_das and read_arrays to throw error is sample_rate_multiplier_is=0 or is missing
 ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.utilities.validation
@@ -74,6 +76,7 @@ ph5.utilities.time_kef_gen.py
  * fix bug getting only the last to_froms of all soh for a das
 ph5.utilities.tabletokef.py
  * add -o option for file output
+ * add flag -i/--ignore to bypass error thrown for srm=0 or missing when creating kef file.
 ph5.utilities.report_gen
  * fix crash on no event table (issue #219)
 ph5.utilities.dumpfair
@@ -108,6 +111,7 @@ ph5.core.ph5api
  * skip ph5api cut traces that return no data. logic previously embedded in code but line 1302 is duplicated onto 1287 to prevent error from being thrown
  * fix ph5api cut sometimes returns too many samples (issue #298)
  * fix for get_availability returning incomplete results
+  * fix query_das_t to throw error is sample_rate_multiplier_is=0 or is missing
 ph5.entry_points
  * creates a dictionary, keys are names of scripts,
       values are (1) simple description,
