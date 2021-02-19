@@ -1,5 +1,7 @@
 Master:
 ph5
+ * fixed malformed created timestamp in stationxml from ph5tostationxml
+   and added testcase to ensure timestamps are well formed
  * fixed errors in entry_points.py that prevented apps from executing.
  * fixed: seg2toph5, ph5toevt.
  * Deleted: ph5view (doesn't compile, was a W.I.P. left to wither)
