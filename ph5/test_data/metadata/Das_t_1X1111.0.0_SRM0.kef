@@ -1,0 +1,183 @@
+#
+#	Mon Nov 23 15:59:12 2020	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0001
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=1
+	event_number_i=1
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=1
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:00:00 2019
+	time/epoch_l=1562256000
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 2
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0004
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=1
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:00:00 2019
+	time/epoch_l=1562256000
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 3
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0007
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=3
+	event_number_i=1
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=0
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:00:00 2019
+	time/epoch_l=1562256000
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 4
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0002
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=1
+	event_number_i=2
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=1
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:00:30 2019
+	time/epoch_l=1562256030
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 5
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0005
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=2
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:00:30 2019
+	time/epoch_l=1562256030
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 6
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0008
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=3
+	event_number_i=2
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=0
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:00:30 2019
+	time/epoch_l=1562256030
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 7
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0003
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=1
+	event_number_i=3
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=1
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:01:00 2019
+	time/epoch_l=1562256060
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 8
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0006
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=3
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:01:00 2019
+	time/epoch_l=1562256060
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
+#   Table row 9
+/Experiment_g/Receivers_g/Das_g_1X1111/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0009
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=3
+	event_number_i=3
+	raw_file_name_s=1111.0.0.fcnt
+	receiver_table_n_i=0
+	response_table_n_i=0
+	sample_count_i=30000
+	sample_rate_i=1000
+	sample_rate_multiplier_i=0
+	stream_number_i=1
+	time/ascii_s=Thu Jul  4 16:01:00 2019
+	time/epoch_l=1562256060
+	time/micro_seconds_i=329999
+	time/type_s=BOTH
+	time_table_n_i=0
