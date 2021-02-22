@@ -1270,7 +1270,10 @@ def main():
 
     except PH5toMSAPIError as err:
         LOGGER.error("{0}".format(err.message))
-        exit(-1)
+    except ph5api.APIError as err:
+        LOGGER.error(err.msg)
+    except experiment.HDF5InteractionError as err:
+        LOGGER.error(err.msg)
 
     ph5API_object.close()
 

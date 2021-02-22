@@ -216,6 +216,10 @@ class CommandList():
                            'ph5.utilities.fix_3chan_texan:main',
                            'For fixing 3-channel Texan data.',
                            type=EntryPointTypes.ALL),
+                EntryPoint('fix_srm',
+                           'ph5.utilities.fix_srm:main',
+                           'For fixing sample_rate_multiplier_i=0 or missing.',
+                           type=EntryPointTypes.ALL),
                 EntryPoint('index_offset_t',
                            'ph5.utilities.index_offset_t:main',
                            'Index offset table in ph5 file to speed '

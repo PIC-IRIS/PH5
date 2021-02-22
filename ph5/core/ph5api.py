@@ -15,7 +15,7 @@ from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2019.93'
+PROG_VERSION = '2021.47'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -782,16 +782,30 @@ class PH5(experiment.ExperimentGroup):
                                     'Das_t')
         except NoSuchNodeError:
             return []
+        try:
+            sample_rate_multiplier_i = tbl.cols.sample_rate_multiplier_i  # noqa
+            sample_rate_multiplier_i = sample_rate_multiplier_i
+        except AttributeError:
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "missing. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
+            raise APIError(-1, errmsg)
+
+        if len(list(tbl.where('sample_rate_multiplier_i==0'))) > 0:
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "with value 0. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
+            raise APIError(-1, errmsg)
+
         epoch_i = tbl.cols.time.epoch_l  # noqa
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
         sample_count_i = tbl.cols.sample_count_i  # noqa
-        sample_rate_multiplier_i = \
-            tbl.cols.sample_rate_multiplier_i  # noqa
         sample_rate_i = tbl.cols.sample_rate_i  # noqa
         epoch_i = epoch_i
         micro_seconds_i = micro_seconds_i
         sample_count_i = sample_count_i
-        sample_rate_multiplier_i = sample_rate_multiplier_i
         sample_rate_i = sample_rate_i
         das = []
         if not start_epoch:
@@ -800,68 +814,24 @@ class PH5(experiment.ExperimentGroup):
             stop_epoch = 32509613590
 
         if sample_rate == 0 or sample_rate is None:
-            for row in tbl.where(
+            numexprstr = (
                     '(channel_number_i == '
                     + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
                     + str(start_epoch) +
                     ')&(epoch_i+micro_seconds_i/1000000<='
                     + str(stop_epoch) + ')'
-            ):
-                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
-                            'array_name_data_a': row['array_name_data_a'],
-                            'array_name_event_a': row['array_name_event_a'],
-                            'array_name_log_a': row['array_name_log_a'],
-                            'channel_number_i': row['channel_number_i'],
-                            'event_number_i': row['event_number_i'],
-                            'raw_file_name_s': row['raw_file_name_s'],
-                            'receiver_table_n_i': row['receiver_table_n_i'],
-                            'response_table_n_i': row['response_table_n_i'],
-                            'sample_count_i': row['sample_count_i'],
-                            'sample_rate_i': row['sample_rate_i'],
-                            'sample_rate_multiplier_i':
-                                row['sample_rate_multiplier_i'],
-                            'stream_number_i': row['stream_number_i'],
-                            'time/ascii_s': row['time/ascii_s'],
-                            'time/epoch_l': row['time/epoch_l'],
-                            'time/micro_seconds_i':
-                                row['time/micro_seconds_i'],
-                            'time/type_s': row['time/type_s'],
-                            'time_table_n_i': row['time_table_n_i']
-                            }
-                das.append(row_dict)
+            )
         elif check_samplerate is False:
-            for row in tbl.where(
+            numexprstr = (
                  '(channel_number_i == '
                  + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000 >= '
                  + str(start_epoch) +
                  '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
                  '&(epoch_i+micro_seconds_i/1000000 <= '
                  + str(stop_epoch) + ')'
-                 ):
-                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
-                            'array_name_data_a': row['array_name_data_a'],
-                            'array_name_event_a': row['array_name_event_a'],
-                            'array_name_log_a': row['array_name_log_a'],
-                            'channel_number_i': row['channel_number_i'],
-                            'event_number_i': row['event_number_i'],
-                            'raw_file_name_s': row['raw_file_name_s'],
-                            'receiver_table_n_i': row['receiver_table_n_i'],
-                            'response_table_n_i': row['response_table_n_i'],
-                            'sample_count_i': row['sample_count_i'],
-                            'sample_rate_i': row['sample_rate_i'],
-                            'sample_rate_multiplier_i':
-                                row['sample_rate_multiplier_i'],
-                            'stream_number_i': row['stream_number_i'],
-                            'time/ascii_s': row['time/ascii_s'],
-                            'time/epoch_l': row['time/epoch_l'],
-                            'time/micro_seconds_i':
-                                row['time/micro_seconds_i'],
-                            'time/type_s': row['time/type_s'],
-                            'time_table_n_i': row['time_table_n_i']
-                            }
-                das.append(row_dict)
+                 )
         else:
-            for row in tbl.where(
+            numexprstr = (
                 '(channel_number_i == '
                 + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
                 + str(start_epoch) +
@@ -871,30 +841,31 @@ class PH5(experiment.ExperimentGroup):
                 str(sample_rate) +
                 ')&(sample_rate_multiplier_i==' +
                 str(sample_rate_multiplier) + ')'
-            ):
-                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
-                            'array_name_data_a': row['array_name_data_a'],
-                            'array_name_event_a': row['array_name_event_a'],
-                            'array_name_log_a': row['array_name_log_a'],
-                            'channel_number_i': row['channel_number_i'],
-                            'event_number_i': row['event_number_i'],
-                            'raw_file_name_s': row['raw_file_name_s'],
-                            'receiver_table_n_i': row['receiver_table_n_i'],
-                            'response_table_n_i': row['response_table_n_i'],
-                            'sample_count_i': row['sample_count_i'],
-                            'sample_rate_i': row['sample_rate_i'],
-                            'sample_rate_multiplier_i':
-                                row['sample_rate_multiplier_i'],
-                            'stream_number_i': row['stream_number_i'],
-                            'time/ascii_s': row['time/ascii_s'],
-                            'time/epoch_l': row['time/epoch_l'],
-                            'time/micro_seconds_i':
-                                row['time/micro_seconds_i'],
-                            'time/type_s': row['time/type_s'],
-                            'time_table_n_i': row['time_table_n_i']
-                            }
-                das.append(row_dict)
+            )
 
+        for row in tbl.where(numexprstr):
+            row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
+                        'array_name_data_a': row['array_name_data_a'],
+                        'array_name_event_a': row['array_name_event_a'],
+                        'array_name_log_a': row['array_name_log_a'],
+                        'channel_number_i': row['channel_number_i'],
+                        'event_number_i': row['event_number_i'],
+                        'raw_file_name_s': row['raw_file_name_s'],
+                        'receiver_table_n_i': row['receiver_table_n_i'],
+                        'response_table_n_i': row['response_table_n_i'],
+                        'sample_count_i': row['sample_count_i'],
+                        'sample_rate_i': row['sample_rate_i'],
+                        'sample_rate_multiplier_i':
+                            row['sample_rate_multiplier_i'],
+                        'stream_number_i': row['stream_number_i'],
+                        'time/ascii_s': row['time/ascii_s'],
+                        'time/epoch_l': row['time/epoch_l'],
+                        'time/micro_seconds_i':
+                            row['time/micro_seconds_i'],
+                        'time/type_s': row['time/type_s'],
+                        'time_table_n_i': row['time_table_n_i']
+                        }
+            das.append(row_dict)
         return das
 
     def read_das_t(self, das, start_epoch=None, stop_epoch=None, reread=True):
