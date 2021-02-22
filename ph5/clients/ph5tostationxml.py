@@ -22,7 +22,7 @@ from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.utilities import validation
 
-PROG_VERSION = '2019.63'
+PROG_VERSION = '2021.47'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -656,6 +656,7 @@ class PH5toStationXMLParser(object):
         return obs_channel
 
     def read_networks(self):
+        has_error = False
         self.manager.ph5.read_experiment_t()
         self.experiment_t = self.manager.ph5.Experiment_t['rows']
         if self.experiment_t == []:
@@ -684,12 +685,13 @@ class PH5toStationXMLParser(object):
             return
 
         unique_resp = validation.check_resp_unique_n_i(
-            self.manager.ph5, self.unique_errors, None)
+            self.manager.ph5, set(), None)
         if unique_resp is not True:
-            raise PH5toStationXMLError(unique_resp)
+            LOGGER.error(unique_resp)
+            has_error = True
 
         has_response_file = validation.check_has_response_filename(
-            self.manager.ph5.Response_t, self.unique_errors, None)
+            self.manager.ph5.Response_t, set(), None)
         if has_response_file is not True:
             raise PH5toStationXMLError(has_response_file)
 
@@ -699,6 +701,10 @@ class PH5toStationXMLParser(object):
         obs_network = self.create_obs_network()
 
         self.manager.ph5.close()
+        if has_error:
+            if self.manager.stationxml_on_error:
+                return obs_network
+            return
         return obs_network
 
     def read_stations(self):

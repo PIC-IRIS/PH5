@@ -328,8 +328,9 @@ def check_resp_unique_n_i(ph5, errors, logger=None):
     dup_indexes = set([i for i in n_i_list
                        if n_i_list.count(i) > 1])
     if len(dup_indexes) != 0:
-        errmsg = "Response_t n_i(s) duplicated: %s" % \
-                 ','.join(map(str, dup_indexes))
+        errmsg = ("Response_t n_i(s) duplicated: %s. "
+                  "Try to rerun resp_load to see if it fix the problem."
+                  % ','.join(map(str, dup_indexes)))
         addLog(errmsg, errors, logger)
         return errmsg
     return True

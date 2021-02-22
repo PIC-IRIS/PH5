@@ -6,7 +6,7 @@ import os
 import sys
 import logging
 
-from obspy.core.inventory.response import Response
+from obspy.core import inventory as inv
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
@@ -20,7 +20,7 @@ from obspy.core.utcdatetime import UTCDateTime
 
 def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
               maxlon=None, lat=None, lon=None, minrad=None, maxrad=None,
-              emp_resp=False):
+              emp_resp=False, stationxml_on_error=True):
     ph5sxml = [ph5tostationxml.PH5toStationXMLRequest(
         minlatitude=minlat,
         maxlatitude=maxlat,
@@ -38,7 +38,7 @@ def getParser(ph5path, nickname, level, minlat=None, maxlat=None, minlon=None,
         nickname=nickname,
         level=level,
         format="TEXT",
-        stationxml_on_error=True
+        stationxml_on_error=stationxml_on_error
     )
     parser = ph5tostationxml.PH5toStationXMLParser(mng)
     return ph5sxml, mng, parser
@@ -312,7 +312,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         response = self.parser.get_response_inv(
             self.obs_channel, a_id='009', sta_id='9001',
             cha_id=1, spr=200, spr_m=1, emp_resp=False)
-        self.assertIsInstance(response, Response)
+        self.assertIsInstance(response, inv.response.Response)
         self.assertIsNotNone(response.instrument_sensitivity)
         self.assertEqual(
             self.parser.unique_errors,
@@ -333,7 +333,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         response = self.parser.get_response_inv(
             self.obs_channel, a_id='003', sta_id='0407',
             cha_id=1, spr=100, spr_m=1, emp_resp=False)
-        self.assertIsInstance(response, Response)
+        self.assertIsInstance(response, inv.response.Response)
         self.assertIsNotNone(response.instrument_sensitivity)
         self.assertEqual(
             self.parser.unique_errors,
@@ -352,7 +352,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         response = self.parser.get_response_inv(
             self.obs_channel, a_id='009', sta_id='9001',
             cha_id=1, spr=50, spr_m=1, emp_resp=True)
-        self.assertIsInstance(response, Response)
+        self.assertIsInstance(response, inv.response.Response)
         self.assertIsNone(response.instrument_sensitivity)
         self.assertEqual(
             self.parser.unique_errors,
@@ -369,7 +369,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
         response = self.parser.get_response_inv(
             self.obs_channel, a_id='009', sta_id='9001',
             cha_id=1, spr=500, spr_m=1, emp_resp=True)
-        self.assertIsInstance(response, Response)
+        self.assertIsInstance(response, inv.response.Response)
         self.assertIsNone(response.instrument_sensitivity)
         self.assertEqual(
             self.parser.unique_errors,
@@ -473,13 +473,29 @@ class TestPH5toStationXMLParser_gen_resp_issue(
         with patch.object(sys, 'argv', testargs):
             kef2ph5.main()
 
+        # stationxml_on_error=True => return network
         self.ph5sxml, self.mng, self.parser = getParser(
             self.tmpdir, 'master.ph5', 'NETWORK')
-        with self.assertRaises(ph5tostationxml.PH5toStationXMLError) as contxt:
-            self.parser.read_networks()
-        self.assertEqual(
-            contxt.exception.message,
-            'Response_t n_i(s) duplicated: 1,3,6')
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.parser.read_networks()
+            self.assertEqual(
+                log.records[0].msg,
+                'Response_t n_i(s) duplicated: 1,3,6. '
+                'Try to rerun resp_load to see if it fix the problem.')
+            self.assertIsInstance(ret, inv.network.Network)
+
+        # stationxml_on_error=False => return None
+        self.ph5sxml, self.mng, self.parser = getParser(
+            self.tmpdir, 'master.ph5', 'NETWORK', stationxml_on_error=False)
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.parser.read_networks()
+            self.assertEqual(
+                log.records[0].msg,
+                'Response_t n_i(s) duplicated: 1,3,6. '
+                'Try to rerun resp_load to see if it fix the problem.')
+            self.assertIsNone(ret)
 
 
 class TestPH5toStationXMLParser_location(LogTestCase, TempDirTestCase):
@@ -582,13 +598,11 @@ class TestPH5toStationXML_Response_NI_DUPLICATE(LogTestCase, TempDirTestCase):
 
         datapath = os.path.join(self.home,
                                 'ph5/test_data/ph5/response_table_n_i_dup')
-        output_sxml = "--stationxml_on_error"
         self.ph5_path_eror = os.path.join(self.home,
                                           datapath)
         self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_eror,
                                                         "master.ph5",
-                                                        "RESPONSE",
-                                                        output_sxml)
+                                                        "RESPONSE")
         self.parser.add_ph5_stationids()
         station = self.parser.read_stations()
         try:

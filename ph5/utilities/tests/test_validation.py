@@ -460,8 +460,11 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         response_t['n_i'] = 2
         errors = set()
         validation.check_resp_unique_n_i(self.ph5API_object, errors)
-        self.assertEqual(errors,
-                         {('Response_t n_i(s) duplicated: 2', 'error')})
+        self.assertEqual(
+            errors,
+            {('Response_t n_i(s) duplicated: 2. '
+              'Try to rerun resp_load to see if it fix the problem.',
+              'error')})
 
     def test_check_has_response_filename(self):
         self.ph5API_object.read_response_t()
