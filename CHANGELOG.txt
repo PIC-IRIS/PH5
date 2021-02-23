@@ -58,6 +58,9 @@ ph5.clients.ph5tostationxml
  * Entry that is excess intersection will not be logged and will not be included in xml
  * Entry that has location out of range will be logged as error and will not be included in xml
  * Entry that has location value=0 or no location unit will be logged as warning and will be included in xml
+ * In case of no response data can be returned because of error, not return empty response but throw error instead. Use flag -E/--emp_resp if want to add empty response for debugging
+ * In case of other bugs, not create stationxml. Use flag --stationxml_on_error to create stationxml if bug present in the data
+ * Multiprocessing has been removed because when checking subfolders of the given path, multiprocessing make the logging messages show up randomly. Using 'for loop' instead help users recognize which one the messages are for. That way ph5tostationxml can inform when never stationxml has or has not been created for a ph5 data.
 ph5.clients.ph5availability
  * New client for returning timeseries availability information
 ph5.utilities.ph5validate
@@ -132,6 +135,7 @@ ph5.core.tests.test_segd2ph5
 ph5.utilities.validation
  * common functions for ph5validate and ph5tostationxml
  * functions for checking response filename, data, duplication
+ * checking response_file_das_a following 2 formats: metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] and resp_load format [das_model]_[sr]_[srm]_[gain]. Each part in the format will be checked, except for [cha] because different channel codes can use the same response file.
 
 v4.1.2:
 ph5.utilities.ph5validate
