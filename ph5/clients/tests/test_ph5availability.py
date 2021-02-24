@@ -1893,7 +1893,6 @@ class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
                                          starttime=None,
                                          endtime=None,
                                          include_sample_rate=True)
-        print(len(tt))
         ph5toms = PH5toMSeed(self.ph5_object)
         ph5toms.process_all()
         cuts = ph5toms.create_cut_list()
@@ -1902,15 +1901,16 @@ class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
             trace = ph5toms.create_trace(cut)
 
             if trace is not None:
-                self.assertEqual(tt[i][3], round(trace[0].stats.starttime))
-                self.assertEqual(tt[i][4], round(trace[0].stats.endtime))
-                # print('Avail Times')
-                # print(tt[i][3])
-                # print(tt[i][4])
-                # print('Trace Times')
-                # print(round(trace[0].stats.starttime))
-                # print(round(trace[0].stats.endtime))
-                i = 1
+                if i >= 1:
+                    #print(tt[i][3])
+                    #print(round(trace[0].stats.starttime))
+                    self.assertEqual(tt[i][3],
+                                 round(trace[0].stats.starttime))
+                    #print(tt[i][4])
+                    #print(round(trace[0].stats.endtime))
+                    self.assertEqual(tt[i][4],
+                                 round(trace[0].stats.endtime))
+                i = i+1
 
 
 if __name__ == "__main__":
