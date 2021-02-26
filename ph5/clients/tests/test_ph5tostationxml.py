@@ -593,27 +593,5 @@ class TestPH5toStationXML_Response_NI_MISMATCH(LogTestCase, TempDirTestCase):
         self.mng.ph5.close()
 
 
-class TestPH5toStationXML_Response_NI_DUPLICATE(LogTestCase, TempDirTestCase):
-    def test_Response_NI_DUPLICATION(self):
-
-        datapath = os.path.join(self.home,
-                                'ph5/test_data/ph5/response_table_n_i_dup')
-        self.ph5_path_eror = os.path.join(self.home,
-                                          datapath)
-        self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_eror,
-                                                        "master.ph5",
-                                                        "RESPONSE")
-        self.parser.add_ph5_stationids()
-        station = self.parser.read_stations()
-        try:
-            self.assertEqual(len(station[0].channels[0].
-                             response._get_overall_sensitivity_and_gain()), 2)
-        except IndexError:
-            self.mng.ph5.close()
-            self.fail("Stationxml is not output with --stationxml_on_error "
-                      "flag enabled.")
-        self.mng.ph5.close()
-
-
 if __name__ == "__main__":
     unittest.main()
