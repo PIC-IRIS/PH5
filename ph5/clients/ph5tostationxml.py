@@ -7,7 +7,7 @@ import io
 import os
 import argparse
 import fnmatch
-import multiprocessing
+
 import logging
 import pickle
 
@@ -22,7 +22,7 @@ from ph5.core import ph5utils, ph5api
 from ph5.core.ph5utils import PH5ResponseManager
 from ph5.utilities import validation
 
-PROG_VERSION = '2019.63'
+PROG_VERSION = '2021.47'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -99,10 +99,12 @@ def get_args():
                               "time format"),
                         type=str, dest="end_time", metavar="end_time")
 
-    parser.add_argument("--level", action="store", default="channel",
-                        help=("Specify level of detail using network, "
-                              "station, channel,or response"),
-                        type=str, metavar="level")
+    parser.add_argument("--level", action="store", default="RESPONSE",
+                        help=("Specify level of detail using NETWORK, "
+                              "STATION, CHANNEL, or RESPONSE."
+                              " Default: RESPONSE"),
+                        choices=('NETWORK', 'STATION', 'CHANNEL', 'RESPONSE'),
+                        type=str.upper, metavar="level")
 
     parser.add_argument("--minlat", action="store",
                         help=("Limit to stations with a latitude larger than "
@@ -146,6 +148,15 @@ def get_args():
 
     parser.add_argument("--uri", action="store", default="",
                         type=str, metavar="uri")
+
+    parser.add_argument("-E", "--emp_resp", action='store_true', default=False,
+                        help='Print out Empty Response for debugging')
+
+    parser.add_argument("--stationxml_on_error", action='store_true',
+                        default=False,
+                        help='Output stationxml even if bug is '
+                             'present in data.')
+
     args = parser.parse_args()
     return args
 
@@ -174,7 +185,7 @@ class PH5toStationXMLRequest(object):
                  minlatitude=None, maxlatitude=None, minlongitude=None,
                  maxlongitude=None, latitude=None, longitude=None,
                  minradius=None, maxradius=None, start_time=None,
-                 end_time=None):
+                 end_time=None, emp_resp=None):
 
         self.network_list = network_list
         self.reportnum_list = reportnum_list
@@ -194,6 +205,7 @@ class PH5toStationXMLRequest(object):
         self.maxradius = maxradius
         self.start_time = start_time
         self.end_time = end_time
+        self.emp_resp = emp_resp
         self.ph5_station_id_list = []  # updated by PH5toStationXMLParser
 
         # assign default values
@@ -225,7 +237,8 @@ class PH5toStationXMLRequestManager(object):
     ph5 api instance
     """
 
-    def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format):
+    def __init__(self, sta_xml_obj_list, ph5path, nickname, level, format,
+                 stationxml_on_error):
         self.request_list = sta_xml_obj_list
         self.ph5 = ph5api.PH5(path=ph5path, nickname=nickname)
         self.iris_custom_ns = "http://www.iris.edu/xml/station/1/"
@@ -234,6 +247,7 @@ class PH5toStationXMLRequestManager(object):
         self.nickname = nickname
         self._obs_stations = {}
         self._obs_channels = {}
+        self.stationxml_on_error = stationxml_on_error
 
     def get_station_key(self, station_code, start_date, end_date,
                         sta_longitude, sta_latitude, sta_elevation, site_name):
@@ -295,12 +309,7 @@ class PH5toStationXMLParser(object):
         self.total_number_stations = 0
         self.unique_errors = set()
         self.checked_data_files = {}
-        self.unique_filenames_n_i = []
         self.manager.ph5.read_response_t()
-        validation.check_resp_unique_n_i(
-            self.manager.ph5, self.unique_errors, None)
-        self.resp_load_already = validation.check_resp_load(
-            self.manager.ph5.Response_t, self.unique_errors, None)
 
     def check_intersection(self, sta_xml_obj, latitude, longitude):
         """
@@ -410,35 +419,40 @@ class PH5toStationXMLParser(object):
         else:
             return
 
-    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id, spr, spr_m):
-        if not self.resp_load_already:
-            return Response()
+    def get_response_inv(self, obs_channel, a_id, sta_id, cha_id,
+                         spr, spr_m, emp_resp):
+
         sensor_keys = [obs_channel.sensor.manufacturer,
                        obs_channel.sensor.model]
         datalogger_keys = [obs_channel.data_logger.manufacturer,
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
-        info = {'n_i': self.response_table_n_i,
-                'array': a_id,
-                'sta': sta_id,
-                'cha_id': cha_id,
-                'cha_code': obs_channel.code,
-                'dmodel': obs_channel.data_logger.model,
-                'smodel': obs_channel.sensor.model,
-                'spr': spr,
-                'sprm': spr_m,
-                }
-        if info['dmodel'].startswith("ZLAND"):
-            info['smodel'] = ''
-        check_info = validation.check_response_info(
-            info, self.manager.ph5, self.unique_filenames_n_i,
-            self.checked_data_files, self.unique_errors, None)
 
         if not self.resp_manager.is_already_requested(sensor_keys,
                                                       datalogger_keys):
-            if not check_info:
-                return Response()
+            info = {'n_i': self.response_table_n_i,
+                    'array': a_id,
+                    'sta': sta_id,
+                    'cha_id': cha_id,
+                    'cha_code': obs_channel.code,
+                    'dmodel': obs_channel.data_logger.model,
+                    'smodel': obs_channel.sensor.model,
+                    'spr': spr,
+                    'sprm': spr_m,
+                    }
+            if info['dmodel'].startswith("ZLAND"):
+                info['smodel'] = ''
+            check_info = validation.check_response_info(
+                info, self.manager.ph5,
+                self.checked_data_files, self.unique_errors, None)
 
+            if check_info[0] is False:
+                if emp_resp:
+                    for errmsg in check_info[1]:
+                        self.unique_errors.add((errmsg, 'error'))
+                    return Response()
+                else:
+                    raise PH5toStationXMLError('\n'.join(check_info[1]))
             response_file_das_a_name, response_file_sensor_a_name = check_info
 
             # parse datalogger response
@@ -515,9 +529,11 @@ class PH5toStationXMLParser(object):
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
+        has_error = False
         for errmsg, logtype in sorted(list(self.unique_errors)):
             if logtype == 'error':
                 LOGGER.error(errmsg)
+                has_error = True
             else:
                 LOGGER.warning(errmsg)
         if obs_stations:
@@ -537,6 +553,10 @@ class PH5toStationXMLParser(object):
                 })
             obs_network.extra = extra
             obs_network.stations = obs_stations
+            if has_error:
+                if self.manager.stationxml_on_error:
+                    return obs_network
+                return
             return obs_network
         else:
             return
@@ -636,11 +656,12 @@ class PH5toStationXMLParser(object):
         return obs_channel
 
     def read_networks(self):
+        has_error = False
         self.manager.ph5.read_experiment_t()
         self.experiment_t = self.manager.ph5.Experiment_t['rows']
         if self.experiment_t == []:
-            LOGGER.error("No experiment_t in %s" % self.manager.ph5.filename)
-            return
+            raise PH5toStationXMLError("No experiment_t in %s"
+                                       % self.manager.ph5.filename)
         # read network codes and compare to network list
         network_patterns = []
         for obj in self.manager.request_list:
@@ -663,12 +684,27 @@ class PH5toStationXMLParser(object):
             self.manager.ph5.close()
             return
 
+        unique_resp = validation.check_resp_unique_n_i(
+            self.manager.ph5, set(), None)
+        if unique_resp is not True:
+            LOGGER.error(unique_resp)
+            has_error = True
+
+        has_response_file = validation.check_has_response_filename(
+            self.manager.ph5.Response_t, set(), None)
+        if has_response_file is not True:
+            raise PH5toStationXMLError(has_response_file)
+
         # update requests list to include ph5 station ids
         self.add_ph5_stationids()
 
         obs_network = self.create_obs_network()
 
         self.manager.ph5.close()
+        if has_error:
+            if self.manager.stationxml_on_error:
+                return obs_network
+            return
         return obs_network
 
     def read_stations(self):
@@ -901,7 +937,8 @@ class PH5toStationXMLParser(object):
                     obs_channel.response = self.get_response_inv(
                             obs_channel, array_code, sta_code, c_id,
                             station_entry['sample_rate_i'],
-                            station_entry['sample_rate_multiplier_i'])
+                            station_entry['sample_rate_multiplier_i'],
+                            sta_xml_obj.emp_resp)
 
                     all_channels.append(obs_channel)
         return all_channels
@@ -926,43 +963,45 @@ def execute(path, args_dict_list, nickname, level, out_format):
                             maxradius=args_dict.get('maxradius'),
                             minradius=args_dict.get('minradius'),
                             start_time=args_dict.get('start_time'),
-                            end_time=args_dict.get('end_time')
+                            end_time=args_dict.get('end_time'),
+                            emp_resp=args_dict.get('emp_resp')
                             )
                for args_dict in args_dict_list]
 
     ph5sxmlmanager = PH5toStationXMLRequestManager(
-                                                    sta_xml_obj_list=ph5sxml,
-                                                    ph5path=path,
-                                                    nickname=nickname,
-                                                    level=level,
-                                                    format=out_format
-                                                  )
+        sta_xml_obj_list=ph5sxml,
+        ph5path=path,
+        nickname=nickname,
+        level=level,
+        format=out_format,
+        stationxml_on_error=args_dict.get('stationxml_on_error'))
     ph5sxmlparser = PH5toStationXMLParser(ph5sxmlmanager)
     return ph5sxmlparser.get_network()
 
 
-def execute_unpack(args):
-    return execute(*args)
-
-
 def run_ph5_to_stationxml(paths, nickname, out_format,
-                          level, uri, args_dict_list,
-                          pool_size=5):
-    results = []
+                          level, uri, args_dict_list):
+    networks = []
     if paths:
-        arguments = []
         for path in paths:
-            arguments.append((path,
-                             args_dict_list,
-                             nickname,
-                             level,
-                             out_format))
-
-        pool = multiprocessing.Pool(processes=pool_size)
-        results = pool.map(execute_unpack, arguments)
-        pool.terminate()
-
-        networks = [n for n in results if n is not None]
+            try:
+                LOGGER.info("CHECKING %s" % os.path.join(path, nickname))
+                n = execute(path,
+                            args_dict_list,
+                            nickname,
+                            level,
+                            out_format)
+                if n is None:
+                    LOGGER.info("NO STATIONXML DATA CREATED FOR %s" %
+                                os.path.join(path, nickname))
+                else:
+                    networks.append(n)
+                    LOGGER.info("STATIONXML DATA CREATED FOR %s" %
+                                os.path.join(path, nickname))
+            except PH5toStationXMLError as e:
+                LOGGER.error(e.message)
+                LOGGER.info("NO STATIONXML DATA CREATED FOR %s" %
+                            os.path.join(path, nickname))
 
         if networks:
             inv = inventory.Inventory(
@@ -974,8 +1013,6 @@ def run_ph5_to_stationxml(paths, nickname, out_format,
                                                 "| version: 1"),
                                         module_uri=uri)
             return inv
-        else:
-            return
     else:
         raise PH5toStationXMLError("No PH5 experiments were found "
                                    "under path(s) {0}".format(paths))
