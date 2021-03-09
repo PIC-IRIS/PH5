@@ -15,7 +15,7 @@ from pyproj import Geod
 from ph5.core import columns, experiment, timedoy
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2019.93'
+PROG_VERSION = '2021.47'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -745,15 +745,13 @@ class PH5(experiment.ExperimentGroup):
             self.read_response_t()
 
         try:
-            response_t = self.Response_t['rows'][n_i]
-            if response_t['n_i'] != n_i:
-                for response_t in self.Response_t['rows']:
-                    if response_t['n_i'] == n_i:
-                        break
+            for response_t in self.Response_t['rows']:
+                if response_t['n_i'] == n_i:
+                    return response_t
         except BaseException:
-            response_t = None
+            return None
 
-        return response_t
+        return None
 
     def read_das_g_names(self):
         '''   Read Das_g names
@@ -768,9 +766,9 @@ class PH5(experiment.ExperimentGroup):
                     start_epoch=None,
                     stop_epoch=None,
                     sample_rate=None,
-                    sample_rate_multiplier=1):
+                    sample_rate_multiplier=1,
+                    check_samplerate=True):
         ''' Uses queries to get data from specific das table'''
-
         das_g = "Das_g_{0}".format(das)
         try:
             node = self.ph5_g_receivers.getdas_g(das)
@@ -784,16 +782,30 @@ class PH5(experiment.ExperimentGroup):
                                     'Das_t')
         except NoSuchNodeError:
             return []
+        try:
+            sample_rate_multiplier_i = tbl.cols.sample_rate_multiplier_i  # noqa
+            sample_rate_multiplier_i = sample_rate_multiplier_i
+        except AttributeError:
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "missing. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
+            raise APIError(-1, errmsg)
+
+        if len(list(tbl.where('sample_rate_multiplier_i==0'))) > 0:
+            errmsg = ("%s has sample_rate_multiplier_i "
+                      "with value 0. Please run fix_srm to fix "
+                      "sample_rate_multiplier_i for PH5 data."
+                      % tbl._v_parent._v_name.replace('Das_g', 'Das_t'))
+            raise APIError(-1, errmsg)
+
         epoch_i = tbl.cols.time.epoch_l  # noqa
         micro_seconds_i = tbl.cols.time.micro_seconds_i  # noqa
         sample_count_i = tbl.cols.sample_count_i  # noqa
-        sample_rate_multiplier_i = \
-            tbl.cols.sample_rate_multiplier_i  # noqa
         sample_rate_i = tbl.cols.sample_rate_i  # noqa
         epoch_i = epoch_i
         micro_seconds_i = micro_seconds_i
         sample_count_i = sample_count_i
-        sample_rate_multiplier_i = sample_rate_multiplier_i
         sample_rate_i = sample_rate_i
         das = []
         if not start_epoch:
@@ -801,74 +813,59 @@ class PH5(experiment.ExperimentGroup):
         if not stop_epoch:
             stop_epoch = 32509613590
 
-        if sample_rate == 0:
-            for row in tbl.where(
+        if sample_rate == 0 or sample_rate is None:
+            numexprstr = (
                     '(channel_number_i == '
                     + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
                     + str(start_epoch) +
                     ')&(epoch_i+micro_seconds_i/1000000<='
                     + str(stop_epoch) + ')'
-            ):
-
-                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
-                            'array_name_data_a': row['array_name_data_a'],
-                            'array_name_event_a': row['array_name_event_a'],
-                            'array_name_log_a': row['array_name_log_a'],
-                            'channel_number_i': row['channel_number_i'],
-                            'event_number_i': row['event_number_i'],
-                            'raw_file_name_s': row['raw_file_name_s'],
-                            'receiver_table_n_i': row['receiver_table_n_i'],
-                            'response_table_n_i': row['response_table_n_i'],
-                            'sample_count_i': row['sample_count_i'],
-                            'sample_rate_i': row['sample_rate_i'],
-                            'sample_rate_multiplier_i':
-                                row['sample_rate_multiplier_i'],
-                            'stream_number_i': row['stream_number_i'],
-                            'time/ascii_s': row['time/ascii_s'],
-                            'time/epoch_l': row['time/epoch_l'],
-                            'time/micro_seconds_i':
-                                row['time/micro_seconds_i'],
-                            'time/type_s': row['time/type_s'],
-                            'time_table_n_i': row['time_table_n_i']
-                            }
-                das.append(row_dict)
-
+            )
+        elif check_samplerate is False:
+            numexprstr = (
+                 '(channel_number_i == '
+                 + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000 >= '
+                 + str(start_epoch) +
+                 '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                 '&(epoch_i+micro_seconds_i/1000000 <= '
+                 + str(stop_epoch) + ')'
+                 )
         else:
-            for row in tbl.where(
-                    '(channel_number_i == '
-                    + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
-                    + str(start_epoch) +
-                    '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
-                    '&(epoch_i+micro_seconds_i/1000000<='
-                    + str(stop_epoch) + ')&(sample_rate_i==' +
-                    str(sample_rate) +
-                    ')&(sample_rate_multiplier_i==' +
-                    str(sample_rate_multiplier) + ')'
-            ):
+            numexprstr = (
+                '(channel_number_i == '
+                + str(chan) + ' )&(epoch_i+micro_seconds_i/1000000>='
+                + str(start_epoch) +
+                '-sample_count_i/sample_rate_i/sample_rate_multiplier_i)'
+                '&(epoch_i+micro_seconds_i/1000000<='
+                + str(stop_epoch) + ')&(sample_rate_i==' +
+                str(sample_rate) +
+                ')&(sample_rate_multiplier_i==' +
+                str(sample_rate_multiplier) + ')'
+            )
 
-                row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
-                            'array_name_data_a': row['array_name_data_a'],
-                            'array_name_event_a': row['array_name_event_a'],
-                            'array_name_log_a': row['array_name_log_a'],
-                            'channel_number_i': row['channel_number_i'],
-                            'event_number_i': row['event_number_i'],
-                            'raw_file_name_s': row['raw_file_name_s'],
-                            'receiver_table_n_i': row['receiver_table_n_i'],
-                            'response_table_n_i': row['response_table_n_i'],
-                            'sample_count_i': row['sample_count_i'],
-                            'sample_rate_i': row['sample_rate_i'],
-                            'sample_rate_multiplier_i':
-                                row['sample_rate_multiplier_i'],
-                            'stream_number_i': row['stream_number_i'],
-                            'time/ascii_s': row['time/ascii_s'],
-                            'time/epoch_l': row['time/epoch_l'],
-                            'time/micro_seconds_i':
-                                row['time/micro_seconds_i'],
-                            'time/type_s': row['time/type_s'],
-                            'time_table_n_i': row['time_table_n_i']
-                            }
-                das.append(row_dict)
-
+        for row in tbl.where(numexprstr):
+            row_dict = {'array_name_SOH_a': row['array_name_SOH_a'],
+                        'array_name_data_a': row['array_name_data_a'],
+                        'array_name_event_a': row['array_name_event_a'],
+                        'array_name_log_a': row['array_name_log_a'],
+                        'channel_number_i': row['channel_number_i'],
+                        'event_number_i': row['event_number_i'],
+                        'raw_file_name_s': row['raw_file_name_s'],
+                        'receiver_table_n_i': row['receiver_table_n_i'],
+                        'response_table_n_i': row['response_table_n_i'],
+                        'sample_count_i': row['sample_count_i'],
+                        'sample_rate_i': row['sample_rate_i'],
+                        'sample_rate_multiplier_i':
+                            row['sample_rate_multiplier_i'],
+                        'stream_number_i': row['stream_number_i'],
+                        'time/ascii_s': row['time/ascii_s'],
+                        'time/epoch_l': row['time/epoch_l'],
+                        'time/micro_seconds_i':
+                            row['time/micro_seconds_i'],
+                        'time/type_s': row['time/type_s'],
+                        'time_table_n_i': row['time_table_n_i']
+                        }
+            das.append(row_dict)
         return das
 
     def read_das_t(self, das, start_epoch=None, stop_epoch=None, reread=True):
@@ -1128,7 +1125,6 @@ class PH5(experiment.ExperimentGroup):
             Das_t = filter_das_t(self.Das_t[das]['rows'], chan)
         else:
             Das_t = das_t
-
         if sample_rate == 0 or chan == -2:
             LOGGER.info("calling textural_cut")
             cuts = self.textural_cut(
@@ -1139,10 +1135,9 @@ class PH5(experiment.ExperimentGroup):
                 Das_t)
             return cuts
 
-        #
         # We shift the samples to match the requested start
         # time to apply the time correction
-        #
+
         clock = Clock()
         if apply_time_correction:
             Time_t = self.get_time_t(das)
@@ -1308,7 +1303,6 @@ class PH5(experiment.ExperimentGroup):
                       None,  # receiver_t
                       None,  # response_t
                       clock=clock)
-
         traces.append(trace)
         if das_t:
             receiver_t = self.get_receiver_t(das_t[0])
@@ -1341,8 +1335,8 @@ class PH5(experiment.ExperimentGroup):
 
         if 'PH5API_DEBUG' in os.environ and os.environ['PH5API_DEBUG']:
             for t in ret:
-                print '-=' * 40
-                print t
+                print('-=' * 40)
+                print(t)
 
         return ret
 

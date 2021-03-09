@@ -1,5 +1,7 @@
 Master:
 ph5
+ * fixed malformed created timestamp in stationxml from ph5tostationxml
+   and added testcase to ensure timestamps are well formed
  * fixed errors in entry_points.py that prevented apps from executing.
  * fixed: seg2toph5, ph5toevt.
  * Deleted: ph5view (doesn't compile, was a W.I.P. left to wither)
@@ -8,6 +10,7 @@ ph5
  * cleanup comments and remove commented out code (issue #216)
  * replace deprecated optparse with argparse module.
  * update ph5 to better install c requirements
+ * Add fix_srm command to change srm values from 0 to 1 or add srm=1 in case that column is missing in das tables or array tables.
 ph5.utilities.ph5
  * add helpfile to utilities folder. Have not added pointer in setup.py as yet.
  * Typing ph5 shows user the choices for help information.
@@ -36,6 +39,7 @@ ph5.utilities.segdtoph5
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
  * fix fast offset_table reading (issue #280)
+ * fix read_das and read_arrays to throw error is sample_rate_multiplier_is=0 or is missing
 ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.utilities.validation
@@ -50,14 +54,19 @@ ph5.clients.ph5tostationxml
  * Round latitude and longitude to 6 decimal places in stationxml to match SEED maximum
  * Round elevation to 1 decimal place in stationxml to match SEED maximum
  * fix incorrectly retrieving network time
+ * checking response table's issue: filename, data, duplication
  * Entry that is excess intersection will not be logged and will not be included in xml
  * Entry that has location out of range will be logged as error and will not be included in xml
  * Entry that has location value=0 or no location unit will be logged as warning and will be included in xml
+ * In case of no response data can be returned because of error, not return empty response but throw error instead. Use flag -E/--emp_resp if want to add empty response for debugging
+ * In case of other bugs, not create stationxml. Use flag --stationxml_on_error to create stationxml if bug present in the data
+ * Multiprocessing has been removed because when checking subfolders of the given path, multiprocessing make the logging messages show up randomly. Using 'for loop' instead help users recognize which one the messages are for. That way ph5tostationxml can inform when never stationxml has or has not been created for a ph5 data.
 ph5.clients.ph5availability
  * New client for returning timeseries availability information
 ph5.utilities.ph5validate
  * add data time checking
  * fix incorrectly detecting data between different deploy/pickup times
+ * add checking response table's issue: filename, data, duplication
  * detecting repeated stations
  * move checking for location errors and warnings to validation
  * correct logging to be the same as other tools
@@ -70,6 +79,7 @@ ph5.utilities.time_kef_gen.py
  * fix bug getting only the last to_froms of all soh for a das
 ph5.utilities.tabletokef.py
  * add -o option for file output
+ * add flag -i/--ignore to bypass error thrown for srm=0 or missing when creating kef file.
 ph5.utilities.report_gen
  * fix crash on no event table (issue #219)
 ph5.utilities.dumpfair
@@ -77,6 +87,7 @@ ph5.utilities.dumpfair
 ph5.utilities.seg2toph5
  * fix bug missing variable
  * Make compatible for pforma
+ * Add flag -r/--raw
 ph5.utilities.pforma_io
  * add seg2 to pforma
  * fix bug that duplicate index_t and array_t when copy tables from A/master.ph5 to Sigma/master.ph5
@@ -90,6 +101,7 @@ ph5.clients.ph5toevt
  * fix info level logging and remove global variables
 ph5.utilities.obspytoph5
  * new tool for loading obspy data in to ph5
+ * change -f to -r, -l to -f to be consistent with other ingestion commands
 ph5.utilities.metadatatoph5
  * new tool for loading stationxml and dataless SEED
 ph5.utilities.tests.test_metadatatoph5
@@ -102,6 +114,7 @@ ph5.core.ph5api
  * skip ph5api cut traces that return no data. logic previously embedded in code but line 1302 is duplicated onto 1287 to prevent error from being thrown
  * fix ph5api cut sometimes returns too many samples (issue #298)
  * fix for get_availability returning incomplete results
+  * fix query_das_t to throw error is sample_rate_multiplier_is=0 or is missing
 ph5.entry_points
  * creates a dictionary, keys are names of scripts,
       values are (1) simple description,
@@ -119,6 +132,10 @@ ph5.clients.test.test_ph5availability
  * Unittest: Stop sending log to screen; Apply testfixtures to capture output and log; Apply tmpdir from test_base; Use os.path.join for path
 ph5.core.tests.test_segd2ph5
  * Unittest: Stop sending log to screen; Apply tmpdir from test_base; Use os.path.join for path
+ph5.utilities.validation
+ * common functions for ph5validate and ph5tostationxml
+ * functions for checking response filename, data, duplication
+ * checking response_file_das_a following 2 formats: metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] and resp_load format [das_model]_[sr]_[srm]_[gain]. Each part in the format will be checked, except for [cha] because different channel codes can use the same response file.
 
 v4.1.2:
 ph5.utilities.ph5validate
@@ -153,7 +170,7 @@ ph5.clients.ph5torec
  * print to stdout by default
  -ph5.clients.ph5toms
  * Add ph5toms support for the web service GeoCSV timeseries data format.
-
+ * Pull sample rate directly from DAS tables rather than PH5toMSeed.get_nonrestricted_segments. Allows ph5toms to work with data which != 100 Hz
 v4.1.1:
 -ph5.clients.ph5toexml
  * Fix case where station does not have a key of 1

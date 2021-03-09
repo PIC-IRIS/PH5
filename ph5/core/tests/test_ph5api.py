@@ -5,7 +5,7 @@ import os
 import unittest
 
 from ph5.core import ph5api
-from ph5.core.tests.test_base import LogTestCase
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
 class TestPH5API(LogTestCase):
@@ -149,7 +149,6 @@ class TestPH5API(LogTestCase):
         self.assertEqual(channel[0]['seed_instrument_code_s'], 'P')
         self.assertEqual(channel[0]['seed_orientation_code_s'], 'Z')
         self.assertEqual(channel[0]['receiver_table_n_i'], 0)
-        # in response_t n_i=0 for model ZLAND3C
         self.assertEqual(channel[0]['response_table_n_i'], 0)
         self.assertEqual(channel[0]['channel_number_i'], 3)
 
@@ -1216,6 +1215,46 @@ class TestPH5API(LogTestCase):
         self.ph5API_object.clear()
         self.ph5API_object.close()
         self.assertIsNone(self.ph5API_object.ph5)
+
+
+class TestPH5API_srm_query_das_t(TempDirTestCase, LogTestCase):
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestPH5API_srm_query_das_t, self).tearDown()
+
+    def test_query_das_t_srm0(self):
+        # sample_rate_multiplier_i=0 => query_das_t raise error
+
+        ph5path = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/array_das')
+        self.ph5_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
+
+        with self.assertRaises(ph5api.APIError) as context:
+            self.ph5_object.query_das_t(
+                '1X1111', 1, 1562198400, 1562284800, 1000)
+            self.assertEqual(context.exception.errno, -1)
+        self.assertEqual(
+            context.exception.msg,
+            ('Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+             'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.'
+             ))
+
+    def test_query_das_t_nosrm(self):
+        # sample_rate_multiplier_i missing => query_das_t raise error
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/array_das')
+        self.ph5_object = ph5api.PH5(path=nosrmpath, nickname='master.ph5')
+
+        with self.assertRaises(ph5api.APIError) as context:
+            self.ph5_object.query_das_t(
+                '1X1111', 1, 1562198400, 1562284800, 1000)
+            self.assertEqual(context.exception.errno, -1)
+        self.assertEqual(
+            context.exception.msg,
+            ('Das_t_1X1111 has sample_rate_multiplier_i missing. '
+             'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.'
+             ))
 
 
 if __name__ == "__main__":

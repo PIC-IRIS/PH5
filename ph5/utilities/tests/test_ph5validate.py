@@ -5,18 +5,102 @@ import unittest
 import os
 import sys
 import logging
+import shutil
+from StringIO import StringIO
 
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import ph5validate, segd2ph5
+from ph5.utilities import ph5validate, segd2ph5, nuke_table, kef2ph5
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
-class TestPh5Validate_main(TempDirTestCase, LogTestCase):
+class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
     def setUp(self):
-        super(TestPh5Validate_main, self).setUp()
+        super(TestPH5Validate_response_info, self).setUp()
+        # copy ph5 data and tweak sensor model and sample rate in array 9
+        # to test for inconsistencies between filenames and info
+        orgph5path = os.path.join(self.home, "ph5/test_data/ph5")
+        shutil.copy(os.path.join(orgph5path, 'master.ph5'),
+                    os.path.join(self.tmpdir, 'master.ph5'))
+        shutil.copy(os.path.join(orgph5path, 'miniPH5_00001.ph5'),
+                    os.path.join(self.tmpdir, 'miniPH5_00001.ph5'))
+        testargs = ['delete_table', '-n', 'master.ph5', '-A', '9']
+        with patch.object(sys, 'argv', testargs):
+            with OutputCapture():
+                f = StringIO('y')
+                sys.stdin = f
+                nuke_table.main()
+                f.close()
+        kefpath = os.path.join(
+            self.home,
+            'ph5/test_data/metadata/array_9_test_resp_filename.kef')
+        testargs = ['keftoph5', '-n', 'master.ph5', '-k', kefpath]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
+
+        self.ph5API_object = ph5api.PH5(path=self.tmpdir,
+                                        nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, '.')
+
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5Validate_response_info, self).tearDown()
+
+    def test_check_array_t(self):
+        # change response_file_sensor_a to
+        # test for No response data loaded for gs11
+        response_t = self.ph5validate.ph5.get_response_t_by_n_i(4)
+        response_t['response_file_sensor_a'] = '/Experiment_g/Responses_g/gs11'
+        with LogCapture():
+            ret = self.ph5validate.check_array_t()
+        for r in ret:
+            if 'Station 9001' in r.heading:
+                self.assertEqual(r.heading,
+                                 "-=-=-=-=-=-=-=-=-\n"
+                                 "Station 9001 Channel 1\n"
+                                 "4 error, 1 warning, 0 info\n"
+                                 "-=-=-=-=-=-=-=-=-\n"
+                                 )
+                # this error causes by changing samplerate
+                errors = [
+                    "No data found for das serial number 12183 during "
+                    "this station's time. You may need to reload the "
+                    "raw data for this station.",
+                    'Response_t[4]:No response data loaded for gs11.',
+                    "Response_t[4]:response_file_das_a 'rt125a_500_1_32' is "
+                    "inconsistent with Array_t_009:sr=100. Please check with "
+                    "resp_load format [das_model]_[sr]_[srm]_[gain].",
+                    "Response_t[4]:response_file_sensor_a 'gs11' is "
+                    "inconsistent with Array_t_009:sensor_model=cmg3t."]
+                self.assertEqual(
+                    set(r.error),
+                    set(errors))
+                self.assertEqual(
+                    r.warning,
+                    ['No station description found.'])
+            if 'Station 0407 Channel -2' in r.heading:
+                self.assertEqual(r.heading,
+                                 "-=-=-=-=-=-=-=-=-\n"
+                                 "Station 0407 Channel -2\n"
+                                 "1 error, 2 warning, 0 info\n"
+                                 "-=-=-=-=-=-=-=-=-\n"
+                                 )
+                self.assertEqual(
+                    r.error,
+                    ['Response_t[-1]:'
+                     'Metadata response with n_i=-1 has no response data.'])
+                # sample rate for station 0407 in array 4 is 0
+                self.assertEqual(
+                    r.warning,
+                    ['No station description found.',
+                     'Sample rate seems to be 0. Is this correct???'])
+
+
+class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestPh5Validate_main_detect_data, self).setUp()
         kef_to_ph5(
             self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
@@ -51,28 +135,31 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'run experiment_t_gen to create table\n')
         self.assertEqual(
             all_logs[3],
-            'Station 9001 Channel 1\n1 error, 3 warning, 0 info\n')
+            'Station 9001 Channel 1\n2 error, 3 warning, 0 info\n')
         self.assertEqual(
             all_logs[4],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
+            'ERROR: Response_t has no entry for n_i=7\n'
             'WARNING: No station description found.\n'
             'WARNING: Data exists before deploy time: 7 seconds.\n'
             'WARNING: Station 9001 [1550849950, 1550850034] is repeated '
             '2 time(s)\n')
         self.assertEqual(
             all_logs[5],
-            'Station 9002 Channel 1\n1 error, 2 warning, 0 info\n')
+            'Station 9002 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[6],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
+            'ERROR: Response_t has no entry for n_i=7\n'
             'WARNING: No station description found.\n'
             'WARNING: Data exists after pickup time: 36 seconds.\n')
         self.assertEqual(
             all_logs[7],
-            'Station 9003 Channel 1\n1 error, 2 warning, 0 info\n')
+            'Station 9003 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[8],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
+            'ERROR: Response_t has no entry for n_i=7\n'
             'WARNING: No station description found.\n'
             'WARNING: Data exists after pickup time: 2 seconds.\n')
 
@@ -91,22 +178,25 @@ class TestPh5Validate_main(TempDirTestCase, LogTestCase):
             'run experiment_t_gen to create table\n')
         self.assertEqual(
             all_logs[3],
-            'Station 9001 Channel 1\n1 error, 3 warning, 0 info\n')
+            'Station 9001 Channel 1\n2 error, 3 warning, 0 info\n')
         self.assertEqual(
             all_logs[4],
-            'ERROR: No Response table found. Have you run resp_load yet?\n')
+            'ERROR: No Response table found. Have you run resp_load yet?\n'
+            'ERROR: Response_t has no entry for n_i=7\n')
         self.assertEqual(
             all_logs[5],
-            'Station 9002 Channel 1\n1 error, 2 warning, 0 info\n')
+            'Station 9002 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[6],
-            'ERROR: No Response table found. Have you run resp_load yet?\n')
+            'ERROR: No Response table found. Have you run resp_load yet?\n'
+            'ERROR: Response_t has no entry for n_i=7\n')
         self.assertEqual(
             all_logs[7],
-            'Station 9003 Channel 1\n1 error, 2 warning, 0 info\n')
+            'Station 9003 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[8],
-            'ERROR: No Response table found. Have you run resp_load yet?\n')
+            'ERROR: No Response table found. Have you run resp_load yet?\n'
+            'ERROR: Response_t has no entry for n_i=7\n')
 
     def test_get_args(self):
         testargs = ['ph5_validate', '-n', 'master.ph5', '-p', self.tmpdir,
@@ -176,7 +266,7 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
 
         self.assertEqual(vb[0].heading,
                          '-=-=-=-=-=-=-=-=-\nStation 9001 Channel 1\n'
-                         '1 error, 3 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
+                         '2 error, 3 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
         self.assertEqual(vb[0].info, [])
         self.assertEqual(
             vb[0].warning,
@@ -185,12 +275,13 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
              'Station 9001 [1550849950, 1550850034] is repeated 2 time(s)'])
         self.assertEqual(
             vb[0].error,
-            ['No Response table found. Have you run resp_load yet?']
+            ['No Response table found. Have you run resp_load yet?',
+             'Response_t has no entry for n_i=7']
         )
 
         self.assertEqual(vb[1].heading,
                          '-=-=-=-=-=-=-=-=-\nStation 9002 Channel 1\n'
-                         '1 error, 2 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
+                         '2 error, 2 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
         self.assertEqual(vb[1].info, [])
         self.assertEqual(
             vb[1].warning,
@@ -198,12 +289,13 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
              'Data exists after pickup time: 36 seconds.'])
         self.assertEqual(
             vb[1].error,
-            ['No Response table found. Have you run resp_load yet?']
+            ['No Response table found. Have you run resp_load yet?',
+             'Response_t has no entry for n_i=7']
         )
 
         self.assertEqual(vb[2].heading,
                          '-=-=-=-=-=-=-=-=-\nStation 9003 Channel 1\n'
-                         '1 error, 2 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
+                         '2 error, 2 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
         self.assertEqual(vb[2].info, [])
         self.assertEqual(
             vb[2].warning,
@@ -211,7 +303,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
              'Data exists after pickup time: 2 seconds.'])
         self.assertEqual(
             vb[2].error,
-            ['No Response table found. Have you run resp_load yet?']
+            ['No Response table found. Have you run resp_load yet?',
+             'Response_t has no entry for n_i=7']
         )
 
     def test_analyze_time(self):
@@ -486,6 +579,35 @@ class TestPh5Validate_noEvent(TempDirTestCase, LogTestCase):
         self.assertIn("Event_t table not found. "
                       "Did this experiment have shots???",
                       vbs[0]. warning)
+
+
+class TestPH5Validate_no_response_filename(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5Validate_no_response_filename, self).tearDown()
+
+    def test_check_response_t(self):
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd/3ch.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5API_object = ph5api.PH5(path=self.tmpdir,
+                                        nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, '.')
+        with LogCapture() as log:
+            log.setLevel(logging.ERROR)
+            ret = self.ph5validate.check_response_t()
+            self.assertEqual(
+                ret[0].error,
+                ["Response table does not contain any response file names. "
+                 "Check if resp_load has been run or if metadatatoph5 input "
+                 "contained response information."])
+            self.assertEqual(
+                log.records[0].msg,
+                "Response table does not contain any response file names. "
+                "Check if resp_load has been run or if metadatatoph5 input "
+                "contained response information.")
 
 
 if __name__ == "__main__":

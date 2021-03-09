@@ -1,4 +1,5 @@
 # Derick Hess, Feb 2019
+# Tim Ronan, Oct 2020
 
 """
 Implements IRIS webservice style extent and query
@@ -13,10 +14,12 @@ import datetime as dt
 import time
 from uuid import uuid4
 from argparse import RawTextHelpFormatter
-from ph5.core import ph5api, ph5utils, timedoy
 
-PROG_VERSION = '2019.101'
+from ph5.core import ph5api, ph5utils, timedoy, experiment
+
+PROG_VERSION = '2020.282'
 LOGGER = logging.getLogger(__name__)
+
 
 f_id = {'sta': 0, 'loc': 1, 'chan': 2,
         'earliest': 3, 'latest': 4, 'sRate': 5}
@@ -39,7 +42,6 @@ class PH5Availability(object):
         :type  :class core.ph5api
         :param object containg PH5 instance
         TODO: ADD ALL PARAMATERS NEEDED
-
         """
         self.ph5 = ph5API_object
         if not self.ph5.Array_t_names:
@@ -330,7 +332,7 @@ class PH5Availability(object):
                                 include_sample_rate=False):
         """
         Get a list of tuples [(station, location, channel,
-        earliest, latest)] containing data extent info for time series
+        early, end)] containing data extent info for time series
         included in PH5.
         :type station: str
         :param station: Station code of requested data (e.g. "ANMO").
@@ -347,14 +349,14 @@ class PH5Availability(object):
         :param endtime: End of requested time window as epoch in seconds
         :rtype: list(tuple(str, str, str, str, float, float))
         :returns: A list of tuples [(station, location, channel,
-            earliest, latest)...] containing data extent info for time series
+            early, end)...] containing data extent info for time series
             included in PH5 archive
-
         NOTE! ph5api as a get_extent() method that works on the channel level.
         Leverage this
-
         """
         availability_extents = []
+        sr_mismatch = False
+        empty_times = True
         self.SR_included = include_sample_rate
         if starttime or endtime:
             if not (starttime and endtime):
@@ -384,27 +386,84 @@ class PH5Availability(object):
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
-
-                        ph5_das = st['das/serial_number_s']
-                        ph5_channum = st['channel_number_i']
-                        ph5_sample_rate = self.get_sample_rate(st)
-
-                        earliest, latest = self.ph5.get_extent(
-                            ph5_das, ph5_channum, ph5_sample_rate,
-                            starttime, endtime)
-                        if earliest is None:
+                        ph5das = st['das/serial_number_s']
+                        chanum = st['channel_number_i']
+                        ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_sample_rate = st['sample_rate_i']
+                        ph5_multiplier = st['sample_rate_multiplier_i']
+                        samplerate_return = None
+                        Das_t = self.ph5.query_das_t(
+                            ph5das,
+                            chan=chanum,
+                            start_epoch=ph5_start_epoch,
+                            stop_epoch=ph5_stop_epoch,
+                            sample_rate=ph5_sample_rate,
+                            sample_rate_multiplier=ph5_multiplier,
+                            check_samplerate=False)
+                        for das in Das_t:
+                            if das['sample_rate_i'] == st['sample_rate_i']:
+                                samplerate_return = das['sample_rate_i']
+                                psr = das['sample_rate_i']
+                                early, end = self.ph5.get_extent(ph5das,
+                                                                 chanum,
+                                                                 psr,
+                                                                 starttime,
+                                                                 endtime
+                                                                 )
+                                empty_times = False
+                            else:
+                                continue
+                        if empty_times is True:
+                            for i, das in enumerate(Das_t):
+                                # Checks to see if all DAS tables have same SR
+                                sr_prev = Das_t[i-1]['sample_rate_i']
+                                if das['sample_rate_i'] != sr_prev:
+                                    sr_mismatch = True
+                            try:
+                                if sr_mismatch is True:
+                                    LOGGER.error('DAS and Array Table sample' +
+                                                 ' rates do not match, DAS' +
+                                                 ' table sample rates do not' +
+                                                 ' match. Data must be'
+                                                 ' updated.')
+                                    return
+                                else:
+                                    # Uses SR if consistent
+                                    samplerate_return = das['sample_rate_i']
+                                    psr = das['sample_rate_i']
+                                    LOGGER.warning('Using sample rate from' +
+                                                   ' DAS Table. Sample rates' +
+                                                   ' in DAS and Array tables' +
+                                                   ' are not consistent.')
+                                    early, end = self.ph5.get_extent(ph5das,
+                                                                     chanum,
+                                                                     psr,
+                                                                     starttime,
+                                                                     endtime
+                                                                     )
+                            except(UnboundLocalError):
+                                continue
+                        if early is None or end is None:
                             continue
-                        if starttime is not None and earliest < starttime:
-                            earliest = starttime
-                        if endtime is not None and endtime < latest:
-                            latest = endtime
+                        if starttime is not None and early < starttime:
+                            early = starttime
+                        if endtime is not None and endtime < end:
+                            end = endtime
+                        if early is None or end is None:
+                            return None
                         if not include_sample_rate:
                             tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                   earliest, latest)
+                                   early, end)
                         else:
-                            tup = (ph5_seed_station, ph5_loc, ph5_channel,
-                                   earliest, latest, ph5_sample_rate)
-
+                            if samplerate_return is not None:
+                                tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                       early, end,
+                                       float(samplerate_return))
+                            else:
+                                tup = (ph5_seed_station, ph5_loc, ph5_channel,
+                                       early, end, float(psr)
+                                       )
                         availability_extents.append(tup)
 
         return availability_extents
@@ -440,11 +499,13 @@ class PH5Availability(object):
         :returns: A list of tuples [(station, location, channel,
             earliest, latest)...] representing contiguous time spans for
             selected channels and time ranges.
-
         NOTE! ph5api as a get_availability()
         method that works on the channel level. Leverage this
         """
         availability = []
+        time = []
+        sr_mismatch = False
+        empty_times = True
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
 
@@ -472,23 +533,85 @@ class PH5Availability(object):
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5_das = st['das/serial_number_s']
-                        ph5_channum = st['channel_number_i']
-                        ph5_sample_rate = self.get_sample_rate(st)
-
-                        times = self.ph5.get_availability(
-                            ph5_das, ph5_sample_rate, ph5_channum,
-                            starttime, endtime)
-                        if times is None:
+                        channum = st['channel_number_i']
+                        ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_sample_rate = st['sample_rate_i']
+                        ph5_multiplier = st['sample_rate_multiplier_i']
+                        Das_t = self.ph5.query_das_t(
+                            ph5_das,
+                            chan=channum,
+                            start_epoch=ph5_start_epoch,
+                            stop_epoch=ph5_stop_epoch,
+                            sample_rate=ph5_sample_rate,
+                            sample_rate_multiplier=ph5_multiplier,
+                            check_samplerate=False)
+                        for das in Das_t:
+                            # Does Array.sr == DAS.sr? If so use sr
+                            if das['sample_rate_i'] == st['sample_rate_i']:
+                                samplerate_return = das['sample_rate_i']
+                                ph5_sr = das['sample_rate_i']
+                                time = self.ph5.get_availability(ph5_das,
+                                                                 ph5_sr,
+                                                                 channum,
+                                                                 starttime,
+                                                                 endtime)
+                                empty_times = False
+                            else:
+                                continue
+                        if empty_times is True:
+                            for i, das in enumerate(Das_t):
+                                # IF DAS.SR != Array.SR, USe DAS.SR if match
+                                # Checks to see if all DAS tables have same SR
+                                sr_prev = Das_t[i-1]['sample_rate_i']
+                                if das['sample_rate_i'] != sr_prev:
+                                    sr_mismatch = True
+                            try:
+                                if sr_mismatch is True:
+                                    # Else throw warning and fail
+                                    LOGGER.error('DAS and Array Table sample' +
+                                                 ' rates do not match, DAS' +
+                                                 ' table sample rates do not' +
+                                                 ' match. Data must be'
+                                                 ' updated.')
+                                    return
+                                else:
+                                    # Uses SR if consistent
+                                    samplerate_return = das['sample_rate_i']
+                                    ph5_sr = das['sample_rate_i']
+                                    LOGGER.warning('Using sample rate from' +
+                                                   ' DAS Table. Sample rates' +
+                                                   ' in DAS and Array tables' +
+                                                   ' are not consistent.')
+                                    time = self.ph5.get_availability(ph5_das,
+                                                                     ph5_sr,
+                                                                     channum,
+                                                                     starttime,
+                                                                     endtime)
+                            except(UnboundLocalError):
+                                continue
+                        if time is None:
                             continue
-                        for T in times:
+                        for T in time:
                             start = T[1] if T[1] > starttime \
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
                                 or endtime is None else endtime
+                            if T[1] is None or T[2] is None:
+                                return None
                             if include_sample_rate:
-                                availability.append((
-                                    ph5_seed_station, ph5_loc, ph5_channel,
-                                    start, end, T[0]))
+                                if samplerate_return is not None:
+                                    availability.append((
+                                        ph5_seed_station, ph5_loc, ph5_channel,
+                                        start, end, float(samplerate_return)))
+                                elif(T[0] is None):
+                                    availability.append((
+                                        ph5_seed_station, ph5_loc, ph5_channel,
+                                        start, end, float(ph5_sr)))
+                                else:
+                                    availability.append((
+                                        ph5_seed_station, ph5_loc, ph5_channel,
+                                        start, end, float(T[0])))
                             else:
                                 availability.append((
                                     ph5_seed_station, ph5_loc, ph5_channel,
@@ -522,7 +645,6 @@ class PH5Availability(object):
         latest: latest time of traces in das_t
         all the parameters are already processed before sending to
         get_sampleNos_gapOverlap() => no need to check or calc. again
-
         return:
            + expected_sampleNo: number of samples expected for the time range
            + sampleNo: number of samples recorded for the time range
@@ -808,6 +930,8 @@ class PH5Availability(object):
         header += "|earliest|latest"
 
         s = ""
+        if result is None:
+            return None
         for r in result:
             r = list(r)
             r = self.convert_time(r)
@@ -1110,6 +1234,8 @@ def main():
         availability.process_all()
 
     except ph5api.APIError as err:
+        LOGGER.error(err.msg)
+    except experiment.HDF5InteractionError as err:
         LOGGER.error(err.msg)
     except PH5AvailabilityError as err:
         LOGGER.error(str(err))

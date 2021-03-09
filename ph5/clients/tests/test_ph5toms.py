@@ -3,8 +3,18 @@ Tests for ph5toms
 '''
 
 import unittest
-from ph5.clients.ph5toms import StationCut, PH5toMSeed
 import copy
+import os
+import sys
+import logging
+
+from mock import patch
+from testfixtures import LogCapture
+
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
+from ph5.core import ph5api, experiment
+from ph5.clients.ph5toms import StationCut, PH5toMSeed
+from ph5.clients import ph5toms
 
 
 class RestrictedRequest(object):
@@ -202,6 +212,162 @@ class TestPH5toMSeed(unittest.TestCase):
         result = PH5toMSeed.get_nonrestricted_segments(
             station_to_cut_list, restricted_list)
         self.assertEqual(result[0].__dict__, expected.__dict__)
+
+
+class TestPH5toMSeed_samplerate(LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        self.ph5_object.close()
+        super(TestPH5toMSeed_samplerate, self).tearDown()
+
+    def test_create_trace(self):
+
+        self.ph5_object = ph5api.PH5(
+            path=os.path.join(self.home, 'ph5/test_data/ph5'),
+            nickname='master.ph5')
+        ph5toms = PH5toMSeed(self.ph5_object)
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+        for cut in cuts:
+            trace = ph5toms.create_trace(cut)
+            if trace is not None:
+                self.assertEqual(trace[0].stats.sampling_rate, cut.sample_rate)
+
+    def test_mismatch_sample_rate(self):
+        ph5test_srpath = os.path.join(self.home,
+                                      'ph5/test_data/ph5/samplerate')
+        self.ph5_object = ph5api.PH5(path=ph5test_srpath,
+                                     nickname='master.ph5')
+        ph5toms = PH5toMSeed(self.ph5_object)
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+        with LogCapture() as log:
+            for cut in cuts:
+                trace = ph5toms.create_trace(cut)
+                if trace is not None:
+                    self.assertEqual(trace[0].stats.station, '10075')
+        self.assertIsNotNone(log)
+
+
+class TestPH5toMSeed_SRM(TempDirTestCase, LogTestCase):
+    '''
+    Test sample_rate_multiplier=0 or missing
+    '''
+    def assert_create_cut_list_trace(self, ph5path, errortype, errno, errmsg):
+        self.ph5_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
+        ph5toms = PH5toMSeed(self.ph5_object,
+                             starttime='2019-06-29T18:03:13.000000',
+                             component='1')
+        ph5toms.process_all()
+        with self.assertRaises(errortype) as context:
+            cuts = ph5toms.create_cut_list()
+            for cut in cuts:
+                ph5toms.create_trace(cut)
+        self.assertEqual(context.exception.errno, errno)
+        self.assertEqual(context.exception.msg, errmsg)
+        self.ph5_object.ph5.close()
+
+    def test_create_cut_list_srm0(self):
+        # sample_rate_multiplier_i=0
+        # => create_cut_list() raise error from read_arrays()
+        ph5path = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/array_das')
+        self.assert_create_cut_list_trace(
+            ph5path,
+            experiment.HDF5InteractionError,
+            7,
+            'Array_t_001 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_create_trace_srm0(self):
+        # sample_rate_multiplier_i=0
+        # => create_trace() raise error from query_das_t()
+        ph5path = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/das')
+        self.assert_create_cut_list_trace(
+            ph5path,
+            ph5api.APIError,
+            -1,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_create_cut_list_nosrm(self):
+        # sample_rate_multiplier_i missing
+        # => create_cut_list raise error from read_arrays()
+        ph5path = os.path.join(self.home,
+                               'ph5/test_data/ph5_no_srm/array_das')
+        self.assert_create_cut_list_trace(
+            ph5path,
+            experiment.HDF5InteractionError,
+            7,
+            'Array_t_001 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_create_trace_nosrm(self):
+        # sample_rate_multiplier_i missing
+        # => create_trace() raise error from query_das_t()
+        ph5path = os.path.join(
+            self.home,
+            'ph5/test_data/ph5_no_srm/das')
+        self.assert_create_cut_list_trace(
+            ph5path,
+            ph5api.APIError,
+            -1,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def assert_main(self, ph5path, errmsg):
+        testargs = ['ph5toms', '-n', 'master.ph5', '-p', ph5path,
+                    '--station', '1111']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.ERROR)
+                ph5toms.main()
+        self.assertEqual(len(log.records), 1)
+        self.assertEqual(
+            log.records[0].msg,
+            errmsg)
+
+    def test_main_srm0(self):
+        # sample_rate_multiplier_i=0
+        # Array_t will be check first when running create_cut_list()
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/array_das')
+        self.assert_main(
+            nosrmpath,
+            'Array_t_001 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Das_t will be check first when running create_trace()
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/das')
+        self.assert_main(
+            nosrmpath,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_main_nosrm(self):
+        # sample_rate_multiplier_i missing
+        # Array_t will be check first when running create_cut_list()
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5_no_srm/array_das')
+        self.assert_main(
+            nosrmpath,
+            'Array_t_001 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Das_t will be check first when running create_trace()
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5_no_srm/das')
+        self.assert_main(
+            nosrmpath,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
 
 
 if __name__ == "__main__":
