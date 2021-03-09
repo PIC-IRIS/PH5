@@ -1913,5 +1913,90 @@ class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
                 i = i+1
 
 
+class TestPH5Availability_SMR(LogTestCase, TempDirTestCase):
+    def assert_main(self, testargs, errmsg):
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.ERROR)
+                ph5availability.main()
+        self.assertEqual(len(log.records), 1)
+        self.assertEqual(log.records[0].msg, errmsg)
+
+    def test_main_no_srm(self):
+        '''
+        test column sample_rate_multiplier_i missing
+        '''
+        # Both Array_t and Das_t missing srm, but Array_t will be checked first
+        # get_array_order_id() will throw error when it reads array
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/array_das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Array_t_001 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Only Das_t missing srm (this doesn't happen in reality but need to
+        # test to see if it works)
+
+        # query_das_t() inside get_availability will throw error
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # get_time_das_t() inside has_data will throw error
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '0']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_main_srm0(self):
+        '''
+        test column sample_rate_multiplier_i=0,
+        '''
+        # Both Array_t and Das_t missing srm, but Array_t will be checked first
+        # get_array_order_id() will throw error when it reads array
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/array_das')
+
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Array_t_001 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Only Das_t missing srm (this doesn't happen in reality but need to
+        # test to see if it works)
+
+        # query_das_t() inside get_availability will throw error
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # get_time_das_t() inside has_data will throw error
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '0']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+
 if __name__ == "__main__":
     unittest.main()
