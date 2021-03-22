@@ -1902,12 +1902,8 @@ class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
 
             if trace is not None:
                 if i >= 1:
-                    # print(tt[i][3])
-                    # print(round(trace[0].stats.starttime))
                     self.assertEqual(tt[i][3],
                                      round(trace[0].stats.starttime))
-                    # print(tt[i][4])
-                    # print(round(trace[0].stats.endtime))
                     self.assertEqual(tt[i][4],
                                      round(trace[0].stats.endtime))
                 i = i+1
