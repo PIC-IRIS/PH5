@@ -922,9 +922,10 @@ class TestPH5API(LogTestCase):
                                             None,
                                             False,
                                             das_t=das_t)
+
         except Exception:
             throwexception = True
-        self.assertFalse(throwexception, 'Throw None type exception')
+        self.assertTrue(throwexception, 'Throw None type exception')
 
         # check nodes since they don't star on even seconds\
         # read actual data no time correction

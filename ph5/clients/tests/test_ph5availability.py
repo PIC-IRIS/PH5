@@ -1881,6 +1881,34 @@ class TestPH5AvailabilitySampleRate_error(LogTestCase, TempDirTestCase):
         self.ph5_sr_error.close()
 
 
+class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
+    def test_CompareMS_Availability(self):
+        self.ph5path = os.path.join(self.home,
+                                    'ph5/test_data/ph5/availability')
+        self.ph5_object = ph5api.PH5(path=self.ph5path,
+                                     nickname='master.ph5')
+        self.avail = ph5availability.PH5Availability(self.ph5_object)
+        tt = self.avail.get_availability(station='10075',
+                                         channel='*',
+                                         starttime=None,
+                                         endtime=None,
+                                         include_sample_rate=True)
+        ph5toms = PH5toMSeed(self.ph5_object)
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+        i = 0
+        for cut in cuts:
+            trace = ph5toms.create_trace(cut)
+
+            if trace is not None:
+                if i >= 1:
+                    self.assertEqual(tt[i][3],
+                                     round(trace[0].stats.starttime))
+                    self.assertEqual(tt[i][4],
+                                     round(trace[0].stats.endtime))
+                i = i+1
+
+
 class TestPH5Availability_SMR(LogTestCase, TempDirTestCase):
     def assert_main(self, testargs, errmsg):
         with patch.object(sys, 'argv', testargs):
