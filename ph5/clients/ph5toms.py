@@ -145,7 +145,8 @@ class PH5toMSeed(object):
                  das_sn=None, use_deploy_pickup=False, decimation=None,
                  sample_rate_keep=None, doy_keep=[], stream=False,
                  reduction_velocity=-1., notimecorrect=False,
-                 restricted=[], format='MSEED', cut_len=86400):
+                 restricted=[], format='MSEED', cut_len=86400,
+                 log_epoch=False):
 
         self.chan_map = {1: 'Z', 2: 'N', 3: 'E', 4: 'Z', 5: 'N', 6: 'E'}
         self.reqtype = reqtype.upper()
@@ -174,6 +175,7 @@ class PH5toMSeed(object):
         self.format = format
         self.cut_len = cut_len
         self.hash_list = []
+        self.log_epoch = log_epoch
 
         self.resp_manager = PH5ResponseManager()
 
@@ -1184,6 +1186,11 @@ def get_args():
         "[array].[seed_station].[seed_channel].[start_time]",
     )
 
+    parser.add_argument(
+        "--epoch", action="store_true", default=False,
+        help="Log the epoch of the miniseed files to the terminal"
+    )
+
     the_args = parser.parse_args()
 
     return the_args
@@ -1250,9 +1257,20 @@ def main():
                            doy_keep=args.doy_keep, stream=args.stream,
                            reduction_velocity=args.red_vel,
                            notimecorrect=args.notimecorrect,
-                           format=args.format)
+                           format=args.format,
+                           log_epoch=args.epoch)
+
+        if args.epoch:
+            epoch_header = "{:>32} {:>32}".format('Start time', 'End time')
+            print(epoch_header)
 
         for stream in ph5ms.process_all():
+            if args.epoch:
+                fmt = "{:>32} {:>32}"
+                msg = fmt.format(stream.traces[0].stats['starttime'],
+                                 stream.traces[0].stats['endtime'])
+                print(msg)
+
             if args.format.upper() == "MSEED":
                 if not args.non_standard:
                     stream.write(ph5ms.filenamemseed_gen(stream),
