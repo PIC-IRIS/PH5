@@ -90,10 +90,9 @@ class Reader ():
             buf = self.FH.read(size)
         except Exception as e:
             LOGGER.error(e)
-
-        if not buf:
             self.FH.close()
-        else:
+
+        if buf:
             self.bytes_read += len(buf)
 
         return buf
@@ -287,7 +286,7 @@ class Reader ():
         n = self.extended_header_blocks - 3
         for i in range(n):
             self.reel_headers.extended_header_4.append(
-                self.read_extended_header_4)
+                self.read_extended_header_4())
 
     def process_external_headers(self):
         self.reel_headers.external_header = self.read_external_header()
@@ -397,6 +396,9 @@ class Reader ():
             chan_set = self.trace_headers.trace_header.channel_set - 1
             n = self.reel_headers.channel_set_descriptor[chan_set].\
                 number_trace_header_extensions
+        if n == 0:
+            self.samples = 0
+            return self.samples
         if n > 0:
             self.trace_headers.trace_header_N.append(
                 self.read_trace_header_1())
