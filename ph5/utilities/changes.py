@@ -7,119 +7,116 @@ from ph5.core import columns
 LOGGER = logging.getLogger(__name__)
 
 try:
-    from PyQt4 import QtGui, QtCore
+    from PySide2 import QtWidgets, QtCore
 except Exception:
-    msg = ("\n\nNo module named PyQt4. "
-           "Please install PyQt4 first, it is needed for experiment_t_gen. "
-           "\n\n"
-           "If using Anaconda run 'conda install pyqt=4'"
-           "For pip users, PyQt4 installation instructions are available at "
-           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
+    msg = ("\n\nNo module named PySide2. "
+           "Please environment_gui.yml to install conda environment"
+           "PySide2 is needed for noven.")
     raise ImportError(msg)
 
-PROG_VERSION = "2016.245"
+PROG_VERSION = "2021.84"
 
 
-class KefMaker(QtGui.QWidget):
+class KefMaker(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
-        self.title = QtGui.QLabel("<b>Experiment_t Generator</b>")
+        self.title = QtWidgets.QLabel("<b>Experiment_t Generator</b>")
         self.title.setAlignment(QtCore.Qt.AlignHCenter)
 
         # Kef Entry Labels/LineEdits
-        self.nicknameLabel = QtGui.QLabel("nickname_s:")
-        self.nickname = QtGui.QLineEdit()
-        self.longnameLabel = QtGui.QLabel("longname_s:")
-        self.longname = QtGui.QLineEdit()
-        self.netcodeLabel = QtGui.QLabel("net_code_s:")
-        self.netcode = QtGui.QLineEdit()
-        self.pisLabel = QtGui.QLabel("PIs_s:")
-        self.pis = QtGui.QLineEdit()
-        self.institutionsLabel = QtGui.QLabel("institutions_s:")
-        self.institutions = QtGui.QLineEdit()
-        self.nwXValLabel = QtGui.QLabel("north_west_corner/X/value_d:")
-        self.nwXVal = QtGui.QLineEdit()
-        self.nwXUnitLabel = QtGui.QLabel("north_west_corner/X/units_s:")
-        self.nwXUnit = QtGui.QLineEdit()
-        self.nwYValLabel = QtGui.QLabel("north_west_corner/Y/value_d:")
-        self.nwYVal = QtGui.QLineEdit()
-        self.nwYUnitLabel = QtGui.QLabel("north_west_corner/Y/units_s:")
-        self.nwYUnit = QtGui.QLineEdit()
-        self.nwZValLabel = QtGui.QLabel("north_west_corner/Z/value_d:")
-        self.nwZVal = QtGui.QLineEdit()
-        self.nwZUnitLabel = QtGui.QLabel("north_west_corner/Z/units_s:")
-        self.nwZUnit = QtGui.QLineEdit()
-        self.nwCoordLabel = QtGui.QLabel(
+        self.nicknameLabel = QtWidgets.QLabel("nickname_s:")
+        self.nickname = QtWidgets.QLineEdit()
+        self.longnameLabel = QtWidgets.QLabel("longname_s:")
+        self.longname = QtWidgets.QLineEdit()
+        self.netcodeLabel = QtWidgets.QLabel("net_code_s:")
+        self.netcode = QtWidgets.QLineEdit()
+        self.pisLabel = QtWidgets.QLabel("PIs_s:")
+        self.pis = QtWidgets.QLineEdit()
+        self.institutionsLabel = QtWidgets.QLabel("institutions_s:")
+        self.institutions = QtWidgets.QLineEdit()
+        self.nwXValLabel = QtWidgets.QLabel("north_west_corner/X/value_d:")
+        self.nwXVal = QtWidgets.QLineEdit()
+        self.nwXUnitLabel = QtWidgets.QLabel("north_west_corner/X/units_s:")
+        self.nwXUnit = QtWidgets.QLineEdit()
+        self.nwYValLabel = QtWidgets.QLabel("north_west_corner/Y/value_d:")
+        self.nwYVal = QtWidgets.QLineEdit()
+        self.nwYUnitLabel = QtWidgets.QLabel("north_west_corner/Y/units_s:")
+        self.nwYUnit = QtWidgets.QLineEdit()
+        self.nwZValLabel = QtWidgets.QLabel("north_west_corner/Z/value_d:")
+        self.nwZVal = QtWidgets.QLineEdit()
+        self.nwZUnitLabel = QtWidgets.QLabel("north_west_corner/Z/units_s:")
+        self.nwZUnit = QtWidgets.QLineEdit()
+        self.nwCoordLabel = QtWidgets.QLabel(
             "north_west_corner/coordinate_system_s:")
-        self.nwCoord = QtGui.QLineEdit()
-        self.nwCoordLabel = QtGui.QLabel(
+        self.nwCoord = QtWidgets.QLineEdit()
+        self.nwCoordLabel = QtWidgets.QLabel(
             "north_west_corner/coordinate_system_s:")
-        self.nwCoord = QtGui.QLineEdit()
-        self.nwProjLabel = QtGui.QLabel(
+        self.nwCoord = QtWidgets.QLineEdit()
+        self.nwProjLabel = QtWidgets.QLabel(
             "north_west_corner/projection_s:")
-        self.nwProj = QtGui.QLineEdit()
-        self.nwEllipLabel = QtGui.QLabel(
+        self.nwProj = QtWidgets.QLineEdit()
+        self.nwEllipLabel = QtWidgets.QLabel(
             "north_west_corner/ellipsoid_s:")
-        self.nwEllip = QtGui.QLineEdit()
-        self.nwDescLabel = QtGui.QLabel(
+        self.nwEllip = QtWidgets.QLineEdit()
+        self.nwDescLabel = QtWidgets.QLabel(
             "north_west_corner/description_s:")
-        self.nwDesc = QtGui.QLineEdit()
-        self.seXValLabel = QtGui.QLabel("south_east_corner/X/value_d:")
-        self.seXVal = QtGui.QLineEdit()
-        self.seXUnitLabel = QtGui.QLabel("south_east_corner/X/units_s:")
-        self.seXUnit = QtGui.QLineEdit()
-        self.seYValLabel = QtGui.QLabel("south_east_corner/Y/value_d:")
-        self.seYVal = QtGui.QLineEdit()
-        self.seYUnitLabel = QtGui.QLabel("south_east_corner/Y/units_s:")
-        self.seYUnit = QtGui.QLineEdit()
-        self.seZValLabel = QtGui.QLabel("south_east_corner/Z/value_d:")
-        self.seZVal = QtGui.QLineEdit()
-        self.seZUnitLabel = QtGui.QLabel("south_east_corner/Z/units_s:")
-        self.seZUnit = QtGui.QLineEdit()
-        self.seCoordLabel = QtGui.QLabel(
+        self.nwDesc = QtWidgets.QLineEdit()
+        self.seXValLabel = QtWidgets.QLabel("south_east_corner/X/value_d:")
+        self.seXVal = QtWidgets.QLineEdit()
+        self.seXUnitLabel = QtWidgets.QLabel("south_east_corner/X/units_s:")
+        self.seXUnit = QtWidgets.QLineEdit()
+        self.seYValLabel = QtWidgets.QLabel("south_east_corner/Y/value_d:")
+        self.seYVal = QtWidgets.QLineEdit()
+        self.seYUnitLabel = QtWidgets.QLabel("south_east_corner/Y/units_s:")
+        self.seYUnit = QtWidgets.QLineEdit()
+        self.seZValLabel = QtWidgets.QLabel("south_east_corner/Z/value_d:")
+        self.seZVal = QtWidgets.QLineEdit()
+        self.seZUnitLabel = QtWidgets.QLabel("south_east_corner/Z/units_s:")
+        self.seZUnit = QtWidgets.QLineEdit()
+        self.seCoordLabel = QtWidgets.QLabel(
             "south_east_corner/coordinate_system_s:")
-        self.seCoord = QtGui.QLineEdit()
-        self.seCoordLabel = QtGui.QLabel(
+        self.seCoord = QtWidgets.QLineEdit()
+        self.seCoordLabel = QtWidgets.QLabel(
             "south_east_corner/coordinate_system_s:")
-        self.seCoord = QtGui.QLineEdit()
-        self.seProjLabel = QtGui.QLabel(
+        self.seCoord = QtWidgets.QLineEdit()
+        self.seProjLabel = QtWidgets.QLabel(
             "south_east_corner/projection_s:")
-        self.seProj = QtGui.QLineEdit()
-        self.seEllipLabel = QtGui.QLabel(
+        self.seProj = QtWidgets.QLineEdit()
+        self.seEllipLabel = QtWidgets.QLabel(
             "south_east_corner/ellipsoid_s:")
-        self.seEllip = QtGui.QLineEdit()
-        self.seDescLabel = QtGui.QLabel(
+        self.seEllip = QtWidgets.QLineEdit()
+        self.seDescLabel = QtWidgets.QLabel(
             "south_east_corner/description_s:")
-        self.seDesc = QtGui.QLineEdit()
-        self.summaryParagraphLabel = QtGui.QLabel(
+        self.seDesc = QtWidgets.QLineEdit()
+        self.summaryParagraphLabel = QtWidgets.QLabel(
             "summary_paragraph_s:")
-        self.summaryParagraph = QtGui.QLineEdit()
-        self.experimentIdLabel = QtGui.QLabel("experiment_id_s:")
-        self.experimentId = QtGui.QLineEdit()
-        self.timeAsciiLabel = QtGui.QLabel(
+        self.summaryParagraph = QtWidgets.QLineEdit()
+        self.experimentIdLabel = QtWidgets.QLabel("experiment_id_s:")
+        self.experimentId = QtWidgets.QLineEdit()
+        self.timeAsciiLabel = QtWidgets.QLabel(
             "time_stamp/ascii_s:")
-        self.timeAscii = QtGui.QLineEdit(str(time.ctime(time.time())))
-        self.timeEpochLabel = QtGui.QLabel(
+        self.timeAscii = QtWidgets.QLineEdit(str(time.ctime(time.time())))
+        self.timeEpochLabel = QtWidgets.QLabel(
             "time_stamp/epoch_l:")
-        self.timeEpoch = QtGui.QLineEdit(str(int(time.time())))
-        self.timeMSLabel = QtGui.QLabel(
+        self.timeEpoch = QtWidgets.QLineEdit(str(int(time.time())))
+        self.timeMSLabel = QtWidgets.QLabel(
             "time_stamp/micro_seconds_i:")
-        self.timeMS = QtGui.QLineEdit('0')
-        self.timeTypeLabel = QtGui.QLabel(
+        self.timeMS = QtWidgets.QLineEdit('0')
+        self.timeTypeLabel = QtWidgets.QLabel(
             "time_stamp/type_s:")
-        self.timeType = QtGui.QLineEdit('BOTH')
+        self.timeType = QtWidgets.QLineEdit('BOTH')
 
         # Other Widgets / Layout Definition
-        layoutMain = QtGui.QVBoxLayout(self)
-        self.splitter = QtGui.QSplitter()
-        self.layout = QtGui.QWidget()
-        self.layout2 = QtGui.QWidget()
-        self.layout3 = QtGui.QWidget()
-        layout = QtGui.QVBoxLayout(self.layout)
-        layout2 = QtGui.QVBoxLayout(self.layout2)
-        layout3 = QtGui.QVBoxLayout(self.layout3)
-        self.generateButton = QtGui.QPushButton("Generate Kef")
+        layoutMain = QtWidgets.QVBoxLayout()
+        self.splitter = QtWidgets.QSplitter()
+        self.layout = QtWidgets.QWidget()
+        self.layout2 = QtWidgets.QWidget()
+        self.layout3 = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(self.layout)
+        layout2 = QtWidgets.QVBoxLayout(self.layout2)
+        layout3 = QtWidgets.QVBoxLayout(self.layout3)
+        self.generateButton = QtWidgets.QPushButton("Generate Kef")
         self.generateButton.clicked.connect(self.chooseFile)
 
         # Layout Presentation
@@ -230,8 +227,12 @@ class KefMaker(QtGui.QWidget):
         self.kLabels.append(str(self.timeMSLabel.text()[:-1]))
         self.kLabels.append(str(self.timeTypeLabel.text()[:-1]))
 
+        central = QtWidgets.QWidget()
+        central.setLayout(layoutMain)
+        self.setCentralWidget(central)
+
     def chooseFile(self):
-        outFilename = str(QtGui.QFileDialog.getSaveFileName())
+        outFilename, _ = QtWidgets.QFileDialog.getSaveFileName()
         if not outFilename:
             return
         self.generateKef(outFilename)
@@ -285,7 +286,7 @@ class KefMaker(QtGui.QWidget):
 
 
 def startapp():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     win = KefMaker()
     win.show()
     sys.exit(app.exec_())
