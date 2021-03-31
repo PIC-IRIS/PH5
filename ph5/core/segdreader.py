@@ -24,23 +24,17 @@ class InputsError (exceptions.Exception):
 
 class ReelHeaders (object):
     '''   Container to hold receiver record related headers   '''
-    __slots__ = ['storage_unit_label', 'general_header_block_1',
-                 'general_header_block_2', 'channel_set_descriptor',
-                 'extended_header_1', 'extended_header_2', 'extended_header_3',
-                 'extended_header_4', 'external_header',
-                 'external_header_shot', 'general_header_block_N',
+    __slots__ = ['storage_unit_label', 'general_header_blocks',
+                 'channel_set_descriptor', 'extended_headers',
+                 'external_header',
+                 'external_header_shot',
                  'channel_set_to_streamer_cable_map']
 
     def __init__(self):
         self.storage_unit_label = None
-        self.general_header_block_1 = None
-        self.general_header_block_2 = None
-        self.general_header_block_N = []
+        self.general_header_blocks = []
         self.channel_set_descriptor = []
-        self.extended_header_1 = None
-        self.extended_header_2 = None
-        self.extended_header_3 = None
-        self.extended_header_4 = []
+        self.extended_headers = []
         self.external_header = None
         self.external_header_shot = []
         self.channel_set_to_streamer_cable_map = None
@@ -202,52 +196,53 @@ class Reader ():
     def process_general_headers(self):
         self.reel_headers = ReelHeaders()
 
-        self.reel_headers.general_header_block_1 =\
-            self.read_general_header_block_1()
-        self.reel_headers.general_header_block_2 =\
-            self.read_general_header_block_2()
+        self.reel_headers.general_header_blocks.append(
+            self.read_general_header_block_1())
+        self.reel_headers.general_header_blocks.append(
+            self.read_general_header_block_2())
         # Set file number
-        if self.reel_headers.general_header_block_1.file_number == 0xFFFF:
+        if self.reel_headers.general_header_blocks[0].file_number == 0xFFFF:
             self.file_number = self.reel_headers.\
-                read_general_header_block_2.extended_file_number
+                read_general_header_blocks[1].extended_file_number
         else:
             self.file_number = self.reel_headers.\
-                general_header_block_1.file_number
+                general_header_blocks[0].file_number
         # Set record length
-        if self.reel_headers.general_header_block_1.record_length == 0xFFF:
+        if self.reel_headers.general_header_blocks[0].record_length == 0xFFF:
             self.record_length_sec = self.reel_headers.\
-                general_header_block_2.extended_record_length
+                general_header_blocks[1].extended_record_length
         else:
             self.record_length_sec = self.reel_headers.\
-                general_header_block_1.record_length * 0.512
+                general_header_blocks[0].record_length * 0.512
         # Set number of channel sets
-        if self.reel_headers.general_header_block_1.chan_sets_per_scan == 0xFF:
+        if self.reel_headers.general_header_blocks[
+                0].chan_sets_per_scan == 0xFF:
             self.chan_sets_per_scan = self.reel_headers.\
-                general_header_block_2.extended_chan_sets_per_scan_type
+                general_header_blocks[1].extended_chan_sets_per_scan_type
         else:
             self.chan_sets_per_scan = self.reel_headers.\
-                general_header_block_1.chan_sets_per_scan
+                general_header_blocks[0].chan_sets_per_scan
         # Number of extended headers
-        if self.reel_headers.general_header_block_1.\
+        if self.reel_headers.general_header_blocks[0].\
            number_extended_header_blocks == 0xFF:
             self.extended_header_blocks = self.reel_headers.\
-                general_header_block_2.extended_header_blocks
+                general_header_blocks[1].extended_header_blocks
         else:
             self.extended_header_blocks = self.reel_headers.\
-                general_header_block_1.number_extended_header_blocks
+                general_header_blocks[0].number_extended_header_blocks
         # Number of external headers
-        if self.reel_headers.general_header_block_1.\
+        if self.reel_headers.general_header_blocks[0].\
            number_external_header_blocks == 0xFF:
             self.external_header_blocks = self.\
-                reel_headers.general_header_block_2.external_header_blocks
+                reel_headers.general_header_blocks[1].external_header_blocks
         else:
             self.external_header_blocks = self.\
-                reel_headers.general_header_block_1.\
+                reel_headers.general_header_blocks[0].\
                 number_external_header_blocks
         # Get sample rate from base scan interval (LSB is 1/16 milli-second)
         self.sample_rate = int(
             (1. / (self.reel_headers.
-                   general_header_block_1.base_scan_interval / 16.)) * 1000.)
+                   general_header_blocks[0].base_scan_interval / 16.)) * 1000.)
 
     def process_channel_set_descriptors(self):
         def create_key():
@@ -278,14 +273,17 @@ class Reader ():
 
     def process_extended_headers(self):
         if self.extended_header_blocks > 0:
-            self.reel_headers.extended_header_1 = self.read_extended_header_1()
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_1())
         if self.extended_header_blocks > 1:
-            self.reel_headers.extended_header_2 = self.read_extended_header_2()
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_2())
         if self.extended_header_blocks > 2:
-            self.reel_headers.extended_header_3 = self.read_extended_header_3()
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_3())
         n = self.extended_header_blocks - 3
         for i in range(n):
-            self.reel_headers.extended_header_4.append(
+            self.reel_headers.extended_headers.append(
                 self.read_extended_header_4())
 
     def process_external_headers(self):
@@ -396,9 +394,6 @@ class Reader ():
             chan_set = self.trace_headers.trace_header.channel_set - 1
             n = self.reel_headers.channel_set_descriptor[chan_set].\
                 number_trace_header_extensions
-        if n == 0:
-            self.samples = 0
-            return self.samples
         if n > 0:
             self.trace_headers.trace_header_N.append(
                 self.read_trace_header_1())
@@ -458,7 +453,7 @@ class Reader ():
               8058 -- 32 bit IEEE float   '''
 
         f = self.trace_fmt = self.reel_headers.\
-            general_header_block_1.data_sample_format_code
+            general_header_blocks[0].data_sample_format_code
 
         bytes_per_sample = 4  # Assumes 32 bit IEEE floats
         buf = self.read_buf(bytes_per_sample * number_of_samples)
