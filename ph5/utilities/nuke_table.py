@@ -190,11 +190,12 @@ def backup(table_type, table_path, table):
         fh = open(outfile, 'w')
         T2K.table_print(table_path, table, fh=fh)
         fh.close()
-    except Exception:
+    except Exception as e:
         LOGGER.error(
-            "Failed to save {0}.\ne.message\nExiting!"
-            .format(os.path.join(os.getcwd(), outfile)))
+            "Failed to save {0}.\n{1}\nExiting!"
+            .format(os.path.join(os.getcwd(), outfile), e.message))
         sys.exit(-4)
+    return outfile
 
 
 def exclaim(n):

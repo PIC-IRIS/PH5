@@ -14,7 +14,8 @@ import datetime as dt
 import time
 from uuid import uuid4
 from argparse import RawTextHelpFormatter
-from ph5.core import ph5api, ph5utils, timedoy
+
+from ph5.core import ph5api, ph5utils, timedoy, experiment
 
 PROG_VERSION = '2020.282'
 LOGGER = logging.getLogger(__name__)
@@ -41,7 +42,6 @@ class PH5Availability(object):
         :type  :class core.ph5api
         :param object containg PH5 instance
         TODO: ADD ALL PARAMATERS NEEDED
-
         """
         self.ph5 = ph5API_object
         if not self.ph5.Array_t_names:
@@ -351,10 +351,8 @@ class PH5Availability(object):
         :returns: A list of tuples [(station, location, channel,
             early, end)...] containing data extent info for time series
             included in PH5 archive
-
         NOTE! ph5api as a get_extent() method that works on the channel level.
         Leverage this
-
         """
         availability_extents = []
         sr_mismatch = False
@@ -501,7 +499,6 @@ class PH5Availability(object):
         :returns: A list of tuples [(station, location, channel,
             earliest, latest)...] representing contiguous time spans for
             selected channels and time ranges.
-
         NOTE! ph5api as a get_availability()
         method that works on the channel level. Leverage this
         """
@@ -648,7 +645,6 @@ class PH5Availability(object):
         latest: latest time of traces in das_t
         all the parameters are already processed before sending to
         get_sampleNos_gapOverlap() => no need to check or calc. again
-
         return:
            + expected_sampleNo: number of samples expected for the time range
            + sampleNo: number of samples recorded for the time range
@@ -1238,6 +1234,8 @@ def main():
         availability.process_all()
 
     except ph5api.APIError as err:
+        LOGGER.error(err.msg)
+    except experiment.HDF5InteractionError as err:
         LOGGER.error(err.msg)
     except PH5AvailabilityError as err:
         LOGGER.error(str(err))

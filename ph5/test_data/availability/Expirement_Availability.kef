@@ -1,0 +1,37 @@
+#
+#	Fri Oct 23 22:39:20 2020	ph5 version: 4.1.2
+#
+#   Table row 1
+/Experiment_g/Experiment_t
+	experiment_id_s=13-012
+	net_code_s=8H
+	nickname_s=dyNaMiCS
+	longname_s=New Mexico Coupling of Seismic
+	PIs_s=Jessie Bonner, Mark Leidig
+	institutions_s=Weston Geophysical Corp.
+	north_west_corner/X/value_d=-106.6
+	north_west_corner/X/units_s=degrees
+	north_west_corner/Y/value_d=35.0
+	north_west_corner/Y/units_s=degrees
+	north_west_corner/Z/value_d=1621.0
+	north_west_corner/Z/units_s=meters
+	north_west_corner/coordinate_system_s=mercator
+	north_west_corner/projection_s=
+	north_west_corner/ellipsoid_s=WGS84
+	north_west_corner/description_s=Estimated elevation
+	south_east_corner/X/value_d=-106.0
+	south_east_corner/X/units_s=degrees
+	south_east_corner/Y/value_d=33.0
+	south_east_corner/Y/units_s=degrees
+	south_east_corner/Z/value_d=1370.0
+	south_east_corner/Z/units_s=meters
+	south_east_corner/coordinate_system_s=mercator
+	south_east_corner/projection_s=
+	south_east_corner/ellipsoid_s=WGS84
+	south_east_corner/description_s=Estimated elevation
+	summary_paragraph_s=A multi-technology experiment (seismic, acoustic, etc) to study the seismo-acoustic source function from above- and below-ground explosions.
+	time_stamp/ascii_s=Fri Sep  13 15:01:41 2013
+	time_stamp/epoch_l=1357311701
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s="BOTH"
+

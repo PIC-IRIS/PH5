@@ -1881,5 +1881,118 @@ class TestPH5AvailabilitySampleRate_error(LogTestCase, TempDirTestCase):
         self.ph5_sr_error.close()
 
 
+class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
+    def test_CompareMS_Availability(self):
+        self.ph5path = os.path.join(self.home,
+                                    'ph5/test_data/ph5/availability')
+        self.ph5_object = ph5api.PH5(path=self.ph5path,
+                                     nickname='master.ph5')
+        self.avail = ph5availability.PH5Availability(self.ph5_object)
+        tt = self.avail.get_availability(station='10075',
+                                         channel='*',
+                                         starttime=None,
+                                         endtime=None,
+                                         include_sample_rate=True)
+        ph5toms = PH5toMSeed(self.ph5_object)
+        ph5toms.process_all()
+        cuts = ph5toms.create_cut_list()
+        i = 0
+        for cut in cuts:
+            trace = ph5toms.create_trace(cut)
+
+            if trace is not None:
+                if i >= 1:
+                    self.assertEqual(tt[i][3],
+                                     round(trace[0].stats.starttime))
+                    self.assertEqual(tt[i][4],
+                                     round(trace[0].stats.endtime))
+                i = i+1
+
+
+class TestPH5Availability_SMR(LogTestCase, TempDirTestCase):
+    def assert_main(self, testargs, errmsg):
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.ERROR)
+                ph5availability.main()
+        self.assertEqual(len(log.records), 1)
+        self.assertEqual(log.records[0].msg, errmsg)
+
+    def test_main_no_srm(self):
+        '''
+        test column sample_rate_multiplier_i missing
+        '''
+        # Both Array_t and Das_t missing srm, but Array_t will be checked first
+        # get_array_order_id() will throw error when it reads array
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/array_das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Array_t_001 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Only Das_t missing srm (this doesn't happen in reality but need to
+        # test to see if it works)
+
+        # query_das_t() inside get_availability will throw error
+        nosrmpath = os.path.join(self.home,
+                                 'ph5/test_data/ph5_no_srm/das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # get_time_das_t() inside has_data will throw error
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '0']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i missing. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+    def test_main_srm0(self):
+        '''
+        test column sample_rate_multiplier_i=0,
+        '''
+        # Both Array_t and Das_t missing srm, but Array_t will be checked first
+        # get_array_order_id() will throw error when it reads array
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/array_das')
+
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Array_t_001 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # Only Das_t missing srm (this doesn't happen in reality but need to
+        # test to see if it works)
+
+        # query_das_t() inside get_availability will throw error
+        nosrmpath = os.path.join(
+            self.home,
+            'ph5/test_data/ph5/sampleratemultiplier0/das')
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '2', '--station', '1111']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+        # get_time_das_t() inside has_data will throw error
+        testargs = ['ph5availability', '-n', 'master.ph5', '-p', nosrmpath,
+                    '-a', '0']
+        self.assert_main(
+            testargs,
+            'Das_t_1X1111 has sample_rate_multiplier_i with value 0. '
+            'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
+
+
 if __name__ == "__main__":
     unittest.main()
