@@ -53,7 +53,7 @@ LSB = LSB_MAP[36]
 
 #   Manufacturers codes
 FAIRFIELD = 20
-SMARTSOLO = 61
+OTHER = 0
 
 
 #
@@ -199,12 +199,10 @@ def get_args():
                        dest="all_events",
                        default=False, metavar="all_events")
 
-    oparser.add_option("-m", "--manufacturers_code", dest="manufacturers_code",
-                       help=("Manufacturers code. "
-                             "Defaults to 20 for Fairfield. "
-                             "Set 61 for SmartSolo."
-                             "Need changes to work for SEG-D written by "
-                             "other data loggers."),
+    oparser.add_option("--manufacturers_code", dest="manufacturers_code",
+                       help="Manufacturers code. Defaults to 20 for Fairfield.\
+                        Most likely will not work for SEG-D written by other\
+                         data loggers,",
                        type='int', default=FAIRFIELD)
 
     options, args = oparser.parse_args()
@@ -440,8 +438,6 @@ def process_traces(rh, th, tr):
            th -> first trace header
            tr -> trace data
     '''
-    if th.trace_header_N == []:
-        return
 
     def get_true_channel():
         #   Find channel by mapping to streamer_cable_number
@@ -452,8 +448,6 @@ def process_traces(rh, th, tr):
         else:
             true_channel = rh.channel_set_to_streamer_cable_map[
                 th.trace_header.channel_set]
-        if true_channel == 0:
-            true_channel = 1
         return true_channel
 
     def process_das():
@@ -1128,7 +1122,7 @@ def main():
                             "".join(e.message)))
                     break
 
-                if not LAT and not LON and len(SD.trace_headers.trace_header_N) > 0:
+                if not LAT and not LON:
                     try:
                         if UTM:
                             #   UTM
