@@ -6,17 +6,25 @@
 #
 import sys
 import os
-from ph5.core import segdreader
+from ph5.core import segdreader, segdreader_smartsolo
 from signal import signal, SIGPIPE, SIG_DFL
+import construct
+import bcd_py
 signal(SIGPIPE, SIG_DFL)
 
-PROG_VERSION = "2019.39"
+PROG_VERSION = "2021.90"
 
 
 def print_container(container):
     keys = container.keys()
     for k in keys:
-        print k, container[k]
+        if k in ['SEGD_revision_number',
+                 'record_length',
+                 'first_shot_point_doy']:
+            print("%s %s (HEX:%s)" %
+                  (k, container[k], "{0:x}".format(container[k])))
+        else:
+            print k, container[k]
 
     print '-' * 80
 
@@ -26,10 +34,11 @@ def general_headers(sd):
     print '*' * 80
     print sd.infile
     print '*' * 80
-    print "*** General Header Block 1 ***"
-    print_container(sd.reel_headers.general_header_block_1)
-    print "*** General Header Block 2 ***"
-    print_container(sd.reel_headers.general_header_block_2)
+    i = 1
+    for ghb in sd.reel_headers.general_header_blocks:
+        print("*** General Header Block %s ***" % i)
+        print_container(ghb)
+        i += 1
 
 
 def channel_set_descriptors(sd):
@@ -45,25 +54,10 @@ def channel_set_descriptors(sd):
 def extended_headers(sd):
     print "*** Extended Headers ***"
     sd.process_extended_headers()
-    n = sd.extended_header_blocks
-    if n > 0:
-        print_container(sd.reel_headers.extended_header_1)
-        n -= 1
-    else:
-        return
-    if n > 0:
-        print 2
-        print_container(sd.reel_headers.extended_header_2)
-        n -= 1
-    else:
-        return
-    if n > 0:
-        print 3
-        print_container(sd.reel_headers.extended_header_3)
-
     i = 1
-    for c in sd.reel_headers.extended_header_4:
-        print i
+    for c in sd.reel_headers.extended_headers:
+        if len(sd.reel_headers.extended_headers) > 1:
+            print i
         i += 1
         print_container(c)
 
@@ -116,10 +110,64 @@ def trace_headers(sd):
     print "There were {0} traces.".format(n)
 
 
+def read_manufacture_code(filename):
+    """ read byte 17 for manufacture code"""
+    f = open(filename, 'rb')
+    f.seek(16)
+    byte = f.read(1)
+    swap = True
+    if sys.byteorder == 'big':
+        swap = False
+    bin = construct.BitStruct("BIN",
+                              construct.BitField(
+                                  "field", 8, swapped=swap))
+    bcd = bin.parse(byte)['field']
+    if sys.byteorder == 'little':
+        bcd = construct.ULInt64("xxx").build(bcd)
+    else:
+        bcd = construct.UBInt64("xxx").build(bcd)
+    code = bcd_py.bcd2int(bcd, 0, 2)
+    f.close()
+    return code
+
+
+def get_segdreader():
+    """
+        get the segdreader from manufacture code infile
+        or from second argument
+    """
+    KNOWN_CODE = {20: (segdreader, 'FairField'),
+                  61: (segdreader_smartsolo, 'SmartSolo')}
+    req_code_list = ["%s for %s format" % (k, KNOWN_CODE[k][1])
+                     for k in KNOWN_CODE.keys()]
+    req_code_str = ("Please give the second argument either "
+                    ' or '.join(req_code_list))
+
+    manu = read_manufacture_code(sys.argv[1])
+    if manu in KNOWN_CODE.keys():
+        reader = KNOWN_CODE[manu][0]
+    else:
+        try:
+            manu = sys.argv[2]
+            if manu in KNOWN_CODE.keys():
+                reader = KNOWN_CODE[manu][0]
+            else:
+                print("The second argument {0} is not one of the known codes:"
+                      " {1}.\n{2}".format(manu, KNOWN_CODE.keys(),
+                                          req_code_str))
+                raise Exception
+        except IndexError:
+            print("The manufacture code {0} is not one of the known codes:"
+                  " {1}.\n{2}".format(manu, KNOWN_CODE.keys(), req_code_str))
+            raise Exception
+    return reader
+
+
 def main():
     global RH, TH
     TH = []
 
+    segdreader = get_segdreader()
     RH = segdreader.ReelHeaders()
     try:
         sd = segdreader.Reader(infile=sys.argv[1])
@@ -130,7 +178,7 @@ def main():
         trace_headers(sd)
         print "{0} bytes read.".format(sd.bytes_read)
     except BaseException:
-        print "Usage: dumpfair fairfield_seg-d_file"
+        print "Usage: dumpfair seg-d_file [format]"
         sys.exit()
 
 
