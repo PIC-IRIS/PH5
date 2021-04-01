@@ -465,8 +465,17 @@ def updatePH5(stream):
                     td[k] = trace.stats.seg2[k]
                 else:
                     tdd = {}
-                    for j in trace.stats.seg2[k]:
-                        tdd[j] = trace.stats.seg2[k][j]
+
+                    if isinstance(trace.stats.seg2[k], list):
+                        # list: Obspy 1.2.2
+                        for j in trace.stats.seg2[k]:
+                            k, v = j.split()
+                            tdd[k] = v
+                    else:
+                        # AtribDict: Obspy 1.1.1
+                        for j in trace.stats.seg2[k]:
+                            tdd[j] = trace.stats.seg2[k][j]
+
                     td[k] = tdd
 
         log_array, name = getLOG(CURRENT_DAS)
