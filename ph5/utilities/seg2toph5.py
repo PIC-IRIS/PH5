@@ -252,14 +252,11 @@ def get_current_data_only(size_of_data, das=None):
 
 
 def update_external_references():
-    global EX, INDEX_T_DAS
-
     LOGGER.info("Updating external references...")
     n = 0
     for i in INDEX_T_DAS.rows:
         external_file = i['external_file_name_s'][2:]
         external_path = i['hdf5_path_s']
-        i['serial_number_s']
         target = external_file + ':' + external_path
         external_group = external_path.split('/')[3]
 
@@ -278,28 +275,27 @@ def update_external_references():
         except Exception as e:
             LOGGER.error(e)
 
-        n = 0
-        for i in INDEX_T_MAP.rows:
-            external_file = i['external_file_name_s'][2:]
-            external_path = i['hdf5_path_s']
-            i['serial_number_s']
-            target = external_file + ':' + external_path
-            external_group = external_path.split('/')[3]
+    n = 0
+    for i in INDEX_T_MAP.rows:
+        external_file = i['external_file_name_s'][2:]
+        external_path = i['hdf5_path_s']
+        target = external_file + ':' + external_path
+        external_group = external_path.split('/')[3]
 
-            # Nuke old node
-            try:
-                group_node = EX.ph5.get_node(external_path)
-                group_node.remove()
-            except Exception as e:
-                pass
+        # Nuke old node
+        try:
+            group_node = EX.ph5.get_node(external_path)
+            group_node.remove()
+        except Exception as e:
+            pass
 
-            # Re-create node
-            try:
-                EX.ph5.create_external_link(
-                    '/Experiment_g/Maps_g', external_group, target)
-                n += 1
-            except Exception as e:
-                LOGGER.error(e.message)
+        # Re-create node
+        try:
+            EX.ph5.create_external_link(
+                '/Experiment_g/Maps_g', external_group, target)
+            n += 1
+        except Exception as e:
+            LOGGER.error(e.message)
     LOGGER.info("Done, {0} nodes recreated.\n".format(n))
 
 
@@ -577,6 +573,11 @@ def main():
     seconds = time.time() - then
     print "Done...{0:b}".format(int(seconds / 6.))  # Minutes X 10
     LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
+    try:
+        EX.ph5close()
+        EXREC.ph5close()
+    except NameError:
+        pass
 
 
 if __name__ == '__main__':
