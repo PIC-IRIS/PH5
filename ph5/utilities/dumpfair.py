@@ -18,9 +18,7 @@ PROG_VERSION = "2021.90"
 def print_container(container):
     keys = container.keys()
     for k in keys:
-        if k in ['SEGD_revision_number',
-                 'record_length',
-                 'first_shot_point_doy']:
+        if k in ['record_length']:
             print("%s %s (HEX:%s)" %
                   (k, container[k], "{0:x}".format(container[k])))
         else:
@@ -89,6 +87,8 @@ def trace_headers(sd):
     if 'fairprint' in os.environ:
         for s in trace:
             print s
+
+    n += 1
     while True:
         if sd.isEOF():
             break
@@ -177,7 +177,8 @@ def main():
         external_header(sd)
         trace_headers(sd)
         print "{0} bytes read.".format(sd.bytes_read)
-    except BaseException:
+    except BaseException, e:
+        print "Fail to read header due to error: ", e
         print "Usage: dumpfair seg-d_file [format]"
         sys.exit()
 
