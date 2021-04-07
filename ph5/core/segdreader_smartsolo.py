@@ -163,7 +163,7 @@ class Reader ():
 
         self.trace_headers.trace_header = self.read_block(
             20, segd_h.Trace_header())
-        n = self.trace_headers.trace_header.number_trace_header_extension
+        n = self.trace_headers.trace_header.trace_extension_blocks
         for i in range(n):
             self.trace_headers.trace_header_N.append(
                 self.read_block(32, segd_h.Trace_header_extension(i)))
@@ -205,6 +205,13 @@ class Reader ():
             raise InputsError("Format code of {0} not supported!".format(f))
 
         return ret
+
+    def process_trace(self):
+        samples = self.process_trace_headers()
+        ret = self.read_trace(samples)
+        cs = self.trace_headers.trace_header.channel_set
+        # Return trace and channel set number
+        return ret, cs
 
     def isEOF(self):
         if self.FH.closed:
