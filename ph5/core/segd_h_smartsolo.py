@@ -12,7 +12,7 @@ import sys
 import construct
 import bcd_py
 
-PROG_VERSION = "2021.90"
+PROG_VERSION = "2021.112"
 
 
 def __version__():
@@ -23,10 +23,18 @@ class HeaderError (exceptions.Exception):
     def __init__(self, args=None):
         self.args = args
 
+
 def convert_fixed_point_binary_16bit(uint):
+    """
+    convert fixed point binary 16 bit to float
+    """
     return uint/float(2**16)
 
+
 def unsigned2signed(uint, bitnum):
+    """
+    convert unsigned binary integer to signed binary integer
+    """
     return uint - (uint >> (bitnum-1)) * 2**bitnum
 
 
@@ -40,7 +48,14 @@ def convert_bcd_field(val, bit_no):
 
     return ret
 
+
 def get_doy(doy, ret):
+    """
+    combine all doy parts to make doy integer,
+    delete all doy parts, replace with integer doy
+    : doy param: list of all field start with 'first_shot_point_doy'
+    : ret param: OrderedDict returned from Construct.parse()
+    """
     doy_str = ''
     for d in doy:
         doy_str += str(d[1])
@@ -123,7 +138,7 @@ class General_header_block (Header_block):
     def __init__(self, n):
         super(General_header_block, self).__init__()
         if n == 0:
-            # (key, number of bits, bcd)
+            # (key, number of bits, bcd/signed/_)
             self.keys = (
                 ("file_number", 2*8, 'bcd'),                        # 0-9999
                 ("data_sample_format_code", 2*8, 'bcd'),            # 8058
@@ -132,8 +147,8 @@ class General_header_block (Header_block):
                 ("general_constant_3", 8, 'bcd'),
                 ("general_constant_4", 8, 'bcd'),
                 ("general_constant_5", 8, 'bcd'),
-                ("general_constant_6", 8, 'bcd'),                 # 05
-                ("first_shot_point_year", 8, 'bcd'),              # 0-99
+                ("general_constant_6", 8, 'bcd'),                   # 05
+                ("first_shot_point_year", 8, 'bcd'),                # 0-99
                 ("number_additional_general_header_blocks", 8/2),   # 2
                 # defined bcd in doc but it doesn't give correct result w/ bcd
                 ("first_shot_point_doy1", 8/2),                      # 1-366
@@ -144,7 +159,7 @@ class General_header_block (Header_block):
                 ("hour_of_day_utc", 8, 'bcd'),
                 ("minute_of_hour_utc", 8, 'bdc'),
                 ("second_of_minute_utc", 8, 'bdc'),
-                ("manufactures_code", 8, 'bcd'),                  # 0x61
+                ("manufactures_code", 8, 'bcd'),                    # 0x61
                 ("manufactures_sn", 2*8, 'bcd'),                    # 0
                 ("bytes_per_scan", 3*8, 'bcd'),
                 # 4:.25ms; 8:.5ms; 10:1ms; 20:2ms; 40: 4ms
@@ -160,10 +175,10 @@ class General_header_block (Header_block):
                 # 8:normal; 2:test record
                 ("record_type", 8/2),                               # 8
                 # extended_record_length used
-                ("record_length", 3*8/2, 'bcd'),                      # FFF
-                ("scan_types_per_record", 8, 'bcd'),              # 1
-                ("chan_sets_per_scan", 8, 'bcd'),                 # 16
-                ("number_sample_skew_32_extensions", 8, 'bcd'),   # 00
+                ("record_length", 3*8/2, 'bcd'),                    # FFF
+                ("scan_types_per_record", 8, 'bcd'),                # 1
+                ("chan_sets_per_scan", 8, 'bcd'),                   # 16
+                ("number_sample_skew_32_extensions", 8, 'bcd'),     # 00
                 ("extended_header_length", 8, 'bcd'),
                 ("external_header_length", 8, 'bcd'))
 
@@ -175,14 +190,14 @@ class General_header_block (Header_block):
                 # doc 3bytes but say at byte 8-9 which is 2 bytes
                 ("number_32-byte_fields_in_external_header", 2*8),  # 0
                 ("not_used", 8),
-                ("SEGD_revision_number1", 8),                        # 1.0
+                ("SEGD_revision_number1", 8),                       # 1.0
                 ("SEGD_revision_number2", 8),  # 1.0
-                ("number_32-byte_general_trailer_blocks", 2*8),       # 0
+                ("number_32-byte_general_trailer_blocks", 2*8),     # 0
                 # 0-128000ms
                 ("extended_record_length", 3*8),
                 ("undefined1", 8),                                  # 0
                 ("general_header_block_number", 8),                 # 2
-                ("undefined2", 13*8))                                 # 0
+                ("undefined2", 13*8))                               # 0
         if n == 2:
             self.keys = (
                 ("expanded_file_number", 3*8),
@@ -193,47 +208,45 @@ class General_header_block (Header_block):
                 ("source_point_index", 8),
                 ("phase_control", 8),                               # 0
                 ("vibrator_type", 8),                               # 0
-                ("phase_angle", 2*8),                                 # 0
+                ("phase_angle", 2*8),                               # 0
                 ("general_header_block_number", 8),                 # 3
                 ("source_set_number_default", 8),
-                ("not_used", 12*8))                                   # 0
+                ("not_used", 12*8))                                 # 0
 
 
 class Channel_set_descriptor (Header_block):
-    # (key, nibble, bcd)
-    # 1 nibble = 4 bit
+    # (key, number of bits, bcd/signed/_)
     keys = (("scan_type_number", 8, 'bcd'),                         # 01
             ("chan_set_number", 8, 'bcd'),
-            ("chan_set_start_time_ms", 2*8),                          # ms
-            ("chan_set_end_time_ms", 2*8),                            # ms
-            ("optional_mp_factor_extension_byte", 8),
-            ("mp_factor_scaler_multiplier", 8),
+            ("chan_set_start_time_ms", 2*8),                        # ms
+            ("chan_set_end_time_ms", 2*8),                          # ms
+            ("optional_MP_factor_extension_byte", 8),
+            ("MP_factor_scaler_multiplier", 8),
             ("number_of_chans_in_chan_set", 2*8, 'bcd'),
             # 1=Seis; 9=Aux
             ("chan_type_code", 8/2),
-            ("not_used", 8/2),                                        # 0
-            ("number_sub-scans", 8/2, 'bcd'),                         # 0
-            ("gain_control_type", 8/2),                               # 3
+            ("not_used", 8/2),                                      # 0
+            ("number_sub-scans", 8/2, 'bcd'),                       # 0
+            ("gain_control_type", 8/2),                             # 3
             ("alias_filter_freq_Hz", 2*8, 'bcd'),
             ("alias_filter_slope_dB_per_octave", 2*8, 'bcd'),
             ("low_cut_filter_freq_Hz", 2*8, 'bcd'),
             ("low_cut_filter_slope_db_per_octave", 2*8, 'bcd'),
-            ("first_notch_filter_freq", 2*8, 'bcd'),                  # 0
-            ("second_notch_filter_freq", 2*8, 'bcd'),                 # 0
-            ("third_notch_filter_freq", 2*8, 'bcd'),                  # 0
-            ("extended_chan_set_number", 2*8),                        # 0
-            ("extended_header_flag", 8/2),                            # 0
-            ("number_trace_header_extensions", 8/2),                  # 7
+            ("first_notch_filter_freq", 2*8, 'bcd'),                # 0
+            ("second_notch_filter_freq", 2*8, 'bcd'),               # 0
+            ("third_notch_filter_freq", 2*8, 'bcd'),                # 0
+            ("extended_chan_set_number", 2*8),                      # 0
+            ("extended_header_flag", 8/2),                          # 0
+            ("number_trace_header_extensions", 8/2),                # 7
             ("vertical_stack_size", 8),                             # 1
             ("streamer_cable_number", 8),                           # 0 in land
             ("array_forming", 8))                                   # 1
 
 
 class Extended_header_block (Header_block):
-    # (key, nibble)
-    # 1 nibble = 4 bit
+    # (key, number of bits, bcd/signed/_)
     keys = (("acquisition_length", 4*8),
-            ("sample_rate", 4*8),
+            ("sample_rate_microsec", 4*8),
             ("number_of_traces", 4*8),
             ("number_of_samples_in_traces", 4*8),
             ("number_of_seis_traces", 4*8),
@@ -248,16 +261,15 @@ class Extended_header_block (Header_block):
 
 
 class External_header_block (Header_block):
-    # (key, nibble)
-    # 1 nibble = 4 bit
-    keys = (("field_file_number", 4*8),                           # External FFID
+    # (key, number of bits, bcd/signed/_)
+    keys = (("field_file_number", 4*8),                         # External FFID
             ("file_number", 4*8),
             ("souce_easting_cm", 4*8),
             ("source_northing_cm", 4*8),
             ("source_elevation_cm", 4*8),
-            ("source_or_receiver_GPS_lat_integer", 4*8),          # DDMMSS.sss
+            ("source_or_receiver_GPS_lat_integer", 4*8),        # DDMMSS.sss
             ("source_or_receiver_GPS_lat_fraction", 2*8),       # DDMMSS.sss
-            ("source_or_receiver_GPS_lon_integer", 4*8),          # DDMMSS.sss
+            ("source_or_receiver_GPS_lon_integer", 4*8),        # DDMMSS.sss
             ("source_or_receiver_GPS_lon_fraction", 2*8),       # DDMMSS.sss
             ("TB_GPS_time_ms", 8*8),
             ("not_used", 2*8),
@@ -266,29 +278,26 @@ class External_header_block (Header_block):
 
 
 class Trace_header (Header_block):
-    # (key, nibble)
-    # 1 nibble = 4 bit
-
+    # (key, number of bits, bcd/signed/_)
     # filenumber = 0-9999, if >9999, set to FFFF, extended file number is used
     keys = (("4_digit_file_number", 2*8, 'bcd'),
-            ("scan_type", 8, 'bcd'),                     # 01
+            ("scan_type", 8, 'bcd'),                            # 01
             ("channel_set", 8, 'bcd'),
             ("trace_number", 2*8, 'bcd'),
-            ("first_timing_word", 3*8),                           # Bin24
-            ("trace_extension_blocks", 8),               # 7 Bin8
+            ("first_timing_word", 3*8),                         # Bin24
+            ("trace_extension_blocks", 8),                      # 7 Bin8
             ("sample_skew_value", 8),
             # 00 No edit applied; 02: muted or dead prior to qcquisition
             ("trace_edit_code", 8),
-            ("time_break_window", 3*8),                           # Bin24
-            ("extended_channel_set", 2*8),                 # 0 Bin16
-            ("extended_file_number", 3*8))                        # Bin16
+            ("time_break_window", 3*8),                         # Bin24
+            ("extended_channel_set", 2*8),                      # 0 Bin16
+            ("extended_file_number", 3*8))                      # Bin16
 
 
 class Trace_header_extension(Header_block):
 
     def __init__(self, n):
-        # (key, nibble, bcd/signed)
-        # 1 nibble = 4 bit
+        # (key, number of bits, bcd/signed/_)
         super(Trace_header_extension, self).__init__()
         if n == 0:
             self.keys = (
