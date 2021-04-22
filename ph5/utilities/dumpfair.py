@@ -12,7 +12,7 @@ import construct
 import bcd_py
 signal(SIGPIPE, SIG_DFL)
 
-PROG_VERSION = "2021.90"
+PROG_VERSION = "2021.112"
 
 
 def print_container(container):
@@ -167,10 +167,10 @@ def main():
     global RH, TH
     TH = []
 
-    segdreader = get_segdreader()
-    RH = segdreader.ReelHeaders()
+    segd_reader = get_segdreader()
+    RH = segd_reader.ReelHeaders()
     try:
-        sd = segdreader.Reader(infile=sys.argv[1])
+        sd = segd_reader.Reader(infile=sys.argv[1])
         general_headers(sd)
         channel_set_descriptors(sd)
         extended_headers(sd)
