@@ -511,7 +511,7 @@ class Reader ():
 
         return ret
 
-    def process_trace(self):
+    def process_trace(self, trace_index):
         samples = self.process_trace_headers()
         ret = self.read_trace(samples)
         cs = self.trace_headers.trace_header.channel_set
