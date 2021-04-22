@@ -13,7 +13,7 @@ import exceptions
 import numpy as np
 from ph5.core import segd_h
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = "2021.112"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -42,15 +42,26 @@ class ReelHeaders (object):
 
 class TraceHeaders (object):
     '''   Container to hold trace related headers   '''
-    __slots__ = ['trace_header', 'trace_header_N']
+    __slots__ = ['trace_header', 'trace_header_N',
+                 'line_number', 'event_number',
+                 'trace_epoch', 'preamp_gain_db',
+                 'lat', 'lon', 'ele']
 
     def __init__(self):
         self.trace_header = None
         self.trace_header_N = []
+        self.line_number = None
+        self.event_number = None
+        self.trace_epoch = None
+        self.lat = None
+        self.lon = None
+        self.ele = None
+        self.preamp_gain_db = None
 
 
 class Reader ():
     def __init__(self, infile=None):
+        self.manufacturer = 'FairfieldNodal'
         self.infile = infile
         self.FH = None
         self.endianess = 'big'  # SEG-D is always big endian(?)
@@ -61,6 +72,10 @@ class Reader ():
         self.extended_header_blocks = None
         self.external_header_blocks = None
         self.sample_rate = None
+        # From Extended headers
+        self.epoch_deploy = None
+        self.epoch_pickup = None
+        self.id_number = None
         # From Channel set headers
         self.channel_set_start_time_sec = None
         self.channel_set_end_time_sec = None
@@ -285,6 +300,11 @@ class Reader ():
         for i in range(n):
             self.reel_headers.extended_headers.append(
                 self.read_extended_header_4())
+        self.epoch_deploy = self.reel_headers.extended_headers[
+                                0].epoch_deploy / 1000000.
+        self.epoch_pickup = self.reel_headers.extended_headers[
+                                0].epoch_pickup / 1000000.
+        self.id_number = self.reel_headers.extended_headers[0]['id_number']
 
     def process_external_headers(self):
         self.reel_headers.external_header = self.read_external_header()
@@ -435,8 +455,24 @@ class Reader ():
                 self.read_trace_header_10())
         # Note: SEG-D 2.1 allows a total of 15 trace header extensions.
         # We only read 10 as per Fairfield rg1.6
-        self.samples = self.trace_headers.trace_header_N[0][
-            'samples_per_trace']
+
+        self.trace_headers.line_number = self.trace_headers.trace_header_N[
+            4].line_number
+        self.trace_headers.event_number = self.trace_headers.trace_header_N[
+            1].shot_point
+        self.trace_headers.trace_epoch = self.trace_headers.trace_header_N[
+            2].shot_epoch
+        self.trace_headers.preamp_gain_db = self.trace_headers.trace_header_N[
+            3].preamp_gain_db
+        self.trace_headers.lat = self.trace_headers.trace_header_N[
+            4].receiver_point_Y_final
+        self.trace_headers.lon = self.trace_headers.trace_header_N[
+            4].receiver_point_X_final
+        self.trace_headers.ele = self.trace_headers.trace_header_N[
+            4].receiver_point_depth_final
+
+        self.samples = self.trace_headers.trace_header_N[
+            0].samples_per_trace
 
         return self.samples
 
@@ -495,23 +531,6 @@ class Reader ():
         except EOFError:
             self.FH.close()
             return True
-
-    def isSEGD(self, expected_manufactures_code=0):
-        '''   Check to see if we are a Fairfield SEG-D file.   '''
-        ret = False
-        try:
-            c = self.read_general_header_block_1()
-            self.FH.seek(0)
-            if c['manufactures_code'] == expected_manufactures_code:
-                ret = True
-            else:
-                if self.FH is not None:
-                    self.FH.close()
-        except Exception as e:
-            raise InputsError(e.message)
-
-        return ret
-
 #
 # Mix in's
 #
