@@ -73,8 +73,8 @@ class Reader ():
         self.external_header_blocks = None
         self.sample_rate = None
         # From Extended headers
-        self.epoch_deploy = None
-        self.epoch_pickup = None
+        self.deploy_epoch = None
+        self.pickup_epoch = None
         self.id_number = None
         # From Channel set headers
         self.channel_set_start_time_sec = None
@@ -300,9 +300,9 @@ class Reader ():
         for i in range(n):
             self.reel_headers.extended_headers.append(
                 self.read_extended_header_4())
-        self.epoch_deploy = self.reel_headers.extended_headers[
+        self.deploy_epoch = self.reel_headers.extended_headers[
                                 0].epoch_deploy / 1000000.
-        self.epoch_pickup = self.reel_headers.extended_headers[
+        self.pickup_epoch = self.reel_headers.extended_headers[
                                 0].epoch_pickup / 1000000.
         self.id_number = self.reel_headers.extended_headers[0]['id_number']
 

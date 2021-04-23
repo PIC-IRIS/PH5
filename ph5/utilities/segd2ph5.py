@@ -496,7 +496,7 @@ def process_traces(rh, th, tr):
     '''
 
     def get_true_channel(SD):
-        if SD.manufacturer == 'FairFieldNode':
+        if SD.manufacturer == 'FairfieldNodal':
             '''
             Orientation Code:
                chan 1 -> N Changed to '1'
@@ -775,7 +775,6 @@ def process_traces(rh, th, tr):
         p_array_t['sample_rate_multiplier_i'] = 1
         p_array_t['deploy_time/type_s'] = 'BOTH'
         try:
-            # f, i = modf(rh.extended_headers[0].epoch_deploy / 1000000.)
             f, i = modf(SD.deploy_epoch)
         except Exception as e:
             LOGGER.warning(
