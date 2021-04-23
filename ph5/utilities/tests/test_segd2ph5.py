@@ -145,7 +145,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         segd2ph5.TRACE_JSON = []
 
         # prepare trace
-        trace, cs = SD.process_trace()
+        trace, cs = SD.process_trace(0)
         T = segd2ph5.Trace(trace, SD.trace_headers)
 
         # ___________test process_traces ____________________
