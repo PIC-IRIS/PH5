@@ -12,13 +12,14 @@ import construct
 import bcd_py
 signal(SIGPIPE, SIG_DFL)
 
-PROG_VERSION = "2021.112"
+PROG_VERSION = "2021.130"
 
 
 def print_container(container):
     keys = container.keys()
     for k in keys:
-        if k in ['record_length']:
+        if k in ['record_length',
+                 'MP_factor_descaler_multiplier']:
             print("%s %s (HEX:%s)" %
                   (k, container[k], "{0:x}".format(container[k])))
         else:

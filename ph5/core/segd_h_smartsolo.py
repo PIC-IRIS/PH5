@@ -12,7 +12,7 @@ import sys
 import construct
 import bcd_py
 
-PROG_VERSION = "2021.112"
+PROG_VERSION = "2021.130"
 
 
 def __version__():
@@ -221,7 +221,7 @@ class Channel_set_descriptor (Header_block):
             ("chan_set_start_time_ms", 2*8),                        # ms
             ("chan_set_end_time_ms", 2*8),                          # ms
             ("optional_MP_factor_extension_byte", 8),
-            ("MP_factor_scaler_multiplier", 8),
+            ("MP_factor_descaler_multiplier", 8),
             ("number_of_chans_in_chan_set", 2*8, 'bcd'),
             # 1=Seis; 9=Aux
             ("chan_type_code", 8/2),
