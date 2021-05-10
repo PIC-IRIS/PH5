@@ -199,9 +199,30 @@ class Reader ():
             # ***   Calculate scale factor for mili-volts.
             # SmartSolo data recorded as mili-volts   ***
         self.reel_headers.channel_set_to_streamer_cable_map = create_key()
-
-        self.preamp_gain_db = self.reel_headers.channel_set_descriptor[
-            0].optional_MP_factor_extension_byte
+        # Calculate preamp_gain
+        self.preamp_gain_db = None
+        mp = self.reel_headers.channel_set_descriptor[
+            0].MP_factor_descaler_multiplier
+        mp_hex = "{0:x}".format(mp)
+        if mp == 0:         # 0x0000
+            self.preamp_gain_db = 0
+        elif mp == 132:     # 0x0084
+            self.preamp_gain_db = 6
+        elif mp == 136:     # 0x0088
+            self.preamp_gain_db = 12
+        elif mp == 140:     # 0x008c
+            self.preamp_gain_db = 18
+        elif mp == 144:     # 0x0090
+            self.preamp_gain_db = 24
+        elif mp == 148:     # 0x0094
+            self.preamp_gain_db = 30
+        elif mp == 152:     # 0x0098
+            self.preamp_gain_db = 36
+        else:
+            LOGGER.error("MP_factor_descaler_multiplier is Ox{0} while it "
+                         "should be one of the following values:\n"
+                         "0x0000,0x0084,0x0088,0x008c,0x0090,0x0094,"
+                         "0x0098".format(mp_hex))
 
     def process_extended_headers(self):
         self.reel_headers.extended_headers.append(
