@@ -278,13 +278,14 @@ class Reader ():
         A SEG - D Rev 3.0 timestamp counting the number of microseconds since
         6 Jan 1980 00:00:00(GPS epoch).
         """
-        start_count_time = 315964800000       # 6 Jan 1980 00:00:00
+        start_count_time = 315964800000.       # 6 Jan 1980 00:00:00
         TB_GPS_time_time_ms = self.trace_headers.trace_header_N[
-                                  1].TB_GPS_time_microsec/1000
-        self.trace_headers.trace_epoch = start_count_time + TB_GPS_time_time_ms
+                                  1].TB_GPS_time_microsec/1000.
+        trace_epoch_ms = start_count_time + TB_GPS_time_time_ms
+        self.trace_headers.trace_epoch = trace_epoch_ms * 1000.     # microsec
         number_of_samples_in_traces = self.trace_headers.trace_header_N[
             0].samples_per_trace
-        trace_endtime_ms = self.trace_headers.trace_epoch + (
+        trace_endtime_ms = trace_epoch_ms + (
             number_of_samples_in_traces / self.sample_rate)
 
         trace_endtime = trace_endtime_ms / float(
