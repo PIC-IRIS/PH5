@@ -15,7 +15,7 @@ from ph5.core import experiment, timedoy
 
 from obspy import read as readSEG2
 
-PROG_VERSION = "2019.42"
+PROG_VERSION = "2021.97"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
@@ -461,8 +461,17 @@ def updatePH5(stream):
                     td[k] = trace.stats.seg2[k]
                 else:
                     tdd = {}
-                    for j in trace.stats.seg2[k]:
-                        tdd[j] = trace.stats.seg2[k][j]
+
+                    if isinstance(trace.stats.seg2[k], list):
+                        # list: Obspy 1.2.2
+                        for j in trace.stats.seg2[k]:
+                            k, v = j.split()
+                            tdd[k] = v
+                    else:
+                        # AtribDict: Obspy 1.1.1
+                        for j in trace.stats.seg2[k]:
+                            tdd[j] = trace.stats.seg2[k][j]
+
                     td[k] = tdd
 
         log_array, name = getLOG(CURRENT_DAS)

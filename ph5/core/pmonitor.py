@@ -26,14 +26,11 @@ LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
 try:
-    from PySide import QtGui, QtCore
-except Exception as e:
-    msg = ("\n\nNo module named PySide. "
-           "Please install PySide first, it is needed for pmonitor. "
-           "\n\n"
-           "If using Anaconda run 'conda install PySide'"
-           "For pip users, PySide installation instructions are available at "
-           "https://pypi.org/project/PySide/#installation.")
+    from PySide2 import QtCore, QtWidgets
+except Exception:
+    msg = ("\n\nNo module named PySide2. "
+           "Please environment_gui.yml to install conda environment"
+           "PySide2 is needed for pmonitor.")
     raise ImportError(msg)
 
 
@@ -92,7 +89,7 @@ QProgressBar::chunk {
 """
 
 
-class FamilyProgress (QtGui.QDialog):
+class FamilyProgress (QtWidgets.QDialog):
     '''
           Progress Bar with button.
     '''
@@ -102,18 +99,18 @@ class FamilyProgress (QtGui.QDialog):
 
         self.setWindowTitle(title)
         self.setFixedHeight(48)
-        self.pbar = QtGui.QProgressBar()
+        self.pbar = QtWidgets.QProgressBar()
         self.pbar.setRange(0, mmax - 1)
 
-        self.btn = QtGui.QPushButton("Starting", self)
+        self.btn = QtWidgets.QPushButton("Starting", self)
 
-        pbarvbox = QtGui.QVBoxLayout()
+        pbarvbox = QtWidgets.QVBoxLayout()
         pbarvbox.addStretch(False)
         pbarvbox.addWidget(self.pbar)
-        buttonvbox = QtGui.QVBoxLayout()
+        buttonvbox = QtWidgets.QVBoxLayout()
         buttonvbox.addStretch(True)
         buttonvbox.addWidget(self.btn)
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addLayout(pbarvbox, stretch=False)
         hbox.addLayout(buttonvbox)
 
@@ -133,7 +130,7 @@ class FamilyProgress (QtGui.QDialog):
         self.pbar.setStyleSheet(WRONG_STYLE)
 
 
-class ErrorsDialog (QtGui.QMainWindow):
+class ErrorsDialog (QtWidgets.QMainWindow):
     '''
        Dialog for displaying problems with input file
     '''
@@ -145,17 +142,17 @@ class ErrorsDialog (QtGui.QMainWindow):
         self.parent = parent
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        saveAction = QtGui.QAction('Save log...', self)
+        saveAction = QtWidgets.QAction('Save log...', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save displayed log file.')
         saveAction.triggered.connect(self.saveFile)
 
-        saveErrAction = QtGui.QAction('Save unprocessed list...', self)
+        saveErrAction = QtWidgets.QAction('Save unprocessed list...', self)
         saveErrAction.setShortcut('Ctrl+U')
         saveErrAction.setStatusTip('Save a list of unprocessed raw files.')
         saveErrAction.triggered.connect(self.saveErrFile)
 
-        closeAction = QtGui.QAction('Close', self)
+        closeAction = QtWidgets.QAction('Close', self)
         closeAction.setShortcut('Ctrl+Q')
         closeAction.setStatusTip('Close error display')
         closeAction.triggered.connect(self.close)
@@ -166,7 +163,7 @@ class ErrorsDialog (QtGui.QMainWindow):
         fileMenu.addAction(saveErrAction)
         fileMenu.addAction(closeAction)
 
-        self.text = QtGui.QTextEdit(self)
+        self.text = QtWidgets.QTextEdit(self)
 
         self.setCentralWidget(self.text)
         self.setGeometry(300, 300, 800, 300)
@@ -214,7 +211,7 @@ class ErrorsDialog (QtGui.QMainWindow):
         self.text.setText(text)
 
     def saveFile(self):
-        filename, _ = QtGui.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Save File', os.getenv('HOME'))
         if not filename:
             return
@@ -224,7 +221,7 @@ class ErrorsDialog (QtGui.QMainWindow):
         f.close()
 
     def saveErrFile(self):
-        filename, _ = QtGui.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Save lst file', os.getenv('HOME'))
         if not filename:
             return
@@ -234,7 +231,7 @@ class ErrorsDialog (QtGui.QMainWindow):
         f.close()
 
 
-class Monitor (QtGui.QWidget):
+class Monitor (QtWidgets.QWidget):
     '''
        Monitor conversions
     '''
@@ -250,7 +247,7 @@ class Monitor (QtGui.QWidget):
             title -> window title
             mmax -> max value for progress bar
         '''
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         self.fio = fio  # pforma_io instance
         self.cmds = cmds  # List of commands to monitor
         self.info = info  # Info about files to convert
@@ -261,7 +258,7 @@ class Monitor (QtGui.QWidget):
         self.fifoerr = None
         self.mmax = mmax
         self.fp = FamilyProgress(title, mmax)  # The progress bar and friends
-        box = QtGui.QVBoxLayout()
+        box = QtWidgets.QVBoxLayout()
         box.addWidget(self.fp)
         # Set button to start conversion
         self.fp.btn.clicked.connect(self.startConversion)
@@ -599,7 +596,7 @@ if __name__ == '__main__':
     d = os.path.join(os.getcwd(), sys.argv[2])
     fio, cmds, info = init_fio(f, d)
     fams = sorted(cmds.keys())
-    application = QtGui.QApplication(sys.argv)
+    application = QtWidgets.QApplication(sys.argv)
     MMM = {}
     for F in fams:
         bl = info[F]['lists']

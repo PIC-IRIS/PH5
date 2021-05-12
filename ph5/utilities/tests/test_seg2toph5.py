@@ -4,6 +4,7 @@ Tests for seg2toph5
 import os
 import sys
 import unittest
+import logging
 
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
@@ -49,8 +50,13 @@ class TestSeg2toPH5_main(TempDirTestCase, LogTestCase):
                     os.path.join(self.home, "ph5/test_data/seg2/15001.dat")]
         with patch.object(sys, 'argv', testargs):
             with OutputCapture():
-                with LogCapture():
+                with LogCapture() as log:
+                    log.setLevel(logging.ERROR)
                     seg2toph5.main()
+
+        # before commit caf6978, there would be 1 error log if run this in
+        # environment that uses Obspy 1.2.2
+        self.assertEqual(len(log.records), 0)
         self.ph5object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
 
         target_p1 = 'miniPH5_00001.ph5:/Experiment_g/Maps_g/'

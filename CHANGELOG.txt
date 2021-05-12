@@ -88,6 +88,7 @@ ph5.utilities.seg2toph5
  * fix bug missing variable
  * Make compatible for pforma
  * Add flag -r/--raw
+ * Make compatible with both Obspy 1.1.1 and 1.2.2
 ph5.utilities.pforma_io
  * add seg2 to pforma
  * fix bug that duplicate index_t and array_t when copy tables from A/master.ph5 to Sigma/master.ph5
