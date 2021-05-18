@@ -13,18 +13,15 @@ from os.path import expanduser
 from ph5.utilities import novenqc, novenkef
 
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2021.84'
 LOGGER = logging.getLogger(__name__)
 
 try:
-    from PyQt4 import QtGui, QtCore
+    from PySide2 import QtWidgets, QtCore
 except Exception:
-    msg = ("\n\nNo module named PyQt4. "
-           "Please install PyQt4 first, it is needed for noven. "
-           "\n\n"
-           "If using Anaconda run 'conda install pyqt=4'"
-           "For pip users, PyQt4 installation instructions are available at "
-           "http://pyqt.sourceforge.net/Docs/PyQt4/installation.html.")
+    msg = ("\n\nNo module named PySide2. "
+           "Please environment_gui.yml to install conda environment"
+           "PySide2 is needed for noven.")
     raise ImportError(msg)
 
 RECEIVER_CFG_S = '{\n'\
@@ -245,50 +242,50 @@ class MyWorker(QtCore.QThread):
             print "Fail"
 
 
-class MyQComboBox(QtGui.QComboBox):
+class MyQComboBox(QtWidgets.QComboBox):
     def __init__(self, values=[]):
         super(MyQComboBox, self).__init__()
         if values:
             self.addItems(values)
 
 
-class MyQTableWidget(QtGui.QTableWidget):
+class MyQTableWidget(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
         super(MyQTableWidget, self).__init__(parent)
 
 
-class MyMessageBox(QtGui.QMessageBox):
+class MyMessageBox(QtWidgets.QMessageBox):
     '''
        Make QMesageBox expand properly
     '''
 
     def __init__(self, parent=None):
-        QtGui.QMessageBox.__init__(self, parent=parent)
+        QtWidgets.QMessageBox.__init__(self, parent=parent)
         self.setSizeGripEnabled(True)
 
     def event(self, e):
-        result = QtGui.QMessageBox.event(self, e)
+        result = QtWidgets.QMessageBox.event(self, e)
 
         self.setMinimumHeight(0)
         self.setMaximumHeight(16777215)
         self.setMinimumWidth(0)
         self.setMaximumWidth(16777215)
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                           QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                           QtWidgets.QSizePolicy.Expanding)
 
-        textEdit = self.findChild(QtGui.QTextEdit)
+        textEdit = self.findChild(QtWidgets.QTextEdit)
         if textEdit is not None:
             textEdit.setMinimumHeight(0)
             textEdit.setMaximumHeight(16777215)
             textEdit.setMinimumWidth(0)
             textEdit.setMaximumWidth(16777215)
-            textEdit.setSizePolicy(
-                QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+            textEdit.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
 
         return result
 
 
-class ErrorsDialog(QtGui.QMainWindow):
+class ErrorsDialog(QtWidgets.QMainWindow):
     '''
        Dialog for displaying problems with input file
     '''
@@ -297,12 +294,12 @@ class ErrorsDialog(QtGui.QMainWindow):
         super(ErrorsDialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        saveAction = QtGui.QAction('Save', self)
+        saveAction = QtWidgets.QAction('Save', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Save current file')
         saveAction.triggered.connect(self.saveFile)
 
-        closeAction = QtGui.QAction('Close', self)
+        closeAction = QtWidgets.QAction('Close', self)
         closeAction.setShortcut('Ctrl+Q')
         closeAction.setStatusTip('Close error display')
         closeAction.triggered.connect(self.close)
@@ -312,7 +309,7 @@ class ErrorsDialog(QtGui.QMainWindow):
         fileMenu.addAction(saveAction)
         fileMenu.addAction(closeAction)
 
-        self.text = QtGui.QTextEdit(self)
+        self.text = QtWidgets.QTextEdit(self)
 
         self.setCentralWidget(self.text)
         self.setGeometry(300, 300, 800, 300)
@@ -326,7 +323,7 @@ class ErrorsDialog(QtGui.QMainWindow):
         self.text.setText(text)
 
     def saveFile(self):
-        filename = QtGui.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Save File', os.getenv('HOME'))
         filename = str(filename)
         if not filename:
@@ -337,56 +334,57 @@ class ErrorsDialog(QtGui.QMainWindow):
         f.close()
 
 
-class SetupDialog(QtGui.QDialog):
+class SetupDialog(QtWidgets.QDialog):
     '''
        Main configuration dialog
     '''
-    changed = QtCore.pyqtSignal()
+    changed = QtCore.Signal()
 
     def __init__(self, settings, parent=None):
         super(SetupDialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        inputFileTypeLabel = QtGui.QLabel("Input Type")
-        self.inputFileType = QtGui.QComboBox()
+        inputFileTypeLabel = QtWidgets.QLabel("Input Type")
+        self.inputFileType = QtWidgets.QComboBox()
         inputFileTypeLabel.setBuddy(self.inputFileType)
         self.inputFileType.addItems(['receiver', 'event'])
         self.inputFileType.setCurrentIndex(
             self.inputFileType.findText(settings['inFormat']))
 
-        outfileFormatLabel = QtGui.QLabel("Output Format")
-        self.outfileFormat = QtGui.QComboBox()
+        outfileFormatLabel = QtWidgets.QLabel("Output Format")
+        self.outfileFormat = QtWidgets.QComboBox()
         outfileFormatLabel.setBuddy(self.outfileFormat)
         self.outfileFormat.addItems(["kef", "kef"])
         self.outfileFormat.setCurrentIndex(
             self.outfileFormat.findText(settings['outFormat']))
 
-        fieldSeparatorLabel = QtGui.QLabel("Column Separator")
-        self.fieldSeparator = QtGui.QComboBox()
+        fieldSeparatorLabel = QtWidgets.QLabel("Column Separator")
+        self.fieldSeparator = QtWidgets.QComboBox()
         fieldSeparatorLabel.setBuddy(self.fieldSeparator)
         self.fieldSeparator.addItems(
             ["comma", "semi-colon", "colon", "tab", "space"])
         self.fieldSeparator.setCurrentIndex(
             self.fieldSeparator.findText(settings['colSep']))
 
-        skipLinesLabel = QtGui.QLabel("Skip Lines")
-        self.skipLines = QtGui.QSpinBox()
+        skipLinesLabel = QtWidgets.QLabel("Skip Lines")
+        self.skipLines = QtWidgets.QSpinBox()
         skipLinesLabel.setBuddy(self.skipLines)
         self.skipLines.setRange(0, 12)
         self.skipLines.setValue(settings['linesSkip'])
 
-        viewLinesLabel = QtGui.QLabel("View Lines")
-        self.viewLines = QtGui.QSpinBox()
+        viewLinesLabel = QtWidgets.QLabel("View Lines")
+        self.viewLines = QtWidgets.QSpinBox()
         viewLinesLabel.setBuddy(self.viewLines)
         self.viewLines.setRange(1, 60)
         self.viewLines.setValue(settings['linesView'])
 
         self.settings = settings
 
-        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Apply |
-                                           QtGui.QDialogButtonBox.Close)
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Apply |
+            QtWidgets.QDialogButtonBox.Close)
 
-        grid = QtGui.QGridLayout()
+        grid = QtWidgets.QGridLayout()
         grid.addWidget(inputFileTypeLabel, 0, 0)
         grid.addWidget(self.inputFileType, 0, 1)
         grid.addWidget(outfileFormatLabel, 1, 0)
@@ -401,7 +399,7 @@ class SetupDialog(QtGui.QDialog):
         grid.addWidget(buttonBox, 5, 0, 2, -1)
         self.setLayout(grid)
 
-        self.connect(buttonBox.button(QtGui.QDialogButtonBox.Apply),
+        self.connect(buttonBox.button(QtWidgets.QDialogButtonBox.Apply),
                      QtCore.SIGNAL("clicked ()"), self.apply)
 
         self.connect(buttonBox, QtCore.SIGNAL("rejected ()"),
@@ -421,7 +419,7 @@ class SetupDialog(QtGui.QDialog):
         LOGGER.info("Reject")
 
 
-class Novitiate(QtGui.QMainWindow):
+class Novitiate(QtWidgets.QMainWindow):
     '''
        Program parent
     '''
@@ -444,38 +442,39 @@ class Novitiate(QtGui.QMainWindow):
         #
         # Setup menus
         #
-        openin = QtGui.QAction('Open...', self)
+        openin = QtWidgets.QAction('Open...', self)
         openin.setShortcut('Ctrl+O')
         openin.setStatusTip('Open input file.')
         self.connect(openin, QtCore.SIGNAL('triggered ()'), self.openInfile)
 
-        checkin = QtGui.QAction('Check input', self)
+        checkin = QtWidgets.QAction('Check input', self)
         checkin.setShortcut('Ctrl+c')
         checkin.setStatusTip('Check validity of input csv.')
         self.connect(checkin, QtCore.SIGNAL('triggered ()'), self.checkInFile)
 
-        mapin = QtGui.QAction('Map locations...', self)
+        mapin = QtWidgets.QAction('Map locations...', self)
         mapin.setShortcut('Ctrl+m')
         mapin.setStatusTip('Produce a map of locations.')
         self.connect(mapin, QtCore.SIGNAL('triggered ()'), self.mapInFile)
 
-        saveas = QtGui.QAction('Save As...', self)
-        saveas.setShortcut('Ctrl+S')
-        saveas.setStatusTip('Save output (kef) file.')
-        self.connect(saveas, QtCore.SIGNAL('triggered ()'), self.saveAs)
-
-        config = QtGui.QAction('Configure...', self)
+        # menuBar doesn't accept 'Configuration' or 'Setting'
+        config = QtWidgets.QAction('Change Parameters...', self)
         config.setShortcut('Ctrl+C')
         config.setStatusTip('Set input file field separator etc.')
         self.connect(config, QtCore.SIGNAL('triggered ()'), self.configure)
 
-        exit = QtGui.QAction('Exit', self)
+        saveas = QtWidgets.QAction('Save As...', self)
+        saveas.setShortcut('Ctrl+S')
+        saveas.setStatusTip('Save output (kef) file.')
+        self.connect(saveas, QtCore.SIGNAL('triggered ()'), self.saveAs)
+
+        exit = QtWidgets.QAction('Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip('Exit application')
         self.connect(exit, QtCore.SIGNAL(
             'triggered()'), QtCore.SLOT('close()'))
 
-        help = QtGui.QAction('Help', self)
+        help = QtWidgets.QAction('Help', self)
         help.setShortcut('Ctrl+h')
         help.setStatusTip('Get help on column names.')
         self.connect(help, QtCore.SIGNAL('triggered()'), self.cbhelp)
@@ -539,7 +538,7 @@ class Novitiate(QtGui.QMainWindow):
             if self.table.cols:
                 y = 0
                 for t in self.table.cols:
-                    item = QtGui.QTableWidgetItem(t)
+                    item = QtWidgets.QTableWidgetItem(t)
                     self.table.setItem(0, y, item)
                     y += 1
 
@@ -588,7 +587,7 @@ class Novitiate(QtGui.QMainWindow):
                 except IndexError:
                     continue
 
-                item = QtGui.QTableWidgetItem(text)
+                item = QtWidgets.QTableWidgetItem(text)
                 item.setTextAlignment(QtCore.Qt.AlignRight |
                                       QtCore.Qt.AlignVCenter)
 
@@ -626,7 +625,7 @@ class Novitiate(QtGui.QMainWindow):
                                             ':', str(cols[k]['help']).strip())
 
         mb = MyMessageBox(parent=None)
-        mb.setFont(QtGui.QFont('Courier', 10, QtGui.QFont.Bold))
+        mb.setFont(QtWidgets.QFont('Courier', 10, QtWidgets.QFont.Bold))
         mb.setWindowTitle('Socorro')
         mb.setText(help)
         mb.setModal(False)
@@ -639,7 +638,7 @@ class Novitiate(QtGui.QMainWindow):
             self.errorsDialog = ErrorsDialog(novenqc.ERR, self)
             self.errorsDialog.show()
         else:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self, "Information", "Nothing funky found!")
 
         self.TOP = novenqc.TOP
@@ -647,7 +646,7 @@ class Novitiate(QtGui.QMainWindow):
     def openInfile(self):
         filters = 'CSV files: (*.csv);; Text files: (*.txt);; All: (*)'
         selected = 'CSV files: (*.csv)'
-        inFileName = QtGui.QFileDialog.getOpenFileName(
+        inFileName, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Open input file", os.getcwd(), filters, selected)
         if os.path.exists(inFileName):
             fh = open(inFileName, 'U')
@@ -660,11 +659,11 @@ class Novitiate(QtGui.QMainWindow):
 
     def mapInFile(self):
         if self.TOP == {}:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self, "Can't continue.", "Must check inputs first.")
             return
 
-        outFileName = QtGui.QFileDialog.getSaveFileName(
+        outFileName, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Output KML file name.', os.getcwd(), filter='*.kml')
         if outFileName:
             if outFileName[-4:] != '.kml':
@@ -677,7 +676,7 @@ class Novitiate(QtGui.QMainWindow):
 
     def checkInFile(self):
         if not self.readFileLines:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self, "Can't continue.",
                 "Must open and configure csv file first.")
             return
@@ -685,13 +684,12 @@ class Novitiate(QtGui.QMainWindow):
         tmp = []
         for n in names:
             if n in tmp:
-                QtGui.QMessageBox.information(
+                QtWidgets.QMessageBox.information(
                     self, "Can't continue.",
                     "Duplicated column: {0}".format(n))
                 return
             if n != 'Ignore':
                 tmp.append(n)
-
         if self.settings['inFormat'] == 'receiver':
             worker = MyWorker('qc_receivers',
                               self.readFileLines[self.settings['linesSkip']:],
@@ -711,12 +709,12 @@ class Novitiate(QtGui.QMainWindow):
 
     def saveAs(self):
         if self.TOP == {}:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self, "Can't continue.",
                 "Must open csv and check inputs first.")
             return
 
-        saveFileName = QtGui.QFileDialog.getSaveFileName(
+        saveFileName, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Save output as', os.getcwd(), filter="*.kef")
         novenkef.write_kef(self.TOP, saveFileName)
 
@@ -764,7 +762,7 @@ def startapp():
         RECEIVER_CFG = read_cfg(os.path.join(home, '.PH5', 'Receiver.cfg'))
         EVENT_CFG = read_cfg(os.path.join(home, '.PH5', 'Event.cfg'))
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     form = Novitiate()
     form.show()
     app.exec_()

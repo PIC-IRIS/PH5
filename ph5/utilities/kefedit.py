@@ -17,12 +17,15 @@ from operator import itemgetter
 from ph5.core import kefutility
 LOGGER = logging.getLogger(__name__)
 try:
-    from PyQt4 import QtGui, QtCore
+    from PySide2 import QtWidgets, QtCore, QtGui
 except Exception:
-    LOGGER.error("PyQt4 must be installed for this to run")
+    msg = ("\n\nNo module named PySide2. "
+           "Please environment_gui.yml to install conda environment"
+           "PySide2 is needed for kefedit.")
+    raise ImportError(msg)
 # added on 20180226 so that temp.kef will always be available
 keftmpfile = path.join(mkdtemp(), 'temp.kef')
-PROG_VERSION = 2018.268
+PROG_VERSION = 2021.84
 EXPL = {}
 
 # CLASS ####################
@@ -31,10 +34,10 @@ EXPL = {}
 # CLASS: KefEdit
 
 
-class KefEdit(QtGui.QMainWindow):
+class KefEdit(QtWidgets.QMainWindow):
 
     def __init__(self):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setWindowTitle("KEF Editor Ver. %s" % PROG_VERSION)
 
@@ -45,16 +48,16 @@ class KefEdit(QtGui.QMainWindow):
         self.notsave = True  # to identify if the open data are save
 
         self.initMenu()
-        mainFrame = QtGui.QFrame(self)
+        mainFrame = QtWidgets.QFrame(self)
         self.setCentralWidget(mainFrame)
-        mainLayout = QtGui.QVBoxLayout()
+        mainLayout = QtWidgets.QVBoxLayout()
         mainFrame.setLayout(mainLayout)
 
-        statusLayout = QtGui.QHBoxLayout()
+        statusLayout = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(statusLayout)
-        statusLayout.addWidget(QtGui.QLabel("Color keys:"))
+        statusLayout.addWidget(QtWidgets.QLabel("Color keys:"))
 
-        updateCol = QtGui.QLabel("UPDATE")
+        updateCol = QtWidgets.QLabel("UPDATE")
         updateCol.installEventFilter(self)
         EXPL[updateCol] = "Color for Changed Row"
         updateCol.setAlignment(QtCore.Qt.AlignHCenter)
@@ -62,7 +65,7 @@ class KefEdit(QtGui.QMainWindow):
         updateCol.setStyleSheet(" background-color: %s" % updateColName)
         statusLayout.addWidget(updateCol)
 
-        deleteCol = QtGui.QLabel("DELETE")
+        deleteCol = QtWidgets.QLabel("DELETE")
         deleteCol.installEventFilter(self)
         EXPL[deleteCol] = "Color for Deleted Row"
         deleteCol.setAlignment(QtCore.Qt.AlignHCenter)
@@ -72,7 +75,7 @@ class KefEdit(QtGui.QMainWindow):
 
         statusLayout.addStretch(1)
 
-        self.path_tabWidget = QtGui.QTabWidget()  # each tab keep a table
+        self.path_tabWidget = QtWidgets.QTabWidget()  # each tab keep a table
         mainLayout.addWidget(self.path_tabWidget)
 
         self.statusBar = self.statusBar()
@@ -85,7 +88,7 @@ class KefEdit(QtGui.QMainWindow):
             if object not in EXPL.keys():
                 return False
             P = object.pos()
-            QtGui.QToolTip.showText(
+            QtWidgets.QToolTip.showText(
                 self.mapToGlobal(QtCore.QPoint(P.x(), P.y() + 20)),
                 EXPL[object])
             return True
@@ -93,48 +96,48 @@ class KefEdit(QtGui.QMainWindow):
 
     def initMenu(self):
         # HELP MENU  #################
-        manualAction = QtGui.QAction('Manual', self)
+        manualAction = QtWidgets.QAction('Manual', self)
         manualAction.setShortcut('F1')
         manualAction.triggered.connect(self.OnManual)
 
-        whatsnewAction = QtGui.QAction("What's new?", self)
+        whatsnewAction = QtWidgets.QAction("What's new?", self)
         whatsnewAction.setShortcut('F1')
         whatsnewAction.triggered.connect(self.OnWhatsnew)
         # FILE MENU  #################
-        openKefAction = QtGui.QAction('Open Kef File', self)
+        openKefAction = QtWidgets.QAction('Open Kef File', self)
         openKefAction.triggered.connect(self.OnOpenKef)
 
-        openPH5Action = QtGui.QAction('Open PH5 File', self)
+        openPH5Action = QtWidgets.QAction('Open PH5 File', self)
         openPH5Action.triggered.connect(self.OnOpenPH5)
 
-        self.openTableAction = QtGui.QAction(
+        self.openTableAction = QtWidgets.QAction(
             'Open table(s) in the current PH5 File', self)
         self.openTableAction.triggered.connect(self.OnOpenCurrPH5)
         self.openTableAction.setEnabled(False)
         # ---------------- Save ----------------
-        self.saveKefAction = QtGui.QAction('Save as Kef File', self)
+        self.saveKefAction = QtWidgets.QAction('Save as Kef File', self)
         self.saveKefAction.triggered.connect(self.OnSaveKef)
         self.saveKefAction.setEnabled(False)
 
-        self.savePH5Action = QtGui.QAction('Save as PH5 File', self)
+        self.savePH5Action = QtWidgets.QAction('Save as PH5 File', self)
         self.savePH5Action.triggered.connect(self.OnSavePH5)
         self.savePH5Action.setEnabled(False)
 
-        self.updatePH5Action = QtGui.QAction('Update the Current PH5 File',
-                                             self)
+        self.updatePH5Action = QtWidgets.QAction(
+            'Update the Current PH5 File', self)
         self.updatePH5Action.triggered.connect(self.OnUpdatePH5)
         self.updatePH5Action.setEnabled(False)
 
-        self.saveCSVAction = QtGui.QAction('Save as CSV File', self)
+        self.saveCSVAction = QtWidgets.QAction('Save as CSV File', self)
         self.saveCSVAction.triggered.connect(self.OnSaveCSV)
         self.saveCSVAction.setEnabled(False)
         # ---------------- exit ----------------
-        exitAction = QtGui.QAction('&Exit', self)
+        exitAction = QtWidgets.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.closeEvent)
 
         # ADDING MENU #####################
-        menubar = QtGui.QMenuBar()
+        menubar = QtWidgets.QMenuBar()
         self.setMenuBar(menubar)
 
         fileMenu = menubar.addMenu('&File')
@@ -174,10 +177,10 @@ class KefEdit(QtGui.QMainWindow):
                       "saved." + \
                       "\nClick on Cancel to cancel closing. " + \
                       "\nClick on Close to close KefEdit."
-                result = QtGui.QMessageBox.question(self, "Are you sure?", msg,
-                                                    QtGui.QMessageBox.Cancel,
-                                                    QtGui.QMessageBox.Close)
-                if result == QtGui.QMessageBox.Cancel:
+                result = QtWidgets.QMessageBox.question(
+                    self, "Are you sure?", msg,
+                    QtWidgets.QMessageBox.Cancel, QtWidgets.QMessageBox.Close)
+                if result == QtWidgets.QMessageBox.Cancel:
                     if evt.__class__.__name__ != 'bool':
                         evt.ignore()
                     return
@@ -200,9 +203,9 @@ class KefEdit(QtGui.QMainWindow):
     # (each set represent for data in a path)
     # * then call self.setData() to set the given data in display
     def OnOpenKef(self):
-        self.kefFilename = filename = str(
-            QtGui.QFileDialog.getOpenFileName(directory="/home/",
-                                              filter="Kef Files(*.kef)"))
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            directory="/home/", filter="Kef Files(*.kef)")
+        self.kefFilename = filename
         if not filename:
             return
 
@@ -238,9 +241,8 @@ class KefEdit(QtGui.QMainWindow):
     # (each set represent for data in a path)
     # then call self.setData() to set the given data in display]
     def OnOpenPH5(self):
-        filename =\
-            str(QtGui.QFileDialog.getOpenFileName(directory="/home/",
-                                                  filter="PH5 Files(*.ph5)"))
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            directory="/home/", filter="PH5 Files(*.ph5)")
         if not filename:
             return
 
@@ -305,11 +307,8 @@ class KefEdit(QtGui.QMainWindow):
         suggestedFileName = self.path2file + "/" + suggestedFileName +\
             '.kef'
 
-        savefilename = str(QtGui.QFileDialog.getSaveFileName(self, "Save File",
-                                                             suggestedFileName,
-                                                             filter="Kef"
-                                                                    "File"
-                                                                    "(*.kef)"))
+        savefilename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save File", suggestedFileName, filter="Kef File (*.kef)")
 
         if not savefilename:
             return
@@ -329,13 +328,13 @@ class KefEdit(QtGui.QMainWindow):
 
         msg = "File %s has been saved successfully." \
               "\nDo you want to close KEF Editor?" % savefilename
-        result = QtGui.QMessageBox.question(self, "Successfully Save File",
-                                            msg, QtGui.QMessageBox.Yes,
-                                            QtGui.QMessageBox.No)
+        result = QtWidgets.QMessageBox.question(
+            self, "Successfully Save File", msg,
+            QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
         self.notsave = False  # after saving, reset notsave
 
-        if result == QtGui.QMessageBox.Yes:
+        if result == QtWidgets.QMessageBox.Yes:
             if self.ph5api is not None:
                 self.ph5api.close()
             QtCore.QCoreApplication.instance().quit()
@@ -361,9 +360,9 @@ class KefEdit(QtGui.QMainWindow):
                 END - START))
         msg = "File %s has been updated successfully." \
               "\nDo you want to close KEF Editor?" % savefilename
-        QtGui.QMessageBox.question(self, "Successfully Save File",
-                                   msg, QtGui.QMessageBox.Yes,
-                                   QtGui.QMessageBox.No)
+        QtWidgets.QMessageBox.question(
+            self, "Successfully Save File", msg,
+            QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
         self.notsave = False  # after saving, reset notsave
 
@@ -384,11 +383,8 @@ class KefEdit(QtGui.QMainWindow):
         if not self._checkAddTableView():
             return
 
-        savefilename = str(QtGui.QFileDialog.getSaveFileName(self, "Save File",
-                                                             self.path2file,
-                                                             filter="PH5"
-                                                                    "File"
-                                                                    "(*.ph5)"))
+        savefilename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save File", self.path2file, filter="PH5 File (*.ph5)")
         if not savefilename:
             return
         START = time.time()
@@ -423,7 +419,7 @@ class KefEdit(QtGui.QMainWindow):
         from subprocess import Popen, PIPE, STDOUT
 
         pathStr = ','.join(self.pathAll)
-        cmdStr = "kef2ph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s"\
+        cmdStr = "keftoph5 -n %(outph5file)s -k %(keffile)s -p %(path2ph5)s"\
                  % options
         self.statusBar.showMessage(
             "Inserting new table(s) %s into PH5file" % pathStr)
@@ -438,23 +434,23 @@ class KefEdit(QtGui.QMainWindow):
         if 'error' not in output.lower():
             msg = "File %s has been saved successfully." \
                   "\nDo you want to close KEF Editor?" % savefilename
-            result = QtGui.QMessageBox.question(self, "Successfully Save File",
-                                                msg, QtGui.QMessageBox.Yes,
-                                                QtGui.QMessageBox.No)
+            result = QtWidgets.QMessageBox.question(
+                self, "Successfully Save File",
+                msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
             self.notsave = False  # after saving, reset notsave
 
-            if result == QtGui.QMessageBox.Yes:
+            if result == QtWidgets.QMessageBox.Yes:
                 doclose = True
         else:
-            QtGui.QMessageBox.warning(self, "Error in saving to PH5 file",
-                                      output)
+            QtWidgets.QMessageBox.warning(
+                self, "Error in saving to PH5 file", output)
             msg = "Do you want to close KEF Editor?"
-            result = QtGui.QMessageBox.question(self, "", msg,
-                                                QtGui.QMessageBox.Yes,
-                                                QtGui.QMessageBox.No)
+            result = QtWidgets.QMessageBox.question(
+                self, "", msg,
+                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
-            if result == QtGui.QMessageBox.Yes:
+            if result == QtWidgets.QMessageBox.Yes:
                 doclose = True
 
         END = time.time()
@@ -485,10 +481,10 @@ class KefEdit(QtGui.QMainWindow):
                       + \
                       "\nClick 'Save' to continue saving."
 
-                result = QtGui.QMessageBox.question(self, "Are you sure?", msg,
-                                                    QtGui.QMessageBox.Cancel,
-                                                    QtGui.QMessageBox.Save)
-                if result == QtGui.QMessageBox.Cancel:
+                result = QtWidgets.QMessageBox.question(
+                    self, "Are you sure?", msg,
+                    QtWidgets.QMessageBox.Cancel, QtWidgets.QMessageBox.Save)
+                if result == QtWidgets.QMessageBox.Cancel:
                     return False
         return True
 
@@ -510,7 +506,7 @@ class KefEdit(QtGui.QMainWindow):
         except Exception, e:
             msg = "Can't save the kef file %s due to the error:%s" % (
                 savefilename, str(e))
-            QtGui.QMessageBox.warning(self, "Error", msg)
+            QtWidgets.QMessageBox.warning(self, "Error", msg)
             return False
 
         saveFile.close()
@@ -531,14 +527,9 @@ class KefEdit(QtGui.QMainWindow):
                 suggestedFileName = self.path2file + "/" + suggestedFileName\
                     + '.csv'
 
-                savefilename =\
-                    str(QtGui.QFileDialog.getSaveFileName(self,
-                                                          "Save File on Path:"
-                                                          "%s" % tab.path,
-                                                          suggestedFileName,
-                                                          filter="CSV"
-                                                                 "File"
-                                                                 "(*.csv)"))
+                savefilename, _ = QtWidgets.QFileDialog.getSaveFileName(
+                    self, "Save File on Path: %s" % tab.path,
+                    suggestedFileName, filter="CSV File (*.csv)")
                 if not savefilename:
                     continue
                 tab.SaveCSV(savefilename)
@@ -548,20 +539,20 @@ class KefEdit(QtGui.QMainWindow):
         if error == "":
             msg = "File %s has been saved successfully." \
                   "\nDo you want to close KEF Editor?" % savefilename
-            result = QtGui.QMessageBox.warning(self, "Successfully Save File",
-                                               msg, QtGui.QMessageBox.Yes,
-                                               QtGui.QMessageBox.No)
+            result = QtWidgets.QMessageBox.warning(
+                self, "Successfully Save File",
+                msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
-            if result == QtGui.QMessageBox.Yes:
+            if result == QtWidgets.QMessageBox.Yes:
                 doclose = True
         else:
-            QtGui.QMessageBox.warning(self, "Error in saving as CSV file")
+            QtWidgets.QMessageBox.warning(self, "Error in saving as CSV file")
             msg = "Do you want to close KEF Editor?"
-            result = QtGui.QMessageBox.question(self, "", msg,
-                                                QtGui.QMessageBox.Yes,
-                                                QtGui.QMessageBox.No)
+            result = QtWidgets.QMessageBox.question(
+                self, "", msg,
+                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
-            if result == QtGui.QMessageBox.Yes:
+            if result == QtWidgets.QMessageBox.Yes:
                 doclose = True
 
         END = time.time()
@@ -602,7 +593,7 @@ class KefEdit(QtGui.QMainWindow):
             if self.dataTable[p] in [None, []]:
                 errMsg = "There are no data for path %s.\n Please check if" \
                          "the selected PH5 is a master file."
-                QtGui.QMessageBox.warning(self, "Error", errMsg % p)
+                QtWidgets.QMessageBox.warning(self, "Error", errMsg % p)
                 return
             pathWidget = TablePanel(self, p, self.dataTable[p],
                                     self.labelSets[p], self.types[p])
@@ -632,10 +623,10 @@ DELETECOLOR = QtGui.QBrush(QtGui.QColor(70, 10, 70, 100))  # light purple
 # with path: path in Kef/PH5
 #   table: data in list
 #   labels: list of columns/keys
-class TablePanel(QtGui.QMainWindow):
+class TablePanel(QtWidgets.QMainWindow):
 
     def __init__(self, parent, path, table, labels, types):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
         self.parent = parent
         self.path = path
         self.table = table
@@ -649,18 +640,18 @@ class TablePanel(QtGui.QMainWindow):
         self.addDataList = []  # list of data to add
         self.addCells = None
 
-        mainFrame = QtGui.QFrame(self)
+        mainFrame = QtWidgets.QFrame(self)
         self.setCentralWidget(mainFrame)
-        mainLayout = QtGui.QVBoxLayout()
+        mainLayout = QtWidgets.QVBoxLayout()
         mainFrame.setLayout(mainLayout)
 
         # set mainTableView
-        self.mainTableView = QtGui.QTableWidget(self)
+        self.mainTableView = QtWidgets.QTableWidget(self)
         self.mainTableView.installEventFilter(self)
         EXPL[self.mainTableView] = "MainView where main data are displayed."
         self.mainTableView.cellClicked.connect(self.OnMainTableClick)
         self.mainTableView.setSelectionMode(
-            QtGui.QAbstractItemView.SingleSelection)
+            QtWidgets.QAbstractItemView.SingleSelection)
         mainLayout.addWidget(self.mainTableView)
 
         # set view range
@@ -675,7 +666,7 @@ class TablePanel(QtGui.QMainWindow):
                     parent.processedLine, parent.totalLines, parent.addMsg)
                 parent.statusBar.showMessage(msg)
             for c in range(len(self.labels)):
-                item = QtGui.QTableWidgetItem(self.table[r][c])
+                item = QtWidgets.QTableWidgetItem(self.table[r][c])
                 item.setFlags(
                     QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
                 # disable cell editing
@@ -695,14 +686,14 @@ class TablePanel(QtGui.QMainWindow):
                 self.labels[c])
 
         # change tools ######################
-        changeBox = QtGui.QHBoxLayout()
+        changeBox = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(changeBox)
         changeBox.setSpacing(25)
 
         changeBox.addStretch(1)
-        changeBox.addWidget(QtGui.QLabel("Select Types:"))
+        changeBox.addWidget(QtWidgets.QLabel("Select Types:"))
 
-        self.singleCell = QtGui.QRadioButton('Single Cell')
+        self.singleCell = QtWidgets.QRadioButton('Single Cell')
         self.singleCell.installEventFilter(self)
         EXPL[
             self.singleCell] = "Select one Single Cell only." \
@@ -710,7 +701,8 @@ class TablePanel(QtGui.QMainWindow):
         self.singleCell.clicked.connect(self.OnClearSelected)
         changeBox.addWidget(self.singleCell)
 
-        self.allInStation = QtGui.QRadioButton('All Similar Cells in Station')
+        self.allInStation = QtWidgets.QRadioButton(
+            'All Similar Cells in Station')
         self.allInStation.installEventFilter(self)
         EXPL[
             self.allInStation] = "All cells that have the same station id and"\
@@ -726,7 +718,8 @@ class TablePanel(QtGui.QMainWindow):
             self.singleCell.setChecked(True)
             self.allInStation.setEnabled(False)
 
-        self.allInColumn = QtGui.QRadioButton('All Similar Cells in Column')
+        self.allInColumn = QtWidgets.QRadioButton(
+            'All Similar Cells in Column')
         self.allInColumn.installEventFilter(self)
         EXPL[
             self.allInColumn] = "All cells that have the same value and" \
@@ -736,7 +729,7 @@ class TablePanel(QtGui.QMainWindow):
         self.allInColumn.clicked.connect(self.OnClearSelected)
         changeBox.addWidget(self.allInColumn)
 
-        self.changedValCtrl = QtGui.QLineEdit('')
+        self.changedValCtrl = QtWidgets.QLineEdit('')
         self.changedValCtrl.installEventFilter(self)
         EXPL[
             self.changedValCtrl] = "Values in the selected items will be" \
@@ -745,7 +738,7 @@ class TablePanel(QtGui.QMainWindow):
         self.changedValCtrl.setFixedWidth(400)
         changeBox.addWidget(self.changedValCtrl)
 
-        self.changeBtn = QtGui.QPushButton('Change', self)
+        self.changeBtn = QtWidgets.QPushButton('Change', self)
         self.changeBtn.installEventFilter(self)
         EXPL[
             self.changeBtn] = "Apply changing values in the selected items" \
@@ -753,7 +746,7 @@ class TablePanel(QtGui.QMainWindow):
         self.changeBtn.clicked.connect(self.OnChange)
         changeBox.addWidget(self.changeBtn)
 
-        self.back2orgBtn = QtGui.QPushButton('Back to Org', self)
+        self.back2orgBtn = QtWidgets.QPushButton('Back to Org', self)
         self.back2orgBtn.installEventFilter(self)
         EXPL[
             self.back2orgBtn] = "Reset selected items back to their original" \
@@ -765,21 +758,22 @@ class TablePanel(QtGui.QMainWindow):
 
         mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
         # column tools ######################
-        columnBox1 = QtGui.QHBoxLayout()
+        columnBox1 = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(columnBox1)
 
         columnBox1.addStretch(1)
 
-        columnBox1.addWidget(QtGui.QLabel("Selected Column"))
-        self.selectedColumnCtrl = QtGui.QLineEdit('')
+        columnBox1.addWidget(QtWidgets.QLabel("Selected Column"))
+        self.selectedColumnCtrl = QtWidgets.QLineEdit('')
         self.selectedColumnCtrl.installEventFilter(self)
         EXPL[self.selectedColumnCtrl] = "The label of the selected column."
         self.selectedColumnCtrl.setReadOnly(True)
         self.selectedColumnCtrl.setFixedWidth(250)
         columnBox1.addWidget(self.selectedColumnCtrl)
 
-        columnBox1.addWidget(QtGui.QLabel("    Position of Char. to change"))
-        self.characterOrderCtrl = QtGui.QComboBox(self)
+        columnBox1.addWidget(
+            QtWidgets.QLabel("    Position of Char. to change"))
+        self.characterOrderCtrl = QtWidgets.QComboBox(self)
         self.characterOrderCtrl.installEventFilter(self)
         EXPL[
             self.characterOrderCtrl] = "The first position of character(s)" \
@@ -788,15 +782,15 @@ class TablePanel(QtGui.QMainWindow):
             self.OnChangeCharOrder)
         columnBox1.addWidget(self.characterOrderCtrl)
 
-        columnBox1.addWidget(QtGui.QLabel("    Number of Char. to change"))
-        self.noOfCharsCtrl = QtGui.QComboBox(self)
+        columnBox1.addWidget(QtWidgets.QLabel("    Number of Char. to change"))
+        self.noOfCharsCtrl = QtWidgets.QComboBox(self)
         self.noOfCharsCtrl.installEventFilter(self)
         EXPL[self.noOfCharsCtrl] = "The number of character(s) to change."
         self.noOfCharsCtrl.currentIndexChanged.connect(self.OnChangeNoOfChars)
         columnBox1.addWidget(self.noOfCharsCtrl)
 
-        columnBox1.addWidget(QtGui.QLabel("   X"))
-        self.XCtrl = QtGui.QLineEdit('')
+        columnBox1.addWidget(QtWidgets.QLabel("   X"))
+        self.XCtrl = QtWidgets.QLineEdit('')
         self.XCtrl.installEventFilter(self)
         EXPL[self.XCtrl] = "The value to be applied in column changing."
         self.XCtrl.textChanged.connect(self.OnXChanged)
@@ -804,13 +798,13 @@ class TablePanel(QtGui.QMainWindow):
         columnBox1.addWidget(self.XCtrl)
         columnBox1.addStretch(1)
 
-        columnBox2 = QtGui.QHBoxLayout()
+        columnBox2 = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(columnBox2)
 
         columnBox2.addStretch(1)
 
         columnBox2.setSpacing(40)
-        self.changeChar2XBtn = QtGui.QPushButton('Change Char. to X', self)
+        self.changeChar2XBtn = QtWidgets.QPushButton('Change Char. to X', self)
         self.changeChar2XBtn.installEventFilter(self)
         EXPL[
             self.changeChar2XBtn] = "Change the selected character(s) in" \
@@ -818,7 +812,7 @@ class TablePanel(QtGui.QMainWindow):
         self.changeChar2XBtn.clicked.connect(self.OnChangeChar2X)
         columnBox2.addWidget(self.changeChar2XBtn)
 
-        self.plusX2CharBtn = QtGui.QPushButton('Plus X to Char.', self)
+        self.plusX2CharBtn = QtWidgets.QPushButton('Plus X to Char.', self)
         self.plusX2CharBtn.installEventFilter(self)
         EXPL[
             self.plusX2CharBtn] = "Plus X to the selected character(s) in" \
@@ -826,7 +820,7 @@ class TablePanel(QtGui.QMainWindow):
         self.plusX2CharBtn.clicked.connect(self.OnPlusX2Char)
         columnBox2.addWidget(self.plusX2CharBtn)
 
-        self.changeCol2XBtn = QtGui.QPushButton('Change Column to X', self)
+        self.changeCol2XBtn = QtWidgets.QPushButton('Change Column to X', self)
         self.changeCol2XBtn.installEventFilter(self)
         EXPL[
             self.changeCol2XBtn] = "Change each item of the selected column" \
@@ -834,13 +828,13 @@ class TablePanel(QtGui.QMainWindow):
         self.changeCol2XBtn.clicked.connect(self.OnChangeCol2X)
         columnBox2.addWidget(self.changeCol2XBtn)
 
-        self.plusX2ColBtn = QtGui.QPushButton('Plus X to Column', self)
+        self.plusX2ColBtn = QtWidgets.QPushButton('Plus X to Column', self)
         self.plusX2ColBtn.installEventFilter(self)
         EXPL[self.plusX2ColBtn] = "Plus X to each item of the selected column."
         self.plusX2ColBtn.clicked.connect(self.OnPlusX2Col)
         columnBox2.addWidget(self.plusX2ColBtn)
 
-        self.resetColBtn = QtGui.QPushButton('Reset Column', self)
+        self.resetColBtn = QtWidgets.QPushButton('Reset Column', self)
         self.resetColBtn.installEventFilter(self)
         EXPL[
             self.resetColBtn] = "Reset each item of the selected column back" \
@@ -852,12 +846,12 @@ class TablePanel(QtGui.QMainWindow):
 
         mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
         # move tools ######################
-        moveBox = QtGui.QHBoxLayout()
+        moveBox = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(moveBox)
 
         moveBox.addStretch(1)
-        moveBox.addWidget(QtGui.QLabel("Selected Row(s)"))
-        self.selectedRowsCtrl = QtGui.QLineEdit('')
+        moveBox.addWidget(QtWidgets.QLabel("Selected Row(s)"))
+        self.selectedRowsCtrl = QtWidgets.QLineEdit('')
         self.selectedRowsCtrl.installEventFilter(self)
         EXPL[
             self.selectedRowsCtrl] = "Show list of Selected Items' rows." \
@@ -869,8 +863,8 @@ class TablePanel(QtGui.QMainWindow):
         moveBox.addWidget(self.selectedRowsCtrl)
 
         moveBox.addWidget(
-            QtGui.QLabel("         Move Selected Row(s) under Line No"))
-        self.moveLineCtrl = QtGui.QComboBox(self)
+            QtWidgets.QLabel("         Move Selected Row(s) under Line No"))
+        self.moveLineCtrl = QtWidgets.QComboBox(self)
         self.moveLineCtrl.installEventFilter(self)
         EXPL[
             self.moveLineCtrl] = "Line Number under which the Selected Row(s)"\
@@ -882,7 +876,7 @@ class TablePanel(QtGui.QMainWindow):
         self.moveLineCtrl.addItems(lineNoList)
         moveBox.addWidget(self.moveLineCtrl)
 
-        self.moveBtn = QtGui.QPushButton('Move', self)
+        self.moveBtn = QtWidgets.QPushButton('Move', self)
         self.moveBtn.installEventFilter(self)
         EXPL[
             self.moveBtn] = "Move the Selected Row(s) to under the Selected" \
@@ -896,12 +890,12 @@ class TablePanel(QtGui.QMainWindow):
         mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
 
         # delete tools ######################
-        deleteBox = QtGui.QHBoxLayout()
+        deleteBox = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(deleteBox)
 
         deleteBox.addStretch(1)
-        self.deleteBtn = QtGui.QPushButton('Delete Row(s) on Selected Cell(s)',
-                                           self)
+        self.deleteBtn = QtWidgets.QPushButton(
+            'Delete Row(s) on Selected Cell(s)', self)
         self.deleteBtn.installEventFilter(self)
         EXPL[self.deleteBtn] = "Mark deleted for the Selected Rows."
         self.deleteBtn.setFixedWidth(400)
@@ -909,7 +903,7 @@ class TablePanel(QtGui.QMainWindow):
         deleteBox.addWidget(self.deleteBtn)
 
         deleteBox.addSpacing(250)
-        self.unDeleteBtn = QtGui.QPushButton('UnDelete', self)
+        self.unDeleteBtn = QtWidgets.QPushButton('UnDelete', self)
         self.unDeleteBtn.installEventFilter(self)
         EXPL[self.unDeleteBtn] = "UnMark deleted for the Selected Rows."
         self.unDeleteBtn.setFixedWidth(400)
@@ -921,11 +915,11 @@ class TablePanel(QtGui.QMainWindow):
         mainLayout.addWidget(Seperator(thick=2, orientation="horizontal"))
 
         # add tools ######################
-        addBox = QtGui.QHBoxLayout()
+        addBox = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(addBox)
 
         addBox.addStretch(1)
-        self.addBtn = QtGui.QPushButton(
+        self.addBtn = QtWidgets.QPushButton(
             'Add Row(s) with Data Copy from Selected Cell(s)', self)
         self.addBtn.installEventFilter(self)
         EXPL[
@@ -936,8 +930,9 @@ class TablePanel(QtGui.QMainWindow):
         addBox.addWidget(self.addBtn)
 
         addBox.addSpacing(250)
-        addBox.addWidget(QtGui.QLabel("Insert Selected Row(s) under Line No"))
-        self.insertLineCtrl = QtGui.QComboBox(self)
+        addBox.addWidget(
+            QtWidgets.QLabel("Insert Selected Row(s) under Line No"))
+        self.insertLineCtrl = QtWidgets.QComboBox(self)
         self.insertLineCtrl.installEventFilter(self)
         EXPL[
             self.insertLineCtrl] = "Select the Line No under which the" \
@@ -950,7 +945,7 @@ class TablePanel(QtGui.QMainWindow):
         self.insertLineCtrl.addItems(lineNoList)
         addBox.addWidget(self.insertLineCtrl)
 
-        self.insertBtn = QtGui.QPushButton('Insert', self)
+        self.insertBtn = QtWidgets.QPushButton('Insert', self)
         self.insertBtn.installEventFilter(self)
         EXPL[
             self.insertBtn] = "Move the Selected Row(s) from AddRowView to" \
@@ -962,7 +957,7 @@ class TablePanel(QtGui.QMainWindow):
         addBox.addStretch(1)
 
         # addTableView: to view all rows to add
-        self.addTableView = QtGui.QTableWidget(self)
+        self.addTableView = QtWidgets.QTableWidget(self)
         self.addTableView.installEventFilter(self)
         EXPL[
             self.addTableView] = "AddRowView, where the rows to be added to" \
@@ -971,7 +966,7 @@ class TablePanel(QtGui.QMainWindow):
         self.addTableView.setMaximumHeight(200)
         self.addTableView.cellClicked.connect(self.OnAddTableClick)
         self.addTableView.setSelectionMode(
-            QtGui.QAbstractItemView.SingleSelection)
+            QtWidgets.QAbstractItemView.SingleSelection)
         mainLayout.addWidget(self.addTableView)
 
         self._setButtonsDisabled()
@@ -981,7 +976,7 @@ class TablePanel(QtGui.QMainWindow):
             if object not in EXPL.keys():
                 return False
             P = object.pos()
-            QtGui.QToolTip.showText(
+            QtWidgets.QToolTip.showText(
                 self.mapToGlobal(QtCore.QPoint(P.x(), P.y() + 20)),
                 EXPL[object])
             return True
@@ -1287,7 +1282,7 @@ class TablePanel(QtGui.QMainWindow):
                           "is/are '%s'," + \
                           "\nwhile the replace character(s) is/are '%s' " \
                           "of which length is different."
-                    QtGui.QMessageBox.warning(self, "Error", msg % (
+                    QtWidgets.QMessageBox.warning(self, "Error", msg % (
                         index + 1, val[order:order + noOfChars],
                         str(self.XCtrl.text())))
                     return
@@ -1299,7 +1294,7 @@ class TablePanel(QtGui.QMainWindow):
         except ValueError:
             msg = "The new value of '%s', line %s is '%s' which doesn't match"\
                   "the required type: %s"
-            QtGui.QMessageBox.warning(self, "Error", msg % (
+            QtWidgets.QMessageBox.warning(self, "Error", msg % (
                 self.selectedColumnCtrl.text(), index + 1, val,
                 type_.__name__))
             return
@@ -1335,7 +1330,7 @@ class TablePanel(QtGui.QMainWindow):
                           "change is '%s'," + \
                           "\nwhile the replace character(s) is/are %s of" \
                           "which length is different."
-                    QtGui.QMessageBox.warning(self, "Error", msg % (
+                    QtWidgets.QMessageBox.warning(self, "Error", msg % (
                         index + 1, val[order:order + noOfChars], insertChars))
                     return
 
@@ -1347,7 +1342,7 @@ class TablePanel(QtGui.QMainWindow):
         except ValueError:
             msg = "The new value of '%s', line %s is '%s' which doesn't" \
                   "match the required type: %s"
-            QtGui.QMessageBox.warning(self, "Error", msg % (
+            QtWidgets.QMessageBox.warning(self, "Error", msg % (
                 self.selectedColumnCtrl.text(), index + 1, val,
                 type_.__name__))
             return
@@ -1366,10 +1361,10 @@ class TablePanel(QtGui.QMainWindow):
             msg = "The value in the X box is '%s'.\n" \
                   "Are you sure you want to change the selected %s to it?" % (
                       self.XCtrl.text(), ctrlName)
-            result = QtGui.QMessageBox.question(self, "Are you sure?", msg,
-                                                QtGui.QMessageBox.Yes,
-                                                QtGui.QMessageBox.Cancel)
-            if result == QtGui.QMessagedBox.Cancel:
+            result = QtWidgets.QMessageBox.question(
+                self, "Are you sure?", msg,
+                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.Cancel)
+            if result == QtWidgets.QMessagedBox.Cancel:
                 return False
 
         return True
@@ -1391,7 +1386,7 @@ class TablePanel(QtGui.QMainWindow):
         except ValueError:
             msg = "The new value of all cells in '%s' is '%s'," \
                   "\nwhich doesn't match the required type: %s"
-            QtGui.QMessageBox.warning(self, "Error", msg % (
+            QtWidgets.QMessageBox.warning(self, "Error", msg % (
                 self.selectedColumnCtrl.text(), self.XCtrl.text(),
                 type_.__name__))
             return
@@ -1436,7 +1431,7 @@ class TablePanel(QtGui.QMainWindow):
             except ValueError:
                 msg = "The new value of %s, line %s is %s," \
                       "\nwhich doesn't match the required type: %s"
-                QtGui.QMessageBox.warning(self, "Error", msg % (
+                QtWidgets.QMessageBox.warning(self, "Error", msg % (
                     self.selectedColumnCtrl.text(), index + 1, newVal,
                     type_.__name__))
                 return
@@ -1525,7 +1520,7 @@ class TablePanel(QtGui.QMainWindow):
                     msg = "Because the row %s has been deleted, cell" \
                           "(%s,%s) can't be changed." % (
                               r + 1, r + 1, c + 1)
-                    QtGui.QMessageBox.warning(self, "Warning", msg)
+                    QtWidgets.QMessageBox.warning(self, "Warning", msg)
                     continue
 
                 currItem = self.mainTableView.item(r, c)
@@ -1641,7 +1636,7 @@ class TablePanel(QtGui.QMainWindow):
         # set data into cells
         for r in range(len(self.addDataList)):
             for c in range(len(self.labels)):
-                item = QtGui.QTableWidgetItem(self.addDataList[r][c])
+                item = QtWidgets.QTableWidgetItem(self.addDataList[r][c])
                 item.setFlags(
                     QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
                 # disable cell editing
@@ -1691,12 +1686,12 @@ class TablePanel(QtGui.QMainWindow):
             self.mainTableView.scrollToTop()
         else:
             self.mainTableView.setSelectionMode(
-                QtGui.QAbstractItemView.ExtendedSelection)
+                QtWidgets.QAbstractItemView.ExtendedSelection)
             lineId = int(val) - 1
             self.mainTableView.selectRow(lineId)
             # self.mainTableView.scrollTo(self.mainTableView.item(lineId,0))
             self.mainTableView.setSelectionMode(
-                QtGui.QAbstractItemView.SingleSelection)
+                QtWidgets.QAbstractItemView.SingleSelection)
 
     ###############################
     # def OnInsert
@@ -1744,7 +1739,7 @@ class TablePanel(QtGui.QMainWindow):
         if moveLineId in selectedRows:
             msg = "Cannot move the select row(s) to a line No \nthat in the" \
                   "range of the selected rows"
-            QtGui.QMessageBox.warning(self, "Warning", msg)
+            QtWidgets.QMessageBox.warning(self, "Warning", msg)
             return
 
         # reidentify new moveLineId when pop the selected Rows from table
@@ -1793,7 +1788,7 @@ class TablePanel(QtGui.QMainWindow):
             self.mainTableView.insertRow(lineId)
             # fill value in insertedUpdData[i] into the empty row
             for c in range(len(self.labels)):
-                item = QtGui.QTableWidgetItem(insertedUpdData[i][c])
+                item = QtWidgets.QTableWidgetItem(insertedUpdData[i][c])
                 item.setFlags(
                     QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
                 # disable cell editing
@@ -1937,56 +1932,56 @@ class TablePanel(QtGui.QMainWindow):
 # Author: Lan
 # Updated: 201703
 # CLASS: SelectTableDialog - GUI for user to select parameters for table
-class SelectTableDialog(QtGui.QDialog):
+class SelectTableDialog(QtWidgets.QDialog):
 
     def __init__(self, parent, availTables, arrays, shotLines, offsets, das):
 
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QDialog.__init__(self)
         self.setWindowTitle("Select Tables")
         self.parent = parent
-        mainLayout = QtGui.QVBoxLayout(self)
+        mainLayout = QtWidgets.QVBoxLayout(self)
 
         mainLayout.addWidget(
-            QtGui.QLabel('What table do you want to get info from?'))
+            QtWidgets.QLabel('What table do you want to get info from?'))
 
-        formLayout = QtGui.QFormLayout()
+        formLayout = QtWidgets.QFormLayout()
         mainLayout.addLayout(formLayout)
 
-        self.tableCtrl = QtGui.QComboBox(self)
+        self.tableCtrl = QtWidgets.QComboBox(self)
         self.tableCtrl.clear()
         self.tableCtrl.addItems([''] + availTables)
         formLayout.addRow("Table", self.tableCtrl)
         self.tableCtrl.currentIndexChanged.connect(self.OnSelectTable)
 
-        self.arrayCtrl = QtGui.QComboBox(self)
+        self.arrayCtrl = QtWidgets.QComboBox(self)
         self.arrayCtrl.clear()
         self.arrayCtrl.addItems([''] + arrays)
         formLayout.addRow("Array", self.arrayCtrl)
 
-        self.shotLineCtrl = QtGui.QComboBox(self)
+        self.shotLineCtrl = QtWidgets.QComboBox(self)
         self.shotLineCtrl.clear()
         self.shotLineCtrl.addItems([''] + shotLines)
         formLayout.addRow("ShotLine", self.shotLineCtrl)
 
-        self.offsetCtrl = QtGui.QComboBox(self)
+        self.offsetCtrl = QtWidgets.QComboBox(self)
         self.offsetCtrl.clear()
         self.offsetCtrl.addItems([''] + offsets)
         formLayout.addRow("Offset (array_event)", self.offsetCtrl)
 
-        self.dasCtrl = QtGui.QComboBox(self)
+        self.dasCtrl = QtWidgets.QComboBox(self)
         self.dasCtrl.clear()
         self.dasCtrl.addItems([''] + das)
         formLayout.addRow("Das", self.dasCtrl)
 
-        btnLayout = QtGui.QHBoxLayout()
+        btnLayout = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(btnLayout)
 
         btnLayout.stretch(1)
-        submitBtn = QtGui.QPushButton('Submit', self)
+        submitBtn = QtWidgets.QPushButton('Submit', self)
         submitBtn.clicked.connect(self.OnSubmit)
         btnLayout.addWidget(submitBtn)
         btnLayout.stretch(1)
-        cancelBtn = QtGui.QPushButton('Cancel', self)
+        cancelBtn = QtWidgets.QPushButton('Cancel', self)
         cancelBtn.clicked.connect(self.OnCancel)
         btnLayout.addWidget(cancelBtn)
         btnLayout.stretch(1)
@@ -2052,7 +2047,7 @@ class SelectTableDialog(QtGui.QDialog):
         if errorCtrl is not None:
             msg = "For Table '%s', %s must be selected." % (
                 p.tableType, errorCtrl)
-            QtGui.QMessageBox.warning(self, "Warning", msg)
+            QtWidgets.QMessageBox.warning(self, "Warning", msg)
             return
 
         p.dataTable, p.labelSets, p.totalLines, p.types =\
@@ -2071,12 +2066,12 @@ class SelectTableDialog(QtGui.QDialog):
 # Author: Lan
 # Updated: 201409
 # CLASS: Seperator - is the line to separate in the Gui (reuse from PH5View)
-class Seperator(QtGui.QFrame):
+class Seperator(QtWidgets.QFrame):
 
     def __init__(self, thick=2, orientation="horizontal", length=None):
-        QtGui.QFrame.__init__(self)
-        self.setFrameShape(QtGui.QFrame.StyledPanel)
-        self.setFrameShadow(QtGui.QFrame.Sunken)
+        QtWidgets.QFrame.__init__(self)
+        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
         if orientation == 'horizontal':
             self.setFixedHeight(thick)
             if length is not None:
@@ -2092,12 +2087,12 @@ class Seperator(QtGui.QFrame):
 # Author: Lan
 # Updated: 201707
 # CLASS: ManWindow - show Manual of the app. (reuse from PH5View)
-class ManWindow(QtGui.QWidget):
+class ManWindow(QtWidgets.QWidget):
 
     def __init__(self, mantype=""):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         self.setGeometry(100, 100, 900, 700)
-        view = QtGui.QTextBrowser(self)
+        view = QtWidgets.QTextBrowser(self)
 
         if mantype == "manual":
             view.setText(kefutility.html_manual)
@@ -2105,7 +2100,7 @@ class ManWindow(QtGui.QWidget):
         elif mantype == "whatsnew":
             view.setText(kefutility.html_whatsnew % PROG_VERSION)
 
-        self.layout = QtGui.QHBoxLayout()
+        self.layout = QtWidgets.QHBoxLayout()
         self.layout.addWidget(view)
 
         self.setLayout(self.layout)
@@ -2114,7 +2109,7 @@ class ManWindow(QtGui.QWidget):
 
 def startapp():
     global application
-    application = QtGui.QApplication(sys.argv)
+    application = QtWidgets.QApplication(sys.argv)
 
     win = KefEdit()
 

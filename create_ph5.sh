@@ -37,6 +37,15 @@ mstoph5 -n master.ph5 -r ../../../samplerate/8H.10075..GH1.2012-08-27T23.01.00.m
 keftoph5 -n master.ph5 -k ../../../samplerate/Das_SampleRate_error.kef
 
 cd ../../
+mkdir availability
+cd availability
+keftoph5 -n master.ph5 -k ../../availability/Availability_all_arrays.kef
+keftoph5 -n master.ph5 -k ../../availability/Expirement_Availability.kef
+keftoph5 -n master.ph5 -k ../../availability/Receiver_Availability.kef
+mstoph5 -n master.ph5 -d ../../availability
+keftoph5 -n master.ph5 -k ../../availability/Das_Availability.kef
+
+cd ../
 mkdir response_table_n_i
 cd response_table_n_i
 pwd
@@ -55,24 +64,6 @@ nuke_table -n master.ph5 --all_arrays
 keftoph5 -n master.ph5 -k ../../response_table_n_i/Response_ni_all_arrays.kef
 
 cd ../
-mkdir response_table_n_i_dup
-cd response_table_n_i_dup
-pwd
-initialize_ph5 -n master.ph5
-metadatatoph5 -n master.ph5 -f ../../response_table_n_i_dup/station_response.xml
-mstoph5 -n master.ph5 -d ../../response_table_n_i_dup/miniseed/
-keftoph5 -n master.ph5 -k ../../metadata/experiment.kef
-time_kef_gen -n master.ph5 -o ../../metadata/time.kef
-keftoph5 -n master.ph5 -k ../../metadata/time.kef
-keftoph5 -n master -k ../../metadata/event_t.kef
-sort_kef_gen -n master.ph5 -a > ../../metadata/sort_t.kef
-keftoph5 -n master -k ../../metadata/sort_t.kef
-geo_kef_gen -n master.ph5 > ../../metadata/offset_t.kef
-keftoph5 -n master -k ../../metadata/offset_t.kef
-nuke_table -n master.ph5 -R
-keftoph5 -n master.ph5 -k ../../response_table_n_i_dup/Response_Table_Duplication.kef
-
-cd ..
 mkdir sampleratemultiplier0
 cd sampleratemultiplier0
 mkdir array_das   # both tables have sample_rate_multiplier_i=0

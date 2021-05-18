@@ -88,6 +88,7 @@ ph5.utilities.seg2toph5
  * fix bug missing variable
  * Make compatible for pforma
  * Add flag -r/--raw
+ * Make compatible with both Obspy 1.1.1 and 1.2.2
 ph5.utilities.pforma_io
  * add seg2 to pforma
  * fix bug that duplicate index_t and array_t when copy tables from A/master.ph5 to Sigma/master.ph5
@@ -111,6 +112,7 @@ ph5.utilities.tests.test_obspytoph5
 ph5.core.tests.test_ph5api
  * unit tests for ph5api; Stop sending log to screen;
 ph5.core.ph5api
+ * Indent lines 1279-1295 in ph5api cut so they are correctly included in the for loop on line 1244
  * skip ph5api cut traces that return no data. logic previously embedded in code but line 1302 is duplicated onto 1287 to prevent error from being thrown
  * fix ph5api cut sometimes returns too many samples (issue #298)
  * fix for get_availability returning incomplete results
