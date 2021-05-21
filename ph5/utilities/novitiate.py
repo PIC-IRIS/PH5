@@ -18,12 +18,15 @@ from math import radians, cos, tan, sqrt, pi
 from ph5.core import timedoy
 
 
-PROG_VERSION = __version__ = "2019.14"
+PROG_VERSION = __version__ = "2021.84"
 LOGGER = logging.getLogger(__name__)
 try:
-    from PyQt4 import QtGui, QtCore, Qt
+    from PySide2 import QtWidgets, QtCore, Qt
 except Exception:
-    LOGGER.error("PyQt4 must be installed for this to run")
+    msg = ("\n\nNo module named PySide2. "
+           "Please environment_gui.yml to install conda environment"
+           "PySide2 is needed for novitiate.")
+    raise ImportError(msg)
 
 # Gives range of expected data logger serial numbers
 MIN_DAS_SN = 10000
@@ -929,7 +932,7 @@ SEPMAP = {r'tab': '\t', 'comma': ',',
           'semi-colon': ';', 'colon': ':', 'space': r'\s'}
 
 
-class MyQTableWidget(QtGui.QTableWidget):
+class MyQTableWidget(QtWidgets.QTableWidget):
 
     def __init__(self, parent=None):
         super(MyQTableWidget, self).__init__(parent)
@@ -953,7 +956,7 @@ class MyQTableWidget(QtGui.QTableWidget):
             col = item.column()
             if item.row() == 0:
                 text = event.mimeData().text()
-                cell = QtGui.QTableWidgetItem(text)
+                cell = QtWidgets.QTableWidgetItem(text)
                 self.setItem(item.row(), item.column(), cell)
                 self.colheaders()
                 self.resizeColumnToContents(col)
@@ -970,13 +973,13 @@ class MyQTableWidget(QtGui.QTableWidget):
             self.cols.append(str(mytext))
 
 
-class DragLabel(QtGui.QLabel):
+class DragLabel(QtWidgets.QLabel):
     def __init__(self, text, parent):
         super(DragLabel, self).__init__(text, parent)
 
         self.setAutoFillBackground(True)
-        self.setFrameShape(QtGui.QFrame.StyledPanel)
-        self.setFrameShadow(QtGui.QFrame.Raised)
+        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.setFrameShadow(QtWidgets.QFrame.Raised)
 
     def mousePressEvent(self, event):
         hotSpot = event.pos()
@@ -986,10 +989,10 @@ class DragLabel(QtGui.QLabel):
         mimeData.setData('application/x-hotspot',
                          '%d %d' % (hotSpot.x(), hotSpot.y()))
 
-        pixmap = QtGui.QPixmap(self.size())
+        pixmap = QtWidgets.QPixmap(self.size())
         self.render(pixmap)
 
-        drag = QtGui.QDrag(self)
+        drag = QtWidgets.QDrag(self)
         drag.setMimeData(mimeData)
         drag.setPixmap(pixmap)
         drag.setHotSpot(hotSpot)
@@ -1002,7 +1005,7 @@ class DragLabel(QtGui.QLabel):
             self.update()
 
 
-class DragWidget(QtGui.QWidget):
+class DragWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(DragWidget, self).__init__(parent)
         x = 5
@@ -1034,44 +1037,45 @@ class DragWidget(QtGui.QWidget):
         wordLabel.show()
 
 
-class SetupDialog(QtGui.QDialog):
+class SetupDialog(QtWidgets.QDialog):
     def __init__(self, settings, parent=None):
         super(SetupDialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        outfileFormatLabel = QtGui.QLabel("Output Format")
-        self.outfileFormat = QtGui.QComboBox()
+        outfileFormatLabel = QtWidgets.QLabel("Output Format")
+        self.outfileFormat = QtWidgets.QComboBox()
         outfileFormatLabel.setBuddy(self.outfileFormat)
         self.outfileFormat.addItems(["kef", ])
         self.outfileFormat.setCurrentIndex(
             self.outfileFormat.findText(settings['outFormat']))
 
-        fieldSeparatorLabel = QtGui.QLabel("Column Separator")
-        self.fieldSeparator = QtGui.QComboBox()
+        fieldSeparatorLabel = QtWidgets.QLabel("Column Separator")
+        self.fieldSeparator = QtWidgets.QComboBox()
         fieldSeparatorLabel.setBuddy(self.fieldSeparator)
         self.fieldSeparator.addItems(
             ["comma", "semi-colon", "colon", "tab", "space"])
         self.fieldSeparator.setCurrentIndex(
             self.fieldSeparator.findText(settings['colSep']))
 
-        skipLinesLabel = QtGui.QLabel("Skip Lines")
-        self.skipLines = QtGui.QSpinBox()
+        skipLinesLabel = QtWidgets.QLabel("Skip Lines")
+        self.skipLines = QtWidgets.QSpinBox()
         skipLinesLabel.setBuddy(self.skipLines)
         self.skipLines.setRange(0, 12)
         self.skipLines.setValue(settings['linesSkip'])
 
-        viewLinesLabel = QtGui.QLabel("View Lines")
-        self.viewLines = QtGui.QSpinBox()
+        viewLinesLabel = QtWidgets.QLabel("View Lines")
+        self.viewLines = QtWidgets.QSpinBox()
         viewLinesLabel.setBuddy(self.viewLines)
         self.viewLines.setRange(1, 60)
         self.viewLines.setValue(settings['linesView'])
 
         self.settings = settings
 
-        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Apply |
-                                           QtGui.QDialogButtonBox.Close)
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Apply |
+            QtWidgets.QDialogButtonBox.Close)
 
-        grid = QtGui.QGridLayout()
+        grid = QtWidgets.QGridLayout()
         grid.addWidget(outfileFormatLabel, 0, 0)
         grid.addWidget(self.outfileFormat, 0, 1)
         grid.addWidget(fieldSeparatorLabel, 1, 0)
@@ -1084,7 +1088,7 @@ class SetupDialog(QtGui.QDialog):
         grid.addWidget(buttonBox, 4, 0, 2, -1)
         self.setLayout(grid)
 
-        self.connect(buttonBox.button(QtGui.QDialogButtonBox.Apply),
+        self.connect(buttonBox.button(QtWidgets.QDialogButtonBox.Apply),
                      QtCore.SIGNAL("clicked ()"), self.apply)
 
         self.connect(buttonBox, QtCore.SIGNAL("rejected ()"),
@@ -1101,7 +1105,7 @@ class SetupDialog(QtGui.QDialog):
         LOGGER.info("Reject")
 
 
-class Novitiate(QtGui.QMainWindow):
+class Novitiate(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(Novitiate, self).__init__(parent)
 
@@ -1114,22 +1118,22 @@ class Novitiate(QtGui.QMainWindow):
         #
         # Setup menus
         #
-        openin = QtGui.QAction('Open...', self)
+        openin = QtWidgets.QAction('Open...', self)
         openin.setShortcut('Ctrl+O')
         openin.setStatusTip('Open input file.')
         self.connect(openin, QtCore.SIGNAL('triggered ()'), self.openInfile)
 
-        saveas = QtGui.QAction('Save As...', self)
+        saveas = QtWidgets.QAction('Save As...', self)
         saveas.setShortcut('Ctrl+S')
         saveas.setStatusTip('Save output file.')
         self.connect(saveas, QtCore.SIGNAL('triggered ()'), self.saveAs)
 
-        config = QtGui.QAction('Configure...', self)
+        config = QtWidgets.QAction('Configure...', self)
         config.setShortcut('Ctrl+C')
         config.setStatusTip('Set input file field separator etc.')
         self.connect(config, QtCore.SIGNAL('triggered ()'), self.configure)
 
-        exit = QtGui.QAction('Exit', self)
+        exit = QtWidgets.QAction('Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip('Exit application')
         self.connect(exit, QtCore.SIGNAL(
@@ -1145,7 +1149,7 @@ class Novitiate(QtGui.QMainWindow):
         #
         # Dock
         #
-        dockW = QtGui.QDockWidget("SHOT Fields / RECV Fields", self)
+        dockW = QtWidgets.QDockWidget("SHOT Fields / RECV Fields", self)
         dockW.setObjectName("DockW")
         dockW.setAllowedAreas(QtCore.Qt.TopDockWidgetArea)
         dockW.setWidget(DragWidget(self))
@@ -1196,13 +1200,13 @@ class Novitiate(QtGui.QMainWindow):
             if self.table.cols:
                 y = 0
                 for t in self.table.cols:
-                    item = QtGui.QTableWidgetItem(t)
+                    item = QtWidgets.QTableWidgetItem(t)
                     self.table.setItem(0, y, item)
                     y += 1
 
         except AttributeError:
             for y in range(maxY):
-                item = QtGui.QTableWidgetItem('Ignore')
+                item = QtWidgets.QTableWidgetItem('Ignore')
                 self.table.setItem(0, y, item)
 
         s = self.settings['linesSkip']
@@ -1218,7 +1222,7 @@ class Novitiate(QtGui.QMainWindow):
                 except IndexError:
                     continue
 
-                item = QtGui.QTableWidgetItem(text)
+                item = QtWidgets.QTableWidgetItem(text)
                 item.setTextAlignment(QtCore.Qt.AlignRight |
                                       QtCore.Qt.AlignVCenter)
 
@@ -1228,7 +1232,7 @@ class Novitiate(QtGui.QMainWindow):
         self.table.setAcceptDrops(True)
 
     def openInfile(self):
-        inFileName = QtGui.QFileDialog.getOpenFileName(
+        inFileName, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, 'Open input file', os.getcwd())
         if os.path.exists(inFileName):
             fh = open(inFileName, 'U')
@@ -1240,7 +1244,7 @@ class Novitiate(QtGui.QMainWindow):
             self.readFileLines = None
 
     def saveAs(self):
-        saveFileName = QtGui.QFileDialog.getSaveFileName(
+        saveFileName, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Save output as', os.getcwd())
         if not saveFileName:
             return
@@ -1284,7 +1288,7 @@ class Novitiate(QtGui.QMainWindow):
 
 if __name__ == '__main__':
     get_args()
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     form = Novitiate()
     form.show()
     app.exec_()

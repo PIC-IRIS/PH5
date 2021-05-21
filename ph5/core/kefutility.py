@@ -1,8 +1,8 @@
-from PyQt4 import QtGui
+from PySide2 import QtWidgets
 from ph5.core import kefx, ph5api
 from ph5.utilities import tabletokef
 
-PROG_VERSION = "2018.057"
+PROG_VERSION = "2021.84"
 
 PH5TYPE = {'_s': str, '_a': str, '_d': float, '_f': float, '_l': int,
            '_i': int}
@@ -111,7 +111,7 @@ def NukeTable(parent, PH5file, path2file, tablepath):
 
     from subprocess import Popen, PIPE, STDOUT
 
-    cmdStr = "nuke-table -p %s -n %s %s" % (path2file, PH5file, op)
+    cmdStr = "nuke_table -p %s -n %s %s" % (path2file, PH5file, op)
     p = Popen(cmdStr, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
               close_fds=True)
     output = p.stdout.read()
@@ -121,16 +121,18 @@ def NukeTable(parent, PH5file, path2file, tablepath):
     if 'not found' in output.lower():
         msg = "PATH '%s' does not exist in PH5 FILE '%s'.\n\nDo you want to" \
               "insert the table into this PH5 FILE." % (tablepath, PH5file)
-        result = QtGui.QMessageBox.question(parent, "Insert table?", msg,
-                                            QtGui.QMessageBox.Yes,
-                                            QtGui.QMessageBox.No)
-        if result == QtGui.QMessageBox.No:
-            QtGui.QMessageBox.warning(parent, "Warning", "Saving interupted.")
+        result = QtWidgets.QMessageBox.question(
+            parent, "Insert table?", msg,
+            QtWidgets.QMessageBox.Yes,
+            QtWidgets.QMessageBox.No)
+        if result == QtWidgets.QMessageBox.No:
+            QtWidgets.QMessageBox.warning(
+                parent, "Warning", "Saving interupted.")
             return False
     if 'error' in output.lower():
         title = "Error in removing table %s from PH5 file" % tablepath
-        result = QtGui.QMessageBox.warning(parent, title,
-                                           output + "\n\nSaving interupted.")
+        result = QtWidgets.QMessageBox.warning(
+            parent, title, output + "\n\nSaving interupted.")
         return False
     return True
 

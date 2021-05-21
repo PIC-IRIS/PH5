@@ -57,7 +57,6 @@ setup(
                       'pyproj',
                       'psutil',
                       'obspy',
-                      'vispy',
                       'lxml',
                       'construct==2.5.1',
                       'simplekml',
