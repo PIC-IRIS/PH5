@@ -17,7 +17,7 @@ import copy
 from ph5.core import ph5api
 from ph5.utilities import validation
 
-PROG_VERSION = "2020.206"
+PROG_VERSION = "2021.141"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -797,6 +797,9 @@ class PH5Validate(object):
         if event['location/Z/units_s'] in [None, '']:
             warning.append("No Event location/Z/units_s value "
                            "found.")
+        if event['location/Z/units_s'] in ['unknown', 'UNKNOWN']:
+            warning.append("Event location/Z/units_s has a value of UNKNOWN. "
+                           "Please update this value.")
         # EVENT TIME
         if event['time/epoch_l'] is None:
             error.append("No Event time/epoch_l value found.")
