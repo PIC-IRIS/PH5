@@ -599,6 +599,13 @@ class PH5Availability(object):
                                 or endtime is None else endtime
                             if T[1] is None or T[2] is None:
                                 return None
+                            # trim user defined time range if it extends beyond the
+                            # deploy/pickup times
+                            # Logic to fix the deploy time error           
+                            if float(start) < float(ph5_start_epoch):
+                                start = ph5_start_epoch
+                            if float(end) > float(ph5_stop_epoch):
+                                end = ph5_stop_epoch
                             if include_sample_rate:
                                 if samplerate_return is not None:
                                     availability.append((
@@ -616,7 +623,6 @@ class PH5Availability(object):
                                 availability.append((
                                     ph5_seed_station, ph5_loc, ph5_channel,
                                     start, end))
-
         return availability
 
     def get_start(self, das_t):
