@@ -17,7 +17,7 @@ import copy
 from ph5.core import ph5api
 from ph5.utilities import validation
 
-PROG_VERSION = "2020.206"
+PROG_VERSION = "2021.141"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -117,14 +117,14 @@ class PH5Validate(object):
             return info, warning, error
         if len(experiment_t) > 1:
             error.append("More than one entry found in experiment_t.")
-        if not experiment_t[0]['net_code_s']:
+
+        if experiment_t[0]['net_code_s'] in [None, '']:
             error.append("Network code was not found: "
                          "A 2 character network code is required.")
-        if not (1 <= len(experiment_t[0]['net_code_s']) <= 2):
+        elif not (1 <= len(experiment_t[0]['net_code_s']) <= 2):
             error.append("SEED network code not "
                          "between 1 and 2 characters.")
-
-        if not experiment_t[0]['net_code_s'][0].isdigit() and \
+        elif not experiment_t[0]['net_code_s'][0].isdigit() and \
                 experiment_t[0]['net_code_s'][0].upper() != "X" and \
                 experiment_t[0]['net_code_s'][0].upper() != "Y" and \
                 experiment_t[0]['net_code_s'][0].upper() != "Z":
@@ -142,9 +142,9 @@ class PH5Validate(object):
                          .format(reportnum_code))
 
         if not experiment_t[0]['nickname_s']:
-            warning.append("Nickname was not found: "
-                           "It is suggested you include a nickname "
-                           "for your experiment")
+            error.append("Nickname was not found: "
+                         "It is suggested you include a nickname "
+                         "for your experiment")
 
         if not experiment_t[0]['longname_s']:
             warning.append("Long name was not found: "
@@ -374,12 +374,15 @@ class PH5Validate(object):
         station_id = station['id_s']
         try:
             if not (0 <= int(station_id) <= 65535):
-                error.append("Station ID not "
-                             "between 0 and 65535")
+                error.append("Station ID '%s' not between 0 and 65535."
+                             % station_id)
+            elif int(station_id) > 32767:
+                warning.append("Station ID '%s' is more than 32767. "
+                               "Not compatible with SEGY revision 1."
+                               % station_id)
         except ValueError:
-            error.append("Station ID not a whole "
-                         "number between 0 "
-                         "and 65535 ")
+            error.append("Station ID '%s' not a whole "
+                         "number between 0 and 65535." % station_id)
 
         if not station['description_s']:
             warning.append("No station description found.")
@@ -410,13 +413,18 @@ class PH5Validate(object):
             error.append("SEED orientation code "
                          "required.")
 
-        if station['sample_rate_i'] <= 0:
-            warning.append("Sample rate seems to be <= 0. "
-                           "Is this correct???")
+        if station['sample_rate_i'] < 0:
+            error.append("Sample rate = %s not positive." %
+                         station['sample_rate_i'])
+        elif station['sample_rate_i'] == 0:
+            warning.append("Sample rate seems to be 0. Is this correct???")
 
-        if station['sample_rate_multiplier_i'] <= 0:
-            warning.append("Sample rate multiplier <= 0. "
-                           "Is this correct???")
+        if ((int(station['sample_rate_multiplier_i']) !=
+                station['sample_rate_multiplier_i'])
+                or station['sample_rate_multiplier_i'] < 1):
+            error.append("Sample rate multiplier = %s "
+                         "is not an integer greater than 1."
+                         % station['sample_rate_multiplier_i'])
 
         response_t = self.ph5.get_response_t_by_n_i(
             station['response_table_n_i'])
@@ -463,7 +471,6 @@ class PH5Validate(object):
                          "You may need to reload the raw "
                          "data for this station."
                          .format(str(das_serial)))
-
         dt = self.das_time[(das_serial, channel_id, sample_rate)]
         # add bound_errors if applicable
         if deploy_time == dt['min_deploy_time'][0]:
@@ -749,47 +756,50 @@ class PH5Validate(object):
         # EVENT CHECKS
         if not event['id_s']:
             error.append("Event id is missing.")
+        else:
+            try:
+                if not (0 <= int(event['id_s']) <= 65535):
+                    error.append("Event ID '%s' not between 0 and 65535."
+                                 % event['id_s'])
+                elif int(event['id_s']) > 32767:
+                    warning.append("Event ID '%s' is more than 32767. "
+                                   "Not compatible with SEGY revision 1."
+                                   % event['id_s'])
+            except ValueError:
+                error.append("Event ID '%s' not a whole "
+                             "number between 0 and 65535." % event['id_s'])
+
         if not event['description_s']:
             warning.append("Event description is missing.")
         # EVENT LOCATION
-        if event['location/coordinate_system_s'] is None:
-            warning.append("No Event location/coordinate_system_s value "
-                           "found.")
-
-        if event['location/projection_s'] is None:
-            warning.append("No Event location/projection_s value "
-                           "found.")
-
-        if event['location/ellipsoid_s'] is None:
-            warning.append("No Event location/ellipsoid_s value "
-                           "found.")
-
-        if event['location/description_s'] is None:
-            warning.append("No Event location/description_s value "
-                           "found.")
-
+        # removed check for coordinate_system_s, projection_s,
+        # projection_s , ellipsoid_s , description_s
+        # because they are not required and most of PIs do not fill them out
         if event['location/X/value_d'] == 0:
             error.append("Event location/X/value_d "
                          "'longitude' seems to be 0. "
                          "Is this correct???")
-        if event['location/X/units_s'] is None:
-            error.append("No Event location/X/units_s value "
-                         "found.")
+        if event['location/X/units_s'] in [None, '']:
+            warning.append("No Event location/X/units_s value "
+                           "found.")
 
         if event['location/Y/value_d'] == 0:
             error.append("Event location/Y/value_d "
                          "'latitude' seems to be 0. "
                          "Is this correct???")
-        if event['location/X/units_s'] is None:
-            error.append("No Event location/Y/units_s value "
-                         "found.")
+        if event['location/Y/units_s'] in [None, '']:
+            warning.append("No Event location/Y/units_s value "
+                           "found.")
 
         if not event['location/Z/value_d']:
             error.append("No Event location/Z/value_d value "
                          "found.")
-        if event['location/X/units_s'] is None:
-            error.append("No Event location/Z/units_s value "
-                         "found.")
+        if event['location/Z/units_s'] in [None, '']:
+            warning.append("No Event location/Z/units_s value "
+                           "found.")
+        if event['location/Z/units_s'] in ['unknown', 'UNKNOWN']:
+            warning.append("Event location/Z/units_s has a value of UNKNOWN. "
+                           "Please update this value.")
         # EVENT TIME
         if event['time/epoch_l'] is None:
             error.append("No Event time/epoch_l value found.")
@@ -824,7 +834,7 @@ class PH5Validate(object):
             msg = ("Event_t table not found. "
                    "Did this experiment have shots???")
             LOGGER.warning(msg)
-            vb = ValidationBlock(heading=header, error=[msg])
+            vb = ValidationBlock(heading=header, warning=[msg])
             validation_blocks.append(vb)
         else:
             shot_lines = sorted(self.ph5.Event_t_names)

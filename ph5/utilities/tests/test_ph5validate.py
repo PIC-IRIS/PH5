@@ -95,7 +95,7 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                 self.assertEqual(
                     r.warning,
                     ['No station description found.',
-                     'Sample rate seems to be <= 0. Is this correct???'])
+                     'Sample rate seems to be 0. Is this correct???'])
 
 
 class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
@@ -221,9 +221,12 @@ class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
         self.assertEqual(ret.verbose, False)
 
 
-class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
+class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
+    """
+    Check conflict times between array_t and das_t
+    """
     def setUp(self):
-        super(TestPh5Validate_detect_data, self).setUp()
+        super(TestPh5Validate_conflict_time, self).setUp()
         kef_to_ph5(
             self.tmpdir, 'master.ph5',
             os.path.join(self.home, 'ph5/test_data'),
@@ -235,7 +238,7 @@ class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
 
     def tearDown(self):
         self.ph5_object.ph5close()
-        super(TestPh5Validate_detect_data, self).tearDown()
+        super(TestPh5Validate_conflict_time, self).tearDown()
 
     def test_check_array_t(self):
         """
@@ -428,6 +431,154 @@ class TestPh5Validate_detect_data(TempDirTestCase, LogTestCase):
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
                       errors)
+
+
+class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestPh5Validate_currPH5, self).setUp()
+        ph5path = os.path.join(self.home, 'ph5/test_data/ph5')
+        self.ph5_object = ph5api.PH5(
+            path=ph5path, nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(
+            self.ph5_object, ph5path)
+
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestPh5Validate_currPH5, self).tearDown()
+
+    def test_check_experiment_t(self):
+        # check no net_code_s
+        experiment_t = self.ph5_object.Experiment_t['rows']
+        experiment_t[0]['net_code_s'] = ''
+        info, warning, error = \
+            self.ph5validate.check_experiment_t_completeness(experiment_t)
+
+        self.assertIn('Network code was not found: '
+                      'A 2 character network code is required.',
+                      error)
+
+    def test_check_station_completeness(self):
+
+        self.ph5validate.analyze_time()
+        das_time = self.ph5validate.das_time
+
+        station = self.ph5_object.Array_t['Array_t_008']['byid']['8001'][1][0]
+        # id_s isn't a whole number => error
+        das_time[('9EEF', 1, 100)]['time_windows'][0] = \
+            (1463568480, 1463568540, '33a33')
+        station['id_s'] = '33a33'
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Station ID '33a33' not a whole number "
+                      "between 0 and 65535.",
+                      err)
+        # id_s not in range [0,65535] => error
+        das_time[('9EEF', 1, 100)]['time_windows'][0] = \
+            (1463568480, 1463568540, '65536')
+        station['id_s'] = '65536'
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Station ID '65536' not between 0 and 65535.",
+                      err)
+        # id_s in range [32768, 65534] => warning
+        das_time[('9EEF', 1, 100)]['time_windows'][0] = \
+            (1463568480, 1463568540, '33333')
+        station['id_s'] = '33333'
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Station ID '33333' is more than 32767. "
+                      "Not compatible with SEGY revision 1.",
+                      warn)
+
+        # sample_rate=0 => warning
+        das_time[('12183', 1, 0)] = das_time[('12183', 1, 500)]
+        station = self.ph5_object.Array_t['Array_t_009']['byid']['9001'][1][0]
+        station['sample_rate_i'] = 0
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Sample rate seems to be 0. Is this correct???",
+                      warn)
+        # sample_rate<0 => error
+        das_time[('12183', 1, -1)] = das_time[('12183', 1, 500)]
+        station['sample_rate_i'] = -1
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Sample rate = -1 not positive.",
+                      err)
+
+        # sample_rate_multiplier_i isn't a integer => error
+        station['sample_rate_i'] = 500
+        station['sample_rate_multiplier_i'] = 1.1
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Sample rate multiplier = 1.1 is not an"
+                      " integer greater than 1.",
+                      err)
+        # sample_rate_multiplier_i<1 => error
+        station['sample_rate_multiplier_i'] = 0
+        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        self.assertIn("Sample rate multiplier = 0 is not an integer "
+                      "greater than 1.",
+                      err)
+
+    def test_check_event_t_completeness(self):
+        self.ph5_object.read_event_t('Event_t_001')
+        event = self.ph5_object.Event_t['Event_t_001']['byid']['7001']
+
+        # id_s isn't a whole number => error
+        event['id_s'] = '7a001'
+        inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+        self.assertIn("Event ID '7a001' not a whole "
+                      "number between 0 and 65535.",
+                      err)
+        # id_s isn't in range [0, 65535] => error
+        event['id_s'] = '65536'
+        inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+        self.assertIn("Event ID '65536' not between 0 and 65535.",
+                      err)
+        # id_s in range [32768, 65534] => warning
+        event['id_s'] = '32769'
+        inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+        self.assertIn("Event ID '32769' is more than 32767. "
+                      "Not compatible with SEGY revision 1.",
+                      warn)
+
+        # no log for location/coordinate_system_s, projection_s, ellipsoid_s,
+        # ellipsoid_s
+        # warning for location/X,Y,Z/units_s
+        event['id_s'] = '7001'
+        event['location/coordinate_system_s'] = ''
+        event['location/projection_s'] = ''
+        event['location/ellipsoid_s'] = ''
+        event['location/description_s'] = ''
+        event['location/X/units_s'] = ''
+        event['location/Y/units_s'] = ''
+        event['location/Z/units_s'] = ''
+        inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+        self.assertEqual((inf, warn, err),
+                         ([],
+                          ['Event description is missing.',
+                           'No Event location/X/units_s value found.',
+                           'No Event location/Y/units_s value found.',
+                           'No Event location/Z/units_s value found.'],
+                          [])
+                         )
+
+
+class TestPh5Validate_noEvent(TempDirTestCase, LogTestCase):
+    def tearDown(self):
+        self.ph5_object.ph5close()
+        super(TestPh5Validate_noEvent, self).tearDown()
+
+    def test_check_no_event(self):
+        testargs = ['segd2ph5', '-n', 'master.ph5', '-r',
+                    os.path.join(self.home,
+                                 'ph5/test_data/segd2ph5/1111.1.0.fcnt')]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+        self.ph5_object = ph5api.PH5(
+            path=self.tmpdir, nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(
+            self.ph5_object, self.tmpdir)
+        vbs = self.ph5validate.check_event_t()
+        self.assertEqual(len(vbs), 1)
+        self.assertIn("Event_t table not found. "
+                      "Did this experiment have shots???",
+                      vbs[0]. warning)
 
 
 class TestPH5Validate_no_response_filename(LogTestCase, TempDirTestCase):

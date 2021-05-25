@@ -744,9 +744,7 @@ class PH5toStationXMLParser(object):
                         for e in errors:
                             msg = header + str(e)
                             self.unique_errors.add((msg, 'error'))
-                        for e in warnings:
-                            msg = header + str(e)
-                            self.unique_errors.add((msg, 'warning'))
+
                         if errors != []:
                             continue
                         if not self.check_intersection(sta_xml_obj, latitude,
