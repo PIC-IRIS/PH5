@@ -1881,6 +1881,22 @@ class TestPH5AvailabilitySampleRate_error(LogTestCase, TempDirTestCase):
         self.ph5_sr_error.close()
 
 
+class TestAvailability_DateRange(LogTestCase, TempDirTestCase):
+    def test_CompareMS_Availability(self):
+        self.ph5path = os.path.join(self.home,
+                                    'ph5/test_data/ph5/availability_extent')
+        self.ph5_object = ph5api.PH5(path=self.ph5path,
+                                     nickname='master.ph5')
+        self.avail = ph5availability.PH5Availability(self.ph5_object)
+        tt = self.avail.get_availability(station='8001',
+                                         channel='HLZ',
+                                         starttime=None,
+                                         endtime=None,
+                                         include_sample_rate=True)
+        self.assertEqual(tt[0][3], 1463568490)
+        self.assertEqual(tt[0][4], 1463568500)
+
+
 class TestCompareMS_Availability(LogTestCase, TempDirTestCase):
     def test_CompareMS_Availability(self):
         self.ph5path = os.path.join(self.home,

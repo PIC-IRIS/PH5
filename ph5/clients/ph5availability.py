@@ -606,8 +606,8 @@ class PH5Availability(object):
                                 or endtime is None else endtime
                             if T[1] is None or T[2] is None:
                                 return None
-                            # trim user defined time range if it extends beyond the
-                            # deploy/pickup times
+                            # trim user defined time range if it
+                            # extends beyond the deploy/pickup times
                             # Logic to fix the deploy time error
                             if float(start) < float(ph5_start_epoch):
                                 start = ph5_start_epoch
