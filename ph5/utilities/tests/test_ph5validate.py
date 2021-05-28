@@ -471,6 +471,8 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
         self.assertIn("Station ID '33a33' not a whole number "
                       "between 0 and 65535.",
                       err)
+        self.assertIn("location/Z/units_s is set unknown. " +
+                      "Consider updating this unit to m.", warn)
         # id_s not in range [0,65535] => error
         das_time[('9EEF', 1, 100)]['time_windows'][0] = \
             (1463568480, 1463568540, '65536')

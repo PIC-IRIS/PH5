@@ -355,6 +355,7 @@ class PH5Validate(object):
           - location/X/value_d
           - location/Y/value_d
           - location/Z/value_d
+          - location/Z/unit_i
           #### CHANNEL DEPLOY/PICKUP
           - deploy_time/epoch_l
           - pickup_time/epoch_l
@@ -436,6 +437,11 @@ class PH5Validate(object):
         e, w = validation.check_lat_lon_elev(station)
         error = error + e
         warning = warning + w
+        if station['location/Z/units_s'] in ['unknown',
+                                             'UNKNOWN']:
+            warning.append("location/Z/units_s is set " +
+                           "unknown. Consider updating " +
+                           "this unit to m.")
 
         # CHANNEL DEPLOY/PICKUP
         deploy_time = station['deploy_time/epoch_l']
