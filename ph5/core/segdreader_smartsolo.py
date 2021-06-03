@@ -15,8 +15,52 @@ import numpy as np
 from ph5.core import segd_h_smartsolo as segd_h
 from ph5.core.timedoy import TimeDOY
 
-PROG_VERSION = "2021.112"
+PROG_VERSION = "2021.154"
 LOGGER = logging.getLogger(__name__)
+
+
+# ---------------------- Convert GPS time to Unix time -----------------------
+# https://www.andrews.edu/~tzs/timeconv/timedisplay.php
+# https://www.andrews.edu/~tzs/timeconv/timealgorithm.html
+def getleaps():
+    """ Define GPS leap seconds """
+    leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205,
+             346723206, 393984007, 425520008, 457056009, 504489610,
+             551750411, 599184012, 820108813, 914803214, 1025136015,
+             1119744016, 1167264017]
+    return leaps
+
+
+def isleap(gpsTime):
+    """ Test to see if a GPS second is a leap second """
+    isLeap = False
+    leaps = getleaps()
+    for i in range(len(leaps)):
+        if (gpsTime == leaps[i]):
+            isLeap = True
+    return isLeap
+
+
+def countleaps(gpsTime):
+    """ Count number of leap seconds that have passed """
+    leaps = getleaps()
+    nleaps = 0              # number of leap seconds prior to gpsTime
+    for i in range(len(leaps)):
+        if (gpsTime >= leaps[i]):
+            nleaps += 1
+    return nleaps
+
+
+def gps2unix(gpsTime):
+    """ Convert GPS Time to Unix Time (sec) """
+    unixTime = gpsTime + 315964800
+    nleaps = countleaps(gpsTime)
+    unixTime -= nleaps
+    if isleap(gpsTime):
+        unixTime += 0.5
+    return unixTime
+
+# --------------------- End Convert GPS time to Unix time---------------------
 
 
 class InputsError (exceptions.Exception):
@@ -274,15 +318,11 @@ class Reader ():
                                                      thN3.IGU_GPS_lon_fraction)
         self.trace_headers.ele = thN3.IGU_GPS_height
         self.trace_headers.preamp_gain_db = self.preamp_gain_db
-        """
-        A SEG - D Rev 3.0 timestamp counting the number of microseconds since
-        6 Jan 1980 00:00:00(GPS epoch).
-        """
-        start_count_time = 315964800000.       # 6 Jan 1980 00:00:00
-        TB_GPS_time_time_ms = self.trace_headers.trace_header_N[
-                                  1].TB_GPS_time_microsec/1000.
-        trace_epoch_ms = start_count_time + TB_GPS_time_time_ms
-        self.trace_headers.trace_epoch = trace_epoch_ms * 1000.     # microsec
+        TB_GPS_time_time_sec = self.trace_headers.trace_header_N[
+                                  1].TB_GPS_time_microsec/1000000.
+        trace_epoch_sec = gps2unix(TB_GPS_time_time_sec)
+        trace_epoch_ms = trace_epoch_sec * 10.**3
+        self.trace_headers.trace_epoch = trace_epoch_sec * 10.**6   # microsec
         number_of_samples_in_traces = self.trace_headers.trace_header_N[
             0].samples_per_trace
         trace_endtime_ms = trace_epoch_ms + (
