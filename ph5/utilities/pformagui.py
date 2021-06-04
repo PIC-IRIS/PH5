@@ -10,23 +10,20 @@ from psutil import cpu_count, cpu_percent
 from ph5.core import pmonitor
 from ph5.utilities import pforma_io, watchit
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2021.84'
 LOGGER = logging.getLogger(__name__)
 try:
-    from PySide import QtCore, QtGui
+    from PySide2 import QtCore, QtWidgets
 except Exception:
-    msg = ("\n\nNo module named PySide. "
-           "Please install PySide first, it is needed for pforma. "
-           "\n\n"
-           "If using Anaconda run 'conda install PySide'"
-           "For pip users, PySide installation instructions are available at "
-           "https://pypi.org/project/PySide/#installation.")
+    msg = ("\n\nNo module named PySide2. "
+           "Please environment_gui.yml to install conda environment"
+           "PySide2 is needed for pforma.")
     raise ImportError(msg)
 
 UTMZone = '13N'
 
 
-class GetInputs(QtGui.QWidget):
+class GetInputs(QtWidgets.QWidget):
     '''
        Widget to set name of lst file, processing directory, and to start run
     '''
@@ -35,14 +32,14 @@ class GetInputs(QtGui.QWidget):
         super(GetInputs, self).__init__(parent)
 
         # Button to start run
-        self.runButton = QtGui.QPushButton("Run")
+        self.runButton = QtWidgets.QPushButton("Run")
         # Select master list of raw files
         self.lstButton = self.createButton("Browse...", self.getList)
         self.lstButton.setStatusTip("Browse for raw lst file.")
         self.lstCombo = self.createComboBox()
-        lstText = QtGui.QLabel("RAW list file:")
+        lstText = QtWidgets.QLabel("RAW list file:")
         # Select processing directory
-        lstLayout = QtGui.QHBoxLayout()
+        lstLayout = QtWidgets.QHBoxLayout()
         lstLayout.addStretch(False)
         lstLayout.addWidget(lstText)
         lstLayout.addWidget(self.lstCombo)
@@ -52,7 +49,7 @@ class GetInputs(QtGui.QWidget):
         self.dirButton.setStatusTip(
             "Browse for or create processing directory.")
         self.dirCombo = self.createComboBox()
-        dirText = QtGui.QLabel("Processing directory:")
+        dirText = QtWidgets.QLabel("Processing directory:")
 
         lstLayout.addWidget(dirText)
         lstLayout.addWidget(self.dirCombo)
@@ -67,7 +64,7 @@ class GetInputs(QtGui.QWidget):
         '''
            Create a button and connect it to 'member'
         '''
-        button = QtGui.QPushButton(text)
+        button = QtWidgets.QPushButton(text)
         button.clicked.connect(member)
         return button
 
@@ -75,18 +72,18 @@ class GetInputs(QtGui.QWidget):
         '''
            Create a combo box
         '''
-        comboBox = QtGui.QComboBox()
+        comboBox = QtWidgets.QComboBox()
         comboBox.setEditable(True)
         comboBox.addItem(text)
-        comboBox.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                               QtGui.QSizePolicy.Preferred)
+        comboBox.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                               QtWidgets.QSizePolicy.Preferred)
         return comboBox
 
     def getList(self):
         '''
            Select the raw lst file
         '''
-        lstfile, _ = QtGui.QFileDialog.getOpenFileName(
+        lstfile, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, 'List file', QtCore.QDir.currentPath())
 
         if lstfile and os.path.exists(lstfile):
@@ -99,10 +96,10 @@ class GetInputs(QtGui.QWidget):
         '''
            Select or create the processing directory
         '''
-        directory =\
-            QtGui.QFileDialog.getExistingDirectory(self,
-                                                   "Working directory",
-                                                   QtCore.QDir.currentPath())
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
+            self,
+            "Working directory",
+            QtCore.QDir.currentPath())
         if directory:
             if self.dirCombo.findText(directory) == -1:
                 self.dirCombo.addItem(directory)
@@ -119,7 +116,7 @@ class MdiChild(pmonitor.Monitor):
         super(MdiChild, self).__init__(fio, cmds, info, title, mmax)
 
 
-class MdiChildDos(QtGui.QProgressDialog):
+class MdiChildDos(QtWidgets.QProgressDialog):
     def __init__(self, home, title='X'):
         super(MdiChildDos, self).__init__(title, "Close", 0, 0)
         self.home = home
@@ -128,7 +125,7 @@ class MdiChildDos(QtGui.QProgressDialog):
 
         self.fio, self.cmds, self.info = init_fio(None, self.home)
         if os.path.exists(os.path.join(self.fio.home, 'Sigma')):
-            mess = QtGui.QMessageBox()
+            mess = QtWidgets.QMessageBox()
             mess.setText("Please remove existing directory {0}.".format(
                 os.path.join(self.fio.home, 'Sigma')))
             mess.exec_()
@@ -139,19 +136,19 @@ class MdiChildDos(QtGui.QProgressDialog):
         self.setLabelText("Completed")
         self.setRange(1, 1)
 
-        mess = QtGui.QMessageBox()
+        mess = QtWidgets.QMessageBox()
         mess.setWindowTitle("Merge Progress Summary")
         mess.setDetailedText('\n'.join(msgs))
         mess.exec_()
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
     statsig = QtCore.Signal(str)
 
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self.mdiArea = QtGui.QMdiArea()
+        self.mdiArea = QtWidgets.QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.mdiArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.setCentralWidget(self.mdiArea)
@@ -187,17 +184,15 @@ class MainWindow(QtGui.QMainWindow):
         '''
            Reset (Kill) all family processes.
         '''
-        reply = \
-            QtGui.QMessageBox.question(self,
-                                       'Message',
-                                       "Are you sure you want to reset family\
-                                        processing?\nAll state information\
-                                        will be lost!!!",
-                                       QtGui.QMessageBox.Yes |
-                                       QtGui.QMessageBox.No,
-                                       QtGui.QMessageBox.No)
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            'Message',
+            "Are you sure you want to reset family processing?"
+            "\nAll state information will be lost!!!",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No)
 
-        if reply == QtGui.QMessageBox.No:
+        if reply == QtWidgets.QMessageBox.No:
             return
 
         self.killchildren()
@@ -246,7 +241,7 @@ class MainWindow(QtGui.QMainWindow):
     def mergeFamily(self):
         mydir = self.inputs.dirCombo.currentText()
         if not mydir:
-            mess = QtGui.QMessageBox()
+            mess = QtWidgets.QMessageBox()
             mess.setText("Processing directory must be set!")
             mess.exec_()
             return
@@ -297,11 +292,11 @@ class MainWindow(QtGui.QMainWindow):
             "/".join(self.children.keys())))
 
     def about(self):
-        QtGui.QMessageBox.about(self,
-                                "About pforma",
-                                "The <b>pforma</b> program performs\
-                                 conversions to PH5 in parallel. "
-                                "Note to self: Need a better about.")
+        QtWidgets.QMessageBox.about(self,
+                                    "About pforma",
+                                    "The <b>pforma</b> program performs"
+                                    "conversions to PH5 in parallel. "
+                                    "Note to self: Need a better about.")
 
     def updateMenus(self):
         hasMdiChild = (self.activeMdiChild() is not None)
@@ -325,40 +320,51 @@ class MainWindow(QtGui.QMainWindow):
         return child
 
     def createActions(self):
-        self.runAct = QtGui.QAction("&Run", self,
-                                    statusTip="Initiate processing.",
-                                    triggered=self.newFamily)
-        self.mergeAct = QtGui.QAction("&Merge", self,
-                                      statusTip="Merge processed families to a\
-                                       single family.",
-                                      triggered=self.mergeFamily)
-        self.timeoutAct = QtGui.QAction("Set &Timeout...", self,
-                                        statusTip="Change timeout to process a\
-                                         single raw file.",
-                                        triggered=self.setTimeout)
-        self.utmAct = QtGui.QAction("&UTM zone...", self,
-                                    statusTip="UTM zone. For some SEG-D data."
-                                              "zone plus N or S (13N)",
-                                    triggered=self.setUTMZone)
-        self.combineAct = QtGui.QAction("Combine # of SEG-D traces in ph5...",
-                                        self,
-                                        statusTip="Combine a number of SEG-D\
-                                         traces for faster processing.",
-                                        triggered=self.setCombineSEGD)
-        self.resetAct = QtGui.QAction("R&eset", self,
-                                      statusTip="Reset all family processes.",
-                                      triggered=self.resetIt)
+        self.runAct = QtWidgets.QAction(
+            "&Run",
+            self,
+            statusTip="Initiate processing.",
+            triggered=self.newFamily)
+        self.mergeAct = QtWidgets.QAction(
+            "&Merge",
+            self,
+            statusTip="Merge processed families to a single family.",
+            triggered=self.mergeFamily)
+        self.timeoutAct = QtWidgets.QAction(
+            "Set &Timeout...",
+            self,
+            statusTip="Change timeout to process a single raw file.",
+            triggered=self.setTimeout)
+        self.utmAct = QtWidgets.QAction(
+            "&UTM zone...",
+            self,
+            statusTip="UTM zone. For some SEG-D data. zone plus N or S (13N)",
+            triggered=self.setUTMZone)
+        self.combineAct = QtWidgets.QAction(
+            "Combine # of SEG-D traces in ph5...",
+            self,
+            statusTip="Combine a number of SEG-D\
+            traces for faster processing.",
+            triggered=self.setCombineSEGD)
+        self.resetAct = QtWidgets.QAction(
+            "R&eset",
+            self,
+            statusTip="Reset all family processes.",
+            triggered=self.resetIt)
 
-        self.exitAct = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q",
-                                     statusTip="Exit the application",
-                                     triggered=QtGui.qApp.closeAllWindows)
+        self.exitAct = QtWidgets.QAction(
+            "E&xit",
+            self,
+            shortcut="Ctrl+Q",
+            statusTip="Exit the application",
+            triggered=QtWidgets.qApp.closeAllWindows)
 
-        self.separatorAct = QtGui.QAction(self)
+        self.separatorAct = QtWidgets.QAction(self)
         self.separatorAct.setSeparator(True)
 
-        self.aboutAct = QtGui.QAction("&About", self,
-                                      statusTip="Show pforma's About box",
-                                      triggered=self.about)
+        self.aboutAct = QtWidgets.QAction("&About", self,
+                                          statusTip="Show pforma's About box",
+                                          triggered=self.about)
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
@@ -379,7 +385,7 @@ class MainWindow(QtGui.QMainWindow):
         '''
            Put GetInputs widget in dock
         '''
-        self.dockWidget = QtGui.QDockWidget(self)
+        self.dockWidget = QtWidgets.QDockWidget(self)
         self.inputs = GetInputs()
         self.inputs.runButton.clicked.connect(self.newFamily)
         self.inputs.runButton.setStatusTip("Initiate processing.")
@@ -428,25 +434,25 @@ class MainWindow(QtGui.QMainWindow):
             self.mdiArea.setActiveSubWindow(window)
 
     def setTimeout(self):
-        a, _ = QtGui.QInputDialog.getInt(
+        a, _ = QtWidgets.QInputDialog.getInt(
             self, "Set Timeout", "Timeout seconds:", self.timeout)
         if _:
             self.timeout = a
 
     def setUTMZone(self):
-        a, _ = QtGui.QInputDialog.getText(self,
-                                          "Set UTM zone",
-                                          "UTM Zone: "+self.UTMZone +
-                                          "(Zone number plus N or S"
-                                          "designation)")
+        a, _ = QtWidgets.QInputDialog.getText(self,
+                                              "Set UTM zone",
+                                              "UTM Zone: "+self.UTMZone +
+                                              "(Zone number plus N or S"
+                                              "designation)")
         if _:
             self.UTMZone = a
 
     def setCombineSEGD(self):
-        a, _ = QtGui.QInputDialog.getInt(self,
-                                         "Set number of traces to combine",
-                                         "Combined number:",
-                                         minValue=1, maxValue=120)
+        a, _ = QtWidgets.QInputDialog.getInt(self,
+                                             "Set number of traces to combine",
+                                             "Combined number:",
+                                             minValue=1, maxValue=120)
         if _:
             self.combine = a
         else:
@@ -459,7 +465,7 @@ class MainWindow(QtGui.QMainWindow):
         mydir = self.inputs.dirCombo.currentText()
         mylst = self.inputs.lstCombo.currentText()
         if not mydir or not mylst:
-            mess = QtGui.QMessageBox()
+            mess = QtWidgets.QMessageBox()
             mess.setText(
                 "A RAW file list and processing directory must be set!")
             mess.exec_()
@@ -536,7 +542,7 @@ def init_fio(f, d, utm=None, combine=None):
 
 
 def startapp():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     mainWin = MainWindow()
     mainWin.show()
     sys.exit(app.exec_())
