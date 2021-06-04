@@ -203,14 +203,25 @@ def get_args():
         MANUFACTURERS_CODE
 
     TSPF = False
-
     from optparse import OptionParser
-    oparser = OptionParser()
+
+    class MyParser(OptionParser):
+        """
+        Override format_epilog to allow newlines
+        """
+        def format_epilog(self, formatter):
+            return self.epilog
+
+    oparser = MyParser()
 
     oparser.usage = "Version: {0} Usage: segdtoph5 [options]".format(
         PROG_VERSION)
-    oparser.epilog = ("Notice: Data of a Das can't be stored in more than one "
-                      "mini file.")
+    oparser.epilog = (
+        "Notice:\n"
+        "\tData of a Das can't be stored in more than one mini file.\n"
+        "\tUpdate astropy package for the lastes leap second table used in "
+        "converting time from GPS to UTC in SmartSolo's:\n"
+        "\t\tconda update astropy\n")
 
     oparser.add_option("-r", "--raw", dest="rawfile",
                        help="Fairfield SEG-D v1.6 file.", metavar="raw_file")
