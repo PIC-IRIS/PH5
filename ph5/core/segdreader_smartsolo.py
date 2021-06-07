@@ -206,6 +206,7 @@ class Reader ():
         self.preamp_gain_db = None
         mp = self.reel_headers.channel_set_descriptor[
             0].MP_factor_descaler_multiplier
+        self.MP_factor_descaler_multiplier = mp
         mp_hex = "{0:x}".format(mp)
         if mp == 0:         # 0x0000
             self.preamp_gain_db = 0
