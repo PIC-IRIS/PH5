@@ -675,11 +675,18 @@ def process_traces(rh, th, tr):
               " Channel: " + str(p_das_t['channel_number_i'])
         #   Write trace data here
         try:
-            #   Convert to counts
-            tr_counts = tr / LSB
-            EXREC.ph5_g_receivers.newarray(
-                p_das_t['array_name_data_a'], tr_counts, dtype='int32',
-                description=des)
+            if SD.manufacturer == 'FairfieldNodal':
+                #   Convert to counts
+                tr_counts = tr / LSB
+                EXREC.ph5_g_receivers.newarray(
+                    p_das_t['array_name_data_a'], tr_counts, dtype='int32',
+                    description=des)
+            elif SD.manufacturer == 'SmartSolo':
+                import numpy
+                tr_mv = tr * SD.MP_factor_descaler_multiplier
+                EXREC.ph5_g_receivers.newarray(
+                    p_das_t['array_name_data_a'], tr_mv, dtype='float32',
+                    description=des)
         except Exception as e:
             #   Failed, leave as float
             LOGGER.warning(
