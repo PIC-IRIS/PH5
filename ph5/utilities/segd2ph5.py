@@ -15,14 +15,16 @@ import time
 import json
 import re
 from math import modf
-from ph5.core import experiment, columns, segdreader, segdreader_smartsolo
-from ph5 import LOGGING_FORMAT
+
 from pyproj import Proj, transform
 import construct
 import bcd_py
 
+from ph5.core import experiment, columns, segdreader, segdreader_smartsolo
+from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = "2019.252"
+
+PROG_VERSION = "2021.159"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
@@ -218,7 +220,7 @@ def get_args():
         PROG_VERSION)
     oparser.epilog = (
         "Notice:\n"
-        "\tData of a Das can't be stored in more than one mini file.\n"
+        "\tData of a Das can't be stored in more than one mini file.\n\n"
         "\tUpdate astropy package for the lastes leap second table used in "
         "converting time from GPS to UTC in SmartSolo's:\n"
         "\t\tconda update astropy\n")
@@ -682,7 +684,6 @@ def process_traces(rh, th, tr):
                     p_das_t['array_name_data_a'], tr_counts, dtype='int32',
                     description=des)
             elif SD.manufacturer == 'SmartSolo':
-                import numpy
                 tr_mv = tr * SD.MP_factor_descaler_multiplier
                 EXREC.ph5_g_receivers.newarray(
                     p_das_t['array_name_data_a'], tr_mv, dtype='float32',
