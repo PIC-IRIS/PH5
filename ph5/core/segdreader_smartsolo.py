@@ -17,7 +17,7 @@ try:
     from astropy.time import Time as asTime
 except ImportError:
     errmsg = ("astropy package is needed to run this command. "
-              "Please run 'conda install astropy` to install it.")
+              "Please run 'conda install astropy' to install it.")
     raise ImportError(errmsg)
 
 from ph5.core import segd_h_smartsolo as segd_h
