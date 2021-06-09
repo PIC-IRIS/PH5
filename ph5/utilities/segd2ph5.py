@@ -684,9 +684,9 @@ def process_traces(rh, th, tr):
                     p_das_t['array_name_data_a'], tr_counts, dtype='int32',
                     description=des)
             elif SD.manufacturer == 'SmartSolo':
-                tr_mv = tr * SD.MP_factor_descaler_multiplier
+                # SmartSolo is recorded by mV
                 EXREC.ph5_g_receivers.newarray(
-                    p_das_t['array_name_data_a'], tr_mv, dtype='float32',
+                    p_das_t['array_name_data_a'], tr, dtype='float32',
                     description=des)
         except Exception as e:
             #   Failed, leave as float
