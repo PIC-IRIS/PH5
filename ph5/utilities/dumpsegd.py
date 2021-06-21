@@ -180,7 +180,7 @@ def main():
         print "{0} bytes read.".format(sd.bytes_read)
     except BaseException, e:
         print "Fail to read header due to error: ", e
-        print "Usage: dumpfair seg-d_file [format]"
+        print "Usage: dumpsegd seg-d_file [format]"
         sys.exit()
 
 
