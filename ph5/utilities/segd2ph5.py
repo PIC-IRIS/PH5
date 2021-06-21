@@ -558,8 +558,6 @@ def process_traces(rh, th, tr):
         filename = SD.name()
         if SD.manufacturer == 'SmartSolo':
             channel_list = ['E', 'N', 'Z']
-            # remove second and decimal of second to shorten filename
-            # to fit the field
             filename_parts = filename.split('.')
             chanidx = -1
             for c in channel_list:
@@ -568,6 +566,16 @@ def process_traces(rh, th, tr):
                     break
                 except ValueError:
                     pass
+            """
+            Shorten filename to fit the field:
+            remove 'segd' at the end
+            remove second and decimal of second
+            add . in front of chan to show somethings have been removed
+            Ex: filename: 453005483.1.2021.03.15.16.00.00.000.E.segd
+            => shorten:   453005483.1.2021.03.15.16.00..E
+            """
+            filename_parts.remove('segd')
+            filename_parts[chanidx] = '.' + filename_parts[chanidx]
             filename_parts.pop(chanidx - 1)  # remove decimal part
             filename_parts.pop(chanidx - 2)  # remove second part
             filename = '.'.join(filename_parts)
