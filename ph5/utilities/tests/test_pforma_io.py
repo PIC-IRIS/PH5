@@ -27,7 +27,8 @@ class TestPforma(LogTestCase, TempDirTestCase):
         # add data to A/master.ph5
         os.chdir(os.path.join(self.tmpdir, "A"))
         testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
-                    os.path.join(self.home, "ph5/test_data/segd/3ch.fcnt")]
+                    os.path.join(self.home,
+                                 "ph5/test_data/segd/fairfield/3ch.fcnt")]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 

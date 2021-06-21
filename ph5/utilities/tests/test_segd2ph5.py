@@ -23,7 +23,7 @@ class TestSegDtoPH5_main(TempDirTestCase, LogTestCase):
     def test_main(self):
         # add fcnt data of the same das in the same array but with different
         # deploytime
-        segd_dir = os.path.join(self.home, "ph5/test_data/segd/")
+        segd_dir = os.path.join(self.home, "ph5/test_data/segd/fairfield/")
         # create list file
         list_file = open('fcnt_list', "w")
         fileList = os.listdir(segd_dir)
@@ -118,14 +118,15 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
     def test_process_traces_Fairfield(self):
         segd2ph5.setLogger()
         segd2ph5.SD = SD = segdreader.Reader(
-            infile=os.path.join(self.home, 'ph5/test_data/segd/3ch.fcnt'))
+            infile=os.path.join(self.home,
+                                'ph5/test_data/segd/fairfield/3ch.fcnt'))
         SD.process_general_headers()
         SD.process_channel_set_descriptors()
         SD.process_extended_headers()
         SD.process_external_headers()
 
         SIZE = os.path.getsize(
-            os.path.join(self.home, 'ph5/test_data/segd/3ch.fcnt'))
+            os.path.join(self.home, 'ph5/test_data/segd/fairfield/3ch.fcnt'))
         # need to use relative path './miniPH5_00001.ph5' because
         # index_t's 'external_file_name_s will be chopped off if the path's
         # length is greater than 32

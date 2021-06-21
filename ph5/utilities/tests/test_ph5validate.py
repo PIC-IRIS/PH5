@@ -566,8 +566,8 @@ class TestPh5Validate_noEvent(TempDirTestCase, LogTestCase):
 
     def test_check_no_event(self):
         testargs = ['segd2ph5', '-n', 'master.ph5', '-r',
-                    os.path.join(self.home,
-                                 'ph5/test_data/segd2ph5/1111.1.0.fcnt')]
+                    os.path.join(self.home, 'ph5/test_data/segd/fairfield/'
+                                            '1111.1.0.fcnt')]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
         self.ph5_object = ph5api.PH5(
@@ -589,7 +589,7 @@ class TestPH5Validate_no_response_filename(LogTestCase, TempDirTestCase):
     def test_check_response_t(self):
         testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
                     os.path.join(self.home,
-                                 'ph5/test_data/segd/3ch.fcnt')]
+                                 'ph5/test_data/segd/fairfield/3ch.fcnt')]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
         self.ph5API_object = ph5api.PH5(path=self.tmpdir,
