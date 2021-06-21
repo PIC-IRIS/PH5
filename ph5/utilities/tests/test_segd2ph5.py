@@ -4,11 +4,13 @@ Tests for segd2ph5
 import os
 import sys
 import unittest
+import logging
 
 from mock import patch
+from testfixtures import LogCapture
 
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader
+from ph5.core import segdreader, ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -71,7 +73,11 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
             segd2ph5.EXREC.ph5close()
         except AttributeError:
             pass
-
+        # Clear global variables
+        segd2ph5.EX = None
+        segd2ph5.DAS_INFO = {}
+        segd2ph5.MAP_INFO = {}
+        segd2ph5.ARRAY_T = {}
         super(TestSegDtoPH5, self).tearDown()
 
     def test_bit_weights(self):
@@ -109,7 +115,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
                 self.assertEqual(r[k], arrays[i][k])
             i += 1
 
-    def test_process_traces(self):
+    def test_process_traces_Fairfield(self):
         segd2ph5.setLogger()
         segd2ph5.SD = SD = segdreader.Reader(
             infile=os.path.join(self.home, 'ph5/test_data/segd/3ch.fcnt'))
@@ -200,6 +206,62 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
                                        places=5)
             else:
                 self.assertEqual(segd2ph5.RESP.lines[0][k], response[k])
+
+
+class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
+    def tearDown(self):
+        self.ph5object.ph5close()
+        super(TestSegDtoPH5_SmartSolo, self).tearDown()
+
+    def test_main(self):
+        sspath = os.path.join(
+            self.home, ("ph5/test_data/segd/smartsolo/453005483.1."
+                        "2021.03.15.16.00.00.000.E.segd"))
+        log1 = ('Line number is using invalid default value -1.'
+                ' Using 1 instead.')
+        log2 = ('Receiver point (stationID) is using invalid default '
+                'value -1. Using 1 instead.')
+        # add segD to ph5
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r', sspath]
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.WARNING)
+                segd2ph5.main()
+                self.assertEqual(log.records[0].msg, log1)
+                self.assertEqual(log.records[1].msg, log2)
+
+        self.ph5object = ph5api.PH5(path='.', nickname='master.ph5')
+        # check array_t
+        self.ph5object.read_array_t_names()
+        self.assertEqual(self.ph5object.Array_t_names, ['Array_t_001'])
+        self.ph5object.read_array_t('Array_t_001')
+        a = self.ph5object.Array_t['Array_t_001']['byid']['1'][1][0]
+        self.assertAlmostEqual(a['location/Y/value_d'], 30.17, 2)
+        self.assertAlmostEqual(a['location/X/value_d'], 90.77, 2)
+        self.assertEqual(a['das/manufacturer_s'], 'SmartSolo')
+        self.assertEqual(a['das/serial_number_s'], '1X1')
+        self.assertEqual(a['sensor/model_s'], 'GS-30CT')
+        self.assertEqual(a['deploy_time/epoch_l'], 1615824000)
+        self.assertEqual(a['pickup_time/epoch_l'], 1615825800)
+        self.assertEqual(a['channel_number_i'], 1)
+        self.assertEqual(a['seed_station_name_s'], '1')
+        self.assertEqual(a['seed_band_code_s'], 'D')
+        self.assertEqual(a['seed_instrument_code_s'], 'P')
+        self.assertEqual(a['sample_rate_i'], 500)
+        self.assertEqual(a['sample_rate_multiplier_i'], 1)
+
+        # check das_t - first trace
+        self.ph5object.read_das_g_names()
+        self.assertEqual(self.ph5object.Das_g_names.keys(), ['Das_g_1X1'])
+        das = self.ph5object.read_das_t('Das_g_1X1')
+        d = self.ph5object.Das_t[das]['rows'][0]
+        self.assertEqual(d['sample_rate_i'], 500)
+        self.assertEqual(d['array_name_data_a'], 'Data_a_0001')
+        self.assertEqual(d['sample_count_i'], 3001)
+        self.assertEqual(d['sample_rate_multiplier_i'], 1)
+        self.assertEqual(d['time/epoch_l'], 1615824000)
+        self.assertEqual(d['raw_file_name_s'],
+                         '453005483.1.2021.03.15.16.00..E')
 
 
 if __name__ == "__main__":
