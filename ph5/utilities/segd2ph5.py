@@ -15,13 +15,16 @@ import time
 import json
 import re
 from math import modf
+import warnings
 
 from pyproj import Proj, transform
 import construct
 import bcd_py
+from tables import NaturalNameWarning
 
 from ph5.core import experiment, columns, segdreader, segdreader_smartsolo
 from ph5 import LOGGING_FORMAT
+warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
 
 PROG_VERSION = "2021.159"
@@ -875,6 +878,8 @@ def process_traces(rh, th, tr):
 
         try:
             line = th.line_number
+            if line == -1:
+                line = 1
         except Exception as e:
             LOGGER.warning("Failed to read line number: {0}.".format(
                 e.message))
@@ -972,7 +977,7 @@ def write_arrays(Array_t):
                         for array_t in Array_t[line][das][dtime][chan_set]:
                             columns.populate(a, array_t)
                     except Exception as e:
-                        print e.message
+                        print(e.message)
 
 
 def writeINDEX():
@@ -1119,7 +1124,7 @@ def main():
         MINIPH5 = None
         ARRAY_T = {}
 
-        def get_das(sd):
+        def get_das(sd, warn=False):
             if sd.manufacturer == 'FairfieldNodal':
                 #   Return line_station or das#[-9:]
                 try:
@@ -1140,9 +1145,23 @@ def main():
                                   str(sd.reel_headers
                                       .extended_headers[0].id_number)[-9:]
             elif sd.manufacturer == 'SmartSolo':
-                das = "{0}X{1}".format(sd.trace_headers.line_number,
-                                       sd.trace_headers.receiver_point)
+                line_number = sd.trace_headers.line_number
+                receiver_point = sd.trace_headers.receiver_point
+                if line_number == -1:
+                    if warn:
+                        LOGGER.warning(
+                            "Line number is using invalid default value -1. "
+                            "Using 1 instead.")
+                    line_number = 1
+                if receiver_point == -1:
+                    if warn:
+                        LOGGER.warning(
+                            "Receiver point (stationID) is using invalid "
+                            "default value -1. Using 1 instead.")
+                    receiver_point = 1
+                das = "{0}X{1}".format(line_number, receiver_point)
                 # das = sd.id_number
+
             return das
 
         def get_node(sd):
@@ -1162,7 +1181,7 @@ def main():
 
         try:
             get_args()
-        except Exception, err_msg:
+        except Exception as err_msg:
             LOGGER.error(err_msg)
             return 1
 
@@ -1209,7 +1228,11 @@ def main():
                 continue
 
             nleft = APPEND
-            Das = get_das(SD)
+            Das = get_das(SD, warn=True)
+            if not Das.isalnum():
+                LOGGER.error(
+                    "DAS %s is not alphanumeric. Can't process." % Das)
+                return 1
             part_number, node_id, number_of_channels = get_node(SD)
             EXREC = get_current_data_only(SIZE, Das)
             LOGGER.info(":<Processing>: {0}\n".format(SD.name()))
@@ -1320,7 +1343,6 @@ def main():
                     log_array.append(line)
 
             LOGGER.info(":<Finished>: {0}\n".format(F))
-
         write_arrays(ARRAY_T)
         seconds = time.time() - then
 
