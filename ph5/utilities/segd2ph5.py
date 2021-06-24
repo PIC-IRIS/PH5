@@ -540,9 +540,11 @@ def process_traces(rh, th, tr):
             else:
                 orientation_code = OM[true_channel]
         elif SD.manufacturer == 'SmartSolo':
-            channel_list = ['E', 'N', 'Z']
+            channel_list = ['N', 'E', 'Z']
             filename_parts = SD.name().split('.')
             found_channel = False
+            true_channel = 0
+            orientation_code = None
             for p in filename_parts:
                 if p in channel_list:
                     orientation_code = p
@@ -551,7 +553,7 @@ def process_traces(rh, th, tr):
                     break
             if not found_channel:
                 LOGGER.warning(
-                    "Neither E, N, or Z can't be found in filename")
+                    "Neither E, N, nor Z can't be found in filename")
         return true_channel, orientation_code
 
     def get_raw_file_name(SD):
