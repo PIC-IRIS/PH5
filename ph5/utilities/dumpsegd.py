@@ -167,10 +167,9 @@ def get_segdreader():
 def main():
     global RH, TH
     TH = []
-
-    segd_reader = get_segdreader()
-    RH = segd_reader.ReelHeaders()
     try:
+        segd_reader = get_segdreader()
+        RH = segd_reader.ReelHeaders()
         sd = segd_reader.Reader(infile=sys.argv[1])
         general_headers(sd)
         channel_set_descriptors(sd)
@@ -178,7 +177,7 @@ def main():
         external_header(sd)
         trace_headers(sd)
         print "{0} bytes read.".format(sd.bytes_read)
-    except BaseException, e:
+    except Exception, e:
         print "Fail to read header due to error: ", e
         print "Usage: dumpsegd seg-d_file [format]"
         sys.exit()
