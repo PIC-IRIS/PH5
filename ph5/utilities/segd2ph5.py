@@ -15,11 +15,19 @@ import time
 import json
 import re
 from math import modf
-from ph5.core import experiment, columns, segdreader
-from ph5 import LOGGING_FORMAT
-from pyproj import Proj, transform
+import warnings
 
-PROG_VERSION = "2019.252"
+from pyproj import Proj, transform
+import construct
+import bcd_py
+from tables import NaturalNameWarning
+
+from ph5.core import experiment, columns, segdreader, segdreader_smartsolo
+from ph5 import LOGGING_FORMAT
+warnings.filterwarnings('ignore', category=NaturalNameWarning)
+
+
+PROG_VERSION = "2021.159"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
@@ -54,6 +62,59 @@ LSB = LSB_MAP[36]
 #   Manufacturers codes
 FAIRFIELD = 20
 OTHER = 0
+
+
+def read_manufacture_code(filename):
+    """ read byte 17 for manufacture code"""
+    f = open(filename, 'rb')
+    f.seek(16)
+    byte = f.read(1)
+    swap = True
+    if sys.byteorder == 'big':
+        swap = False
+    bin = construct.BitStruct("BIN",
+                              construct.BitField(
+                                  "field", 8, swapped=swap))
+    bcd = bin.parse(byte)['field']
+    if sys.byteorder == 'little':
+        bcd = construct.ULInt64("xxx").build(bcd)
+    else:
+        bcd = construct.UBInt64("xxx").build(bcd)
+    code = bcd_py.bcd2int(bcd, 0, 2)
+    f.close()
+    return code
+
+
+def get_segdreader(filename, manucode):
+    """
+        get the segdreader from manufacture code infile
+        or from --manufacturers_code argument
+    """
+    KNOWN_CODE = {20: (segdreader, 'FairField'),
+                  61: (segdreader_smartsolo, 'SmartSolo')}
+    req_code_list = ["%s for %s format" % (k, KNOWN_CODE[k][1])
+                     for k in KNOWN_CODE.keys()]
+    req_code_str = ("Please give flag --manufacturers_code either "
+                    ' or '.join(req_code_list))
+
+    manu = read_manufacture_code(filename)
+    if manu in KNOWN_CODE.keys():
+        reader = KNOWN_CODE[manu][0]
+    else:
+        try:
+            if manucode in KNOWN_CODE.keys():
+                reader = KNOWN_CODE[manucode][0]
+            else:
+                LOGGER.error("manufacturers_code flag {0} is not one of "
+                             "the known codes: {1}.\n{2}".
+                             format(manucode, KNOWN_CODE.keys(), req_code_str))
+                raise Exception
+        except IndexError:
+            LOGGER.error("The manufacture code recorded in file {0} is not "
+                         "one of the known codes: {1}.\n{2}".
+                         format(manucode, KNOWN_CODE.keys(), req_code_str))
+            raise Exception
+    return reader
 
 
 #
@@ -147,14 +208,25 @@ def get_args():
         MANUFACTURERS_CODE
 
     TSPF = False
-
     from optparse import OptionParser
-    oparser = OptionParser()
+
+    class MyParser(OptionParser):
+        """
+        Override format_epilog to allow newlines
+        """
+        def format_epilog(self, formatter):
+            return self.epilog
+
+    oparser = MyParser()
 
     oparser.usage = "Version: {0} Usage: segdtoph5 [options]".format(
         PROG_VERSION)
-    oparser.epilog = ("Notice: Data of a Das can't be stored in more than one "
-                      "mini file.")
+    oparser.epilog = (
+        "Notice:\n"
+        "\tData of a Das can't be stored in more than one mini file.\n\n"
+        "\tUpdate astropy package for the lastes leap second table used in "
+        "converting time from GPS to UTC in SmartSolo's:\n"
+        "\t\tconda update astropy\n")
 
     oparser.add_option("-r", "--raw", dest="rawfile",
                        help="Fairfield SEG-D v1.6 file.", metavar="raw_file")
@@ -203,7 +275,7 @@ def get_args():
                        help="Manufacturers code. Defaults to 20 for Fairfield.\
                         Most likely will not work for SEG-D written by other\
                          data loggers,",
-                       type='int', default=FAIRFIELD)
+                       type='int', default=None)
 
     options, args = oparser.parse_args()
 
@@ -439,16 +511,77 @@ def process_traces(rh, th, tr):
            tr -> trace data
     '''
 
-    def get_true_channel():
-        #   Find channel by mapping to streamer_cable_number
+    def get_true_channel(SD):
+        if SD.manufacturer == 'FairfieldNodal':
+            '''
+            Orientation Code:
+               chan 1 -> N Changed to '1'
+               chan 2 -> E Changed to '2'
+               chan 3 -> Z
+            or
+               chan 1 -> Z
+            '''
+            #   Find channel by mapping to streamer_cable_number
+            if rh.channel_set_to_streamer_cable_map[
+                th.trace_header.channel_set] \
+                    == 0:
+                true_channel = th.trace_header.channel_set
+            else:
+                true_channel = rh.channel_set_to_streamer_cable_map[
+                    th.trace_header.channel_set]
+            if SD.chan_sets_per_scan >= 3:
+                OM = {1: '1', 2: '2', 3: 'Z'}
+            elif SD.chan_sets_per_scan == 1:
+                OM = {1: 'Z'}
+            else:
+                OM = None
+            if OM is None:
+                orientation_code = true_channel
+            else:
+                orientation_code = OM[true_channel]
+        elif SD.manufacturer == 'SmartSolo':
+            channel_list = ['N', 'E', 'Z']
+            filename_parts = SD.name().split('.')
+            found_channel = False
+            true_channel = 0
+            orientation_code = None
+            for p in filename_parts:
+                if p in channel_list:
+                    orientation_code = p
+                    true_channel = channel_list.index(p) + 1
+                    found_channel = True
+                    break
+            if not found_channel:
+                LOGGER.warning(
+                    "Neither E, N, nor Z can't be found in filename")
+        return true_channel, orientation_code
 
-        if rh.channel_set_to_streamer_cable_map[th.trace_header.channel_set]\
-                == 0:
-            true_channel = th.trace_header.channel_set
-        else:
-            true_channel = rh.channel_set_to_streamer_cable_map[
-                th.trace_header.channel_set]
-        return true_channel
+    def get_raw_file_name(SD):
+        filename = SD.name()
+        if SD.manufacturer == 'SmartSolo':
+            channel_list = ['E', 'N', 'Z']
+            filename_parts = filename.split('.')
+            chanidx = -1
+            for c in channel_list:
+                try:
+                    chanidx = filename_parts.index(c)
+                    break
+                except ValueError:
+                    pass
+            """
+            Shorten filename to fit the field:
+            remove 'segd' at the end
+            remove second and decimal of second
+            add . in front of chan to show somethings have been removed
+            Ex: filename: 453005483.1.2021.03.15.16.00.00.000.E.segd
+            => shorten:   453005483.1.2021.03.15.16.00..E
+            """
+            filename_parts.remove('segd')
+            filename_parts[chanidx] = '.' + filename_parts[chanidx]
+            filename_parts.pop(chanidx - 1)  # remove decimal part
+            filename_parts.pop(chanidx - 2)  # remove second part
+            filename = '.'.join(filename_parts)
+        return os.path.basename(filename)
 
     def process_das():
         global LSB
@@ -482,14 +615,14 @@ def process_traces(rh, th, tr):
             str(Das))
         #   Build maps group (XXX)
         EXREC.ph5_g_maps.newdas('Das_g_', str(Das))
-        if rh.general_header_block_1.chan_sets_per_scan == 1:
+        if rh.general_header_blocks[0].chan_sets_per_scan == 1:
             #   Single channel
             p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
-        elif rh.general_header_block_1.chan_sets_per_scan >= 3:
+        elif rh.general_header_blocks[0].chan_sets_per_scan >= 3:
             # 1 (N node) -> 1 (N PH5), 2 (E Node)-> 2 (E PH5), 3 (Z Node) -> 0
             # (Z PH5)
             M = {1: 1, 2: 2, 3: 0}
-            p_das_t['receiver_table_n_i'] = M[get_true_channel()]
+            p_das_t['receiver_table_n_i'] = M[get_true_channel(SD)[0]]
         else:
             p_das_t['receiver_table_n_i'] = 0  # 0 -> Z
             LOGGER.warning(
@@ -500,7 +633,7 @@ def process_traces(rh, th, tr):
         p_das_t['time_table_n_i'] = 0
         p_das_t['time/type_s'] = 'BOTH'
         try:
-            trace_epoch = th.trace_header_N[2].shot_epoch
+            trace_epoch = th.trace_epoch
         except Exception as e:
             LOGGER.warning("Failed to read shot epoch: {0}.".format(e.message))
             trace_epoch = 0.
@@ -509,13 +642,14 @@ def process_traces(rh, th, tr):
         p_das_t['time/epoch_l'] = int(i)
         p_das_t['time/ascii_s'] = time.ctime(p_das_t['time/epoch_l'])
         p_das_t['time/micro_seconds_i'] = int(f * 1000000.)
-        p_das_t['event_number_i'] = th.trace_header_N[1].shot_point
-        p_das_t['channel_number_i'] = get_true_channel()
+        p_das_t['event_number_i'] = th.event_number
+        p_das_t['channel_number_i'] = get_true_channel(SD)[0]
+        p_das_t['sample_rate_i'] = SD.sample_rate
         p_das_t['sample_rate_i'] = SD.sample_rate
         p_das_t['sample_rate_multiplier_i'] = 1
         p_das_t['sample_count_i'] = len(tr)
         p_das_t['stream_number_i'] = 1
-        p_das_t['raw_file_name_s'] = os.path.basename(SD.name())
+        p_das_t['raw_file_name_s'] = get_raw_file_name(SD)
         p_das_t['array_name_data_a'] = EXREC.ph5_g_receivers.nextarray(
             'Data_a_')
         p_response_t = {}
@@ -530,13 +664,13 @@ def process_traces(rh, th, tr):
             response_file_a
         '''
         try:
-            LSB = LSB_MAP[th.trace_header_N[3].preamp_gain_db]
-            n_i = RESP.match(LSB, th.trace_header_N[3].preamp_gain_db)
+            LSB = LSB_MAP[th.preamp_gain_db]
+            n_i = RESP.match(LSB, th.preamp_gain_db)
         except Exception as e:
             n_i = 0
         p_response_t['gain/units_s'] = 'dB'
         try:
-            p_response_t['gain/value_i'] = th.trace_header_N[3].preamp_gain_db
+            p_response_t['gain/value_i'] = th.preamp_gain_db
         except Exception as e:
             LOGGER.warning(
                 "Failed to read trace pre amp gain: {0}.".format(e.message))
@@ -556,11 +690,17 @@ def process_traces(rh, th, tr):
               " Channel: " + str(p_das_t['channel_number_i'])
         #   Write trace data here
         try:
-            #   Convert to counts
-            tr_counts = tr / LSB
-            EXREC.ph5_g_receivers.newarray(
-                p_das_t['array_name_data_a'], tr_counts, dtype='int32',
-                description=des)
+            if SD.manufacturer == 'FairfieldNodal':
+                #   Convert to counts
+                tr_counts = tr / LSB
+                EXREC.ph5_g_receivers.newarray(
+                    p_das_t['array_name_data_a'], tr_counts, dtype='int32',
+                    description=des)
+            elif SD.manufacturer == 'SmartSolo':
+                # SmartSolo is recorded by mV
+                EXREC.ph5_g_receivers.newarray(
+                    p_das_t['array_name_data_a'], tr, dtype='float32',
+                    description=des)
         except Exception as e:
             #   Failed, leave as float
             LOGGER.warning(
@@ -656,36 +796,21 @@ def process_traces(rh, th, tr):
            Changed from H to P at request from Akram
         '''
         instrument_code = 'P'
-        '''
-        Orientation Code:
-           chan 1 -> N Changed to '1'
-           chan 2 -> E Changed to '2'
-           chan 3 -> Z
-        or
-           chan 1 -> Z
-        '''
-        if SD.chan_sets_per_scan >= 3:
-            OM = {1: '1', 2: '2', 3: 'Z'}
-        elif SD.chan_sets_per_scan == 1:
-            OM = {1: 'Z'}
-        else:
-            OM = None
-        if OM is None:
-            orientation_code = get_true_channel()
-        else:
-            orientation_code = OM[get_true_channel()]
+        chan_set, orientation_code = get_true_channel(SD)
+
         p_array_t['seed_band_code_s'] = band_code
         p_array_t['seed_instrument_code_s'] = instrument_code
         p_array_t['seed_orientation_code_s'] = orientation_code
+
         p_array_t['seed_station_name_s'] = Das.split('X')[1]
         p_array_t['sample_rate_i'] = SD.sample_rate
         p_array_t['sample_rate_multiplier_i'] = 1
         p_array_t['deploy_time/type_s'] = 'BOTH'
         try:
-            f, i = modf(rh.extended_header_1.epoch_deploy / 1000000.)
+            f, i = modf(SD.deploy_epoch)
         except Exception as e:
             LOGGER.warning(
-                "Failed to read extended header 1 deploy epoch: {0}.".format(
+                "Failed to read deploy epoch: {0}.".format(
                     e.message))
             f = i = 0.
         p_array_t['deploy_time/epoch_l'] = int(i)
@@ -693,23 +818,28 @@ def process_traces(rh, th, tr):
         p_array_t['deploy_time/micro_seconds_i'] = int(f * 1000000.)
         p_array_t['pickup_time/type_s'] = 'BOTH'
         try:
-            f, i = modf(rh.extended_header_1.epoch_pickup / 1000000.)
+            f, i = modf(SD.pickup_epoch)
         except Exception as e:
             LOGGER.warning(
-                "Failed to read extended header 1 pickup epoch: {0}.".format(
+                "Failed to read pickup epoch: {0}.".format(
                     e.message))
             f = i = 0.
         p_array_t['pickup_time/epoch_l'] = int(i)
         p_array_t['pickup_time/ascii_s'] = time.ctime(int(i))
         p_array_t['pickup_time/micro_seconds_i'] = int(f * 1000000.)
         p_array_t['id_s'] = Das.split('X')[1]
-        p_array_t['das/manufacturer_s'] = 'FairfieldNodal'
-        DM = {1: 'ZLAND 1C', 3: "ZLAND 3C"}
+
+        # use manu_code to decide SMARTSOLO dasmodel
+        p_array_t['das/manufacturer_s'] = SD.manufacturer
+
         try:
-            if SD.chan_sets_per_scan >= 3:
-                p_array_t['das/model_s'] = DM[3]
-            else:
-                p_array_t['das/model_s'] = DM[1]
+            if SD.manufacturer == "SmartSolo":
+                p_array_t['das/model_s'] = 'SmartSolo IGU16'
+            elif SD.manufacturer == "FairfieldNodal":
+                if SD.chan_sets_per_scan >= 3:
+                    p_array_t['das/model_s'] = "ZLAND 3C"
+                else:
+                    p_array_t['das/model_s'] = 'ZLAND 1C'
         except Exception as e:
             LOGGER.warning(
                 "Failed to read channel sets per scan: {0}.".format(e.message))
@@ -741,30 +871,30 @@ def process_traces(rh, th, tr):
         p_array_t['location/Y/value_d'] = LAT
         p_array_t['location/Z/units_s'] = 'unknown'
         try:
-            p_array_t['location/Z/value_d'] =\
-                th.trace_header_N[4].receiver_point_depth_final / 10.
+            p_array_t['location/Z/value_d'] = th.ele / 10.
         except Exception as e:
             LOGGER.warning(
-                "Failed to read receiver point depth: {0}.".format(e.message))
+                "Failed to read elevation: {0}.".format(e.message))
             p_array_t['location/Z/value_d'] = 0.
 
-        p_array_t['channel_number_i'] = get_true_channel()
+        p_array_t['channel_number_i'] = chan_set
         try:
             p_array_t['description_s'] = "DAS: {0}, Node ID: {1}".format(
-                Das, rh.extended_header_1.id_number)
+                Das, SD.id_number)
         except Exception as e:
             LOGGER.warning(
-                "Failed to read extended header 1 ID number: {0}.".format(
+                "Failed to read ID number: {0}.".format(
                     e.message))
 
         try:
-            line = th.trace_header_N[4].line_number
+            line = th.line_number
+            if line == -1:
+                line = 1
         except Exception as e:
             LOGGER.warning("Failed to read line number: {0}.".format(
                 e.message))
             line = 0
 
-        chan_set = get_true_channel()
         dtime = p_array_t['deploy_time/epoch_l']
         if line not in ARRAY_T:
             ARRAY_T[line] = {}
@@ -777,6 +907,11 @@ def process_traces(rh, th, tr):
 
         if not seen_sta():
             ARRAY_T[line][Das][dtime][chan_set].append(p_array_t)
+        elif SD.manufacturer == "SmartSolo":
+            # need to update the row after each trace is readed
+            # because the pickup time will be
+            # updated depend on trace_epoch
+            ARRAY_T[line][Das][dtime][chan_set][-1] = p_array_t
 
     def process_reel_headers():
         global RH
@@ -789,28 +924,17 @@ def process_traces(rh, th, tr):
                 ll, sort_keys=True, indent=4).split('\n'))
 
         log_array, log_name = getLOG()
-        #   General header 1
-        process(rh.general_header_block_1, 'General 1')
-        #   General header 1
-        process(rh.general_header_block_2, 'General 2')
-        #   General header N
-        for i in range(len(rh.general_header_block_N)):
-            ht = "General {0}".format(i + 3)
-            process(rh.general_header_block_N[i], ht)
+        for i in range(len(rh.general_header_blocks)):
+            ht = "General {0}".format(i+1)
+            process(rh.general_header_blocks[i], ht)
         #   Channel set descriptors
         for i in range(len(rh.channel_set_descriptor)):
             ht = "Channel Set {0}".format(i + 1)
             process(rh.channel_set_descriptor, ht)
-        #   Extended header 1
-        process(rh.extended_header_1, "Extended 1")
-        #   Extended header 2
-        process(rh.extended_header_2, "Extended 2")
-        #   Extended header 3
-        process(rh.extended_header_3, "Extended 3")
-        #   Extended header 4 - n
-        for i in range(len(rh.extended_header_4)):
-            ht = "Extended 4 ({0})".format(i + 1)
-            process(rh.extended_header_4[i], ht)
+
+        for i in range(len(rh.extended_headers)):
+            ht = "Extended {0}".format(i)
+            process(rh.extended_headers[i], ht)
         #   External header
         process(rh.external_header, "External Header")
         #   External header shot
@@ -863,7 +987,7 @@ def write_arrays(Array_t):
                         for array_t in Array_t[line][das][dtime][chan_set]:
                             columns.populate(a, array_t)
                     except Exception as e:
-                        print e.message
+                        print(e.message)
 
 
 def writeINDEX():
@@ -975,6 +1099,29 @@ def utmcsptolatlon(northing, easting):
     return lat, lon
 
 
+def get_latlon(manu, th):
+    try:
+        if manu == 'FairfieldNodal':
+            if UTM:
+                #   UTM
+                LAT, LON = utmcsptolatlon(th.lat/10., th.lon/10.)
+            elif TSPF:
+                #   Texas State Plane coordinates
+                LAT, LON = txncsptolatlon(th.lat/10., th.lon/10.)
+            else:
+                LAT = th.lat / 10.
+                LON = th.lon / 10.
+        elif manu == 'SmartSolo':
+            LAT = th.lat
+            LON = th.lon
+    except Exception as e:
+        LOGGER.warning(
+            "Failed to convert location: {0}.\n".format(
+                e.message))
+
+    return LAT, LON
+
+
 def main():
     import time
     then = time.time()
@@ -987,25 +1134,43 @@ def main():
         MINIPH5 = None
         ARRAY_T = {}
 
-        def get_das(sd):
-            #   Return line_station or das#[-9:]
-            try:
-                das = "{0}X{1}".format(
-                    sd.reel_headers.extended_header_3.line_number,
-                    sd.reel_headers.extended_header_3.receiver_point)
-            except Exception:
+        def get_das(sd, warn=False):
+            if sd.manufacturer == 'FairfieldNodal':
+                #   Return line_station or das#[-9:]
                 try:
                     das = "{0}X{1}".format(
-                        sd.reel_headers.external_header.receiver_line,
-                        sd.reel_headers.external_header.receiver_point)
+                        sd.reel_headers.extended_headers[2].line_number,
+                        sd.reel_headers.extended_headers[2].receiver_point)
                 except Exception:
-                    das = "sn" + \
-                          str(sd.reel_headers.general_header_block_1.
-                              manufactures_sn)
-                    if das == 0:
-                        das = "id" + \
-                              str(sd.reel_headers
-                                  .extended_header_1.id_number)[-9:]
+                    try:
+                        das = "{0}X{1}".format(
+                            sd.reel_headers.external_header.receiver_line,
+                            sd.reel_headers.external_header.receiver_point)
+                    except Exception:
+                        das = "sn" + \
+                              str(sd.reel_headers.general_header_blocks[0].
+                                  manufactures_sn)
+                        if das == 0:
+                            das = "id" + \
+                                  str(sd.reel_headers
+                                      .extended_headers[0].id_number)[-9:]
+            elif sd.manufacturer == 'SmartSolo':
+                line_number = sd.trace_headers.line_number
+                receiver_point = sd.trace_headers.receiver_point
+                if line_number == -1:
+                    if warn:
+                        LOGGER.warning(
+                            "Line number is using invalid default value -1. "
+                            "Using 1 instead.")
+                    line_number = 1
+                if receiver_point == -1:
+                    if warn:
+                        LOGGER.warning(
+                            "Receiver point (stationID) is using invalid "
+                            "default value -1. Using 1 instead.")
+                    receiver_point = 1
+                das = "{0}X{1}".format(line_number, receiver_point)
+                # das = sd.id_number
 
             return das
 
@@ -1015,18 +1180,18 @@ def main():
             id = None  # Node ID
             nc = None  # Number of channel sets
             try:
-                nc = sd.reel_headers.general_header_block_1[
+                nc = sd.reel_headers.general_header_blocks[0][
                     'chan_sets_per_scan']
-                pn = sd.reel_headers.extended_header_1['part_number']
-                id = sd.reel_headers.extended_header_1['id_number']
+                id = sd.id_number
+                if sd.manufacturer == 'FairfieldNodal':
+                    pn = sd.reel_headers.extended_headers[0]['part_number']
             except Exception:
                 pass
-
             return pn, id, nc
 
         try:
             get_args()
-        except Exception, err_msg:
+        except Exception as err_msg:
             LOGGER.error(err_msg)
             return 1
 
@@ -1050,22 +1215,22 @@ def main():
                 LOGGER.error("Failed to read {0}, {1}.\
                  Skipping...\n".format(f, str(e.message)))
                 continue
-
-            SD = segdreader.Reader(infile=f)
+            try:
+                segd_reader = get_segdreader(f, MANUFACTURERS_CODE)
+            except Exception:
+                continue
+            SD = segd_reader.Reader(infile=f)
             LAT = None
             LON = None
             RH = False
-            if not SD.isSEGD(expected_manufactures_code=MANUFACTURERS_CODE):
-                LOGGER.error(
-                    "{0} is not a Fairfield SEG-D file. Skipping.".format(
-                        SD.name()))
-                continue
 
             try:
                 SD.process_general_headers()
                 SD.process_channel_set_descriptors()
                 SD.process_extended_headers()
                 SD.process_external_headers()
+                if SD.manufacturer == 'SmartSolo':
+                    SD.process_trace_headers()
             except segdreader.InputsError as e:
                 LOGGER.error(
                     "Possible bad SEG-D file -- {0}".format(
@@ -1073,7 +1238,11 @@ def main():
                 continue
 
             nleft = APPEND
-            Das = get_das(SD)
+            Das = get_das(SD, warn=True)
+            if not Das.isalnum():
+                LOGGER.error(
+                    "DAS %s is not alphanumeric. Can't process." % Das)
+                return 1
             part_number, node_id, number_of_channels = get_node(SD)
             EXREC = get_current_data_only(SIZE, Das)
             LOGGER.info(":<Processing>: {0}\n".format(SD.name()))
@@ -1081,12 +1250,17 @@ def main():
                 "Processing: {0}... Size: {1}\n".format(SD.name(), SIZE))
             if EXREC.filename != MINIPH5:
                 LOGGER.info("Opened: {0}...\n".format(EXREC.filename))
+                if node_id is None:
+                    node_id_str = ''
+                else:
+                    node_id_str = ', Node ID: %s' % node_id
                 LOGGER.info(
-                    "DAS: {0}, Node ID: {1}, PN: {2}, Channels: {3}".format(
-                        Das, node_id, part_number, number_of_channels))
+                    "DAS: {0}{1}, PN: {2}, Channels: {3}".format(
+                        Das, node_id_str, part_number, number_of_channels))
                 MINIPH5 = EXREC.filename
 
             n = 0
+            trace_index = 0
             trace_headers_list = []
             while True:
                 if SD.isEOF():
@@ -1114,7 +1288,8 @@ def main():
                     break
 
                 try:
-                    trace, cs = SD.process_trace()
+                    trace, cs = SD.process_trace(trace_index)
+                    trace_index += 1
                 except segdreader.InputsError as e:
                     LOGGER.error("{0}\n".format(F))
                     LOGGER.error(
@@ -1123,30 +1298,7 @@ def main():
                     break
 
                 if not LAT and not LON:
-                    try:
-                        if UTM:
-                            #   UTM
-                            LAT, LON = utmcsptolatlon(
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
-                        elif TSPF:
-                            #   Texas State Plane coordinates
-                            LAT, LON = txncsptolatlon(
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_Y_final / 10.,
-                                SD.trace_headers.trace_header_N[
-                                    4].receiver_point_X_final / 10.)
-                        else:
-                            LAT = SD.trace_headers.trace_header_N[
-                                      4].receiver_point_Y_final / 10.
-                            LON = SD.trace_headers.trace_header_N[
-                                      4].receiver_point_X_final / 10.
-                    except Exception as e:
-                        LOGGER.warning(
-                            "Failed to convert location: {0}.\n".format(
-                                e.message))
+                    LAT, LON = get_latlon(SD.manufacturer, SD.trace_headers)
 
                 trace_headers_list.append(SD.trace_headers)
                 if n == 0:
@@ -1201,7 +1353,6 @@ def main():
                     log_array.append(line)
 
             LOGGER.info(":<Finished>: {0}\n".format(F))
-
         write_arrays(ARRAY_T)
         seconds = time.time() - then
 

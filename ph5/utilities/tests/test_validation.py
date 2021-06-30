@@ -481,7 +481,7 @@ class TestValidation_no_response_filename(LogTestCase, TempDirTestCase):
     def test_check_has_response_filename(self):
         testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
                     os.path.join(self.home,
-                                 'ph5/test_data/segd/3ch.fcnt')]
+                                 'ph5/test_data/segd/fairfield/3ch.fcnt')]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
         self.ph5 = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')

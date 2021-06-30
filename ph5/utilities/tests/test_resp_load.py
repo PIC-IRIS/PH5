@@ -27,7 +27,8 @@ class Test_n_i_fix_indiv(TempDirTestCase, LogTestCase):
 
     def test_main(self):
         testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
-                    os.path.join(self.home, "ph5/test_data/segd/3ch.fcnt")]
+                    os.path.join(self.home,
+                                 "ph5/test_data/segd/fairfield/3ch.fcnt")]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 
@@ -110,7 +111,8 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
          response_t: n_i=0 bit_weight=1.88e-05
         """
         testargs = ['segdtoph5', '-n', 'master.ph5', '-r',
-                    os.path.join(self.home, "ph5/test_data/segd/3ch.fcnt")]
+                    os.path.join(self.home,
+                                 "ph5/test_data/segd/fairfield/3ch.fcnt")]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 
