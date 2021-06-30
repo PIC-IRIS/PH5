@@ -236,7 +236,7 @@ class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
         self.ph5object.read_array_t_names()
         self.assertEqual(self.ph5object.Array_t_names, ['Array_t_001'])
         self.ph5object.read_array_t('Array_t_001')
-        a = self.ph5object.Array_t['Array_t_001']['byid']['1'][1][0]
+        a = self.ph5object.Array_t['Array_t_001']['byid']['1'][2][0]
         self.assertAlmostEqual(a['location/Y/value_d'], 30.17, 2)
         self.assertAlmostEqual(a['location/X/value_d'], 90.77, 2)
         self.assertEqual(a['das/manufacturer_s'], 'SmartSolo')
@@ -244,7 +244,7 @@ class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
         self.assertEqual(a['sensor/model_s'], 'GS-30CT')
         self.assertEqual(a['deploy_time/epoch_l'], 1615824000)
         self.assertEqual(a['pickup_time/epoch_l'], 1615825800)
-        self.assertEqual(a['channel_number_i'], 1)
+        self.assertEqual(a['channel_number_i'], 2)
         self.assertEqual(a['seed_station_name_s'], '1')
         self.assertEqual(a['seed_band_code_s'], 'D')
         self.assertEqual(a['seed_instrument_code_s'], 'P')
