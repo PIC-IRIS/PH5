@@ -388,6 +388,8 @@ class PH5Availability(object):
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5das = st['das/serial_number_s']
                         chanum = st['channel_number_i']
+                        # Seem to be replacing a channel time with a
+                        # stationtime. Replace in DAS group
                         ph5_start_epoch = st['deploy_time/epoch_l']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
@@ -446,19 +448,22 @@ class PH5Availability(object):
                                 continue
                         if early is None or end is None:
                             continue
+                        # trim user defined time range if it extends beyond the
+                        # deploy/pickup times
+                        # Logic to fix the deploy time error
+                        if (early is not None
+                           and float(early) < float(ph5_start_epoch)):
+                            early = ph5_start_epoch
+                        if (end is not None
+                           and float(end) > float(ph5_stop_epoch)):
+                            end = ph5_stop_epoch
+                        # End of trim
                         if starttime is not None and early < starttime:
                             early = starttime
                         if endtime is not None and endtime < end:
                             end = endtime
                         if early is None or end is None:
                             return None
-                        # trim user defined time range if it extends beyond the
-                        # deploy/pickup times
-                        # Logic to fix the deploy time error
-                        if float(early) < float(ph5_start_epoch):
-                            early = ph5_start_epoch
-                        if float(end) > float(ph5_stop_epoch):
-                            end = ph5_stop_epoch
                         if not include_sample_rate:
                             tup = (ph5_seed_station, ph5_loc, ph5_channel,
                                    early, end)
@@ -515,7 +520,6 @@ class PH5Availability(object):
         empty_times = True
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
-
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -545,6 +549,8 @@ class PH5Availability(object):
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
+                        start_epoch = ph5_start_epoch
+                        end_epoch = ph5_stop_epoch
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
                             chan=channum,
@@ -600,19 +606,20 @@ class PH5Availability(object):
                         if time is None:
                             continue
                         for T in time:
+                            if float(ph5_start_epoch) >= float(T[1]):
+                                start_epoch = ph5_start_epoch
+                            if float(ph5_stop_epoch) <= float(T[2]):
+                                end_epoch = ph5_stop_epoch
                             start = T[1] if T[1] > starttime \
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
                                 or endtime is None else endtime
+                            if float(start) < float(start_epoch):
+                                start = start_epoch
+                            if float(end) > float(end_epoch):
+                                end = end_epoch
                             if T[1] is None or T[2] is None:
                                 return None
-                            # trim user defined time range if it
-                            # extends beyond the deploy/pickup times
-                            # Logic to fix the deploy time error
-                            if float(start) < float(ph5_start_epoch):
-                                start = ph5_start_epoch
-                            if float(end) > float(ph5_stop_epoch):
-                                end = ph5_stop_epoch
                             if include_sample_rate:
                                 if samplerate_return is not None:
                                     availability.append((
