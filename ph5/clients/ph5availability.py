@@ -578,8 +578,8 @@ class PH5Availability(object):
                                 key[2] == ph5_sample_rate):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
-                                min_epoch = [dt['time_windows'][0][0]]
-                                max_epoch = [max([t[1] for t in dt['time_windows']])]
+                                start_chan_epoch = dt['time_windows'][0][0]
+                                end_chan_epoch = dt['time_windows'][-1][1]
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
@@ -627,18 +627,14 @@ class PH5Availability(object):
                         if time is None:
                             continue
                         for T in time:
-                            if float(min_epoch[0]) >= float(T[1]):
-                                start_epoch = min_epoch[0]
-                            if float(max_epoch[0]) <= float(T[2]):
-                                end_epoch = max_epoch[0]
                             start = T[1] if T[1] > starttime \
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
                                 or endtime is None else endtime
-                            if float(start) < float(start_epoch):
-                                start = start_epoch
-                            if float(end) > float(end_epoch):
-                                end = end_epoch
+                            if float(start) < float(start_chan_epoch):
+                                start = start_chan_epoch
+                            if float(end) > float(end_chan_epoch):
+                                end = end_chan_epoch
                             if T[1] is None or T[2] is None:
                                 return None
                             if include_sample_rate:
