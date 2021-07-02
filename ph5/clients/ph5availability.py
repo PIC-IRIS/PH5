@@ -355,6 +355,7 @@ class PH5Availability(object):
         Leverage this
         """
         availability_extents = []
+        self.das_time = {}
         sr_mismatch = False
         empty_times = True
         self.SR_included = include_sample_rate
@@ -379,6 +380,21 @@ class PH5Availability(object):
 
                 for deployment in station_list:
                     station_len = len(station_list[deployment])
+                    # Build a for loop to solve for the das time extent
+                    # The first loop is necessary to determine full time
+                    # extent
+                    for st_num in range(0, station_len):
+                        stat = station_list[deployment][st_num]
+                        d = stat['das/serial_number_s']
+                        c = stat['channel_number_i']
+                        spr = stat['sample_rate_i']
+                        key = (d, c, spr)
+                        if key not in self.das_time.keys():
+                            self.das_time[key] = {'time_windows': []}
+                        self.das_time[key]['time_windows'].append(
+                            (stat['deploy_time/epoch_l'],
+                             stat['pickup_time/epoch_l'],
+                             stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
 
@@ -403,6 +419,15 @@ class PH5Availability(object):
                             sample_rate=ph5_sample_rate,
                             sample_rate_multiplier=ph5_multiplier,
                             check_samplerate=False)
+                        # Find key that corresponds to the das
+                        for key in self.das_time.keys():
+                            if (key[0] == ph5das and
+                                key[1] == chanum and
+                                key[2] == ph5_sample_rate):
+                                dt = self.das_time[key]
+                                dt['time_windows'].sort()
+                                start_chan_epoch = dt['time_windows'][0][0]
+                                end_chan_epoch = dt['time_windows'][-1][1]
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
@@ -451,17 +476,16 @@ class PH5Availability(object):
                         # trim user defined time range if it extends beyond the
                         # deploy/pickup times
                         # Logic to fix the deploy time error
-                        if (early is not None
-                           and float(early) < float(ph5_start_epoch)):
-                            early = ph5_start_epoch
-                        if (end is not None
-                           and float(end) > float(ph5_stop_epoch)):
-                            end = ph5_stop_epoch
-                        # End of trim
                         if starttime is not None and early < starttime:
                             early = starttime
                         if endtime is not None and endtime < end:
                             end = endtime
+                        # Start channel trim
+                        if float(early) < float(start_chan_epoch):
+                            early = start_chan_epoch
+                        if float(end) > float(end_chan_epoch):
+                            end = end_chan_epoch
+                        # End of channel trim
                         if early is None or end is None:
                             return None
                         if not include_sample_rate:
@@ -537,6 +561,8 @@ class PH5Availability(object):
                 for deployment in station_list:
                     station_len = len(station_list[deployment])
                     # Build a for loop to solve for the das time extent
+                    # The first loop is necessary to determine full time
+                    # extent
                     for st_num in range(0, station_len):
                         stat = station_list[deployment][st_num]
                         d = stat['das/serial_number_s']
@@ -561,8 +587,6 @@ class PH5Availability(object):
                         ph5_stop_epoch = st['pickup_time/epoch_l']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
-                        start_epoch = ph5_start_epoch
-                        end_epoch = ph5_stop_epoch
                         Das_t = self.ph5.query_das_t(
                             ph5_das,
                             chan=channum,
@@ -571,7 +595,7 @@ class PH5Availability(object):
                             sample_rate=ph5_sample_rate,
                             sample_rate_multiplier=ph5_multiplier,
                             check_samplerate=False)
-                        # Find key that corresponds to the das 
+                        # Find key that corresponds to the das
                         for key in self.das_time.keys():
                             if (key[0] == ph5_das and
                                 key[1] == channum and
