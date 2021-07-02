@@ -518,6 +518,7 @@ class PH5Availability(object):
         time = []
         sr_mismatch = False
         empty_times = True
+        self.das_time = {}
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
         for array_name in array_names:
@@ -535,11 +536,22 @@ class PH5Availability(object):
 
                 for deployment in station_list:
                     station_len = len(station_list[deployment])
+                    # Build a for loop to solve for the das time extent
+                    for st_num in range(0, station_len):
+                        stat = station_list[deployment][st_num]
+                        d = stat['das/serial_number_s']
+                        c = stat['channel_number_i']
+                        spr = stat['sample_rate_i']
+                        key = (d, c, spr)
+                        if key not in self.das_time.keys():
+                            self.das_time[key] = {'time_windows': []}
+                        self.das_time[key]['time_windows'].append(
+                            (stat['deploy_time/epoch_l'],
+                             stat['pickup_time/epoch_l'],
+                             stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
-
                         ret = self.get_slc_info(st, station, location, channel)
-
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
@@ -559,6 +571,15 @@ class PH5Availability(object):
                             sample_rate=ph5_sample_rate,
                             sample_rate_multiplier=ph5_multiplier,
                             check_samplerate=False)
+                        # Find key that corresponds to the das 
+                        for key in self.das_time.keys():
+                            if (key[0] == ph5_das and
+                                key[1] == channum and
+                                key[2] == ph5_sample_rate):
+                                dt = self.das_time[key]
+                                dt['time_windows'].sort()
+                                min_epoch = [dt['time_windows'][0][0]]
+                                max_epoch = [max([t[1] for t in dt['time_windows']])]
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
@@ -606,10 +627,10 @@ class PH5Availability(object):
                         if time is None:
                             continue
                         for T in time:
-                            if float(ph5_start_epoch) >= float(T[1]):
-                                start_epoch = ph5_start_epoch
-                            if float(ph5_stop_epoch) <= float(T[2]):
-                                end_epoch = ph5_stop_epoch
+                            if float(min_epoch[0]) >= float(T[1]):
+                                start_epoch = min_epoch[0]
+                            if float(max_epoch[0]) <= float(T[2]):
+                                end_epoch = max_epoch[0]
                             start = T[1] if T[1] > starttime \
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
