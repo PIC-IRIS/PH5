@@ -2,7 +2,6 @@
 echo "Making test PH5!"
 rm -rf ph5/test_data/ph5
 cd ph5/test_data/
-
 mkdir ph5
 cd ph5
 initialize_ph5 -n master.ph5
