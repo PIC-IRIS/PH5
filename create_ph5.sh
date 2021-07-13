@@ -5,7 +5,7 @@ cd ph5/test_data/
 mkdir ph5
 cd ph5
 initialize_ph5 -n master.ph5
-segdtoph5 -n master.ph5 -U 13N -r ../segd/3ch.fcnt
+segdtoph5 -n master.ph5 -U 13N -r ../segd/fairfield/3ch.fcnt
 130toph5 -n master.ph5 -r ../rt130/2016139.9EEF.ZIP
 125atoph5 -n master.ph5 -r ../rt125a/I2183RAW.TRD
 metadatatoph5 -n master.ph5 -f ../metadata/station.xml
@@ -92,7 +92,7 @@ mkdir das         # das table sample_rate_multiplier_i=0
 cd array_das
 initialize_ph5 -n master.ph5
 keftoph5 -n master.ph5 -k ../../../metadata/experiment.kef
-segdtoph5 -n master.ph5 -r ../../../segd/1111.0.0.fcnt
+segdtoph5 -n master.ph5 -r ../../../segd/fairfield/1111.0.0.fcnt
 cp master.ph5 ../das/
 echo "y" | delete_table -n master.ph5 -D 1X1111
 keftoph5 -n master.ph5 -k ../../../metadata/Das_t_1X1111.0.0_SRM0.kef

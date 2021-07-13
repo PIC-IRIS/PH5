@@ -13,7 +13,7 @@ import exceptions
 import numpy as np
 from ph5.core import segd_h
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = "2021.112"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -24,23 +24,17 @@ class InputsError (exceptions.Exception):
 
 class ReelHeaders (object):
     '''   Container to hold receiver record related headers   '''
-    __slots__ = ['storage_unit_label', 'general_header_block_1',
-                 'general_header_block_2', 'channel_set_descriptor',
-                 'extended_header_1', 'extended_header_2', 'extended_header_3',
-                 'extended_header_4', 'external_header',
-                 'external_header_shot', 'general_header_block_N',
+    __slots__ = ['storage_unit_label', 'general_header_blocks',
+                 'channel_set_descriptor', 'extended_headers',
+                 'external_header',
+                 'external_header_shot',
                  'channel_set_to_streamer_cable_map']
 
     def __init__(self):
         self.storage_unit_label = None
-        self.general_header_block_1 = None
-        self.general_header_block_2 = None
-        self.general_header_block_N = []
+        self.general_header_blocks = []
         self.channel_set_descriptor = []
-        self.extended_header_1 = None
-        self.extended_header_2 = None
-        self.extended_header_3 = None
-        self.extended_header_4 = []
+        self.extended_headers = []
         self.external_header = None
         self.external_header_shot = []
         self.channel_set_to_streamer_cable_map = None
@@ -48,15 +42,26 @@ class ReelHeaders (object):
 
 class TraceHeaders (object):
     '''   Container to hold trace related headers   '''
-    __slots__ = ['trace_header', 'trace_header_N']
+    __slots__ = ['trace_header', 'trace_header_N',
+                 'line_number', 'event_number',
+                 'trace_epoch', 'preamp_gain_db',
+                 'lat', 'lon', 'ele']
 
     def __init__(self):
         self.trace_header = None
         self.trace_header_N = []
+        self.line_number = None
+        self.event_number = None
+        self.trace_epoch = None
+        self.lat = None
+        self.lon = None
+        self.ele = None
+        self.preamp_gain_db = None
 
 
 class Reader ():
     def __init__(self, infile=None):
+        self.manufacturer = 'FairfieldNodal'
         self.infile = infile
         self.FH = None
         self.endianess = 'big'  # SEG-D is always big endian(?)
@@ -67,6 +72,10 @@ class Reader ():
         self.extended_header_blocks = None
         self.external_header_blocks = None
         self.sample_rate = None
+        # From Extended headers
+        self.deploy_epoch = None
+        self.pickup_epoch = None
+        self.id_number = None
         # From Channel set headers
         self.channel_set_start_time_sec = None
         self.channel_set_end_time_sec = None
@@ -90,10 +99,9 @@ class Reader ():
             buf = self.FH.read(size)
         except Exception as e:
             LOGGER.error(e)
-
-        if not buf:
             self.FH.close()
-        else:
+
+        if buf:
             self.bytes_read += len(buf)
 
         return buf
@@ -203,52 +211,53 @@ class Reader ():
     def process_general_headers(self):
         self.reel_headers = ReelHeaders()
 
-        self.reel_headers.general_header_block_1 =\
-            self.read_general_header_block_1()
-        self.reel_headers.general_header_block_2 =\
-            self.read_general_header_block_2()
+        self.reel_headers.general_header_blocks.append(
+            self.read_general_header_block_1())
+        self.reel_headers.general_header_blocks.append(
+            self.read_general_header_block_2())
         # Set file number
-        if self.reel_headers.general_header_block_1.file_number == 0xFFFF:
+        if self.reel_headers.general_header_blocks[0].file_number == 0xFFFF:
             self.file_number = self.reel_headers.\
-                read_general_header_block_2.extended_file_number
+                read_general_header_blocks[1].extended_file_number
         else:
             self.file_number = self.reel_headers.\
-                general_header_block_1.file_number
+                general_header_blocks[0].file_number
         # Set record length
-        if self.reel_headers.general_header_block_1.record_length == 0xFFF:
+        if self.reel_headers.general_header_blocks[0].record_length == 0xFFF:
             self.record_length_sec = self.reel_headers.\
-                general_header_block_2.extended_record_length
+                general_header_blocks[1].extended_record_length
         else:
             self.record_length_sec = self.reel_headers.\
-                general_header_block_1.record_length * 0.512
+                general_header_blocks[0].record_length * 0.512
         # Set number of channel sets
-        if self.reel_headers.general_header_block_1.chan_sets_per_scan == 0xFF:
+        if self.reel_headers.general_header_blocks[
+                0].chan_sets_per_scan == 0xFF:
             self.chan_sets_per_scan = self.reel_headers.\
-                general_header_block_2.extended_chan_sets_per_scan_type
+                general_header_blocks[1].extended_chan_sets_per_scan_type
         else:
             self.chan_sets_per_scan = self.reel_headers.\
-                general_header_block_1.chan_sets_per_scan
+                general_header_blocks[0].chan_sets_per_scan
         # Number of extended headers
-        if self.reel_headers.general_header_block_1.\
+        if self.reel_headers.general_header_blocks[0].\
            number_extended_header_blocks == 0xFF:
             self.extended_header_blocks = self.reel_headers.\
-                general_header_block_2.extended_header_blocks
+                general_header_blocks[1].extended_header_blocks
         else:
             self.extended_header_blocks = self.reel_headers.\
-                general_header_block_1.number_extended_header_blocks
+                general_header_blocks[0].number_extended_header_blocks
         # Number of external headers
-        if self.reel_headers.general_header_block_1.\
+        if self.reel_headers.general_header_blocks[0].\
            number_external_header_blocks == 0xFF:
             self.external_header_blocks = self.\
-                reel_headers.general_header_block_2.external_header_blocks
+                reel_headers.general_header_blocks[1].external_header_blocks
         else:
             self.external_header_blocks = self.\
-                reel_headers.general_header_block_1.\
+                reel_headers.general_header_blocks[0].\
                 number_external_header_blocks
         # Get sample rate from base scan interval (LSB is 1/16 milli-second)
         self.sample_rate = int(
             (1. / (self.reel_headers.
-                   general_header_block_1.base_scan_interval / 16.)) * 1000.)
+                   general_header_blocks[0].base_scan_interval / 16.)) * 1000.)
 
     def process_channel_set_descriptors(self):
         def create_key():
@@ -279,15 +288,23 @@ class Reader ():
 
     def process_extended_headers(self):
         if self.extended_header_blocks > 0:
-            self.reel_headers.extended_header_1 = self.read_extended_header_1()
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_1())
         if self.extended_header_blocks > 1:
-            self.reel_headers.extended_header_2 = self.read_extended_header_2()
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_2())
         if self.extended_header_blocks > 2:
-            self.reel_headers.extended_header_3 = self.read_extended_header_3()
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_3())
         n = self.extended_header_blocks - 3
         for i in range(n):
-            self.reel_headers.extended_header_4.append(
-                self.read_extended_header_4)
+            self.reel_headers.extended_headers.append(
+                self.read_extended_header_4())
+        self.deploy_epoch = self.reel_headers.extended_headers[
+                                0].epoch_deploy / 1000000.
+        self.pickup_epoch = self.reel_headers.extended_headers[
+                                0].epoch_pickup / 1000000.
+        self.id_number = self.reel_headers.extended_headers[0]['id_number']
 
     def process_external_headers(self):
         self.reel_headers.external_header = self.read_external_header()
@@ -438,8 +455,24 @@ class Reader ():
                 self.read_trace_header_10())
         # Note: SEG-D 2.1 allows a total of 15 trace header extensions.
         # We only read 10 as per Fairfield rg1.6
-        self.samples = self.trace_headers.trace_header_N[0][
-            'samples_per_trace']
+
+        self.trace_headers.line_number = self.trace_headers.trace_header_N[
+            4].line_number
+        self.trace_headers.event_number = self.trace_headers.trace_header_N[
+            1].shot_point
+        self.trace_headers.trace_epoch = self.trace_headers.trace_header_N[
+            2].shot_epoch
+        self.trace_headers.preamp_gain_db = self.trace_headers.trace_header_N[
+            3].preamp_gain_db
+        self.trace_headers.lat = self.trace_headers.trace_header_N[
+            4].receiver_point_Y_final
+        self.trace_headers.lon = self.trace_headers.trace_header_N[
+            4].receiver_point_X_final
+        self.trace_headers.ele = self.trace_headers.trace_header_N[
+            4].receiver_point_depth_final
+
+        self.samples = self.trace_headers.trace_header_N[
+            0].samples_per_trace
 
         return self.samples
 
@@ -456,7 +489,7 @@ class Reader ():
               8058 -- 32 bit IEEE float   '''
 
         f = self.trace_fmt = self.reel_headers.\
-            general_header_block_1.data_sample_format_code
+            general_header_blocks[0].data_sample_format_code
 
         bytes_per_sample = 4  # Assumes 32 bit IEEE floats
         buf = self.read_buf(bytes_per_sample * number_of_samples)
@@ -478,7 +511,7 @@ class Reader ():
 
         return ret
 
-    def process_trace(self):
+    def process_trace(self, trace_index):
         samples = self.process_trace_headers()
         ret = self.read_trace(samples)
         cs = self.trace_headers.trace_header.channel_set
@@ -498,23 +531,6 @@ class Reader ():
         except EOFError:
             self.FH.close()
             return True
-
-    def isSEGD(self, expected_manufactures_code=0):
-        '''   Check to see if we are a Fairfield SEG-D file.   '''
-        ret = False
-        try:
-            c = self.read_general_header_block_1()
-            self.FH.seek(0)
-            if c['manufactures_code'] == expected_manufactures_code:
-                ret = True
-            else:
-                if self.FH is not None:
-                    self.FH.close()
-        except Exception as e:
-            raise InputsError(e.message)
-
-        return ret
-
 #
 # Mix in's
 #
