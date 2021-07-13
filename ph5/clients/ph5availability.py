@@ -422,8 +422,8 @@ class PH5Availability(object):
                         # Find key that corresponds to the das
                         for key in self.das_time.keys():
                             if (key[0] == ph5das and
-                                key[1] == chanum and
-                                key[2] == ph5_sample_rate):
+                               key[1] == chanum and
+                               key[2] == ph5_sample_rate):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
                                 start_chan_epoch = dt['time_windows'][0][0]
@@ -598,8 +598,8 @@ class PH5Availability(object):
                         # Find key that corresponds to the das
                         for key in self.das_time.keys():
                             if (key[0] == ph5_das and
-                                key[1] == channum and
-                                key[2] == ph5_sample_rate):
+                               key[1] == channum and
+                               key[2] == ph5_sample_rate):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
                                 start_chan_epoch = dt['time_windows'][0][0]
