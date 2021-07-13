@@ -157,8 +157,8 @@ class General_header_block (Header_block):
                 # doc: 1 bytes for HHMMSS
                 # but Byte No.=14-16 which actually 3 bytes
                 ("hour_of_day_utc", 8, 'bcd'),
-                ("minute_of_hour_utc", 8, 'bdc'),
-                ("second_of_minute_utc", 8, 'bdc'),
+                ("minute_of_hour_utc", 8, 'bcd'),
+                ("second_of_minute_utc", 8, 'bcd'),
                 ("manufactures_code", 8, 'bcd'),                    # 0x61
                 ("manufactures_sn", 2*8, 'bcd'),                    # 0
                 ("bytes_per_scan", 3*8, 'bcd'),
