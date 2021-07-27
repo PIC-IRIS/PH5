@@ -436,7 +436,7 @@ class TestPH5toStationXMLParser_gen_resp_issue(
             kef2ph5.main()
         testargs = ['segdtoph5', '-n', 'master.ph5', '-U', '13N', '-r',
                     os.path.join(self.home,
-                                 'ph5/test_data/segd/3ch.fcnt')]
+                                 'ph5/test_data/segd/fairfield/3ch.fcnt')]
         with patch.object(sys, 'argv', testargs):
             segd2ph5.main()
 

@@ -36,6 +36,7 @@ ph5.utilities.pformagui
 ph5.utilities.segdtoph5
  * Fixed bug causing pforma to finish correctly on node (issue #233)
  * fixed bug in utmzone processing
+ * Fixed bug in smartsolo reading causing incorrect time conversions from BCD
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
  * fix fast offset_table reading (issue #280)

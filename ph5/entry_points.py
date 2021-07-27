@@ -67,10 +67,10 @@ class CommandList():
                            'ph5.utilities.cross_check_event_array_data:main',
                            'Cross check Event, Array, and Data.',
                            type=EntryPointTypes.ALL),
-                EntryPoint('dumpfair',
-                           'ph5.utilities.dumpfair:main',
-                           'Determine how many samples are '
-                           'in Fairfield Node SEG-D files.',
+                EntryPoint('dumpsegd',
+                           'ph5.utilities.dumpsegd:main',
+                           'Dump header of a SEG-D file '
+                           '(Fairfield Node or SmartSolo)',
                            type=EntryPointTypes.ALL),
                 EntryPoint('dumpsac',
                            'ph5.utilities.dumpsac:main',
