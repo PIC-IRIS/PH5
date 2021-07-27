@@ -8,7 +8,7 @@
 	das/serial_number_s = 9EEF
 	pickup_time/ascii_s = Wed May 18 10:49:00 2016
 	pickup_time/epoch_l = 1463568500
-	pickup_time/micro_seconds_i = 0
+	pickup_time/micro_seconds_i = 300000
 	pickup_time/type_s = BOTH
 	location/X/value_d = -106.916169
 	location/X/units_s = degrees
@@ -21,7 +21,7 @@
 	location/Z/units_s = m
 	deploy_time/ascii_s = Wed May 18 10:48:00 2016
 	deploy_time/epoch_l = 1463568490
-	deploy_time/micro_seconds_i = 0
+	deploy_time/micro_seconds_i = 200000
 	deploy_time/type_s = BOTH
 	sensor/manufacturer_s = guralp
 	channel_number_i = 1
@@ -37,7 +37,7 @@
 	das/serial_number_s = 9EEF
 	pickup_time/ascii_s = Wed May 18 10:49:00 2016
 	pickup_time/epoch_l = 1463568540
-	pickup_time/micro_seconds_i = 0
+	pickup_time/micro_seconds_i = 300000
 	pickup_time/type_s = BOTH
 	location/X/value_d = -106.916169
 	location/X/units_s = degrees
@@ -50,7 +50,7 @@
 	location/Z/units_s = m
 	deploy_time/ascii_s = Wed May 18 10:48:00 2016
 	deploy_time/epoch_l = 1463568480
-	deploy_time/micro_seconds_i = 0
+	deploy_time/micro_seconds_i = 200000
 	deploy_time/type_s = BOTH
 	sensor/manufacturer_s = guralp
 	channel_number_i = 2
@@ -66,7 +66,7 @@
 	das/serial_number_s = 9EEF
 	pickup_time/ascii_s = Wed May 18 10:49:00 2016
 	pickup_time/epoch_l = 1463568540
-	pickup_time/micro_seconds_i = 0
+	pickup_time/micro_seconds_i = 300000
 	pickup_time/type_s = BOTH
 	location/X/value_d = -106.916169
 	location/X/units_s = degrees
@@ -79,7 +79,7 @@
 	location/Z/units_s = m
 	deploy_time/ascii_s = Wed May 18 10:48:00 2016
 	deploy_time/epoch_l = 1463568480
-	deploy_time/micro_seconds_i = 0
+	deploy_time/micro_seconds_i = 200000
 	deploy_time/type_s = BOTH
 	sensor/manufacturer_s = guralp
 	channel_number_i = 3

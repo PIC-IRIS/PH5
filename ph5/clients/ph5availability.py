@@ -393,7 +393,9 @@ class PH5Availability(object):
                             self.das_time[key] = {'time_windows': []}
                         self.das_time[key]['time_windows'].append(
                             (stat['deploy_time/epoch_l'],
+                             stat['deploy_time/micro_seconds_i'],
                              stat['pickup_time/epoch_l'],
+                             stat['pickup_time/micro_seconds_i'],
                              stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
@@ -426,8 +428,19 @@ class PH5Availability(object):
                                key[2] == ph5_sample_rate):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
-                                start_chan_epoch = dt['time_windows'][0][0]
-                                end_chan_epoch = dt['time_windows'][-1][1]
+                                start_chan_s = float(dt['time_windows']
+                                                       [0][0])
+                                start_chan_ms = float(dt['time_windows']
+                                                        [0][1])/1000000
+                                start_chan_epoch = start_chan_s+start_chan_ms
+
+                                # -1 is the last extent in the das tables
+                                end_chan_s = float(dt['time_windows']
+                                                     [-1][2])
+
+                                end_chan_ms = float(dt['time_windows']
+                                                      [-1][3])/1000000
+                                end_chan_epoch = end_chan_s+end_chan_ms
                         for das in Das_t:
                             if das['sample_rate_i'] == st['sample_rate_i']:
                                 samplerate_return = das['sample_rate_i']
@@ -573,7 +586,9 @@ class PH5Availability(object):
                             self.das_time[key] = {'time_windows': []}
                         self.das_time[key]['time_windows'].append(
                             (stat['deploy_time/epoch_l'],
+                             stat['deploy_time/micro_seconds_i'],
                              stat['pickup_time/epoch_l'],
+                             stat['pickup_time/micro_seconds_i'],
                              stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
@@ -602,8 +617,21 @@ class PH5Availability(object):
                                key[2] == ph5_sample_rate):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
-                                start_chan_epoch = dt['time_windows'][0][0]
-                                end_chan_epoch = dt['time_windows'][-1][1]
+                                start_chan_s = float(dt['time_windows']
+                                                       [0][0])
+                                start_chan_ms = float(dt['time_windows']
+                                                        [0][1])/1000000
+                                start_chan_epoch = start_chan_s+start_chan_ms
+
+                                # -1 is the last extent in the das tables
+                                end_chan_s = float(dt['time_windows']
+                                                     [-1][2])
+
+                                end_chan_ms = float(dt['time_windows']
+                                                      [-1][3])/1000000
+                                end_chan_epoch = end_chan_s+end_chan_ms
+                                # End Chan Micro Seconds aadded in HERE
+
                         for das in Das_t:
                             # Does Array.sr == DAS.sr? If so use sr
                             if das['sample_rate_i'] == st['sample_rate_i']:
@@ -655,9 +683,9 @@ class PH5Availability(object):
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
                                 or endtime is None else endtime
-                            if float(start) < float(start_chan_epoch):
+                            if float(start) < start_chan_epoch:
                                 start = start_chan_epoch
-                            if float(end) > float(end_chan_epoch):
+                            if float(end) > end_chan_epoch:
                                 end = end_chan_epoch
                             if T[1] is None or T[2] is None:
                                 return None

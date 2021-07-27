@@ -1897,8 +1897,8 @@ class TestAvailability_DateRange(LogTestCase, TempDirTestCase):
                                          starttime=None,
                                          endtime=None,
                                          include_sample_rate=True)
-        self.assertEqual(tt[0][3], 1463568490)
-        self.assertEqual(tt[0][4], 1463568500)
+        self.assertEqual(tt[0][3], 1463568490.2)
+        self.assertEqual(tt[0][4], 1463568500.3)
         self.ph5_object.close()
 
 
