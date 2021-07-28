@@ -622,7 +622,7 @@ class PH5Availability(object):
                             if (key[0] == ph5_das and
                                key[1] == channum and
                                key[2] == ph5_sample_rate and
-                               key[3] >= ph5_seed_station):
+                               key[3] == ph5_seed_station):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
                                 start_chan_s = float(dt['time_windows']
@@ -640,50 +640,64 @@ class PH5Availability(object):
                                 end_chan_epoch = end_chan_s+end_chan_ms
                                 # End Chan Micro Seconds aadded in HERE
 
-                        for das in Das_t:
-                            # Does Array.sr == DAS.sr? If so use sr
-                            if das['sample_rate_i'] == st['sample_rate_i']:
-                                samplerate_return = das['sample_rate_i']
-                                ph5_sr = das['sample_rate_i']
-                                time = self.ph5.get_availability(ph5_das,
-                                                                 ph5_sr,
-                                                                 channum,
-                                                                 starttime,
-                                                                 endtime)
-                                empty_times = False
-                            else:
-                                continue
-                        if empty_times is True:
-                            for i, das in enumerate(Das_t):
-                                # IF DAS.SR != Array.SR, USe DAS.SR if match
-                                # Checks to see if all DAS tables have same SR
-                                sr_prev = Das_t[i-1]['sample_rate_i']
-                                if das['sample_rate_i'] != sr_prev:
-                                    sr_mismatch = True
-                            try:
-                                if sr_mismatch is True:
-                                    # Else throw warning and fail
-                                    LOGGER.error('DAS and Array Table sample' +
-                                                 ' rates do not match, DAS' +
-                                                 ' table sample rates do not' +
-                                                 ' match. Data must be'
-                                                 ' updated.')
-                                    return
-                                else:
-                                    # Uses SR if consistent
+                            for das in Das_t:
+                                # Does Array.sr == DAS.sr? If so use sr
+                                if das['sample_rate_i'] == st['sample_rate_i']:
                                     samplerate_return = das['sample_rate_i']
                                     ph5_sr = das['sample_rate_i']
-                                    LOGGER.warning('Using sample rate from' +
-                                                   ' DAS Table. Sample rates' +
-                                                   ' in DAS and Array tables' +
-                                                   ' are not consistent.')
-                                    time = self.ph5.get_availability(ph5_das,
-                                                                     ph5_sr,
-                                                                     channum,
-                                                                     starttime,
-                                                                     endtime)
-                            except(UnboundLocalError):
-                                continue
+                                    if(key[3] == ph5_seed_station):
+                                        avail = self.ph5.get_availability
+                                        time = avail(ph5_das,
+                                                     ph5_sr,
+                                                     channum,
+                                                     starttime,
+                                                     endtime)
+
+                                    else:
+                                        continue
+                                    empty_times = False
+                                else:
+                                    continue
+                            if empty_times is True:
+                                for i, das in enumerate(Das_t):
+                                    # IF DAS.SR != Array.SR, USe DAS.SR if match
+                                    # Checks to see if all DAS tables have
+                                    # same SR
+                                    sr_prev = Das_t[i-1]['sample_rate_i']
+                                    if das['sample_rate_i'] != sr_prev:
+                                        sr_mismatch = True
+                                try:
+                                    if sr_mismatch is True:
+                                        # Else throw warning and fail
+                                        LOGGER.error('DAS and Array Table' +
+                                                     ' sample rates do not' +
+                                                     ' match, DAS table' +
+                                                     ' sample rates do not' +
+                                                     ' match. Data must be'
+                                                     ' updated.')
+                                        continue
+                                    else:
+                                        # Uses SR if consistent
+                                        samplerate_return = das['sample_rate_i']
+                                        ph5_sr = das['sample_rate_i']
+                                        LOGGER.warning('Using sample rate' +
+                                                       ' from DAS Table.' +
+                                                       '  Sample rates in' +
+                                                       ' DAS and Array ' +
+                                                       ' tables are not' +
+                                                       ' consistent.')
+                                        if(key[3] == ph5_seed_station):
+                                            # Station matcher
+                                            avail = self.ph5.get_availability
+                                            time = avail(ph5_das,
+                                                         ph5_sr,
+                                                        channum,
+                                                        starttime,
+                                                        endtime)
+                                        else:
+                                            continue
+                                except(UnboundLocalError):
+                                    continue
                         if time is None:
                             continue
                         for T in time:
