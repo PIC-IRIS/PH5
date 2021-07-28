@@ -713,21 +713,38 @@ class PH5Availability(object):
                                 return None
                             if include_sample_rate:
                                 if samplerate_return is not None:
-                                    availability.append((
-                                        ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(samplerate_return)))
+                                    if(start > end):
+                                        continue
+                                    else:
+                                        availability.append((
+                                            ph5_seed_station, ph5_loc,
+                                            ph5_channel,
+                                            start, end,
+                                            float(samplerate_return)))
                                 elif(T[0] is None):
-                                    availability.append((
-                                        ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(ph5_sr)))
+                                    if(start > end):
+                                        continue
+                                    else:
+                                        availability.append((
+                                            ph5_seed_station, ph5_loc,
+                                            ph5_channel,
+                                            start, end, float(ph5_sr)))
+                                else:
+                                    if(start > end):
+                                        continue
+                                    else:
+                                        availability.append((
+                                            ph5_seed_station, ph5_loc,
+                                            ph5_channel,
+                                            start, end, float(T[0])))
+                            else:
+                                if(start > end):
+                                    continue
                                 else:
                                     availability.append((
-                                        ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(T[0])))
-                            else:
-                                availability.append((
-                                    ph5_seed_station, ph5_loc, ph5_channel,
-                                    start, end))
+                                        ph5_seed_station, ph5_loc,
+                                        ph5_channel,
+                                        start, end))
         return availability
 
     def get_start(self, das_t):
