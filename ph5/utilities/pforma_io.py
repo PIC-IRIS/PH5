@@ -455,8 +455,8 @@ class FormaIO():
                      naming scheme. Please rename.")
             if tp == 'unknown':
                 raise FormaIOError(errno=3,
-                                   msg="File in {1} does not have standard\
-                                    name: {0}".format(
+                                   msg=("File in {1} does not have standard "
+                                        "name: {0}").format(
                                        raw_file, self.infile))
 
             # Save info about each raw file keyed by serial number in
@@ -759,10 +759,14 @@ texanRE = re.compile(r"[Ii](\d\d\d\d).*[Tt][Rr][Dd]")
 seg2RE = re.compile(r"(\d+)\.dat")
 # For type 'rt-130'
 rt130RE = re.compile(r"\d\d\d\d\d\d\d\.(\w\w\w\w)(\.\d\d)?\.[Zz][Ii][Pp]")
+# ============================= SEGD ============================== #
 # For type 'nodal'
 nodalRE = re.compile(r"[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
 # For simpleton 'nodal'
 simpletonodalRE = re.compile(r"\d+\.fcnt")
+# For type SmartSolo (except for RE, it is still understood as 'nodal')
+martSoloRE = re.compile(r"(\d+)[\d.]+.[E,N,Ze,n,z].segd")
+# =========================== END SEGD ============================= #
 # For PIC rename
 picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
 
@@ -790,6 +794,10 @@ def guess_instrument_type(filename):
     mo = simpletonodalRE.match(filename)
     if mo:
         return 'nodal', 'lllsss'
+    mo = martSoloRE.match(filename)
+    if mo:
+        das = mo.group(1)
+        return 'nodal', das
     mo = seg2RE.match(filename)
     if mo:
         das = mo.groups()[0]
