@@ -385,10 +385,13 @@ class PH5Availability(object):
                     # extent
                     for st_num in range(0, station_len):
                         stat = station_list[deployment][st_num]
+                        ss = stat['seed_station_name_s']
                         d = stat['das/serial_number_s']
                         c = stat['channel_number_i']
                         spr = stat['sample_rate_i']
-                        key = (d, c, spr)
+                        # Add an index into the key that is associated with the
+                        # DTation mkae them match up.
+                        key = (d, c, spr, ss)
                         if key not in self.das_time.keys():
                             self.das_time[key] = {'time_windows': []}
                         self.das_time[key]['time_windows'].append(
@@ -421,11 +424,14 @@ class PH5Availability(object):
                             sample_rate=ph5_sample_rate,
                             sample_rate_multiplier=ph5_multiplier,
                             check_samplerate=False)
-                        # Find key that corresponds to the das
+
+                        # Find key that corresponds to the das and station
+                        # Try to match on the key
                         for key in self.das_time.keys():
                             if (key[0] == ph5das and
                                key[1] == chanum and
-                               key[2] == ph5_sample_rate):
+                               key[2] == ph5_sample_rate and
+                               key[3] == ph5_seed_station):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
                                 start_chan_s = float(dt['time_windows']
@@ -578,10 +584,11 @@ class PH5Availability(object):
                     # extent
                     for st_num in range(0, station_len):
                         stat = station_list[deployment][st_num]
+                        ss = stat['seed_station_name_s']
                         d = stat['das/serial_number_s']
                         c = stat['channel_number_i']
                         spr = stat['sample_rate_i']
-                        key = (d, c, spr)
+                        key = (d, c, spr, ss)
                         if key not in self.das_time.keys():
                             self.das_time[key] = {'time_windows': []}
                         self.das_time[key]['time_windows'].append(
@@ -614,7 +621,8 @@ class PH5Availability(object):
                         for key in self.das_time.keys():
                             if (key[0] == ph5_das and
                                key[1] == channum and
-                               key[2] == ph5_sample_rate):
+                               key[2] == ph5_sample_rate and
+                               key[3] >= ph5_seed_station):
                                 dt = self.das_time[key]
                                 dt['time_windows'].sort()
                                 start_chan_s = float(dt['time_windows']
