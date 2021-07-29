@@ -17,7 +17,7 @@ from argparse import RawTextHelpFormatter
 
 from ph5.core import ph5api, ph5utils, timedoy, experiment
 
-PROG_VERSION = '2020.282'
+PROG_VERSION = '2021.210'
 LOGGER = logging.getLogger(__name__)
 
 

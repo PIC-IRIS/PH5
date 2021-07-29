@@ -1,5 +1,7 @@
 Master:
 ph5
+ * Make Ph5 availability accout for metadata content.
+ * Split avaiabiity information on metadata epochs
  * fixed malformed created timestamp in stationxml from ph5tostationxml
    and added testcase to ensure timestamps are well formed
  * fixed errors in entry_points.py that prevented apps from executing.
