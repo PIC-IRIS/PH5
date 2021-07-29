@@ -560,6 +560,8 @@ class PH5Availability(object):
         availability = []
         time = []
         sr_mismatch = False
+        or_start_switch = False
+        or_stop_switch = False
         empty_times = True
         self.das_time = {}
         self.SR_included = include_sample_rate
@@ -606,7 +608,9 @@ class PH5Availability(object):
                         ph5_das = st['das/serial_number_s']
                         channum = st['channel_number_i']
                         ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_start_ms = st['deploy_time/micro_seconds_i']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_stop_ms = st['pickup_time/micro_seconds_i']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
                         Das_t = self.ph5.query_das_t(
@@ -630,7 +634,11 @@ class PH5Availability(object):
                                 start_chan_ms = float(dt['time_windows']
                                                         [0][1])/1000000
                                 start_chan_epoch = start_chan_s+start_chan_ms
-
+                                if start_chan_epoch < ph5_start_epoch:
+                                    or_start_switch = True
+                                    override_start = float(ph5_start_epoch) +\
+                                        float(ph5_start_ms)\
+                                        / 1000000
                                 # -1 is the last extent in the das tables
                                 end_chan_s = float(dt['time_windows']
                                                      [-1][2])
@@ -638,6 +646,12 @@ class PH5Availability(object):
                                 end_chan_ms = float(dt['time_windows']
                                                       [-1][3])/1000000
                                 end_chan_epoch = end_chan_s+end_chan_ms
+                                if end_chan_epoch > ph5_stop_epoch:
+                                    or_stop_switch = True
+                                    override_stop = float(ph5_stop_epoch) +\
+                                        float(ph5_stop_ms)\
+                                        / 1000000
+                                # Add switch to override time stamp
                                 # End Chan Micro Seconds aadded in HERE
 
                             for das in Das_t:
@@ -660,9 +674,9 @@ class PH5Availability(object):
                                     continue
                             if empty_times is True:
                                 for i, das in enumerate(Das_t):
-                                    # IF DAS.SR != Array.SR, USe DAS.SR if match
-                                    # Checks to see if all DAS tables have
-                                    # same SR
+                                    # IF DAS.SR != Array.SR, USe DAS.SR if
+                                    # match checks to see if all DAS
+                                    # tables have same SR
                                     sr_prev = Das_t[i-1]['sample_rate_i']
                                     if das['sample_rate_i'] != sr_prev:
                                         sr_mismatch = True
@@ -678,7 +692,8 @@ class PH5Availability(object):
                                         continue
                                     else:
                                         # Uses SR if consistent
-                                        samplerate_return = das['sample_rate_i']
+                                        dassampr = das['sample_rate_i']
+                                        samplerate_return = dassampr
                                         ph5_sr = das['sample_rate_i']
                                         LOGGER.warning('Using sample rate' +
                                                        ' from DAS Table.' +
@@ -691,9 +706,9 @@ class PH5Availability(object):
                                             avail = self.ph5.get_availability
                                             time = avail(ph5_das,
                                                          ph5_sr,
-                                                        channum,
-                                                        starttime,
-                                                        endtime)
+                                                         channum,
+                                                         starttime,
+                                                         endtime)
                                         else:
                                             continue
                                 except(UnboundLocalError):
@@ -707,8 +722,14 @@ class PH5Availability(object):
                                 or endtime is None else endtime
                             if float(start) < start_chan_epoch:
                                 start = start_chan_epoch
+                            if or_start_switch is True:
+                                start = override_start
+                                or_start_switch = False
                             if float(end) > end_chan_epoch:
                                 end = end_chan_epoch
+                                if or_stop_switch is True:
+                                    end = override_stop
+                                    or_stop_switch = False
                             if T[1] is None or T[2] is None:
                                 return None
                             if include_sample_rate:
