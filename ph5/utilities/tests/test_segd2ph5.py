@@ -223,7 +223,7 @@ class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
         log2 = ('Receiver point (stationID) is using invalid default '
                 'value -1. Using 1 instead.')
         # add segD to ph5
-        testargs = ['segdtoph5', '-n', 'master.ph5', '-r', sspath]
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r', sspath, '-U', '5N']
         with patch.object(sys, 'argv', testargs):
             with LogCapture() as log:
                 log.setLevel(logging.WARNING)
@@ -250,6 +250,8 @@ class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
         self.assertEqual(a['seed_instrument_code_s'], 'P')
         self.assertEqual(a['sample_rate_i'], 500)
         self.assertEqual(a['sample_rate_multiplier_i'], 1)
+        self.assertEqual(a['location/description_s'],
+                         'Read from SEG-D as is.')
 
         # check das_t - first trace
         self.ph5object.read_das_g_names()
