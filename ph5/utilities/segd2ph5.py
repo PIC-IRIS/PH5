@@ -851,15 +851,15 @@ def process_traces(rh, th, tr):
         p_array_t['sensor/model_s'] = 'GS-30CT'
         p_array_t[
             'sensor/notes_s'] = "manufacturer and model not read from file."
-        if TSPF:
-            p_array_t[
-                'location/description_s'] = "Converted from Texas State Plane\
-                 FIPS zone 4202"
-        elif UTM:
-            p_array_t[
-                'location/description_s'] = "Converted from UTM Zone {0}"\
-                .format(
-                UTM)
+        if SD.manufacturer == 'FairfieldNodal':
+            if TSPF:
+                p_array_t['location/description_s'] = (
+                    "Converted from Texas State Plane FIPS zone 4202")
+            elif UTM:
+                p_array_t['location/description_s'] = (
+                    "Converted from UTM Zone {0}".format(UTM))
+            else:
+                p_array_t['location/description_s'] = "Read from SEG-D as is."
         else:
             p_array_t['location/description_s'] = "Read from SEG-D as is."
 
