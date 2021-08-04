@@ -33,7 +33,7 @@ class TestUnsimpleton_main(TempDirTestCase):
             with OutputCapture():
                 unsimpleton.main()
         rg16_dir = os.path.join(self.tmpdir, "rg16data")
-        rg16_fileList = os.listdir(rg16_dir)
+        rg16_fileList = sorted(os.listdir(rg16_dir))
         self.assertEqual(rg16_fileList, ['PIC_1_1111_4886.0.0.rg16',
                                          'PIC_1_1111_4892.0.0.rg16',
                                          'PIC_1_1111_5118.0.0.rg16'])
