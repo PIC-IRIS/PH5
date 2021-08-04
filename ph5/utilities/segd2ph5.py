@@ -977,6 +977,7 @@ def write_arrays(Array_t):
         das_list = sorted(Array_t[line].keys())
         #   Loop through das_list
         for das in das_list:
+            Array_t[line][das] = combine_array_entries(Array_t[line][das])
             dtimes = sorted(Array_t[line][das].keys())
             #   Loop through deploying times
             for dtime in dtimes:
@@ -988,6 +989,55 @@ def write_arrays(Array_t):
                             columns.populate(a, array_t)
                     except Exception as e:
                         print(e.message)
+
+
+def combine_array_entries(aOfDas):
+    """
+    :param aOfDas: {dtime: {c:[entry]}} in which each dtime is an entry
+    :return aOnDeployTimes which has the same structure of aOfDas but the
+        times are combined if gap less than 2m
+    """
+    aOnChannels = {}  # {c_i: list of entries according to dtimes' order}
+    dtimes = sorted(aOfDas.keys())
+    for dtime in dtimes:
+        chan_sets = sorted(aOfDas[dtime].keys())
+        for c in chan_sets:
+            if c not in aOnChannels:
+                aOnChannels[c] = []
+            for entry in aOfDas[dtime][c]:
+                aOnChannels[c].append(entry)
+
+    # same structure of aOfDas but the times are combined if gap less than 2m:
+    # {dtime: {c:[combined entry] } }
+    aOnDeployTimes = {}
+    for c in aOnChannels:
+        prevPickupTime = 0
+        currDeployTime = 0
+        dEntries = aOnChannels[c]
+        for d in dEntries:
+            deployTime = d['deploy_time/epoch_l']
+
+            if deployTime - prevPickupTime >= 120:
+                # gap between 2 separate deployments for the same device
+                # should be at lease 120 seconds (2m)
+                currDeployTime = deployTime
+                if deployTime not in aOnDeployTimes:
+                    aOnDeployTimes[deployTime] = {}
+                if c not in aOnDeployTimes[deployTime]:
+                    aOnDeployTimes[deployTime][c] = [d]
+            else:
+                # If gap less than 120 seconds, combine the entry with the
+                # entry of currDeployTime by
+                # keeping deployTime and adjusting pickupTime
+                aOnDeployTimes[currDeployTime][c][0][
+                    'pickup_time/epoch_l'] = d['pickup_time/epoch_l']
+                aOnDeployTimes[currDeployTime][c][0][
+                    'pickup_time/ascii_s'] = d['pickup_time/ascii_s']
+                aOnDeployTimes[currDeployTime][c][0][
+                    'pickup_time/micro_seconds_i'] = d['pickup_time/'
+                                                       'micro_seconds_i']
+            prevPickupTime = d['pickup_time/epoch_l']
+    return aOnDeployTimes
 
 
 def writeINDEX():

@@ -93,27 +93,95 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
 
     def test_write_arrays(self):
         # same das, different deploy times
-        arrays = \
-            [{'das/serial_number_s': '3X500', 'channel_number_i': 1,
-              'deploy_time/epoch_l': 1544545576},
-             {'das/serial_number_s': '3X500', 'channel_number_i': 2,
-              'deploy_time/epoch_l': 1502293592},
-             {'das/serial_number_s': '3X500', 'channel_number_i': 1,
-              'deploy_time/epoch_l': 1544545576},
-             {'das/serial_number_s': '3X500', 'channel_number_i': 2,
-              'deploy_time/epoch_l': 1502293592}]
+        # combine ones that gap less than 2m
+        # separate ones that gap more than 2m
+        array_c1 = [
+            {'das/serial_number_s': '1X2060', 'channel_number_i': 1,
+             'deploy_time/epoch_l': 1601325564,
+             'pickup_time/ascii_s': 'Tue Sep 29 16:39:24 2020',
+             'pickup_time/epoch_l': 1601397564,
+             'pickup_time/micro_seconds_i': 1},
+            # gap = 20s => combine with previous
+            {'das/serial_number_s': '1X2060', 'channel_number_i': 1,
+             'deploy_time/epoch_l': 1601397584,
+             'pickup_time/ascii_s': 'Wed Sep 30 16:23:45 2020',
+             'pickup_time/epoch_l': 1601483025,
+             'pickup_time/micro_seconds_i': 2},
+            # gap=150s => separate with previous
+            {'das/serial_number_s': '1X2060', 'channel_number_i': 1,
+             'deploy_time/epoch_l': 1601483175,
+             'pickup_time/ascii_s': 'Thu Oct  1 16:23:45 2020',
+             'pickup_time/epoch_l': 1601569425,
+             'pickup_time/micro_seconds_i': 3}]
+        array_c2 = [
+            {'das/serial_number_s': '1X2060', 'channel_number_i': 2,
+             'deploy_time/epoch_l': 1601325564,
+             'pickup_time/ascii_s': 'Tue Sep 29 16:39:24 2020',
+             'pickup_time/epoch_l': 1601397564,
+             'pickup_time/micro_seconds_i': 1},
+            # gap = 20s => combine with previous
+            {'das/serial_number_s': '1X2060', 'channel_number_i': 2,
+             'deploy_time/epoch_l': 1601397584,
+             'pickup_time/ascii_s': 'Wed Sep 30 16:23:45 2020',
+             'pickup_time/epoch_l': 1601483025,
+             'pickup_time/micro_seconds_i': 2},
+            # gap=150s => separate with previous
+            {'das/serial_number_s': '1X2060', 'channel_number_i': 2,
+             'deploy_time/epoch_l': 1601483175,
+             'pickup_time/ascii_s': 'Thu Oct  1 16:23:45 2020',
+             'pickup_time/epoch_l': 1601569425,
+             'pickup_time/micro_seconds_i': 3}]
+
         array_t = \
-            {1: {'3X500': {1502293592: {1: [arrays[0]], 2: [arrays[1]]},
-                           1546021724: {1: [arrays[2]], 2: [arrays[3]]}}}}
+            {1: {'1X2060': {1601325564: {1: [array_c1[0]], 2: [array_c2[0]]},
+                            1601397584: {1: [array_c1[1]], 2: [array_c2[1]]},
+                            1601483175: {1: [array_c1[2]], 2: [array_c2[2]]}}}}
 
         segd2ph5.write_arrays(array_t)
         ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
+        self.assertEqual(len(ret), 4)   # 2 entries for each channels
 
-        i = 0
-        for r in ret.iterrows():
-            for k in arrays[0].keys():
-                self.assertEqual(r[k], arrays[i][k])
-            i += 1
+        self.assertEqual(ret[0]['deploy_time']['epoch_l'],
+                         array_c1[0]['deploy_time/epoch_l'])
+        # combine with array_c1[1][pickup_time]
+        self.assertEqual(ret[0]['pickup_time']['epoch_l'],
+                         array_c1[1]['pickup_time/epoch_l'])
+        self.assertEqual(ret[0]['pickup_time']['ascii_s'],
+                         array_c1[1]['pickup_time/ascii_s'])
+        self.assertEqual(ret[0]['pickup_time']['micro_seconds_i'],
+                         array_c1[1]['pickup_time/micro_seconds_i'])
+        self.assertEqual(ret[0]['deploy_time']['epoch_l'],
+                         array_c1[0]['deploy_time/epoch_l'])
+
+        self.assertEqual(ret[1]['deploy_time']['epoch_l'],
+                         array_c2[0]['deploy_time/epoch_l'])
+        # combine with array_c2[1][pickup_time]
+        self.assertEqual(ret[1]['pickup_time']['epoch_l'],
+                         array_c2[1]['pickup_time/epoch_l'])
+        self.assertEqual(ret[1]['pickup_time']['ascii_s'],
+                         array_c2[1]['pickup_time/ascii_s'])
+        self.assertEqual(ret[1]['pickup_time']['micro_seconds_i'],
+                         array_c2[1]['pickup_time/micro_seconds_i'])
+
+        # array_c1[2] will be a separate entry
+        self.assertEqual(ret[2]['deploy_time']['epoch_l'],
+                         array_c1[2]['deploy_time/epoch_l'])
+        self.assertEqual(ret[2]['pickup_time']['epoch_l'],
+                         array_c1[2]['pickup_time/epoch_l'])
+        self.assertEqual(ret[2]['pickup_time']['ascii_s'],
+                         array_c1[2]['pickup_time/ascii_s'])
+        self.assertEqual(ret[2]['pickup_time']['micro_seconds_i'],
+                         array_c1[2]['pickup_time/micro_seconds_i'])
+
+        # array_c2[2] will be a separate entry
+        self.assertEqual(ret[3]['deploy_time']['epoch_l'],
+                         array_c2[2]['deploy_time/epoch_l'])
+        self.assertEqual(ret[3]['pickup_time']['epoch_l'],
+                         array_c2[2]['pickup_time/epoch_l'])
+        self.assertEqual(ret[3]['pickup_time']['ascii_s'],
+                         array_c2[2]['pickup_time/ascii_s'])
+        self.assertEqual(ret[3]['pickup_time']['micro_seconds_i'],
+                         array_c2[2]['pickup_time/micro_seconds_i'])
 
     def test_process_traces_Fairfield(self):
         segd2ph5.setLogger()
