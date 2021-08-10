@@ -404,7 +404,6 @@ class PH5Availability(object):
                              stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
-
                         ret = self.get_slc_info(st, station, location, channel)
                         if ret == -1:
                             continue
@@ -499,10 +498,8 @@ class PH5Availability(object):
                                         samplerate_return = dsri
                                         psr = das['sample_rate_i']
                                         LOGGER.warning('Using sample rate' +
-                                                       ' from DAS Table.' +
-                                                       ' Sample rates in DAS' +
-                                                       ' and Array tables' +
-                                                       ' are not consistent.')
+                                                       ' from DAS Table ' +
+                                                       ph5das + '.')
                                         if(key[3] == ph5_seed_station):
                                             extent = self.ph5.get_extent
                                             early, end = extent(ph5das,
@@ -727,11 +724,8 @@ class PH5Availability(object):
                                         samplerate_return = dassampr
                                         ph5_sr = das['sample_rate_i']
                                         LOGGER.warning('Using sample rate' +
-                                                       ' from DAS Table.' +
-                                                       '  Sample rates in' +
-                                                       ' DAS and Array ' +
-                                                       ' tables are not' +
-                                                       ' consistent.')
+                                                       ' from DAS Table ' +
+                                                       ph5_das + '.')
                                         if(key[3] == ph5_seed_station):
                                             # Station matcher
                                             avail = self.ph5.get_availability
