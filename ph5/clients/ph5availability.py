@@ -17,7 +17,7 @@ from argparse import RawTextHelpFormatter
 
 from ph5.core import ph5api, ph5utils, timedoy, experiment
 
-PROG_VERSION = '2020.282'
+PROG_VERSION = '2021.210'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -355,8 +355,11 @@ class PH5Availability(object):
         Leverage this
         """
         availability_extents = []
+        self.das_time = {}
         sr_mismatch = False
         empty_times = True
+        or_start_switch = False
+        or_stop_switch = False
         self.SR_included = include_sample_rate
         if starttime or endtime:
             if not (starttime and endtime):
@@ -379,17 +382,40 @@ class PH5Availability(object):
 
                 for deployment in station_list:
                     station_len = len(station_list[deployment])
+                    # Build a for loop to solve for the das time extent
+                    # The first loop is necessary to determine full time
+                    # extent
+                    for st_num in range(0, station_len):
+                        stat = station_list[deployment][st_num]
+                        ss = stat['seed_station_name_s']
+                        d = stat['das/serial_number_s']
+                        c = stat['channel_number_i']
+                        spr = stat['sample_rate_i']
+                        # Add an index into the key that is associated with the
+                        # DTation mkae them match up.
+                        key = (d, c, spr, ss)
+                        if key not in self.das_time.keys():
+                            self.das_time[key] = {'time_windows': []}
+                        self.das_time[key]['time_windows'].append(
+                            (stat['deploy_time/epoch_l'],
+                             stat['deploy_time/micro_seconds_i'],
+                             stat['pickup_time/epoch_l'],
+                             stat['pickup_time/micro_seconds_i'],
+                             stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
-
                         ret = self.get_slc_info(st, station, location, channel)
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5das = st['das/serial_number_s']
                         chanum = st['channel_number_i']
+                        # Seem to be replacing a channel time with a
+                        # stationtime. Replace in DAS group
                         ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_start_ms = st['deploy_time/micro_seconds_i']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_stop_ms = st['pickup_time/micro_seconds_i']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
                         samplerate_return = None
@@ -401,55 +427,112 @@ class PH5Availability(object):
                             sample_rate=ph5_sample_rate,
                             sample_rate_multiplier=ph5_multiplier,
                             check_samplerate=False)
-                        for das in Das_t:
-                            if das['sample_rate_i'] == st['sample_rate_i']:
-                                samplerate_return = das['sample_rate_i']
-                                psr = das['sample_rate_i']
-                                early, end = self.ph5.get_extent(ph5das,
-                                                                 chanum,
-                                                                 psr,
-                                                                 starttime,
-                                                                 endtime
-                                                                 )
-                                empty_times = False
-                            else:
-                                continue
-                        if empty_times is True:
-                            for i, das in enumerate(Das_t):
-                                # Checks to see if all DAS tables have same SR
-                                sr_prev = Das_t[i-1]['sample_rate_i']
-                                if das['sample_rate_i'] != sr_prev:
-                                    sr_mismatch = True
-                            try:
-                                if sr_mismatch is True:
-                                    LOGGER.error('DAS and Array Table sample' +
-                                                 ' rates do not match, DAS' +
-                                                 ' table sample rates do not' +
-                                                 ' match. Data must be'
-                                                 ' updated.')
-                                    return
-                                else:
-                                    # Uses SR if consistent
+
+                        # Find key that corresponds to the das and station
+                        # Try to match on the key
+                        for key in self.das_time.keys():
+                            if (key[0] == ph5das and
+                               key[1] == chanum and
+                               key[2] == ph5_sample_rate and
+                               key[3] == ph5_seed_station):
+                                dt = self.das_time[key]
+                                dt['time_windows'].sort()
+                                start_chan_s = float(dt['time_windows']
+                                                       [0][0])
+                                start_chan_ms = float(dt['time_windows']
+                                                        [0][1])/1000000
+                                start_chan_epoch = start_chan_s+start_chan_ms
+                                if start_chan_epoch < ph5_start_epoch:
+                                    or_start_switch = True
+                                    override_start = float(ph5_start_epoch) +\
+                                        float(ph5_start_ms)\
+                                        / 1000000
+                                # -1 is the last extent in the das tables
+                                end_chan_s = float(dt['time_windows']
+                                                     [-1][2])
+
+                                end_chan_ms = float(dt['time_windows']
+                                                      [-1][3])/1000000
+                                end_chan_epoch = end_chan_s+end_chan_ms
+                                if end_chan_epoch > ph5_stop_epoch:
+                                    or_stop_switch = True
+                                    override_stop = float(ph5_stop_epoch) +\
+                                        float(ph5_stop_ms)\
+                                        / 1000000
+                            for das in Das_t:
+                                if das['sample_rate_i'] == st['sample_rate_i']:
                                     samplerate_return = das['sample_rate_i']
                                     psr = das['sample_rate_i']
-                                    LOGGER.warning('Using sample rate from' +
-                                                   ' DAS Table. Sample rates' +
-                                                   ' in DAS and Array tables' +
-                                                   ' are not consistent.')
-                                    early, end = self.ph5.get_extent(ph5das,
-                                                                     chanum,
-                                                                     psr,
-                                                                     starttime,
-                                                                     endtime
-                                                                     )
-                            except(UnboundLocalError):
-                                continue
+                                    if(key[3] == ph5_seed_station):
+                                        extent = self.ph5.get_extent
+                                        early, end = extent(ph5das,
+                                                            chanum,
+                                                            psr,
+                                                            starttime,
+                                                            endtime
+                                                            )
+                                    else:
+                                        continue
+                                    empty_times = False
+                                else:
+                                    continue
+                            if empty_times is True:
+                                for i, das in enumerate(Das_t):
+                                    # Checks to see if all DAS
+                                    # tables have same SR
+                                    sr_prev = Das_t[i-1]['sample_rate_i']
+                                    if das['sample_rate_i'] != sr_prev:
+                                        sr_mismatch = True
+                                try:
+                                    if sr_mismatch is True:
+                                        LOGGER.error('DAS and Array Table' +
+                                                     ' sample rates do not' +
+                                                     ' match, DAS table' +
+                                                     ' sample rates do not' +
+                                                     ' match. Data must be'
+                                                     ' updated.')
+                                        continue
+                                    else:
+                                        # Uses SR if consistent
+                                        dsri = das['sample_rate_i']
+                                        samplerate_return = dsri
+                                        psr = das['sample_rate_i']
+                                        LOGGER.warning('Using sample rate' +
+                                                       ' from DAS Table ' +
+                                                       ph5das + '.')
+                                        if(key[3] == ph5_seed_station):
+                                            extent = self.ph5.get_extent
+                                            early, end = extent(ph5das,
+                                                                chanum,
+                                                                psr,
+                                                                starttime,
+                                                                endtime
+                                                                )
+                                        else:
+                                            continue
+                                except(UnboundLocalError):
+                                    continue
                         if early is None or end is None:
                             continue
+                        # trim user defined time range if it extends beyond the
+                        # deploy/pickup times
+                        # Logic to fix the deploy time error
                         if starttime is not None and early < starttime:
                             early = starttime
                         if endtime is not None and endtime < end:
                             end = endtime
+                        # Start channel trim
+                        if float(early) < float(start_chan_epoch):
+                            early = start_chan_epoch
+                        if or_start_switch is True:
+                            early = override_start
+                            or_start_switch = False
+                        if float(end) > float(end_chan_epoch):
+                            end = end_chan_epoch
+                            if or_stop_switch is True:
+                                end = override_stop
+                                or_stop_switch = False
+                        # End of channel trim
                         if early is None or end is None:
                             return None
                         if not include_sample_rate:
@@ -505,10 +588,12 @@ class PH5Availability(object):
         availability = []
         time = []
         sr_mismatch = False
+        or_start_switch = False
+        or_stop_switch = False
         empty_times = True
+        self.das_time = {}
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
-
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -524,18 +609,36 @@ class PH5Availability(object):
 
                 for deployment in station_list:
                     station_len = len(station_list[deployment])
+                    # Build a for loop to solve for the das time extent
+                    # The first loop is necessary to determine full time
+                    # extent
+                    for st_num in range(0, station_len):
+                        stat = station_list[deployment][st_num]
+                        ss = stat['seed_station_name_s']
+                        d = stat['das/serial_number_s']
+                        c = stat['channel_number_i']
+                        spr = stat['sample_rate_i']
+                        key = (d, c, spr, ss)
+                        if key not in self.das_time.keys():
+                            self.das_time[key] = {'time_windows': []}
+                        self.das_time[key]['time_windows'].append(
+                            (stat['deploy_time/epoch_l'],
+                             stat['deploy_time/micro_seconds_i'],
+                             stat['pickup_time/epoch_l'],
+                             stat['pickup_time/micro_seconds_i'],
+                             stat['id_s']))
                     for st_num in range(0, station_len):
                         st = station_list[deployment][st_num]
-
                         ret = self.get_slc_info(st, station, location, channel)
-
                         if ret == -1:
                             continue
                         ph5_seed_station, ph5_loc, ph5_channel = ret
                         ph5_das = st['das/serial_number_s']
                         channum = st['channel_number_i']
                         ph5_start_epoch = st['deploy_time/epoch_l']
+                        ph5_start_ms = st['deploy_time/micro_seconds_i']
                         ph5_stop_epoch = st['pickup_time/epoch_l']
+                        ph5_stop_ms = st['pickup_time/micro_seconds_i']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
                         Das_t = self.ph5.query_das_t(
@@ -546,50 +649,95 @@ class PH5Availability(object):
                             sample_rate=ph5_sample_rate,
                             sample_rate_multiplier=ph5_multiplier,
                             check_samplerate=False)
-                        for das in Das_t:
-                            # Does Array.sr == DAS.sr? If so use sr
-                            if das['sample_rate_i'] == st['sample_rate_i']:
-                                samplerate_return = das['sample_rate_i']
-                                ph5_sr = das['sample_rate_i']
-                                time = self.ph5.get_availability(ph5_das,
-                                                                 ph5_sr,
-                                                                 channum,
-                                                                 starttime,
-                                                                 endtime)
-                                empty_times = False
-                            else:
-                                continue
-                        if empty_times is True:
-                            for i, das in enumerate(Das_t):
-                                # IF DAS.SR != Array.SR, USe DAS.SR if match
-                                # Checks to see if all DAS tables have same SR
-                                sr_prev = Das_t[i-1]['sample_rate_i']
-                                if das['sample_rate_i'] != sr_prev:
-                                    sr_mismatch = True
-                            try:
-                                if sr_mismatch is True:
-                                    # Else throw warning and fail
-                                    LOGGER.error('DAS and Array Table sample' +
-                                                 ' rates do not match, DAS' +
-                                                 ' table sample rates do not' +
-                                                 ' match. Data must be'
-                                                 ' updated.')
-                                    return
-                                else:
-                                    # Uses SR if consistent
+                        # Find key that corresponds to the das
+                        for key in self.das_time.keys():
+                            if (key[0] == ph5_das and
+                               key[1] == channum and
+                               key[2] == ph5_sample_rate and
+                               key[3] == ph5_seed_station):
+                                dt = self.das_time[key]
+                                dt['time_windows'].sort()
+                                start_chan_s = float(dt['time_windows']
+                                                       [0][0])
+                                start_chan_ms = float(dt['time_windows']
+                                                        [0][1])/1000000
+                                start_chan_epoch = start_chan_s+start_chan_ms
+                                if start_chan_epoch < ph5_start_epoch:
+                                    or_start_switch = True
+                                    override_start = float(ph5_start_epoch) +\
+                                        float(ph5_start_ms)\
+                                        / 1000000
+                                # -1 is the last extent in the das tables
+                                end_chan_s = float(dt['time_windows']
+                                                     [-1][2])
+
+                                end_chan_ms = float(dt['time_windows']
+                                                      [-1][3])/1000000
+                                end_chan_epoch = end_chan_s+end_chan_ms
+                                if end_chan_epoch > ph5_stop_epoch:
+                                    or_stop_switch = True
+                                    override_stop = float(ph5_stop_epoch) +\
+                                        float(ph5_stop_ms)\
+                                        / 1000000
+                                # Add switch to override time stamp
+                                # End Chan Micro Seconds aadded in HERE
+
+                            for das in Das_t:
+                                # Does Array.sr == DAS.sr? If so use sr
+                                if das['sample_rate_i'] == st['sample_rate_i']:
                                     samplerate_return = das['sample_rate_i']
                                     ph5_sr = das['sample_rate_i']
-                                    LOGGER.warning('Using sample rate from' +
-                                                   ' DAS Table. Sample rates' +
-                                                   ' in DAS and Array tables' +
-                                                   ' are not consistent.')
-                                    time = self.ph5.get_availability(ph5_das,
-                                                                     ph5_sr,
-                                                                     channum,
-                                                                     starttime,
-                                                                     endtime)
-                            except(UnboundLocalError):
-                                continue
+                                    if(key[3] == ph5_seed_station):
+                                        avail = self.ph5.get_availability
+                                        time = avail(ph5_das,
+                                                     ph5_sr,
+                                                     channum,
+                                                     starttime,
+                                                     endtime)
+
+                                    else:
+                                        continue
+                                    empty_times = False
+                                else:
+                                    continue
+                            if empty_times is True:
+                                for i, das in enumerate(Das_t):
+                                    # IF DAS.SR != Array.SR, USe DAS.SR if
+                                    # match checks to see if all DAS
+                                    # tables have same SR
+                                    sr_prev = Das_t[i-1]['sample_rate_i']
+                                    if das['sample_rate_i'] != sr_prev:
+                                        sr_mismatch = True
+                                try:
+                                    if sr_mismatch is True:
+                                        # Else throw warning and fail
+                                        LOGGER.error('DAS and Array Table' +
+                                                     ' sample rates do not' +
+                                                     ' match, DAS table' +
+                                                     ' sample rates do not' +
+                                                     ' match. Data must be'
+                                                     ' updated.')
+                                        continue
+                                    else:
+                                        # Uses SR if consistent
+                                        dassampr = das['sample_rate_i']
+                                        samplerate_return = dassampr
+                                        ph5_sr = das['sample_rate_i']
+                                        LOGGER.warning('Using sample rate' +
+                                                       ' from DAS Table ' +
+                                                       ph5_das + '.')
+                                        if(key[3] == ph5_seed_station):
+                                            # Station matcher
+                                            avail = self.ph5.get_availability
+                                            time = avail(ph5_das,
+                                                         ph5_sr,
+                                                         channum,
+                                                         starttime,
+                                                         endtime)
+                                        else:
+                                            continue
+                                except(UnboundLocalError):
+                                    continue
                         if time is None:
                             continue
                         for T in time:
@@ -597,26 +745,52 @@ class PH5Availability(object):
                                 or starttime is None else starttime
                             end = T[2] if T[2] < endtime \
                                 or endtime is None else endtime
+                            if float(start) < start_chan_epoch:
+                                start = start_chan_epoch
+                            if or_start_switch is True:
+                                start = override_start
+                                or_start_switch = False
+                            if float(end) > end_chan_epoch:
+                                end = end_chan_epoch
+                                if or_stop_switch is True:
+                                    end = override_stop
+                                    or_stop_switch = False
                             if T[1] is None or T[2] is None:
                                 return None
                             if include_sample_rate:
                                 if samplerate_return is not None:
-                                    availability.append((
-                                        ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(samplerate_return)))
+                                    if(start > end):
+                                        continue
+                                    else:
+                                        availability.append((
+                                            ph5_seed_station, ph5_loc,
+                                            ph5_channel,
+                                            start, end,
+                                            float(samplerate_return)))
                                 elif(T[0] is None):
-                                    availability.append((
-                                        ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(ph5_sr)))
+                                    if(start > end):
+                                        continue
+                                    else:
+                                        availability.append((
+                                            ph5_seed_station, ph5_loc,
+                                            ph5_channel,
+                                            start, end, float(ph5_sr)))
+                                else:
+                                    if(start > end):
+                                        continue
+                                    else:
+                                        availability.append((
+                                            ph5_seed_station, ph5_loc,
+                                            ph5_channel,
+                                            start, end, float(T[0])))
+                            else:
+                                if(start > end):
+                                    continue
                                 else:
                                     availability.append((
-                                        ph5_seed_station, ph5_loc, ph5_channel,
-                                        start, end, float(T[0])))
-                            else:
-                                availability.append((
-                                    ph5_seed_station, ph5_loc, ph5_channel,
-                                    start, end))
-
+                                        ph5_seed_station, ph5_loc,
+                                        ph5_channel,
+                                        start, end))
         return availability
 
     def get_start(self, das_t):
