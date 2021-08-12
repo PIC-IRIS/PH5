@@ -1007,8 +1007,9 @@ def combine_array_entries(aOfDas):
             for entry in aOfDas[dtime][c]:
                 aOnChannels[c].append(entry)
 
-    # same structure of aOfDas but the times are combined if gap less than 2m:
-    # {dtime: {c:[combined entry] } }
+    # same structure of aOfDas but the times are combined if deploy time of
+    # the current entry is exactly the same as the pickup time of the previous
+    # one:    # {dtime: {c:[combined entry] } }
     aOnDeployTimes = {}
     for c in aOnChannels:
         prevPickupTime = 0
@@ -1016,19 +1017,13 @@ def combine_array_entries(aOfDas):
         dEntries = aOnChannels[c]
         for d in dEntries:
             deployTime = d['deploy_time/epoch_l']
-
-            if deployTime - prevPickupTime >= 120:
-                # gap between 2 separate deployments for the same device
-                # should be at lease 120 seconds (2m)
+            if deployTime != prevPickupTime:
                 currDeployTime = deployTime
                 if deployTime not in aOnDeployTimes:
                     aOnDeployTimes[deployTime] = {}
                 if c not in aOnDeployTimes[deployTime]:
                     aOnDeployTimes[deployTime][c] = [d]
             else:
-                # If gap less than 120 seconds, combine the entry with the
-                # entry of currDeployTime by
-                # keeping deployTime and adjusting pickupTime
                 aOnDeployTimes[currDeployTime][c][0][
                     'pickup_time/epoch_l'] = d['pickup_time/epoch_l']
                 aOnDeployTimes[currDeployTime][c][0][
