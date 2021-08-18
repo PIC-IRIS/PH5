@@ -172,9 +172,9 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
         self.assertEqual(len(ret), 3)   # 2 entries for chan1, 1 for chan2
 
+        # combine array_c1[0] and overlapping array_c1[1]
         self.assertEqual(ret[0]['deploy_time']['epoch_l'],
                          array_c1[0]['deploy_time/epoch_l'])
-        # combine with array_c1[1][pickup_time]
         self.assertEqual(ret[0]['pickup_time']['epoch_l'],
                          array_c1[1]['pickup_time/epoch_l'])
         self.assertEqual(ret[0]['pickup_time']['ascii_s'],
@@ -184,9 +184,9 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(ret[0]['deploy_time']['epoch_l'],
                          array_c1[0]['deploy_time/epoch_l'])
 
+        # combine array_c2[0] and overlapping array_c2[1]
         self.assertEqual(ret[1]['deploy_time']['epoch_l'],
-                         array_c2[0]['deploy_time/epoch_l'])
-        # combine with array_c2[1][pickup_time]
+                         array_c1[0]['deploy_time/epoch_l'])
         self.assertEqual(ret[1]['pickup_time']['epoch_l'],
                          array_c2[1]['pickup_time/epoch_l'])
         self.assertEqual(ret[1]['pickup_time']['ascii_s'],
@@ -194,7 +194,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         self.assertEqual(ret[1]['pickup_time']['micro_seconds_i'],
                          array_c2[1]['pickup_time/micro_seconds_i'])
 
-        # array_c1[2] will be a separate entry
+        # combine array_c1[2] and deploy_time match pickup_time array_c1[3]
         self.assertEqual(ret[2]['deploy_time']['epoch_l'],
                          array_c1[2]['deploy_time/epoch_l'])
         self.assertEqual(ret[2]['pickup_time']['epoch_l'],
