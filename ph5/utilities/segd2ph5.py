@@ -1016,7 +1016,7 @@ def combine_array_entries(aName, aOfDas):
     for c in aOnChannels:
         prevPickupTime = 0
         currDeployTime = 0
-        dEntries = sorted(aOnChannels[c])
+        dEntries = aOnChannels[c]
         for d in dEntries:
             deployTime = d['deploy_time/epoch_l']
             if deployTime > prevPickupTime:
