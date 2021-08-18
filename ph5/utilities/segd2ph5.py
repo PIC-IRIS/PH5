@@ -977,7 +977,8 @@ def write_arrays(Array_t):
         das_list = sorted(Array_t[line].keys())
         #   Loop through das_list
         for das in das_list:
-            Array_t[line][das] = combine_array_entries(Array_t[line][das])
+            Array_t[line][das] = combine_array_entries(name,
+                                                       Array_t[line][das])
             dtimes = sorted(Array_t[line][das].keys())
             #   Loop through deploying times
             for dtime in dtimes:
@@ -991,8 +992,9 @@ def write_arrays(Array_t):
                         print(e.message)
 
 
-def combine_array_entries(aOfDas):
+def combine_array_entries(aName, aOfDas):
     """
+    :para aName: "Array_t_xxx" to add to warning message
     :param aOfDas: {dtime: {c:[entry]}} in which each dtime is an entry
     :return aOnDeployTimes which has the same structure of aOfDas but the
         times are combined if gap less than 2m
@@ -1014,23 +1016,35 @@ def combine_array_entries(aOfDas):
     for c in aOnChannels:
         prevPickupTime = 0
         currDeployTime = 0
-        dEntries = aOnChannels[c]
+        dEntries = sorted(aOnChannels[c])
         for d in dEntries:
             deployTime = d['deploy_time/epoch_l']
-            if deployTime != prevPickupTime:
+            if deployTime > prevPickupTime:
                 currDeployTime = deployTime
                 if deployTime not in aOnDeployTimes:
                     aOnDeployTimes[deployTime] = {}
                 if c not in aOnDeployTimes[deployTime]:
                     aOnDeployTimes[deployTime][c] = [d]
             else:
-                aOnDeployTimes[currDeployTime][c][0][
-                    'pickup_time/epoch_l'] = d['pickup_time/epoch_l']
-                aOnDeployTimes[currDeployTime][c][0][
-                    'pickup_time/ascii_s'] = d['pickup_time/ascii_s']
-                aOnDeployTimes[currDeployTime][c][0][
-                    'pickup_time/micro_seconds_i'] = d['pickup_time/'
-                                                       'micro_seconds_i']
+                uEntry = aOnDeployTimes[currDeployTime][c][0]
+                msg = "Das %s - %s - station %s - chan %s: " % (
+                    d['das/serial_number_s'], aName,
+                    d['id_s'], d['channel_number_i'])
+                msg += "Combine %s"
+                msg += ("entry [%s - %s] into previous entry [%s - %s]" %
+                        (d['deploy_time/ascii_s'],
+                         d['pickup_time/ascii_s'],
+                         uEntry['deploy_time/ascii_s'],
+                         uEntry['pickup_time/ascii_s']))
+                descr = ""
+                if deployTime < prevPickupTime:
+                    descr = "overlapping "
+                msg %= descr
+                LOGGER.warning(msg)
+                uEntry['pickup_time/epoch_l'] = d['pickup_time/epoch_l']
+                uEntry['pickup_time/ascii_s'] = d['pickup_time/ascii_s']
+                uEntry['pickup_time/micro_seconds_i'] = d['pickup_time/'
+                                                          'micro_seconds_i']
             prevPickupTime = d['pickup_time/epoch_l']
     return aOnDeployTimes
 
