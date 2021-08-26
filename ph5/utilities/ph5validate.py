@@ -65,9 +65,15 @@ class PH5Validate(object):
     def read_arrays(self, name):
         if name is None:
             for n in self.ph5.Array_t_names:
-                self.ph5.read_array_t(n)
+                try:
+                    self.ph5.read_array_t(n)
+                except ph5api.APIError as e:
+                    LOGGER.error(e.msg)
         else:
-            self.ph5.read_array_t(name)
+            try:
+                self.ph5.read_array_t(name)
+            except ph5api.APIError as e:
+                LOGGER.error(e.msg)
 
     def read_events(self, name):
         if name is None:

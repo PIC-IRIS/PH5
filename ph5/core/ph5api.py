@@ -564,7 +564,13 @@ class PH5(experiment.ExperimentGroup):
         if not self.Array_t_names:
             self.read_array_t_names()
         if name in self.Array_t_names:
-            rows, keys = self.ph5_g_sorts.read_arrays(name)
+            try:
+                rows, keys = self.ph5_g_sorts.read_arrays(name)
+            except TypeError as e:
+                if 'NoneType' in str(e):
+                    self.Array_t[name] = {'byid': {}, 'order': [], 'keys': []}
+                    msg = "Table %s is empty." % name
+                    raise APIError(4, msg)
             byid, order = by_id(
                 rows, secondary_key='channel_number_i', unique_key=False)
             self.Array_t[name] = {'byid': byid, 'order': order, 'keys': keys}
