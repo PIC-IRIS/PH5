@@ -57,6 +57,7 @@ class PH5Validate(object):
     def __init__(self, ph5API_object, ph5path):
         self.ph5 = ph5API_object
         self.path = ph5path
+        self.miniFileNotFound = set()
         if not self.ph5.Array_t_names:
             self.ph5.read_array_t_names()
         if not self.ph5.Experiment_t:
@@ -469,7 +470,48 @@ class PH5Validate(object):
         if sensor_serial is None:
             warning.append("Sensor serial number is missing.")
 
-        self.ph5.read_das_t(das_serial, reread=False)
+        if not station['sensor/manufacturer_s']:
+            warning.append("Sensor manufacturer is "
+                           "missing. Is this correct???")
+
+        if not station['sensor/model_s']:
+            warning.append("Sensor model is missing. "
+                           "Is this correct???")
+
+        if not station['das/manufacturer_s']:
+            warning.append("DAS manufacturer is missing. "
+                           "Is this correct???")
+
+        if not station['das/model_s']:
+            warning.append("DAS model is missing. "
+                           "Is this correct???")
+
+        errmsg = ""
+        try:
+            self.ph5.read_das_t(das_serial, reread=False)
+        except IOError as e:
+            if 'does not exist' in str(e):
+                minifile = str(e).split("``")[1]
+                errmsg = str(e) + ("The file is required for Das %s."
+                                   % das_serial)
+                self.miniFileNotFound.add(minifile)
+            else:
+                raise e
+        except AttributeError as e:
+            if "'NoneType' object has no attribute '_v_parent'" == str(e):
+                errmsg = ("Minifile for Das %s is missing. "
+                          "Cannot identifind minifile's name" % das_serial)
+            else:
+                raise e
+        except TypeError as e:
+            if "argument of type 'NoneType' is not iterable" == str(e):
+                errmsg = "Das_t_%s does not exist in minifile." % das_serial
+            else:
+                raise e
+        if errmsg != "":
+            warning.append(errmsg)
+            return info, warning, error
+
         sample_rate = station['sample_rate_i']
         nodata_err = None
         if das_serial not in self.ph5.Das_t:
@@ -523,9 +565,13 @@ class PH5Validate(object):
                     check_end = das_time_list[index+1][0] - 1
                 i = 1
                 # while loop to avoid using overlaping row
-                while check_end < check_start:
-                    i += 1
-                    check_end = das_time_list[index+i][0] - 1
+                try:
+                    while check_end < check_start:
+                        i += 1
+                        check_end = das_time_list[index+i][0] - 1
+                except IndexError:
+                    # all are overlapped
+                    check_end = das_time_list[index][1]
                 try:
                     # clear das to make sure get_extent consider channel & sr
                     self.ph5.forget_das_t(das_serial)
@@ -560,22 +606,6 @@ class PH5Validate(object):
             error.append("No data found for channel {0}. "
                          "Other channels seem to exist"
                          .format(str(channel_id)))
-
-        if not station['sensor/manufacturer_s']:
-            warning.append("Sensor manufacturer is "
-                           "missing. Is this correct???")
-
-        if not station['sensor/model_s']:
-            warning.append("Sensor model is missing. "
-                           "Is this correct???")
-
-        if not station['das/manufacturer_s']:
-            warning.append("DAS manufacturer is missing. "
-                           "Is this correct???")
-
-        if not station['das/model_s']:
-            warning.append("DAS model is missing. "
-                           "Is this correct???")
 
         return info, warning, error
 
@@ -621,9 +651,13 @@ class PH5Validate(object):
             dt['min_deploy_time'] = [dt['time_windows'][0][0]]
             dt['max_pickup_time'] = [max([t[1] for t in dt['time_windows']])]
             # look for data outside time border of each set
-            true_deploy, true_pickup = self.ph5.get_extent(das=d,
-                                                           component=c,
-                                                           sample_rate=spr)
+            try:
+                true_deploy, true_pickup = self.ph5.get_extent(das=d,
+                                                               component=c,
+                                                               sample_rate=spr)
+            except IOError as e:
+                dt['min_deploy_time'].append(str(e))
+                continue
             if true_deploy is None:
                 # No data found. But don't give warning here because it
                 #  will be given in check_station_completness
@@ -716,11 +750,12 @@ class PH5Validate(object):
 
                             if info or warning or error:
                                 header = ("-=-=-=-=-=-=-=-=-\n"
-                                          "Station {0} Channel {1}\n"
-                                          "{2} error, {3} warning, "
-                                          "{4} info\n"
+                                          "{0} Station {1} Channel {2}\n"
+                                          "{3} error, {4} warning, "
+                                          "{5} info\n"
                                           "-=-=-=-=-=-=-=-=-\n"
-                                          .format(str(station_id),
+                                          .format(str(array_name),
+                                                  str(station_id),
                                                   str(channel_id),
                                                   len(error),
                                                   len(warning),
@@ -936,7 +971,12 @@ def main():
             for vb in validation_blocks:
                 vb.write_to_log(log_file,
                                 args.level)
+        if len(ph5validate.miniFileNotFound) != 0:
+            msg = "The following files are missing: %s" % ", ".join(sorted(
+                ph5validate.miniFileNotFound))
+            LOGGER.warning(msg)
         ph5API_object.close()
+
         sys.stdout.write("\nWarnings, Errors and suggestions "
                          "written to logfile: %s\n" % args.outfile)
     except ph5api.APIError as err:
