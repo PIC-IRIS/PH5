@@ -492,20 +492,14 @@ class PH5Validate(object):
         except IOError as e:
             if 'does not exist' in str(e):
                 minifile = str(e).split("``")[1]
-                errmsg = str(e) + ("The file is required for Das %s."
+                errmsg = str(e) + (". The file is required for Das %s."
                                    % das_serial)
                 self.miniFileNotFound.add(minifile)
             else:
                 raise e
-        except AttributeError as e:
-            if "'NoneType' object has no attribute '_v_parent'" == str(e):
-                errmsg = ("Minifile for Das %s is missing. "
-                          "Cannot identifind minifile's name" % das_serial)
-            else:
-                raise e
         except TypeError as e:
             if "argument of type 'NoneType' is not iterable" == str(e):
-                errmsg = "Das_t_%s does not exist in minifile." % das_serial
+                errmsg = "Table Das_t_%s is empty." % das_serial
             else:
                 raise e
         if errmsg != "":
@@ -687,6 +681,8 @@ class PH5Validate(object):
             self.analyze_time()
             array_names = sorted(self.ph5.Array_t_names)
             for array_name in array_names:
+                check_dup_sta_list = []
+                dup_sta_list = set()
                 arraybyid = self.ph5.Array_t[array_name]['byid']
                 arrayorder = self.ph5.Array_t[array_name]['order']
                 for ph5_station in arrayorder:
@@ -696,6 +692,10 @@ class PH5Validate(object):
                         for st_num in range(0, station_len):
                             station = station_list[deployment][st_num]
                             station_id = station['id_s']
+                            if station not in check_dup_sta_list:
+                                check_dup_sta_list.append(station)
+                            else:
+                                dup_sta_list.add(station_id)
                             channel_id = station['channel_number_i']
                             cha_code = (station['seed_band_code_s'] +
                                         station['seed_instrument_code_s'] +
@@ -765,6 +765,10 @@ class PH5Validate(object):
                                                      warning=warning,
                                                      error=error)
                                 validation_blocks.append(vb)
+                if len(dup_sta_list) > 0:
+                    msg = ("The following stations are duplicated in %s: %s"
+                           % (array_name, ', '.join(sorted(dup_sta_list))))
+                    LOGGER.warning(msg)
         return validation_blocks
 
     def check_event_t_completeness(self, event):
