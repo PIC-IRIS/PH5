@@ -59,7 +59,7 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
             if 'Station 9001' in r.heading:
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
-                                 "Station 9001 Channel 1\n"
+                                 "Array_t_009 Station 9001 Channel 1\n"
                                  "4 error, 1 warning, 0 info\n"
                                  "-=-=-=-=-=-=-=-=-\n"
                                  )
@@ -83,7 +83,7 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
             if 'Station 0407 Channel -2' in r.heading:
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
-                                 "Station 0407 Channel -2\n"
+                                 "Array_t_004 Station 0407 Channel -2\n"
                                  "1 error, 2 warning, 0 info\n"
                                  "-=-=-=-=-=-=-=-=-\n"
                                  )
@@ -135,7 +135,8 @@ class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
             'run experiment_t_gen to create table\n')
         self.assertEqual(
             all_logs[3],
-            'Station 9001 Channel 1\n2 error, 3 warning, 0 info\n')
+            'Array_t_009 Station 9001 Channel 1\n'
+            '2 error, 3 warning, 0 info\n')
         self.assertEqual(
             all_logs[4],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
@@ -146,7 +147,7 @@ class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
             '2 time(s)\n')
         self.assertEqual(
             all_logs[5],
-            'Station 9002 Channel 1\n2 error, 2 warning, 0 info\n')
+            'Array_t_009 Station 9002 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[6],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
@@ -155,7 +156,7 @@ class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
             'WARNING: Data exists after pickup time: 36 seconds.\n')
         self.assertEqual(
             all_logs[7],
-            'Station 9003 Channel 1\n2 error, 2 warning, 0 info\n')
+            'Array_t_009 Station 9003 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[8],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
@@ -178,21 +179,21 @@ class TestPh5Validate_main_detect_data(TempDirTestCase, LogTestCase):
             'run experiment_t_gen to create table\n')
         self.assertEqual(
             all_logs[3],
-            'Station 9001 Channel 1\n2 error, 3 warning, 0 info\n')
+            'Array_t_009 Station 9001 Channel 1\n2 error, 3 warning, 0 info\n')
         self.assertEqual(
             all_logs[4],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
             'ERROR: Response_t has no entry for n_i=7\n')
         self.assertEqual(
             all_logs[5],
-            'Station 9002 Channel 1\n2 error, 2 warning, 0 info\n')
+            'Array_t_009 Station 9002 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[6],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
             'ERROR: Response_t has no entry for n_i=7\n')
         self.assertEqual(
             all_logs[7],
-            'Station 9003 Channel 1\n2 error, 2 warning, 0 info\n')
+            'Array_t_009 Station 9003 Channel 1\n2 error, 2 warning, 0 info\n')
         self.assertEqual(
             all_logs[8],
             'ERROR: No Response table found. Have you run resp_load yet?\n'
@@ -265,7 +266,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         )
 
         self.assertEqual(vb[0].heading,
-                         '-=-=-=-=-=-=-=-=-\nStation 9001 Channel 1\n'
+                         '-=-=-=-=-=-=-=-=-\n'
+                         'Array_t_009 Station 9001 Channel 1\n'
                          '2 error, 3 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
         self.assertEqual(vb[0].info, [])
         self.assertEqual(
@@ -280,7 +282,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         )
 
         self.assertEqual(vb[1].heading,
-                         '-=-=-=-=-=-=-=-=-\nStation 9002 Channel 1\n'
+                         '-=-=-=-=-=-=-=-=-\n'
+                         'Array_t_009 Station 9002 Channel 1\n'
                          '2 error, 2 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
         self.assertEqual(vb[1].info, [])
         self.assertEqual(
@@ -294,7 +297,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         )
 
         self.assertEqual(vb[2].heading,
-                         '-=-=-=-=-=-=-=-=-\nStation 9003 Channel 1\n'
+                         '-=-=-=-=-=-=-=-=-\n'
+                         'Array_t_009 Station 9003 Channel 1\n'
                          '2 error, 2 warning, 0 info\n-=-=-=-=-=-=-=-=-\n')
         self.assertEqual(vb[2].info, [])
         self.assertEqual(
