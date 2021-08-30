@@ -125,18 +125,18 @@ class PH5Validate(object):
         if len(experiment_t) > 1:
             error.append("More than one entry found in experiment_t.")
 
-        if experiment_t[0]['net_code_s'] in [None, '']:
-            error.append("Network code was not found: "
-                         "A 2 character network code is required.")
-        elif not (1 <= len(experiment_t[0]['net_code_s']) <= 2):
-            error.append("SEED network code not "
-                         "between 1 and 2 characters.")
-        elif not experiment_t[0]['net_code_s'][0].isdigit() and \
-                experiment_t[0]['net_code_s'][0].upper() != "X" and \
-                experiment_t[0]['net_code_s'][0].upper() != "Y" and \
-                experiment_t[0]['net_code_s'][0].upper() != "Z":
-            error.append("Network code is a permanent FDSN: "
-                         "Network code should be a temporary code.")
+        # if experiment_t[0]['net_code_s'] in [None, '']:
+        #     error.append("Network code was not found: "
+        #                  "A 2 character network code is required.")
+        # elif not (1 <= len(experiment_t[0]['net_code_s']) <= 2):
+        #     error.append("SEED network code not "
+        #                  "between 1 and 2 characters.")
+        # elif not experiment_t[0]['net_code_s'][0].isdigit() and \
+        #         experiment_t[0]['net_code_s'][0].upper() != "X" and \
+        #         experiment_t[0]['net_code_s'][0].upper() != "Y" and \
+        #         experiment_t[0]['net_code_s'][0].upper() != "Z":
+        #     error.append("Network code is a permanent FDSN: "
+        #                  "Network code should be a temporary code.")
 
         reportnum_code = experiment_t[0]['experiment_id_s']
         if not reportnum_code:
@@ -394,50 +394,50 @@ class PH5Validate(object):
         if not station['description_s']:
             warning.append("No station description found.")
 
-        if not station['seed_station_name_s']:
-            error.append("SEED station code required.")
+        # if not station['seed_station_name_s']:
+        #     error.append("SEED station code required.")
+        #
+        # if not (1 <= len(station['seed_station_name_s']) <= 5):
+        #     error.append("SEED station code not "
+        #                  "between 1 and 5 characters.")
+        #
+        # # CHANNEL LEVEL CHECKS CHECKS
+        # if station['seed_location_code_s'] is None:
+        #     error.append("SEED location code "
+        #                  "required.")
 
-        if not (1 <= len(station['seed_station_name_s']) <= 5):
-            error.append("SEED station code not "
-                         "between 1 and 5 characters.")
+        # if not (0 <= len(station['seed_location_code_s']) <= 2):
+        #     error.append("SEED location code not "
+        #                  "between 0 and 2 characters.")
+        #
+        # if not station['seed_band_code_s']:
+        #     error.append("SEED band code required.")
+        #
+        # if not station['seed_instrument_code_s']:
+        #     error.append("SEED instrument code required.")
+        #
+        # if not station['seed_orientation_code_s']:
+        #     error.append("SEED orientation code "
+        #                  "required.")
 
-        # CHANNEL LEVEL CHECKS CHECKS
-        if station['seed_location_code_s'] is None:
-            error.append("SEED location code "
-                         "required.")
-
-        if not (0 <= len(station['seed_location_code_s']) <= 2):
-            error.append("SEED location code not "
-                         "between 0 and 2 characters.")
-
-        if not station['seed_band_code_s']:
-            error.append("SEED band code required.")
-
-        if not station['seed_instrument_code_s']:
-            error.append("SEED instrument code required.")
-
-        if not station['seed_orientation_code_s']:
-            error.append("SEED orientation code "
-                         "required.")
-
-        if station['sample_rate_i'] < 0:
-            error.append("Sample rate = %s not positive." %
-                         station['sample_rate_i'])
-        elif station['sample_rate_i'] == 0:
-            warning.append("Sample rate seems to be 0. Is this correct???")
-
-        if ((int(station['sample_rate_multiplier_i']) !=
-                station['sample_rate_multiplier_i'])
-                or station['sample_rate_multiplier_i'] < 1):
-            error.append("Sample rate multiplier = %s "
-                         "is not an integer greater than 1."
-                         % station['sample_rate_multiplier_i'])
-
-        response_t = self.ph5.get_response_t_by_n_i(
-            station['response_table_n_i'])
-        if response_t is None:
-            error.append("No Response table found. "
-                         "Have you run resp_load yet?")
+        # if station['sample_rate_i'] < 0:
+        #     error.append("Sample rate = %s not positive." %
+        #                  station['sample_rate_i'])
+        # elif station['sample_rate_i'] == 0:
+        #     warning.append("Sample rate seems to be 0. Is this correct???")
+        #
+        # if ((int(station['sample_rate_multiplier_i']) !=
+        #         station['sample_rate_multiplier_i'])
+        #         or station['sample_rate_multiplier_i'] < 1):
+        #     error.append("Sample rate multiplier = %s "
+        #                  "is not an integer greater than 1."
+        #                  % station['sample_rate_multiplier_i'])
+        #
+        # response_t = self.ph5.get_response_t_by_n_i(
+        #     station['response_table_n_i'])
+        # if response_t is None:
+        #     error.append("No Response table found. "
+        #                  "Have you run resp_load yet?")
 
         # CHANNEL LOCATION
         e, w = validation.check_lat_lon_elev(station)
@@ -506,14 +506,14 @@ class PH5Validate(object):
             warning.append(errmsg)
             return info, warning, error
 
-        sample_rate = station['sample_rate_i']
+        # sample_rate = station['sample_rate_i']
         nodata_err = None
         if das_serial not in self.ph5.Das_t:
             error.append("No data found for das serial number {0}. "
                          "You may need to reload the raw "
                          "data for this station."
                          .format(str(das_serial)))
-        dt = self.das_time[(das_serial, channel_id, sample_rate)]
+        dt = self.das_time[(das_serial, channel_id)]
         # add bound_errors if applicable
         if deploy_time == dt['min_deploy_time'][0]:
             try:
@@ -576,7 +576,7 @@ class PH5Validate(object):
                                         component=channel_id,
                                         start=check_start,
                                         end=check_end,
-                                        sample_rate=sample_rate)
+                                        sample_rate=200)
 
                 if true_start is None and nodata_err is None:
                     # check nodata_err to avoid duplicate error
@@ -629,8 +629,8 @@ class PH5Validate(object):
                     for stat in deployment:
                         d = stat['das/serial_number_s']
                         c = stat['channel_number_i']
-                        spr = stat['sample_rate_i']
-                        key = (d, c, spr)
+                        # spr = stat['sample_rate_i']
+                        key = (d, c)
                         if key not in self.das_time.keys():
                             self.das_time[key] = {'time_windows': []}
                         self.das_time[key]['time_windows'].append(
@@ -641,14 +641,14 @@ class PH5Validate(object):
         for key in self.das_time.keys():
             dt = self.das_time[key]
             dt['time_windows'].sort()
-            d, c, spr = key
+            d, c = key
             dt['min_deploy_time'] = [dt['time_windows'][0][0]]
             dt['max_pickup_time'] = [max([t[1] for t in dt['time_windows']])]
             # look for data outside time border of each set
             try:
                 true_deploy, true_pickup = self.ph5.get_extent(das=d,
                                                                component=c,
-                                                               sample_rate=spr)
+                                                               sample_rate=200)
             except IOError as e:
                 dt['min_deploy_time'].append(str(e))
                 continue
@@ -697,27 +697,27 @@ class PH5Validate(object):
                             else:
                                 dup_sta_list.add(station_id)
                             channel_id = station['channel_number_i']
-                            cha_code = (station['seed_band_code_s'] +
-                                        station['seed_instrument_code_s'] +
-                                        station['seed_orientation_code_s'])
-                            resp_n_i = station['response_table_n_i']
+                            # cha_code = (station['seed_band_code_s'] +
+                            #             # station['seed_instrument_code_s'] +
+                            #             station['seed_orientation_code_s'])
+                            # resp_n_i = station['response_table_n_i']
                             das_model = station['das/model_s']
                             if das_model.startswith("ZLAND"):
                                 sensor_model = ''
                             else:
                                 sensor_model = station['sensor/model_s']
                             errors = set()
-                            resp_info = {
-                                'n_i': resp_n_i,
-                                'array': array_name[8:],
-                                'sta': station_id,
-                                'cha_id': channel_id,
-                                'cha_code': cha_code,
-                                'dmodel': das_model,
-                                'smodel': sensor_model,
-                                'spr': station['sample_rate_i'],
-                                'sprm': station['sample_rate_multiplier_i']
-                            }
+                            # resp_info = {
+                            #     'n_i': resp_n_i,
+                            #     'array': array_name[8:],
+                            #     'sta': station_id,
+                            #     'cha_id': channel_id,
+                            #     # 'cha_code': cha_code,
+                            #     'dmodel': das_model,
+                            #     'smodel': sensor_model,
+                            #     'spr': station['sample_rate_i'],
+                            #     'sprm': station['sample_rate_multiplier_i']
+                            # }
 
                             LOGGER.debug("Validating Station {0} Channel {1}"
                                          .format(str(station_id),
@@ -725,15 +725,15 @@ class PH5Validate(object):
                             info, warning, error = \
                                 self.check_station_completeness(station)
 
-                            check_info = validation.check_response_info(
-                                resp_info,
-                                self.ph5,
-                                checked_data_files,
-                                errors,
-                                None)
-                            if check_info[0] is False:
-                                for errmsg in check_info[1]:
-                                    errors.add((errmsg, 'error'))
+                            # check_info = validation.check_response_info(
+                            #     resp_info,
+                            #     self.ph5,
+                            #     checked_data_files,
+                            #     errors,
+                            #     None)
+                            # if check_info[0] is False:
+                            #     for errmsg in check_info[1]:
+                            #         errors.add((errmsg, 'error'))
                             error += [': '.join(e[0].split(': ')[1:])
                                       for e in errors if e[1] == 'error']
                             warning += [': '.join(w[0].split(': ')[1:])
@@ -969,7 +969,7 @@ def main():
         validation_blocks = []
         validation_blocks.extend(ph5validate.check_experiment_t())
         validation_blocks.extend(ph5validate.check_array_t())
-        validation_blocks.extend(ph5validate.check_response_t())
+        # validation_blocks.extend(ph5validate.check_response_t())
         validation_blocks.extend(ph5validate.check_event_t())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
