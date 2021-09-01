@@ -10,7 +10,7 @@ from mock import patch
 from testfixtures import LogCapture
 
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader, ph5api
+from ph5.core import segdreader, segdreader_smartsolo, ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -91,7 +91,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         self.assertAlmostEqual(LSB24, segd2ph5.LSB_MAP[24], places=6)
         self.assertAlmostEqual(LSB36, segd2ph5.LSB_MAP[36], places=6)
 
-    def test_write_arrays(self):
+    def test_write_arrays_Smartsolo(self):
         # same das, different deploy times
         # combine ones that gap less than 2m
         # separate ones that gap more than 2m
@@ -163,9 +163,13 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
                 '[Tue Sep 29 16:23:45 2020 - Wed Sep 30 16:23:45 2020] '
                 'into previous entry '
                 '[Mon Sep 28 20:39:24 2020 - Tue Sep 29 16:39:24 2020]']
+        SD = segdreader_smartsolo.Reader(
+            infile=os.path.join(self.home,
+                                "ph5/test_data/segd/smartsolo/453005483.1."
+                                "2021.03.15.16.00.00.000.E.segd"))
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
-            segd2ph5.write_arrays(array_t)
+            segd2ph5.write_arrays(SD, array_t)
             for i in range(len(log.records)):
                 self.assertEqual(log.records[i].msg, logs[i])
 
@@ -203,6 +207,32 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
                          array_c1[3]['pickup_time/ascii_s'])
         self.assertEqual(ret[2]['pickup_time']['micro_seconds_i'],
                          array_c1[3]['pickup_time/micro_seconds_i'])
+
+    def test_write_arrays_Fairfield(self):
+        # same das, different deploy times
+        arrays = \
+            [{'das/serial_number_s': '3X500', 'channel_number_i': 1,
+              'deploy_time/epoch_l': 1544545576},
+             {'das/serial_number_s': '3X500', 'channel_number_i': 2,
+              'deploy_time/epoch_l': 1502293592},
+             {'das/serial_number_s': '3X500', 'channel_number_i': 1,
+              'deploy_time/epoch_l': 1544545576},
+             {'das/serial_number_s': '3X500', 'channel_number_i': 2,
+              'deploy_time/epoch_l': 1502293592}]
+        array_t = \
+            {1: {'3X500': {1502293592: {1: [arrays[0]], 2: [arrays[1]]},
+                           1546021724: {1: [arrays[2]], 2: [arrays[3]]}}}}
+        SD = segdreader.Reader(
+            infile=os.path.join(self.home,
+                                'ph5/test_data/segd/fairfield/3ch.fcnt'))
+        segd2ph5.write_arrays(SD, array_t)
+        ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
+
+        i = 0
+        for r in ret.iterrows():
+            for k in arrays[0].keys():
+                self.assertEqual(r[k], arrays[i][k])
+            i += 1
 
     def test_process_traces_Fairfield(self):
         segd2ph5.setLogger()

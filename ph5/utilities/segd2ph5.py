@@ -966,9 +966,8 @@ def process_traces(rh, th, tr):
     process_trace_header()
 
 
-def write_arrays(Array_t):
+def write_arrays(SD, Array_t):
     '''   Write /Experiment_g/Sorts_g/Array_t_xxx   '''
-
     lines = sorted(Array_t.keys())
     #   Loop through arrays/lines
     for line in lines:
@@ -977,8 +976,9 @@ def write_arrays(Array_t):
         das_list = sorted(Array_t[line].keys())
         #   Loop through das_list
         for das in das_list:
-            Array_t[line][das] = combine_array_entries(name,
-                                                       Array_t[line][das])
+            if SD.manufacturer == 'SmartSolo':
+                Array_t[line][das] = combine_array_entries(
+                    name, Array_t[line][das])
             dtimes = sorted(Array_t[line][das].keys())
             #   Loop through deploying times
             for dtime in dtimes:
@@ -1412,7 +1412,7 @@ def main():
                     log_array.append(line)
 
             LOGGER.info(":<Finished>: {0}\n".format(F))
-        write_arrays(ARRAY_T)
+        write_arrays(SD, ARRAY_T)
         seconds = time.time() - then
 
         try:
