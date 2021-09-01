@@ -352,7 +352,7 @@ class SortsGroup:
             self.ph5_t_array[array_name] = node
 
         ret, keys = read_table(node)
-        check_srm_valid(ret, keys, array_name, ignore_srm)
+        # check_srm_valid(ret, keys, array_name, ignore_srm)
         return ret, keys
 
     def index_offset_table(self, name='Offset_t', level=9, weight='full'):
