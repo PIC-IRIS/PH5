@@ -92,9 +92,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         self.assertAlmostEqual(LSB36, segd2ph5.LSB_MAP[36], places=6)
 
     def test_write_arrays_Smartsolo(self):
-        # same das, different deploy times
-        # combine ones that gap less than 2m
-        # separate ones that gap more than 2m
+        # the entries with overlaps or no gaps will be combined into one entry
         array_c1 = [
             {'das/serial_number_s': '1X2060', 'id_s': '2060',
              'channel_number_i': 1,
