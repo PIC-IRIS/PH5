@@ -15,7 +15,7 @@ import os
 import logging
 from ph5.core import segdreader
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2021.208'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -141,11 +141,11 @@ def main():
             extended_headers(sd)
             external_header(sd)
 
-            line_number = sd.reel_headers.extended_header_3['line_number']
-            receiver_point = sd.reel_headers.extended_header_3[
+            line_number = sd.reel_headers.extended_headers[2]['line_number']
+            receiver_point = sd.reel_headers.extended_headers[2][
                 'receiver_point']
-            sd.reel_headers.general_header_block_2['file_version_number']
-            id_number = sd.reel_headers.extended_header_1['id_number']
+            sd.reel_headers.general_header_blocks[1]['file_version_number']
+            id_number = sd.reel_headers.extended_headers[0]['id_number']
             outfile = "PIC_{0}_{1}_{3}.0.0.rg{2}".format(
                 line_number, receiver_point, 16, id_number)
             linkname = os.path.join(outpath, outfile)
