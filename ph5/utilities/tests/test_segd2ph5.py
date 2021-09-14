@@ -10,7 +10,7 @@ from mock import patch
 from testfixtures import LogCapture
 
 from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader, ph5api
+from ph5.core import segdreader, segdreader_smartsolo, ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -91,7 +91,122 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         self.assertAlmostEqual(LSB24, segd2ph5.LSB_MAP[24], places=6)
         self.assertAlmostEqual(LSB36, segd2ph5.LSB_MAP[36], places=6)
 
-    def test_write_arrays(self):
+    def test_write_arrays_Smartsolo(self):
+        # the entries with overlaps or no gaps will be combined into one entry
+        array_c1 = [
+            {'das/serial_number_s': '1X2060', 'id_s': '2060',
+             'channel_number_i': 1,
+             'deploy_time/ascii_s': "Mon Sep 28 20:39:24 2020",
+             'deploy_time/epoch_l': 1601325564,
+             'pickup_time/ascii_s': 'Tue Sep 29 16:39:24 2020',
+             'pickup_time/epoch_l': 1601397564,
+             'pickup_time/micro_seconds_i': 0},
+            # overlap => combine with previous
+            {'das/serial_number_s': '1X2060', 'id_s': '2060',
+             'channel_number_i': 1,
+             'deploy_time/ascii_s': "Tue Sep 29 16:23:45 2020",
+             'deploy_time/epoch_l': 1601396625,
+             'pickup_time/ascii_s': 'Wed Sep 30 16:23:45 2020',
+             'pickup_time/epoch_l': 1601483025,
+             'pickup_time/micro_seconds_i': 0},
+            # gap=150s: separate with previous
+            {'das/serial_number_s': '1X2060', 'id_s': '2060',
+             'channel_number_i': 1,
+             'deploy_time/ascii_s': "Wed Sep 30 16:26:15 2020",
+             'deploy_time/epoch_l': 1601483175,
+             'pickup_time/ascii_s': 'Thu Oct 1 16:23:45 2020',
+             'pickup_time/epoch_l': 1601569425,
+             'pickup_time/micro_seconds_i': 0},
+            {'das/serial_number_s': '1X2060', 'id_s': '2060',
+             'channel_number_i': 1,
+             'deploy_time/ascii_s': "Thu Oct 1 16:23:45 2020",
+             'deploy_time/epoch_l': 1601569425,
+             'pickup_time/ascii_s': 'Fri Oct 2 16:21:15 2020',
+             'pickup_time/epoch_l': 1601655675,
+             'pickup_time/micro_seconds_i': 0}
+        ]
+        array_c2 = [
+            {'das/serial_number_s': '1X2060', 'id_s': '2060',
+             'channel_number_i': 2,
+             'deploy_time/ascii_s': "Mon Sep 28 20:39:24 2020",
+             'deploy_time/epoch_l': 1601325564,
+             'pickup_time/ascii_s': 'Tue Sep 29 16:39:24 2020',
+             'pickup_time/epoch_l': 1601397564,
+             'pickup_time/micro_seconds_i': 1},
+            # overlap => combine with previous
+            {'das/serial_number_s': '1X2060', 'id_s': '2060',
+             'channel_number_i': 2,
+             'deploy_time/ascii_s': "Tue Sep 29 16:23:45 2020",
+             'deploy_time/epoch_l': 1601396625,
+             'pickup_time/ascii_s': 'Wed Sep 30 16:23:45 2020',
+             'pickup_time/epoch_l': 1601483025,
+             'pickup_time/micro_seconds_i': 2}]
+
+        array_t = \
+            {1: {'1X2060': {1601325564: {1: [array_c1[0]], 2: [array_c2[0]]},
+                            1601396625: {1: [array_c1[1]], 2: [array_c2[1]]},
+                            1601483175: {1: [array_c1[2]]},
+                            1601569425: {1: [array_c1[3]]}}}}
+        logs = ['Das 1X2060 - Array_t_001 - station 2060 - chan 1: Combine '
+                'overlapping entry '
+                '[Tue Sep 29 16:23:45 2020 - Wed Sep 30 16:23:45 2020] '
+                'into previous entry '
+                '[Mon Sep 28 20:39:24 2020 - Tue Sep 29 16:39:24 2020]',
+                'Das 1X2060 - Array_t_001 - station 2060 - chan 1: Combine '
+                'entry [Thu Oct 1 16:23:45 2020 - Fri Oct 2 16:21:15 2020] '
+                'into previous entry '
+                '[Wed Sep 30 16:26:15 2020 - Thu Oct 1 16:23:45 2020]',
+                'Das 1X2060 - Array_t_001 - station 2060 - chan 2: Combine '
+                'overlapping entry '
+                '[Tue Sep 29 16:23:45 2020 - Wed Sep 30 16:23:45 2020] '
+                'into previous entry '
+                '[Mon Sep 28 20:39:24 2020 - Tue Sep 29 16:39:24 2020]']
+        SD = segdreader_smartsolo.Reader(
+            infile=os.path.join(self.home,
+                                "ph5/test_data/segd/smartsolo/453005483.1."
+                                "2021.03.15.16.00.00.000.E.segd"))
+        with LogCapture() as log:
+            log.setLevel(logging.WARNING)
+            segd2ph5.write_arrays(SD, array_t)
+            for i in range(len(log.records)):
+                self.assertEqual(log.records[i].msg, logs[i])
+
+        ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
+        self.assertEqual(len(ret), 3)   # 2 entries for chan1, 1 for chan2
+
+        # combine array_c1[0] and overlapping array_c1[1]
+        self.assertEqual(ret[0]['deploy_time']['epoch_l'],
+                         array_c1[0]['deploy_time/epoch_l'])
+        self.assertEqual(ret[0]['pickup_time']['epoch_l'],
+                         array_c1[1]['pickup_time/epoch_l'])
+        self.assertEqual(ret[0]['pickup_time']['ascii_s'],
+                         array_c1[1]['pickup_time/ascii_s'])
+        self.assertEqual(ret[0]['pickup_time']['micro_seconds_i'],
+                         array_c1[1]['pickup_time/micro_seconds_i'])
+        self.assertEqual(ret[0]['deploy_time']['epoch_l'],
+                         array_c1[0]['deploy_time/epoch_l'])
+
+        # combine array_c2[0] and overlapping array_c2[1]
+        self.assertEqual(ret[1]['deploy_time']['epoch_l'],
+                         array_c1[0]['deploy_time/epoch_l'])
+        self.assertEqual(ret[1]['pickup_time']['epoch_l'],
+                         array_c2[1]['pickup_time/epoch_l'])
+        self.assertEqual(ret[1]['pickup_time']['ascii_s'],
+                         array_c2[1]['pickup_time/ascii_s'])
+        self.assertEqual(ret[1]['pickup_time']['micro_seconds_i'],
+                         array_c2[1]['pickup_time/micro_seconds_i'])
+
+        # combine array_c1[2] and deploy_time match pickup_time array_c1[3]
+        self.assertEqual(ret[2]['deploy_time']['epoch_l'],
+                         array_c1[2]['deploy_time/epoch_l'])
+        self.assertEqual(ret[2]['pickup_time']['epoch_l'],
+                         array_c1[3]['pickup_time/epoch_l'])
+        self.assertEqual(ret[2]['pickup_time']['ascii_s'],
+                         array_c1[3]['pickup_time/ascii_s'])
+        self.assertEqual(ret[2]['pickup_time']['micro_seconds_i'],
+                         array_c1[3]['pickup_time/micro_seconds_i'])
+
+    def test_write_arrays_Fairfield(self):
         # same das, different deploy times
         arrays = \
             [{'das/serial_number_s': '3X500', 'channel_number_i': 1,
@@ -105,8 +220,10 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
         array_t = \
             {1: {'3X500': {1502293592: {1: [arrays[0]], 2: [arrays[1]]},
                            1546021724: {1: [arrays[2]], 2: [arrays[3]]}}}}
-
-        segd2ph5.write_arrays(array_t)
+        SD = segdreader.Reader(
+            infile=os.path.join(self.home,
+                                'ph5/test_data/segd/fairfield/3ch.fcnt'))
+        segd2ph5.write_arrays(SD, array_t)
         ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
 
         i = 0
