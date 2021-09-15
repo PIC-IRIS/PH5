@@ -765,7 +765,7 @@ nodalRE = re.compile(r"[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
 # For simpleton 'nodal'
 simpletonodalRE = re.compile(r"\d+\.fcnt")
 # For type SmartSolo (except for RE, it is still understood as 'nodal')
-martSoloRE = re.compile(r"(\d+)[\d.]+.[E,N,Ze,n,z].segd")
+martSoloRE = re.compile(r"(\d+)[\d.]+.[ENZenz].segd")
 # =========================== END SEGD ============================= #
 # For PIC rename
 picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
