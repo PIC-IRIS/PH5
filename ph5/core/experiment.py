@@ -39,6 +39,8 @@ def check_srm_valid(rows, keys, tablename, ignore_srm=False):
     :param tablename: name of the table (string)
     :param ignore_srm: flag to ignore checking srm when it is True (boolean)
     """
+    if keys is None:
+        return rows, keys, tablename, ignore_srm
     if ignore_srm:
         return
     if 'sample_rate_multiplier_i' not in keys:
