@@ -289,8 +289,7 @@ class Reader ():
         self.trace_headers.lat = self.getLocationDecimal(
             thN3.IGU_GPS_lat_integer, thN3.IGU_GPS_lat_fraction)
         self.trace_headers.lon = self.getLocationDecimal(
-            thN3.IGU_GPS_lon_integer,
-                                                     thN3.IGU_GPS_lon_fraction)
+            thN3.IGU_GPS_lon_integer, thN3.IGU_GPS_lon_fraction)
         self.trace_headers.ele = thN3.IGU_GPS_height
         self.trace_headers.preamp_gain_db = self.preamp_gain_db
         TB_GPS_time_time_sec = self.trace_headers.trace_header_N[
