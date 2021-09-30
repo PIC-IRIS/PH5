@@ -143,12 +143,17 @@ class Reader ():
         lon degree: DDDMMSS.sss
         decimal = deg + min/60 + sec/3600
         """
+        # NEW FORMAT: ingeger is a signed one
         degree_str = "%.3f" % (integer + fraction)
+        """
+        # OLD FORMAT DDMMSS.sss
         sec = float(degree_str[-6:])
         min = float(degree_str[-8:-6])
         deg = float(degree_str[:-8])
         decimal = deg + min/60. + sec/3600.
         return decimal
+        """
+        return degree_str
 
     def process_general_headers(self):
         self.reel_headers = ReelHeaders()

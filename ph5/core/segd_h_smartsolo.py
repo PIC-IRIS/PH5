@@ -325,9 +325,9 @@ class Trace_header_extension(Header_block):
                 ("not_used", 20*8))
         if n == 3:
             self.keys = (
-                ("IGU_GPS_lat_integer", 4*8),
+                ("IGU_GPS_lat_integer", 4*8, "signed"),  # new format=>signed
                 ("IGU_GPS_lat_fraction", 2*8),
-                ("IGU_GPS_lon_integer", 4*8),
+                ("IGU_GPS_lon_integer", 4*8, "signed"),  # new format=>signed
                 ("IGU_GPS_lon_fraction", 2 * 8),
                 ("IGU_GPS_height", 4*8),                              # float
                 ("not_used", 16*8))
