@@ -4,21 +4,20 @@ Tests for sort_kefGen
 import os
 import sys
 import unittest
-import logging
 from StringIO import StringIO
 
 from mock import patch
 from testfixtures import OutputCapture
 
 from ph5.utilities import segd2ph5, nuke_table, sort_kef_gen
-from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
-    initialize_ex
+from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
 def rem_currtime_ver_info(text):
     lines = text.split('\n')[1:]        # remove first line with version
-    lines = [l for l in lines if 'time_stamp' not in l]
+    lines = [line for line in lines if 'time_stamp' not in line]
     return '\n'.join(lines)
+
 
 class TestSortKefGen_main(TempDirTestCase, LogTestCase):
 
@@ -58,7 +57,7 @@ class TestSortKefGen_main(TempDirTestCase, LogTestCase):
 
         # compare with recreated sort_test_delete_das.kef
         with open(os.path.join(
-                self.home,'ph5/test_data/metadata/sort_test_delete_das.kef'),
+                self.home, 'ph5/test_data/metadata/sort_test_delete_das.kef'),
                   'r') as content_file:
             content = content_file.read().strip()
         content = rem_currtime_ver_info(content)
