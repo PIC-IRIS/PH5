@@ -147,16 +147,20 @@ class Reader ():
         integer is signed ingeter
         return signed_integer.fraction
         """
-        # NEW FORMAT: ingeger is a signed one
-        degree_str = "%.3f" % (integer + fraction)
         """
         # OLD FORMAT DDMMSS.sss
+        degree_str = "%.3f" % (integer + fraction)
         sec = float(degree_str[-6:])
         min = float(degree_str[-8:-6])
         deg = float(degree_str[:-8])
         decimal = deg + min/60. + sec/3600.
         return decimal
         """
+        # NEW FORMAT: ingeger is a signed one
+        if integer < 0:
+            degree_str = "%.3f" % (integer - fraction)
+        else:
+            degree_str = "%.3f" % (integer + fraction)
         return degree_str
 
     def process_general_headers(self):
