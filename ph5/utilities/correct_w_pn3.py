@@ -7,15 +7,13 @@ import argparse
 import os
 import sys
 import logging
-import tables
 from shutil import copy
 import time
 
-from ph5.core import (ph5api, experiment, columns, experiment_pn3, ph5api_pn3,
-                      timedoy)
-from ph5.utilities import nuke_table, kef2ph5 as K2T, tabletokef as T2K
+from ph5.core import (ph5api, experiment, columns, ph5api_pn3, timedoy)
+from ph5.utilities import tabletokef as T2K
 from ph5 import LOGGING_FORMAT
-import tabletokef as T2K
+
 
 PROG_VERSION = "2021.271"
 LOGGER = logging.getLogger(__name__)
@@ -23,37 +21,40 @@ LOGGER = logging.getLogger(__name__)
 
 def get_args():
     parser = argparse.ArgumentParser(
-                                formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.usage = ("correctwpn3 --pn4 pn4path --pn3 pn3path")
 
-    parser.description = ("Recreate Array_t with info from pn3.\n"
-                          "Exclude entries that don't match with index_t, das_t.\n"
-                          "Remove external links and all pn4's minifiles.\n"
-                          "Copy pn3's minifiles to pn4.\n"
-                          "Create new external link based on info from Index_t. \n"
-                          "Version: {0}"
-                          .format(PROG_VERSION))
+    parser.description = (
+        "Require: full data set of pn3 in pn3path"
+        " and master.ph5 of pn4 in pn4path"
+        "Exclude none-matched entries in array_t, index_t, das_t.\n"
+        "Remove external links and all pn4's minifiles.\n"
+        "Recreate Array_t, Index_t with info from pn3.\n"
+        "Copy pn3's minifiles to pn4.\n"
+        "Reformat das_t table.\n"
+        "Create new external link based on info from Index_t.\n"
+        "Version: {0}".format(PROG_VERSION))
 
-    parser.add_argument("--pn4", dest="pn4path",
-                        help="Path to pn4 master file (not include master.ph5)",
-                        metavar="pn4path", required=True)
+    parser.add_argument(
+        "--pn4", dest="pn4path", metavar="pn4path", required=True,
+        help="Path to pn4 master file (not include master.ph5)")
 
-    parser.add_argument("--pn3", dest="pn3path",
-                        help="Path to pn3 master file (not include master.ph5)",
-                        metavar="pn3path", required=True)
+    parser.add_argument(
+        "--pn3", dest="pn3path", metavar="pn3path", required=True,
+        help="Path to pn3 master file (not include master.ph5)")
 
-    parser.add_argument("-a", "--add_info", dest="addInfoFile",
-                        help=("Path to file containing user's values for "
-                              "array_t (include filename)\n"
-                              "Format for each line: key=value\n"
-                              "Ex:\n"
-                              "\tsensor/model_s=L28\n"
-                              "\tsensor/manufacturer_s=Sercel"),
-                        metavar="addInfoFile")
-    parser.add_argument("-s", dest="skip_missing_minifile",
-                        help="Flag to skip reporting about minifile",
-                        action='store_true', default=True)
+    parser.add_argument(
+        "-a", "--add_info", dest="addInfoFile", metavar="addInfoFile",
+        help=("Path to file containing user's values for array_t. "
+              "Ex: -a path/addInfo.txt \n"
+              "Format for each line: key=value\n"
+              "Ex:"
+              "\n\tsensor/model_s=L28"
+              "\n\tsensor/manufacturer_s=Sercel"))
+    parser.add_argument(
+        "-s", dest="skip_missing_minifile", action='store_true', default=True,
+        help="Flag to skip reporting about minifile")
 
     args = parser.parse_args()
     skip_missing_minifile = args.skip_missing_minifile
@@ -88,6 +89,7 @@ def getDupOfField(listOfDict, mainK1, mainK2, dupK):
     d = [e['mixK'] for e in b if len(e[dupK]) > 1]
     return d
 
+
 # ########################### CHECK ISSUES ##############################
 def get_array_t(pn3object):
     """
@@ -112,12 +114,15 @@ def get_array_t(pn3object):
                 station_len = len(station_list[deployment])
                 for st_num in range(0, station_len):
                     e = station_list[deployment][st_num]
-                    if e['deploy_time/ascii_s'] == e['pickup_time/ascii_s']:
+                    if e['deploy_time/ascii_s'] >= e['pickup_time/ascii_s']:
                         if e['deploy_time/ascii_s'] not in sameDepPic.keys():
                             sameDepPic[e['deploy_time/ascii_s']] = {}
-                        if e['das/serial_number_s'] not in sameDepPic[e['deploy_time/ascii_s']]:
-                            sameDepPic[e['deploy_time/ascii_s']][e['das/serial_number_s']] = 0
-                        sameDepPic[e['deploy_time/ascii_s']][e['das/serial_number_s']] += 1
+                        if e['das/serial_number_s'] not in sameDepPic[
+                                e['deploy_time/ascii_s']]:
+                            sameDepPic[e['deploy_time/ascii_s']][
+                                e['das/serial_number_s']] = 0
+                        sameDepPic[e['deploy_time/ascii_s']][
+                            e['das/serial_number_s']] += 1
                         remCount += 1
                     else:
                         e['array_name'] = aname
@@ -126,7 +131,7 @@ def get_array_t(pn3object):
                             dasDict[e['das/serial_number_s']] = []
                         dasDict[e['das/serial_number_s']].append(e)
                     count += 1
-    cormdas = []
+
     for t in sameDepPic.keys():
         for das in sameDepPic[t].keys():
             remNo = sameDepPic[t][das]
@@ -134,21 +139,23 @@ def get_array_t(pn3object):
             if das in dasDict:
                 total += len(dasDict[das])
             sameDepPic[t][das] = "%s/%s" % (remNo, total)
-            if total == 4:
-                cormdas.append(das)
 
     if sameDepPic != {}:
-        msg = ("Due to coincided deploy and pickup times, %s/%s  entries will be removed from array_t:\n"
-               "[time]: {[das_serial]: [rem/total], [das_serial]: [rem/total], ...},\n" % (remCount, count))
+        msg = ("Due to coincided deploy and pickup times, %s/%s  "
+               "entries will be removed from array_t:\n"
+               "[time]: {[das_serial]: [rem/total], "
+               "[das_serial]: [rem/total], ...},\n" % (remCount, count))
         for deptime, dasncount in sameDepPic.items():
             msg += "%s: %s\n" % (deptime, dasncount)
         LOGGER.warning(msg)
 
     for d in dasDict:
-        res = getDupOfField(dasDict[d], 'array_name', 'channel_number_i', 'deploy_time/ascii_s')
+        res = getDupOfField(dasDict[d], 'array_name', 'channel_number_i',
+                            'deploy_time/ascii_s')
         for r in res:
             array, channel = r
-            LOGGER.warning('Das %s channel %s duplicated in %s. User need to handle this manually'
+            LOGGER.warning('Das %s channel %s duplicated in %s. '
+                           'User need to handle this manually'
                            % (d, channel, array))
 
     return entryList, dasDict.keys()
@@ -226,8 +233,10 @@ def get_das_t(pn3object, pn3_array_t, pn3_index_t):
                "the following Das's entries in array_t and index_t will be "
                "removed:\n %s" % sorted(in_index_no_das))
         LOGGER.warning(msg)
-        pn3_array_t = [e for e in pn3_array_t if e['das/serial_number_s'] in all_das]
-        pn3_index_t = [e for e in pn3_index_t if e['serial_number_s'] in all_das]
+        pn3_array_t = [e for e in pn3_array_t
+                       if e['das/serial_number_s'] in all_das]
+        pn3_index_t = [e for e in pn3_index_t
+                       if e['serial_number_s'] in all_das]
 
     # print(all_das_g_name['Das_g_11736']._v_pathname)
     pn3dir = os.path.join(os.getcwd(), pn3object.currentpath)
@@ -259,7 +268,7 @@ def get_das_t(pn3object, pn3_array_t, pn3_index_t):
         msg = "The following Das have empty das_t: %s" % empty_das_t_list
         LOGGER.warning(msg)
 
-    if missing_minifiles != []:
+    if missing_minifiles != set():
         msg = "The following minifiles are missing:\n%s" % missing_minifiles
         LOGGER.warning(msg)
 
@@ -289,7 +298,7 @@ def create_index_t_backup(pn3object, path):
     tdoy = timedoy.TimeDOY(epoch=time.time())
     tt = "{0:04d}{1:03d}".format(tdoy.dtobject.year, tdoy.dtobject.day)
     prefix = "{0}_{1}".format('Index_t', tt)
-    outfile = "{0}_00.kef".format(prefix)
+    outfile = "{0}_backup_from_pn3.kef".format(prefix)
     # Do not overwite existing file
     i = 1
     while os.path.exists(outfile):
@@ -326,12 +335,12 @@ def cleanup_pn4(pn4object):
     + remove ext_link for das_g
     """
     ret = raw_input("\n=========================================\n"
-                    "All external links to minifiles are going to "
+                    "All existing external links to minifiles are going to "
                     "be removed from : %s.\n"
                     "Do you want to continue?(y/n)" % pn4object.filename)
     if ret == 'n':
         return False
-    ##### REMOVE Array_t #####
+    # #### REMOVE Array_t #####
     pn4object.read_array_t_names()
     rem_arrays = []
     failed_rem_arrays = []
@@ -341,13 +350,13 @@ def cleanup_pn4(pn4object):
             rem_arrays.append(aname)
         else:
             failed_rem_arrays.append(aname)
-    LOGGER.info("Remove from pn4 object %s" % rem_arrays)
+    LOGGER.info("Remove the following array_t from pn4: %s" % rem_arrays)
 
-    ##### REMOVE INDEX_T #####
+    # #### REMOVE INDEX_T #####
     pn4object.ph5_g_receivers.nuke_index_t()
-    LOGGER.info("Remove Index_t from pn4 object")
+    LOGGER.info("Remove Index_t from pn4")
 
-    #### REMOVE EXT_LINK FOR Das_g ####
+    # ### REMOVE EXT_LINK FOR Das_g ####
     pn4object.read_das_g_names()
     all_das_g_name = pn4object.Das_g_names
     rem_das = []
@@ -357,9 +366,9 @@ def cleanup_pn4(pn4object):
             group_node = pn4object.ph5.get_node(external_path)
             group_node.remove()
             rem_das.append(external_path.split('/')[3].replace("Das_g_", ""))
-        except Exception as e:
+        except Exception:
             pass
-    LOGGER.info("Remove Das_g external links from pn4 object%s" % rem_das)
+    LOGGER.info("Remove Das_g external links from pn4: %s" % rem_das)
     return pn4object
 # ########################## END CLEAN UP PN4 ###########################
 
@@ -378,6 +387,7 @@ def get_band_code(sample_rate):
         band_code = 'X'
     return band_code
 
+
 def convert_to_pn4_array(entry, pn3_das_t, addInfo, skip_missing_minifile):
     """
     param pn3e: array entry form pn3
@@ -394,11 +404,11 @@ def convert_to_pn4_array(entry, pn3_das_t, addInfo, skip_missing_minifile):
         if rel_das_chan_rows == []:
             LOGGER.error("Cannot fill in station's sample_rate_i, "
                          "seed_band_code_s and receiver_table_n_i because "
-                         "chan %s doen't exist for %s in das_t "
+                         "chan %s doesn't exist for %s in das_t "
                          % (chan, das))
         else:
             rel_das_time_rows = [e for e in rel_das_chan_rows
-                                 if dep <= e ['time/epoch_l'] <= pic]
+                                 if dep <= e['time/epoch_l'] <= pic]
             sample_rates = list({e['sample_rate_i']
                                  for e in rel_das_time_rows})
             if len(sample_rates) > 1:
@@ -406,10 +416,15 @@ def convert_to_pn4_array(entry, pn3_das_t, addInfo, skip_missing_minifile):
                        "channel %s. User need to correct sample rate in "
                        "array_t by themselves." % (das, chan))
                 LOGGER.warning(msg)
-            entry['sample_rate_i'] = sample_rates[0]
-            entry['seed_band_code_s'] = get_band_code(sample_rates[0])
-            entry['receiver_table_n_i'] = rel_das_time_rows[0][
-                'receiver_table_n_i']
+            if len(sample_rates) == 0:
+                msg = ("Das %s at channel %s has no trace between time "
+                       "[%s, %s]." % (das, chan, dep, pic))
+                LOGGER.error(msg)
+            else:
+                entry['sample_rate_i'] = sample_rates[0]
+                entry['seed_band_code_s'] = get_band_code(sample_rates[0])
+                entry['receiver_table_n_i'] = rel_das_time_rows[0][
+                    'receiver_table_n_i']
     else:
         if not skip_missing_minifile:
             LOGGER.error("Cannot fill in station's sample_rate_i, "
@@ -421,9 +436,15 @@ def convert_to_pn4_array(entry, pn3_das_t, addInfo, skip_missing_minifile):
     entry['seed_orientation_code_s'] = 'Z'
     entry['seed_station_name_s'] = entry['id_s']
 
+    incorrect_keys = set()
     for k in addInfo:
         if k in entry.keys():
             entry[k] = addInfo[k]
+        else:
+            incorrect_keys.add(k)
+    if incorrect_keys != set():
+        LOGGER.warning("AddInfo file contents incorrect key(s): %s" %
+                       incorrect_keys)
 
     return entry
 
@@ -453,12 +474,18 @@ def recreate_index_t(pn4object, pn3_index_t):
 
 def prepare_minifiles(pn4path, pn3path, pn3_das_t, existing_minifiles):
     ret = raw_input("\n=========================================\n"
-                    "All minifiles are going to be deleted in %s.\n"
+                    "All existing minifiles are going to be deleted in %s.\n"
                     "Do you want to continue?(y/n)" % pn4path)
     if ret == 'n':
         return False
 
+    for f in os.listdir((pn4path)):
+        if f.endswith(".ph5") and f.startswith("miniPH5"):
+            LOGGER.info("Deleting pn4's existing minifile: %s", f)
+            os.remove(os.path.join(pn4path, f))
+
     for f in existing_minifiles:
+        LOGGER.info("Preparing minifile: %s" % f)
         minipn3path = os.path.join(pn3path, f)
         minipn4path = os.path.join(pn4path, f)
         copy(minipn3path, minipn4path)
@@ -468,10 +495,6 @@ def prepare_minifiles(pn4path, pn3path, pn3_das_t, existing_minifiles):
         for group in all_das_g_name:
             das = group.replace("Das_g_", "")
             groupnode = miniobj.ph5_g_receivers.getdas_g(das)
-            # if das not in pn3_das_t.keys():
-            #     # group_node = miniobj.ph5.get_node(group)
-            #     groupnode.remove()
-            # else:
             # remove das_t
             das_t = miniobj.ph5_g_receivers.ph5.get_node(
                 '/Experiment_g/Receivers_g/Das_g_%s' % das,
@@ -486,7 +509,7 @@ def prepare_minifiles(pn4path, pn3path, pn3_das_t, existing_minifiles):
                 columns.Data, expectedrows=1000)
             miniobj.ph5_g_receivers.setcurrent(groupnode)
             for e in pn3_das_t[das]:
-                # add new das_t information with sample_rate_multiplier_i=1
+                # add pn3's das_t entry with sample_rate_multiplier_i=1
                 e['sample_rate_multiplier_i'] = 1
                 miniobj.ph5_g_receivers.populateDas_t(e)
         miniobj.close()
@@ -495,32 +518,44 @@ def prepare_minifiles(pn4path, pn3path, pn3_das_t, existing_minifiles):
 
 def create_external_links(pn4object, pn3_index_t, rem_das,
                           existing_minifile_dict):
+    ext_links = {}
     for entry in pn3_index_t:
         das = entry['serial_number_s']
-        external_file = entry['external_file_name_s'][2:]
-        external_path = entry['hdf5_path_s']
-        target = external_file + ':' + external_path
-        external_group = external_path.split('/')[3]
+        ext_file = entry['external_file_name_s'][2:]
+        ext_path = entry['hdf5_path_s']
+        target = ext_file + ':' + ext_path
+        ext_group = ext_path.split('/')[3]
         try:
             pn4object.ph5.create_external_link(
-                '/Experiment_g/Receivers_g', external_group, target)
-            LOGGER.info("External link '%s' is created." % target)
+                '/Experiment_g/Receivers_g', ext_group, target)
+            if ext_file not in ext_links:
+                ext_links[ext_file] = []
+            ext_links[ext_file].append(das)
         except Exception as e:
             # pass
             LOGGER.error("{0}\n".format(e.message))
+    for ext_file in ext_links:
+        LOGGER.info("External link to %s is created for the following das: %s"
+                    % (ext_file, ext_links[ext_file]))
 
     das_in_existing_mini = []
     for das_list in existing_minifile_dict.values():
         das_in_existing_mini += das_list
+    no_ext_link_das = []
     for das in rem_das:
         if das in das_in_existing_mini:
-            LOGGER.info("External link is not created for das %s. "
-                        "Use tool 'create_ext' when metadata is found." % das)
-    
-    
+            no_ext_link_das.append(das)
+    LOGGER.info("External link is not created for the following das, "
+                "Use tool 'create_ext' when metadata is found: %s"
+                % no_ext_link_das)
+
+
 # ########################## END RECREATE PN4 ###########################
 
 def getAddInfo(filename):
+    """
+    Use flag -a to add addInfo file to change info
+    """
     with open(filename, 'r') as file:
         lines = file.readlines()
         addInfo = {}
@@ -551,29 +586,34 @@ def main():
      pn3_array_t,
      rem_das,
      existing_minifile_dict) = check_pn3_issues(pn3object)
+
     create_index_t_backup(pn3object, pn4path)
+
     pn3object.close()
 
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
     pn4object = ph5api.PH5(path=pn4path, nickname='master.ph5', editmode=True)
+
     pn4object = cleanup_pn4(pn4object)
     if not pn4object:
-        LOGGER.warning("The program was interupted by user 1.")
+        LOGGER.warning("The program was interupted by user.")
         sys.exit()
+
     recreate_array_t(pn4object, pn3_array_t, pn3_das_t, addInfo,
                      skip_missing_minifile)
 
     recreate_index_t(pn4object, pn3_index_t)
+
     ret = prepare_minifiles(
         pn4path, pn3path, pn3_das_t, existing_minifile_dict.keys())
-
     if not ret:
-        LOGGER.warning("The program was interupted by user 2.")
+        LOGGER.warning("The program was interupted by user.")
         sys.exit()
     create_external_links(pn4object, pn3_index_t, rem_das,
                           existing_minifile_dict)
     pn4object.close()
     os.environ["HDF5_USE_FILE_LOCKING"] = "TRUE"
+    LOGGER.info("FINISH correcting pn4 data using info from pn3.")
 
 
 if __name__ == '__main__':
