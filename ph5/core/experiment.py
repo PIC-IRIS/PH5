@@ -57,7 +57,7 @@ def check_srm_valid(rows, keys, tablename, ignore_srm=False):
                       "with value 0. Please run fix_srm to fix "
                       "sample_rate_multiplier_i for PH5 data."
                       % tablename)
-            raise HDF5InteractionError(8, errmsg)
+            raise HDF5InteractionError(7, errmsg)
 
 
 class HDF5InteractionError (Exception):
