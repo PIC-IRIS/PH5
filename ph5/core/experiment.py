@@ -40,6 +40,8 @@ def check_srm_valid(rows, keys, tablename, ignore_srm=False):
     :param ignore_srm: flag to ignore checking srm when it is True (boolean)
     """
     if keys is None:
+        LOGGER.warning("Table %s is empty. Use nuke_table > 2019.037 to "
+                       "remove the table" % tablename)
         return rows, keys, tablename, ignore_srm
     if ignore_srm:
         return
@@ -55,7 +57,7 @@ def check_srm_valid(rows, keys, tablename, ignore_srm=False):
                       "with value 0. Please run fix_srm to fix "
                       "sample_rate_multiplier_i for PH5 data."
                       % tablename)
-            raise HDF5InteractionError(7, errmsg)
+            raise HDF5InteractionError(8, errmsg)
 
 
 class HDF5InteractionError (Exception):

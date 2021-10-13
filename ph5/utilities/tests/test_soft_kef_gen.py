@@ -3,13 +3,13 @@ Tests for sort_kefGen
 '''
 import os
 import sys
+import logging
 import unittest
-from StringIO import StringIO
 
 from mock import patch
-from testfixtures import OutputCapture
+from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import segd2ph5, nuke_table, sort_kef_gen
+from ph5.utilities import sort_kef_gen
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
@@ -22,42 +22,30 @@ def rem_currtime_ver_info(text):
 class TestSortKefGen_main(TempDirTestCase, LogTestCase):
 
     def test_main(self):
-        # add fcnt data of the same das in the same array but with different
-        # deploytime
-        segd_dir = os.path.join(self.home, "ph5/test_data/segd/fairfield/")
-        # create list file
-        list_file = open('fcnt_list', "w")
-        list_file.write(os.path.join(segd_dir, '3ch.fcnt') + '\n')
-        list_file.write(os.path.join(segd_dir, '1111.0.0.fcnt'))
-        list_file.close()
-
-        # add segD to ph5
-        testargs = ['segdtoph5', '-n', 'master', '-f', 'fcnt_list']
-        with patch.object(sys, 'argv', testargs):
-            segd2ph5.main()
-
-        # delete das 1X1111 from ph5
-        testargs = ['delete_table', '-n', 'master', '-D', '1X1111']
-        with patch.object(sys, 'argv', testargs):
-            with OutputCapture():
-                f = StringIO('y')
-                sys.stdin = f
-                nuke_table.main()
-                f.close()
+        ph5_dir = os.path.join(self.home, "ph5/test_data/ph5_empty_das_t/")
 
         # create soft.kef
         # Related to issue #480, if check_srm_valid isn't skipped for empty
         # das_t, sort_kef_gen will issue an error
-        testargs = ['sort_kef_gen', '-n', 'master', '-a']
+        testargs = ['sort_kef_gen', '-n', 'master', '-p', ph5_dir, '-a']
         with patch.object(sys, 'argv', testargs):
-            with OutputCapture() as out:
-                sort_kef_gen.main()
-                output = out.captured.strip()
+            with LogCapture() as log:
+                log.setLevel(logging.WARNING)
+                with OutputCapture() as out:
+                    sort_kef_gen.main()
+                    output = out.captured.strip()
+                self.assertEqual(len(log.records), 1)
+                self.assertEqual(
+                    log.records[0].msg,
+                    "Table Das_t_1X1111 is empty. "
+                    "Use nuke_table > 2019.037 to remove the table"
+                )
         output = rem_currtime_ver_info(output)
 
         # compare with recreated sort_test_delete_das.kef
         with open(os.path.join(
-                self.home, 'ph5/test_data/metadata/sort_test_delete_das.kef'),
+                self.home,
+                'ph5/test_data/ph5_empty_das_t/sort_test_delete_das.kef'),
                   'r') as content_file:
             content = content_file.read().strip()
         content = rem_currtime_ver_info(content)
