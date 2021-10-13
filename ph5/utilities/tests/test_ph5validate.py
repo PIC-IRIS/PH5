@@ -252,7 +252,7 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
 
         self.assertEqual(
             self.ph5validate.das_time,
-            {('12183', 1, 500):
+            {('12183', 'Array_t_009', 1, 500):
                 {'max_pickup_time': [1550850187],
                  'time_windows': [(1550849950, 1550850034, '9001'),
                                   (1550849950, 1550850034, '9001'),
@@ -313,8 +313,9 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         + check if it catch the case data exists before the whole time range
         """
         self.ph5validate.analyze_time()
-        self.assertEqual(self.ph5validate.das_time.keys(), [('12183', 1, 500)])
-        Dtime = self.ph5validate.das_time[('12183', 1, 500)]
+        self.assertEqual(self.ph5validate.das_time.keys(),
+                         [('12183', 'Array_t_009', 1, 500)])
+        Dtime = self.ph5validate.das_time[('12183', 'Array_t_009', 1, 500)]
 
         # 3 different deploy time
         self.assertEqual(len(Dtime['time_windows']), 5)
@@ -339,7 +340,7 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
 
     def test_check_station_completeness(self):
         self.ph5validate.das_time = {
-            ('12183', 1, 500):
+            ('12183', 'Array_t_009', 1, 500):
             {'time_windows': [(1550849950, 1550850034, '9001'),
                               (1550849950, 1550850034, '9001'),
                               (1550849950, 1550850034, '9001'),
@@ -353,7 +354,7 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
 
         self.ph5validate.read_arrays('Array_t_009')
         arraybyid = self.ph5validate.ph5.Array_t['Array_t_009']['byid']
-        DT = self.ph5validate.das_time[('12183', 1, 500)]
+        DT = self.ph5validate.das_time[('12183', 'Array_t_009', 1, 500)]
 
         # check lon/lat not in range
         # check warning data exist before min_deploy_time
@@ -364,7 +365,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         station['location/Y/units_s'] = 'degrees'
         station['location/Z/value_d'] = 1403
         station['location/Z/units_s'] = 'm'
-        ret = self.ph5validate.check_station_completeness(station)
+        ret = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         warnings = ret[1]
         self.assertEqual(
             warnings,
@@ -386,7 +388,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         station['location/Y/units_s'] = None
         station['location/Z/value_d'] = None
         station['location/Z/units_s'] = ''
-        ret = self.ph5validate.check_station_completeness(station)
+        ret = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         warnings = ret[1]
         self.assertEqual(
             warnings,
@@ -405,7 +408,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         # check error overlaping
         # => change deploy time of the 3rd station
         DT['time_windows'][5] = (1550850090, 1550850187, '9003')
-        ret = self.ph5validate.check_station_completeness(station)
+        ret = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         errors = ret[2]
         self.assertIn('Overlap time on station(s): 9002, 9003', errors)
 
@@ -415,7 +419,8 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         station['deploy_time/epoch_l'] = 1550850190
         station['pickup_time/epoch_l'] = 1550850191
         DT['time_windows'][5] = (1550850190, 1550850191, '9003')
-        ret = self.ph5validate.check_station_completeness(station)
+        ret = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         errors = ret[2]
         self.assertIn("No data found for das serial number 12183 during this "
                       "station's time. You may need to reload the raw data "
@@ -425,8 +430,10 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         station = arraybyid.get('9002')[1][0]
         station['das/serial_number_s'] = '1218'
         self.ph5validate.das_time[
-            ('1218', 1, 500)] = self.ph5validate.das_time[('12183', 1, 500)]
-        ret = self.ph5validate.check_station_completeness(station)
+            ('1218', 'Array_t_009', 1, 500)] = self.ph5validate.das_time[
+            ('12183', 'Array_t_009', 1, 500)]
+        ret = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         errors = ret[2]
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
@@ -464,53 +471,62 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
 
         station = self.ph5_object.Array_t['Array_t_008']['byid']['8001'][1][0]
         # id_s isn't a whole number => error
-        das_time[('9EEF', 1, 100)]['time_windows'][0] = \
+        das_time[('9EEF', 'Array_t_008', 1, 100)]['time_windows'][0] = \
             (1463568480, 1463568540, '33a33')
         station['id_s'] = '33a33'
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_008')
         self.assertIn("Station ID '33a33' not a whole number "
                       "between 0 and 65535.",
                       err)
         # id_s not in range [0,65535] => error
-        das_time[('9EEF', 1, 100)]['time_windows'][0] = \
+        das_time[('9EEF', 'Array_t_008', 1, 100)]['time_windows'][0] = \
             (1463568480, 1463568540, '65536')
         station['id_s'] = '65536'
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_008')
         self.assertIn("Station ID '65536' not between 0 and 65535.",
                       err)
         # id_s in range [32768, 65534] => warning
-        das_time[('9EEF', 1, 100)]['time_windows'][0] = \
+        das_time[('9EEF', 'Array_t_008', 1, 100)]['time_windows'][0] = \
             (1463568480, 1463568540, '33333')
         station['id_s'] = '33333'
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_008')
         self.assertIn("Station ID '33333' is more than 32767. "
                       "Not compatible with SEGY revision 1.",
                       warn)
 
         # sample_rate=0 => warning
-        das_time[('12183', 1, 0)] = das_time[('12183', 1, 500)]
+        das_time[('12183', 'Array_t_009', 1, 0)] = das_time[
+            ('12183', 'Array_t_009', 1, 500)]
         station = self.ph5_object.Array_t['Array_t_009']['byid']['9001'][1][0]
         station['sample_rate_i'] = 0
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         self.assertIn("Sample rate seems to be 0. Is this correct???",
                       warn)
         # sample_rate<0 => error
-        das_time[('12183', 1, -1)] = das_time[('12183', 1, 500)]
+        das_time[('12183', 'Array_t_009', 1, -1)] = das_time[
+            ('12183', 'Array_t_009', 1, 500)]
         station['sample_rate_i'] = -1
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         self.assertIn("Sample rate = -1 not positive.",
                       err)
 
         # sample_rate_multiplier_i isn't a integer => error
         station['sample_rate_i'] = 500
         station['sample_rate_multiplier_i'] = 1.1
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         self.assertIn("Sample rate multiplier = 1.1 is not an"
                       " integer greater than 1.",
                       err)
         # sample_rate_multiplier_i<1 => error
         station['sample_rate_multiplier_i'] = 0
-        inf, warn, err = self.ph5validate.check_station_completeness(station)
+        inf, warn, err = self.ph5validate.check_station_completeness(
+            station, 'Array_t_009')
         self.assertIn("Sample rate multiplier = 0 is not an integer "
                       "greater than 1.",
                       err)

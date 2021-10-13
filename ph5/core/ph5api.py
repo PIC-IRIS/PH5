@@ -1372,7 +1372,11 @@ class PH5(experiment.ExperimentGroup):
                 stop_epoch=end,
                 sample_rate=sample_rate)
             if not das_t_t:
-                LOGGER.warning("No Das table found for " + das)
+                msg = ("No Das table found for %s chan %s sr %s"
+                       % (das, component, sample_rate))
+                if start is not None:
+                    msg += " in time [%s, %s]" % (start, end)
+                LOGGER.warning(msg)
                 return None, None
 
         if not das_t_t:
