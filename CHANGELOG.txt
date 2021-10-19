@@ -40,10 +40,12 @@ ph5.utilities.segdtoph5
  * fixed bug in utmzone processing
  * Fixed bug in smartsolo reading causing incorrect time conversions from BCD
  * Work with SmartSolo in which entries of same deployment (no gaps) are combined into one
+ * (segdreader_smartsolo) modify to work with changes in SS header to show negative in location
 ph5.core.experiment
  * fixed bug found by Natalie (issue #231)
  * fix fast offset_table reading (issue #280)
  * fix read_das and read_arrays to throw error is sample_rate_multiplier_is=0 or is missing
+ * if table is empty, not try to check for sample_rate_multiplier_i, but give a warning message
 ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.utilities.validation
