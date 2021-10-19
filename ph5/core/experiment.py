@@ -661,6 +661,22 @@ class SortsGroup:
         except Exception:
             return False
 
+    def get_rm_das_arrays(self, das):
+        array_t_names = self.namesArray_t()
+        rm_das_arrays = {}
+        for aname in sorted(array_t_names):
+            rows, keys = self.read_arrays(aname)
+            rm_rows = []
+            for r in rows:
+                if r['das/serial_number_s'] == das:
+                    rm_rows.append(r)
+            rm_das_arrays[aname] = {
+                'rows': rows,
+                'keys': keys,
+                'new_rows': [i for i in rows if i not in rm_rows]}
+
+        return rm_das_arrays
+
 
 class Data_Trace (object):
     __slots__ = ("das", "epoch", "length", "channel",
@@ -1150,13 +1166,21 @@ class ReceiversGroup:
         self.ph5_t_time.remove()
         self.initgroup()
 
-    def nuke_das_t(self, das):
+    def truncate_das_t(self, das):
         g = self.getdas_g(das)
         if not g:
             return False
         self.setcurrent(g)
         self.current_t_das.truncate(0)
         return True
+
+    def get_rm_das_index_t(self, das):
+        rows, keys = self.read_index()
+        new_rows = []
+        for r in rows:
+            if r['serial_number_s'] != das:
+                new_rows.append(r)
+        return {'rows': rows, 'new_rows': new_rows}
 
 
 class ReportsGroup:

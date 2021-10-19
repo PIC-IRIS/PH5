@@ -150,7 +150,7 @@ def delete_das(ph5object, das_name, ph5, path):
     if 'sample_rate_multiplier_i' not in das_keys:
         ph5object = reformat_das_t(ph5object, das_sn, ph5, path)
     else:
-        ph5object.ph5_g_receivers.nuke_das_t(das_sn)
+        ph5object.ph5_g_receivers.truncate_das_t(das_sn)
     LOGGER.info('Nuke {0}.'.format(datapath))
     return backupfile, datapath, ph5object
 
