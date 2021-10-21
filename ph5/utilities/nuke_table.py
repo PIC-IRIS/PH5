@@ -15,7 +15,7 @@ import time
 from ph5.core import experiment, timedoy, columns
 import tabletokef as T2K
 
-PROG_VERSION = '2019.037'
+PROG_VERSION = '2021.294'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -359,9 +359,9 @@ def main():
     if DAS_TABLE:
         table_type = 'Das_t_{0}'.format(DAS_TABLE)
         T2K.DAS_TABLE = DAS_TABLE
-        T2K.read_receivers(DAS_TABLE)
+        T2K.read_receivers(DAS_TABLE, ignore_srm=True)
         if DAS_TABLE not in T2K.DAS_T:
-            LOGGER.warning("Can't find Das_t for %s" % DAS_TABLE)
+            LOGGER.warning("Das_t not found for %s" % DAS_TABLE)
             EX.ph5close()
             return
         # check if das_t is empty (b/c of the old way of das deletion)
@@ -371,15 +371,23 @@ def main():
 
         # remove das-related-entries in array_t
         rm_das_arrays = EX.ph5_g_sorts.get_rm_das_arrays(DAS_TABLE)
-        if rm_das_arrays != {}:
-            check_relation = raw_input(
-                "Das %s is in the following array(s):%s\nTo maintain "
-                "consitency, stations related to das must be removed.\n"
+        rm_das_index = EX.ph5_g_receivers.get_rm_das_index_t(DAS_TABLE)
+        rm_tables = rm_das_arrays.keys()
+        if rm_das_index['rows'] != rm_das_index['new_rows']:
+            rm_tables += ['Index_t']
+        rm_tables_str = ', '.join(rm_tables)
+        if rm_tables != []:
+            yon = raw_input(
+                "The following tables has entries related to das %s: %s.\n"
+                "To maintain consistency, those entries must be removed "
+                "along with removing the das.\n"
                 "Do you want to continue?(y/n)"
-                % (DAS_TABLE, rm_das_arrays.keys()))
-            if check_relation != 'y':
+                % (DAS_TABLE, rm_tables_str))
+            if yon != 'y':
                 EX.ph5close()
                 return
+
+        if rm_das_arrays != {}:
             for aname in rm_das_arrays:
                 rm_items = rm_das_arrays[aname]
                 table_type = aname
@@ -389,11 +397,10 @@ def main():
                     aname,
                     '/Experiment_g/Sorts_g/{0}'.format(aname),
                     array_t)
-                if EX.ph5_g_sorts.nuke_array_t(anum):
-                    LOGGER.info("Remove %s." % aname)
+                EX.ph5_g_sorts.nuke_array_t(anum)
                 if rm_items['new_rows'] == []:
                     LOGGER.warning("After removing the stations related to "
-                                   "das %s. %s is empty and will be removed."
+                                   "das %s. %s is empty and removed."
                                    % (DAS_TABLE, aname))
                 else:
                     a = EX.ph5_g_sorts.newArraySort(aname)
@@ -401,7 +408,6 @@ def main():
                         columns.populate(a, r)
 
         # remove das related entries in index_t
-        rm_das_index = EX.ph5_g_receivers.get_rm_das_index_t(DAS_TABLE)
         if rm_das_index['rows'] != rm_das_index['new_rows']:
             table_type = 'Index_t'
             T2K.read_index_table()
@@ -420,14 +426,21 @@ def main():
         external_path = dasGroups["Das_g_%s" % DAS_TABLE]._v_pathname
         group_node = EX.ph5.get_node(external_path)
         group_node.remove()
-
-        LOGGER.info(
-            "Das %s and all entries related to it in array %s and index_t "
-            "have been removed from master file. To rollback, use "
-            "'creare_ext' to add das back to master. Recover array_t and "
-            "index_t from kef files. If the das was nuked before with old "
-            "'delete_table tool, you will need keffile created at that time "
-            "to recover the table." % (DAS_TABLE, rm_das_arrays.keys()))
+        if rm_tables != []:
+            LOGGER.info(
+                "Das %s and all entries related to it in %s "
+                "have been removed from master file. To rollback, "
+                "recover %s from kef files; use 'creare_ext' to add das back "
+                "to master. If the das was nuked before with old 'nuke_table' "
+                "tool, you will need kef file created at that time to recover "
+                "the table." % (DAS_TABLE, rm_tables_str, rm_tables_str))
+        else:
+            LOGGER.info(
+                "Das %s has been removed from master file. To rollback, "
+                "use 'creare_ext' to add das back to master. "
+                "If the das was nuked before with old 'nuke_table' tool, "
+                "you will need kef file created at that time "
+                "to recover the table." % DAS_TABLE)
 
     EX.ph5close()
 
