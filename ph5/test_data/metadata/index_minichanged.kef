@@ -1,0 +1,110 @@
+#
+#	Thu Oct 21 20:03:04 2021	ph5 version: 4.1.2
+#	mini changed from miniPH5_00001 to miniPH5_00002 for test_create_ext.py
+#   Table row 1
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Wed Aug  9 16:00:30 2017
+	end_time/epoch_l=1502294430
+	end_time/micro_seconds_i=380000
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00002.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_3X500
+	serial_number_s=3X500
+	start_time/ascii_s=Wed Aug  9 16:00:00 2017
+	start_time/epoch_l=1502294400
+	start_time/micro_seconds_i=380000
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Thu Oct 21 17:51:44 2021
+	time_stamp/epoch_l=1634838704
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 2
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Wed Aug  9 16:01:00 2017
+	end_time/epoch_l=1502294460
+	end_time/micro_seconds_i=380000
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00002.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_3X500
+	serial_number_s=3X500
+	start_time/ascii_s=Wed Aug  9 16:00:30 2017
+	start_time/epoch_l=1502294430
+	start_time/micro_seconds_i=380000
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Thu Oct 21 17:51:44 2021
+	time_stamp/epoch_l=1634838704
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 3
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Wed Aug  9 16:00:30 2017
+	end_time/epoch_l=1502294430
+	end_time/micro_seconds_i=380000
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00002.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_3X500
+	serial_number_s=3X500
+	start_time/ascii_s=Wed Aug  9 16:00:00 2017
+	start_time/epoch_l=1502294400
+	start_time/micro_seconds_i=380000
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Thu Oct 21 17:51:44 2021
+	time_stamp/epoch_l=1634838704
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 4
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Wed Aug  9 16:01:00 2017
+	end_time/epoch_l=1502294460
+	end_time/micro_seconds_i=380000
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00002.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_3X500
+	serial_number_s=3X500
+	start_time/ascii_s=Wed Aug  9 16:00:30 2017
+	start_time/epoch_l=1502294430
+	start_time/micro_seconds_i=380000
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Thu Oct 21 17:51:44 2021
+	time_stamp/epoch_l=1634838704
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 5
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Wed Aug  9 16:00:30 2017
+	end_time/epoch_l=1502294430
+	end_time/micro_seconds_i=380000
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00002.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_3X500
+	serial_number_s=3X500
+	start_time/ascii_s=Wed Aug  9 16:00:00 2017
+	start_time/epoch_l=1502294400
+	start_time/micro_seconds_i=380000
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Thu Oct 21 17:51:44 2021
+	time_stamp/epoch_l=1634838704
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 6
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Wed Aug  9 16:01:00 2017
+	end_time/epoch_l=1502294460
+	end_time/micro_seconds_i=380000
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00002.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_3X500
+	serial_number_s=3X500
+	start_time/ascii_s=Wed Aug  9 16:00:30 2017
+	start_time/epoch_l=1502294430
+	start_time/micro_seconds_i=380000
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Thu Oct 21 17:51:44 2021
+	time_stamp/epoch_l=1634838704
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
