@@ -34,12 +34,13 @@ def get_args():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
         EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE,\
-        INDEX_TABLE, DAS, M_INDEX_TABLE, NO_BACKUP
+        INDEX_TABLE, DAS_TABLE, TRUNC, M_INDEX_TABLE, NO_BACKUP
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.usage = ("delete_table --nickname ph5-file-prefix [options]")
+    parser.usage = ("delete_table/nuke_table --nickname ph5-file-prefix "
+                    "[options]")
 
     parser.description = ("Initialize a table in a ph5 file. Caution:"
                           "Deletes contents of table!\n\nVersion: {0}"
@@ -113,16 +114,21 @@ def get_args():
                         help="Nuke /Experiment_g/Maps_g/Index_t.")
 
     parser.add_argument("-D", "--Das_g", dest="das_g_", metavar="das",
-                        help="Remove external link "
+                        help="-D flag only: Remove external link "
                              "/Experiment_g/Receivers_g/Das_g_[das].\n"
                              "Remove entries related to the Das in "
                              "Array_t and Index_t")
+
+    parser.add_argument("--trunc", action='store_true', default=False,
+                        help="Use with -D/--Dag_g: Truncate Das table.")
 
     parser.add_argument("-T", "--Time_t", dest="time_t", action="store_true",
                         default=False,
                         help="Nuke /Experiment_g/Receivers_g/Time_t.")
 
     args = parser.parse_args()
+    if args.trunc and args.das_g_ is None:
+        parser.error('--trunc requires -D/--Das_g.')
 
     PH5 = args.ph5_file_prefix
     PATH = args.ph5_path
@@ -149,8 +155,9 @@ def get_args():
     RESPONSE_TABLE = args.response_t
     REPORT_TABLE = args.report_t
     RECEIVER_TABLE = args.receiver_t
-    DAS = args.das_g_
+    DAS_TABLE = args.das_g_
     NO_BACKUP = args.no_backup
+    TRUNC = args.trunc
 
 
 #
@@ -210,9 +217,9 @@ def exclaim(n):
 
 
 def main():
-    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, TRUNC,\
         EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
-        RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS, M_INDEX_TABLE
+        RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
     get_args()
     initialize_ph5()
     T2K.init_local()
@@ -358,7 +365,22 @@ def main():
         T2K.read_report_table()
         backup(table_type, '/Experiment_g/Reports_g/Report_t', T2K.REPORT_T)
         EX.ph5_g_reports.nuke_report_t()
-    if DAS:
+    if DAS_TABLE:
+        if TRUNC:
+            yon = raw_input(
+                "Are you sure you want to delete all data in Das_t for das {0}"
+                "?(y/n)".format(DAS_TABLE))
+            if yon == 'y':
+                table_type = 'Das_t_{0}'.format(DAS_TABLE)
+                T2K.DAS_TABLE = DAS_TABLE
+                T2K.read_receivers(DAS_TABLE)
+                if DAS_TABLE in T2K.DAS_T:
+                    backup(table_type,
+                           '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
+                               DAS_TABLE), T2K.DAS_T[DAS_TABLE])
+                EX.ph5_g_receivers.truncate_das_t(DAS_TABLE)
+            return
+        DAS = DAS_TABLE
         table_type = 'Das_t_{0}'.format(DAS)
         T2K.DAS_TABLE = DAS
         T2K.read_receivers(DAS, ignore_srm=True)
