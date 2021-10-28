@@ -1,0 +1,354 @@
+#	row 11: deploy=pickup: ids 1111, chan 3
+#	delete das 3X500
+#	row 10 duplicated row 5: id_s 1111, chan 2
+#   Table row 1
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jun 29 18:03:13 2019
+	deploy_time/epoch_l=1561831393
+	deploy_time/micro_seconds_i=846999
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Jul 20 14:40:04 2019
+	pickup_time/epoch_l=1563633604
+	pickup_time/micro_seconds_i=726999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4892
+	channel_number_i=1
+
+#   Table row 2
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jun 29 18:03:13 2019
+	deploy_time/epoch_l=1561831393
+	deploy_time/micro_seconds_i=846999
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Jul 20 14:40:04 2019
+	pickup_time/epoch_l=1563633604
+	pickup_time/micro_seconds_i=726999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4892
+	channel_number_i=2
+
+#   Table row 3
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jun 29 18:03:13 2019
+	deploy_time/epoch_l=1561831393
+	deploy_time/micro_seconds_i=846999
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Jul 20 14:40:04 2019
+	pickup_time/epoch_l=1563633604
+	pickup_time/micro_seconds_i=726999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4892
+	channel_number_i=3
+
+#   Table row 4
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jul 20 14:46:58 2019
+	deploy_time/epoch_l=1563634018
+	deploy_time/micro_seconds_i=690000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Aug 17 13:56:27 2019
+	pickup_time/epoch_l=1566050187
+	pickup_time/micro_seconds_i=786999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 5118
+	channel_number_i=1
+
+#   Table row 5
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jul 20 14:46:58 2019
+	deploy_time/epoch_l=1563634018
+	deploy_time/micro_seconds_i=690000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Aug 17 13:56:27 2019
+	pickup_time/epoch_l=1566050187
+	pickup_time/micro_seconds_i=786999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 5118
+	channel_number_i=2
+
+#   Table row 6
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jul 20 14:46:58 2019
+	deploy_time/epoch_l=1563634018
+	deploy_time/micro_seconds_i=690000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Aug 17 13:56:27 2019
+	pickup_time/epoch_l=1566050187
+	pickup_time/micro_seconds_i=786999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 5118
+	channel_number_i=3
+
+#   Table row 7
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Aug 31 16:33:56 2019
+	deploy_time/epoch_l=1567269236
+	deploy_time/micro_seconds_i=857000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Sep 28 14:30:37 2019
+	pickup_time/epoch_l=1569681037
+	pickup_time/micro_seconds_i=609999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4886
+	channel_number_i=1
+
+#   Table row 8
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Aug 31 16:33:56 2019
+	deploy_time/epoch_l=1567269236
+	deploy_time/micro_seconds_i=857000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Sep 28 14:30:37 2019
+	pickup_time/epoch_l=1569681037
+	pickup_time/micro_seconds_i=609999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4886
+	channel_number_i=2
+
+#   Table row 9
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Aug 31 16:33:56 2019
+	deploy_time/epoch_l=1567269236
+	deploy_time/micro_seconds_i=857000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Sep 28 14:30:37 2019
+	pickup_time/epoch_l=1569681037
+	pickup_time/micro_seconds_i=609999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4886
+	channel_number_i=3
+
+#   Table row 10
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Sat Jul 20 14:46:58 2019
+	deploy_time/epoch_l=1563634018
+	deploy_time/micro_seconds_i=690000
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Sat Aug 17 13:56:27 2019
+	pickup_time/epoch_l=1566050187
+	pickup_time/micro_seconds_i=786999
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 5118
+	channel_number_i=2
+
+#   Table row 11
+/Experiment_g/Sorts_g/Array_t_001
+	id_s=1111
+	location/X/value_d=327519.7
+	location/X/units_s=degrees
+	location/Y/value_d=3773952.7
+	location/Y/units_s=degrees
+	location/Z/value_d=1408.0
+	location/Z/units_s=unknown
+	location/coordinate_system_s=geographic
+	location/projection_s=WGS84
+	location/ellipsoid_s=
+	location/description_s=Read from SEG-D as is.
+	deploy_time/ascii_s=Wed Dec 31 17:00:00 1969
+	deploy_time/epoch_l=25200
+	deploy_time/micro_seconds_i=0
+	deploy_time/type_s=BOTH
+	pickup_time/ascii_s=Wed Dec 31 17:00:00 1969
+	pickup_time/epoch_l=25200
+	pickup_time/micro_seconds_i=0
+	pickup_time/type_s=BOTH
+	das/serial_number_s=1X1111
+	das/model_s=ZLAND 3C
+	das/manufacturer_s=FairfieldNodal
+	das/notes_s=manufacturer and model not read from data file.
+	sensor/serial_number_s=
+	sensor/model_s=GS-30CT
+	sensor/manufacturer_s=Geo Space
+	sensor/notes_s=manufacturer and model not read from file.
+	description_s=DAS: 1X1111, Node ID: 4886
+	channel_number_i=3
