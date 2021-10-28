@@ -1,0 +1,35 @@
+#   sort-kef-gen Version: 2019.036 ph5 Version: 4.1.2
+#   row 1 das Das_g_3X500
+/Experiment_g/Sorts_g/Sort_t
+	array_name_s = 001
+	array_t_name_s = Array_t_001
+	description_s = Recording window 0001
+	start_time/epoch_l = 1502294400
+	start_time/micro_seconds_i = 380000
+	start_time/type_s = BOTH
+	start_time/ascii_s = Wed Aug  9 16:00:00 2017
+	end_time/epoch_l = 1502294430
+	end_time/micro_seconds_i = 0
+	end_time/ascii_s = Wed Aug  9 16:00:30 2017
+	end_time/type_s = BOTH
+	time_stamp/epoch_l = 1632415571
+	time_stamp/ascii_s = Thu Sep 23 16:46:11 2021
+	time_stamp/micro_seconds_i = 0
+	time_stamp/type_s = BOTH
+#   row 2 das Das_g_3X500
+/Experiment_g/Sorts_g/Sort_t
+	array_name_s = 001
+	array_t_name_s = Array_t_001
+	description_s = Recording window 0002
+	start_time/epoch_l = 1502294430
+	start_time/micro_seconds_i = 380000
+	start_time/type_s = BOTH
+	start_time/ascii_s = Wed Aug  9 16:00:30 2017
+	end_time/epoch_l = 1502294460
+	end_time/micro_seconds_i = 0
+	end_time/ascii_s = Wed Aug  9 16:01:00 2017
+	end_time/type_s = BOTH
+	time_stamp/epoch_l = 1632415571
+	time_stamp/ascii_s = Thu Sep 23 16:46:11 2021
+	time_stamp/micro_seconds_i = 0
+	time_stamp/type_s = BOTH

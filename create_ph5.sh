@@ -50,7 +50,7 @@ cd ../
 mkdir availability_extent
 cd availability_extent
 initialize_ph5 -n master.ph5
-segdtoph5 -n master.ph5 -U 13N -r ../../segd/3ch.fcnt
+segdtoph5 -n master.ph5 -U 13N -r ../../segd/fairfield/3ch.fcnt
 130toph5 -n master.ph5 -r ../../rt130/2016139.9EEF.ZIP
 125atoph5 -n master.ph5 -r ../../rt125a/I2183RAW.TRD
 metadatatoph5 -n master.ph5 -f ../../metadata/station.xml

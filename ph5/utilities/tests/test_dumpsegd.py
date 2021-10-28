@@ -17,7 +17,7 @@ class TestDumpSEGD(TempDirTestCase, LogTestCase):
         segdfile = os.path.join(
             self.home,
             'ph5/test_data/segd/smartsolo/'
-            '453005483.1.2021.03.15.16.00.00.000.E.segd')
+            '453005513.2.2021.05.08.20.06.00.000.E.segd')
         segdheaderfile = segdfile + '.header'
         with open(segdheaderfile, 'r') as headerFile:
             header = headerFile.read().split()

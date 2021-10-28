@@ -65,6 +65,23 @@ class TestPforma(LogTestCase, TempDirTestCase):
         self.assertEqual(INDEX_T_A.rows[0],
                          INDEX_T_Sigma.rows[0])
 
+    def test_guess_instrument_type(self):
+        # SmartSolo filename
+        filename = "453005483.1.2021.03.15.16.00.00.000.E.segd"
+        ret = pforma_io.guess_instrument_type(filename)
+        self.assertEqual(ret, ('nodal', '453005483'))
+        # unsimpleton fairfield
+        filename = "PIC_1_1111_4886.0.0.rg16"
+        ret = pforma_io.guess_instrument_type(filename)
+        self.assertEqual(ret, ('nodal', '1X1111'))
+        # simpleton fairfield non standard
+        filename = "1111.0.0.fcnt"
+        ret = pforma_io.guess_instrument_type(filename)
+        self.assertEqual(ret, ('unknown', None))
+        filename = "1111.fcnt"
+        ret = pforma_io.guess_instrument_type(filename)
+        self.assertEqual(ret, ('nodal', 'lllsss'))
+
 
 if __name__ == "__main__":
     unittest.main()

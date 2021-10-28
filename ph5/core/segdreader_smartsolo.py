@@ -137,18 +137,31 @@ class Reader ():
                     second=ghb.second_of_minute_utc)
         return t.epoch()
 
-    def degree2decimal(self, integer, fraction):
+    def getLocationDecimal(self, integer, fraction):
         """
+        OLD FORMAT: degree2decimal
         lat degree: DDMMSS.sss
         lon degree: DDDMMSS.sss
-        decimal = deg + min/60 + sec/3600
+        return decimal = deg + min/60 + sec/3600
+        NEW FORMAT: combine signed integer with string
+        integer is signed ingeter
+        return signed_integer.fraction
         """
+        """
+        # OLD FORMAT DDMMSS.sss
         degree_str = "%.3f" % (integer + fraction)
         sec = float(degree_str[-6:])
         min = float(degree_str[-8:-6])
         deg = float(degree_str[:-8])
         decimal = deg + min/60. + sec/3600.
         return decimal
+        """
+        # NEW FORMAT: ingeger is a signed one
+        if integer < 0:
+            degree_str = "%.3f" % (integer - fraction)
+        else:
+            degree_str = "%.3f" % (integer + fraction)
+        return degree_str
 
     def process_general_headers(self):
         self.reel_headers = ReelHeaders()
@@ -277,10 +290,10 @@ class Reader ():
             thN0.extended_receiver_point_number_integer
 
         thN3 = self.trace_headers.trace_header_N[3]
-        self.trace_headers.lat = self.degree2decimal(thN3.IGU_GPS_lat_integer,
-                                                     thN3.IGU_GPS_lat_fraction)
-        self.trace_headers.lon = self.degree2decimal(thN3.IGU_GPS_lon_integer,
-                                                     thN3.IGU_GPS_lon_fraction)
+        self.trace_headers.lat = self.getLocationDecimal(
+            thN3.IGU_GPS_lat_integer, thN3.IGU_GPS_lat_fraction)
+        self.trace_headers.lon = self.getLocationDecimal(
+            thN3.IGU_GPS_lon_integer, thN3.IGU_GPS_lon_fraction)
         self.trace_headers.ele = thN3.IGU_GPS_height
         self.trace_headers.preamp_gain_db = self.preamp_gain_db
         TB_GPS_time_time_sec = self.trace_headers.trace_header_N[
