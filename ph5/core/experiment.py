@@ -668,6 +668,10 @@ class SortsGroup:
             return False
 
     def get_rm_das_arrays(self, das):
+        """
+        get all array with das in the entries, remove those entries in
+        'new_rows' returned
+        """
         array_t_names = self.namesArray_t()
         rm_das_arrays = {}
         for aname in sorted(array_t_names):
@@ -676,6 +680,8 @@ class SortsGroup:
             for r in rows:
                 if r['das/serial_number_s'] == das:
                     rm_rows.append(r)
+            if len(rm_rows) == 0:
+                continue
             rm_das_arrays[aname] = {
                 'rows': rows,
                 'keys': keys,
@@ -1181,6 +1187,9 @@ class ReceiversGroup:
         return True
 
     def get_rm_das_index_t(self, das):
+        """
+        remove all index_t's entries with das and return it in 'new_rows'
+        """
         rows, keys = self.read_index()
         new_rows = []
         for r in rows:
