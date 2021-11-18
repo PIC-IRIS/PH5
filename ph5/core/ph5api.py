@@ -270,7 +270,7 @@ class PH5(experiment.ExperimentGroup):
               returns a list of channels for this station
         '''
         try:
-            self.read_array_t(array)
+            # self.read_array_t(array)
             chans = sorted(self.Array_t[array]['byid'][station].keys())
             return chans
         except Exception:
