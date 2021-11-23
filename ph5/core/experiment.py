@@ -469,10 +469,10 @@ class SortsGroup:
                              name,
                              columns.Event)
 
-        self.ph5_t_event = e
+        self.ph5_t_event[name] = e
 
         columns.add_reference('/Experiment_g/Sorts_g/' +
-                              name, self.ph5_t_event)
+                              name, e)
 
         return e
 
@@ -486,10 +486,10 @@ class SortsGroup:
                              name,
                              columns.Array)
 
-        self.ph5_t_array = a
+        self.ph5_t_array[name] = a
 
         columns.add_reference('/Experiment_g/Sorts_g/' +
-                              name, self.ph5_t_array)
+                              name, a)
 
         return a
 
