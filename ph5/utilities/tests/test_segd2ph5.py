@@ -171,7 +171,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
             for i in range(len(log.records)):
                 self.assertEqual(log.records[i].msg, logs[i])
 
-        ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
+        ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array['Array_t_001']
         self.assertEqual(len(ret), 3)   # 2 entries for chan1, 1 for chan2
 
         # combine array_c1[0] and overlapping array_c1[1]
@@ -224,7 +224,7 @@ class TestSegDtoPH5(TempDirTestCase, LogTestCase):
             infile=os.path.join(self.home,
                                 'ph5/test_data/segd/fairfield/3ch.fcnt'))
         segd2ph5.write_arrays(SD, array_t)
-        ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array
+        ret = segd2ph5.EX.ph5_g_sorts.ph5_t_array['Array_t_001']
 
         i = 0
         for r in ret.iterrows():
