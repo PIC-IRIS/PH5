@@ -57,12 +57,17 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
             "Writing table backup: %s" % os.path.join(self.tmpdir, 'Index_t'),
             logrecs[2].msg)
         self.assertEqual(
-            "Das 1X1111 and all entries related to it in Array_t_001, Index_t "
-            "have been removed from master file. To rollback, recover "
-            "Array_t_001, Index_t from kef files; use 'creare_ext' to add das "
-            "back to master. If the das was nuked before with old "
-            "'nuke_table' tool, you will need kef file created at that time "
-            "to recover the table.",
+            "Das 1X1111 and all entries related to it in and all entries "
+            "related to it in Array_t_001, Index_t  have been removed from "
+            "master file.\nSteps to rollback:\n\t"
+            "+ Recover das info in index_t, array_t from backup kef files. "
+            "(If the das has been removed from the tables using other tool(s) "
+            "users need to find another way to recover those tables before "
+            "moving on to the next step.)\n\t"
+            "+ Use 'creare_ext' to add das back to master.\n\t"
+            "+ If the das was nuked before with old 'nuke_table' tool, "
+            "you will need das backup kef file created at that time to "
+            "recover the das table.",
             logrecs[3].msg
         )
 

@@ -14,8 +14,9 @@ import time
 
 from ph5.core import experiment, timedoy, columns
 import tabletokef as T2K
+from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = '2021.294'
+PROG_VERSION = '2021.336'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -160,6 +161,19 @@ def get_args():
     TRUNC = args.trunc
 
 
+def set_logger():
+    """
+    Setting logger's format and filehandler
+    """
+
+    # set filehandler
+    ch = logging.FileHandler("nuke_table.log")
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
+
 #
 # Initialize ph5 file
 #
@@ -221,6 +235,7 @@ def main():
         EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
     get_args()
+    set_logger()
     initialize_ph5()
     T2K.init_local()
     T2K.EX = EX
@@ -450,21 +465,22 @@ def main():
         external_path = dasGroups["Das_g_%s" % DAS]._v_pathname
         group_node = EX.ph5.get_node(external_path)
         group_node.remove()
+        rm_info = ""
         if rm_tables != []:
-            LOGGER.info(
-                "Das %s and all entries related to it in %s "
-                "have been removed from master file. To rollback, "
-                "recover %s from kef files; use 'creare_ext' to add das back "
-                "to master. If the das was nuked before with old 'nuke_table' "
-                "tool, you will need kef file created at that time to recover "
-                "the table." % (DAS, rm_tables_str, rm_tables_str))
-        else:
-            LOGGER.info(
-                "Das %s has been removed from master file. To rollback, "
-                "use 'creare_ext' to add das back to master. "
-                "If the das was nuked before with old 'nuke_table' tool, "
-                "you will need kef file created at that time "
-                "to recover the table." % DAS)
+            rm_info = ("and all entries related to it in %s "
+                       % rm_tables_str)
+
+        LOGGER.info(
+            "Das %s and all entries related to it in %s "
+            "have been removed from master file.\nSteps to rollback:"
+            "\n\t+ Recover das info in index_t, array_t from backup kef files."
+            " (If the das has been removed from the tables using other tool(s)"
+            " users need to find another way to recover those tables before "
+            "moving on to the next step.)"
+            "\n\t+ Use 'creare_ext' to add das back to master."
+            "\n\t+ If the das was nuked before with old 'nuke_table' "
+            "tool, you will need das backup kef file created at that time to "
+            "recover the das table." % (DAS, rm_info))
 
     EX.ph5close()
 
