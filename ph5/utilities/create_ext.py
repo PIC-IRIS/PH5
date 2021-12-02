@@ -8,10 +8,10 @@ import sys
 import logging
 import tables
 
-from ph5.core import ph5api
+from ph5.core import ph5api, experiment
 from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = '2021.294'
+PROG_VERSION = '2021.336'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -38,20 +38,27 @@ def get_args():
                         help="Create external link "
                              "/Experiment_g/Receivers_g/Das_g_[das].\n"
                              "Entries related to the Das in Array_t and "
-                             "Index_t are checked before link is created.",
+                             "Index_t are checked before link is created.\n"
+                             "(One of -m/--minifile or -s/--scan_mini is "
+                             "required)",
                         required=True)
 
-    parser.add_argument("-m", "--minifile",
-                        help="Minifile's name. Ex: miniPH5_00001.ph5\n"
-                             "Required to be in the same folder of master.ph5",
-                        required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-m", "--minifile",
+                       help="Minifile's name. Ex: miniPH5_00001.ph5\n"
+                            "Required to be in the same folder of master.ph5")
+    group.add_argument("-s", "--scan_mini", action='store_true',
+                       help="Scan through all minifiles in the given folder "
+                            "to find the one that contains the waveform of "
+                            "the das.")
 
     args = parser.parse_args()
     ph5 = args.ph5_file_prefix
     path = args.ph5_path
     das = args.das_g_
     mini = args.minifile
-    return ph5, path, das, mini
+    scan_mini = args.scan_mini
+    return ph5, path, das, mini, scan_mini
 
 
 def set_logger():
@@ -157,9 +164,48 @@ def create_ext_link(ph5obj, das, mini, ext_link):
                 "to check for consistency." % ext_link)
 
 
+def scan_folder_for_minifile(das, path):
+    """
+    Scan through all minifiles in the given folder to find the one that
+    contains the waveform of the das.
+    """
+    minifiles = [f for f in os.listdir(path)
+                 if f.startswith('mini') and f.endswith('.ph5')]
+    LOGGER.info("'create_ext' will look through the minifile in path '%s'. "
+                "If it gives 'Segmentation fault' at any file, that file "
+                "must be broken and need to be reloaded." % path)
+    for mini in minifiles:
+        if not os.path.isfile(os.path.join(path, mini)):
+            LOGGER.error("File %s is broken and can't be read.")
+            continue
+        LOGGER.info("Reading minifile: %s" % mini)
+        exrec = experiment.ExperimentGroup(nickname=mini, currentpath=path)
+        exrec.ph5open()
+        exrec.initgroup()
+        try:
+            exrec.ph5_g_receivers.ph5.get_node(
+                '/Experiment_g/Receivers_g/Das_g_%s' % das,
+                name='Das_t',
+                classname='Table')
+            exrec.ph5.close()
+            return mini
+        except tables.exceptions.NoSuchNodeError:
+            pass
+        exrec.ph5.close()
+
+
 def main():
-    ph5, path, das, mini = get_args()
+    ph5, path, das, mini, scan_mini = get_args()
     set_logger()
+    if scan_mini:
+        mini = scan_folder_for_minifile(das, path)
+        if mini is None:
+            LOGGER.error("DAS %s's waveform data can't be found in any of the "
+                         "minifiles in the given path: '%s'" % (das, path))
+        else:
+            LOGGER.info("Waveform data for DAS %s is found in '%s'" %
+                        (das, os.path.join(path, mini)))
+        return
     ph5obj = ph5api.PH5(path=path, nickname=ph5, editmode=True)
     LOGGER.info("create_ext {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))

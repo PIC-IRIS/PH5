@@ -145,10 +145,29 @@ class TestCreateExt(TempDirTestCase, LogTestCase):
                 log.setLevel(logging.ERROR)
                 create_ext.main()
                 self.assertEqual(
+                    log.records[0].msg,
                     "Minifile for Das 3X500 in index_t is miniPH5_00002.ph5 "
-                    "while the given minifile is miniPH5_00001.ph5.",
-                    log.records[0].msg)
+                    "while the given minifile is miniPH5_00001.ph5.")
         self.assertFalse(self.checkExtlink())
+
+    def test_scan_folder_for_minifile(self):
+        testargs = ['create_ext', '-n', 'master.ph5', '-D', '3X500', '-s']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                create_ext.main()
+                self.assertEqual(
+                    log.records[-1].msg,
+                    "Waveform data for DAS 3X500 is found in "
+                    "'./miniPH5_00001.ph5'")
+
+        testargs = ['create_ext', '-n', 'master.ph5', '-D', '3X501', '-s']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                create_ext.main()
+                self.assertEqual(
+                    log.records[-1].msg,
+                    "DAS 3X501's waveform data can't be found in any of the "
+                    "minifiles in the given path: '.'")
 
 
 if __name__ == "__main__":
