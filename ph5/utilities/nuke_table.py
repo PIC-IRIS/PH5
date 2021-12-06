@@ -472,15 +472,17 @@ def main():
 
         LOGGER.info(
             "Das %s and all entries related to it in %s "
-            "have been removed from master file.\nSteps to rollback:"
+            "have been removed from master file."
+            "\nTo rollback this deletion you have to follow the steps:"
             "\n\t+ Recover das info in index_t, array_t from backup kef files."
             " (If the das has been removed from the tables using other tool(s)"
             " users need to find another way to recover those tables before "
-            "moving on to the next step.)"
+            "moving on to the next step. Please see PIC data group PH5 "
+            "documentation on deleting and replacing tables if needed.)"
             "\n\t+ Use 'creare_ext' to add das back to master."
-            "\n\t+ If the das was nuked before with old 'nuke_table' "
-            "tool, you will need das backup kef file created at that time to "
-            "recover the das table." % (DAS, rm_info))
+            "\n\t+ If the das was nuked before with 'nuke_table' version less "
+            "than 2021.336, you will need das' backup kef file created at "
+            "that time to recover the das table." % (DAS, rm_info))
 
     EX.ph5close()
 
