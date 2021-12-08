@@ -9,13 +9,16 @@ import logging
 import os
 import time
 import re
-import numpy as np
 import math
+
+import numpy as np
 from pyproj import Geod
-from ph5.core import columns, experiment, timedoy
 from tables.exceptions import NoSuchNodeError
 
-PROG_VERSION = '2021.47'
+from ph5.core import columns, experiment, timedoy
+
+
+PROG_VERSION = '2021.322'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -270,7 +273,7 @@ class PH5(experiment.ExperimentGroup):
               returns a list of channels for this station
         '''
         try:
-            self.read_array_t(array)
+            # self.read_array_t(array)
             chans = sorted(self.Array_t[array]['byid'][station].keys())
             return chans
         except Exception:
