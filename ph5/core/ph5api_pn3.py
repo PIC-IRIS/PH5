@@ -3,22 +3,20 @@
 # Basic API for reading a family of ph5 files
 #
 # Steve Azevedo, March 2015
+# modified to work with pn3
 #
 
 import logging
 import os
 import time
 import re
-import math
-
 import numpy as np
+import math
 from pyproj import Geod
+from ph5.core import columns, experiment_pn3 as experiment, timedoy
 from tables.exceptions import NoSuchNodeError
 
-from ph5.core import columns, experiment, timedoy
-
-
-PROG_VERSION = '2021.322'
+PROG_VERSION = '2021.47'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -273,7 +271,7 @@ class PH5(experiment.ExperimentGroup):
               returns a list of channels for this station
         '''
         try:
-            # self.read_array_t(array)
+            self.read_array_t(array)
             chans = sorted(self.Array_t[array]['byid'][station].keys())
             return chans
         except Exception:
@@ -1375,11 +1373,7 @@ class PH5(experiment.ExperimentGroup):
                 stop_epoch=end,
                 sample_rate=sample_rate)
             if not das_t_t:
-                msg = ("No Das table found for %s chan %s sr %s"
-                       % (das, component, sample_rate))
-                if start is not None:
-                    msg += " in time [%s, %s]" % (start, end)
-                LOGGER.warning(msg)
+                LOGGER.warning("No Das table found for " + das)
                 return None, None
 
         if not das_t_t:

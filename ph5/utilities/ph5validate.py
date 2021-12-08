@@ -330,7 +330,7 @@ class PH5Validate(object):
         header = header % len(err)
         return [ValidationBlock(heading=header, error=err)]
 
-    def check_station_completeness(self, station):
+    def check_station_completeness(self, station, array_name):
         """
         Checks that the following are present in Experiment_t:
           #### STATION LEVEL CHECKS
@@ -471,7 +471,8 @@ class PH5Validate(object):
                          "You may need to reload the raw "
                          "data for this station."
                          .format(str(das_serial)))
-        dt = self.das_time[(das_serial, channel_id, sample_rate)]
+        dt = self.das_time[(
+            das_serial, array_name, channel_id, sample_rate)]
         # add bound_errors if applicable
         if deploy_time == dt['min_deploy_time'][0]:
             try:
@@ -479,7 +480,7 @@ class PH5Validate(object):
             except IndexError:
                 pass
 
-        das_time_list = copy.copy(dt['time_windows'])
+        das_time_list = copy.deepcopy(dt['time_windows'])
 
         # check for duplicates:
         item = (deploy_time, pickup_time, station_id)
@@ -492,15 +493,24 @@ class PH5Validate(object):
 
         index = das_time_list.index((deploy_time, pickup_time, station_id))
 
-        overlaps = []
+        overlap_stations = []
+        overlap_entries = []
         # check if there is any overlap time for this das
         for t in das_time_list:
             if ((t[0] <= deploy_time < t[1]) or (t[0] < pickup_time <= t[1])):
-                overlaps.append(t[2])
+                overlap_stations.append(t[2])
+                overlap_entries.append(t)
 
-        if len(overlaps) > 1:
+        # remove overlaped windows times to use current deploy, pickup
+        if len(overlap_stations) > 1:
+            for t in overlap_entries:
+                das_time_list = list(filter((t).__ne__, x))
+            das_time_list += [(deploy_time, pickup_time)]
+            das_time_list.sort()
+
             error.append("Overlap time on station(s): %s" %
-                         ", ".join(overlaps))
+                         ", ".join(overlap_stations))
+            index = das_time_list.index((deploy_time, pickup_time))
 
         try:
             # don't need to read das_t because it will be read in get_extent
@@ -515,11 +525,7 @@ class PH5Validate(object):
                     # -- check data from current deploy time to
                     # next deploy time -1 (-1 to avoid include next deploy time
                     check_end = das_time_list[index+1][0] - 1
-                i = 1
-                # while loop to avoid using overlaping row
-                while check_end < check_start:
-                    i += 1
-                    check_end = das_time_list[index+i][0] - 1
+
                 try:
                     # clear das to make sure get_extent consider channel & sr
                     self.ph5.forget_das_t(das_serial)
@@ -576,7 +582,7 @@ class PH5Validate(object):
     def analyze_time(self):
         """
         Analyze the array table to create dictionary self.das_time with key
-        is a set of (das, channel, sample_rate)
+        is a set of (das, array, channel, sample_rate)
         Each item's value includes
         * time_windows: a deploy-time-sorted list of all time windows
         of stations that match its key
@@ -600,7 +606,7 @@ class PH5Validate(object):
                         d = stat['das/serial_number_s']
                         c = stat['channel_number_i']
                         spr = stat['sample_rate_i']
-                        key = (d, c, spr)
+                        key = (d, array_name, c, spr)
                         if key not in self.das_time.keys():
                             self.das_time[key] = {'time_windows': []}
                         self.das_time[key]['time_windows'].append(
@@ -611,7 +617,7 @@ class PH5Validate(object):
         for key in self.das_time.keys():
             dt = self.das_time[key]
             dt['time_windows'].sort()
-            d, c, spr = key
+            d, a, c, spr = key
             dt['min_deploy_time'] = [dt['time_windows'][0][0]]
             dt['max_pickup_time'] = [max([t[1] for t in dt['time_windows']])]
             # look for data outside time border of each set
@@ -683,7 +689,8 @@ class PH5Validate(object):
                                          .format(str(station_id),
                                                  str(channel_id)))
                             info, warning, error = \
-                                self.check_station_completeness(station)
+                                self.check_station_completeness(
+                                    station, array_name)
 
                             check_info = validation.check_response_info(
                                 resp_info,
@@ -916,29 +923,29 @@ def get_args():
 
 
 def main():
-    try:
-        args = get_args()
-        ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
-        ph5validate = PH5Validate(ph5API_object,
-                                  args.ph5path)
-        validation_blocks = []
-        validation_blocks.extend(ph5validate.check_experiment_t())
-        validation_blocks.extend(ph5validate.check_array_t())
-        validation_blocks.extend(ph5validate.check_response_t())
-        validation_blocks.extend(ph5validate.check_event_t())
-        with open(args.outfile, "w") as log_file:
-            for vb in validation_blocks:
-                vb.write_to_log(log_file,
-                                args.level)
-        ph5API_object.close()
-        sys.stdout.write("\nWarnings, Errors and suggestions "
-                         "written to logfile: %s\n" % args.outfile)
-    except ph5api.APIError as err:
-        LOGGER.error(err)
-    except PH5ValidateException as err:
-        LOGGER.error(err)
-    except Exception as e:
-        LOGGER.error(e)
+    # try:
+    args = get_args()
+    ph5API_object = ph5api.PH5(path=args.ph5path, nickname=args.nickname)
+    ph5validate = PH5Validate(ph5API_object,
+                              args.ph5path)
+    validation_blocks = []
+    validation_blocks.extend(ph5validate.check_experiment_t())
+    validation_blocks.extend(ph5validate.check_array_t())
+    validation_blocks.extend(ph5validate.check_response_t())
+    validation_blocks.extend(ph5validate.check_event_t())
+    with open(args.outfile, "w") as log_file:
+        for vb in validation_blocks:
+            vb.write_to_log(log_file,
+                            args.level)
+    ph5API_object.close()
+    sys.stdout.write("\nWarnings, Errors and suggestions "
+                     "written to logfile: %s\n" % args.outfile)
+    # except ph5api.APIError as err:
+    #     LOGGER.error(err)
+    # except PH5ValidateException as err:
+    #     LOGGER.error(err)
+    # except Exception as e:
+    #     LOGGER.error(e)
 
 
 if __name__ == '__main__':

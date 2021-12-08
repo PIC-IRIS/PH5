@@ -1,0 +1,3 @@
+sensor/model_s=L28
+sensor/manufacturer_s=Sercel
+das/model_s=rt125

@@ -1,0 +1,488 @@
+#	remove all entries related to das 3X500
+#	
+#
+#   Table row 1
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:00:30 2019
+	end_time/epoch_l=1562256030
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:00:00 2019
+	start_time/epoch_l=1562256000
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 2
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:01:00 2019
+	end_time/epoch_l=1562256060
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:00:30 2019
+	start_time/epoch_l=1562256030
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 3
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:01:30 2019
+	end_time/epoch_l=1562256090
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:01:00 2019
+	start_time/epoch_l=1562256060
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 4
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:00:30 2019
+	end_time/epoch_l=1562256030
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:00:00 2019
+	start_time/epoch_l=1562256000
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 5
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:01:00 2019
+	end_time/epoch_l=1562256060
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:00:30 2019
+	start_time/epoch_l=1562256030
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 6
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:01:30 2019
+	end_time/epoch_l=1562256090
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:01:00 2019
+	start_time/epoch_l=1562256060
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 7
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:00:30 2019
+	end_time/epoch_l=1562256030
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:00:00 2019
+	start_time/epoch_l=1562256000
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 8
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:01:00 2019
+	end_time/epoch_l=1562256060
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:00:30 2019
+	start_time/epoch_l=1562256030
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 9
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Jul  4 16:01:30 2019
+	end_time/epoch_l=1562256090
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Jul  4 16:01:00 2019
+	start_time/epoch_l=1562256060
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 10
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:00:30 2019
+	end_time/epoch_l=1564675230
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:00:00 2019
+	start_time/epoch_l=1564675200
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 11
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:01:00 2019
+	end_time/epoch_l=1564675260
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:00:30 2019
+	start_time/epoch_l=1564675230
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 12
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:01:30 2019
+	end_time/epoch_l=1564675290
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:01:00 2019
+	start_time/epoch_l=1564675260
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 13
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:00:30 2019
+	end_time/epoch_l=1564675230
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:00:00 2019
+	start_time/epoch_l=1564675200
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 14
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:01:00 2019
+	end_time/epoch_l=1564675260
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:00:30 2019
+	start_time/epoch_l=1564675230
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 15
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:01:30 2019
+	end_time/epoch_l=1564675290
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:01:00 2019
+	start_time/epoch_l=1564675260
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 16
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:00:30 2019
+	end_time/epoch_l=1564675230
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:00:00 2019
+	start_time/epoch_l=1564675200
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 17
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:01:00 2019
+	end_time/epoch_l=1564675260
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:00:30 2019
+	start_time/epoch_l=1564675230
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 18
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Thu Aug  1 16:01:30 2019
+	end_time/epoch_l=1564675290
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Thu Aug  1 16:01:00 2019
+	start_time/epoch_l=1564675260
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 19
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:00:30 2019
+	end_time/epoch_l=1568563230
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:00:00 2019
+	start_time/epoch_l=1568563200
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 20
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:01:00 2019
+	end_time/epoch_l=1568563260
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:00:30 2019
+	start_time/epoch_l=1568563230
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 21
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:01:30 2019
+	end_time/epoch_l=1568563290
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:01:00 2019
+	start_time/epoch_l=1568563260
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 22
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:00:30 2019
+	end_time/epoch_l=1568563230
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:00:00 2019
+	start_time/epoch_l=1568563200
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 23
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:01:00 2019
+	end_time/epoch_l=1568563260
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:00:30 2019
+	start_time/epoch_l=1568563230
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 24
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:01:30 2019
+	end_time/epoch_l=1568563290
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:01:00 2019
+	start_time/epoch_l=1568563260
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 25
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:00:30 2019
+	end_time/epoch_l=1568563230
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:00:00 2019
+	start_time/epoch_l=1568563200
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 26
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:01:00 2019
+	end_time/epoch_l=1568563260
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:00:30 2019
+	start_time/epoch_l=1568563230
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH
+
+#   Table row 27
+/Experiment_g/Receivers_g/Index_t
+	end_time/ascii_s=Sun Sep 15 16:01:30 2019
+	end_time/epoch_l=1568563290
+	end_time/micro_seconds_i=329998
+	end_time/type_s=BOTH
+	external_file_name_s=./miniPH5_00001.ph5
+	hdf5_path_s=/Experiment_g/Receivers_g/Das_g_1X1111
+	serial_number_s=1X1111
+	start_time/ascii_s=Sun Sep 15 16:01:00 2019
+	start_time/epoch_l=1568563260
+	start_time/micro_seconds_i=329998
+	start_time/type_s=BOTH
+	time_stamp/ascii_s=Tue Oct 26 21:18:02 2021
+	time_stamp/epoch_l=1635283082
+	time_stamp/micro_seconds_i=0
+	time_stamp/type_s=BOTH

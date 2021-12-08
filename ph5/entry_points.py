@@ -255,6 +255,11 @@ class CommandList():
                            'Generate data_description.txt '
                            'and/or data_request_key.txt.',
                            type=EntryPointTypes.ALL),
+                EntryPoint('correctwpn3',
+                           'ph5.utilities.correct_w_pn3:main',
+                           "Correct recreate pn4's array_t, index_t, "
+                           "das data with info from pn3.",
+                           type=EntryPointTypes.ALL),
                 EntryPoint('ph5toevt',
                            'ph5.clients.ph5toevt:main',
                            'Extract events from a ph5 archive, '
