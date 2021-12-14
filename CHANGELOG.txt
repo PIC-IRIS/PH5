@@ -124,7 +124,8 @@ ph5.core.ph5api
  * skip ph5api cut traces that return no data. logic previously embedded in code but line 1302 is duplicated onto 1287 to prevent error from being thrown
  * fix ph5api cut sometimes returns too many samples (issue #298)
  * fix for get_availability returning incomplete results
-  * fix query_das_t to throw error is sample_rate_multiplier_is=0 or is missing
+ * fix query_das_t to throw error is sample_rate_multiplier_is=0 or is missing
+ * Remove the call to read_array_t() channels() to optimize geo_kef_gen
 ph5.entry_points
  * creates a dictionary, keys are names of scripts,
       values are (1) simple description,

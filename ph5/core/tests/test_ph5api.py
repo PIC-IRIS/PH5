@@ -1115,6 +1115,8 @@ class TestPH5API(LogTestCase):
                          times[0])
 
     def test_channels(self):
+        # add read_array_t() bc commented it out in channels()
+        self.ph5API_object.read_array_t('Array_t_001')
         # should give 3 channels
         chans = self.ph5API_object.channels(
             'Array_t_001',
@@ -1122,6 +1124,7 @@ class TestPH5API(LogTestCase):
         self.assertEqual(3, len(chans))
         self.assertEqual([1, 2, 3], chans)
 
+        self.ph5API_object.read_array_t('Array_t_004')
         # should give 1 channels
         chans = self.ph5API_object.channels(
             'Array_t_004',
