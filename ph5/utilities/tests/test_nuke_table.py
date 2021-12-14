@@ -47,15 +47,15 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
         self.assertEqual(
             'Das_t for 1X1111 is empty which may result from deleting das '
             'using the old tool.',
-            logrecs[0].msg
+            logrecs[2].msg
         )
         self.assertIn(
             "Writing table backup: %s" % os.path.join(self.tmpdir,
                                                       'Array_t_001'),
-            logrecs[1].msg)
+            logrecs[3].msg)
         self.assertIn(
             "Writing table backup: %s" % os.path.join(self.tmpdir, 'Index_t'),
-            logrecs[2].msg)
+            logrecs[4].msg)
         self.assertEqual(
             "Das 1X1111 and all entries related to it in and all entries "
             "related to it in Array_t_001, Index_t  have been removed from "
@@ -70,7 +70,7 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
             "+ If the das was nuked before with 'nuke_table' version less "
             "than 2021.336, you will need das' backup kef file created at "
             "that time to recover the das table.",
-            logrecs[3].msg
+            logrecs[5].msg
         )
 
         # delete one more time to see warning Das_t not found

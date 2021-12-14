@@ -239,7 +239,8 @@ def main():
     initialize_ph5()
     T2K.init_local()
     T2K.EX = EX
-
+    LOGGER.info("delete_table {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
     # /Experiment_g/Experiment_t
     if EXPERIMENT_TABLE:
         table_type = 'Experiment_t'
