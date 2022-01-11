@@ -76,6 +76,8 @@ ph5.utilities.ph5validate
  * detecting repeated stations
  * move checking for location errors and warnings to validation
  * correct logging to be the same as other tools
+ * modify checking limit for station id to [0, 32767], event id to [0, 2147483647];
+ * remove error 'No Event location/Z/value_d value found.'
 ph5.utilities.test.test_ph5validate
  * unittest for ph5validate
 ph5.utilities.sort_kef_gen.py
