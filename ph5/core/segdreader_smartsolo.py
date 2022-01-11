@@ -158,9 +158,9 @@ class Reader ():
         """
         # NEW FORMAT: ingeger is a signed one
         if integer < 0:
-            degree_str = "%.3f" % (integer - fraction)
+            degree_str = integer - fraction
         else:
-            degree_str = "%.3f" % (integer + fraction)
+            degree_str = integer + fraction
         return degree_str
 
     def process_general_headers(self):
