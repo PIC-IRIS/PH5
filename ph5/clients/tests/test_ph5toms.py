@@ -7,6 +7,7 @@ import copy
 import os
 import sys
 import logging
+import struct
 
 from mock import patch
 from testfixtures import LogCapture
@@ -37,6 +38,39 @@ def get_restricted_request_testcase(st, et):
     return RestrictedRequest(network="8A", station="1001",
                              location="", channel="EPZ",
                              starttime=st, endtime=et)
+
+
+class TestPH5toMSeed_SAC(LogTestCase, TempDirTestCase):
+
+    def test_SAC_header(self):
+        """
+        Tests that the SAC header has a 90 degree incidence angle (CMPINC)
+        off of the vertical axis master.ph5 with a 0 degree incidence angle
+        off of the horizontal axis
+        """
+        # TODO: Add more test data with varying incidence angles,
+        # and their expected results.
+        ph5path = os.path.join(self.home, 'ph5/test_data/ph5/availability/')
+        sac_file = 'sac_test/8H.10075..GH1.2012-08-27T23.01.00.sac'
+        testargs = [
+            'ph5toms',
+            '-n', 'master.ph5',
+            '-o', 'sac_test',
+            '-p', ph5path,
+            '-f', 'SAC']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.ERROR)
+                ph5toms.main()
+        self.assertTrue(os.path.exists(sac_file))
+        with open(sac_file, 'rb') as fp:
+            bytestr = fp.read()
+        # CMPINC at word offset 58 (byte 232) in SAC header
+        # 32-bit float, so slice 4 bytes
+        # unpack into a float, should be equal to 90 in SAC header
+        # since the original has dip of 0 off of the horizontal axis
+        dip = struct.unpack('f', bytestr[232:236])[0]
+        self.assertAlmostEqual(dip, 90.0)
 
 
 class TestPH5toMSeed(unittest.TestCase):

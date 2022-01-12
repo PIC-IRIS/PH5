@@ -602,6 +602,13 @@ class PH5toMSeed(object):
                         self.ph5.get_receiver_t_by_n_i(stc.receiver_n_i)
                     azimuth = Receiver_t['orientation/azimuth/value_f']
                     dip = Receiver_t['orientation/dip/value_f']
+                    # dip is below horizontal axis
+                    # but SAC convention requires from vertical axis.
+                    dip = float(dip)
+                    # If mseed dip < 0, SAC should be be > 90 deg
+                    # If mseed dip > 0, SAC should be < 90 deg
+                    # Else dip = 90
+                    dip = 90 - dip
                     obspy_trace.stats.sac = {'kstnm': stc.seed_station,
                                              'kcmpnm': stc.seed_channel,
                                              'knetwk': stc.net_code,
