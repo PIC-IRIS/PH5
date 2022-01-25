@@ -605,10 +605,13 @@ class PH5toMSeed(object):
                     # dip is below horizontal axis
                     # but SAC convention requires from vertical axis.
                     dip = float(dip)
-                    # If mseed dip < 0, SAC should be be > 90 deg
-                    # If mseed dip > 0, SAC should be < 90 deg
-                    # Else dip = 90
-                    dip = 90 - dip
+                    if Receiver_t['orientation/description_s'] == 'Z':
+                        dip = 90 + dip
+                    else:
+                        # If mseed dip < 0, SAC should be be > 90 deg
+                        # If mseed dip > 0, SAC should be < 90 deg
+                        # Else dip = 90
+                        dip = 90 - dip
                     obspy_trace.stats.sac = {'kstnm': stc.seed_station,
                                              'kcmpnm': stc.seed_channel,
                                              'knetwk': stc.net_code,
