@@ -39,6 +39,7 @@ jobs:
       run: |
         source activate ph5
         pip install -e .
+        pip install flake8
         conda list
         python setup.py develop
 
