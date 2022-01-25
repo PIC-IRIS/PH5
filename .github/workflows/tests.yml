@@ -46,8 +46,9 @@ jobs:
       run: |
         source activate ph5
         pip install -e . 
-        conda list
-        python setup.py develop
+        ph5 -a
+        bash create_ph5.sh
+        python runtests.py
 
     - name: Run Tests
       shell: bash
