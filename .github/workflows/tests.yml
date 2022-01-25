@@ -33,13 +33,13 @@ jobs:
         conda config --add channels conda-forge
         conda config --set restore_free_channel true
         conda env update --name ph5 --file environment.yml
-        
+        conda install flake8
+
     - name: Install Our Package
       shell: bash
       run: |
         source activate ph5
         pip install -e .
-        pip install flake8
         conda list
         python setup.py develop
 
