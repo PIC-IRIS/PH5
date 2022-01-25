@@ -39,13 +39,14 @@ jobs:
       shell: bash
       run: |
         source activate ph5
-        pip install -e .
+        pip install -e ${{github.repository}} 
         conda list
         python setup.py develop
 
     - name: Run Tests
       shell: bash
       run: |
+
         flake8 ph5
         pyflakes ph5
         bash create_ph5.sh
