@@ -39,7 +39,7 @@ jobs:
       shell: bash
       run: |
         source activate ph5
-        pip install -e ${{github.repository}} 
+        pip install -e . 
         conda list
         python setup.py develop
 
