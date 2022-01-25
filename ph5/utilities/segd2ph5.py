@@ -851,15 +851,15 @@ def process_traces(rh, th, tr):
         p_array_t['sensor/model_s'] = 'GS-30CT'
         p_array_t[
             'sensor/notes_s'] = "manufacturer and model not read from file."
-        if TSPF:
-            p_array_t[
-                'location/description_s'] = "Converted from Texas State Plane\
-                 FIPS zone 4202"
-        elif UTM:
-            p_array_t[
-                'location/description_s'] = "Converted from UTM Zone {0}"\
-                .format(
-                UTM)
+        if SD.manufacturer == 'FairfieldNodal':
+            if TSPF:
+                p_array_t['location/description_s'] = (
+                    "Converted from Texas State Plane FIPS zone 4202")
+            elif UTM:
+                p_array_t['location/description_s'] = (
+                    "Converted from UTM Zone {0}".format(UTM))
+            else:
+                p_array_t['location/description_s'] = "Read from SEG-D as is."
         else:
             p_array_t['location/description_s'] = "Read from SEG-D as is."
 
@@ -966,9 +966,8 @@ def process_traces(rh, th, tr):
     process_trace_header()
 
 
-def write_arrays(Array_t):
+def write_arrays(SD, Array_t):
     '''   Write /Experiment_g/Sorts_g/Array_t_xxx   '''
-
     lines = sorted(Array_t.keys())
     #   Loop through arrays/lines
     for line in lines:
@@ -977,6 +976,9 @@ def write_arrays(Array_t):
         das_list = sorted(Array_t[line].keys())
         #   Loop through das_list
         for das in das_list:
+            if SD.manufacturer == 'SmartSolo':
+                Array_t[line][das] = combine_array_entries(
+                    name, Array_t[line][das])
             dtimes = sorted(Array_t[line][das].keys())
             #   Loop through deploying times
             for dtime in dtimes:
@@ -988,6 +990,63 @@ def write_arrays(Array_t):
                             columns.populate(a, array_t)
                     except Exception as e:
                         print(e.message)
+
+
+def combine_array_entries(aName, aOfDas):
+    """
+    :para aName: "Array_t_xxx" to add to warning message
+    :param aOfDas: {dtime: {c:[entry]}} in which each dtime is an entry
+    :return aOnDeployTimes which has the same structure of aOfDas but the
+        times are combined if gap less than 2m
+    """
+    aOnChannels = {}  # {c_i: list of entries according to dtimes' order}
+    dtimes = sorted(aOfDas.keys())
+    for dtime in dtimes:
+        chan_sets = sorted(aOfDas[dtime].keys())
+        for c in chan_sets:
+            if c not in aOnChannels:
+                aOnChannels[c] = []
+            for entry in aOfDas[dtime][c]:
+                aOnChannels[c].append(entry)
+
+    # same structure of aOfDas but the times are combined if deploy time of
+    # the current entry is exactly the same as the pickup time of the previous
+    # one:    # {dtime: {c:[combined entry] } }
+    aOnDeployTimes = {}
+    for c in aOnChannels:
+        prevPickupTime = 0
+        currDeployTime = 0
+        dEntries = aOnChannels[c]
+        for d in dEntries:
+            deployTime = d['deploy_time/epoch_l']
+            if deployTime > prevPickupTime:
+                currDeployTime = deployTime
+                if deployTime not in aOnDeployTimes:
+                    aOnDeployTimes[deployTime] = {}
+                if c not in aOnDeployTimes[deployTime]:
+                    aOnDeployTimes[deployTime][c] = [d]
+            else:
+                uEntry = aOnDeployTimes[currDeployTime][c][0]
+                msg = "Das %s - %s - station %s - chan %s: " % (
+                    d['das/serial_number_s'], aName,
+                    d['id_s'], d['channel_number_i'])
+                msg += "Combine %s"
+                msg += ("entry [%s - %s] into previous entry [%s - %s]" %
+                        (d['deploy_time/ascii_s'],
+                         d['pickup_time/ascii_s'],
+                         uEntry['deploy_time/ascii_s'],
+                         uEntry['pickup_time/ascii_s']))
+                descr = ""
+                if deployTime < prevPickupTime:
+                    descr = "overlapping "
+                msg %= descr
+                LOGGER.warning(msg)
+                uEntry['pickup_time/epoch_l'] = d['pickup_time/epoch_l']
+                uEntry['pickup_time/ascii_s'] = d['pickup_time/ascii_s']
+                uEntry['pickup_time/micro_seconds_i'] = d['pickup_time/'
+                                                          'micro_seconds_i']
+            prevPickupTime = d['pickup_time/epoch_l']
+    return aOnDeployTimes
 
 
 def writeINDEX():
@@ -1353,7 +1412,7 @@ def main():
                     log_array.append(line)
 
             LOGGER.info(":<Finished>: {0}\n".format(F))
-        write_arrays(ARRAY_T)
+        write_arrays(SD, ARRAY_T)
         seconds = time.time() - then
 
         try:

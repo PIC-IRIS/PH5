@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-PROG_VERSION = '2021.47'
+PROG_VERSION = '2021.160'
 LOGGER = logging.getLogger(__name__)
 ZLIBCOMP = 6
 
@@ -39,6 +39,10 @@ def check_srm_valid(rows, keys, tablename, ignore_srm=False):
     :param tablename: name of the table (string)
     :param ignore_srm: flag to ignore checking srm when it is True (boolean)
     """
+    if keys is None:
+        LOGGER.warning("Table %s is empty. Use nuke_table > 2019.037 to "
+                       "remove the table" % tablename)
+        return rows, keys, tablename, ignore_srm
     if ignore_srm:
         return
     if 'sample_rate_multiplier_i' not in keys:
@@ -342,6 +346,13 @@ class SortsGroup:
                 '/Experiment_g/Sorts_g',
                 name=array_name,
                 classname='Table')
+            self.ph5_t_array[array_name] = node
+        except IndexError:
+            node = self.ph5.get_node(
+                '/Experiment_g/Sorts_g',
+                name=array_name,
+                classname='Table')
+            self.ph5_t_array = {}
             self.ph5_t_array[array_name] = node
 
         ret, keys = read_table(node)
