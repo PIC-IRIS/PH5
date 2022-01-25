@@ -36,10 +36,10 @@ jobs:
         conda install flake8
 
     - name: Check Directory
-       shell: bash
-       run: |
-         ls -a
-         pwd
+      shell: bash
+      run: |
+        ls -a
+        pwd
     
     - name: Install Our Package
       shell: bash
