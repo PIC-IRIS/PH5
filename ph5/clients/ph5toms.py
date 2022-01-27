@@ -608,9 +608,6 @@ class PH5toMSeed(object):
                     if Receiver_t['orientation/description_s'] == 'Z':
                         dip = 90 + dip
                     else:
-                        # If mseed dip < 0, SAC should be be > 90 deg
-                        # If mseed dip > 0, SAC should be < 90 deg
-                        # Else dip = 90
                         dip = 90 - dip
                     obspy_trace.stats.sac = {'kstnm': stc.seed_station,
                                              'kcmpnm': stc.seed_channel,
