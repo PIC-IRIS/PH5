@@ -469,23 +469,26 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
         station['id_s'] = '33a33'
         inf, warn, err = self.ph5validate.check_station_completeness(station)
         self.assertIn("Station ID '33a33' not a whole number "
-                      "between 0 and 65535.",
+                      "between 0 and 32767.",
                       err)
         # id_s not in range [0,65535] => error
         das_time[('9EEF', 1, 100)]['time_windows'][0] = \
             (1463568480, 1463568540, '65536')
         station['id_s'] = '65536'
         inf, warn, err = self.ph5validate.check_station_completeness(station)
-        self.assertIn("Station ID '65536' not between 0 and 65535.",
+        # no more old error
+        self.assertNotIn("Station ID '65536' not between 0 and 65535.",
+                         err)
+        self.assertIn("Station ID '65536' not between 0 and 32767.",
                       err)
-        # id_s in range [32768, 65534] => warning
+        # id_s in range [32768, 65534] => no more old warning
         das_time[('9EEF', 1, 100)]['time_windows'][0] = \
             (1463568480, 1463568540, '33333')
         station['id_s'] = '33333'
         inf, warn, err = self.ph5validate.check_station_completeness(station)
-        self.assertIn("Station ID '33333' is more than 32767. "
-                      "Not compatible with SEGY revision 1.",
-                      warn)
+        self.assertNotIn("Station ID '33333' is more than 32767. "
+                         "Not compatible with SEGY revision 1.",
+                         warn)
 
         # sample_rate=0 => warning
         das_time[('12183', 1, 0)] = das_time[('12183', 1, 500)]
@@ -523,24 +526,37 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
         event['id_s'] = '7a001'
         inf, warn, err = self.ph5validate.check_event_t_completeness(event)
         self.assertIn("Event ID '7a001' not a whole "
-                      "number between 0 and 65535.",
+                      "number between 0 and 2147483647.",
                       err)
-        # id_s isn't in range [0, 65535] => error
+        # id_s isn't in range [0, 65535] => no more old error
         event['id_s'] = '65536'
         inf, warn, err = self.ph5validate.check_event_t_completeness(event)
-        self.assertIn("Event ID '65536' not between 0 and 65535.",
-                      err)
-        # id_s in range [32768, 65534] => warning
+        self.assertNotIn("Event ID '65536' not between 0 and 65535.",
+                         err)
+        # id_s in range [32768, 65534] => no more old warning
         event['id_s'] = '32769'
         inf, warn, err = self.ph5validate.check_event_t_completeness(event)
-        self.assertIn("Event ID '32769' is more than 32767. "
-                      "Not compatible with SEGY revision 1.",
-                      warn)
+        self.assertNotIn("Event ID '32769' is more than 32767. "
+                         "Not compatible with SEGY revision 1.",
+                         warn)
+
+        # id_s isn't in range [0, 2147483647] => error
+        event['id_s'] = '-1'
+        inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+        self.assertIn("Event ID '-1' not between 0 and 2147483647.",
+                      err)
+
+        # id_s isn't in range [0, 2147483647] => error
+        event['id_s'] = '2147483648'
+        inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+        self.assertIn("Event ID '2147483648' not between 0 and 2147483647.",
+                      err)
 
         # no log for location/coordinate_system_s, projection_s, ellipsoid_s,
         # ellipsoid_s
         # warning for location/X,Y,Z/units_s
         event['id_s'] = '7001'
+        event['location/Z/value_d'] = 0
         event['location/coordinate_system_s'] = ''
         event['location/projection_s'] = ''
         event['location/ellipsoid_s'] = ''
@@ -549,14 +565,14 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
         event['location/Y/units_s'] = ''
         event['location/Z/units_s'] = ''
         inf, warn, err = self.ph5validate.check_event_t_completeness(event)
-        self.assertEqual((inf, warn, err),
-                         ([],
-                          ['Event description is missing.',
-                           'No Event location/X/units_s value found.',
-                           'No Event location/Y/units_s value found.',
-                           'No Event location/Z/units_s value found.'],
-                          [])
-                         )
+        self.assertEqual(warn,
+                         ['Event description is missing.',
+                          'No Event location/X/units_s value found.',
+                          'No Event location/Y/units_s value found.',
+                          'No Event location/Z/units_s value found.'])
+
+        # remove error for location/Z/value_d = 0
+        self.assertNotIn('No Event location/Z/value_d value found.', err)
 
 
 class TestPh5Validate_noEvent(TempDirTestCase, LogTestCase):

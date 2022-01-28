@@ -373,16 +373,12 @@ class PH5Validate(object):
         # STATION LEVEL CHECKS CHECKS
         station_id = station['id_s']
         try:
-            if not (0 <= int(station_id) <= 65535):
-                error.append("Station ID '%s' not between 0 and 65535."
+            if not (0 <= int(station_id) <= 32767):
+                error.append("Station ID '%s' not between 0 and 32767."
                              % station_id)
-            elif int(station_id) > 32767:
-                warning.append("Station ID '%s' is more than 32767. "
-                               "Not compatible with SEGY revision 1."
-                               % station_id)
         except ValueError:
             error.append("Station ID '%s' not a whole "
-                         "number between 0 and 65535." % station_id)
+                         "number between 0 and 32767." % station_id)
 
         if not station['description_s']:
             warning.append("No station description found.")
@@ -757,17 +753,17 @@ class PH5Validate(object):
         if not event['id_s']:
             error.append("Event id is missing.")
         else:
+            # 2147483647
+            signed_int_4bytes_max = 2 ** (8 * 4 - 1) - 1
             try:
-                if not (0 <= int(event['id_s']) <= 65535):
-                    error.append("Event ID '%s' not between 0 and 65535."
-                                 % event['id_s'])
-                elif int(event['id_s']) > 32767:
-                    warning.append("Event ID '%s' is more than 32767. "
-                                   "Not compatible with SEGY revision 1."
-                                   % event['id_s'])
+                if not (0 <= int(event['id_s']) <= signed_int_4bytes_max):
+                    error.append("Event ID '%s' not between 0 and %s."
+                                 % (event['id_s'], signed_int_4bytes_max))
+
             except ValueError:
                 error.append("Event ID '%s' not a whole "
-                             "number between 0 and 65535." % event['id_s'])
+                             "number between 0 and %s."
+                             % (event['id_s'], signed_int_4bytes_max))
 
         if not event['description_s']:
             warning.append("Event description is missing.")
@@ -791,9 +787,6 @@ class PH5Validate(object):
             warning.append("No Event location/Y/units_s value "
                            "found.")
 
-        if not event['location/Z/value_d']:
-            error.append("No Event location/Z/value_d value "
-                         "found.")
         if event['location/Z/units_s'] in [None, '']:
             warning.append("No Event location/Z/units_s value "
                            "found.")
