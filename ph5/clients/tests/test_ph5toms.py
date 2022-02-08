@@ -10,6 +10,7 @@ import logging
 
 from mock import patch
 from testfixtures import LogCapture
+import obspy
 
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 from ph5.core import ph5api, experiment
@@ -37,6 +38,53 @@ def get_restricted_request_testcase(st, et):
     return RestrictedRequest(network="8A", station="1001",
                              location="", channel="EPZ",
                              starttime=st, endtime=et)
+
+
+class TestPH5toMSeed_SAC(LogTestCase, TempDirTestCase):
+
+    def test_SAC_header(self):
+        """
+        Tests SAC header's incidence angle (CMPINC)
+        channel 1: PMCINC = 90 - dip
+        channel 2: PNCINC = 90 - dip
+        channel Z: PNCINC = 90 + dip
+        """
+        ph5path = os.path.join(self.home, 'ph5/test_data/ph5')
+        sacpath = os.path.join(self.tmpdir, 'sac_test')
+
+        # get orientation/dip/value_f in ph5
+        # (receiver_table_n_i corresponding to channel 1/2/Z from array_t)
+        ph5API_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
+        Receiver_t = ph5API_object.get_receiver_t_by_n_i(1)
+        dip1 = Receiver_t['orientation/dip/value_f']
+        Receiver_t = ph5API_object.get_receiver_t_by_n_i(2)
+        dip2 = Receiver_t['orientation/dip/value_f']
+        Receiver_t = ph5API_object.get_receiver_t_by_n_i(0)
+        dipZ = Receiver_t['orientation/dip/value_f']
+        ph5API_object.close()
+
+        testargs = [
+            'ph5toms',
+            '-n', 'master.ph5',
+            '--station', '500',
+            '-o', 'sac_test',
+            '-p', ph5path,
+            '-f', 'SAC']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture():
+                ph5toms.main()
+
+        saclist = os.listdir(sacpath)
+        self.assertEqual(len(saclist), 6)
+        for f in saclist:
+            st = obspy.read(os.path.join(sacpath, f))
+            self.assertIn(st[0].stats['channel'], ['DP1', 'DP2', 'DPZ'])
+            if st[0].stats['channel'] == 'DP1':
+                self.assertEqual(st[0].stats['sac']['cmpinc'], 90 - dip1)
+            if st[0].stats['channel'] == 'DP2':
+                self.assertEqual(st[0].stats['sac']['cmpinc'], 90 - dip2)
+            if st[0].stats['channel'] == 'DPZ':
+                self.assertEqual(st[0].stats['sac']['cmpinc'], 90 + dipZ)
 
 
 class TestPH5toMSeed(unittest.TestCase):
