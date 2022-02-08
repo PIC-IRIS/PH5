@@ -95,7 +95,7 @@ initialize_ph5 -n master.ph5
 keftoph5 -n master.ph5 -k ../../../metadata/experiment.kef
 segdtoph5 -n master.ph5 -r ../../../segd/fairfield/1111.0.0.fcnt
 cp master.ph5 ../das/
-echo "y" | delete_table -n master.ph5 -D 1X1111
+echo "y" | delete_table -n master.ph5 -D 1X1111 --trunc
 keftoph5 -n master.ph5 -k ../../../metadata/Das_t_1X1111.0.0_SRM0.kef
 echo "y" | delete_table -n master.ph5 -A 1
 keftoph5 -n master.ph5 -k ../../../metadata/Array_t_001_SMR0.kef

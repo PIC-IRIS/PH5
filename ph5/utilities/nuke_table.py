@@ -11,10 +11,12 @@ import os
 import sys
 import logging
 import time
-from ph5.core import experiment, timedoy
-import tabletokef as T2K
 
-PROG_VERSION = '2019.037'
+from ph5.core import experiment, timedoy, columns
+import tabletokef as T2K
+from ph5 import LOGGING_FORMAT
+
+PROG_VERSION = '2021.336'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -33,12 +35,13 @@ def get_args():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
         EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE,\
-        INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE, NO_BACKUP
+        INDEX_TABLE, DAS_TABLE, TRUNC, M_INDEX_TABLE, NO_BACKUP
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.usage = ("delete_table --nickname ph5-file-prefix [options]")
+    parser.usage = ("delete_table/nuke_table --nickname ph5-file-prefix "
+                    "[options]")
 
     parser.description = ("Initialize a table in a ph5 file. Caution:"
                           "Deletes contents of table!\n\nVersion: {0}"
@@ -111,15 +114,22 @@ def get_args():
                         default=False,
                         help="Nuke /Experiment_g/Maps_g/Index_t.")
 
-    parser.add_argument("-D", "--Das_t", dest="das_t_", metavar="das",
-                        help="Nuke/Experiment_g/Receivers_g/Das_g_[das]/"
-                             "Das_t.")
+    parser.add_argument("-D", "--Das_g", dest="das_g_", metavar="das",
+                        help="-D flag only: Remove external link "
+                             "/Experiment_g/Receivers_g/Das_g_[das].\n"
+                             "Remove entries related to the Das in "
+                             "Array_t and Index_t")
+
+    parser.add_argument("--trunc", action='store_true', default=False,
+                        help="Use with -D/--Dag_g: Truncate Das table.")
 
     parser.add_argument("-T", "--Time_t", dest="time_t", action="store_true",
                         default=False,
                         help="Nuke /Experiment_g/Receivers_g/Time_t.")
 
     args = parser.parse_args()
+    if args.trunc and args.das_g_ is None:
+        parser.error('--trunc requires -D/--Das_g.')
 
     PH5 = args.ph5_file_prefix
     PATH = args.ph5_path
@@ -146,9 +156,23 @@ def get_args():
     RESPONSE_TABLE = args.response_t
     REPORT_TABLE = args.report_t
     RECEIVER_TABLE = args.receiver_t
-    DAS_TABLE = args.das_t_
+    DAS_TABLE = args.das_g_
     NO_BACKUP = args.no_backup
+    TRUNC = args.trunc
 
+
+def set_logger():
+    """
+    Setting logger's format and filehandler
+    """
+
+    # set filehandler
+    ch = logging.FileHandler("nuke_table.log")
+    ch.setLevel(logging.INFO)
+    # Add formatter
+    formatter = logging.Formatter(LOGGING_FORMAT)
+    ch.setFormatter(formatter)
+    LOGGER.addHandler(ch)
 
 #
 # Initialize ph5 file
@@ -207,14 +231,16 @@ def exclaim(n):
 
 
 def main():
-    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
+    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, TRUNC,\
         EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
     get_args()
+    set_logger()
     initialize_ph5()
     T2K.init_local()
     T2K.EX = EX
-
+    LOGGER.info("delete_table {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
     # /Experiment_g/Experiment_t
     if EXPERIMENT_TABLE:
         table_type = 'Experiment_t'
@@ -356,18 +382,109 @@ def main():
         backup(table_type, '/Experiment_g/Reports_g/Report_t', T2K.REPORT_T)
         EX.ph5_g_reports.nuke_report_t()
     if DAS_TABLE:
-        yon = raw_input(
-            "Are you sure you want to delete all data in Das_t for das {0}?"
-            " y/n ".format(DAS_TABLE))
-        if yon == 'y':
-            table_type = 'Das_t_{0}'.format(DAS_TABLE)
-            T2K.DAS_TABLE = DAS_TABLE
-            T2K.read_receivers(DAS_TABLE)
-            if DAS_TABLE in T2K.DAS_T:
-                backup(table_type,
-                       '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
-                           DAS_TABLE), T2K.DAS_T[DAS_TABLE])
-            EX.ph5_g_receivers.nuke_das_t(DAS_TABLE)
+        if TRUNC:
+            yon = raw_input(
+                "Are you sure you want to delete all data in Das_t for das {0}"
+                "?(y/n)".format(DAS_TABLE))
+            if yon == 'y':
+                table_type = 'Das_t_{0}'.format(DAS_TABLE)
+                T2K.DAS_TABLE = DAS_TABLE
+                T2K.read_receivers(DAS_TABLE)
+                if DAS_TABLE in T2K.DAS_T:
+                    backup(table_type,
+                           '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(
+                               DAS_TABLE), T2K.DAS_T[DAS_TABLE])
+                EX.ph5_g_receivers.truncate_das_t(DAS_TABLE)
+            return
+        DAS = DAS_TABLE
+        table_type = 'Das_t_{0}'.format(DAS)
+        T2K.DAS_TABLE = DAS
+        T2K.read_receivers(DAS, ignore_srm=True)
+        if DAS not in T2K.DAS_T:
+            LOGGER.warning("Das_t not found for %s" % DAS)
+            EX.ph5close()
+            return
+        # check if das_t is empty (b/c of the old way of das deletion)
+        if T2K.DAS_T[DAS].rows == []:
+            LOGGER.warning("Das_t for %s is empty which may result from "
+                           "deleting das using the old tool." % DAS)
+
+        # remove das-related-entries in array_t
+        rm_das_arrays = EX.ph5_g_sorts.get_rm_das_arrays(DAS)
+        rm_das_index = EX.ph5_g_receivers.get_rm_das_index_t(DAS)
+        rm_tables = rm_das_arrays.keys()
+        if rm_das_index['rows'] != rm_das_index['new_rows']:
+            rm_tables += ['Index_t']
+        rm_tables_str = ', '.join(rm_tables)
+        if rm_tables != []:
+            yon = raw_input(
+                "The following tables has entries related to das %s: %s.\n"
+                "To maintain consistency, those entries must be removed "
+                "along with removing the das.\n"
+                "Do you want to continue?(y/n)"
+                % (DAS, rm_tables_str))
+            if yon != 'y':
+                EX.ph5close()
+                return
+
+        if rm_das_arrays != {}:
+            for aname in rm_das_arrays:
+                rm_items = rm_das_arrays[aname]
+                table_type = aname
+                array_t = T2K.Rows_Keys(rm_items['rows'], rm_items['keys'])
+                anum = int(aname.replace("Array_t_", ""))
+                backup(
+                    aname,
+                    '/Experiment_g/Sorts_g/{0}'.format(aname),
+                    array_t)
+                EX.ph5_g_sorts.nuke_array_t(anum)
+                if rm_items['new_rows'] == []:
+                    LOGGER.warning("After removing the stations related to "
+                                   "das %s. %s is empty and removed."
+                                   % (DAS, aname))
+                else:
+                    a = EX.ph5_g_sorts.newArraySort(aname)
+                    for r in rm_items['new_rows']:
+                        columns.populate(a, r)
+
+        # remove das related entries in index_t
+        if rm_das_index['rows'] != rm_das_index['new_rows']:
+            table_type = 'Index_t'
+            T2K.read_index_table()
+            backup(table_type, '/Experiment_g/Receivers_g/Index_t',
+                   T2K.INDEX_T)
+            EX.ph5_g_receivers.nuke_index_t()
+            if rm_das_index == []:
+                LOGGER.warning("After removing all entries related to das %s."
+                               "Index_t is now empty." % DAS)
+            else:
+                for r in rm_das_index['new_rows']:
+                    EX.ph5_g_receivers.populateIndex_t(r)
+
+        # remove ext_link for das
+        dasGroups = EX.ph5_g_receivers.alldas_g()
+        external_path = dasGroups["Das_g_%s" % DAS]._v_pathname
+        group_node = EX.ph5.get_node(external_path)
+        group_node.remove()
+        rm_info = ""
+        if rm_tables != []:
+            rm_info = ("and all entries related to it in %s "
+                       % rm_tables_str)
+
+        LOGGER.info(
+            "Das %s and all entries related to it in %s "
+            "have been removed from master file."
+            "\nTo rollback this deletion you have to follow the steps:"
+            "\n\t+ Recover das info in index_t, array_t from backup kef files."
+            " (If the das has been removed from the tables using other tool(s)"
+            " users need to find another way to recover those tables before "
+            "moving on to the next step. Please see PIC data group PH5 "
+            "documentation on deleting and replacing tables if needed.)"
+            "\n\t+ Use 'creare_ext' to add das back to master."
+            "\n\t+ If the das was nuked before with 'nuke_table' version less "
+            "than 2021.336, you will need das' backup kef file created at "
+            "that time to recover the das table." % (DAS, rm_info))
+
     EX.ph5close()
 
 

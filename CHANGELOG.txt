@@ -46,6 +46,7 @@ ph5.core.experiment
  * fix fast offset_table reading (issue #280)
  * fix read_das and read_arrays to throw error is sample_rate_multiplier_is=0 or is missing
  * if table is empty, not try to check for sample_rate_multiplier_i, but give a warning message
+ * change function nuke_das_t to truncate_das_t
 ph5.clients.tests.test_ph5toms
  * fixed bug in stationCut call
 ph5.utilities.validation
@@ -148,6 +149,12 @@ ph5.utilities.validation
  * common functions for ph5validate and ph5tostationxml
  * functions for checking response filename, data, duplication
  * checking response_file_das_a following 2 formats: metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] and resp_load format [das_model]_[sr]_[srm]_[gain]. Each part in the format will be checked, except for [cha] because different channel codes can use the same response file.
+ph5.utilities.nuke_table
+ * change way to remove das from truncating Das_t to removing external link to das_t
+ * truncating Das_t can still be perform with flag --trunc
+ * set log for nuke_table
+ph5.utilities.create_ext
+ * create external link to a minifile for a das
 
 v4.1.2:
 ph5.utilities.ph5validate

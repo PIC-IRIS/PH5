@@ -39,12 +39,14 @@ def check_srm_valid(rows, keys, tablename, ignore_srm=False):
     :param tablename: name of the table (string)
     :param ignore_srm: flag to ignore checking srm when it is True (boolean)
     """
+    if ignore_srm:
+        return
+
     if keys is None:
         LOGGER.warning("Table %s is empty. Use nuke_table > 2019.037 to "
                        "remove the table" % tablename)
         return rows, keys, tablename, ignore_srm
-    if ignore_srm:
-        return
+
     if 'sample_rate_multiplier_i' not in keys:
         errmsg = ("%s has sample_rate_multiplier_i "
                   "missing. Please run fix_srm to fix "
@@ -467,10 +469,10 @@ class SortsGroup:
                              name,
                              columns.Event)
 
-        self.ph5_t_event = e
+        self.ph5_t_event[name] = e
 
         columns.add_reference('/Experiment_g/Sorts_g/' +
-                              name, self.ph5_t_event)
+                              name, e)
 
         return e
 
@@ -484,10 +486,10 @@ class SortsGroup:
                              name,
                              columns.Array)
 
-        self.ph5_t_array = a
+        self.ph5_t_array[name] = a
 
         columns.add_reference('/Experiment_g/Sorts_g/' +
-                              name, self.ph5_t_array)
+                              name, a)
 
         return a
 
@@ -664,6 +666,28 @@ class SortsGroup:
             return True
         except Exception:
             return False
+
+    def get_rm_das_arrays(self, das):
+        """
+        get all array with das in the entries, remove those entries in
+        'new_rows' returned
+        """
+        array_t_names = self.namesArray_t()
+        rm_das_arrays = {}
+        for aname in sorted(array_t_names):
+            rows, keys = self.read_arrays(aname)
+            rm_rows = []
+            for r in rows:
+                if r['das/serial_number_s'] == das:
+                    rm_rows.append(r)
+            if len(rm_rows) == 0:
+                continue
+            rm_das_arrays[aname] = {
+                'rows': rows,
+                'keys': keys,
+                'new_rows': [i for i in rows if i not in rm_rows]}
+
+        return rm_das_arrays
 
 
 class Data_Trace (object):
@@ -1154,13 +1178,24 @@ class ReceiversGroup:
         self.ph5_t_time.remove()
         self.initgroup()
 
-    def nuke_das_t(self, das):
+    def truncate_das_t(self, das):
         g = self.getdas_g(das)
         if not g:
             return False
         self.setcurrent(g)
         self.current_t_das.truncate(0)
         return True
+
+    def get_rm_das_index_t(self, das):
+        """
+        remove all index_t's entries with das and return it in 'new_rows'
+        """
+        rows, keys = self.read_index()
+        new_rows = []
+        for r in rows:
+            if r['serial_number_s'] != das:
+                new_rows.append(r)
+        return {'rows': rows, 'new_rows': new_rows}
 
 
 class ReportsGroup:
