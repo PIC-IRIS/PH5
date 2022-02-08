@@ -349,8 +349,8 @@ class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
         self.assertEqual(self.ph5object.Array_t_names, ['Array_t_001'])
         self.ph5object.read_array_t('Array_t_001')
         a = self.ph5object.Array_t['Array_t_001']['byid']['1'][2][0]
-        self.assertAlmostEqual(a['location/Y/value_d'], 19.421, 2)
-        self.assertAlmostEqual(a['location/X/value_d'], -155.291, 2)
+        self.assertEqual(a['location/Y/value_d'], 19.42083740234375)
+        self.assertEqual(a['location/X/value_d'], -155.2911834716797)
         self.assertEqual(a['das/manufacturer_s'], 'SmartSolo')
         self.assertEqual(a['das/serial_number_s'], '1X1')
         self.assertEqual(a['sensor/model_s'], 'GS-30CT')
