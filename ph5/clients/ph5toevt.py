@@ -171,6 +171,12 @@ def get_args():
                         dest="break_standard",
                         help="Force traces to be no longer than 2^15 samples.",
                         default=True)
+    parser.add_argument("-k", "--keep_overlap", action="store_true",
+                        dest="keep_overlap",
+                        help="By default, overlapped data will be removed from"
+                             "traces. The flag helps keeping overlap for"
+                             "references.",
+                        default=False)
     parser.add_argument("--debug", dest="debug",
                         action="store_true", default=False)
 
@@ -432,6 +438,7 @@ def gather(args, p5):
                     sf.set_cut_start_epoch(cut_start_fepoch)
                     sf.set_array_t(array_t[c][t])
 
+                    rm_overlap = True if not args.keep_overlap else False
                     # Cut trace
                     # Need to pad iff multiple traces
                     traces = p5.cut(das,
@@ -439,7 +446,17 @@ def gather(args, p5):
                                     cut_stop_fepoch,
                                     chan=c,
                                     sample_rate=sr,
-                                    apply_time_correction=args.do_time_correct)
+                                    apply_time_correction=args.do_time_correct,
+                                    remove_overlaping=rm_overlap)
+                    if rm_overlap:
+                        for tr in traces:
+                            for d in tr.das_t:
+                                if 'overlap_start' in d:
+                                    LOGGER.warn(
+                                        "Warning: Overlaping between "
+                                        "[{0}, {1}] has been removed.".format(
+                                            d['overlap_start'],
+                                            d['overlap_stop']))
                     if len(traces[0].data) == 0:
                         LOGGER.warn(
                             "Warning: No data found for {0} for station {1}."

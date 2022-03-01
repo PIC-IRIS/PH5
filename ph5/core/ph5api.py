@@ -1104,7 +1104,8 @@ class PH5(experiment.ExperimentGroup):
         return traces
 
     def cut(self, das, start_fepoch, stop_fepoch, chan=1,
-            sample_rate=None, apply_time_correction=True, das_t=None):
+            sample_rate=None, apply_time_correction=True, das_t=None,
+            remove_overlaping=False):
         '''   Cut trace data and return a Trace object
               Inputs:
                  das -> data logger serial number
@@ -1241,6 +1242,12 @@ class PH5(experiment.ExperimentGroup):
                 time_diff = abs(window_start_fepoch)
                 # Overlaps are positive
                 d['gap_overlap'] = time_diff - (1. / sr)
+                if remove_overlaping and d['gap_overlap'] > 0:
+                    d['overlap_start'] = d['gap_overlap']
+                    d['overlap_stop'] = window_stop_fepoch
+                    window_start_fepoch = window_stop_fepoch
+                    time_diff = abs(window_start_fepoch)
+                    d['gap_overlap'] = time_diff - (1. / sr)
                 # Data gap
                 if abs(time_diff) > (1. / sr):
                     new_trace = True
