@@ -453,10 +453,10 @@ def gather(args, p5):
                             for d in tr.das_t:
                                 if 'overlap_start' in d:
                                     LOGGER.warn(
-                                        "Warning: Overlaping between "
-                                        "[{0}, {1}] has been removed.".format(
-                                            d['overlap_start'],
-                                            d['overlap_stop']))
+                                        "Overlaping between "
+                                        "[%.6f, %.6f] has been removed."
+                                        % (d['overlap_start'],
+                                           d['overlap_stop']))
                     if len(traces[0].data) == 0:
                         LOGGER.warn(
                             "Warning: No data found for {0} for station {1}."

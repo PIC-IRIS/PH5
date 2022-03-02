@@ -1171,12 +1171,28 @@ class PH5(experiment.ExperimentGroup):
         window_start_fepoch0 = None
         window_stop_fepoch = None
         trace_start_fepoch = None
+        new_window_start_fepoch = None
         data = None
         for d in Das_t:
             sr = float(d['sample_rate_i']) / \
                  float(d['sample_rate_multiplier_i'])
             window_start_fepoch = fepoch(
                 d['time/epoch_l'], d['time/micro_seconds_i'])
+            if not first:
+                # Time difference between the end of last window and the start
+                # of this one
+                time_diff = abs(window_start_fepoch)
+                # Overlaps are positive
+                d['gap_overlap'] = time_diff - (1. / sr)
+                if remove_overlaping and d['gap_overlap'] > 0:
+                    d['overlap_start'] = d['gap_overlap']
+                    window_start_fepoch = new_window_start_fepoch
+                    d['overlap_stop'] = window_start_fepoch
+                    time_diff = abs(window_start_fepoch)
+                    d['gap_overlap'] = time_diff - (1. / sr)
+                # Data gap
+                if abs(time_diff) > (1. / sr):
+                    new_trace = True
             if (d['channel_number_i'] != chan) or (
                     sr != sample_rate) or (window_start_fepoch > stop_fepoch):
                 continue
@@ -1236,21 +1252,7 @@ class PH5(experiment.ExperimentGroup):
                     dt = 'float32'
 
                 data = np.array([], dtype=dt)
-            else:
-                # Time difference between the end of last window and the start
-                # of this one
-                time_diff = abs(window_start_fepoch)
-                # Overlaps are positive
-                d['gap_overlap'] = time_diff - (1. / sr)
-                if remove_overlaping and d['gap_overlap'] > 0:
-                    d['overlap_start'] = d['gap_overlap']
-                    d['overlap_stop'] = window_stop_fepoch
-                    window_start_fepoch = window_stop_fepoch
-                    time_diff = abs(window_start_fepoch)
-                    d['gap_overlap'] = time_diff - (1. / sr)
-                # Data gap
-                if abs(time_diff) > (1. / sr):
-                    new_trace = True
+
             if len(data_tmp) > 0:
                 #  Gap!!!
                 if new_trace:
@@ -1303,6 +1305,7 @@ class PH5(experiment.ExperimentGroup):
                 if num_overextend_samples > 0:
                     # trim the data array to exclude the over extending samples
                     data = data[0:samples_to_cut]
+            new_window_start_fepoch = window_stop_fepoch
         # Done reading all the traces catch the last bit
         trace = Trace(data,
                       trace_start_fepoch,
