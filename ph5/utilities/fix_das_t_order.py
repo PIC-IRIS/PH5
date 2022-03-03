@@ -6,10 +6,9 @@ import argparse
 import os
 import sys
 import logging
-import tables
 import operator
 
-from ph5.core import ph5api, experiment, columns
+from ph5.core import ph5api, experiment
 from ph5.utilities import nuke_table, kef2ph5 as K2T, tabletokef as T2K
 from ph5 import LOGGING_FORMAT
 
@@ -86,37 +85,31 @@ def delete_das(ph5object, das_name, ph5, path):
         ph5object.ph5_g_receivers.current_t_das)
     das_t = T2K.Rows_Keys(das, das_keys)
     datapath = '/Experiment_g/Receivers_g/Das_g_{0}/Das_t'.format(das_sn)
-    print("datapath:", datapath)
     backupfile = nuke_table.backup(
         das_name,
         datapath,
         das_t)
     ph5object.ph5_g_receivers.truncate_das_t(das_sn)
     LOGGER.info('Nuke {0}.'.format(datapath))
-    print("bakupfile:", backupfile)
     return backupfile, datapath, ph5object
+
 
 def fix_das_order_in_kef(startfilepath, fixedfilepath, datapath):
     """
-    Correct sample rate multiplier (srm) from kef file startfilepath and
-    save into fixedfilepath as following:
-        + replace srm=0 with srm=1
-        + add srm=1 for each data row if there is no srm
+    Reorder Das_t according to channel and time in kef file startfilepath and
+    save into fixedfilepath
     :param startfilepath: name of kef file for das table (str)
     :param fixedfilepath: name of kef file in which srms are fixed (str)
     :param datapath: path to the table in ph5 structure
     """
-    tmpfile = open('temp3.txt', 'w')
     startfile = open(startfilepath, 'r')
     fixedfile = open(fixedfilepath, 'w')
     content = startfile.read()
     parts = content.split("#")
-    # header_content = "#".join(parts[:4])
     dasinfo = []
     for p in parts[4:]:
         d = {'kefStr': p}
         p_lines = p.split("\n")
-        print(p)
         for line in p_lines:
             if 'channel_number_i' in line:
                 d['channel_number_i'] = line.split('=')[1]
@@ -124,24 +117,20 @@ def fix_das_order_in_kef(startfilepath, fixedfilepath, datapath):
                 d['time/epoch_l'] = line.split('=')[1]
             if 'time/micro_seconds_i' in line:
                 d['time/micro_seconds_i'] = line.split('=')[1]
-            if 'time/ascii_s' in line:
-                d['time/ascii_s'] = line.split('=')[1]
         dasinfo.append(d)
-        print(d)
+
     sorted_dasinfo = sorted(dasinfo,
                             key=operator.itemgetter('channel_number_i',
                                                     'time/epoch_l',
                                                     'time/micro_seconds_i'))
-    for d in sorted_dasinfo:
-        tmpfile.write(d['time/ascii_s'] + '\n')
-    new_parts = parts[:4] + [d['kefStr'] for d in sorted_dasinfo]
+    new_parts = parts[:4] + [das['kefStr'] for das in sorted_dasinfo]
     new_content = "#".join(new_parts)
-
     fixedfile.write(new_content)
     startfile.close()
     fixedfile.close()
-    tmpfile.close()
-    # LOGGER.info(logmsg)
+    logmsg = ('Reorder das_t and save in %s.' % fixedfilepath)
+    LOGGER.info(logmsg)
+
 
 def add_fixed_table(ex, ph5, path, fixedfilepath):
     """
@@ -193,15 +182,14 @@ def main():
     LOGGER.info("fix_das_t_order {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
     init_T2K(ph5object)
-    # try:
-    # fix all das tables
-    ph5object.read_das_g_names()
-    for das_g_name in ph5object.Das_g_names.keys():
-        das_t_name = das_g_name.replace('Das_g_', 'Das_t_')
-        print("das_t_name")
-        ph5object = process(ph5object, ph5, path, das_name=das_t_name)
-    # except Exception as e:
-    #     LOGGER.error(e.message)
+    try:
+        # fix all das tables
+        ph5object.read_das_g_names()
+        for das_g_name in ph5object.Das_g_names.keys():
+            das_t_name = das_g_name.replace('Das_g_', 'Das_t_')
+            ph5object = process(ph5object, ph5, path, das_name=das_t_name)
+    except Exception as e:
+        LOGGER.error(e.message)
 
     ph5object.close()
 
