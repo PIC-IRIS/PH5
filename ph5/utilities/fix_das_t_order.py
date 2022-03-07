@@ -71,10 +71,10 @@ def fix_das(ph5object, ph5, path, das_sn):
     :param path: path to ph5 file (str)
     :param das_sn: das serial number (str)
     """
-    das = ph5object.ph5_g_receivers.getdas_g(das_sn)
-    if das is None:
+    das_g = ph5object.ph5_g_receivers.getdas_g(das_sn)
+    if das_g is None:
         raise Exception('DAS %s not exist.' % das_sn)
-    ph5object.ph5_g_receivers.setcurrent(das)
+    ph5object.ph5_g_receivers.setcurrent(das_g)
     das_rows, das_keys = experiment.read_table(
         ph5object.ph5_g_receivers.current_t_das)
 
@@ -96,8 +96,8 @@ def fix_das(ph5object, ph5, path, das_sn):
                                               'time/epoch_l',
                                               'time/micro_seconds_i'))
     LOGGER.info('Populate {0} with order-fixed table.'.format(datapath))
-    for d in das_rows:
-        ph5object.ph5_g_receivers.populateDas_t(d)
+    for r in das_rows:
+        ph5object.ph5_g_receivers.populateDas_t(r)
 
 
 def main():
