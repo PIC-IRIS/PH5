@@ -690,7 +690,7 @@ def process_traces(rh, th, tr):
         if SD.manufacturer == 'SmartSolo':
             # wait to reorder before populate
             if Das not in DAS_T:
-                DAS_T = {Das: []}
+                DAS_T[Das] = []
             DAS_T[Das].append(p_das_t)
         else:
             EXREC.ph5_g_receivers.populateDas_t(p_das_t)
