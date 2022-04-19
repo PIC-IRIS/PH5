@@ -11,7 +11,7 @@ from ph5.core import ph5api, experiment
 from ph5.utilities import nuke_table, tabletokef as T2K
 from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = '2022.066'
+PROG_VERSION = '2022.109'
 LOGGER = logging.getLogger(__name__)
 
 

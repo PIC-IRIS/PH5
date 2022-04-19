@@ -29,7 +29,7 @@ from ph5 import LOGGING_FORMAT
 warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
 
-PROG_VERSION = "2022.062"
+PROG_VERSION = "2022.109"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
