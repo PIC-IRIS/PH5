@@ -22,7 +22,8 @@ def get_args():
     parser.usage = ("fix_das_t_order --nickname ph5-file-prefix [options]")
 
     parser.description = ("Reorder das_t according to channel_number_i and "
-                          "time. \nVersion: {0}"
+                          "time. Will update all das_t in an experiment."
+                          " \nVersion: {0}"
                           .format(PROG_VERSION))
 
     parser.add_argument("-n", "--nickname", dest="ph5_file_prefix",
