@@ -586,7 +586,7 @@ def process_traces(rh, th, tr):
         return os.path.basename(filename)
 
     def process_das():
-        global LSB, DAS_T
+        global LSB
         '''
         '''
         p_das_t = {}
@@ -687,13 +687,7 @@ def process_traces(rh, th, tr):
             EX.ph5_g_responses.populateResponse_t(p_response_t)
             RESP.update()
         p_das_t['response_table_n_i'] = n_i
-        if SD.manufacturer == 'SmartSolo':
-            # wait to reorder before populate
-            if Das not in DAS_T:
-                DAS_T[Das] = []
-            DAS_T[Das].append(p_das_t)
-        else:
-            EXREC.ph5_g_receivers.populateDas_t(p_das_t)
+        EXREC.ph5_g_receivers.populateDas_t(p_das_t)
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
               " Channel: " + str(p_das_t['channel_number_i'])
         #   Write trace data here
@@ -1000,22 +994,25 @@ def write_arrays(SD, Array_t):
                         print(e.message)
 
 
-def reorder_das(Das_t, PH5):
+def reorder_das(PH5):
     """
     Run only after EX and EXREC have been closed.
     Open ph5object, truncate das_t, reorder and re-populate it
-    :param: Das_t: the global DAS_T: {das_sn:[das_t_rows]}
     :param: PH5: name of master file. Ex: master.ph5
     """
-    ph5object = ph5api.PH5(path='.', nickname=PH5, editmode=True)
+    ph5filename = PH5 if PH5[-4:] == '.ph5' else PH5 + '.ph5'
+    ph5object = ph5api.PH5(path='.', nickname=ph5filename, editmode=True)
     ph5object.read_das_g_names()
     for das_g_name in ph5object.Das_g_names.keys():
         das_sn = das_g_name.replace('Das_g_', '')
         das_g = ph5object.ph5_g_receivers.getdas_g(das_sn)
         ph5object.ph5_g_receivers.setcurrent(das_g)
+        das_rows, das_keys = experiment.read_table(
+            ph5object.ph5_g_receivers.current_t_das)
+
         ph5object.ph5_g_receivers.truncate_das_t(das_sn)
 
-        das_rows = sorted(Das_t[das_sn],
+        das_rows = sorted(das_rows,
                           key=operator.itemgetter('channel_number_i',
                                                   'time/epoch_l',
                                                   'time/micro_seconds_i'))
@@ -1221,11 +1218,10 @@ def main():
 
     def prof():
         global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
-            ARRAY_T, DAS_T, RH, LAT, LON, F, TRACE_JSON, APPEND
+            ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
 
         MINIPH5 = None
         ARRAY_T = {}
-        DAS_T = {}
 
         def get_das(sd, warn=False):
             if sd.manufacturer == 'FairfieldNodal':
@@ -1456,7 +1452,7 @@ def main():
             LOGGER.warning("{0}\n".format("".join(e.message)))
 
         # need to do this after close EX and EXREC so all info are pushed
-        reorder_das(DAS_T, PH5)
+        reorder_das(PH5)
         LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
         logging.shutdown()
 
