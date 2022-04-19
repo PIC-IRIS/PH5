@@ -149,6 +149,13 @@ def get_args():
     parser.add_argument("-N", "--notimecorrect", action="store_false",
                         default=True,
                         dest="do_time_correct")
+    
+    parser.add_argument("-k", "--keep_overlap", action="store_true",
+                        dest="keep_overlap",
+                        help="By default, overlapped data will be removed from"
+                             "traces. The flag helps keeping overlap for"
+                             "references.",
+                        default=False)
     parser.add_argument("--debug", dest="debug",
                         action="store_true", default=False)
 
@@ -350,11 +357,23 @@ def gather(args, p5):
                     sf.set_array_t(array_t[c][t])
                     # Read Das table
                     p5.forget_das_t(das)
+
+                    rm_overlap = True if not args.keep_overlap else False
                     #
                     # Cut trace
                     #
                     traces = p5.cut(das, start_fepoch,
-                                    stop_fepoch, chan=c, sample_rate=sr)
+                                    stop_fepoch, chan=c, sample_rate=sr,
+                                    remove_overlaping=rm_overlap)
+                    if rm_overlap:
+                        for tr in traces:
+                            for d in tr.das_t:
+                                if 'overlap_start' in d:
+                                    LOGGER.warn(
+                                        "Overlaping between "
+                                        "[%.6f, %.6f] has been removed."
+                                        % (d['overlap_start'],
+                                           d['overlap_stop']))
                     trace = ph5api.pad_traces(traces)
                     if args.do_time_correct:
                         LOGGER.info("Applied time drift correction by\
