@@ -1455,7 +1455,6 @@ def main():
         except Exception as e:
             LOGGER.warning("{0}\n".format("".join(e.message)))
 
-
         # need to do this after close EX and EXREC so all info are pushed
         reorder_das(DAS_T, PH5)
         LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
