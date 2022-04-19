@@ -254,7 +254,7 @@ def gather(args, p5):
                 event_t = None
 
             LOGGER.info("Extracting receivers for event {0:s}.".format(evt))
-        except Exception as e:
+        except Exception:
             LOGGER.warn("Warning: The event {0} not found.\n".format(evt))
             continue
 

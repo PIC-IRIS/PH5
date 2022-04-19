@@ -149,7 +149,7 @@ def get_args():
     parser.add_argument("-N", "--notimecorrect", action="store_false",
                         default=True,
                         dest="do_time_correct")
-    
+
     parser.add_argument("-k", "--keep_overlap", action="store_true",
                         dest="keep_overlap",
                         help="By default, overlapped data will be removed from"
@@ -231,7 +231,7 @@ def gather(args, p5):
                        ['rows'][0]['sample_rate_i']) / float(
                            p5.Das_t[array_t[c][0]['das/serial_number_s']]
                            ['rows'][0]['sample_rate_multiplier_i'])
-        except KeyError as e:
+        except KeyError:
             LOGGER.warn(
                 "Warning: The station {0} not found in the current array.\n"
                 .format(sta))
@@ -508,7 +508,7 @@ def gather(args, p5):
                             # Write any messages
                             for log in logs:
                                 LOGGER.info(log)
-                        except segyfactory.SEGYError as e:
+                        except segyfactory.SEGYError:
                             LOGGER.error("Header write failure.")
                             sys.exit()
                     else:
@@ -518,7 +518,7 @@ def gather(args, p5):
                             for log in logs:
                                 LOGGER.info(log)
                             LOGGER.info('=-' * 40)
-                        except segyfactory.SEGYError as e:
+                        except segyfactory.SEGYError:
                             LOGGER.error("Trace write failure.")
                             sys.exit()
         # Traces found does not match traces expected
