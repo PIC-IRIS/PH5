@@ -399,7 +399,7 @@ def gather(args, p5):
                         LOGGER.warn(
                             "Warning: There were {0} samples of padding\
                             added to fill gap(s) in original traces."
-                            .trace.padding)
+                            .format(trace.padding))
                     # Need to apply decimation here
                     if args.decimation:
                         # Decimate
