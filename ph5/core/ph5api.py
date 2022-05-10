@@ -1241,19 +1241,19 @@ class PH5(experiment.ExperimentGroup):
                 stop=int(round(cut_stop_sample - time_cor_guess_samples)))
             current_trace_type, current_trace_byteorder = (
                 self.ph5_g_receivers.trace_info(trace_reference))
-            if first:
-                # Correct start time to 'actual' time of first sample
-                if trace_start_fepoch is None:
-                    trace_start_fepoch = \
-                        window_start_fepoch + cut_start_sample / sr
-                first = False
-                dt = 'int32'
-                if current_trace_type == 'float':
-                    dt = 'float32'
-
-                data = np.array([], dtype=dt)
-
             if len(data_tmp) > 0:
+                if first:
+                    # Correct start time to 'actual' time of first sample
+                    if trace_start_fepoch is None:
+                        trace_start_fepoch = \
+                            window_start_fepoch + cut_start_sample / sr
+                    first = False
+                    dt = 'int32'
+                    if current_trace_type == 'float':
+                        dt = 'float32'
+
+                    data = np.array([], dtype=dt)
+
                 #  Gap!!!
                 if new_trace:
                     # Save trace before gap
