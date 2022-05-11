@@ -1171,27 +1171,26 @@ class PH5(experiment.ExperimentGroup):
         window_start_fepoch0 = None
         window_stop_fepoch = None
         trace_start_fepoch = None
-        new_window_start_fepoch = None
+        last_window_stop_fepoch = None
         data = None
         for d in Das_t:
             sr = float(d['sample_rate_i']) / \
                  float(d['sample_rate_multiplier_i'])
             window_start_fepoch = fepoch(
                 d['time/epoch_l'], d['time/micro_seconds_i'])
-            if not first:
-                # Time difference between the end of last window and the start
-                # of this one
-                time_diff = abs(window_start_fepoch)
-                # Overlaps are positive
-                d['gap_overlap'] = time_diff - (1. / sr)
-                if remove_overlaping and d['gap_overlap'] > 0:
-                    d['overlap_start'] = d['gap_overlap']
-                    window_start_fepoch = new_window_start_fepoch
-                    d['overlap_stop'] = window_start_fepoch
-                    time_diff = abs(window_start_fepoch)
-                    d['gap_overlap'] = time_diff - (1. / sr)
-                # Data gap
-                if abs(time_diff) > (1. / sr):
+            if last_window_stop_fepoch is not None:
+                # gap/overlap is the time difference between
+                # the end of last window and the start of the current one
+                d['gap_overlap'] = (
+                        window_start_fepoch - last_window_stop_fepoch)
+                if d['gap_overlap'] < 0:
+                    # overlap
+                    if remove_overlaping:
+                        d['overlap_start'] = window_start_fepoch
+                        d['overlap_stop'] = last_window_stop_fepoch
+                        window_start_fepoch = last_window_stop_fepoch
+                elif d['gap_overlap'] > 0:
+                    # gap
                     new_trace = True
             if (d['channel_number_i'] != chan) or (
                     sr != sample_rate) or (window_start_fepoch > stop_fepoch):
@@ -1305,7 +1304,7 @@ class PH5(experiment.ExperimentGroup):
                 if num_overextend_samples > 0:
                     # trim the data array to exclude the over extending samples
                     data = data[0:samples_to_cut]
-            new_window_start_fepoch = window_stop_fepoch
+            last_window_stop_fepoch = window_stop_fepoch
         # Done reading all the traces catch the last bit
         trace = Trace(data,
                       trace_start_fepoch,
@@ -1544,7 +1543,6 @@ def pad_traces(traces):
 
     def pad(data, n, dtype):
         m = np.mean(data, dtype=dtype)
-
         return np.append(data, [m] * n)
 
     ret = Trace(traces[0].data,  # Gets extended (np.append)
@@ -1558,6 +1556,7 @@ def pad_traces(traces):
                 traces[0].receiver_t,  # Should not change
                 traces[0].response_t,  # Should not change
                 clock=traces[0].clock)
+
     ret.start_time = traces[0].start_time
 
     end_time0 = None
@@ -1576,7 +1575,9 @@ def pad_traces(traces):
                 # Pad
                 d = pad(t.data, n, dtype=ret.ttype)
                 ret.data = np.append(ret.data, d)
-                N += n
+                if n > 0:
+                    # pad() only add value when n>0
+                    N += n
 
         end_time1 = end_time0 + (1. / t.sample_rate)
 
