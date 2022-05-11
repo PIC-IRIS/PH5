@@ -454,7 +454,7 @@ def gather(args, p5):
                                 if 'overlap_start' in d:
                                     LOGGER.warn(
                                         "Overlaping between "
-                                        "[%.6f, %.6f] has been removed."
+                                        "[%.9f, %.9f] has been removed."
                                         % (d['overlap_start'],
                                            d['overlap_stop']))
                     if len(traces[0].data) == 0:
