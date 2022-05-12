@@ -1206,24 +1206,20 @@ class PH5(experiment.ExperimentGroup):
             # start cutting at start of window
             if start_fepoch < window_start_fepoch:
                 cut_start_fepoch = window_start_fepoch
-                cut_start_sample = 0
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int(math.ceil(((cut_start_fepoch -
-                                                   window_start_fepoch) *
-                                                  sr)))
+            cut_start_sample = round(
+                cut_start_fepoch - window_start_fepoch) * sr
+
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
-                cut_stop_sample = window_samples
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = round(stop_fepoch, 6)
-                cut_stop_sample = int(round(
-                                        math.ceil((cut_stop_fepoch -
-                                                   window_start_fepoch) * sr),
-                                        6))
+            cut_stop_sample = round(cut_stop_fepoch - window_start_fepoch) * sr
+
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
@@ -1240,6 +1236,7 @@ class PH5(experiment.ExperimentGroup):
                 stop=int(round(cut_stop_sample - time_cor_guess_samples)))
             current_trace_type, current_trace_byteorder = (
                 self.ph5_g_receivers.trace_info(trace_reference))
+
             if len(data_tmp) > 0:
                 if first:
                     # Correct start time to 'actual' time of first sample
