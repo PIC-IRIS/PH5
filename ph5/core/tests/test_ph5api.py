@@ -1296,15 +1296,14 @@ class TestPH5API_rm_overlap(TempDirTestCase, LogTestCase):
 
         self.assertEqual(len(traces), 1)
         self.assertEqual(traces[0].nsamples, 500)
-        self.assertEqual(len(traces[0].das_t), 3)
-        self.assertEqual(traces[0].das_t[1]['gap_overlap'], 0.0)
-        self.assertNotIn('overlap_start', traces[0].das_t[1].keys())
+        self.assertEqual(len(traces[0].das_t), 2)
+        self.assertEqual(traces[0].das_t[0]['gap_overlap'], 0.0)
 
-        self.assertEqual(traces[0].das_t[2]['gap_overlap'],
+        self.assertEqual(traces[0].das_t[1]['gap_overlap'],
                          -9.5367431640625e-07)
-        self.assertEqual(traces[0].das_t[2]['overlap_start'],
+        self.assertEqual(traces[0].das_t[1]['overlap_start'],
                          1620504379.075999)
-        self.assertEqual(traces[0].das_t[2]['overlap_stop'],
+        self.assertEqual(traces[0].das_t[1]['overlap_stop'],
                          1620504379.076)
 
 
