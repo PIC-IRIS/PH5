@@ -13,9 +13,9 @@ from ph5.clients import ph5torec
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase, kef_to_ph5
 
 
-class TestPh5torec_main(TempDirTestCase, LogTestCase):
+class TestPh5torec_rm_overlap(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TestPh5torec_main, self).setUp()
+        super(TestPh5torec_rm_overlap, self).setUp()
         testargs = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', testargs):
             initialize_ph5.main()

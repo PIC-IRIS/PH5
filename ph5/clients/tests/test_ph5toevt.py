@@ -13,9 +13,9 @@ from ph5.clients import ph5toevt
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
 
-class TestPh5toevt_main(TempDirTestCase, LogTestCase):
+class TestPh5toevt_rm_overlap(TempDirTestCase, LogTestCase):
     def setUp(self):
-        super(TestPh5toevt_main, self).setUp()
+        super(TestPh5toevt_rm_overlap, self).setUp()
 
         testargs = ['initialize_ph5', '-n', 'master.ph5']
         with patch.object(sys, 'argv', testargs):
