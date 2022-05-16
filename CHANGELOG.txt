@@ -108,8 +108,10 @@ ph5.utilities.130toph5
  * fix pforma support after LOGGER change
 ph5.clients.ph5torec
  * fix info level logging and remove global variables
+  * add feature to remove overlapping as default
 ph5.clients.ph5toevt
  * fix info level logging and remove global variables
+ * add feature to remove overlapping as default
 ph5.utilities.obspytoph5
  * new tool for loading obspy data in to ph5
  * change -f to -r, -l to -f to be consistent with other ingestion commands
@@ -128,6 +130,8 @@ ph5.core.ph5api
  * fix for get_availability returning incomplete results
  * fix query_das_t to throw error is sample_rate_multiplier_is=0 or is missing
  * Remove the call to read_array_t() channels() to optimize geo_kef_gen
+ * option to remove overlaping
+ * tune up finding start time and start/index of trace
 ph5.entry_points
  * creates a dictionary, keys are names of scripts,
       values are (1) simple description,
