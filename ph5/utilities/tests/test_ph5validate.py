@@ -626,5 +626,37 @@ class TestPH5Validate_no_response_filename(LogTestCase, TempDirTestCase):
                 "contained response information.")
 
 
+class TestPH5Validate_das_t_order(LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(TestPH5Validate_das_t_order, self).setUp()
+        segd_file = os.path.join(
+            self.home, "ph5/test_data/segd/smartsolo/453005513.2.2021.05.08."
+                       "20.06.00.000.E.segd")
+        testargs = ['segdtoph5', '-n', 'master', '-r', segd_file]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+
+        ph5_object = ph5api.PH5(
+            path=self.tmpdir, nickname='master.ph5', editmode=True)
+        ph5_object.ph5_g_receivers.truncate_das_t('1X4')
+        kef_to_ph5(
+            self.tmpdir, 'master.ph5',
+            os.path.join(self.home, 'ph5/test_data/metadata'),
+            ['das1X1_messed_order.kef'])
+        ph5_object.close()
+
+    def test_main(self):
+        testargs = ['ph5validate', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            ph5validate.main()
+
+        with open(os.path.join(self.tmpdir, 'ph5_validate.log'),
+                  'r') as content_file:
+            loglines = content_file.read().strip().split("\n")
+        self.assertIn("ERROR: Das 1X1: Das_t isn't in channel/time order."
+                      " Run fix_das_t_order to fix that.",
+                      loglines)
+
+
 if __name__ == "__main__":
     unittest.main()
