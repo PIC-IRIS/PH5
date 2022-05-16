@@ -1,0 +1,35 @@
+-=-=-=-=-=-=-=-=-
+Experiment_t
+1 error, 0 warning, 0 info
+-=-=-=-=-=-=-=-=-
+ERROR: Experiment_t does not exist. run experiment_t_gen to create table
+-=-=-=-=-=-=-=-=-
+Station 4 Channel 3
+1 error, 3 warning, 0 info
+-=-=-=-=-=-=-=-=-
+ERROR: response_file_das_a is blank.
+WARNING: location/Z/units_s is set as unknown. Consider updating this unit to m.
+WARNING: Channel elevation seems to be 0. Is this correct???
+WARNING: Data exists after pickup time: 0 seconds.
+-=-=-=-=-=-=-=-=-
+Station 4 Channel 3
+1 error, 3 warning, 0 info
+-=-=-=-=-=-=-=-=-
+ERROR: response_file_das_a is blank.
+WARNING: location/Z/units_s is set as unknown. Consider updating this unit to m.
+WARNING: Channel elevation seems to be 0. Is this correct???
+WARNING: Data exists after pickup time: 0 seconds.
+-=-=-=-=-=-=-=-=-
+Response_t
+1 error, 0 warning, 0 info
+-=-=-=-=-=-=-=-=-
+ERROR: Response table does not contain any response file names. Check if resp_load has been run or if metadatatoph5 input contained response information.
+-=-=-=-=-=-=-=-=-
+Event_t
+-=-=-=-=-=-=-=-=-
+WARNING: Event_t table not found. Did this experiment have shots???
+-=-=-=-=-=-=-=-=-
+Das_t
+1 error, 0 warning, 0 info
+-=-=-=-=-=-=-=-=-
+ERROR: Das 1X4: Das_t isn't in channel/time order. Run fix_das_t_order to fix that.
