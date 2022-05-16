@@ -880,7 +880,7 @@ class PH5Validate(object):
                                         'time/epoch_l',
                                         'time/micro_seconds_i'))
             if das_rows != sorted_das_rows:
-                error.append("Das %s: Das_t isn't in channel, time order. "
+                error.append("Das %s: Das_t isn't in channel/time order. "
                              "Run fix_das_t_order to fix that."
                              % das_sn)
         if len(error) != 0:
