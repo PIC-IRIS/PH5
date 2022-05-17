@@ -392,16 +392,19 @@ class TestSegDtoPH5_messed_order(TempDirTestCase, LogTestCase):
         """
         listfile = os.path.join(
             self.home, ("ph5/test_data/segd/messed_order/segd_list"))
-
+        print("listfile:", listfile)
         # add segD to ph5
         testargs = ['segdtoph5', '-n', 'master.ph5', '-f', listfile]
         with patch.object(sys, 'argv', testargs):
-            with LogCapture():
+            with LogCapture() as log:
                 with OutputCapture():
                     segd2ph5.main()
+        for r in log.records:
+            print("log:", r.msg)
 
         self.ph5object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
-
+        self.ph5object.read_das_g_names()
+        print("ph5object.Das_g_names.keys():", self.ph5object.Das_g_names.keys())
         das_g = self.ph5object.ph5_g_receivers.getdas_g('1X4')
         self.ph5object.ph5_g_receivers.setcurrent(das_g)
         das_rows, das_keys = experiment.read_table(
