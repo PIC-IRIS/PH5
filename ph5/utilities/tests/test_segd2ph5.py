@@ -5,12 +5,13 @@ import os
 import sys
 import unittest
 import logging
+import operator
 
 from mock import patch
-from testfixtures import LogCapture
+from testfixtures import LogCapture, OutputCapture
 
-from ph5.utilities import segd2ph5, tabletokef
-from ph5.core import segdreader, segdreader_smartsolo, ph5api
+from ph5.utilities import segd2ph5, tabletokef, initialize_ph5
+from ph5.core import segdreader, segdreader_smartsolo, ph5api, experiment
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
@@ -377,6 +378,49 @@ class TestSegDtoPH5_SmartSolo(TempDirTestCase, LogTestCase):
         self.assertEqual(d['time/epoch_l'], 1620504360)
         self.assertEqual(d['raw_file_name_s'],
                          '453005513.2.2021.05.08.20.06..E')
+
+
+class TestSegDtoPH5_messed_order(TempDirTestCase, LogTestCase):
+    def tearDown(self):
+        self.ph5object.ph5close()
+        super(TestSegDtoPH5_messed_order, self).tearDown()
+
+    def test_main(self):
+        """
+        segd_list not in time order
+        test if created das_t in time order
+        """
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        # create list file
+        segd_dir = os.path.join(self.home, "ph5/test_data/segd/messed_order/")
+        with open('segd_list', "w") as segdlistfile:
+            fileList = os.listdir(segd_dir)
+            for f in fileList:
+                if f.endswith('segd'):
+                    segdlistfile.write(os.path.join(segd_dir, f) + "\n")
+
+        # add segD to ph5
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-f', 'segd_list']
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture():
+                with OutputCapture():
+                    segd2ph5.main()
+
+        self.ph5object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
+        das_g = self.ph5object.ph5_g_receivers.getdas_g('1X4')
+        self.ph5object.ph5_g_receivers.setcurrent(das_g)
+        das_rows, das_keys = experiment.read_table(
+            self.ph5object.ph5_g_receivers.current_t_das)
+
+        ordered_das_rows = sorted(
+            das_rows,
+            key=operator.itemgetter('channel_number_i',
+                                    'time/epoch_l',
+                                    'time/micro_seconds_i'))
+        self.assertEqual(das_rows, ordered_das_rows)
 
 
 if __name__ == "__main__":

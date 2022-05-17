@@ -13,11 +13,12 @@ import subprocess
 import os
 import sys
 import copy
+import operator
 
-from ph5.core import ph5api
+from ph5.core import ph5api, experiment
 from ph5.utilities import validation
 
-PROG_VERSION = "2021.141"
+PROG_VERSION = "2022.066"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -855,6 +856,46 @@ class PH5Validate(object):
                         validation_blocks.append(vb)
         return validation_blocks
 
+    def check_das_order(self):
+        """
+        Check if das_t for each das is in order of channel and time
+        """
+
+        validation_blocks = []
+        error = []
+        self.ph5.read_das_g_names()
+        for das_g_name in self.ph5.Das_g_names.keys():
+            das_sn = das_g_name.replace('Das_g_', '')
+            LOGGER.info("Validating Das_t_%s" % das_sn)
+            das_g = self.ph5.ph5_g_receivers.getdas_g(das_sn)
+            if das_g is None:
+                error.append('DAS %s not exist.' % das_sn)
+                continue
+            self.ph5.ph5_g_receivers.setcurrent(das_g)
+            das_rows, das_keys = experiment.read_table(
+                self.ph5.ph5_g_receivers.current_t_das)
+            sorted_das_rows = sorted(
+                das_rows,
+                key=operator.itemgetter('channel_number_i',
+                                        'time/epoch_l',
+                                        'time/micro_seconds_i'))
+            if das_rows != sorted_das_rows:
+                error.append("Das %s: Das_t isn't in channel/time order. "
+                             "Run fix_das_t_order to fix that."
+                             % das_sn)
+        if len(error) != 0:
+            header = ("-=-=-=-=-=-=-=-=-\n"
+                      "Das_t\n"
+                      "{0} error, 0 warning, 0 info\n"
+                      "-=-=-=-=-=-=-=-=-\n"
+                      .format(len(error)))
+            vb = ValidationBlock(heading=header,
+                                 info=[],
+                                 warning=[],
+                                 error=error)
+            validation_blocks.append(vb)
+        return validation_blocks
+
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -919,6 +960,7 @@ def main():
         validation_blocks.extend(ph5validate.check_array_t())
         validation_blocks.extend(ph5validate.check_response_t())
         validation_blocks.extend(ph5validate.check_event_t())
+        validation_blocks.extend(ph5validate.check_das_order())
         with open(args.outfile, "w") as log_file:
             for vb in validation_blocks:
                 vb.write_to_log(log_file,

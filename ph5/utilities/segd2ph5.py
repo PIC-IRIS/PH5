@@ -16,18 +16,20 @@ import json
 import re
 from math import modf
 import warnings
+import operator
 
 from pyproj import Proj, transform
 import construct
 import bcd_py
 from tables import NaturalNameWarning
 
-from ph5.core import experiment, columns, segdreader, segdreader_smartsolo
+from ph5.core import (experiment, columns, segdreader, segdreader_smartsolo,
+                      ph5api)
 from ph5 import LOGGING_FORMAT
 warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
 
-PROG_VERSION = "2021.159"
+PROG_VERSION = "2022.109"
 LOGGER = logging.getLogger(__name__)
 
 MAX_PH5_BYTES = 1073741824 * 100.  # 100 GB (1024 X 1024 X 1024 X 2)
@@ -992,6 +994,34 @@ def write_arrays(SD, Array_t):
                         print(e.message)
 
 
+def reorder_das(PH5):
+    """
+    Run only after EX and EXREC have been closed.
+    Open ph5object, truncate das_t, reorder and re-populate it
+    :param: PH5: name of master file. Ex: master.ph5
+    """
+    ph5filename = PH5 if PH5[-4:] == '.ph5' else PH5 + '.ph5'
+    ph5object = ph5api.PH5(path='.', nickname=ph5filename, editmode=True)
+    ph5object.read_das_g_names()
+    for das_g_name in ph5object.Das_g_names.keys():
+        das_sn = das_g_name.replace('Das_g_', '')
+        das_g = ph5object.ph5_g_receivers.getdas_g(das_sn)
+        ph5object.ph5_g_receivers.setcurrent(das_g)
+        das_rows, das_keys = experiment.read_table(
+            ph5object.ph5_g_receivers.current_t_das)
+
+        ph5object.ph5_g_receivers.truncate_das_t(das_sn)
+
+        das_rows = sorted(das_rows,
+                          key=operator.itemgetter('channel_number_i',
+                                                  'time/epoch_l',
+                                                  'time/micro_seconds_i'))
+        for r in das_rows:
+            ph5object.ph5_g_receivers.populateDas_t(r)
+    ph5object.close()
+    LOGGER.info("Reorder and populate Das_t")
+
+
 def combine_array_entries(aName, aOfDas):
     """
     :para aName: "Array_t_xxx" to add to warning message
@@ -1421,6 +1451,8 @@ def main():
         except Exception as e:
             LOGGER.warning("{0}\n".format("".join(e.message)))
 
+        # need to do this after close EX and EXREC so all info are pushed
+        reorder_das(PH5)
         LOGGER.info("Done...{0:b}".format(int(seconds / 6.)))
         logging.shutdown()
 

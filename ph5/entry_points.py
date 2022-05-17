@@ -224,6 +224,11 @@ class CommandList():
                            'ph5.utilities.fix_srm:main',
                            'For fixing sample_rate_multiplier_i=0 or missing.',
                            type=EntryPointTypes.ALL),
+                EntryPoint('fix_das_t_order',
+                           'ph5.utilities.fix_das_t_order:main',
+                           'Reorder das_t according to channel_number_i and '
+                           'time.',
+                           type=EntryPointTypes.ALL),
                 EntryPoint('index_offset_t',
                            'ph5.utilities.index_offset_t:main',
                            'Index offset table in ph5 file to speed '
@@ -285,5 +290,7 @@ class CommandList():
                            'Takes PH5 files and returns time series '
                            'availability info.',
                            type=EntryPointTypes.CLIENT),
-                ]
+                ],
+
+
             }

@@ -1,0 +1,7543 @@
+#
+#	Mon May 16 16:22:42 2022	ph5 version: 4.1.2
+#	row 3 and row 5 has been switched
+#   Table row 1
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0001
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=1
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:00 2021
+	time/epoch_l=1620504360
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 2
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0002
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=2
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:01 2021
+	time/epoch_l=1620504361
+	time/micro_seconds_i=4000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 5
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0005
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=5
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:04 2021
+	time/epoch_l=1620504364
+	time/micro_seconds_i=16000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+
+#   Table row 4
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0004
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=4
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:03 2021
+	time/epoch_l=1620504363
+	time/micro_seconds_i=12000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 3
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0003
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=3
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:02 2021
+	time/epoch_l=1620504362
+	time/micro_seconds_i=7999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 6
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0006
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=6
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:05 2021
+	time/epoch_l=1620504365
+	time/micro_seconds_i=19999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 7
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0007
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=7
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:06 2021
+	time/epoch_l=1620504366
+	time/micro_seconds_i=23999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 8
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0008
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=8
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:07 2021
+	time/epoch_l=1620504367
+	time/micro_seconds_i=28000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 9
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0009
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=9
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:08 2021
+	time/epoch_l=1620504368
+	time/micro_seconds_i=32000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 10
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0010
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=10
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:09 2021
+	time/epoch_l=1620504369
+	time/micro_seconds_i=36000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 11
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0011
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=11
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:10 2021
+	time/epoch_l=1620504370
+	time/micro_seconds_i=39999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 12
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0012
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=12
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:11 2021
+	time/epoch_l=1620504371
+	time/micro_seconds_i=43999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 13
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0013
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=13
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:12 2021
+	time/epoch_l=1620504372
+	time/micro_seconds_i=48000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 14
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0014
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=14
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:13 2021
+	time/epoch_l=1620504373
+	time/micro_seconds_i=52000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 15
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0015
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=15
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:14 2021
+	time/epoch_l=1620504374
+	time/micro_seconds_i=56000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 16
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0016
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=16
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:15 2021
+	time/epoch_l=1620504375
+	time/micro_seconds_i=60000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 17
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0017
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=17
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:16 2021
+	time/epoch_l=1620504376
+	time/micro_seconds_i=64000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 18
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0018
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=18
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:17 2021
+	time/epoch_l=1620504377
+	time/micro_seconds_i=68000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 19
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0019
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=19
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:18 2021
+	time/epoch_l=1620504378
+	time/micro_seconds_i=72000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 20
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0020
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=20
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:19 2021
+	time/epoch_l=1620504379
+	time/micro_seconds_i=75999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 21
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0021
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=21
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:20 2021
+	time/epoch_l=1620504380
+	time/micro_seconds_i=79999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 22
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0022
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=22
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:21 2021
+	time/epoch_l=1620504381
+	time/micro_seconds_i=84000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 23
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0023
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=23
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:22 2021
+	time/epoch_l=1620504382
+	time/micro_seconds_i=88000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 24
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0024
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=24
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:23 2021
+	time/epoch_l=1620504383
+	time/micro_seconds_i=92000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 25
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0025
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=25
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:24 2021
+	time/epoch_l=1620504384
+	time/micro_seconds_i=96000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 26
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0026
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=26
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:25 2021
+	time/epoch_l=1620504385
+	time/micro_seconds_i=99999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 27
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0027
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=27
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:26 2021
+	time/epoch_l=1620504386
+	time/micro_seconds_i=104000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 28
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0028
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=28
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:27 2021
+	time/epoch_l=1620504387
+	time/micro_seconds_i=108000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 29
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0029
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=29
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:28 2021
+	time/epoch_l=1620504388
+	time/micro_seconds_i=111999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 30
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0030
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=30
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:29 2021
+	time/epoch_l=1620504389
+	time/micro_seconds_i=116000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 31
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0031
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=31
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:30 2021
+	time/epoch_l=1620504390
+	time/micro_seconds_i=119999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 32
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0032
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=32
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:31 2021
+	time/epoch_l=1620504391
+	time/micro_seconds_i=124000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 33
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0033
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=33
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:32 2021
+	time/epoch_l=1620504392
+	time/micro_seconds_i=128000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 34
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0034
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=34
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:33 2021
+	time/epoch_l=1620504393
+	time/micro_seconds_i=131999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 35
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0035
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=35
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:34 2021
+	time/epoch_l=1620504394
+	time/micro_seconds_i=135999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 36
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0036
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=36
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:35 2021
+	time/epoch_l=1620504395
+	time/micro_seconds_i=140000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 37
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0037
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=37
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:36 2021
+	time/epoch_l=1620504396
+	time/micro_seconds_i=144000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 38
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0038
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=38
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:37 2021
+	time/epoch_l=1620504397
+	time/micro_seconds_i=148000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 39
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0039
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=39
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:38 2021
+	time/epoch_l=1620504398
+	time/micro_seconds_i=152000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 40
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0040
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=40
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:39 2021
+	time/epoch_l=1620504399
+	time/micro_seconds_i=156000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 41
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0041
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=41
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:40 2021
+	time/epoch_l=1620504400
+	time/micro_seconds_i=160000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 42
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0042
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=42
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:41 2021
+	time/epoch_l=1620504401
+	time/micro_seconds_i=164000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 43
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0043
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=43
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:42 2021
+	time/epoch_l=1620504402
+	time/micro_seconds_i=167999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 44
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0044
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=44
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:43 2021
+	time/epoch_l=1620504403
+	time/micro_seconds_i=171999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 45
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0045
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=45
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:44 2021
+	time/epoch_l=1620504404
+	time/micro_seconds_i=176000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 46
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0046
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=46
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:45 2021
+	time/epoch_l=1620504405
+	time/micro_seconds_i=180000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 47
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0047
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=47
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:46 2021
+	time/epoch_l=1620504406
+	time/micro_seconds_i=184000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 48
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0048
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=48
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:47 2021
+	time/epoch_l=1620504407
+	time/micro_seconds_i=187999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 49
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0049
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=49
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:48 2021
+	time/epoch_l=1620504408
+	time/micro_seconds_i=191999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 50
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0050
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=50
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:49 2021
+	time/epoch_l=1620504409
+	time/micro_seconds_i=196000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 51
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0051
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=51
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:50 2021
+	time/epoch_l=1620504410
+	time/micro_seconds_i=200000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 52
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0052
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=52
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:51 2021
+	time/epoch_l=1620504411
+	time/micro_seconds_i=203999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 53
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0053
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=53
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:52 2021
+	time/epoch_l=1620504412
+	time/micro_seconds_i=208000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 54
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0054
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=54
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:53 2021
+	time/epoch_l=1620504413
+	time/micro_seconds_i=212000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 55
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0055
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=55
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:54 2021
+	time/epoch_l=1620504414
+	time/micro_seconds_i=216000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 56
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0056
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=56
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:55 2021
+	time/epoch_l=1620504415
+	time/micro_seconds_i=220000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 57
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0057
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=57
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:56 2021
+	time/epoch_l=1620504416
+	time/micro_seconds_i=223999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 58
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0058
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=58
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:57 2021
+	time/epoch_l=1620504417
+	time/micro_seconds_i=227999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 59
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0059
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=59
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:58 2021
+	time/epoch_l=1620504418
+	time/micro_seconds_i=232000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 60
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0060
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=60
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:06:59 2021
+	time/epoch_l=1620504419
+	time/micro_seconds_i=236000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 61
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0061
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=61
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:00 2021
+	time/epoch_l=1620504420
+	time/micro_seconds_i=240000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 62
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0062
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=62
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:01 2021
+	time/epoch_l=1620504421
+	time/micro_seconds_i=244000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 63
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0063
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=63
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:02 2021
+	time/epoch_l=1620504422
+	time/micro_seconds_i=248000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 64
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0064
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=64
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:03 2021
+	time/epoch_l=1620504423
+	time/micro_seconds_i=252000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 65
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0065
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=65
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:04 2021
+	time/epoch_l=1620504424
+	time/micro_seconds_i=256000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 66
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0066
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=66
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:05 2021
+	time/epoch_l=1620504425
+	time/micro_seconds_i=259999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 67
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0067
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=67
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:06 2021
+	time/epoch_l=1620504426
+	time/micro_seconds_i=263999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 68
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0068
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=68
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:07 2021
+	time/epoch_l=1620504427
+	time/micro_seconds_i=267999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 69
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0069
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=69
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:08 2021
+	time/epoch_l=1620504428
+	time/micro_seconds_i=272000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 70
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0070
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=70
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:09 2021
+	time/epoch_l=1620504429
+	time/micro_seconds_i=276000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 71
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0071
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=71
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:10 2021
+	time/epoch_l=1620504430
+	time/micro_seconds_i=279999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 72
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0072
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=72
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:11 2021
+	time/epoch_l=1620504431
+	time/micro_seconds_i=283999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 73
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0073
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=73
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:12 2021
+	time/epoch_l=1620504432
+	time/micro_seconds_i=288000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 74
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0074
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=74
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:13 2021
+	time/epoch_l=1620504433
+	time/micro_seconds_i=292000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 75
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0075
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=75
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:14 2021
+	time/epoch_l=1620504434
+	time/micro_seconds_i=296000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 76
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0076
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=76
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:15 2021
+	time/epoch_l=1620504435
+	time/micro_seconds_i=300000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 77
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0077
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=77
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:16 2021
+	time/epoch_l=1620504436
+	time/micro_seconds_i=304000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 78
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0078
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=78
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:17 2021
+	time/epoch_l=1620504437
+	time/micro_seconds_i=308000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 79
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0079
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=79
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:18 2021
+	time/epoch_l=1620504438
+	time/micro_seconds_i=312000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 80
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0080
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=80
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:19 2021
+	time/epoch_l=1620504439
+	time/micro_seconds_i=315999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 81
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0081
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=81
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:20 2021
+	time/epoch_l=1620504440
+	time/micro_seconds_i=319999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 82
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0082
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=82
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:21 2021
+	time/epoch_l=1620504441
+	time/micro_seconds_i=323999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 83
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0083
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=83
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:22 2021
+	time/epoch_l=1620504442
+	time/micro_seconds_i=328000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 84
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0084
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=84
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:23 2021
+	time/epoch_l=1620504443
+	time/micro_seconds_i=332000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 85
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0085
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=85
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:24 2021
+	time/epoch_l=1620504444
+	time/micro_seconds_i=336000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 86
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0086
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=86
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:25 2021
+	time/epoch_l=1620504445
+	time/micro_seconds_i=340000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 87
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0087
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=87
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:26 2021
+	time/epoch_l=1620504446
+	time/micro_seconds_i=344000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 88
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0088
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=88
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:27 2021
+	time/epoch_l=1620504447
+	time/micro_seconds_i=348000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 89
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0089
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=89
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:28 2021
+	time/epoch_l=1620504448
+	time/micro_seconds_i=351999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 90
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0090
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=90
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:29 2021
+	time/epoch_l=1620504449
+	time/micro_seconds_i=355999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 91
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0091
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=91
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:30 2021
+	time/epoch_l=1620504450
+	time/micro_seconds_i=359999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 92
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0092
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=92
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:31 2021
+	time/epoch_l=1620504451
+	time/micro_seconds_i=364000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 93
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0093
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=93
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:32 2021
+	time/epoch_l=1620504452
+	time/micro_seconds_i=368000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 94
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0094
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=94
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:33 2021
+	time/epoch_l=1620504453
+	time/micro_seconds_i=371999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 95
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0095
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=95
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:34 2021
+	time/epoch_l=1620504454
+	time/micro_seconds_i=375999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 96
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0096
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=96
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:35 2021
+	time/epoch_l=1620504455
+	time/micro_seconds_i=380000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 97
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0097
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=97
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:36 2021
+	time/epoch_l=1620504456
+	time/micro_seconds_i=384000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 98
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0098
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=98
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:37 2021
+	time/epoch_l=1620504457
+	time/micro_seconds_i=388000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 99
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0099
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=99
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:38 2021
+	time/epoch_l=1620504458
+	time/micro_seconds_i=392000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 100
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0100
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=100
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:39 2021
+	time/epoch_l=1620504459
+	time/micro_seconds_i=396000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 101
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0101
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=101
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:40 2021
+	time/epoch_l=1620504460
+	time/micro_seconds_i=400000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 102
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0102
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=102
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:41 2021
+	time/epoch_l=1620504461
+	time/micro_seconds_i=404000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 103
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0103
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=103
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:42 2021
+	time/epoch_l=1620504462
+	time/micro_seconds_i=407999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 104
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0104
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=104
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:43 2021
+	time/epoch_l=1620504463
+	time/micro_seconds_i=411999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 105
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0105
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=105
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:44 2021
+	time/epoch_l=1620504464
+	time/micro_seconds_i=415999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 106
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0106
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=106
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:45 2021
+	time/epoch_l=1620504465
+	time/micro_seconds_i=420000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 107
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0107
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=107
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:46 2021
+	time/epoch_l=1620504466
+	time/micro_seconds_i=424000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 108
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0108
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=108
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:47 2021
+	time/epoch_l=1620504467
+	time/micro_seconds_i=428000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 109
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0109
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=109
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:48 2021
+	time/epoch_l=1620504468
+	time/micro_seconds_i=432000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 110
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0110
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=110
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:49 2021
+	time/epoch_l=1620504469
+	time/micro_seconds_i=436000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 111
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0111
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=111
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:50 2021
+	time/epoch_l=1620504470
+	time/micro_seconds_i=440000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 112
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0112
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=112
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:51 2021
+	time/epoch_l=1620504471
+	time/micro_seconds_i=444000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 113
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0113
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=113
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:52 2021
+	time/epoch_l=1620504472
+	time/micro_seconds_i=447999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 114
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0114
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=114
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:53 2021
+	time/epoch_l=1620504473
+	time/micro_seconds_i=451999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 115
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0115
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=115
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:54 2021
+	time/epoch_l=1620504474
+	time/micro_seconds_i=456000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 116
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0116
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=116
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:55 2021
+	time/epoch_l=1620504475
+	time/micro_seconds_i=460000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 117
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0117
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=117
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:56 2021
+	time/epoch_l=1620504476
+	time/micro_seconds_i=463999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 118
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0118
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=118
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:57 2021
+	time/epoch_l=1620504477
+	time/micro_seconds_i=467999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 119
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0119
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=119
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:58 2021
+	time/epoch_l=1620504478
+	time/micro_seconds_i=471999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 120
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0120
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=120
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:07:59 2021
+	time/epoch_l=1620504479
+	time/micro_seconds_i=476000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 121
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0121
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=121
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:00 2021
+	time/epoch_l=1620504480
+	time/micro_seconds_i=480000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 122
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0122
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=122
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:01 2021
+	time/epoch_l=1620504481
+	time/micro_seconds_i=484000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 123
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0123
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=123
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:02 2021
+	time/epoch_l=1620504482
+	time/micro_seconds_i=488000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 124
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0124
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=124
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:03 2021
+	time/epoch_l=1620504483
+	time/micro_seconds_i=492000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 125
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0125
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=125
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:04 2021
+	time/epoch_l=1620504484
+	time/micro_seconds_i=496000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 126
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0126
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=126
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:05 2021
+	time/epoch_l=1620504485
+	time/micro_seconds_i=500000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 127
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0127
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=127
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:06 2021
+	time/epoch_l=1620504486
+	time/micro_seconds_i=503999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 128
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0128
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=128
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:07 2021
+	time/epoch_l=1620504487
+	time/micro_seconds_i=507999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 129
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0129
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=129
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:08 2021
+	time/epoch_l=1620504488
+	time/micro_seconds_i=512000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 130
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0130
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=130
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:09 2021
+	time/epoch_l=1620504489
+	time/micro_seconds_i=516000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 131
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0131
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=131
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:10 2021
+	time/epoch_l=1620504490
+	time/micro_seconds_i=520000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 132
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0132
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=132
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:11 2021
+	time/epoch_l=1620504491
+	time/micro_seconds_i=524000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 133
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0133
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=133
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:12 2021
+	time/epoch_l=1620504492
+	time/micro_seconds_i=528000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 134
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0134
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=134
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:13 2021
+	time/epoch_l=1620504493
+	time/micro_seconds_i=532000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 135
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0135
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=135
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:14 2021
+	time/epoch_l=1620504494
+	time/micro_seconds_i=536000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 136
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0136
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=136
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:15 2021
+	time/epoch_l=1620504495
+	time/micro_seconds_i=539999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 137
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0137
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=137
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:16 2021
+	time/epoch_l=1620504496
+	time/micro_seconds_i=543999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 138
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0138
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=138
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:17 2021
+	time/epoch_l=1620504497
+	time/micro_seconds_i=548000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 139
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0139
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=139
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:18 2021
+	time/epoch_l=1620504498
+	time/micro_seconds_i=552000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 140
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0140
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=140
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:19 2021
+	time/epoch_l=1620504499
+	time/micro_seconds_i=555999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 141
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0141
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=141
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:20 2021
+	time/epoch_l=1620504500
+	time/micro_seconds_i=559999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 142
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0142
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=142
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:21 2021
+	time/epoch_l=1620504501
+	time/micro_seconds_i=563999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 143
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0143
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=143
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:22 2021
+	time/epoch_l=1620504502
+	time/micro_seconds_i=568000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 144
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0144
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=144
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:23 2021
+	time/epoch_l=1620504503
+	time/micro_seconds_i=572000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 145
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0145
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=145
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:24 2021
+	time/epoch_l=1620504504
+	time/micro_seconds_i=576000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 146
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0146
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=146
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:25 2021
+	time/epoch_l=1620504505
+	time/micro_seconds_i=580000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 147
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0147
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=147
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:26 2021
+	time/epoch_l=1620504506
+	time/micro_seconds_i=584000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 148
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0148
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=148
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:27 2021
+	time/epoch_l=1620504507
+	time/micro_seconds_i=588000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 149
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0149
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=149
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:28 2021
+	time/epoch_l=1620504508
+	time/micro_seconds_i=592000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 150
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0150
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=150
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:29 2021
+	time/epoch_l=1620504509
+	time/micro_seconds_i=595999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 151
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0151
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=151
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:30 2021
+	time/epoch_l=1620504510
+	time/micro_seconds_i=599999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 152
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0152
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=152
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:31 2021
+	time/epoch_l=1620504511
+	time/micro_seconds_i=604000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 153
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0153
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=153
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:32 2021
+	time/epoch_l=1620504512
+	time/micro_seconds_i=608000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 154
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0154
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=154
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:33 2021
+	time/epoch_l=1620504513
+	time/micro_seconds_i=612000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 155
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0155
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=155
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:34 2021
+	time/epoch_l=1620504514
+	time/micro_seconds_i=616000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 156
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0156
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=156
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:35 2021
+	time/epoch_l=1620504515
+	time/micro_seconds_i=619999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 157
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0157
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=157
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:36 2021
+	time/epoch_l=1620504516
+	time/micro_seconds_i=624000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 158
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0158
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=158
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:37 2021
+	time/epoch_l=1620504517
+	time/micro_seconds_i=628000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 159
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0159
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=159
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:38 2021
+	time/epoch_l=1620504518
+	time/micro_seconds_i=631999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 160
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0160
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=160
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:39 2021
+	time/epoch_l=1620504519
+	time/micro_seconds_i=635999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 161
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0161
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=161
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:40 2021
+	time/epoch_l=1620504520
+	time/micro_seconds_i=640000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 162
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0162
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=162
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:41 2021
+	time/epoch_l=1620504521
+	time/micro_seconds_i=644000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 163
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0163
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=163
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:42 2021
+	time/epoch_l=1620504522
+	time/micro_seconds_i=648000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 164
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0164
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=164
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:43 2021
+	time/epoch_l=1620504523
+	time/micro_seconds_i=651999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 165
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0165
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=165
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:44 2021
+	time/epoch_l=1620504524
+	time/micro_seconds_i=655999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 166
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0166
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=166
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:45 2021
+	time/epoch_l=1620504525
+	time/micro_seconds_i=660000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 167
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0167
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=167
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:46 2021
+	time/epoch_l=1620504526
+	time/micro_seconds_i=664000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 168
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0168
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=168
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:47 2021
+	time/epoch_l=1620504527
+	time/micro_seconds_i=668000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 169
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0169
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=169
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:48 2021
+	time/epoch_l=1620504528
+	time/micro_seconds_i=672000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 170
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0170
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=170
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:49 2021
+	time/epoch_l=1620504529
+	time/micro_seconds_i=676000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 171
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0171
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=171
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:50 2021
+	time/epoch_l=1620504530
+	time/micro_seconds_i=680000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 172
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0172
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=172
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:51 2021
+	time/epoch_l=1620504531
+	time/micro_seconds_i=684000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 173
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0173
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=173
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:52 2021
+	time/epoch_l=1620504532
+	time/micro_seconds_i=687999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 174
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0174
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=174
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:53 2021
+	time/epoch_l=1620504533
+	time/micro_seconds_i=691999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 175
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0175
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=175
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:54 2021
+	time/epoch_l=1620504534
+	time/micro_seconds_i=696000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 176
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0176
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=176
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:55 2021
+	time/epoch_l=1620504535
+	time/micro_seconds_i=700000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 177
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0177
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=177
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:56 2021
+	time/epoch_l=1620504536
+	time/micro_seconds_i=704000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 178
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0178
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=178
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:57 2021
+	time/epoch_l=1620504537
+	time/micro_seconds_i=708000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 179
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0179
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=179
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:58 2021
+	time/epoch_l=1620504538
+	time/micro_seconds_i=711999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 180
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0180
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=180
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:08:59 2021
+	time/epoch_l=1620504539
+	time/micro_seconds_i=716000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 181
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0181
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=181
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:00 2021
+	time/epoch_l=1620504540
+	time/micro_seconds_i=720000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 182
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0182
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=182
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:01 2021
+	time/epoch_l=1620504541
+	time/micro_seconds_i=723999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 183
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0183
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=183
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:02 2021
+	time/epoch_l=1620504542
+	time/micro_seconds_i=727999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 184
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0184
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=184
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:03 2021
+	time/epoch_l=1620504543
+	time/micro_seconds_i=732000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 185
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0185
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=185
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:04 2021
+	time/epoch_l=1620504544
+	time/micro_seconds_i=736000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 186
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0186
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=186
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:05 2021
+	time/epoch_l=1620504545
+	time/micro_seconds_i=740000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 187
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0187
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=187
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:06 2021
+	time/epoch_l=1620504546
+	time/micro_seconds_i=743999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 188
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0188
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=188
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:07 2021
+	time/epoch_l=1620504547
+	time/micro_seconds_i=747999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 189
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0189
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=189
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:08 2021
+	time/epoch_l=1620504548
+	time/micro_seconds_i=752000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 190
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0190
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=190
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:09 2021
+	time/epoch_l=1620504549
+	time/micro_seconds_i=756000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 191
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0191
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=191
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:10 2021
+	time/epoch_l=1620504550
+	time/micro_seconds_i=760000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 192
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0192
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=192
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:11 2021
+	time/epoch_l=1620504551
+	time/micro_seconds_i=764000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 193
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0193
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=193
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:12 2021
+	time/epoch_l=1620504552
+	time/micro_seconds_i=768000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 194
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0194
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=194
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:13 2021
+	time/epoch_l=1620504553
+	time/micro_seconds_i=772000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 195
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0195
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=195
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:14 2021
+	time/epoch_l=1620504554
+	time/micro_seconds_i=776000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 196
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0196
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=196
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:15 2021
+	time/epoch_l=1620504555
+	time/micro_seconds_i=779999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 197
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0197
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=197
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:16 2021
+	time/epoch_l=1620504556
+	time/micro_seconds_i=783999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 198
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0198
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=198
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:17 2021
+	time/epoch_l=1620504557
+	time/micro_seconds_i=788000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 199
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0199
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=199
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:18 2021
+	time/epoch_l=1620504558
+	time/micro_seconds_i=792000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 200
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0200
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=200
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:19 2021
+	time/epoch_l=1620504559
+	time/micro_seconds_i=796000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 201
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0201
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=201
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:20 2021
+	time/epoch_l=1620504560
+	time/micro_seconds_i=800000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 202
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0202
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=202
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:21 2021
+	time/epoch_l=1620504561
+	time/micro_seconds_i=803999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 203
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0203
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=203
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:22 2021
+	time/epoch_l=1620504562
+	time/micro_seconds_i=808000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 204
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0204
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=204
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:23 2021
+	time/epoch_l=1620504563
+	time/micro_seconds_i=812000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 205
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0205
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=205
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:24 2021
+	time/epoch_l=1620504564
+	time/micro_seconds_i=815999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 206
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0206
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=206
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:25 2021
+	time/epoch_l=1620504565
+	time/micro_seconds_i=819999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 207
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0207
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=207
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:26 2021
+	time/epoch_l=1620504566
+	time/micro_seconds_i=823999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 208
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0208
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=208
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:27 2021
+	time/epoch_l=1620504567
+	time/micro_seconds_i=828000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 209
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0209
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=209
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:28 2021
+	time/epoch_l=1620504568
+	time/micro_seconds_i=832000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 210
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0210
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=210
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:29 2021
+	time/epoch_l=1620504569
+	time/micro_seconds_i=835999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 211
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0211
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=211
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:30 2021
+	time/epoch_l=1620504570
+	time/micro_seconds_i=839999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 212
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0212
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=212
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:31 2021
+	time/epoch_l=1620504571
+	time/micro_seconds_i=844000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 213
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0213
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=213
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:32 2021
+	time/epoch_l=1620504572
+	time/micro_seconds_i=848000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 214
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0214
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=214
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:33 2021
+	time/epoch_l=1620504573
+	time/micro_seconds_i=852000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 215
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0215
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=215
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:34 2021
+	time/epoch_l=1620504574
+	time/micro_seconds_i=856000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 216
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0216
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=216
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:35 2021
+	time/epoch_l=1620504575
+	time/micro_seconds_i=860000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 217
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0217
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=217
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:36 2021
+	time/epoch_l=1620504576
+	time/micro_seconds_i=864000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 218
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0218
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=218
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:37 2021
+	time/epoch_l=1620504577
+	time/micro_seconds_i=868000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 219
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0219
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=219
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:38 2021
+	time/epoch_l=1620504578
+	time/micro_seconds_i=871999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 220
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0220
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=220
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:39 2021
+	time/epoch_l=1620504579
+	time/micro_seconds_i=875999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 221
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0221
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=221
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:40 2021
+	time/epoch_l=1620504580
+	time/micro_seconds_i=880000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 222
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0222
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=222
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:41 2021
+	time/epoch_l=1620504581
+	time/micro_seconds_i=884000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 223
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0223
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=223
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:42 2021
+	time/epoch_l=1620504582
+	time/micro_seconds_i=888000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 224
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0224
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=224
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:43 2021
+	time/epoch_l=1620504583
+	time/micro_seconds_i=891999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 225
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0225
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=225
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:44 2021
+	time/epoch_l=1620504584
+	time/micro_seconds_i=895999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 226
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0226
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=226
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:45 2021
+	time/epoch_l=1620504585
+	time/micro_seconds_i=900000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 227
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0227
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=227
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:46 2021
+	time/epoch_l=1620504586
+	time/micro_seconds_i=904000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 228
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0228
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=228
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:47 2021
+	time/epoch_l=1620504587
+	time/micro_seconds_i=907999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 229
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0229
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=229
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:48 2021
+	time/epoch_l=1620504588
+	time/micro_seconds_i=912000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 230
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0230
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=230
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:49 2021
+	time/epoch_l=1620504589
+	time/micro_seconds_i=916000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 231
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0231
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=231
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:50 2021
+	time/epoch_l=1620504590
+	time/micro_seconds_i=920000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 232
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0232
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=232
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:51 2021
+	time/epoch_l=1620504591
+	time/micro_seconds_i=924000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 233
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0233
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=233
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:52 2021
+	time/epoch_l=1620504592
+	time/micro_seconds_i=927999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 234
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0234
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=234
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:53 2021
+	time/epoch_l=1620504593
+	time/micro_seconds_i=931999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 235
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0235
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=235
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:54 2021
+	time/epoch_l=1620504594
+	time/micro_seconds_i=936000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 236
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0236
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=236
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:55 2021
+	time/epoch_l=1620504595
+	time/micro_seconds_i=940000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 237
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0237
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=237
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:56 2021
+	time/epoch_l=1620504596
+	time/micro_seconds_i=944000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 238
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0238
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=238
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:57 2021
+	time/epoch_l=1620504597
+	time/micro_seconds_i=948000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 239
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0239
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=239
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:58 2021
+	time/epoch_l=1620504598
+	time/micro_seconds_i=952000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 240
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0240
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=240
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:09:59 2021
+	time/epoch_l=1620504599
+	time/micro_seconds_i=956000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 241
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0241
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=241
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:00 2021
+	time/epoch_l=1620504600
+	time/micro_seconds_i=960000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 242
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0242
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=242
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:01 2021
+	time/epoch_l=1620504601
+	time/micro_seconds_i=963999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 243
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0243
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=243
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:02 2021
+	time/epoch_l=1620504602
+	time/micro_seconds_i=967999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 244
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0244
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=244
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:03 2021
+	time/epoch_l=1620504603
+	time/micro_seconds_i=971999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 245
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0245
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=245
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:04 2021
+	time/epoch_l=1620504604
+	time/micro_seconds_i=976000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 246
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0246
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=246
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:05 2021
+	time/epoch_l=1620504605
+	time/micro_seconds_i=980000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 247
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0247
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=247
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:06 2021
+	time/epoch_l=1620504606
+	time/micro_seconds_i=983999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 248
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0248
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=248
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:07 2021
+	time/epoch_l=1620504607
+	time/micro_seconds_i=987999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 249
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0249
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=249
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:08 2021
+	time/epoch_l=1620504608
+	time/micro_seconds_i=992000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 250
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0250
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=250
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:09 2021
+	time/epoch_l=1620504609
+	time/micro_seconds_i=996000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 251
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0251
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=251
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:11 2021
+	time/epoch_l=1620504611
+	time/micro_seconds_i=0
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 252
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0252
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=252
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:12 2021
+	time/epoch_l=1620504612
+	time/micro_seconds_i=4000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 253
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0253
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=253
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:13 2021
+	time/epoch_l=1620504613
+	time/micro_seconds_i=8000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 254
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0254
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=254
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:14 2021
+	time/epoch_l=1620504614
+	time/micro_seconds_i=12000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 255
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0255
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=255
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:15 2021
+	time/epoch_l=1620504615
+	time/micro_seconds_i=16000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 256
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0256
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=256
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:16 2021
+	time/epoch_l=1620504616
+	time/micro_seconds_i=19999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 257
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0257
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=257
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:17 2021
+	time/epoch_l=1620504617
+	time/micro_seconds_i=23999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 258
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0258
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=258
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:18 2021
+	time/epoch_l=1620504618
+	time/micro_seconds_i=28000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 259
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0259
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=259
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:19 2021
+	time/epoch_l=1620504619
+	time/micro_seconds_i=32000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 260
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0260
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=260
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:20 2021
+	time/epoch_l=1620504620
+	time/micro_seconds_i=36000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 261
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0261
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=261
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:21 2021
+	time/epoch_l=1620504621
+	time/micro_seconds_i=40000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 262
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0262
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=262
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:22 2021
+	time/epoch_l=1620504622
+	time/micro_seconds_i=44000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 263
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0263
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=263
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:23 2021
+	time/epoch_l=1620504623
+	time/micro_seconds_i=48000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 264
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0264
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=264
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:24 2021
+	time/epoch_l=1620504624
+	time/micro_seconds_i=52000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 265
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0265
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=265
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:25 2021
+	time/epoch_l=1620504625
+	time/micro_seconds_i=55999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 266
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0266
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=266
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:26 2021
+	time/epoch_l=1620504626
+	time/micro_seconds_i=59999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 267
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0267
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=267
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:27 2021
+	time/epoch_l=1620504627
+	time/micro_seconds_i=63999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 268
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0268
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=268
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:28 2021
+	time/epoch_l=1620504628
+	time/micro_seconds_i=68000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 269
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0269
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=269
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:29 2021
+	time/epoch_l=1620504629
+	time/micro_seconds_i=72000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 270
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0270
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=270
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:30 2021
+	time/epoch_l=1620504630
+	time/micro_seconds_i=75999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 271
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0271
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=271
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:31 2021
+	time/epoch_l=1620504631
+	time/micro_seconds_i=79999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 272
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0272
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=272
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:32 2021
+	time/epoch_l=1620504632
+	time/micro_seconds_i=84000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 273
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0273
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=273
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:33 2021
+	time/epoch_l=1620504633
+	time/micro_seconds_i=88000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 274
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0274
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=274
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:34 2021
+	time/epoch_l=1620504634
+	time/micro_seconds_i=92000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 275
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0275
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=275
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:35 2021
+	time/epoch_l=1620504635
+	time/micro_seconds_i=96000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 276
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0276
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=276
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:36 2021
+	time/epoch_l=1620504636
+	time/micro_seconds_i=100000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 277
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0277
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=277
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:37 2021
+	time/epoch_l=1620504637
+	time/micro_seconds_i=104000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 278
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0278
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=278
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:38 2021
+	time/epoch_l=1620504638
+	time/micro_seconds_i=108000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 279
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0279
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=279
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:39 2021
+	time/epoch_l=1620504639
+	time/micro_seconds_i=111999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 280
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0280
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=280
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:40 2021
+	time/epoch_l=1620504640
+	time/micro_seconds_i=115999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 281
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0281
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=281
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:41 2021
+	time/epoch_l=1620504641
+	time/micro_seconds_i=119999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 282
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0282
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=282
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:42 2021
+	time/epoch_l=1620504642
+	time/micro_seconds_i=124000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 283
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0283
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=283
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:43 2021
+	time/epoch_l=1620504643
+	time/micro_seconds_i=128000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 284
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0284
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=284
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:44 2021
+	time/epoch_l=1620504644
+	time/micro_seconds_i=132000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 285
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0285
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=285
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:45 2021
+	time/epoch_l=1620504645
+	time/micro_seconds_i=136000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 286
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0286
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=286
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:46 2021
+	time/epoch_l=1620504646
+	time/micro_seconds_i=140000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 287
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0287
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=287
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:47 2021
+	time/epoch_l=1620504647
+	time/micro_seconds_i=144000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 288
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0288
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=288
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:48 2021
+	time/epoch_l=1620504648
+	time/micro_seconds_i=148000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 289
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0289
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=289
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:49 2021
+	time/epoch_l=1620504649
+	time/micro_seconds_i=151999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 290
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0290
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=290
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:50 2021
+	time/epoch_l=1620504650
+	time/micro_seconds_i=155999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 291
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0291
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=291
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:51 2021
+	time/epoch_l=1620504651
+	time/micro_seconds_i=160000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 292
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0292
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=292
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:52 2021
+	time/epoch_l=1620504652
+	time/micro_seconds_i=164000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 293
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0293
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=293
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:53 2021
+	time/epoch_l=1620504653
+	time/micro_seconds_i=167999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 294
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0294
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=294
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:54 2021
+	time/epoch_l=1620504654
+	time/micro_seconds_i=171999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 295
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0295
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=295
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:55 2021
+	time/epoch_l=1620504655
+	time/micro_seconds_i=176000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 296
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0296
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=296
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:56 2021
+	time/epoch_l=1620504656
+	time/micro_seconds_i=180000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 297
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0297
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=297
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:57 2021
+	time/epoch_l=1620504657
+	time/micro_seconds_i=184000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 298
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0298
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=298
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:58 2021
+	time/epoch_l=1620504658
+	time/micro_seconds_i=188000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 299
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0299
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=299
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:10:59 2021
+	time/epoch_l=1620504659
+	time/micro_seconds_i=192000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 300
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0300
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=300
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:00 2021
+	time/epoch_l=1620504660
+	time/micro_seconds_i=196000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 301
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0301
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=301
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:01 2021
+	time/epoch_l=1620504661
+	time/micro_seconds_i=200000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 302
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0302
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=302
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:02 2021
+	time/epoch_l=1620504662
+	time/micro_seconds_i=203999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 303
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0303
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=303
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:03 2021
+	time/epoch_l=1620504663
+	time/micro_seconds_i=207999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 304
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0304
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=304
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:04 2021
+	time/epoch_l=1620504664
+	time/micro_seconds_i=211999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 305
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0305
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=305
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:05 2021
+	time/epoch_l=1620504665
+	time/micro_seconds_i=216000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 306
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0306
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=306
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:06 2021
+	time/epoch_l=1620504666
+	time/micro_seconds_i=220000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 307
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0307
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=307
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:07 2021
+	time/epoch_l=1620504667
+	time/micro_seconds_i=224000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 308
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0308
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=308
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:08 2021
+	time/epoch_l=1620504668
+	time/micro_seconds_i=228000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 309
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0309
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=309
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:09 2021
+	time/epoch_l=1620504669
+	time/micro_seconds_i=232000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 310
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0310
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=310
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:10 2021
+	time/epoch_l=1620504670
+	time/micro_seconds_i=236000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 311
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0311
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=311
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:11 2021
+	time/epoch_l=1620504671
+	time/micro_seconds_i=240000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 312
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0312
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=312
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:12 2021
+	time/epoch_l=1620504672
+	time/micro_seconds_i=243999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 313
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0313
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=313
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:13 2021
+	time/epoch_l=1620504673
+	time/micro_seconds_i=247999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 314
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0314
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=314
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:14 2021
+	time/epoch_l=1620504674
+	time/micro_seconds_i=252000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 315
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0315
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=315
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:15 2021
+	time/epoch_l=1620504675
+	time/micro_seconds_i=256000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 316
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0316
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=316
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:16 2021
+	time/epoch_l=1620504676
+	time/micro_seconds_i=259999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 317
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0317
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=317
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:17 2021
+	time/epoch_l=1620504677
+	time/micro_seconds_i=263999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 318
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0318
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=318
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:18 2021
+	time/epoch_l=1620504678
+	time/micro_seconds_i=267999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 319
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0319
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=319
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:19 2021
+	time/epoch_l=1620504679
+	time/micro_seconds_i=272000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 320
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0320
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=320
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:20 2021
+	time/epoch_l=1620504680
+	time/micro_seconds_i=276000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 321
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0321
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=321
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:21 2021
+	time/epoch_l=1620504681
+	time/micro_seconds_i=280000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 322
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0322
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=322
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:22 2021
+	time/epoch_l=1620504682
+	time/micro_seconds_i=284000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 323
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0323
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=323
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:23 2021
+	time/epoch_l=1620504683
+	time/micro_seconds_i=288000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 324
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0324
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=324
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:24 2021
+	time/epoch_l=1620504684
+	time/micro_seconds_i=292000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 325
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0325
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=325
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:25 2021
+	time/epoch_l=1620504685
+	time/micro_seconds_i=296000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 326
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0326
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=326
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:26 2021
+	time/epoch_l=1620504686
+	time/micro_seconds_i=299999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 327
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0327
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=327
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:27 2021
+	time/epoch_l=1620504687
+	time/micro_seconds_i=303999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 328
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0328
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=328
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:28 2021
+	time/epoch_l=1620504688
+	time/micro_seconds_i=308000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 329
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0329
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=329
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:29 2021
+	time/epoch_l=1620504689
+	time/micro_seconds_i=312000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 330
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0330
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=330
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:30 2021
+	time/epoch_l=1620504690
+	time/micro_seconds_i=316000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 331
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0331
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=331
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:31 2021
+	time/epoch_l=1620504691
+	time/micro_seconds_i=320000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 332
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0332
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=332
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:32 2021
+	time/epoch_l=1620504692
+	time/micro_seconds_i=323999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 333
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0333
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=333
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:33 2021
+	time/epoch_l=1620504693
+	time/micro_seconds_i=328000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 334
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0334
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=334
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:34 2021
+	time/epoch_l=1620504694
+	time/micro_seconds_i=332000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 335
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0335
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=335
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:35 2021
+	time/epoch_l=1620504695
+	time/micro_seconds_i=335999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 336
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0336
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=336
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:36 2021
+	time/epoch_l=1620504696
+	time/micro_seconds_i=339999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 337
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0337
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=337
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:37 2021
+	time/epoch_l=1620504697
+	time/micro_seconds_i=344000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 338
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0338
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=338
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:38 2021
+	time/epoch_l=1620504698
+	time/micro_seconds_i=348000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 339
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0339
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=339
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:39 2021
+	time/epoch_l=1620504699
+	time/micro_seconds_i=351999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 340
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0340
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=340
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:40 2021
+	time/epoch_l=1620504700
+	time/micro_seconds_i=355999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 341
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0341
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=341
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:41 2021
+	time/epoch_l=1620504701
+	time/micro_seconds_i=359999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 342
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0342
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=342
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:42 2021
+	time/epoch_l=1620504702
+	time/micro_seconds_i=364000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 343
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0343
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=343
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:43 2021
+	time/epoch_l=1620504703
+	time/micro_seconds_i=368000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 344
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0344
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=344
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:44 2021
+	time/epoch_l=1620504704
+	time/micro_seconds_i=372000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 345
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0345
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=345
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:45 2021
+	time/epoch_l=1620504705
+	time/micro_seconds_i=376000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 346
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0346
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=346
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:46 2021
+	time/epoch_l=1620504706
+	time/micro_seconds_i=380000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 347
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0347
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=347
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:47 2021
+	time/epoch_l=1620504707
+	time/micro_seconds_i=384000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 348
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0348
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=348
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:48 2021
+	time/epoch_l=1620504708
+	time/micro_seconds_i=388000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 349
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0349
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=349
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:49 2021
+	time/epoch_l=1620504709
+	time/micro_seconds_i=391999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 350
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0350
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=350
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:50 2021
+	time/epoch_l=1620504710
+	time/micro_seconds_i=395999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 351
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0351
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=351
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:51 2021
+	time/epoch_l=1620504711
+	time/micro_seconds_i=400000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 352
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0352
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=352
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:52 2021
+	time/epoch_l=1620504712
+	time/micro_seconds_i=404000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 353
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0353
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=353
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:53 2021
+	time/epoch_l=1620504713
+	time/micro_seconds_i=408000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 354
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0354
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=354
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:54 2021
+	time/epoch_l=1620504714
+	time/micro_seconds_i=412000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 355
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0355
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=355
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:55 2021
+	time/epoch_l=1620504715
+	time/micro_seconds_i=415999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 356
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0356
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=356
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:56 2021
+	time/epoch_l=1620504716
+	time/micro_seconds_i=420000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 357
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0357
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=357
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:57 2021
+	time/epoch_l=1620504717
+	time/micro_seconds_i=424000
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 358
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0358
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=358
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:58 2021
+	time/epoch_l=1620504718
+	time/micro_seconds_i=427999
+	time/type_s=BOTH
+	time_table_n_i=0
+
+#   Table row 359
+/Experiment_g/Receivers_g/Das_g_1X1/Das_t
+	array_name_SOH_a=
+	array_name_data_a=Data_a_0359
+	array_name_event_a=
+	array_name_log_a=
+	channel_number_i=2
+	event_number_i=359
+	raw_file_name_s=453005513.2.2021.05.08.20.06..E
+	receiver_table_n_i=2
+	response_table_n_i=0
+	sample_count_i=251
+	sample_rate_i=250
+	sample_rate_multiplier_i=1
+	stream_number_i=1
+	time/ascii_s=Sat May  8 20:11:59 2021
+	time/epoch_l=1620504719
+	time/micro_seconds_i=431999
+	time/type_s=BOTH
+	time_table_n_i=0
+
