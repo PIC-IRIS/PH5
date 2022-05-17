@@ -390,6 +390,10 @@ class TestSegDtoPH5_messed_order(TempDirTestCase, LogTestCase):
         segd_list not in time order
         test if created das_t in time order
         """
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
         listfile = os.path.join(
             self.home, ("ph5/test_data/segd/messed_order/segd_list"))
         print("listfile:", listfile)
