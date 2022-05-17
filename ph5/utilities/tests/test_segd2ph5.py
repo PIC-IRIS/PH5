@@ -10,7 +10,7 @@ import operator
 from mock import patch
 from testfixtures import LogCapture, OutputCapture
 
-from ph5.utilities import segd2ph5, tabletokef
+from ph5.utilities import segd2ph5, tabletokef, initialize_ph5
 from ph5.core import segdreader, segdreader_smartsolo, ph5api, experiment
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
@@ -408,7 +408,8 @@ class TestSegDtoPH5_messed_order(TempDirTestCase, LogTestCase):
 
         self.ph5object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
         self.ph5object.read_das_g_names()
-        print("ph5object.Das_g_names.keys():", self.ph5object.Das_g_names.keys())
+        print("ph5object.Das_g_names.keys():",
+              self.ph5object.Das_g_names.keys())
         das_g = self.ph5object.ph5_g_receivers.getdas_g('1X4')
         self.ph5object.ph5_g_receivers.setcurrent(das_g)
         das_rows, das_keys = experiment.read_table(
