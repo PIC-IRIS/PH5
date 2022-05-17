@@ -394,11 +394,16 @@ class TestSegDtoPH5_messed_order(TempDirTestCase, LogTestCase):
         with patch.object(sys, 'argv', testargs):
             initialize_ph5.main()
 
-        listfile = os.path.join(
-            self.home, ("ph5/test_data/segd/messed_order/segd_list"))
-        print("listfile:", listfile)
+        # create list file
+        segd_dir = os.path.join(self.home, "ph5/test_data/segd/messed_order/")
+        with open('segd_list', "w") as segdlistfile:
+            fileList = os.listdir(segd_dir)
+            for f in fileList:
+                if f.endswith('segd'):
+                    segdlistfile.write(os.path.join(segd_dir, f) + "\n")
+
         # add segD to ph5
-        testargs = ['segdtoph5', '-n', 'master.ph5', '-f', listfile]
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-f', 'segd_list']
         with patch.object(sys, 'argv', testargs):
             with LogCapture() as log:
                 with OutputCapture():
