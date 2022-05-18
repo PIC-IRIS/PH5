@@ -1189,9 +1189,9 @@ class PH5(experiment.ExperimentGroup):
                         d['overlap_start'] = window_start_fepoch
                         d['overlap_stop'] = last_window_stop_fepoch
                         window_start_fepoch = last_window_stop_fepoch
-                elif d['gap_overlap'] > 0:
-                    # gap
-                    new_trace = True
+                # Data gap
+                # if abs(time_diff) > (1. / sr) => always happen
+                new_trace = True
             if (d['channel_number_i'] != chan) or (
                     sr != sample_rate) or (window_start_fepoch > stop_fepoch):
                 continue
@@ -1206,20 +1206,21 @@ class PH5(experiment.ExperimentGroup):
             # start cutting at start of window
             if start_fepoch < window_start_fepoch:
                 cut_start_fepoch = window_start_fepoch
+                cut_start_sample = 0
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-            cut_start_sample = round(
-                cut_start_fepoch - window_start_fepoch) * sr
-
+                cut_start_sample = round(
+                    (cut_start_fepoch - window_start_fepoch) * sr)
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
+                cut_stop_sample = window_samples
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = round(stop_fepoch, 6)
-            cut_stop_sample = round(cut_stop_fepoch - window_start_fepoch) * sr
-
+                cut_stop_sample = round(
+                    (cut_stop_fepoch - window_start_fepoch) * sr)
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
