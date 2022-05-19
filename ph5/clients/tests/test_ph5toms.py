@@ -75,7 +75,7 @@ class TestPH5toMSeed_SAC(LogTestCase, TempDirTestCase):
                 ph5toms.main()
 
         saclist = os.listdir(sacpath)
-        self.assertEqual(len(saclist), 3)
+        self.assertEqual(len(saclist), 6)
         for f in saclist:
             st = obspy.read(os.path.join(sacpath, f))
             self.assertIn(st[0].stats['channel'], ['DP1', 'DP2', 'DPZ'])
