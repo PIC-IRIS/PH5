@@ -1176,7 +1176,7 @@ class PH5(experiment.ExperimentGroup):
         for d in Das_t:
             sr = float(d['sample_rate_i']) / \
                  float(d['sample_rate_multiplier_i'])
-            window_start_fepoch = fepoch(
+            org_window_start_fepoch = window_start_fepoch = fepoch(
                 d['time/epoch_l'], d['time/micro_seconds_i'])
             if last_window_stop_fepoch is not None:
                 # gap/overlap is the time difference between
@@ -1200,7 +1200,8 @@ class PH5(experiment.ExperimentGroup):
             # Number of samples in window
             window_samples = d['sample_count_i']
             # Window stop epoch
-            window_stop_fepoch = window_start_fepoch + (window_samples / sr)
+            window_stop_fepoch = round(
+                org_window_start_fepoch + (window_samples / sr), 6)
 
             # Requested start before start of window, we must need to
             # start cutting at start of window
@@ -1790,14 +1791,14 @@ def build_kef(ts, rs):
     return ret
 
 
-def fepoch(epoch, ms):
+def fepoch(epoch, usec):
     '''
-    Given ascii epoch and miliseconds return epoch as a float.
+    Given ascii epoch and microseconds return epoch as a float.
     '''
     epoch = float(int(epoch))
-    secs = float(int(ms)) / 1000000.0
+    secs = float(int(usec)) / 1000000.0
 
-    return epoch + secs
+    return round(epoch + secs, 6)
 
 
 def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
