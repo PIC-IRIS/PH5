@@ -10,6 +10,7 @@ import os
 import time
 import re
 import math
+from decimal import Decimal
 
 import numpy as np
 from pyproj import Geod
@@ -1184,8 +1185,8 @@ class PH5(experiment.ExperimentGroup):
             # Number of samples in window
             window_samples = d['sample_count_i']
             # Window stop epoch
-            window_stop_fepoch = round(
-                window_start_fepoch + (window_samples / sr), 6)
+            window_stop_fepoch = (window_start_fepoch +
+                                  float(Decimal(window_samples) / Decimal(sr)))
 
             # Requested start before start of window, we must need to
             # start cutting at start of window
@@ -1779,14 +1780,14 @@ def build_kef(ts, rs):
     return ret
 
 
-def fepoch(epoch, ms):
+def fepoch(epoch, usecs):
     '''
     Given ascii epoch and microseconds return epoch as a float.
     '''
-    epoch = float(int(epoch))
-    secs = float(int(ms)) / 1000000.0
+    epoch = Decimal(epoch)
+    secs = Decimal(usecs) / 1000000
 
-    return round(epoch + secs, 6)
+    return float(epoch + secs)
 
 
 def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):
