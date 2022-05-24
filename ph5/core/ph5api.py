@@ -19,7 +19,7 @@ from tables.exceptions import NoSuchNodeError
 from ph5.core import columns, experiment, timedoy
 
 
-PROG_VERSION = '2021.322'
+PROG_VERSION = '2022.144'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
