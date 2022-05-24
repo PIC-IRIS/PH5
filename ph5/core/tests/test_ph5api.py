@@ -2,8 +2,12 @@
 Tests for ph5api
 '''
 import os
+import sys
 import unittest
 
+from mock import patch
+
+from ph5.utilities import segd2ph5, initialize_ph5
 from ph5.core import ph5api
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 
@@ -1259,6 +1263,39 @@ class TestPH5API_srm_query_das_t(TempDirTestCase, LogTestCase):
             ('Das_t_1X1111 has sample_rate_multiplier_i missing. '
              'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.'
              ))
+
+
+class TestPH5API_precision(TempDirTestCase, LogTestCase):
+    def setUp(self):
+        super(TestPH5API_precision, self).setUp()
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        segd_file = os.path.join(
+            self.home, "ph5/test_data/segd/smartsolo/453005513.2.2021.05.08."
+                       "20.06.00.000.E.segd")
+        testargs = ['segdtoph5', '-n', 'master', '-r', segd_file]
+        with patch.object(sys, 'argv', testargs):
+            segd2ph5.main()
+
+        self.ph5obj = ph5api.PH5(path=self.tmpdir,
+                                 nickname='master.ph5')
+
+    def tearDown(self):
+        self.ph5obj.ph5close()
+        super(TestPH5API_precision, self).tearDown()
+
+    def test_cut(self):
+        traces = self.ph5obj.cut(das='1X1',
+                                 start_fepoch=1620504374.0,
+                                 stop_fepoch=1620504375.0,
+                                 chan=2,
+                                 sample_rate=250.0)
+
+        self.assertEqual(len(traces), 2)
+        # before fixed: 237
+        self.assertEqual(traces[1].nsamples, 236)
 
 
 if __name__ == "__main__":

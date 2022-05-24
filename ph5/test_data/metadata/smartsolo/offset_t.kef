@@ -1,0 +1,9 @@
+# geod2kef v2018.268, PH5 v4.1.2
+# 1
+/Experiment_g/Sorts_g/Offset_t_001_102
+	event_id_s=116807
+	offset/value_d=4173189.04106
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=1
+	azimuth/value_f=29.5626142596
