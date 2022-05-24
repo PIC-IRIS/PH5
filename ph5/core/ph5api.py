@@ -1245,7 +1245,7 @@ class PH5(experiment.ExperimentGroup):
                     new_trace = True
             if len(data_tmp) > 0:
                 #  Gap!!!
-                if new_trace:
+                if das_t and new_trace:
                     # Save trace before gap
                     trace = Trace(data,
                                   trace_start_fepoch,
