@@ -10,6 +10,7 @@ import os
 import time
 import re
 import math
+from decimal import Decimal
 
 import numpy as np
 from pyproj import Geod
@@ -18,7 +19,7 @@ from tables.exceptions import NoSuchNodeError
 from ph5.core import columns, experiment, timedoy
 
 
-PROG_VERSION = '2021.322'
+PROG_VERSION = '2022.144'
 
 LOGGER = logging.getLogger(__name__)
 PH5VERSION = columns.PH5VERSION
@@ -1184,7 +1185,8 @@ class PH5(experiment.ExperimentGroup):
             # Number of samples in window
             window_samples = d['sample_count_i']
             # Window stop epoch
-            window_stop_fepoch = window_start_fepoch + (window_samples / sr)
+            window_stop_fepoch = (window_start_fepoch +
+                                  float(Decimal(window_samples) / Decimal(sr)))
 
             # Requested start before start of window, we must need to
             # start cutting at start of window
@@ -1194,9 +1196,8 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = int(math.ceil(((cut_start_fepoch -
-                                                   window_start_fepoch) *
-                                                  sr)))
+                cut_start_sample = round(
+                    (cut_start_fepoch - window_start_fepoch) * sr)
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
@@ -1204,10 +1205,8 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Requested stop is somewhere in window
                 cut_stop_fepoch = round(stop_fepoch, 6)
-                cut_stop_sample = int(round(
-                                        math.ceil((cut_stop_fepoch -
-                                                   window_start_fepoch) * sr),
-                                        6))
+                cut_stop_sample = round(
+                    (cut_stop_fepoch - window_start_fepoch) * sr)
             # Get trace reference and cut data available in this window
             trace_reference = self.ph5_g_receivers.find_trace_ref(
                 d['array_name_data_a'].strip())
@@ -1246,7 +1245,7 @@ class PH5(experiment.ExperimentGroup):
                     new_trace = True
             if len(data_tmp) > 0:
                 #  Gap!!!
-                if new_trace:
+                if das_t and new_trace:
                     # Save trace before gap
                     trace = Trace(data,
                                   trace_start_fepoch,
@@ -1781,14 +1780,14 @@ def build_kef(ts, rs):
     return ret
 
 
-def fepoch(epoch, ms):
+def fepoch(epoch, usecs):
     '''
-    Given ascii epoch and miliseconds return epoch as a float.
+    Given ascii epoch and microseconds return epoch as a float.
     '''
-    epoch = float(int(epoch))
-    secs = float(int(ms)) / 1000000.0
+    epoch = Decimal(epoch)
+    secs = Decimal(usecs) / 1000000
 
-    return epoch + secs
+    return float(epoch + secs)
 
 
 def _cor(start_fepoch, stop_fepoch, Time_t, max_drift_rate=MAX_DRIFT_RATE):

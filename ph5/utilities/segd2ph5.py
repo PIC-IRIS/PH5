@@ -14,6 +14,7 @@ import logging
 import time
 import json
 import re
+from decimal import Decimal
 from math import modf
 import warnings
 import operator
@@ -640,10 +641,10 @@ def process_traces(rh, th, tr):
             LOGGER.warning("Failed to read shot epoch: {0}.".format(e.message))
             trace_epoch = 0.
 
-        f, i = modf(trace_epoch / 1000000.)
-        p_das_t['time/epoch_l'] = int(i)
+        tmp = Decimal(trace_epoch) / 1000000
+        p_das_t['time/epoch_l'] = int(tmp)
         p_das_t['time/ascii_s'] = time.ctime(p_das_t['time/epoch_l'])
-        p_das_t['time/micro_seconds_i'] = int(f * 1000000.)
+        p_das_t['time/micro_seconds_i'] = int((tmp % 1) * 1000000)
         p_das_t['event_number_i'] = th.event_number
         p_das_t['channel_number_i'] = get_true_channel(SD)[0]
         p_das_t['sample_rate_i'] = SD.sample_rate

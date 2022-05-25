@@ -131,6 +131,7 @@ ph5.core.ph5api
  * fix for get_availability returning incomplete results
  * fix query_das_t to throw error is sample_rate_multiplier_is=0 or is missing
  * Remove the call to read_array_t() channels() to optimize geo_kef_gen
+ * fix cut()'s precision to not go over one extra sample out of the size which creating fake overlap
 ph5.entry_points
  * creates a dictionary, keys are names of scripts,
       values are (1) simple description,

@@ -1,0 +1,21 @@
+/Experiment_g/Sorts_g/Event_t_102
+	id_s=116807
+	location/X/value_d=-127.605897
+	location/X/units_s=degrees
+	location/Y/value_d=49.836281
+	location/Y/units_s=degrees
+	location/Z/value_d=0.0
+	location/Z/units_s=m
+	location/coordinate_system_s=
+	location/projection_s=
+	location/ellipsoid_s=
+	location/description_s=
+	time/ascii_s=Sat May 8 20:06:14 2021
+	time/epoch_l=1620504374
+	time/micro_seconds_i=56000
+	time/type_s=BOTH
+	size/value_d=6600.0
+	size/units_s=volume in3
+	depth/value_d=-12.0
+	depth/units_s=
+	description_s=MGL2104PD02 - MGL2104 airgun - Pressure 1975psi - Water Depth -96.9m

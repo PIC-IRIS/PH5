@@ -423,5 +423,41 @@ class TestSegDtoPH5_messed_order(TempDirTestCase, LogTestCase):
         self.assertEqual(das_rows, ordered_das_rows)
 
 
+class TestSegDtoPH5_precision(TempDirTestCase, LogTestCase):
+    def tearDown(self):
+        self.ph5object.ph5close()
+        super(TestSegDtoPH5_precision, self).tearDown()
+
+    def test_main(self):
+        """
+        test if created das_t[time/micro_second_i] is correct
+        """
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        # create list file
+        segd_file = os.path.join(
+            self.home, "ph5/test_data/segd/smartsolo/453005513.2.2021.05.08."
+                       "20.06.00.000.E.segd")
+
+        # add segD to ph5
+        testargs = ['segdtoph5', '-n', 'master.ph5', '-r', segd_file]
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture():
+                with OutputCapture():
+                    segd2ph5.main()
+
+        self.ph5object = ph5api.PH5(path=self.tmpdir, nickname='master.ph5')
+        das_g = self.ph5object.ph5_g_receivers.getdas_g('1X1')
+        self.ph5object.ph5_g_receivers.setcurrent(das_g)
+        das_rows, das_keys = experiment.read_table(
+            self.ph5object.ph5_g_receivers.current_t_das)
+        # 7999 before fixed
+        self.assertEqual(das_rows[2]['time/micro_seconds_i'], 8000)
+        # 19999 before fixed
+        self.assertEqual(das_rows[5]['time/micro_seconds_i'], 20000)
+
+
 if __name__ == "__main__":
     unittest.main()
