@@ -265,6 +265,116 @@ class PH5Availability(object):
         self.ph5.forget_das_t(das)
         return earliest_epoch, latest_epoch, new_das_t
 
+    def get_one_availability(self, das, das_info, sample_rate, chan,
+                             start=None, end=None):
+        '''
+        Required: das, sample_rate and component
+        Optional: Start time, End time
+        :param das: das serial number
+        :param sample_rate: sample rate
+        :param component: component channel number
+        :param start: start time epoch
+        :param end:  end time epoch
+        :return: list of tuples (sample_rate, start, end)
+        '''
+        das_t_t = None
+        gaps = 0
+        if chan is None:
+            raise ValueError("Component required for get_availability")
+        if sample_rate is None:
+            raise ValueError("Sample rate required for get_availability")
+
+        key = (chan, start, end, sample_rate)
+        if key in das_info[das].keys():
+            das_t_t = das_info[das][key]
+        else:
+            das_t_t = self.ph5.query_das_t(
+                das,
+                chan=chan,
+                start_epoch=start,
+                stop_epoch=end,
+                sample_rate=sample_rate)
+            if not das_t_t:
+                LOGGER.warning("No Das table found for " + das)
+                return None
+            das_info[das][key] = das_t_t
+
+        Das_t = ph5api.filter_das_t(das_t_t, chan)
+
+        if sample_rate > 0:
+            Das_t = [das_t for das_t in Das_t if
+                     das_t['sample_rate_i'] /
+                     das_t['sample_rate_multiplier_i'] == sample_rate]
+        else:
+            Das_t = [das_t for das_t in Das_t if
+                     das_t['sample_rate_i'] == sample_rate]
+
+        new_das_t = sorted(Das_t, key=lambda k: k['time/epoch_l'])
+
+        if not new_das_t:
+            LOGGER.warning("No Das table found for " + das)
+            return None
+
+        gaps = 0
+        prev_start = None
+        prev_end = None
+        prev_len = None
+        prev_sr = None
+        times = []
+        for entry in new_das_t:
+            # set the values for this entry
+            cur_time = (float(entry['time/epoch_l']) +
+                        float(entry['time/micro_seconds_i']) /
+                        1000000)
+            if entry['sample_rate_i'] > 0:
+                cur_len = (float(entry['sample_count_i']) /
+                           float(entry['sample_rate_i']) /
+                           float(entry['sample_rate_multiplier_i']))
+                cur_sr = (float(entry['sample_rate_i']) /
+                          float(entry['sample_rate_multiplier_i']))
+            else:
+                cur_len = 0
+                cur_sr = 0
+            cur_end = cur_time + cur_len
+
+            if (prev_start is None and prev_end is None and
+                    prev_len is None and prev_sr is None):
+                prev_start = cur_time
+                prev_end = cur_end
+                prev_len = cur_len
+                prev_sr = cur_sr
+            else:
+                if (cur_time == prev_start and
+                        cur_len == prev_len and
+                        cur_sr == prev_sr):
+                    # duplicate entry - skip
+                    continue
+                elif (cur_time > prev_end or
+                        cur_sr != prev_sr):
+                    # there is a gap so add a new entry
+                    times.append((prev_sr,
+                                  prev_start,
+                                  prev_end))
+                    # increment the number of gaps and reset previous
+                    gaps = gaps + 1
+                    prev_start = cur_time
+                    prev_end = cur_end
+                    prev_len = cur_len
+                    prev_sr = cur_sr
+                elif (cur_time == prev_end and
+                        cur_sr == prev_sr):
+                    # extend the end time since this was a continuous segment
+                    prev_end = cur_end
+                    prev_len = cur_len
+                    prev_sr = cur_sr
+
+        # add the last continuous segment
+        times.append((prev_sr,
+                      prev_start,
+                      prev_end))
+
+        return times
+
     def get_slc(self, station='*', location='*', channel='*',
                 starttime=None, endtime=None, include_sample_rate=False):
         """
@@ -594,6 +704,7 @@ class PH5Availability(object):
         self.das_time = {}
         self.SR_included = include_sample_rate
         array_names = sorted(self.ph5.Array_t_names)
+        das_info = {}
         for array_name in array_names:
             if self.array is not None:
                 a_n = int(array_name.split('_')[2])
@@ -641,14 +752,22 @@ class PH5Availability(object):
                         ph5_stop_ms = st['pickup_time/micro_seconds_i']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
-                        Das_t = self.ph5.query_das_t(
-                            ph5_das,
-                            chan=channum,
-                            start_epoch=ph5_start_epoch,
-                            stop_epoch=ph5_stop_epoch,
-                            sample_rate=ph5_sample_rate,
-                            sample_rate_multiplier=ph5_multiplier,
-                            check_samplerate=False)
+                        if ph5_das not in das_info.keys():
+                            das_info[ph5_das] = {}
+                        k = (channum,  ph5_start_epoch,
+                             ph5_stop_epoch, ph5_sample_rate)
+                        if k in das_info[ph5_das].keys():
+                            Das_t = das_info[ph5_das][key]
+                        else:
+                            Das_t = self.ph5.query_das_t(
+                                ph5_das,
+                                chan=channum,
+                                start_epoch=ph5_start_epoch,
+                                stop_epoch=ph5_stop_epoch,
+                                sample_rate=ph5_sample_rate,
+                                sample_rate_multiplier=ph5_multiplier,
+                                check_samplerate=False)
+                            das_info[ph5_das][key] = Das_t
                         # Find key that corresponds to the das
                         for key in self.das_time.keys():
                             if (key[0] == ph5_das and
@@ -688,8 +807,9 @@ class PH5Availability(object):
                                     samplerate_return = das['sample_rate_i']
                                     ph5_sr = das['sample_rate_i']
                                     if(key[3] == ph5_seed_station):
-                                        avail = self.ph5.get_availability
+                                        avail = self.get_one_availability
                                         time = avail(ph5_das,
+                                                     das_info,
                                                      ph5_sr,
                                                      channum,
                                                      starttime,
@@ -728,8 +848,9 @@ class PH5Availability(object):
                                                        ph5_das + '.')
                                         if(key[3] == ph5_seed_station):
                                             # Station matcher
-                                            avail = self.ph5.get_availability
+                                            avail = self.get_one_availability
                                             time = avail(ph5_das,
+                                                         das_info,
                                                          ph5_sr,
                                                          channum,
                                                          starttime,
