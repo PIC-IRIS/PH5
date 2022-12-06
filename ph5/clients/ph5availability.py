@@ -284,9 +284,9 @@ class PH5Availability(object):
         if sample_rate is None:
             raise ValueError("Sample rate required for get_availability")
 
-        key = (chan, start, end, sample_rate)
-        if key in das_info[das].keys():
-            das_t_t = das_info[das][key]
+        info_k = (chan, start, end, sample_rate)
+        if info_k in das_info[das].keys():
+            das_t_t = das_info[das][info_k]
         else:
             das_t_t = self.ph5.query_das_t(
                 das,
@@ -297,7 +297,7 @@ class PH5Availability(object):
             if not das_t_t:
                 LOGGER.warning("No Das table found for " + das)
                 return None
-            das_info[das][key] = das_t_t
+            das_info[das][info_k] = das_t_t
 
         Das_t = ph5api.filter_das_t(das_t_t, chan)
 
@@ -754,32 +754,21 @@ class PH5Availability(object):
                         ph5_multiplier = st['sample_rate_multiplier_i']
                         if ph5_das not in das_info.keys():
                             das_info[ph5_das] = {}
-                        k = (channum,  ph5_start_epoch,
-                             ph5_stop_epoch, ph5_sample_rate)
-                        try:
-                            if k in das_info[ph5_das].keys():
-                                Das_t = das_info[ph5_das][key]
-                            else:
-                                Das_t = self.ph5.query_das_t(
-                                    ph5_das,
-                                    chan=channum,
-                                    start_epoch=ph5_start_epoch,
-                                    stop_epoch=ph5_stop_epoch,
-                                    sample_rate=ph5_sample_rate,
-                                    sample_rate_multiplier=ph5_multiplier,
-                                    check_samplerate=False)
-                                das_info[ph5_das][key] = Das_t
-                        except KeyError as e:
-                                print('skipping exception and running query DAS T')
-                                Das_t = self.ph5.query_das_t(
-                                    ph5_das,
-                                    chan=channum,
-                                    start_epoch=ph5_start_epoch,
-                                    stop_epoch=ph5_stop_epoch,
-                                    sample_rate=ph5_sample_rate,
-                                    sample_rate_multiplier=ph5_multiplier,
-                                    check_samplerate=False)
-                                das_info[ph5_das][key] = Das_t
+                        info_k = (channum,  ph5_start_epoch,
+                                  ph5_stop_epoch, ph5_sample_rate)
+                        if info_k in das_info[ph5_das].keys():
+                            Das_t = das_info[ph5_das][info_k]
+                        else:
+                            Das_t = self.ph5.query_das_t(
+                                ph5_das,
+                                chan=channum,
+                                start_epoch=ph5_start_epoch,
+                                stop_epoch=ph5_stop_epoch,
+                                sample_rate=ph5_sample_rate,
+                                sample_rate_multiplier=ph5_multiplier,
+                                check_samplerate=False)
+                            das_info[ph5_das][info_k] = Das_t
+
                         # Find key that corresponds to the das
                         for key in self.das_time.keys():
                             if (key[0] == ph5_das and
