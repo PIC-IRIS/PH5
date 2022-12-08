@@ -266,7 +266,7 @@ class PH5Availability(object):
         return earliest_epoch, latest_epoch, new_das_t
 
     def get_one_availability(self, das, das_info, sample_rate, chan,
-                             start=None, end=None):
+                             deploy_time, pickup_time, start=None, end=None):
         '''
         Required: das, sample_rate and component
         Optional: Start time, End time
@@ -321,6 +321,7 @@ class PH5Availability(object):
         prev_len = None
         prev_sr = None
         times = []
+        count = 0
         for entry in new_das_t:
             # set the values for this entry
             cur_time = (float(entry['time/epoch_l']) +
@@ -344,6 +345,10 @@ class PH5Availability(object):
                 prev_len = cur_len
                 prev_sr = cur_sr
             else:
+                if cur_end < deploy_time:
+                    continue
+                if cur_time > pickup_time:
+                    break
                 if (cur_time == prev_start and
                         cur_len == prev_len and
                         cur_sr == prev_sr):
@@ -351,6 +356,11 @@ class PH5Availability(object):
                     continue
                 elif (cur_time > prev_end or
                         cur_sr != prev_sr):
+                    if count == 0:
+                        # adjust start time of the first segment not smaller
+                        # than deploy_time
+                        prev_start = max(deploy_time, prev_start)
+                        count += 1
                     # there is a gap so add a new entry
                     times.append((prev_sr,
                                   prev_start,
@@ -367,6 +377,14 @@ class PH5Availability(object):
                     prev_end = cur_end
                     prev_len = cur_len
                     prev_sr = cur_sr
+                elif (cur_time < prev_end < cur_end):
+                    # there is an overlap => extend end time
+                    prev_len += cur_len - (prev_end - cur_time)
+                    prev_end = cur_end
+                    prev_sr = cur_sr
+
+        # adjust end time of the last segment not greater than pickup_time
+        prev_end = min(pickup_time, prev_end)
 
         # add the last continuous segment
         times.append((prev_sr,
@@ -752,6 +770,10 @@ class PH5Availability(object):
                         ph5_stop_ms = st['pickup_time/micro_seconds_i']
                         ph5_sample_rate = st['sample_rate_i']
                         ph5_multiplier = st['sample_rate_multiplier_i']
+                        deploy_time = (
+                            ph5_start_epoch + ph5_start_ms / 10. ** 6.)
+                        pickup_time = (
+                            ph5_stop_epoch + ph5_stop_ms / 10. ** 6.)
                         if ph5_das not in das_info.keys():
                             das_info[ph5_das] = {}
                         info_k = (channum,  ph5_start_epoch,
@@ -813,6 +835,8 @@ class PH5Availability(object):
                                                      das_info,
                                                      ph5_sr,
                                                      channum,
+                                                     deploy_time,
+                                                     pickup_time,
                                                      starttime,
                                                      endtime)
 
@@ -854,6 +878,8 @@ class PH5Availability(object):
                                                          das_info,
                                                          ph5_sr,
                                                          channum,
+                                                         deploy_time,
+                                                         pickup_time,
                                                          starttime,
                                                          endtime)
                                         else:
