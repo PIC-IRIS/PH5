@@ -1456,7 +1456,6 @@ class PH5(experiment.ExperimentGroup):
             LOGGER.warning("No Das table found for " + das)
             return None
 
-        overlaps = 0
         gaps = 0
         prev_start = None
         prev_end = None
@@ -1493,14 +1492,12 @@ class PH5(experiment.ExperimentGroup):
                     continue
                 elif (cur_time > prev_end or
                         cur_sr != prev_sr):
-                    if cur_time > prev_end:
-                        # there is a gap
-                        gaps = gaps + 1
-                    # add a new entry
+                    # there is a gap so add a new entry
                     times.append((prev_sr,
                                   prev_start,
                                   prev_end))
-                    # reset previous
+                    # increment the number of gaps and reset previous
+                    gaps = gaps + 1
                     prev_start = cur_time
                     prev_end = cur_end
                     prev_len = cur_len
@@ -1509,12 +1506,7 @@ class PH5(experiment.ExperimentGroup):
                         cur_sr == prev_sr):
                     # extend the end time since this was a continuous segment
                     prev_end = cur_end
-                    prev_len += cur_len
-                    prev_sr = cur_sr
-                elif (cur_time < prev_end < cur_end):
-                    # there is an overlap => extend end time
-                    prev_len += cur_len - (prev_end - cur_time)
-                    prev_end = cur_end
+                    prev_len = cur_len
                     prev_sr = cur_sr
 
         # add the last continuous segment

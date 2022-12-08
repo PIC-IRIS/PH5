@@ -315,6 +315,7 @@ class PH5Availability(object):
             LOGGER.warning("No Das table found for " + das)
             return None
 
+        overlaps = 0
         gaps = 0
         prev_start = None
         prev_end = None
@@ -361,12 +362,14 @@ class PH5Availability(object):
                         # than deploy_time
                         prev_start = max(deploy_time, prev_start)
                         count += 1
-                    # there is a gap so add a new entry
+                    if cur_time > prev_end:
+                        # there is a gap
+                        gaps = gaps + 1
+                    # add a new entry
                     times.append((prev_sr,
                                   prev_start,
                                   prev_end))
-                    # increment the number of gaps and reset previous
-                    gaps = gaps + 1
+                    # reset previous
                     prev_start = cur_time
                     prev_end = cur_end
                     prev_len = cur_len
@@ -375,13 +378,14 @@ class PH5Availability(object):
                         cur_sr == prev_sr):
                     # extend the end time since this was a continuous segment
                     prev_end = cur_end
-                    prev_len = cur_len
+                    prev_len += cur_len
                     prev_sr = cur_sr
                 elif (cur_time < prev_end < cur_end):
                     # there is an overlap => extend end time
                     prev_len += cur_len - (prev_end - cur_time)
                     prev_end = cur_end
                     prev_sr = cur_sr
+                    overlaps += 1
 
         # adjust end time of the last segment not greater than pickup_time
         prev_end = min(pickup_time, prev_end)
