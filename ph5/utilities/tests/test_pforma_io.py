@@ -69,7 +69,11 @@ class TestPforma(LogTestCase, TempDirTestCase):
         # SmartSolo filename
         filename = "453005483.1.2021.03.15.16.00.00.000.E.segd"
         ret = pforma_io.guess_instrument_type(filename)
-        self.assertEqual(ret, ('nodal', '453005483'))
+        self.assertEqual(ret, ('nodal', 'smartsolo'))
+        # SSolo, unsimpleton smartsolo
+        filename = "SSolo_1_1_453012520_0_E.segd"
+        ret = pforma_io.guess_instrument_type(filename)
+        self.assertEqual(ret, ('nodal', '1X1'))
         # unsimpleton fairfield
         filename = "PIC_1_1111_4886.0.0.rg16"
         ret = pforma_io.guess_instrument_type(filename)
