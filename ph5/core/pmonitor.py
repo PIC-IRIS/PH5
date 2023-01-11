@@ -405,7 +405,7 @@ class Monitor (QtWidgets.QWidget):
             self.log.append("Time processing {0} seconds.".format(
                 int(time.time() - Monitor.NOW)))
             dtype, das = guess_instrument_type(
-                os.path.basename(self.current_file))
+                os.path.basename(self.current_file), self.current_file.strip())
             # Update the list of successfully processed file
             if dtype != 'unknown':
                 if das not in self.processedFiles:
