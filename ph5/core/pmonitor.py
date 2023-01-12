@@ -21,7 +21,7 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2023.12'
 LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 

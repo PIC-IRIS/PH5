@@ -16,7 +16,7 @@ import re
 
 from ph5.core import segdreader_smartsolo
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2023.12'
 LOGGER = logging.getLogger(__name__)
 
 HOME = os.environ['HOME']
