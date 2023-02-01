@@ -52,7 +52,8 @@ class FormaIO():
              'WW', 'XX', 'YY', 'ZZ', 'AAA', 'BBB', 'CCC', 'DDD',
              'EEE', 'FFF', 'GGG', 'HHH', 'III', 'JJJ', 'LLL', 'MMM')
 
-    def __init__(self, infile=None, outdir=None):
+    def __init__(self, infile=None, outdir=None, main_window=None):
+        self.main_window = main_window
         self.infile = infile  # Input file (list of raw files)
         self.infh = None  # File handle for infile
         self.raw_files = {}  # Raw files organized by type
@@ -449,7 +450,7 @@ class FormaIO():
             # Try to guess data logger type and serial number based on file
             # name
             raw_file = os.path.basename(line)
-            tp, das = guess_instrument_type(raw_file, line)
+            tp, das = guess_instrument_type(raw_file, line, self.main_window)
             if das == 'lllsss':
                 raise FormaIOError(
                     errno=4,
@@ -773,7 +774,7 @@ martSoloRE = re.compile(r"(\d+)[\d.]+.[ENZenz].segd")
 picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
 
 
-def guess_instrument_type(filename, abs_path):
+def guess_instrument_type(filename, abs_path, main_window=None):
     '''   Attempt to determine type of datalogger from data file name   '''
     mo = texanRE.match(filename)
     if mo:
@@ -798,7 +799,16 @@ def guess_instrument_type(filename, abs_path):
         return 'nodal', 'lllsss'
     mo = martSoloRE.match(filename)
     if mo:
+        if main_window is None:
+            print("Reading SmartSolo header from {0}... Please wait.".format(
+                    filename))
+        else:
+            main_window.statsig.emit(
+                "Reading SmartSolo header from {0}... Please wait.".format(
+                    filename))
         array, station = get_smartsolo_array_station(abs_path)
+        if not main_window is None:
+            main_window.statsig.emit("")
         das = array + 'X' + station
         return 'nodal', das
     mo = seg2RE.match(filename)
