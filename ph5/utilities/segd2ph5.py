@@ -1,6 +1,7 @@
 #!/usr/bin/env pnpython4
-# -*- coding: iso-8859-15 -*-
-#
+# ======================================================================
+#   In Developer branch, this tool can create ph5 with no trace to serve TESTING
+# ======================================================================
 #   Read Fairfield SEG-D (Version 1.6) from the Sweetwater experiment.
 #   Write PH5
 #
@@ -27,8 +28,8 @@ from tables import NaturalNameWarning
 from ph5.core import (experiment, columns, segdreader, segdreader_smartsolo,
                       ph5api)
 from ph5 import LOGGING_FORMAT
-warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
+warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
 PROG_VERSION = "2022.109"
 LOGGER = logging.getLogger(__name__)
@@ -50,12 +51,12 @@ miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
 # -2.5V to 2.5V
 mV_full_scale = 5000
 # 24-bit
-counts_full_scale = 2**24
+counts_full_scale = 2 ** 24
 
 
 def bitweight(db):
     # where db = 20log(V1,V2)
-    return (mV_full_scale / (10.**(db/20.))) / counts_full_scale
+    return (mV_full_scale / (10. ** (db / 20.))) / counts_full_scale
 
 
 dbs = (0, 6, 12, 18, 24, 30, 36)
@@ -207,8 +208,8 @@ def read_infile(infile):
 
 
 def get_args():
-    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND,\
-        MANUFACTURERS_CODE
+    global PH5, FILES, EVERY, NUM_MINI, TSPF, UTM, FIRST_MINI, APPEND, \
+        MANUFACTURERS_CODE, NO_TRACE
 
     TSPF = False
     from optparse import OptionParser
@@ -217,6 +218,7 @@ def get_args():
         """
         Override format_epilog to allow newlines
         """
+
         def format_epilog(self, formatter):
             return self.epilog
 
@@ -280,6 +282,13 @@ def get_args():
                          data loggers,",
                        type='int', default=None)
 
+    oparser.add_option("-N", "--no_trace", action="store_true",
+                       dest="no_trace",
+                       help="Manufacturers code. Defaults to 20 for Fairfield.\
+                        Most likely will not work for SEG-D written by other\
+                         data loggers,",
+                       default=False)
+
     options, args = oparser.parse_args()
 
     if options.rawfile and options.infile:
@@ -295,6 +304,7 @@ def get_args():
     TSPF = options.texas_spc
     APPEND = options.combine
     MANUFACTURERS_CODE = options.manufacturers_code
+    NO_TRACE = options.no_trace
 
     if options.infile is not None:
         read_infile(options.infile)
@@ -692,30 +702,31 @@ def process_traces(rh, th, tr):
         des = "Epoch: " + str(p_das_t['time/epoch_l']) + \
               " Channel: " + str(p_das_t['channel_number_i'])
         #   Write trace data here
-        try:
-            if SD.manufacturer == 'FairfieldNodal':
-                #   Convert to counts
-                tr_counts = tr / LSB
-                EXREC.ph5_g_receivers.newarray(
-                    p_das_t['array_name_data_a'], tr_counts, dtype='int32',
-                    description=des)
-            elif SD.manufacturer == 'SmartSolo':
-                # SmartSolo is recorded by mV
+        if not NO_TRACE:
+            try:
+                if SD.manufacturer == 'FairfieldNodal':
+                    #   Convert to counts
+                    tr_counts = tr / LSB
+                    EXREC.ph5_g_receivers.newarray(
+                        p_das_t['array_name_data_a'], tr_counts, dtype='int32',
+                        description=des)
+                elif SD.manufacturer == 'SmartSolo':
+                    # SmartSolo is recorded by mV
+                    EXREC.ph5_g_receivers.newarray(
+                        p_das_t['array_name_data_a'], tr, dtype='float32',
+                        description=des)
+            except Exception as e:
+                #   Failed, leave as float
+                LOGGER.warning(
+                    "Could not convert trace to counts. max: {1},\
+                     min {2}\n{0}".format(
+                        e.message, tr.max(), tr.min()))
+                p_response_t['bit_weight/value_d'] = 1.
                 EXREC.ph5_g_receivers.newarray(
                     p_das_t['array_name_data_a'], tr, dtype='float32',
                     description=des)
-        except Exception as e:
-            #   Failed, leave as float
-            LOGGER.warning(
-                "Could not convert trace to counts. max: {1},\
-                 min {2}\n{0}".format(
-                    e.message, tr.max(), tr.min()))
-            p_response_t['bit_weight/value_d'] = 1.
-            EXREC.ph5_g_receivers.newarray(
-                p_das_t['array_name_data_a'], tr, dtype='float32',
-                description=des)
         update_index_t_info(p_das_t['time/epoch_l'] + (
-                    float(p_das_t['time/micro_seconds_i']) / 1000000.),
+                float(p_das_t['time/micro_seconds_i']) / 1000000.),
                             p_das_t['sample_count_i'],
                             p_das_t['sample_rate_i'] / p_das_t[
                                 'sample_rate_multiplier_i'])
@@ -928,7 +939,7 @@ def process_traces(rh, th, tr):
 
         log_array, log_name = getLOG()
         for i in range(len(rh.general_header_blocks)):
-            ht = "General {0}".format(i+1)
+            ht = "General {0}".format(i + 1)
             process(rh.general_header_blocks[i], ht)
         #   Channel set descriptors
         for i in range(len(rh.channel_set_descriptor)):
@@ -953,7 +964,7 @@ def process_traces(rh, th, tr):
         def process(hdr, header_type):
             global TRACE_JSON
             ll = [{'FileType': 'SEG-D', 'HeaderType': 'trace',
-                  'HeaderSubType': header_type}, hdr]
+                   'HeaderSubType': header_type}, hdr]
             TRACE_JSON.append(json.dumps(
                 ll, sort_keys=True, indent=4).split('\n'))
 
@@ -1179,7 +1190,7 @@ def utmcsptolatlon(northing, easting):
     else:
         NS = 'north'
 
-    utmc = Proj("+proj=utm +zone="+utmzone+" +"+NS+" +ellps=WGS84")
+    utmc = Proj("+proj=utm +zone=" + utmzone + " +" + NS + " +ellps=WGS84")
     print
     #   WGS84, geographic
     wgs = Proj(init='epsg:4326', proj='latlong')
@@ -1194,10 +1205,10 @@ def get_latlon(manu, th):
         if manu == 'FairfieldNodal':
             if UTM:
                 #   UTM
-                LAT, LON = utmcsptolatlon(th.lat/10., th.lon/10.)
+                LAT, LON = utmcsptolatlon(th.lat / 10., th.lon / 10.)
             elif TSPF:
                 #   Texas State Plane coordinates
-                LAT, LON = txncsptolatlon(th.lat/10., th.lon/10.)
+                LAT, LON = txncsptolatlon(th.lat / 10., th.lon / 10.)
             else:
                 LAT = th.lat / 10.
                 LON = th.lon / 10.
@@ -1218,7 +1229,7 @@ def main():
     from numpy import append as npappend
 
     def prof():
-        global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE,\
+        global RESP, INDEX_T_DAS, INDEX_T_MAP, SD, EXREC, MINIPH5, Das, SIZE, \
             ARRAY_T, RH, LAT, LON, F, TRACE_JSON, APPEND
 
         MINIPH5 = None
@@ -1417,7 +1428,7 @@ def main():
                         else:
                             new_traces.append(T)
                             if chan_set_next is None:
-                                chan_set_next =\
+                                chan_set_next = \
                                     T.headers.trace_header.channel_set
 
                     traces = new_traces
