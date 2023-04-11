@@ -72,6 +72,7 @@ ph5.clients.ph5tostationxml
  * Multiprocessing has been removed because when checking subfolders of the given path, multiprocessing make the logging messages show up randomly. Using 'for loop' instead help users recognize which one the messages are for. That way ph5tostationxml can inform when never stationxml has or has not been created for a ph5 data.
 ph5.clients.ph5availability
  * New client for returning timeseries availability information
+ * Consider array time instead of das time only
 ph5.utilities.ph5validate
  * add data time checking
  * fix incorrectly detecting data between different deploy/pickup times
