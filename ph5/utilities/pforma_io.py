@@ -451,8 +451,14 @@ class FormaIO():
             if das == 'lllsss':
                 raise FormaIOError(
                     errno=4,
-                    msg="May be nodal SEG-D file but using simpleton file\
-                     naming scheme. Please rename.")
+                    msg="May be nodal SEG-D file but using simpleton file "
+                        "naming scheme. Please rename using unsimpleton.")
+            if das == 'smartsolo':
+                raise FormaIOError(
+                    errno=4,
+                    msg="May be Smartsolo SEG-D file but using simpleton file "
+                        "naming scheme. Please rename using unsimpleton."
+                )
             if tp == 'unknown':
                 raise FormaIOError(errno=3,
                                    msg=("File in {1} does not have standard "
@@ -765,10 +771,12 @@ nodalRE = re.compile(r"[Rr](\d+)_(\d+)\.\d+\.\d+\.[Rr][Gg](\d+)")
 # For simpleton 'nodal'
 simpletonodalRE = re.compile(r"\d+\.fcnt")
 # For type SmartSolo (except for RE, it is still understood as 'nodal')
-martSoloRE = re.compile(r"(\d+)[\d.]+.[ENZenz].segd")
+martSoloRE = re.compile(r"(\d+).(\d+).(\d+).([\d.]+).[ENZenz].segd")
 # =========================== END SEGD ============================= #
 # For PIC rename
 picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
+# for 'ssolo', unsimpleton of Smartsolo
+ssoloRE = re.compile(r"^SSolo_(\d+)_(\d+)_(\d+)_(\d+)_([NEZ]).segd$")
 
 
 def guess_instrument_type(filename):
@@ -796,7 +804,12 @@ def guess_instrument_type(filename):
         return 'nodal', 'lllsss'
     mo = martSoloRE.match(filename)
     if mo:
-        das = mo.group(1)
+        return 'nodal', 'smartsolo'
+    mo = ssoloRE.match(filename)
+    if mo:
+        arr = mo.group(1)
+        sta = mo.group(2)
+        das = arr + 'X' + sta
         return 'nodal', das
     mo = seg2RE.match(filename)
     if mo:

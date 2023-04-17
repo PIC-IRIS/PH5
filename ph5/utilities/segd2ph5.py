@@ -545,6 +545,9 @@ def process_traces(rh, th, tr):
         elif SD.manufacturer == 'SmartSolo':
             channel_list = ['N', 'E', 'Z']
             filename_parts = SD.name().split('.')
+            if 'SSolo' in SD.name():
+                # unsimpletoned smartsolo file name
+                filename_parts = filename_parts[0].split('_')
             found_channel = False
             true_channel = 0
             orientation_code = None
@@ -562,28 +565,30 @@ def process_traces(rh, th, tr):
     def get_raw_file_name(SD):
         filename = SD.name()
         if SD.manufacturer == 'SmartSolo':
-            channel_list = ['E', 'N', 'Z']
-            filename_parts = filename.split('.')
-            chanidx = -1
-            for c in channel_list:
-                try:
-                    chanidx = filename_parts.index(c)
-                    break
-                except ValueError:
-                    pass
-            """
-            Shorten filename to fit the field:
-            remove 'segd' at the end
-            remove second and decimal of second
-            add . in front of chan to show somethings have been removed
-            Ex: filename: 453005483.1.2021.03.15.16.00.00.000.E.segd
-            => shorten:   453005483.1.2021.03.15.16.00..E
-            """
-            filename_parts.remove('segd')
-            filename_parts[chanidx] = '.' + filename_parts[chanidx]
-            filename_parts.pop(chanidx - 1)  # remove decimal part
-            filename_parts.pop(chanidx - 2)  # remove second part
-            filename = '.'.join(filename_parts)
+            if 'SSolo' not in filename:
+                # original smartsolo file name
+                channel_list = ['E', 'N', 'Z']
+                filename_parts = filename.split('.')
+                chanidx = -1
+                for c in channel_list:
+                    try:
+                        chanidx = filename_parts.index(c)
+                        break
+                    except ValueError:
+                        pass
+                """
+                Shorten filename to fit the field:
+                remove 'segd' at the end
+                remove second and decimal of second
+                add . in front of chan to show somethings have been removed
+                Ex: filename: 453005483.1.2021.03.15.16.00.00.000.E.segd
+                => shorten:   453005483.1.2021.03.15.16.00..E
+                """
+                filename_parts.remove('segd')
+                filename_parts[chanidx] = '.' + filename_parts[chanidx]
+                filename_parts.pop(chanidx - 1)  # remove decimal part
+                filename_parts.pop(chanidx - 2)  # remove second part
+                filename = '.'.join(filename_parts)
         return os.path.basename(filename)
 
     def process_das():
