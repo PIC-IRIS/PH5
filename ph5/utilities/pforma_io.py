@@ -807,7 +807,7 @@ def guess_instrument_type(filename, abs_path, main_window=None):
                 "Reading SmartSolo header from {0}... Please wait.".format(
                     filename))
         array, station = get_smartsolo_array_station(abs_path)
-        if not main_window is None:
+        if main_window is not None:
             main_window.statsig.emit("")
         das = array + 'X' + station
         return 'nodal', das
@@ -817,10 +817,17 @@ def guess_instrument_type(filename, abs_path, main_window=None):
         return 'seg2', das
     return 'unknown', None
 
-def get_smartsolo_array_station(filename):
-    RH = segdreader_smartsolo.ReelHeaders()
+
+def get_smartsolo_array_station(path2file):
+    """
+    Read array_id and station_id from header of the given file.
+
+    :param path2file: absolute path to the file to get the info
+    :return array_id: id of the array of the data
+    :return station_id: id of the station of the data
+    """
     try:
-        sd = segdreader_smartsolo.Reader(infile=filename)
+        sd = segdreader_smartsolo.Reader(infile=path2file)
     except BaseException:
         LOGGER.error(
             "Failed to properly read {0}.".format(filename))
@@ -833,6 +840,7 @@ def get_smartsolo_array_station(filename):
     array_id = sd.trace_headers.line_number
     station_id = sd.trace_headers.receiver_point
     return str(array_id), str(station_id)
+
 
 def write_json(x, filename):
     '''   Write x in JSON format to filename   '''
