@@ -91,6 +91,18 @@ class TestPforma(LogTestCase, TempDirTestCase):
         ret = pforma_io.guess_instrument_type(filename, '.')
         self.assertEqual(ret, ('nodal', 'lllsss'))
 
+    def test_get_smartsolo_array_station(self):
+        # SmartSolo filename
+        filename = "453005513.2.2021.05.08.20.06.00.000.E.segd"
+        abs_path = os.path.join(self.home,
+                                "ph5/test_data/segd/smartsolo",
+                                filename)
+        expected_station_id = '1'
+        expected_array_id = '1'
+        ret = pforma_io.get_smartsolo_array_station(abs_path)
+        self.assertEqual(ret[0], expected_array_id)
+        self.assertEqual(ret[1], expected_station_id)
+
 
 if __name__ == "__main__":
     unittest.main()
