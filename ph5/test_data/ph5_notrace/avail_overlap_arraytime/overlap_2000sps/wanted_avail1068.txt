@@ -1,0 +1,4 @@
+# ph5availability -n master.ph5 --station 1068 -S -a 2 -f t
+# overlap - sample-rate=2000sps
+#n s     l  c   q sample-rate                    earliest                      latest
+ZV 1068  -- GP2        2000.0 2021-05-12T22:47:33.000000Z 2021-05-14T00:00:00.000000Z

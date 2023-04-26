@@ -2016,5 +2016,51 @@ class TestPH5Availability_SMR(LogTestCase, TempDirTestCase):
             'Please run fix_srm to fix sample_rate_multiplier_i for PH5 data.')
 
 
+class TestPH5Availability_Overlap_ArrayTime(LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(TestPH5Availability_Overlap_ArrayTime, self).setUp()
+        self.test_path = os.path.join(
+            self.home,
+            'ph5/test_data/ph5_notrace/avail_overlap_arraytime')
+        self.test_args = ['ph5availability', '-n', 'master.ph5',
+                          '-a', '2', '-S', '-f', 't']
+
+    def assert_main_output_against_wanted_output(
+            self, test_args, test_path, wanted_file):
+        with open(os.path.join(test_path, wanted_file),
+                  'r') as content_file:
+            content_str = content_file.read().strip()
+        expected_outputs = [
+            ln for ln in content_str.split('\n') if not ln.startswith('#')]
+
+        with OutputCapture():
+            with patch.object(sys, 'argv', test_args):
+                with OutputCapture() as out:
+                    ph5availability.main()
+                    output_str = out.captured.strip()
+        outputs = [
+            ln for ln in output_str.split('\n') if not ln.startswith('#')]
+
+        self.assertListEqual(outputs, expected_outputs)
+
+    def test_overlap_1000sps(self):
+        test_path = os.path.join(self.test_path, 'overlap_1000sps')
+        test_args = self.test_args + ['-p', test_path, '--station', '8133']
+        self.assert_main_output_against_wanted_output(
+            test_args, test_path, 'wanted_avail8133.txt')
+
+    def test_overlap_2000sps(self):
+        test_path = os.path.join(self.test_path, 'overlap_2000sps')
+        test_args = self.test_args + ['-p', test_path, '--station', '1068']
+        self.assert_main_output_against_wanted_output(
+            test_args, test_path, 'wanted_avail1068.txt')
+
+    def test_das_start_b4_deploying(self):
+        test_path = os.path.join(self.test_path, 'start_b4_deploy')
+        test_args = self.test_args + ['-p', test_path, '--station', '1511']
+        self.assert_main_output_against_wanted_output(
+            test_args, test_path, 'wanted_avail1511.txt')
+
+
 if __name__ == "__main__":
     unittest.main()
