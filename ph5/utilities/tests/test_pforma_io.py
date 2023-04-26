@@ -67,20 +67,41 @@ class TestPforma(LogTestCase, TempDirTestCase):
 
     def test_guess_instrument_type(self):
         # SmartSolo filename
-        filename = "453005483.1.2021.03.15.16.00.00.000.E.segd"
-        ret = pforma_io.guess_instrument_type(filename)
-        self.assertEqual(ret, ('nodal', '453005483'))
+        filename = "453005513.2.2021.05.08.20.06.00.000.E.segd"
+        abs_path = os.path.join(self.home,
+                                "ph5/test_data/segd/smartsolo",
+                                filename)
+        with OutputCapture() as out:
+            ret = pforma_io.guess_instrument_type(filename, abs_path)
+            output = out.captured.strip()
+        self.assertEqual(ret, ('nodal', '1X1'))
+        self.assertEqual(output,
+                         'Reading SmartSolo header from '
+                         '453005513.2.2021.05.08.20.06.00.000.E.segd... '
+                         'Please wait.')
         # unsimpleton fairfield
         filename = "PIC_1_1111_4886.0.0.rg16"
-        ret = pforma_io.guess_instrument_type(filename)
+        ret = pforma_io.guess_instrument_type(filename, '.')
         self.assertEqual(ret, ('nodal', '1X1111'))
         # simpleton fairfield non standard
         filename = "1111.0.0.fcnt"
-        ret = pforma_io.guess_instrument_type(filename)
+        ret = pforma_io.guess_instrument_type(filename, '.')
         self.assertEqual(ret, ('unknown', None))
         filename = "1111.fcnt"
-        ret = pforma_io.guess_instrument_type(filename)
+        ret = pforma_io.guess_instrument_type(filename, '.')
         self.assertEqual(ret, ('nodal', 'lllsss'))
+
+    def test_get_smartsolo_array_station(self):
+        # SmartSolo filename
+        filename = "453005513.2.2021.05.08.20.06.00.000.E.segd"
+        abs_path = os.path.join(self.home,
+                                "ph5/test_data/segd/smartsolo",
+                                filename)
+        expected_station_id = '1'
+        expected_array_id = '1'
+        ret = pforma_io.get_smartsolo_array_station(abs_path)
+        self.assertEqual(ret[0], expected_array_id)
+        self.assertEqual(ret[1], expected_station_id)
 
 
 if __name__ == "__main__":

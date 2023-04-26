@@ -112,18 +112,20 @@ class MdiChild(pmonitor.Monitor):
        Create instance of pmonitor.Monitor
     '''
 
-    def __init__(self, fio, cmds, info, title='X', mmax=100):
-        super(MdiChild, self).__init__(fio, cmds, info, title, mmax)
+    def __init__(self, fio, cmds, info, title='X', mmax=100, main_window=None):
+        super(MdiChild, self).__init__(
+            fio, cmds, info, title, mmax, main_window)
 
 
 class MdiChildDos(QtWidgets.QProgressDialog):
-    def __init__(self, home, title='X'):
+    def __init__(self, home, title='X', main_window=None):
         super(MdiChildDos, self).__init__(title, "Close", 0, 0)
         self.home = home
         self.good = True
         self.setMinimumWidth(400)
 
-        self.fio, self.cmds, self.info = init_fio(None, self.home)
+        self.fio, self.cmds, self.info = init_fio(None, self.home,
+                                                  main_window=main_window)
         if os.path.exists(os.path.join(self.fio.home, 'Sigma')):
             mess = QtWidgets.QMessageBox()
             mess.setText("Please remove existing directory {0}.".format(
@@ -248,7 +250,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.statsig.emit(
             "Merging PH5 families to Sigma. This may take awhile...")
-        pd = MdiChildDos(mydir, "Merging to Sigma...")
+        pd = MdiChildDos(mydir, "Merging to Sigma...", main_window=self)
         if pd.good:
             pd.canceled.connect(self.mdiArea.closeAllSubWindows)
             self.mdiArea.addSubWindow(pd)
@@ -311,7 +313,8 @@ class MainWindow(QtWidgets.QMainWindow):
                          c,
                          i,
                          title=t,
-                         mmax=m)
+                         mmax=m,
+                         main_window=self)
 
         child.setTimeout(self.timeout)
 
@@ -473,7 +476,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statsig.emit(
             "Setting up processing of list {0} at {1}".format(mylst, mydir))
         self.fio, self.cmds, self.info = init_fio(
-            mylst, mydir, utm=self.UTMZone, combine=self.combine)
+            mylst, mydir, utm=self.UTMZone, combine=self.combine,
+            main_window=self)
         fams = self.cmds.keys()
         self.statsig.emit("Processing families {0}".format(" ".join(fams)))
         return True
@@ -497,7 +501,7 @@ def get_len(f):
     return num_lines
 
 
-def init_fio(f, d, utm=None, combine=None):
+def init_fio(f, d, utm=None, combine=None, main_window=None):
     '''
         Initialize parallel processing
         Inputs:
@@ -508,7 +512,7 @@ def init_fio(f, d, utm=None, combine=None):
             cmds -> list of conversion commands
             lsts -> info about processing sub-lists and types of instruments
     '''
-    fio = pforma_io.FormaIO(infile=f, outdir=d)
+    fio = pforma_io.FormaIO(infile=f, outdir=d, main_window=main_window)
     if utm:
         fio.set_utm(utm)
     if combine:

@@ -21,7 +21,7 @@ from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
-PROG_VERSION = '2019.14'
+PROG_VERSION = '2023.12'
 LOGGER = logging.getLogger(__name__)
 TIMEOUT = 500 * 4
 
@@ -240,7 +240,7 @@ class Monitor (QtWidgets.QWidget):
     # This holds the start epoch of the conversion of a raw file
     NOW = None
 
-    def __init__(self, fio, cmds, info, title='X', mmax=100):
+    def __init__(self, fio, cmds, info, title='X', mmax=100, main_window=None):
         '''
             fio -> pforma_io object
             cmds -> list of commands
@@ -257,6 +257,7 @@ class Monitor (QtWidgets.QWidget):
         self.fifo = None  # STDOUT + STDERR of process (a pipe)
         self.fifoerr = None
         self.mmax = mmax
+        self.main_window = main_window
         self.fp = FamilyProgress(title, mmax)  # The progress bar and friends
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.fp)
@@ -405,7 +406,9 @@ class Monitor (QtWidgets.QWidget):
             self.log.append("Time processing {0} seconds.".format(
                 int(time.time() - Monitor.NOW)))
             dtype, das = guess_instrument_type(
-                os.path.basename(self.current_file))
+                os.path.basename(self.current_file), self.current_file.strip(),
+                self.main_window
+            )
             # Update the list of successfully processed file
             if dtype != 'unknown':
                 if das not in self.processedFiles:

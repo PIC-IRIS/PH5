@@ -106,6 +106,7 @@ ph5.utilities.pforma_io
  * add smartsolo to pforma
  * add seg2 to pforma
  * fix bug that duplicate index_t and array_t when copy tables from A/master.ph5 to Sigma/master.ph5
+ * make pforma read header info for station id and array id when reading SmartSolo
 ph5.utilities.125atoph5
  * fix pforma support after LOGGER change
 ph5.utilities.130toph5

@@ -14,7 +14,9 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
-PROG_VERSION = '2019.14'
+from ph5.core import segdreader_smartsolo
+
+PROG_VERSION = '2023.12'
 LOGGER = logging.getLogger(__name__)
 
 HOME = os.environ['HOME']
@@ -50,7 +52,8 @@ class FormaIO():
              'WW', 'XX', 'YY', 'ZZ', 'AAA', 'BBB', 'CCC', 'DDD',
              'EEE', 'FFF', 'GGG', 'HHH', 'III', 'JJJ', 'LLL', 'MMM')
 
-    def __init__(self, infile=None, outdir=None):
+    def __init__(self, infile=None, outdir=None, main_window=None):
+        self.main_window = main_window
         self.infile = infile  # Input file (list of raw files)
         self.infh = None  # File handle for infile
         self.raw_files = {}  # Raw files organized by type
@@ -447,7 +450,7 @@ class FormaIO():
             # Try to guess data logger type and serial number based on file
             # name
             raw_file = os.path.basename(line)
-            tp, das = guess_instrument_type(raw_file)
+            tp, das = guess_instrument_type(raw_file, line, self.main_window)
             if das == 'lllsss':
                 raise FormaIOError(
                     errno=4,
@@ -771,7 +774,7 @@ martSoloRE = re.compile(r"(\d+)[\d.]+.[ENZenz].segd")
 picnodalRE = re.compile(r"PIC_(\d+)_(\d+)_\d+\.\d+\.\d+\.[Rr][Gg](\d+)")
 
 
-def guess_instrument_type(filename):
+def guess_instrument_type(filename, abs_path, main_window=None):
     '''   Attempt to determine type of datalogger from data file name   '''
     mo = texanRE.match(filename)
     if mo:
@@ -796,13 +799,47 @@ def guess_instrument_type(filename):
         return 'nodal', 'lllsss'
     mo = martSoloRE.match(filename)
     if mo:
-        das = mo.group(1)
+        if main_window is None:
+            print("Reading SmartSolo header from {0}... Please wait.".format(
+                    filename))
+        else:
+            main_window.statsig.emit(
+                "Reading SmartSolo header from {0}... Please wait.".format(
+                    filename))
+        array, station = get_smartsolo_array_station(abs_path)
+        if main_window is not None:
+            main_window.statsig.emit("")
+        das = array + 'X' + station
         return 'nodal', das
     mo = seg2RE.match(filename)
     if mo:
         das = mo.groups()[0]
         return 'seg2', das
     return 'unknown', None
+
+
+def get_smartsolo_array_station(path2file):
+    """
+    Read array_id and station_id from header of the given file.
+
+    :param path2file: absolute path to the file to get the info
+    :return array_id: id of the array of the data
+    :return station_id: id of the station of the data
+    """
+    try:
+        sd = segdreader_smartsolo.Reader(infile=path2file)
+    except BaseException:
+        LOGGER.error(
+            "Failed to properly read {0}.".format(filename))
+        sys.exit()
+    sd.process_general_headers()
+    sd.process_channel_set_descriptors()
+    sd.process_extended_headers()
+    sd.process_external_headers()
+    sd.process_trace_headers()
+    array_id = sd.trace_headers.line_number
+    station_id = sd.trace_headers.receiver_point
+    return str(array_id), str(station_id)
 
 
 def write_json(x, filename):
@@ -834,7 +871,7 @@ def print_it(x):
 #
 if __name__ == '__main__':
     filename = "PIC_1_25_1941.0.0.rg16"
-    print guess_instrument_type(filename)
+    print guess_instrument_type(filename, '.')
     sys.exit()
 
     import timedoy
