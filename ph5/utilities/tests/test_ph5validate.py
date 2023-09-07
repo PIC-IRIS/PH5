@@ -432,6 +432,26 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
                       "You may need to reload the raw data for this station.",
                       errors)
 
+    def test_check_station_completeness_duplicate_das_for_diff_stations(self):
+        self.ph5validate.das_time = {
+            ('12183', 1, 500):
+            {'time_windows': [(1550849950, 1550850034, '9001'),
+                              (1550849950, 1550850034, '9002')],
+             'min_deploy_time': [1550849950],
+             }
+        }
+
+        self.ph5validate.read_arrays('Array_t_009')
+        arraybyid = self.ph5validate.ph5.Array_t['Array_t_009']['byid']
+        station = arraybyid.get('9001')[1][0]
+        ret = self.ph5validate.check_station_completeness(station)
+        errors = ret[2]
+        self.assertEqual(
+            errors,
+            ['No Response table found. Have you run resp_load yet?',
+             'Das 12183 chan 1 spr 500 has been repeatly entered for '
+             'time range [1550849950, 1550850034] on stations: 9001, 9002'])
+
 
 class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
     def setUp(self):

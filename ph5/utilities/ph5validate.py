@@ -487,6 +487,20 @@ class PH5Validate(object):
             # delete all duplicates except for the last one
             del das_time_list[dups[0]:dups[-1]]
 
+        # check for duplicates on different stations:
+        dups = [x for x in das_time_list
+                if x[0] == item[0] and x[1] == item[1] and x[2] != item[2]]
+        dup_stations = [x[2] for x in dups]
+        if len(dups) > 0:
+            error.append("Das %s chan %s spr %s has been repeatly entered for "
+                         "time range [%s, %s] on stations: %s" %
+                         (das_serial, channel_id, sample_rate,
+                          deploy_time, pickup_time,
+                          ', '.join([station_id] + dup_stations)))
+            # delete all duplicates stations for das
+            for x in dups:
+                das_time_list.remove(x)
+
         index = das_time_list.index((deploy_time, pickup_time, station_id))
 
         overlaps = []
