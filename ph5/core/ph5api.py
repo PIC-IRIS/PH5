@@ -1232,11 +1232,12 @@ class PH5(experiment.ExperimentGroup):
 
             requested_size_seconds = stop_fepoch - start_fepoch
             requested_sample_cnt = requested_size_seconds * sr
+            sample_cnt_this_read = cut_stop_sample - cut_start_sample
 
             if low_level_debug:
                 logger.debug("")
                 window_size_seconds = window_stop_fepoch - window_start_fepoch
-                sample_cnt_this_read = cut_stop_sample - cut_start_sample
+
                 logger.debug("***--**** --- start_fepoch: {}  stop_fepoch: {}".format(start_fepoch, stop_fepoch))
                 logger.debug("***--**** --- requested_size_seconds: {}".format(requested_size_seconds))
                 logger.debug("***--**** --- requested_sample_cnt: {}  sample_cnt_this_read: {}".format(requested_sample_cnt,
@@ -1249,6 +1250,16 @@ class PH5(experiment.ExperimentGroup):
                                                                                                     window_stop_fepoch))
                 logger.debug("***--**** --- window size seconds: {}".format(window_size_seconds))
                 logger.debug("***--**** --- time_cor_guess_samples, i.e. sample shift: {}".format(time_cor_guess_samples))
+
+            if sample_cnt_this_read == 0.0 and cut_start_fepoch == window_stop_fepoch:
+                # this can happen when no start_time is requested and a len is
+                # requested that is an even multiple of the data_a array size and
+                # (I assume) the trace start time
+                # e.g. len_sec = 30, data_a size 3600 sec, window_start_fepoch: 1198029600.0
+                #
+                # so set the last sample time and on to the next array
+                previous_last_sample_fepoch = cut_stop_fepoch - (1.0/sr)
+                continue
 
             data_tmp = self.ph5_g_receivers.read_trace(
                 trace_reference,
@@ -1272,7 +1283,8 @@ class PH5(experiment.ExperimentGroup):
                 # Time difference between the end of last window and the start
                 # of this one
                 if False:
-                    # this does not look right - 2023-09-25
+                    # this is from a previous version and did not look quite right - 2023-09-25
+                    # it can go away if the newer version works ok
                     time_diff = abs(window_start_fepoch)
                     # Overlaps are positive
                     # inserting a new key??  where is this used
