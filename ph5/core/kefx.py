@@ -24,6 +24,7 @@ receiverRE = re.compile("/Experiment_g/Receivers_g/Das_g_.*")
 arrayRE = re.compile(r"/Experiment_g/Sorts_g/Array_t_(\d+)")
 eventRE = re.compile(r"/Experiment_g/Sorts_g/Event_t(_(\d+))?")
 offsetRE = re.compile(r"/Experiment_g/Sorts_g/Offset_t(_(\d+)_(\d+))?")
+dasRE = re.compile(r"/Experiment_g/Receivers_g/Das_g_([A-Zaz0-9]+)/Das_t")
 
 
 class KefError (Exception):
@@ -315,6 +316,17 @@ class Kef:
 
         return err
 
+    def dass_update(self, EXREC):
+        '''   update das_t to ph5 file from kef file   '''
+        self.rewind()
+        for p, kv in self:
+            if p not in columns.TABLES:
+                LOGGER.warning("No table reference for key: {0}\n"
+                               "Possibly ph5 file is not open or initialized?"
+                               .format(p))
+                continue
+            EXREC.ph5_g_receivers.populateDas_t(kv)
+
     def strip_receiver_g(self):
         ret = []
         self.rewind()
@@ -326,10 +338,11 @@ class Kef:
 
         return ret
 
-    def strip_a_e_o(self):
+    def strip_a_e_o_d(self):
         reta = {}
         rete = {}
         reto = {}
+        retd = {}
         self.rewind()
 
         for p in self.paths:
@@ -342,14 +355,18 @@ class Kef:
             elif offsetRE.match(p):
                 base = string.split(p, '/')[-1:]
                 reto[base[0]] = True
+            if dasRE.match(p):
+                base = string.split(p, '/')[-1:]
+                retd[base[0]] = True
 
         a = sorted(reta.keys())
         e = rete.keys()
         e.sort()
         o = reto.keys()
         o.sort()
+        d = sorted(retd.keys())
 
-        return a, e, o
+        return a, e, o, d
 
     def ksort(self, mkey):
         # Kludge to handle mis-written node id_s
