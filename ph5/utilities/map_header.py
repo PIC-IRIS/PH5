@@ -4,7 +4,8 @@
 #
 # Input: List of SmartSolo files to create map in a file (one per line)
 #
-# Usage: mapheader list_of_files_to_create_map
+# Usage: mapheader -f list_of_files_to_create_map
+#    Or: mapheader -d directory_of_files_to_create_map
 #
 # Lan Dam, November 2023
 #
@@ -32,15 +33,22 @@ def get_args():
                           "array, station. v{0}"
                           .format(PROG_VERSION))
 
-    parser.add_argument("-f", "--listfile", dest="sslistfile",
-                        help="File that contents the list of SmartSolo SEG-D "
-                             "files to create map.",
-                        required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-f", "--listfile", dest="sslistfile",
+                       help="File that contents the list of SmartSolo SEG-D "
+                             "files to create map.")
+
+    group.add_argument("-d", "--dir", dest="ssdirectory",
+                       help="Name of directory that SmartSolo SEG-D files "
+                             "to create map are located.")
 
     ARGS = parser.parse_args()
 
-    if not os.path.exists(ARGS.sslistfile):
+    if ARGS.sslistfile is not None and not os.path.exists(ARGS.sslistfile):
         LOGGER.error("Can not read {0}!".format(ARGS.sslistfile))
+        sys.exit()
+    if ARGS.ssdirectory is not None and not os.path.exists(ARGS.ssdirectory):
+        LOGGER.error("{0} not exist!".format(ARGS.ssdirectory))
         sys.exit()
     set_logger()
 
@@ -77,27 +85,54 @@ def create_mapping_line_for_smartsolo(path2file):
     sd.process_extended_headers()
     sd.process_external_headers()
     sd.process_trace_headers()
-    arg = {'file': path2file}
-    arg['array_id'] = sd.trace_headers.line_number
-    arg['station_id'] = sd.trace_headers.receiver_point
+    arg = {'file': path2file,
+           'array_id': sd.trace_headers.line_number,
+           'station_id': sd.trace_headers.receiver_point}
     return "%(file)s:%(array_id)sX%(station_id)s\n" % arg
 
 
-def main():
-    get_args()
-
-    with open(ARGS.sslistfile) as list_file:
+def create_map_from_list_file(list_file_name):
+    """
+    Create map file from file of list of SmartSolo files
+    :param list_file_name: name of list file
+    """
+    with open(list_file_name) as list_file:
         with open("smartsolo_map", 'w') as map_file:
             while True:
                 line = list_file.readline()
                 if not line:
                     break
-                asbpath = line.strip()
-                if not os.path.exists(asbpath):
-                    LOGGER.warning("Can't find: {0}".format(asbpath))
+                abs_path = line.strip()
+                if not os.path.exists(abs_path):
+                    LOGGER.warning("Can't find: {0}".format(abs_path))
                     continue
-                map_line = create_mapping_line_for_smartsolo(asbpath)
+                map_line = create_mapping_line_for_smartsolo(abs_path)
                 map_file.write(map_line)
+
+
+def create_map_from_directory_path(dir_path):
+    """
+    Create map file from directory of SmartSolo files
+    :param dir_path: path to SmartSolo directory (either absolute or relative)
+    """
+    with open("smartsolo_map", 'w') as map_file:
+        for path, subdirs, files in os.walk(dir_path):
+            for file_name in files:
+                if not file_name.endswith('.segd'):
+                    continue
+                abs_path = os.path.abspath(os.path.join(path, file_name))
+                map_line = create_mapping_line_for_smartsolo(abs_path)
+                map_file.write(map_line)
+
+
+def main():
+    get_args()
+    LOGGER.info("map_header {0}".format(PROG_VERSION))
+    LOGGER.info("{0}".format(sys.argv))
+    if ARGS.sslistfile is not None:
+        create_map_from_list_file(ARGS.sslistfile)
+    else:
+        create_map_from_directory_path(ARGS.ssdirectory)
 
 
 if __name__ == '__main__':
