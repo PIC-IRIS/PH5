@@ -830,7 +830,7 @@ def get_smartsolo_array_station(path2file):
         sd = segdreader_smartsolo.Reader(infile=path2file)
     except BaseException:
         LOGGER.error(
-            "Failed to properly read {0}.".format(filename))
+            "Failed to properly read {0}.".format(path2file))
         sys.exit()
     sd.process_general_headers()
     sd.process_channel_set_descriptors()
