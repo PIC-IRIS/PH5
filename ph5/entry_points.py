@@ -244,7 +244,7 @@ class CommandList():
                            'SEG-D file names that expose information '
                            'about the contents of the file.',
                            type=EntryPointTypes.EDITING),
-                EntryPoint('mapheader',
+                EntryPoint('map_header',
                            'ph5.utilities.map_header:main',
                            'A command line utility for SmartSolo SEG-D '
                            'to create mapping between filepaths and their '
