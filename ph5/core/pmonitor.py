@@ -17,7 +17,6 @@ import os
 import re
 from threading import Thread
 from Queue import Queue, Empty
-from ph5.utilities.pforma_io import guess_instrument_type
 from ph5.utilities import watchit
 import time
 
@@ -405,10 +404,8 @@ class Monitor (QtWidgets.QWidget):
         elif fileDoneRE.match(line):
             self.log.append("Time processing {0} seconds.".format(
                 int(time.time() - Monitor.NOW)))
-            dtype, das = guess_instrument_type(
-                os.path.basename(self.current_file), self.current_file.strip(),
-                self.main_window
-            )
+            dtype = self.fio.file_das_type[self.current_file]['type']
+            das = self.fio.file_das_type[self.current_file]['das']
             # Update the list of successfully processed file
             if dtype != 'unknown':
                 if das not in self.processedFiles:
@@ -434,7 +431,7 @@ class Monitor (QtWidgets.QWidget):
             #
             Monitor.NOW = time.time()
             mo = fileStartRE.match(line)
-            self.current_file = mo.groups()[0]
+            self.current_file = mo.groups()[0].strip()
             # We really only need to do this once
             if self.monPercent == 0.01:
                 self.fp.processingStyle()
