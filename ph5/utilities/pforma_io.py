@@ -57,6 +57,7 @@ class FormaIO():
         self.infile = infile  # Input file (list of raw files)
         self.infh = None  # File handle for infile
         self.raw_files = {}  # Raw files organized by type
+        self.file_das_type = {}  # Das, type by file paths
         self.total_raw = 0.0  # Total size of raw
         self.number_raw = 0
         self.home = outdir  # Where the processing of the ph5 files happens
@@ -441,16 +442,23 @@ class FormaIO():
             # Skip empty line
             if not line:
                 continue
+            line_parts = line.split(':')
+            file_abs_path = line_parts[0]
             # Skip files that do not exist
-            if not os.path.exists(line):
+            if not os.path.exists(file_abs_path):
                 LOGGER.warning(
-                    "{0} not found. Skipping.".format(line))
+                    "{0} not found. Skipping.".format(file_abs_path))
                 continue
             n += 1
+
             # Try to guess data logger type and serial number based on file
             # name
-            raw_file = os.path.basename(line)
-            tp, das = guess_instrument_type(raw_file, line, self.main_window)
+            raw_file = os.path.basename(file_abs_path)
+            if len(line_parts) > 1:
+                tp, das = 'nodal', line_parts[1]
+            else:
+                tp, das = guess_instrument_type(raw_file, file_abs_path,
+                                                self.main_window)
             if das == 'lllsss':
                 raise FormaIOError(
                     errno=4,
@@ -471,18 +479,18 @@ class FormaIO():
             # Type of data logger
             file_info['type'] = tp
             # Full path to raw file
-            file_info['path'] = line
+            file_info['path'] = file_abs_path
             # Size of raw file in bytes
-            file_info['size'] = os.stat(line).st_size
+            file_info['size'] = os.stat(file_abs_path).st_size
             # Time file was modified
-            file_info['mtime'] = os.stat(line).st_mtime
+            file_info['mtime'] = os.stat(file_abs_path).st_mtime
             # file_info['adler'] = check_sum (line)
             # Which family of ph5 files does this belong to. See self.nmini
             file_info['mini'] = None
             # Total of raw files so far in bytes
             self.total_raw += file_info['size']
             self.raw_files[das].append(file_info)
-
+            self.file_das_type[file_abs_path] = {'das': das, 'type': tp}
         self.average_raw = int(self.total_raw / n)
         self.number_raw = n
         self.infh.close()
