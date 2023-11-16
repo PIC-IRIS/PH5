@@ -29,8 +29,8 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.description = ("A command line utility for SmartSolo SEG-D "
-                          "to create mapping between filepaths and their "
-                          "array, station. v{0}"
+                          "to create `smartsolo_map` between filepaths and "
+                          "their array, station. v{0}"
                           .format(PROG_VERSION))
 
     group = parser.add_mutually_exclusive_group(required=True)
