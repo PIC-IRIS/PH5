@@ -663,7 +663,13 @@ class Ssegy:
 
         # 16 free bits
         try:
-            ext['empty3'] = int(self.event_t['description_s'])
+            desc_int = int(self.event_t['description_s'])
+            if 0 <= desc_int <= 65535:
+                ext['empty3'] = desc_int
+            else:
+                LOGGER.warning("event_t[description_s] '%s' is ignored "
+                               "because it doesn't satisfy the limit range "
+                               "[0, 65535]" % desc_int)
         except BaseException:
             pass
 
