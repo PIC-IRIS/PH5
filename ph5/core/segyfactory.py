@@ -66,6 +66,7 @@ class SEGYError(Exception):
 
     def __init__(self, *args, **kwargs):
         self.args = (args, kwargs)
+        self.message = args[0]
 
 
 class Ssegy:
