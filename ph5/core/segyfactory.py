@@ -667,9 +667,10 @@ class Ssegy:
             if 0 <= desc_int <= 65535:
                 ext['empty3'] = desc_int
             else:
-                LOGGER.warning("event_t[description_s] '%s' is ignored "
-                               "because it doesn't satisfy the limit range "
-                               "[0, 65535]" % desc_int)
+                LOGGER.warning(
+                    "Event_t's description_s, %s, not added to segy header: "
+                    "Descriptions must be numeric values in range [0,65535] "
+                    "to be added to header." % desc_int)
         except BaseException:
             pass
 
