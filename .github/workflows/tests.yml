@@ -29,9 +29,6 @@ jobs:
       shell: bash
       run: |
         python --version
-        curl -O https://bootstrap.pypa.io/pip/2.7/get-pip.py
-        python get-pip.py
-        # python -m pip install --upgrade "pip < 21.0"
         conda create -q -n ph5 python=${{ matrix.python-version }}
         conda config --add channels conda-forge
         conda config --set restore_free_channel true
