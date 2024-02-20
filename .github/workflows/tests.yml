@@ -34,6 +34,7 @@ jobs:
         conda config --set restore_free_channel true
         conda env update --name ph5 --file environment.yml
         conda install flake8
+        conda install pip
     
     - name: Install Package and Run Test
       shell: bash
