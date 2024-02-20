@@ -22,4 +22,5 @@ dependencies:
    - tables==3.4.2
    - flake8      # development
    - coverage    # development
+   - typing
    - matplotlib==1.*
