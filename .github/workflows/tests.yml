@@ -22,7 +22,7 @@ jobs:
     - name: Setup Conda
       uses: s-weigand/setup-conda@v1
       with:
-        update-conda: true
+        update-conda: false
         python-version: ${{ matrix.python-version }}
 
     - name: Install Env
@@ -39,7 +39,7 @@ jobs:
       shell: bash
       run: |
         source activate ph5
-        python2.7 -m pip install -e .
+        pip install -e .
         bash create_ph5.sh
         python runtests.py
 
