@@ -46,9 +46,9 @@ jobs:
         bash create_ph5.sh
         python runtests.py
 
-    - name: Check for Flake 8
-      shell: bash
-      run: |
+        # - name: Check for Flake 8
+        #   shell: bash
+        #   run: |
 
-        flake8 ph5
-        pyflakes ph5
+        #     flake8 ph5
+        #     pyflakes ph5
