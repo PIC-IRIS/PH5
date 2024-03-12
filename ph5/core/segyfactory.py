@@ -66,6 +66,7 @@ class SEGYError(Exception):
 
     def __init__(self, *args, **kwargs):
         self.args = (args, kwargs)
+        self.message = args[0]
 
 
 class Ssegy:
@@ -662,7 +663,14 @@ class Ssegy:
 
         # 16 free bits
         try:
-            ext['empty3'] = int(self.event_t['description_s'])
+            desc_int = int(self.event_t['description_s'])
+            if 0 <= desc_int <= 65535:
+                ext['empty3'] = desc_int
+            else:
+                LOGGER.warning(
+                    "Event_t's description_s, %s, not added to segy header: "
+                    "Descriptions must be numeric values in range [0,65535] "
+                    "to be added to header." % desc_int)
         except BaseException:
             pass
 
