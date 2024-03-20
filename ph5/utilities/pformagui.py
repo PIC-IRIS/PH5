@@ -35,9 +35,12 @@ class GetInputs(QtWidgets.QWidget):
         self.runButton = QtWidgets.QPushButton("Run")
         # Select master list of raw files
         self.lstButton = self.createButton("Browse...", self.getList)
-        self.lstButton.setStatusTip("Browse for raw lst file.")
+        self.lstButton.setStatusTip(
+            "Browse for raw list file. "
+            "For SmartSolo, map file created by map_header can be used to "
+            "reduce reading file headers when building ph5. ")
         self.lstCombo = self.createComboBox()
-        lstText = QtWidgets.QLabel("RAW list file:")
+        lstText = QtWidgets.QLabel("MAP/RAW list file:")
         # Select processing directory
         lstLayout = QtWidgets.QHBoxLayout()
         lstLayout.addStretch(False)

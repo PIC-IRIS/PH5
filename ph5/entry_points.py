@@ -244,6 +244,12 @@ class CommandList():
                            'SEG-D file names that expose information '
                            'about the contents of the file.',
                            type=EntryPointTypes.EDITING),
+                EntryPoint('map_header',
+                           'ph5.utilities.map_header:main',
+                           'A command line utility for SmartSolo SEG-D '
+                           'to create mapping between filepaths and their '
+                           'array, station.',
+                           type=EntryPointTypes.EDITING),
                 EntryPoint('set_deploy_pickup_times',
                            'ph5.utilities.set_deploy_pickup_times:main',
                            'Set deploy and pickup times in '
