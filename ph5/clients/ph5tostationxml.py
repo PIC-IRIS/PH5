@@ -305,6 +305,7 @@ class PH5toStationXMLParser(object):
         self.manager = manager
         self.resp_manager = PH5ResponseManager()
         self.response_table_n_i = None
+        self.response_by_n_i = {}
         self.receiver_table_n_i = None
         self.total_number_stations = 0
         self.unique_errors = set()
@@ -428,104 +429,93 @@ class PH5toStationXMLParser(object):
                            obs_channel.data_logger.model,
                            obs_channel.sample_rate]
 
-        if not self.resp_manager.is_already_requested(sensor_keys,
-                                                      datalogger_keys):
-            info = {'n_i': self.response_table_n_i,
-                    'array': a_id,
-                    'sta': sta_id,
-                    'cha_id': cha_id,
-                    'cha_code': obs_channel.code,
-                    'dmodel': obs_channel.data_logger.model,
-                    'smodel': obs_channel.sensor.model,
-                    'spr': spr,
-                    'sprm': spr_m,
-                    }
-            if info['dmodel'].startswith("ZLAND"):
-                info['smodel'] = ''
-            check_info = validation.check_response_info(
-                info, self.manager.ph5,
-                self.checked_data_files, self.unique_errors, None)
+        info = {'n_i': self.response_table_n_i,
+                'array': a_id,
+                'sta': sta_id,
+                'cha_id': cha_id,
+                'cha_code': obs_channel.code,
+                'dmodel': obs_channel.data_logger.model,
+                'smodel': obs_channel.sensor.model,
+                'spr': spr,
+                'sprm': spr_m,
+                }
+        if info['dmodel'].startswith("ZLAND"):
+            info['smodel'] = ''
+        check_info = validation.check_response_info(
+            info, self.manager.ph5,
+            self.checked_data_files, self.unique_errors, None)
 
-            if check_info[0] is False:
-                if emp_resp:
-                    for errmsg in check_info[1]:
-                        self.unique_errors.add((errmsg, 'error'))
-                    return Response()
-                else:
-                    raise PH5toStationXMLError('\n'.join(check_info[1]))
-            response_file_das_a_name, response_file_sensor_a_name = check_info
-
-            # parse datalogger response
-            if response_file_das_a_name:
-                response_file_das_a = \
-                    self.manager.ph5.ph5_g_responses.get_response(
-                                                    response_file_das_a_name
-                                            )
-
-                with io.BytesIO(response_file_das_a) as buf:
-                    buf.seek(0, 0)
-                    if _is_resp(buf):
-                        buf.seek(0, 0)
-                        dl_resp = read_inventory(buf, format="RESP")
-                        dl_resp = dl_resp[0][0][0].response
-                    else:
-                        buf.seek(0, 0)
-                        dl_resp = pickle.loads(response_file_das_a)
-
-            # parse sensor response if present
-            if response_file_sensor_a_name:
-                response_file_sensor_a = \
-                    self.manager.ph5.ph5_g_responses.get_response(
-                                                response_file_sensor_a_name
-                                            )
-
-                with io.BytesIO(response_file_sensor_a) as buf:
-                    buf.seek(0, 0)
-                    if _is_resp(buf):
-                        buf.seek(0, 0)
-                        sensor_resp = read_inventory(buf, format="RESP")
-                        sensor_resp = sensor_resp[0][0][0].response
-                    else:
-                        buf.seek(0, 0)
-                        sensor_resp = pickle.loads(response_file_sensor_a)
-
-            inv_resp = None
-            if response_file_das_a_name and response_file_sensor_a_name:
-                # both datalogger and sensor response
-                dl_resp.response_stages.pop(0)
-                dl_resp.response_stages.insert(0,
-                                               sensor_resp.response_stages[0])
-                dl_resp.recalculate_overall_sensitivity()
-                inv_resp = dl_resp
-            elif response_file_das_a_name:
-                # only datalogger response
-                inv_resp = dl_resp
-            elif response_file_sensor_a_name:
-                # only sensor response
-                inv_resp = sensor_resp
-
-            if inv_resp:
-                # update response manager and return response
-                self.resp_manager.add_response(sensor_keys,
-                                               datalogger_keys,
-                                               inv_resp)
-                if self.manager.level == "CHANNEL":
-                    return Response(
-                        instrument_sensitivity=inv_resp.instrument_sensitivity
-                        )
-                else:
-                    return inv_resp
-            else:
+        if check_info[0] is False:
+            if emp_resp:
+                for errmsg in check_info[1]:
+                    self.unique_errors.add((errmsg, 'error'))
                 return Response()
-        else:
-            inv_resp = self.resp_manager.get_response(sensor_keys,
-                                                      datalogger_keys)
+            else:
+                raise PH5toStationXMLError('\n'.join(check_info[1]))
+        response_file_das_a_name, response_file_sensor_a_name = check_info
+
+        # parse datalogger response
+        if response_file_das_a_name:
+            response_file_das_a = \
+                self.manager.ph5.ph5_g_responses.get_response(
+                                                response_file_das_a_name
+                                        )
+
+            with io.BytesIO(response_file_das_a) as buf:
+                buf.seek(0, 0)
+                if _is_resp(buf):
+                    buf.seek(0, 0)
+                    dl_resp = read_inventory(buf, format="RESP")
+                    dl_resp = dl_resp[0][0][0].response
+                else:
+                    buf.seek(0, 0)
+                    dl_resp = pickle.loads(response_file_das_a)
+
+        # parse sensor response if present
+        if response_file_sensor_a_name:
+            response_file_sensor_a = \
+                self.manager.ph5.ph5_g_responses.get_response(
+                                            response_file_sensor_a_name
+                                        )
+
+            with io.BytesIO(response_file_sensor_a) as buf:
+                buf.seek(0, 0)
+                if _is_resp(buf):
+                    buf.seek(0, 0)
+                    sensor_resp = read_inventory(buf, format="RESP")
+                    sensor_resp = sensor_resp[0][0][0].response
+                else:
+                    buf.seek(0, 0)
+                    sensor_resp = pickle.loads(response_file_sensor_a)
+
+        inv_resp = None
+        if response_file_das_a_name and response_file_sensor_a_name:
+            # both datalogger and sensor response
+            dl_resp.response_stages.pop(0)
+            dl_resp.response_stages.insert(0,
+                                           sensor_resp.response_stages[0])
+            dl_resp.recalculate_overall_sensitivity()
+            inv_resp = dl_resp
+        elif response_file_das_a_name:
+            # only datalogger response
+            inv_resp = dl_resp
+        elif response_file_sensor_a_name:
+            # only sensor response
+            inv_resp = sensor_resp
+
+        if inv_resp:
+            # update response manager and return response
+            self.resp_manager.add_response(sensor_keys,
+                                           datalogger_keys,
+                                           inv_resp)
             if self.manager.level == "CHANNEL":
                 return Response(
                     instrument_sensitivity=inv_resp.instrument_sensitivity
-                )
+                    )
             else:
                 return inv_resp
+        else:
+            return Response()
 
     def create_obs_network(self):
         obs_stations = self.read_stations()
@@ -929,14 +919,20 @@ class PH5toStationXMLParser(object):
                         station_entry['das/serial_number_s'])
                     self.manager.set_obs_channel(cha_key, obs_channel)
 
-                    # read response and add it to obspy channel inventory
-                    self.response_table_n_i = \
+                    # read response and add it to response_by_n_i if
+                    # it doesn't exist
+                    self.response_table_n_i = n_i = \
                         station_entry['response_table_n_i']
-                    obs_channel.response = self.get_response_inv(
-                            obs_channel, array_code, sta_code, c_id,
-                            station_entry['sample_rate_i'],
-                            station_entry['sample_rate_multiplier_i'],
-                            sta_xml_obj.emp_resp)
+                    if (self.response_table_n_i
+                            not in self.response_by_n_i.keys()):
+                        self.response_by_n_i[n_i] = \
+                            self.get_response_inv(
+                                obs_channel, array_code, sta_code, c_id,
+                                station_entry['sample_rate_i'],
+                                station_entry['sample_rate_multiplier_i'],
+                                sta_xml_obj.emp_resp)
+                    # Assign response to obspy channel inventory
+                    obs_channel.response = self.response_by_n_i[n_i]
 
                     all_channels.append(obs_channel)
         return all_channels
