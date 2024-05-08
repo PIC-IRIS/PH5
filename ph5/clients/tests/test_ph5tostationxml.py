@@ -582,5 +582,46 @@ class TestPH5toStationXML_Response_NI_MISMATCH(LogTestCase, TempDirTestCase):
         self.mng.ph5.close()
 
 
+class TestPh5ToStationxml(LogTestCase, TempDirTestCase):
+    def test_different_response_for_same_models(self):
+        datapath = os.path.join(self.home,
+                                'ph5/test_data/ph5_different_response')
+        arg_dict_list = [{
+            'network_list': None, 'reportnum_list': None,
+            'station_list': None, 'location_list': None,
+            'channel_list': None, 'component_list': None,
+            'receiver_list': None, 'array_list': ['001', '002'],
+            'minlat': None, 'maxlat': None, 'minlon': None, 'maxlon': None,
+            'latitude': None, 'longitude': None,
+            'maxradius': None, 'minradius': None,
+            'start_time': None, 'end_time': None, 'emp_resp': False,}]
+        inv = ph5tostationxml.run_ph5_to_stationxml(
+            [datapath], 'master.ph5', 'SACPZ', 'RESPONSE', '', arg_dict_list
+        )
+        # array 1 response n_i=0
+        response = inv.get_response('XW.10006..DP1',
+                                    UTCDateTime("2024-01-11T18:48:34"))
+
+        self.assertEqual(response.instrument_sensitivity.frequency, 50.)
+        self.assertAlmostEqual(response.instrument_sensitivity.value,
+                               4902075.50872, 4)
+        response = inv.get_response('XW.10006..DPZ',
+                                    UTCDateTime("2024-01-11T18:48:34"))
+        self.assertEqual(response.instrument_sensitivity.frequency, 50.)
+        self.assertAlmostEqual(response.instrument_sensitivity.value,
+                               4902075.50872, 4)
+
+        # array 2 response n_i=1
+        response = inv.get_response('XW.20134..DP1',
+                                    UTCDateTime("2024-01-14T18:48:34"))
+        self.assertEqual(response.instrument_sensitivity.frequency, 50.)
+        self.assertAlmostEqual(response.instrument_sensitivity.value,
+                               612759.438589, 4)
+        response = inv.get_response('XW.20134..DP2',
+                                    UTCDateTime("2024-01-14T18:48:34"))
+        self.assertEqual(response.instrument_sensitivity.frequency, 50.)
+        self.assertAlmostEqual(response.instrument_sensitivity.value,
+                               612759.438589, 4)
+
 if __name__ == "__main__":
     unittest.main()
