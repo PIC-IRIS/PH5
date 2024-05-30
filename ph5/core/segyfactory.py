@@ -20,7 +20,7 @@ from pyproj import Geod
 from ph5.core.cs2cs import geod2utm
 from ph5.core import segy_h, ebcdic
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2024.151'
 LOGGER = logging.getLogger(__name__)
 
 os.environ['TZ'] = 'UTC'
@@ -57,6 +57,31 @@ EXT_HEADER_CHOICES = ['P', 'S', 'U', 'I', 'N']
 
 DECIMATION_FACTORS = {'2': '2', '4': '4', '5': '5', '8': '4,2', '10': '5,2',
                       '20': '5,4'}
+
+
+def add_string_to_header(ext, key, bit_number, text, string_name):
+    """
+    Add text that has been convert to integer to external header (ext)
+    if value is compliant with bit_number of the field.
+
+    :param ext: dictionary of external header
+    :param key: key of field to be added in external header
+    :param bit_number: number of bits of unsigned integer for trace header's
+        entry
+    :param text: string to be added
+    :param string_name: name of string to be used in warning message,
+    """
+    range_upper = 2 ** bit_number - 1
+
+    text_int = int(text)
+    if 0 <= text_int <= range_upper:
+        ext[key] = text_int
+    else:
+        LOGGER.warning(
+            "%s, %s, not added to segy header: Descriptions must be "
+            "numeric values in range [0,%s] to be added to header." %
+            (string_name, text_int, range_upper))
+
 
 
 class SEGYError(Exception):
@@ -625,7 +650,9 @@ class Ssegy:
 
         # Sensor sn
         try:
-            ext['sensor_sn'] = int(self.array_t['sensor/serial_number_s'])
+            add_string_to_header(ext, 'sensor_sn', 16,
+                                 self.array_t['sensor/serial_number_s'],
+                                 "Array_t's sensor/serial_number_s")
         except BaseException:
             pass
 
@@ -647,9 +674,12 @@ class Ssegy:
 
         # Number of samples
         ext['samples'] = self.length_points
+
         # 32 free bits
         try:
-            ext['empty2'] = int(self.array_t['description_s'])
+            add_string_to_header(ext, 'empty2', 32,
+                                 self.array_t['description_s'],
+                                 "Array_t's description_s")
         except BaseException:
             pass
 
@@ -663,14 +693,9 @@ class Ssegy:
 
         # 16 free bits
         try:
-            desc_int = int(self.event_t['description_s'])
-            if 0 <= desc_int <= 65535:
-                ext['empty3'] = desc_int
-            else:
-                LOGGER.warning(
-                    "Event_t's description_s, %s, not added to segy header: "
-                    "Descriptions must be numeric values in range [0,65535] "
-                    "to be added to header." % desc_int)
+            add_string_to_header(ext, 'empty3', 16,
+                                 self.event_t['description_s'],
+                                 "Event_t's description_s")
         except BaseException:
             pass
 
