@@ -16,7 +16,7 @@ from ph5.core import experiment, timedoy, columns
 import tabletokef as T2K
 from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = '2021.336'
+PROG_VERSION = '2024.164'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -328,7 +328,7 @@ def main():
                 table_type,
                 '/Experiment_g/Sorts_g/{0}'.format(table_type),
                 T2K.ARRAY_T[table_type])
-            ARRAY_TABLE = int(table_type[-3:])
+            ARRAY_TABLE = int(table_type.replace('Array_t_', ''))
             if EX.ph5_g_sorts.nuke_array_t(ARRAY_TABLE):
                 exclaim(ARRAY_TABLE)
             else:

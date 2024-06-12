@@ -13,6 +13,7 @@ from testfixtures import OutputCapture, LogCapture
 
 from ph5.utilities import nuke_table
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
+from ph5.core import experiment
 
 
 class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
@@ -83,6 +84,39 @@ class TestTabletokef_SRM(TempDirTestCase, LogTestCase):
                     'Das_t not found for 1X1111',
                     log.records[0].msg
                 )
+
+
+class TestLongArrayValue(TempDirTestCase, LogTestCase):
+    def assert_array_list(self, ph5_path, array_list):
+        ex = experiment.ExperimentGroup(ph5_path, 'master.ph5')
+        ex.ph5open()
+        ex.initgroup()
+        self.assertListEqual(
+            ex.ph5_g_sorts.names(),
+            ['Array_t_2589373'],
+            "array_list failed to match with %s" % array_list)
+        ex.ph5close()
+
+    def test_main(self):
+        long_array_value_path = os.path.join(
+            self.home, 'ph5/test_data/ph5_long_array_value')
+
+        # prepare test file
+        copy(os.path.join(long_array_value_path, 'master.ph5'), self.tmpdir)
+
+        # check ph5 has array Array_t_2589373
+        self.assert_array_list(long_array_value_path, ['Array_t_2589373'])
+
+        testargs = ['nuke_table', '-n', 'master.ph5', '--all_arrays']
+        # test to see if successfully delete array table with long value
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                log.setLevel(logging.INFO)
+                nuke_table.main()
+                self.assertEqual(log.records[3].msg,
+                                 '2589373 It worked.')
+        # check if Array_t_2589373 isn't in ph5 anymore
+        self.assert_array_list(long_array_value_path, [])
 
 
 if __name__ == "__main__":
