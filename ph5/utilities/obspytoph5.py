@@ -20,6 +20,10 @@ from numpy import array
 
 PROG_VERSION = '2019.65'
 LOGGER = logging.getLogger(__name__)
+DEPRECATION_WARNING = (
+    'mstoph5 is no longer supported by the PH5 software. '
+    'Please use different functions to format data as PH5.\n\n'
+    'To force running the command anyway, please use flag --force')
 
 
 class ObspytoPH5Error(Exception):
@@ -464,7 +468,8 @@ def get_args(args):
     parser = argparse.ArgumentParser(
             description='Takes data files and converts to PH5',
             usage=('Version: {0} mstoph5 --nickname="Master_PH5_file" '
-                   '[options]'.format(PROG_VERSION)),
+                   '[options]\n'
+                   'IMPORTANT: {1}').format(PROG_VERSION, DEPRECATION_WARNING),
             epilog=("Notice: Data of a Das can't be stored in more than one "
                     "mini file.")
             )
@@ -511,11 +516,19 @@ def get_args(args):
         help="Verbose logging ",
         action='store_true')
 
+    parser.add_argument(
+        "--force", dest="force_run",
+        help="Force to run the command.",
+        action="store_true", default=False)
+
     return parser.parse_args(args)
 
 
 def main():
     args = get_args(sys.argv[1:])
+    if not args.force_run:
+        LOGGER.warning(DEPRECATION_WARNING)
+        sys.exit()
 
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)

@@ -23,6 +23,10 @@ import pickle
 
 PROG_VERSION = "2019.63"
 LOGGER = logging.getLogger(__name__)
+DEPRECATION_WARNING = (
+    'metadatatoph5 is no longer supported by the PH5 software. '
+    'Please use different functions to format data as PH5.\n\n'
+    'To force running the command anyway, please use flag --force')
 
 
 def is_ph5_array_csv(fh):
@@ -448,8 +452,8 @@ def get_args(args):
     parser = argparse.ArgumentParser(
         description='Load metdata in to PH5.',
         usage='Version: {0} metdatatoph5 --nickname="Master_PH5_file"'
-              '-f "FILE" [options]'
-        .format(PROG_VERSION))
+              '-f "FILE" [options]\n'
+              'IMPORTANT: {1}'.format(PROG_VERSION, DEPRECATION_WARNING))
 
     parser.add_argument(
         "-n", "--nickname", action="store",
@@ -464,12 +468,20 @@ def get_args(args):
         help="Input file containing metadata...stationxml, SEED, Stationtxt",
         metavar="file", required=True)
 
+    parser.add_argument(
+        "--force", dest="force_run",
+        help="Force to run the command.",
+        action="store_true", default=False)
+
     return parser.parse_args(args)
 
 
 def main():
 
     args = get_args(sys.argv[1:])
+    if not args.force_run:
+        LOGGER.warning(DEPRECATION_WARNING)
+        sys.exit()
 
     if args.nickname[-3:] == 'ph5':
         ph5file = os.path.join(args.ph5path, args.nickname)

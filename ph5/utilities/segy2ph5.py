@@ -19,6 +19,10 @@ from ph5.core import experiment, columns, segyreader, timedoy
 
 PROG_VERSION = "2018.268"
 LOGGER = logging.getLogger(__name__)
+DEPRECATION_WARNING = (
+    'segy2ph5 is no longer supported by the PH5 software. '
+    'Please use different functions to format data as PH5.\n\n'
+    'To force running the command anyway, please use flag --force')
 
 MAX_PH5_BYTES = 1073741824 * .5  # 1/2GB (1024 X 1024 X 1024 X .5)
 DAS_INFO = {}
@@ -95,7 +99,8 @@ def get_args():
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.usage = "segy2ph5 --nickname=ph5-file-prefix [options]"
+    parser.usage = ("segy2ph5 --nickname=ph5-file-prefix"
+                    " [options]\nIMPORTANT: {0}".format(DEPRECATION_WARNING))
 
     parser.description = ("Read a standard SEG-Y file and load it into a "
                           "PH5 file.\n\nVersion: {0}"
@@ -177,7 +182,14 @@ def get_args():
                         help="The gather contains data recorded using 3 "
                              "channels, 1, 2, 3.")
 
+    parser.add_argument("--force", dest="force_run",
+                        help="Force to run the command.",
+                        action="store_true", default=False)
+
     args = parser.parse_args()
+    if not args.force_run:
+        LOGGER.warning(DEPRECATION_WARNING)
+        sys.exit()
 
     try:
         SIZE = os.path.getsize(args.infile)

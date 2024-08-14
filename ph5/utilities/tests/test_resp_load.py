@@ -92,7 +92,8 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
         """
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     os.path.join(self.home,
-                                 "ph5/test_data/metadata/station.xml")]
+                                 "ph5/test_data/metadata/station.xml"),
+                    '--force']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
         """
@@ -100,7 +101,8 @@ class Test_n_i_fix(TempDirTestCase, LogTestCase):
         """
         testargs = ['mstoph5', '-n', 'master.ph5', '-d',
                     os.path.join(self.home,
-                                 "ph5/test_data/miniseed")]
+                                 "ph5/test_data/miniseed"),
+                    '--force']
         with patch.object(sys, 'argv', testargs):
             obspytoph5.main()
 
