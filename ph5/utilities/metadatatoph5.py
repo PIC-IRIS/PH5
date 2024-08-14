@@ -21,7 +21,7 @@ from obspy import UTCDateTime
 from obspy.core.util import AttribDict
 import pickle
 
-PROG_VERSION = "2019.63"
+PROG_VERSION = "2024.227"
 LOGGER = logging.getLogger(__name__)
 DEPRECATION_WARNING = (
     'metadatatoph5 is no longer supported by the PH5 software. '

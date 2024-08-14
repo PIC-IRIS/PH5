@@ -17,7 +17,7 @@ from math import modf
 from ph5 import LOGGING_FORMAT
 from ph5.core import experiment, columns, segyreader, timedoy
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2024.227"
 LOGGER = logging.getLogger(__name__)
 DEPRECATION_WARNING = (
     'segy2ph5 is no longer supported by the PH5 software. '

@@ -18,7 +18,7 @@ from obspy import read as reader
 from obspy import UTCDateTime, Stream, Trace
 from numpy import array
 
-PROG_VERSION = '2019.65'
+PROG_VERSION = '2024.227'
 LOGGER = logging.getLogger(__name__)
 DEPRECATION_WARNING = (
     'mstoph5 is no longer supported by the PH5 software. '
