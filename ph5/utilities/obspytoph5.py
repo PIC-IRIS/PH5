@@ -23,7 +23,7 @@ LOGGER = logging.getLogger(__name__)
 DEPRECATION_WARNING = (
     'mstoph5 is no longer supported by the PH5 software. '
     'Please use different functions to format data as PH5.\n\n'
-    'To force running the command anyway, please use flag --force')
+    'To force running the command anyway, please use flag --force\n\n')
 
 
 class ObspytoPH5Error(Exception):

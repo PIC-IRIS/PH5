@@ -22,7 +22,7 @@ LOGGER = logging.getLogger(__name__)
 DEPRECATION_WARNING = (
     'segy2ph5 is no longer supported by the PH5 software. '
     'Please use different functions to format data as PH5.\n\n'
-    'To force running the command anyway, please use flag --force')
+    'To force running the command anyway, please use flag --force\n\n')
 
 MAX_PH5_BYTES = 1073741824 * .5  # 1/2GB (1024 X 1024 X 1024 X .5)
 DAS_INFO = {}
