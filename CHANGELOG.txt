@@ -1,5 +1,6 @@
 Master:
 ph5
+ * Add flag --force to not used commands mstoph5, metadatatoph5, segytoph5 and request that flag to run the commands.
  * Make Ph5 availability accout for metadata content.
  * Split avaiabiity information on metadata epochs
  * fixed malformed created timestamp in stationxml from ph5tostationxml

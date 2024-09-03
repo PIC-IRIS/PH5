@@ -8,21 +8,21 @@ import unittest
 from obspy.core import inventory
 from obspy import UTCDateTime
 from mock import patch
-from testfixtures import OutputCapture
+from testfixtures import OutputCapture, LogCapture
 
 from ph5.utilities import metadatatoph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase,\
     initialize_ex
 
 
-class TestMetadatatoPH5_main(TempDirTestCase, LogTestCase):
+class TestMetadatatoPH5Main(TempDirTestCase, LogTestCase):
     def test_main(self):
         testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
                     os.path.join(self.home,
-                                 'ph5/test_data/metadata/station.xml')]
+                                 'ph5/test_data/metadata/station.xml'),
+                    '--force']
         with patch.object(sys, 'argv', testargs):
             metadatatoph5.main()
-        self.assertTrue(os.path.isfile('master.ph5'))
 
         self.ph5_object = initialize_ex('master.ph5', '.', False)
         array_names = self.ph5_object.ph5_g_sorts.names()
@@ -53,6 +53,19 @@ class TestMetadatatoPH5_main(TempDirTestCase, LogTestCase):
         self.assertEqual('H', ret[0]['seed_band_code_s'])
         self.assertEqual('N', ret[0]['seed_orientation_code_s'])
         self.ph5_object.ph5close()
+
+    def test_main_without_force(self):
+        testargs = ['metadatatoph5', '-n', 'master.ph5', '-f',
+                    os.path.join(self.home,
+                                 'ph5/test_data/metadata/station.xml')]
+        with patch.object(sys, 'argv', testargs):
+            with LogCapture() as log:
+                with self.assertRaises(SystemExit):
+                    metadatatoph5.main()
+                self.assertEqual(
+                    log.records[0].msg,
+                    metadatatoph5.DEPRECATION_WARNING
+                )
 
     def test_get_args(self):
         with OutputCapture():
