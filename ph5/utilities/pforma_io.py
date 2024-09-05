@@ -469,6 +469,16 @@ class FormaIO():
                                    msg=("File in {1} does not have standard "
                                         "name: {0}").format(
                                        raw_file, self.infile))
+            if tp == 'rt-130':
+                raise FormaIOError(errno=5,
+                                   msg=("{0}: RT130 data detected, exit and "
+                                        "add data to PH5 with 130toph5."
+                                        ).format(raw_file))
+            if tp == 'seg2':
+                raise FormaIOError(errno=5,
+                                   msg=("{0}: SEG2 data detected, exit and "
+                                        "add data to PH5 with seg2toph5."
+                                        ).format(raw_file))
 
             # Save info about each raw file keyed by serial number in
             # self.raw_files
