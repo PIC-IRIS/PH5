@@ -2,12 +2,13 @@
 # Convert csv file generated using keftocsv back into a kef file.
 #
 import argparse
+import io
 import csv
 import logging
 from datetime import datetime
 
 
-PROG_VERSION = "2018.268"
+PROG_VERSION = "2024.270"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -29,7 +30,8 @@ def get_args():
 
 def main():
     args = get_args()
-    with open(args.file, 'rb') as csvfile:
+
+    with io.open(args.file, "r", encoding='utf-8-sig') as csvfile:
         reader = csv.DictReader(csvfile)
         kef_dict_list = [row for row in reader]
     with open(args.outfile, 'w') as keffile:
