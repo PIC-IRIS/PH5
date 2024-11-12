@@ -32,8 +32,11 @@ if float(T2K.PROG_VERSION[0:8]) < 2017.317:
 
 
 def get_args():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
-        EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
+    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE,\
+        OFFSET_TABLE, ALL_OFFSETS,\
+        EVENT_TABLE, ALL_EVENTS,\
+        ARRAY_TABLE, ALL_ARRAYS,\
+        RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE,\
         INDEX_TABLE, DAS_TABLE, TRUNC, M_INDEX_TABLE, NO_BACKUP
 
@@ -73,22 +76,31 @@ def get_args():
 
     parser.add_argument("-O", "--Offset_t", dest="offset_t_", metavar="a_e",
                         help="Nuke "
-                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID] "
-                             "to a kef file.")
+                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID]."
+                        )
+
+    parser.add_argument("--all_offsets", dest="all_offsets",
+                        action='store_true', default=False,
+                        help="Nuke "
+                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID]."
+                        )
 
     parser.add_argument("-V", "--Event_t", dest="event_t_", metavar="n",
                         type=int,
                         help="Nuke /Experiment_g/Sorts_g/Event_t_[n]. "
                              "Use 0 for Event_t")
 
+    parser.add_argument("--all_events", dest="all_events",
+                        action='store_true', default=False,
+                        help="Nuke all /Experiment_g/Sorts_g/Event_t_xxx.")
+
     parser.add_argument("-A", "--Array_t_", dest="array_t_", metavar="n",
                         help="Nuke /Experiment_g/Sorts_g/Array_t_[n].",
                         type=int)
 
-    parser.add_argument("--all_arrays", dest='all_arrays', action='store_true',
-                        default=False,
-                        help=("Nuke all /Experiment_g/Sorts_g/Array_t_xxx "
-                              "to a kef file."))
+    parser.add_argument("--all_arrays", dest='all_arrays',
+                        action='store_true', default=False,
+                        help="Nuke all /Experiment_g/Sorts_g/Array_t_xxx.")
 
     parser.add_argument("-R", "--Response_t", dest="response_t",
                         action="store_true",
@@ -147,7 +159,10 @@ def get_args():
             sys.exit()
     else:
         OFFSET_TABLE = None
+
+    ALL_OFFSETS = args.all_offsets
     EVENT_TABLE = args.event_t_
+    ALL_EVENTS = args.all_events
     TIME_TABLE = args.time_t
     INDEX_TABLE = args.index_t
     M_INDEX_TABLE = args.m_index_t
@@ -231,9 +246,10 @@ def exclaim(n):
 
 
 def main():
-    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, TRUNC,\
-        EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
-        RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
+    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, ALL_OFFSETS, TRUNC,\
+        EVENT_TABLE, ALL_EVENTS, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE,\
+        REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE,\
+        M_INDEX_TABLE
     get_args()
     set_logger()
     initialize_ph5()
@@ -291,7 +307,10 @@ def main():
             if table_type in T2K.EVENT_T:
                 backup(table_type, '/Experiment_g/Sorts_g/Event_t',
                        T2K.EVENT_T[table_type])
-            EX.ph5_g_sorts.nuke_event_t()
+            if EX.ph5_g_sorts.nuke_event_t():
+                exclaim(0)
+            else:
+                print("0 Not found.")
         else:
             table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
             if table_type in T2K.EVENT_T:
@@ -303,6 +322,27 @@ def main():
                 exclaim(EVENT_TABLE)
             else:
                 print "{0} Not found.".format(EVENT_TABLE)
+    elif ALL_EVENTS:
+        T2K.read_all_event_table()
+        for table_type in T2K.EVENT_T:
+            backup(
+                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                T2K.EVENT_T[table_type])
+            if table_type == "Event_t":
+                if table_type in T2K.EVENT_T:
+                    backup(table_type, '/Experiment_g/Sorts_g/Event_t',
+                           T2K.EVENT_T[table_type])
+                if EX.ph5_g_sorts.nuke_event_t():
+                    exclaim(0)
+                else:
+                    print("0 Not found.")
+            else:
+                EVENT_TABLE = int(table_type.replace('Event_t_', ''))
+                if EX.ph5_g_sorts.nuke_event_t(
+                        "Event_t_{0:03d}".format(EVENT_TABLE)):
+                    exclaim(EVENT_TABLE)
+                else:
+                    print "{0} Not found.".format(EVENT_TABLE)
 
     # /Experiment_g/Sorts_g/Array_t_[n]
     if ARRAY_TABLE:
