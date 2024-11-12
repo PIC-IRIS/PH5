@@ -402,6 +402,23 @@ def read_offset_table():
     OFFSET_T[name] = Rows_Keys(rows, keys)
 
 
+def read_all_offset_tables():
+    global EX, OFFSET_T
+    import re
+    OFFSET_T_NAME_RE = re.compile("Offset_t.*")
+
+    names = EX.ph5_g_sorts.namesRE(OFFSET_T_NAME_RE)
+    for name in names:
+        try:
+            offsets, offset_keys = EX.ph5_g_sorts.read_offsets(name=name)
+        except Exception:
+            LOGGER.error("Can't read {0}. Does it exist?".format(name))
+            continue
+
+        rowskeys = Rows_Keys(offsets, offset_keys)
+        OFFSET_T[name] = rowskeys
+
+
 def read_sort_table():
     '''   Read /Experiment_t/Sorts_g/Sort_g   '''
     global EX, SORT_T

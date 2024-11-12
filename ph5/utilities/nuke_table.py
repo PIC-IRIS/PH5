@@ -162,13 +162,11 @@ def get_args():
 
     ALL_OFFSETS = args.all_offsets
     EVENT_TABLE = args.event_t_
-    print("EVENT_TABLE arg:", EVENT_TABLE)
     ALL_EVENTS = args.all_events
     TIME_TABLE = args.time_t
     INDEX_TABLE = args.index_t
     M_INDEX_TABLE = args.m_index_t
     ARRAY_TABLE = args.array_t_
-    print("ARRAY_TABLE:", ARRAY_TABLE)
     ALL_ARRAYS = args.all_arrays
     RESPONSE_TABLE = args.response_t
     REPORT_TABLE = args.report_t
@@ -268,7 +266,6 @@ def nuke_offset_table(offset_id):
         table_type = "Offset_t_{0:03d}_{1:03d}".format(
             offset_id[0], offset_id[1])
         if table_type in T2K.OFFSET_T:
-            print("T2K.OFFSET_T[table_type]:", T2K.OFFSET_T[table_type].rows)
             backup(
                 table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
                 T2K.OFFSET_T[table_type])
@@ -313,14 +310,14 @@ def main():
         nuke_offset_table(OFFSET_TABLE)
 
     elif ALL_OFFSETS:
-        T2K.read_sort_arrays()      # read all arrays
-        T2K.read_all_event_table()  # read all tables
-        for array_name in T2K.ARRAY_T:
-            array_id = int(array_name.replace('Array_t_', ''))
-            for event_name in T2K.EVENT_T:
-                event_id = int(event_name.replace('Event_t_', ''))
-                offset_id = (array_id, event_id)
-                nuke_offset_table(offset_id)
+        T2K.read_all_offset_tables()
+        for offset_name in T2K.OFFSET_T:
+            if offset_name == "Offset_t":
+                OFFSET_TABLE = (0, 0)
+            else:
+                offset_str = offset_name.replace("Offset_t_", "")
+                OFFSET_TABLE = map(int, offset_str.split("_"))
+            nuke_offset_table(OFFSET_TABLE)
 
     # /Experiment_g/Sorts_g/Event_t
     if EVENT_TABLE is not None:
