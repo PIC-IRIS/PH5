@@ -251,8 +251,6 @@ def nuke_offset_table(offset_id):
 
     :param offset_id: tuple - (arrayId, eventId)
     """
-    T2K.OFFSET_TABLE = offset_id
-    T2K.read_offset_table()
     if offset_id[0] == 0:
         table_type = 'Offset_t'
         if table_type in T2K.OFFSET_T:
@@ -276,6 +274,34 @@ def nuke_offset_table(offset_id):
             exclaim(offset_id)
         else:
             print "{0} Not found.".format(OFFSET_TABLE)
+
+
+def nuke_event_table(event_id):
+    """
+    Delete event_table form Experiment EX.
+
+    :param event_id: tuple - (arrayId, eventId)
+    """
+    if event_id == 0:
+        table_type = 'Event_t'
+        if table_type in T2K.EVENT_T:
+            backup(table_type, '/Experiment_g/Sorts_g/Event_t',
+                   T2K.EVENT_T[table_type])
+        if EX.ph5_g_sorts.nuke_event_t():
+            exclaim(0)
+        else:
+            print("0 Not found.")
+    else:
+        table_type = "Event_t_{0:03d}".format(event_id)
+        if table_type in T2K.EVENT_T:
+            backup(
+                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                T2K.EVENT_T[table_type])
+        if EX.ph5_g_sorts.nuke_event_t(
+                "Event_t_{0:03d}".format(event_id)):
+            exclaim(event_id)
+        else:
+            print "{0} Not found.".format(event_id)
 
 
 def main():
@@ -307,6 +333,8 @@ def main():
 
     # /Experiment_g/Sorts_g/Offset_t
     if OFFSET_TABLE:
+        T2K.OFFSET_TABLE = OFFSET_TABLE
+        T2K.read_offset_table()
         nuke_offset_table(OFFSET_TABLE)
 
     elif ALL_OFFSETS:
@@ -321,55 +349,20 @@ def main():
 
     # /Experiment_g/Sorts_g/Event_t
     if EVENT_TABLE is not None:
-        print("EVENT_TABLE:", EVENT_TABLE)
         T2K.EVENT_TABLE = EVENT_TABLE
         T2K.read_event_table()
-        if EVENT_TABLE == 0:
-            table_type = 'Event_t'
-            if table_type in T2K.EVENT_T:
-                backup(table_type, '/Experiment_g/Sorts_g/Event_t',
-                       T2K.EVENT_T[table_type])
-            if EX.ph5_g_sorts.nuke_event_t():
-                exclaim(0)
-            else:
-                print("0 Not found.")
-        else:
-            table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
-            if table_type in T2K.EVENT_T:
-                backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                    T2K.EVENT_T[table_type])
-            if EX.ph5_g_sorts.nuke_event_t(
-                    "Event_t_{0:03d}".format(EVENT_TABLE)):
-                exclaim(EVENT_TABLE)
-            else:
-                print "{0} Not found.".format(EVENT_TABLE)
+        nuke_event_table(EVENT_TABLE)
     elif ALL_EVENTS:
-        print("ALL_EVENTS")
-        T2K.read_all_event_table()
-        for table_type in T2K.EVENT_T:
-            backup(
-                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                T2K.EVENT_T[table_type])
-            if table_type == "Event_t":
-                if table_type in T2K.EVENT_T:
-                    backup(table_type, '/Experiment_g/Sorts_g/Event_t',
-                           T2K.EVENT_T[table_type])
-                if EX.ph5_g_sorts.nuke_event_t():
-                    exclaim(0)
-                else:
-                    print("0 Not found.")
+        T2K.read_all_event_tables()
+        for event_name in T2K.EVENT_T:
+            if event_name == "Event_t":
+                EVENT_TABLE = 0
             else:
-                EVENT_TABLE = int(table_type.replace('Event_t_', ''))
-                if EX.ph5_g_sorts.nuke_event_t(
-                        "Event_t_{0:03d}".format(EVENT_TABLE)):
-                    exclaim(EVENT_TABLE)
-                else:
-                    print "{0} Not found.".format(EVENT_TABLE)
+                EVENT_TABLE = int(event_name.replace("Event_t_", ""))
+            nuke_event_table(EVENT_TABLE)
 
     # /Experiment_g/Sorts_g/Array_t_[n]
     if ARRAY_TABLE:
-        print("ARRAY_TABLE:", ARRAY_TABLE)
         T2K.ARRAY_TABLE = ARRAY_TABLE
         T2K.read_sort_arrays()
         table_type = 'Array_t_{0:03d}'.format(ARRAY_TABLE)
@@ -385,7 +378,6 @@ def main():
 
     # /Experiment_g/Sorts_g/Array_t_xxx
     elif ALL_ARRAYS:
-        print("ALL_ARRAY")
         T2K.read_sort_arrays()
 
         for table_type in T2K.ARRAY_T:

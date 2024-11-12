@@ -367,7 +367,7 @@ def read_event_table():
     EVENT_T[T] = rowskeys
 
 
-def read_all_event_table():
+def read_all_event_tables():
     global EX, EVENT_T
     import re
     EVENT_T_NAME_RE = re.compile("Event_t.*")
@@ -660,7 +660,7 @@ def main():
         for k in keys:
             table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
     elif ALL_EVENTS is not False:
-        read_all_event_table()
+        read_all_event_tables()
         keys = EVENT_T.keys()
         for k in keys:
             table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
