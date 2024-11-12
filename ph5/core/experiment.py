@@ -652,13 +652,19 @@ class SortsGroup:
             pass
         # Remove cruft left from failed indexing
         cruftRE = re.compile(".*value_d")
-        nodes = get_nodes_by_name(
-            self.ph5, '/Experiment_g/Sorts_g/', cruftRE, None)
-        for k in nodes.keys():
-            try:
-                nodes[k].remove()
-            except Exception:
-                pass
+        try:
+            nodes = get_nodes_by_name(
+                self.ph5, '/Experiment_g/Sorts_g/', cruftRE, None)
+            for k in nodes.keys():
+                try:
+                    nodes[k].remove()
+                except Exception:
+                    pass
+        except tables.exceptions.NoSuchNodeError:
+            # When delete all offset tables, the deleted tables
+            # get_node_by_name() might call on deleted one again.
+            pass
+
         # Remove the offset table
         try:
             self.ph5_t_offset[name].remove()
