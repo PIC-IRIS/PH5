@@ -16,7 +16,7 @@ from ph5.core import experiment, timedoy, columns
 import tabletokef as T2K
 from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = '2024.164'
+PROG_VERSION = '2024.318'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
