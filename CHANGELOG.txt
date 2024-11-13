@@ -160,6 +160,7 @@ ph5.utilities.nuke_table
  * change way to remove das from truncating Das_t to removing external link to das_t
  * truncating Das_t can still be perform with flag --trunc
  * set log for nuke_table
+ * add --all_events, --all_offsets
 ph5.utilities.create_ext
  * create external link to a minifile for a das
 
