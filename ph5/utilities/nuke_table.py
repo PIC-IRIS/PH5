@@ -273,7 +273,7 @@ def nuke_offset_table(offset_id):
                                                   offset_id[1])):
             exclaim(offset_id)
         else:
-            print "{0} Not found.".format(OFFSET_TABLE)
+            print "{0} Not found.".format(offset_id)
 
 
 def nuke_event_table(event_id):
