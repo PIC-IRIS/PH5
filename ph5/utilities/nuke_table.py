@@ -338,7 +338,7 @@ def main():
         nuke_offset_table(OFFSET_TABLE)
 
     elif ALL_OFFSETS:
-        T2K.read_all_offset_tables()
+        T2K.read_all_offset_table()
         for offset_name in T2K.OFFSET_T:
             if offset_name == "Offset_t":
                 OFFSET_TABLE = (0, 0)
@@ -353,7 +353,7 @@ def main():
         T2K.read_event_table()
         nuke_event_table(EVENT_TABLE)
     elif ALL_EVENTS:
-        T2K.read_all_event_tables()
+        T2K.read_all_event_table()
         for event_name in T2K.EVENT_T:
             if event_name == "Event_t":
                 EVENT_TABLE = 0

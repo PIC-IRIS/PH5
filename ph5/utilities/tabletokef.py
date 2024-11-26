@@ -367,7 +367,7 @@ def read_event_table():
     EVENT_T[T] = rowskeys
 
 
-def read_all_event_tables():
+def read_all_event_table():
     global EX, EVENT_T
     import re
     EVENT_T_NAME_RE = re.compile("Event_t.*")
@@ -402,7 +402,7 @@ def read_offset_table():
     OFFSET_T[name] = Rows_Keys(rows, keys)
 
 
-def read_all_offset_tables():
+def read_all_offset_table():
     global EX, OFFSET_T
     import re
     OFFSET_T_NAME_RE = re.compile("Offset_t.*")
@@ -660,7 +660,7 @@ def main():
         for k in keys:
             table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
     elif ALL_EVENTS is not False:
-        read_all_event_tables()
+        read_all_event_table()
         keys = EVENT_T.keys()
         for k in keys:
             table_print("/Experiment_g/Sorts_g/{0}".format(k), EVENT_T[k])
