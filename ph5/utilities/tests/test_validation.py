@@ -140,7 +140,8 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         err = ("array 002, station 0407, channel 1: Response_t[5]:"
                "response_file_das_a 'NoneQ330_CMG3T_200HHN' is inconsistent "
                "with Array_t_002:sensor_model=None CMG-3T. Please check with "
-               "metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
+               "deprecated tool metadatatoph5 format "
+               "[das_model]_[sensor_model]_[sr][cha] "
                "(check doesn't include [cha]).")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
@@ -185,7 +186,7 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
             '/Experiment_g/Responses_g/NoneQ330_NoneCMG3T'
         err = ("array 002, station 0407, channel 1: Response_t[5]:"
                "response_file_das_a 'NoneQ330_NoneCMG3T' is incomplete. "
-               "Please check with metadatatoph5 format "
+               "Please check with deprecated tool metadatatoph5 format "
                "[das_model]_[sensor_model]_[sr][cha] "
                "(check doesn't include [cha])."
                )
@@ -259,8 +260,8 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
                "inconsistent with "
                "Array_t_002:sr=200 Array_t_002:sensor_model=None CMG-3T "
                "Array_t_002:srm=1. Please check with resp_load format "
-               "[das_model]_[sr]_[srm]_[gain] or metadatatoph5 format "
-               "[das_model]_[sensor_model]_[sr][cha] "
+               "[das_model]_[sr]_[srm]_[gain] or deprecated tool metadatatoph5"
+               " format [das_model]_[sensor_model]_[sr][cha] "
                "(check doesn't include [cha]).")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
@@ -282,8 +283,8 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
                "incomplete or inconsistent with Array_t_002:sr=200 "
                "Array_t_002:sensor_model=None CMG-3T. "
                "Please check with resp_load format "
-               "[das_model]_[sr]_[srm]_[gain] or metadatatoph5 format "
-               "[das_model]_[sensor_model]_[sr][cha] "
+               "[das_model]_[sr]_[srm]_[gain] or deprecated tool metadatatoph5"
+               " format [das_model]_[sensor_model]_[sr][cha] "
                "(check doesn't include [cha]).")
         with LogCapture() as log:
             log.setLevel(logging.ERROR)
@@ -420,8 +421,8 @@ class TestValidation_response(LogTestCase, TempDirTestCase):
         chckerrors = set(
             ["array 002 station 0407, channel 1: Response_t[5]:"
              "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is inconsistent "
-             "with Array_t_002:das_model=Q330. Please check with "
-             "metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
+             "with Array_t_002:das_model=Q330. Please check with deprecated "
+             "tool metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
              "(check doesn't include [cha])."])
         with LogCapture() as log:
             log.setLevel(logging.WARNING)
@@ -491,7 +492,8 @@ class TestValidation_no_response_filename(LogTestCase, TempDirTestCase):
         self.assertEqual(has_response_file,
                          "Response table does not contain any response file "
                          "names. Check if resp_load has been run or if "
-                         "metadatatoph5 input contained response information.")
+                         "deprecated tool metadatatoph5 input contained "
+                         "response information.")
 
 
 class TestValidation_location(unittest.TestCase):

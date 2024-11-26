@@ -340,7 +340,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             set([("array 003 station 0407, channel 1: Response_t[6]:"
                   "response_file_das_a 'NoneQ330_NoneCMG3T_100LHN' is "
                   "inconsistent with Array_t_003:das_model=rt125a. "
-                  "Please check with metadatatoph5 format "
+                  "Please check with deprecated tool metadatatoph5 format "
                   "[das_model]_[sensor_model]_[sr][cha] "
                   "(check doesn't include [cha]).", 'error')
                  ]))
@@ -407,7 +407,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
                 {"array 002 station 0407, channel 1: Response_t[5]:"
                  "response_file_das_a 'NoneQ330_NoneCMG3T_200HHN' is "
                  "inconsistent with Array_t_002:sensor_model=CMG. Please "
-                 "check with metadatatoph5 format "
+                 "check with deprecated tool metadatatoph5 format "
                  "[das_model]_[sensor_model]_[sr][cha] "
                  "(check doesn't include [cha]).",
                  "array 008 station 8001, channel 1: Response_t[1]:"
@@ -452,8 +452,8 @@ class TestPH5toStationXMLParser_gen_resp_issue(
         self.assertEqual(
             contxt.exception.message,
             "Response table does not contain any response file names. "
-            "Check if resp_load has been run or if metadatatoph5 input "
-            "contained response information.")
+            "Check if resp_load has been run or if deprecated tool "
+            "metadatatoph5 input contained response information.")
 
     def test_read_networks_response_duplication(self):
         # response_t_dup_n_i.kef has n_i= 1,3,6 duplicated

@@ -637,13 +637,13 @@ class TestPH5Validate_no_response_filename(LogTestCase, TempDirTestCase):
             self.assertEqual(
                 ret[0].error,
                 ["Response table does not contain any response file names. "
-                 "Check if resp_load has been run or if metadatatoph5 input "
-                 "contained response information."])
+                 "Check if resp_load has been run or if deprecated tool "
+                 "metadatatoph5 input contained response information."])
             self.assertEqual(
                 log.records[0].msg,
                 "Response table does not contain any response file names. "
-                "Check if resp_load has been run or if metadatatoph5 input "
-                "contained response information.")
+                "Check if resp_load has been run or if deprecated tool "
+                "metadatatoph5 input contained response information.")
 
 
 class TestPH5Validate_das_t_order(LogTestCase, TempDirTestCase):

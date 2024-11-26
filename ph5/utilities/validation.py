@@ -74,8 +74,8 @@ def check_metadatatoph5_format(Response_t, info, header, errors, logger):
     :return:
         if there are more than 3 parts return False
         if all (3) parts pass checks return True
-        if 2 parts pass checks, decide that this is created from metadatatoph5
-            return True and log as error
+        if 2 parts pass checks, decide that this is created from deprecated
+            tool metadatatoph5 return True and log as error.
         if less than 2 parts pass checks return incomplete_errmsg, m_check_fail
             to be included if check for resp_load format also failed.
     """
@@ -113,7 +113,7 @@ def check_metadatatoph5_format(Response_t, info, header, errors, logger):
         if m_check_fail != set([]) or incomplete_errmsg != '':
             errmsg = combine_errors(m_check_fail, incomplete_errmsg, info)
             errmsg = ("{0}Response_t[{1}]:response_file_das_a '{2}' is {3}. "
-                      "Please check with metadatatoph5 format "
+                      "Please check with deprecated tool metadatatoph5 format "
                       "[das_model]_[sensor_model]_[sr][cha] "
                       "(check doesn't include [cha])."
                       ).format(header,
@@ -148,8 +148,9 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
         + if 3 parts corrects, decide this is created from resp_load so
             errmsg only includes resp_load's checks and format
         + if less than 3 parts corrects, cannot decide this is created from
-            resp_load or metadatatoph5, so errmsg includes resp_load's
-            checks and formats and metadatatoph5's if m_check_ret!=True
+            resp_load or deprecated tool metadatatoph5, so errmsg includes
+            resp_load's checks and formats and deprecated tool metadatatoph5's
+            if m_check_ret!=True
      """
     if Response_t['response_file_das_a'] == '':
         # blank response_file_das_a return False in check_response_info
@@ -158,7 +159,8 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
     info['gain'] = Response_t['gain/value_i']
     response_fname = Response_t['response_file_das_a'].split('/')[-1]
     r_format = "resp_load format [das_model]_[sr]_[srm]_[gain]"
-    m_format = ("metadatatoph5 format [das_model]_[sensor_model]_[sr][cha] "
+    m_format = ("deprecated tool metadatatoph5 format "
+                "[das_model]_[sensor_model]_[sr][cha] "
                 "(check doesn't include [cha])")
     parts = response_fname.split('_')
     if len(parts) > 4:
@@ -205,7 +207,7 @@ def check_das_resp_load_format(Response_t, info, header, errors, logger,
                                r_format)
         else:
             # if less than 3 parts correct, include the check and format
-            # of checking metadatatoph5 format to error message
+            # of checking deprecated tool metadatatoph5 format to error message
             if incomplete_errmsg != 'incomplete':
                 incomplete_errmsg = m_check_ret[0]
             for c in m_check_ret[1]:
@@ -342,8 +344,8 @@ def check_has_response_filename(Response_t, errors, logger):
         if entry['response_file_das_a'] != '':
             return True
     errmsg = ("Response table does not contain any response file names. "
-              "Check if resp_load has been run or if metadatatoph5 input "
-              "contained response information.")
+              "Check if resp_load has been run or if deprecated tool "
+              "metadatatoph5 input contained response information.")
     addLog(errmsg, errors, logger)
     return errmsg
 
