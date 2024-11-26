@@ -11,7 +11,7 @@ from StringIO import StringIO
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
 
-from ph5.utilities import nuke_table
+from ph5.utilities import nuke_table, initialize_ph5, tabletokef, kef2ph5
 from ph5.core.tests.test_base import LogTestCase, TempDirTestCase
 from ph5.core import experiment
 
@@ -117,6 +117,80 @@ class TestLongArrayValue(TempDirTestCase, LogTestCase):
                                  '2589373 It worked.')
         # check if Array_t_2589373 isn't in ph5 anymore
         self.assert_array_list(long_array_value_path, [])
+
+
+class TestAllEventsFlags(TempDirTestCase, LogTestCase):
+
+    def check_event_length(self, length):
+        EX = experiment.ExperimentGroup(self.tmpdir, 'master.ph5')
+        EX.ph5open(False)
+        EX.initgroup()
+
+        tabletokef.init_local()
+        tabletokef.EX = EX
+
+        tabletokef.read_all_event_table()
+        self.assertEqual(len(tabletokef.EVENT_T), length)
+        EX.ph5close()
+
+    def test_main(self):
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        # add event table
+        all_events_path = os.path.join(
+            self.home,
+            'ph5/test_data/metadata/delete_table/all_events.kef')
+        testargs = ['kef2ph5', '-n', 'master.ph5', '-k', all_events_path]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
+        # check there are 2 events
+        self.check_event_length(2)
+
+        # remove all events (FEATURE TO TEST)
+        testargs = ['delete_table', '-n', 'master.ph5', '--all_events']
+        with patch.object(sys, 'argv', testargs):
+            nuke_table.main()
+        # check there are no events
+        self.check_event_length(0)
+
+
+class TestAllOffsetsFlags(TempDirTestCase, LogTestCase):
+
+    def check_offset_length(self, length):
+        EX = experiment.ExperimentGroup(self.tmpdir, 'master.ph5')
+        EX.ph5open(False)
+        EX.initgroup()
+
+        tabletokef.init_local()
+        tabletokef.EX = EX
+
+        tabletokef.read_all_offset_table()
+        self.assertEqual(len(tabletokef.OFFSET_T), length)
+        EX.ph5close()
+
+    def test_main(self):
+        testargs = ['initialize_ph5', '-n', 'master.ph5']
+        with patch.object(sys, 'argv', testargs):
+            initialize_ph5.main()
+
+        # add offset table
+        all_offsets_path = os.path.join(
+            self.home,
+            'ph5/test_data/metadata/delete_table/all_offsets.kef')
+        testargs = ['kef2ph5', '-n', 'master.ph5', '-k', all_offsets_path]
+        with patch.object(sys, 'argv', testargs):
+            kef2ph5.main()
+        # check there are 12 offset
+        self.check_offset_length(12)
+
+        # remove all offset (FEATURE TO TEST)
+        testargs = ['delete_table', '-n', 'master.ph5', '--all_offsets']
+        with patch.object(sys, 'argv', testargs):
+            nuke_table.main()
+        # check there are no offset
+        self.check_offset_length(0)
 
 
 if __name__ == "__main__":
