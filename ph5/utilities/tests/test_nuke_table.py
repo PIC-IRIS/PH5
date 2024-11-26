@@ -122,7 +122,7 @@ class TestLongArrayValue(TempDirTestCase, LogTestCase):
 class TestAllEventsFlags(TempDirTestCase, LogTestCase):
 
     def check_event_length(self, length):
-        EX = experiment.ExperimentGroup( self.tmpdir, 'master.ph5')
+        EX = experiment.ExperimentGroup(self.tmpdir, 'master.ph5')
         EX.ph5open(False)
         EX.initgroup()
 
@@ -159,7 +159,7 @@ class TestAllEventsFlags(TempDirTestCase, LogTestCase):
 class TestAllOffsetsFlags(TempDirTestCase, LogTestCase):
 
     def check_offset_length(self, length):
-        EX = experiment.ExperimentGroup( self.tmpdir, 'master.ph5')
+        EX = experiment.ExperimentGroup(self.tmpdir, 'master.ph5')
         EX.ph5open(False)
         EX.initgroup()
 
