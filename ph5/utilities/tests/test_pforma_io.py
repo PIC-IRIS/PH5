@@ -104,5 +104,39 @@ class TestPforma(LogTestCase, TempDirTestCase):
         self.assertEqual(ret[1], expected_station_id)
 
 
+class TestPformaIONotRead(LogTestCase, TempDirTestCase):
+    def test_rt130(self):
+        rt130_dir = os.path.join(
+            self.home, "ph5/test_data/rt130/2016139.9EEF.ZIP")
+        with open('rt130_list', 'w') as list_file:
+            list_file.write(rt130_dir)
+        list_file_path = os.path.join(self.tmpdir, 'rt130_list')
+        fio = pforma_io.FormaIO(infile=list_file_path, outdir=self.tmpdir)
+        fio.open()
+        with self.assertRaises(pforma_io.FormaIOError) as contxt:
+            fio.read()
+        self.assertEqual(
+            contxt.exception.message,
+            '2016139.9EEF.ZIP: RT130 data detected, '
+            'exit and add data to PH5 with 130toph5.'
+        )
+
+    def test_seg2(self):
+        seg2_dir = os.path.join(
+            self.home, "ph5/test_data/seg2/15001.dat")
+        with open('seg2_list', 'w') as list_file:
+            list_file.write(seg2_dir)
+        list_file_path = os.path.join(self.tmpdir, 'seg2_list')
+        fio = pforma_io.FormaIO(infile=list_file_path, outdir=self.tmpdir)
+        fio.open()
+        with self.assertRaises(pforma_io.FormaIOError) as contxt:
+            fio.read()
+        self.assertEqual(
+            contxt.exception.message,
+            '15001.dat: SEG2 data detected, '
+            'exit and add data to PH5 with seg2toph5.'
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
