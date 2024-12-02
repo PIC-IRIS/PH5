@@ -1,4 +1,8 @@
 Master:
+docs
+ * Added inital compiled verison.  Use docsrc for changes.
+docsrc
+ * Added reStructuredText documentation for file format.
 ph5
  * Add flag --force to not used commands mstoph5, metadatatoph5, segytoph5 and request that flag to run the commands.
  * Make Ph5 availability accout for metadata content.
