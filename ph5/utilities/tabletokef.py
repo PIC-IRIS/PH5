@@ -104,7 +104,8 @@ def get_args():
     global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, \
         EVENT_TABLE, ARRAY_TABLE, RESPONSE_TABLE, REPORT_TABLE, \
         RECEIVER_TABLE, DAS_TABLE, TIME_TABLE, TABLE_KEY, INDEX_TABLE, \
-        M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS, OFILE, IGNORE_SRM
+        M_INDEX_TABLE, ALL_ARRAYS, ALL_EVENTS, OFILE, IGNORE_SRM, \
+        STATION, MINIFILE
 
     parser = argparse.ArgumentParser(
                                 formatter_class=argparse.RawTextHelpFormatter)
@@ -160,6 +161,10 @@ def get_args():
                         type=int,
                         help=("Dump /Experiment_g/Sorts_g/Array_t_[n] "
                               "to a kef file."))
+    parser.add_argument("-s", "--station", dest="station", metavar="s",
+                        type=str, default='',
+                        help=("Go with -s/--station flag to create kef "
+                              "for a specific station (for testing)."))
 
     parser.add_argument("--all_arrays", dest='all_arrays', action='store_true',
                         default=False,
@@ -188,6 +193,10 @@ def get_args():
                         default=False,
                         help=("Dump /Experiment_g/Receivers_g/Index_t "
                               "to a kef file."))
+    parser.add_argument("-m", "--miniPH5_xxxxx", dest="minifile",
+                        default=0, metavar='n',
+                        help=("Go with -I/--Index_t flag to create kef for a "
+                              "specific mini file (testing)."))
 
     parser.add_argument("-M", "--M_Index_t", dest="m_index_t",
                         action="store_true",
@@ -235,9 +244,11 @@ def get_args():
     EVENT_TABLE = args.event_t_
     TIME_TABLE = args.time_t
     INDEX_TABLE = args.index_t
+    MINIFILE = args.minifile
     M_INDEX_TABLE = args.m_index_t
     TABLE_KEY = args.update_key
     ARRAY_TABLE = args.array_t_
+    STATION = args.station
     ALL_ARRAYS = args.all_arrays
     ALL_EVENTS = args.all_events
     RESPONSE_TABLE = args.response_t
@@ -292,15 +303,23 @@ def table_print(t, a, fh=None):
     global TABLE_KEY
     global PATH
     global EX
+    global STATION, MINIFILE
     i = 0
     s = ''
     s = s + \
         "#\n#\t%s\tph5 version: %s\n#\n" % (
             time.ctime(time.time()), EX.version())
+
     # Loop through table rows
     for r in a.rows:
+        if 'Array' in t and STATION != '':
+            if r['id_s'] != STATION:
+                continue
+        if 'Receivers_g/Index_t' in t and MINIFILE != 0:
+            minifile = 'miniPH5_{0:05d}'.format(int(MINIFILE))
+            if minifile not in r['external_file_name_s']:
+                continue
         i += 1
-
         s = s + "#   Table row %d\n" % i
         # Print table name
         if TABLE_KEY in a.keys:
