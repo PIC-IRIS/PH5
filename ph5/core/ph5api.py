@@ -1104,7 +1104,7 @@ class PH5(experiment.ExperimentGroup):
             traces.append(trace)
         return traces
 
-    def cut(self, das, start_fepoch, stop_fepoch, chan=1,
+    def cut(self, das, start_fepoch, stop_fepoch, logger, chan=1,
             sample_rate=None, apply_time_correction=True, das_t=None):
         '''   Cut trace data and return a Trace object
               Inputs:
@@ -1120,6 +1120,17 @@ class PH5(experiment.ExperimentGroup):
               Returns:
                  A list of PH5 trace objects split on gaps
         '''
+        low_level_debug = False
+        if low_level_debug:
+            # show inputs to cut
+            logger.debug("***--**** Class PH5 starting, apply_time_correction: {}".format(apply_time_correction))
+            logger.debug("***--**** start_fepoch: {}  stop_fepoch: {}   chan: {} ".format(start_fepoch, stop_fepoch, chan))
+            logger.debug("***--**** sample_rate: {}".format(sample_rate))
+            logger.debug("***--**** das: {}".format(das))
+            logger.debug("***--**** das_t: {}".format(das_t))
+            logger.debug("***--**** self.Das_t: {}".format(self.Das_t))
+            logger.debug("***--**** self.apply_time_correction: {}".format(apply_time_correction))
+
         if not das_t:
             self.read_das_t(das, start_epoch=start_fepoch,
                             stop_epoch=stop_fepoch, reread=False)
@@ -1162,21 +1173,23 @@ class PH5(experiment.ExperimentGroup):
             clock.comment.append("No time correction applied.")
             time_cor_guess_samples = 0
 
-        samples_read = 0
         first = True
         new_trace = False
         traces = []
         das_t = []
 
+        previous_last_sample_fepoch = None
         window_start_fepoch0 = None
         window_stop_fepoch = None
         trace_start_fepoch = None
         data = None
+
         for d in Das_t:
             sr = float(d['sample_rate_i']) / \
                  float(d['sample_rate_multiplier_i'])
             window_start_fepoch = fepoch(
                 d['time/epoch_l'], d['time/micro_seconds_i'])
+
             if (d['channel_number_i'] != chan) or (
                     sr != sample_rate) or (window_start_fepoch > stop_fepoch):
                 continue
@@ -1217,17 +1230,49 @@ class PH5(experiment.ExperimentGroup):
             if not trace_reference:
                 continue
 
+            requested_size_seconds = stop_fepoch - start_fepoch
+            requested_sample_cnt = requested_size_seconds * sr
+            sample_cnt_this_read = cut_stop_sample - cut_start_sample
+
+            if low_level_debug:
+                logger.debug("")
+                window_size_seconds = window_stop_fepoch - window_start_fepoch
+
+                logger.debug("***--**** --- start_fepoch: {}  stop_fepoch: {}".format(start_fepoch, stop_fepoch))
+                logger.debug("***--**** --- requested_size_seconds: {}".format(requested_size_seconds))
+                logger.debug("***--**** --- requested_sample_cnt: {}  sample_cnt_this_read: {}".format(requested_sample_cnt,
+                                                                                                       sample_cnt_this_read))
+                logger.debug("***--**** --- cut_start_fepoch: {}  cut_start_sample: {}".format(cut_start_fepoch,
+                                                                                               cut_start_sample))
+                logger.debug("***--**** --- cut_stop_fepoch: {}   cut_stop_sample: {}".format(cut_stop_fepoch,
+                                                                                              cut_stop_sample))
+                logger.debug("***--**** --- window_start_fepoch: {}  window_stop_fepoch: {}".format(window_start_fepoch,
+                                                                                                    window_stop_fepoch))
+                logger.debug("***--**** --- window size seconds: {}".format(window_size_seconds))
+                logger.debug("***--**** --- time_cor_guess_samples, i.e. sample shift: {}".format(time_cor_guess_samples))
+
+            if sample_cnt_this_read == 0.0 and cut_start_fepoch == window_stop_fepoch:
+                # this can happen when no start_time is requested and a len is
+                # requested that is an even multiple of the data_a array size and
+                # (I assume) the trace start time
+                # e.g. len_sec = 30, data_a size 3600 sec, window_start_fepoch: 1198029600.0
+                #
+                # so set the last sample time and on to the next array
+                previous_last_sample_fepoch = cut_stop_fepoch - (1.0/sr)
+                continue
+
             data_tmp = self.ph5_g_receivers.read_trace(
                 trace_reference,
                 start=int(round(cut_start_sample - time_cor_guess_samples)),
                 stop=int(round(cut_stop_sample - time_cor_guess_samples)))
             current_trace_type, current_trace_byteorder = (
                 self.ph5_g_receivers.trace_info(trace_reference))
+
             if first:
-                # Correct start time to 'actual' time of first sample
                 if trace_start_fepoch is None:
                     trace_start_fepoch = \
                         window_start_fepoch + cut_start_sample / sr
+
                 first = False
                 dt = 'int32'
                 if current_trace_type == 'float':
@@ -1237,20 +1282,30 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Time difference between the end of last window and the start
                 # of this one
-                time_diff = abs(window_start_fepoch)
-                # Overlaps are positive
-                d['gap_overlap'] = time_diff - (1. / sr)
-                # Data gap
-                if abs(time_diff) > (1. / sr):
-                    new_trace = True
+                if False:
+                    # this is from a previous version and did not look quite right - 2023-09-25
+                    # it can go away if the newer version works ok
+                    time_diff = abs(window_start_fepoch)
+                    # Overlaps are positive
+                    # inserting a new key??  where is this used
+                    d['gap_overlap'] = time_diff - (1. / sr)
+                    # Data gap
+                    if abs(time_diff) > (1. / sr):
+                        new_trace = True
+
+                time_diff = abs(window_start_fepoch - previous_last_sample_fepoch)
+                if time_diff > (1.0/sr):
+                     new_trace = True
+
             if len(data_tmp) > 0:
                 #  Gap!!!
+                # 2023-09-27 - should not "gap" when crossing ph5 boundary arrays if sr does not change
                 if das_t and new_trace:
                     # Save trace before gap
                     trace = Trace(data,
                                   trace_start_fepoch,
                                   0,  # time_correction
-                                  len(data),  # samples_read
+                                  len(data),  # samples accumulated
                                   sr,
                                   current_trace_type,
                                   current_trace_byteorder,
@@ -1259,47 +1314,50 @@ class PH5(experiment.ExperimentGroup):
                                   None,  # response_t
                                   clock=clock)
                     traces.append(trace)
-                    #
-                    # Start of trace after gap
-                    #
-                    start_fepoch = trace_start_fepoch
-                    trace_start_fepoch = window_start_fepoch
-                    samples_read = len(data_tmp)
+
+                    # the data is already in data_tmp, so trace_start_fepoch should
+                    # be relative samples as used to read into data_tmp
+                    trace_start_fepoch = window_start_fepoch + cut_start_sample / sr
+                    if low_level_debug:
+                        logger.debug("***--**** --- --- trace appended, trace_start_fepoch: {}  samples to trace: {}  samples last read: {}"
+                                    .format(trace_start_fepoch, len(data), len(data_tmp)))
 
                     dt = 'int32'
                     if current_trace_type == 'float':
                         dt = 'float32'
-                    data = np.array([], dtype=dt)
 
+                    # empty array and restart with data in data_tmp
+                    data = np.array([], dtype=dt)
                     data = np.append(data, data_tmp)
+
                     das_t = [d]
                     new_trace = False
                 else:
                     data = np.append(data, data_tmp)
-                    samples_read += len(data_tmp)
                     das_t.append(d)
-                # adjust the number of data samples as to not over extend the
-                # cut_stop_fepoch
+
+                # this is the definition of "previous_last_sample_fepoch", so "first" must
+                # have been true once before second loop! This is intended as a way to recognize
+                # that that some (many?) ph5 data array boundaries are not necessarily gaps.
+                previous_last_sample_fepoch = cut_stop_fepoch - (1.0/sr)
+
                 if data is None:
+                    logger.warning("***--**** --- is this part of normal processing? or something special?")
                     return [Trace(np.array([]), start_fepoch, 0.,
                                   0, sample_rate, None, None, das_t, None,
                                   None, clock=clock)]
-                calc_stop_fepoch = trace_start_fepoch + (len(data) / sr)
 
-                # calculate number of overextending samples
-                # num_overextend_samples is specific to the data per das table
-                # needs to be embedded in for loop to work properly.
-                num_overextend_samples = int(math.floor(calc_stop_fepoch -
-                                                        cut_stop_fepoch) * sr)
-                samples_to_cut = int(len(data) - num_overextend_samples)
-                if num_overextend_samples > 0:
-                    # trim the data array to exclude the over extending samples
-                    data = data[0:samples_to_cut]
+                # adjust the number of data samples as to not over extend the
+                # cut_stop_fepoch
+                if len(data) > requested_sample_cnt:
+                    # trim the data array to exclude samples over the requested size
+                    data = data[0:requested_sample_cnt]
+
         # Done reading all the traces catch the last bit
         trace = Trace(data,
                       trace_start_fepoch,
                       0,  # time_correction_ms
-                      len(data),  # nsamples
+                      len(data),  # samples accumulated
                       sample_rate,
                       current_trace_type,
                       current_trace_byteorder,
@@ -1308,6 +1366,10 @@ class PH5(experiment.ExperimentGroup):
                       None,  # response_t
                       clock=clock)
         traces.append(trace)
+        if low_level_debug:
+            logger.debug("***--**** --- --- last trace appended, trace_start_fepoch: {}  samples to trace: {}  samples last read: {}"
+                         .format(trace_start_fepoch, len(data), len(data_tmp)))
+
         if das_t:
             receiver_t = self.get_receiver_t(das_t[0])
             response_t = self.get_response_t(das_t[0])
@@ -1339,6 +1401,9 @@ class PH5(experiment.ExperimentGroup):
 
         if 'PH5API_DEBUG' in os.environ and os.environ['PH5API_DEBUG']:
             for t in ret:
+                # Note: to use this, there probably needs to be a change to use logger
+                # ouput, or at least through web service shell because
+                # print output is added to stdout in the output when run through
                 print('-=' * 40)
                 print(t)
 
