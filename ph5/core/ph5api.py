@@ -1120,6 +1120,7 @@ class PH5(experiment.ExperimentGroup):
               Returns:
                  A list of PH5 trace objects split on gaps
         '''
+        org_start_fepoch = start_fepoch
         if not das_t:
             self.read_das_t(das, start_epoch=start_fepoch,
                             stop_epoch=stop_fepoch, reread=False)
@@ -1316,7 +1317,7 @@ class PH5(experiment.ExperimentGroup):
             response_t = None
         ret = []
 
-        for t in traces:
+        for index, t in enumerate(traces):
             if apply_time_correction:
                 window_start_fepoch0 = t.start_time
                 window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
@@ -1335,6 +1336,21 @@ class PH5(experiment.ExperimentGroup):
             # Set receiver_t and response_t
             t.receiver_t = receiver_t
             t.response_t = response_t
+
+            # trim off redundant section before user's org_start_fepoch because
+            # the trace starts before it.
+            if index == 0:
+                trace_start_fepoch = t.start_time.epoch(fepoch=True)
+                if trace_start_fepoch < org_start_fepoch:
+                    delta = org_start_fepoch - trace_start_fepoch
+                    # This should be 1 but the calculation is to make sure
+                    # the weird case
+                    num_of_redundant_samples = int(math.ceil(delta * sr))
+                    new_delta = num_of_redundant_samples / sr
+                    new_start_time_fepoch = trace_start_fepoch + new_delta
+                    t.start_time = timedoy.TimeDOY(epoch=new_start_time_fepoch)
+                    t.data = t.data[num_of_redundant_samples:]
+
             ret.append(t)
 
         if 'PH5API_DEBUG' in os.environ and os.environ['PH5API_DEBUG']:
