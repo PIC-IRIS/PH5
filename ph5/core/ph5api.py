@@ -1318,6 +1318,27 @@ class PH5(experiment.ExperimentGroup):
         ret = []
 
         for index, t in enumerate(traces):
+            # trim off redundant section before user's org_start because
+            # the trace starts before it.
+            if index == 0:
+                org_start = timedoy.TimeDOY(epoch=org_start_fepoch)
+                if timedoy.compare(t.start_time, org_start) == -1:
+                    # to correct start time to org_start
+                    correct_time = timedoy.delta(t.start_time, org_start)
+
+                    # This should be 1 but the calculation is to make sure
+                    # the weird case
+                    num_of_redundant_samples = int(math.ceil(correct_time * sr))
+
+                    # to correct time according to sample time
+                    new_correct_time = num_of_redundant_samples / sr
+
+                    # fix trace values
+                    t.start_time = timedoy.timecorrect(
+                        t.start_time, new_correct_time * 1000)
+                    t.data = t.data[num_of_redundant_samples:]
+                    t.nsamples = len(t.data)
+
             if apply_time_correction:
                 window_start_fepoch0 = t.start_time
                 window_stop_fepoch = window_start_fepoch0 + (t.nsamples / sr)
@@ -1336,22 +1357,6 @@ class PH5(experiment.ExperimentGroup):
             # Set receiver_t and response_t
             t.receiver_t = receiver_t
             t.response_t = response_t
-
-            # trim off redundant section before user's org_start_fepoch because
-            # the trace starts before it.
-            if index == 0:
-                trace_start_fepoch = t.start_time.epoch(fepoch=True)
-                if trace_start_fepoch < org_start_fepoch:
-                    delta = org_start_fepoch - trace_start_fepoch
-                    # This should be 1 but the calculation is to make sure
-                    # the weird case
-                    num_of_redundant_samples = int(math.ceil(delta * sr))
-                    new_delta = num_of_redundant_samples / sr
-                    new_start_time_fepoch = trace_start_fepoch + new_delta
-                    t.start_time = timedoy.TimeDOY(epoch=new_start_time_fepoch)
-                    t.data = t.data[num_of_redundant_samples:]
-                    t.nsamples = t.nsamples - num_of_redundant_samples
-
             ret.append(t)
 
         if 'PH5API_DEBUG' in os.environ and os.environ['PH5API_DEBUG']:
