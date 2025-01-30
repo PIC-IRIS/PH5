@@ -1350,7 +1350,6 @@ class PH5(experiment.ExperimentGroup):
                     new_start_time_fepoch = trace_start_fepoch + new_delta
                     t.start_time = timedoy.TimeDOY(epoch=new_start_time_fepoch)
                     t.data = t.data[num_of_redundant_samples:]
-                    t.nsamples = t.nsamples - num_of_redundant_samples
 
             ret.append(t)
 
