@@ -1298,5 +1298,40 @@ class TestPH5API_precision(TempDirTestCase, LogTestCase):
         self.assertEqual(traces[1].nsamples, 236)
 
 
+class TestPH5APICutTimeStartInMiddleOfSample(LogTestCase):
+    """
+    This test to make sure the traces return will be at or after the cut
+    """
+    def setUp(self):
+        super(TestPH5APICutTimeStartInMiddleOfSample, self).setUp()
+        self.home = os.getcwd()
+        self.ph5API_object = ph5api.PH5(
+            path=os.path.join(
+                self.home, 'ph5/test_data/ph5_cut_start_in_middle_of_sample'),
+            nickname='master.ph5')
+
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(TestPH5APICutTimeStartInMiddleOfSample, self).tearDown()
+
+    def test_cut(self):
+        cut_start_epoch = 1508630400.0
+        cut_end_epoch = 1508716799.0
+        das = self.ph5API_object.query_das_t(
+            das='A123', chan=1, sample_rate=100, sample_rate_multiplier=1,
+            start_epoch=cut_start_epoch, stop_epoch=cut_end_epoch
+        )
+        das = [x for x in das]
+        traces = self.ph5API_object.cut(
+            das='A123', chan=1, sample_rate=100, das_t=das,
+            start_fepoch=cut_start_epoch, stop_fepoch=cut_end_epoch,
+            apply_time_correction=True
+        )
+
+        trace_start_epoch = traces[0].start_time.epoch(fepoch=True)
+        # make sure trace start at or after cut start
+        self.assertGreaterEqual(trace_start_epoch, cut_start_epoch)
+
+
 if __name__ == "__main__":
     unittest.main()
