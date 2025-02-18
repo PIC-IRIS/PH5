@@ -1196,8 +1196,10 @@ class PH5(experiment.ExperimentGroup):
             else:
                 # Cut start is somewhere in window
                 cut_start_fepoch = start_fepoch
-                cut_start_sample = round(
-                    (cut_start_fepoch - window_start_fepoch) * sr)
+                # round up to make sure it will start at or after
+                # window_start_fepoch
+                cut_start_sample = int(math.ceil(
+                    (cut_start_fepoch - window_start_fepoch) * sr))
             # Requested stop is after end of window so we need rest of window
             if stop_fepoch > window_stop_fepoch:
                 cut_stop_fepoch = window_stop_fepoch
