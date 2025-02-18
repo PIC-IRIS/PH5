@@ -16,7 +16,7 @@ from ph5.core import experiment, timedoy, columns
 import tabletokef as T2K
 from ph5 import LOGGING_FORMAT
 
-PROG_VERSION = '2024.164'
+PROG_VERSION = '2024.318'
 LOGGER = logging.getLogger(__name__)
 
 if float(T2K.PROG_VERSION[0:8]) < 2017.317:
@@ -32,8 +32,11 @@ if float(T2K.PROG_VERSION[0:8]) < 2017.317:
 
 
 def get_args():
-    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE,\
-        EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
+    global PH5, PATH, DEBUG, EXPERIMENT_TABLE, SORT_TABLE,\
+        OFFSET_TABLE, ALL_OFFSETS,\
+        EVENT_TABLE, ALL_EVENTS,\
+        ARRAY_TABLE, ALL_ARRAYS,\
+        RESPONSE_TABLE, REPORT_TABLE,\
         RECEIVER_TABLE, TIME_TABLE,\
         INDEX_TABLE, DAS_TABLE, TRUNC, M_INDEX_TABLE, NO_BACKUP
 
@@ -73,22 +76,31 @@ def get_args():
 
     parser.add_argument("-O", "--Offset_t", dest="offset_t_", metavar="a_e",
                         help="Nuke "
-                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID] "
-                             "to a kef file.")
+                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID]."
+                        )
+
+    parser.add_argument("--all_offsets", dest="all_offsets",
+                        action='store_true', default=False,
+                        help="Nuke "
+                             "/Experiment_g/Sort_g/Offset_t_[arrayID_eventID]."
+                        )
 
     parser.add_argument("-V", "--Event_t", dest="event_t_", metavar="n",
                         type=int,
                         help="Nuke /Experiment_g/Sorts_g/Event_t_[n]. "
                              "Use 0 for Event_t")
 
+    parser.add_argument("--all_events", dest="all_events",
+                        action='store_true', default=False,
+                        help="Nuke all /Experiment_g/Sorts_g/Event_t_xxx.")
+
     parser.add_argument("-A", "--Array_t_", dest="array_t_", metavar="n",
                         help="Nuke /Experiment_g/Sorts_g/Array_t_[n].",
                         type=int)
 
-    parser.add_argument("--all_arrays", dest='all_arrays', action='store_true',
-                        default=False,
-                        help=("Nuke all /Experiment_g/Sorts_g/Array_t_xxx "
-                              "to a kef file."))
+    parser.add_argument("--all_arrays", dest='all_arrays',
+                        action='store_true', default=False,
+                        help="Nuke all /Experiment_g/Sorts_g/Array_t_xxx.")
 
     parser.add_argument("-R", "--Response_t", dest="response_t",
                         action="store_true",
@@ -147,7 +159,10 @@ def get_args():
             sys.exit()
     else:
         OFFSET_TABLE = None
+
+    ALL_OFFSETS = args.all_offsets
     EVENT_TABLE = args.event_t_
+    ALL_EVENTS = args.all_events
     TIME_TABLE = args.time_t
     INDEX_TABLE = args.index_t
     M_INDEX_TABLE = args.m_index_t
@@ -230,10 +245,70 @@ def exclaim(n):
         LOGGER.info("{0} It worked.".format(n))
 
 
+def nuke_offset_table(offset_id):
+    """
+    Delete offset_table form Experiment EX.
+
+    :param offset_id: tuple - (arrayId, eventId)
+    """
+    if offset_id[0] == 0:
+        table_type = 'Offset_t'
+        if table_type in T2K.OFFSET_T:
+            backup(table_type, '/Experiment_g/Sorts_g/Offset_t',
+                   T2K.OFFSET_T[table_type])
+        if EX.ph5_g_sorts.nuke_offset_t():
+            exclaim(offset_id)
+        else:
+            print "{0} Not found.".format(offset_id)
+    else:
+        table_type = "Offset_t_{0:03d}_{1:03d}".format(
+            offset_id[0], offset_id[1])
+        if table_type in T2K.OFFSET_T:
+            backup(
+                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                T2K.OFFSET_T[table_type])
+
+        if EX.ph5_g_sorts.nuke_offset_t(
+                "Offset_t_{0:03d}_{1:03d}".format(offset_id[0],
+                                                  offset_id[1])):
+            exclaim(offset_id)
+        else:
+            print "{0} Not found.".format(offset_id)
+
+
+def nuke_event_table(event_id):
+    """
+    Delete event_table form Experiment EX.
+
+    :param event_id: tuple - (arrayId, eventId)
+    """
+    if event_id == 0:
+        table_type = 'Event_t'
+        if table_type in T2K.EVENT_T:
+            backup(table_type, '/Experiment_g/Sorts_g/Event_t',
+                   T2K.EVENT_T[table_type])
+        if EX.ph5_g_sorts.nuke_event_t():
+            exclaim(0)
+        else:
+            print("0 Not found.")
+    else:
+        table_type = "Event_t_{0:03d}".format(event_id)
+        if table_type in T2K.EVENT_T:
+            backup(
+                table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
+                T2K.EVENT_T[table_type])
+        if EX.ph5_g_sorts.nuke_event_t(
+                "Event_t_{0:03d}".format(event_id)):
+            exclaim(event_id)
+        else:
+            print "{0} Not found.".format(event_id)
+
+
 def main():
-    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, TRUNC,\
-        EVENT_TABLE, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE, REPORT_TABLE,\
-        RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE, M_INDEX_TABLE
+    global EXPERIMENT_TABLE, SORT_TABLE, OFFSET_TABLE, ALL_OFFSETS, TRUNC,\
+        EVENT_TABLE, ALL_EVENTS, ARRAY_TABLE, ALL_ARRAYS, RESPONSE_TABLE,\
+        REPORT_TABLE, RECEIVER_TABLE, TIME_TABLE, INDEX_TABLE, DAS_TABLE,\
+        M_INDEX_TABLE
     get_args()
     set_logger()
     initialize_ph5()
@@ -241,6 +316,7 @@ def main():
     T2K.EX = EX
     LOGGER.info("delete_table {0}".format(PROG_VERSION))
     LOGGER.info("{0}".format(sys.argv))
+
     # /Experiment_g/Experiment_t
     if EXPERIMENT_TABLE:
         table_type = 'Experiment_t'
@@ -256,53 +332,34 @@ def main():
         EX.ph5_g_sorts.nuke_sort_t()
 
     # /Experiment_g/Sorts_g/Offset_t
-    if OFFSET_TABLE is not None:
+    if OFFSET_TABLE:
         T2K.OFFSET_TABLE = OFFSET_TABLE
         T2K.read_offset_table()
-        if OFFSET_TABLE[0] == 0:
-            table_type = 'Offset_t'
-            if table_type in T2K.OFFSET_T:
-                backup(table_type, '/Experiment_g/Sorts_g/Offset_t',
-                       T2K.OFFSET_T[table_type])
-            if EX.ph5_g_sorts.nuke_offset_t():
-                exclaim(OFFSET_TABLE)
+        nuke_offset_table(OFFSET_TABLE)
+
+    elif ALL_OFFSETS:
+        T2K.read_all_offset_table()
+        for offset_name in T2K.OFFSET_T:
+            if offset_name == "Offset_t":
+                OFFSET_TABLE = (0, 0)
             else:
-                print "{0} Not found.".format(OFFSET_TABLE)
-        else:
-            table_type = "Offset_t_{0:03d}_{1:03d}".format(
-                OFFSET_TABLE[0], OFFSET_TABLE[1])
-            if table_type in T2K.OFFSET_T:
-                backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                    T2K.OFFSET_T[table_type])
-            if EX.ph5_g_sorts.nuke_offset_t(
-                    "Offset_t_{0:03d}_{1:03d}".format(OFFSET_TABLE[0],
-                                                      OFFSET_TABLE[1])):
-                exclaim(OFFSET_TABLE)
-            else:
-                print "{0} Not found.".format(OFFSET_TABLE)
+                offset_str = offset_name.replace("Offset_t_", "")
+                OFFSET_TABLE = map(int, offset_str.split("_"))
+            nuke_offset_table(OFFSET_TABLE)
 
     # /Experiment_g/Sorts_g/Event_t
     if EVENT_TABLE is not None:
         T2K.EVENT_TABLE = EVENT_TABLE
         T2K.read_event_table()
-        if EVENT_TABLE == 0:
-            table_type = 'Event_t'
-            if table_type in T2K.EVENT_T:
-                backup(table_type, '/Experiment_g/Sorts_g/Event_t',
-                       T2K.EVENT_T[table_type])
-            EX.ph5_g_sorts.nuke_event_t()
-        else:
-            table_type = "Event_t_{0:03d}".format(EVENT_TABLE)
-            if table_type in T2K.EVENT_T:
-                backup(
-                    table_type, '/Experiment_g/Sorts_g/{0}'.format(table_type),
-                    T2K.EVENT_T[table_type])
-            if EX.ph5_g_sorts.nuke_event_t(
-                    "Event_t_{0:03d}".format(EVENT_TABLE)):
-                exclaim(EVENT_TABLE)
+        nuke_event_table(EVENT_TABLE)
+    elif ALL_EVENTS:
+        T2K.read_all_event_table()
+        for event_name in T2K.EVENT_T:
+            if event_name == "Event_t":
+                EVENT_TABLE = 0
             else:
-                print "{0} Not found.".format(EVENT_TABLE)
+                EVENT_TABLE = int(event_name.replace("Event_t_", ""))
+            nuke_event_table(EVENT_TABLE)
 
     # /Experiment_g/Sorts_g/Array_t_[n]
     if ARRAY_TABLE:

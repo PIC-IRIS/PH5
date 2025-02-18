@@ -1,0 +1,97 @@
+# geod2kef v2018.268, PH5 v4.1.2
+# 1
+/Experiment_g/Sorts_g/Offset_t_008_002
+	event_id_s=3001
+	offset/value_d=-7921127.6472
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=8001
+	azimuth/value_f=-6.30655852223
+# 2
+/Experiment_g/Sorts_g/Offset_t_008_001
+	event_id_s=7001
+	offset/value_d=3458.40689342
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=8001
+	azimuth/value_f=173.875034549
+# 3
+/Experiment_g/Sorts_g/Offset_t_009_002
+	event_id_s=3001
+	offset/value_d=-7932254.32336
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=9001
+	azimuth/value_f=-6.30002980429
+# 4
+/Experiment_g/Sorts_g/Offset_t_009_001
+	event_id_s=7001
+	offset/value_d=-7673.76009838
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=9001
+	azimuth/value_f=-4.13630611084
+# 5
+/Experiment_g/Sorts_g/Offset_t_001_002
+	event_id_s=3001
+	offset/value_d=-6442763.78086
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=500
+	azimuth/value_f=-6.58363354542
+# 6
+/Experiment_g/Sorts_g/Offset_t_001_001
+	event_id_s=7001
+	offset/value_d=-1510625.82485
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=500
+	azimuth/value_f=-174.671510673
+# 7
+/Experiment_g/Sorts_g/Offset_t_002_002
+	event_id_s=3001
+	offset/value_d=0.0
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=0407
+	azimuth/value_f=180.0
+# 8
+/Experiment_g/Sorts_g/Offset_t_002_001
+	event_id_s=7001
+	offset/value_d=7924586.03673
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=0407
+	azimuth/value_f=18.9491221382
+# 9
+/Experiment_g/Sorts_g/Offset_t_003_002
+	event_id_s=3001
+	offset/value_d=0.0
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=0407
+	azimuth/value_f=180.0
+# 10
+/Experiment_g/Sorts_g/Offset_t_003_001
+	event_id_s=7001
+	offset/value_d=7924586.03673
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=0407
+	azimuth/value_f=18.9491221382
+# 11
+/Experiment_g/Sorts_g/Offset_t_004_002
+	event_id_s=3001
+	offset/value_d=0.0
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=0407
+	azimuth/value_f=180.0
+# 12
+/Experiment_g/Sorts_g/Offset_t_004_001
+	event_id_s=7001
+	offset/value_d=7924586.03673
+	azimuth/units_s=degrees
+	offset/units_s=m
+	receiver_id_s=0407
+	azimuth/value_f=18.9491221382
