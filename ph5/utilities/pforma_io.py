@@ -14,6 +14,11 @@ import subprocess32 as subprocess
 from zlib import adler32
 import re
 
+try:
+    import psutil as _psutil
+except Exception:
+    _psutil = None
+
 from ph5.core import segdreader_smartsolo
 
 PROG_VERSION = '2024.249'
@@ -30,6 +35,45 @@ INST2PROG = {'texan': '125atoph5', 'rt-130': '130toph5',
              'nodal': 'segdtoph5', 'seg2': 'seg2toph5'}
 
 ON_POSIX = 'posix' in sys.builtin_module_names
+
+# hard upper bound on how many PH5 famillies can be processed in parallel
+PFORMA_MAX_FAMILIES = 4
+
+def _compute_safe_nmini(requested_n):
+    """
+    Limit the number of parallel PH5 families to avoid oversubscribing CPU / I/O.
+    Priority:
+      1. Adjusting PFO
+      2. Physical cores - 1 (or total cores - 1) if psutil is available.
+      3. Fall back to requested_n.
+    """
+    # Env override
+    env_limit = PFORMA_MAX_FAMILIES
+    if env_limit is not None:
+        try:
+            env_limit = int(env_limit)
+        except Exception:
+            env_limit = None
+    # Core-based limit
+    cores = None
+    if _psutil is not None:
+        try:
+            cores = _psutil.cpu_count(logical=False) or _psutil.cpu_count()
+        except Exception:
+            cores = None
+    # Default safe max: cores - 1 (leave one core free)
+    safe_max = None
+    if cores:
+        safe_max = max(1, cores - 1)
+    if env_limit is not None:
+        if safe_max is None:
+            safe_max = env_limit
+        else:
+            safe_max = min(safe_max, env_limit)
+    if safe_max is None:
+        safe_max = requested_n
+    # Do not exceed requested_n
+    return max(1, min(requested_n, safe_max))
 
 
 class FormaIOError(exceptions.Exception):
@@ -118,9 +162,26 @@ class FormaIO():
         '''
             Set the self.nmini list of PH5 families from n and FormaIO.MINIS.
             Use value for N from pforma.cfg if it exists.
+
+            We clamp n to a safe maximum to avoid oversubscribing CPU/IO.
+            You can override the max via the PFORMA_MAX_FAMILIES env var.
         '''
-        if 'N' not in self.cfg:
-            self.nmini = FormaIO.MINIS[0:n]
+        if 'N' in self.cfg:
+            # Respect existing project configuration
+            return
+
+        try:
+            n = int(n)
+        except Exception:
+            n = 1
+
+        safe_n = _compute_safe_nmini(n)
+        if safe_n != n:
+            LOGGER.info("Requested {0} PH5 families, limiting to {1} "
+                        "to reduce load (set PFORMA_MAX_FAMILIES to override)."
+                        .format(n, safe_n))
+
+        self.nmini = FormaIO.MINIS[0:safe_n]
 
     def initialize_ph5(self):
         '''   Set up processing directory structure and set M from
