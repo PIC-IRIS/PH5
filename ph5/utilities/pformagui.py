@@ -520,10 +520,17 @@ def init_fio(f, d, utm=None, combine=None, main_window=None):
         fio.set_utm(utm)
     if combine:
         fio.set_combine(combine)
-    if cpu_count(logical=False) > 3:
-        fio.set_nmini(cpu_count(logical=True) + 1)
+
+    # limit families to around half logical cores.
+    phys = cpu_count(logical=False) or cpu_count(logical=True)
+    logi = cpu_count(logical=True)
+
+    if phys and phys > 0:
+        requested = max(1, phys // 2)
     else:
-        fio.set_nmini(cpu_count(logical=True))
+        requested = max(1, logi // 2)
+
+    fio.set_nmini(requested)
 
     fio.initialize_ph5()
 
