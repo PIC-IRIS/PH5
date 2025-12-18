@@ -35,45 +35,9 @@ INST2PROG = {'texan': '125atoph5', 'rt-130': '130toph5',
              'nodal': 'segdtoph5', 'seg2': 'seg2toph5'}
 
 ON_POSIX = 'posix' in sys.builtin_module_names
+MAX_INDEX = 999
 
 # hard upper bound on how many PH5 famillies can be processed in parallel
-PFORMA_MAX_FAMILIES = 4
-
-def _compute_safe_nmini(requested_n):
-    """
-    Limit the number of parallel PH5 families to avoid oversubscribing CPU / I/O.
-    Priority:
-      1. Adjusting PFO
-      2. Physical cores - 1 (or total cores - 1) if psutil is available.
-      3. Fall back to requested_n.
-    """
-    # Env override
-    env_limit = PFORMA_MAX_FAMILIES
-    if env_limit is not None:
-        try:
-            env_limit = int(env_limit)
-        except Exception:
-            env_limit = None
-    # Core-based limit
-    cores = None
-    if _psutil is not None:
-        try:
-            cores = _psutil.cpu_count(logical=False) or _psutil.cpu_count()
-        except Exception:
-            cores = None
-    # Default safe max: cores - 1 (leave one core free)
-    safe_max = None
-    if cores:
-        safe_max = max(1, cores - 1)
-    if env_limit is not None:
-        if safe_max is None:
-            safe_max = env_limit
-        else:
-            safe_max = min(safe_max, env_limit)
-    if safe_max is None:
-        safe_max = requested_n
-    # Do not exceed requested_n
-    return max(1, min(requested_n, safe_max))
 
 
 class FormaIOError(exceptions.Exception):
@@ -96,8 +60,10 @@ class FormaIO():
              'WW', 'XX', 'YY', 'ZZ', 'AAA', 'BBB', 'CCC', 'DDD',
              'EEE', 'FFF', 'GGG', 'HHH', 'III', 'JJJ', 'LLL', 'MMM')
 
-    def __init__(self, infile=None, outdir=None, main_window=None):
+    def __init__(self, infile=None, outdir=None, main_window=None,
+                 max_families=None):
         self.main_window = main_window
+        self.max_families = max_families   # limit max parallel families
         self.infile = infile  # Input file (list of raw files)
         self.infh = None  # File handle for infile
         self.raw_files = {}  # Raw files organized by type
@@ -115,7 +81,7 @@ class FormaIO():
             self.M = int(self.cfg['M'])
 
         if self.cfg and 'N' in self.cfg:
-            self.nmini = FormaIO.MINIS[0:self.cfg['N']]
+            self.nmini = FormaIO.MINIS[0:self.cfg['N'] - 1]
         else:
             self.nmini = FormaIO.MINIS[0:4]
 
@@ -163,11 +129,12 @@ class FormaIO():
             Set the self.nmini list of PH5 families from n and FormaIO.MINIS.
             Use value for N from pforma.cfg if it exists.
 
-            We clamp n to a safe maximum to avoid oversubscribing CPU/IO.
-            You can override the max via the PFORMA_MAX_FAMILIES env var.
+            Clamps n using:
+              - self.max_families (from GUI), if provided
+              - CPU core count (don't oversubcribe)
         '''
+        # Respect project config if already fixed:
         if 'N' in self.cfg:
-            # Respect existing project configuration
             return
 
         try:
@@ -175,11 +142,40 @@ class FormaIO():
         except Exception:
             n = 1
 
-        safe_n = _compute_safe_nmini(n)
+        # 1) GUI override, if provided:
+        gui_limit = getattr(self, 'max_families', None)
+        if gui_limit is not None:
+            try:
+                gui_limit = int(gui_limit)
+            except Exception:
+                gui_limit = None
+
+        # 3) Core-based limit:
+        cores = None
+        if _psutil is not None:
+            try:
+                cores = _psutil.cpu_count(logical=False) or \
+                        _psutil.cpu_count()
+            except Exception:
+                cores = None
+
+        safe_max = None
+        if cores:
+            safe_max = max(1, cores - 1)
+
+        # If GUI set a limit, it wins save_max:
+        if gui_limit is not None:
+            safe_max = gui_limit if safe_max is None else min(safe_max,
+                                                              gui_limit)
+        # If everything failed, just use requested n:
+        if safe_max is None:
+            safe_max = n
+        # not exceed requested n:
+        safe_n = max(1, min(n, safe_max))
+
         if safe_n != n:
             LOGGER.info("Requested {0} PH5 families, limiting to {1} "
-                        "to reduce load (set PFORMA_MAX_FAMILIES to override)."
-                        .format(n, safe_n))
+                        "(GUI / env / cores).".format(n, safe_n))
 
         self.nmini = FormaIO.MINIS[0:safe_n]
 
@@ -218,16 +214,6 @@ class FormaIO():
                     self.M = len(minis)
 
         os.chdir(self.whereami)
-
-    def set_M(self, m):
-        '''
-            Set self.M, the number of mini files in each family.
-        '''
-        try:
-            self.M = int(m)
-        except Exception as e:
-            raise FormaIOError(
-                errno=10, msg="Failed to set M: {0}".format(e.message))
 
     def run_simple(self, cmds, x, family):
         '''
@@ -290,179 +276,138 @@ class FormaIO():
     #
     # Should this be implemented as a closure?
     #
+    def build_cmd(self, tp, clprog, list_path, mini_index):
+        # One mini per DAS, at mini_index
+        if tp == 'nodal':
+            if self.UTM:
+                cmd = (
+                    "{prog} -n master.ph5 -f {lst} "
+                    "-M 1 -U {utm} -S {S} -c {combine} 2>&1"
+                ).format(
+                    prog=clprog,
+                    lst=list_path,
+                    utm=self.UTM,
+                    S=mini_index,
+                    combine=self.COMBINE
+                )
+            elif self.TSPF:
+                cmd = (
+                    "{prog} -n master.ph5 -f {lst} "
+                    "-M 1 -T -S {S} -c {combine} 2>&1"
+                ).format(
+                    prog=clprog,
+                    lst=list_path,
+                    S=mini_index,
+                    combine=self.COMBINE
+                )
+            else:
+                cmd = (
+                    "{prog} -n master.ph5 -f {lst} "
+                    "-M 1 -S {S} -c {combine} 2>&1"
+                ).format(
+                    prog=clprog,
+                    lst=list_path,
+                    S=mini_index,
+                    combine=self.COMBINE
+                )
+        else:
+            # texan, rt-130, seg2
+            extra = ""
+            if tp == 'texan':
+                extra = " --overide"
+            cmd = (
+                "{prog} -n master.ph5 -f {lst} "
+                "-M 1 -S {S}{extra} 2>&1"
+            ).format(
+                prog=clprog,
+                lst=list_path,
+                S=mini_index,
+                extra=extra
+            )
+        return cmd
 
     def run(self, runit=True):
-        '''   Run processes to convert raw files to ph5
-              runit -> If true, execute processes otherwise only return list of
-              commands to execute.
+        '''Run processes to convert raw files to ph5.
+
+        Logic:
+          - A mini (index) can contain multiple DAS.
+          - A DAS is written to exactly one mini (no splitting).
+          - max_index (self.M) is the maximum mini index we use.
+          - DAS are assigned to families round-robin over self.nmini.
+          - Minis are assigned round-robin 1..max_index, then wrap.
         '''
 
-        def split(ts):
-            '''   Split up lists of raw files for processing.
-                  Key by mini ph5 family name.
-            '''
-            ret = {}  # Files to load
-            tot = {}  # Total raw size per family
-            # Initialize
-            for m in self.nmini:
-                ret[m] = {}
-                tot[m] = 0
+        # DAS -> list of file_info (path, size, type, etc.)
+        dass = sorted(self.resolved.keys())
+        if not dass:
+            if runit:
+                return {}, {}, None
+            else:
+                return {}, {}, None
 
-            # Check to see if any of these are already loaded (data from a das
-            # must all be in the same family).
-            dass = self.resolved.keys()
-            for d in dass:
-                raws = self.resolved[d]
-                for r in raws:
-                    if r['mini'] and r['mini'] in ret:
-                        if d not in ret[r['mini']]:
-                            ret[r['mini']][d] = []
+        families = list(self.nmini)
+        if not families:
+            raise FormaIOError(11, "No PH5 families (nmini) defined.")
 
-                        tot[r['mini']] += r['size']
-                        ret[r['mini']][d].append(r)
+        self.M = MAX_INDEX
 
-            # Go through remaining dass and assign them to a family
-            dass.sort()
-            i = 0
-            for d in dass:
-                raws = self.resolved[d]
-                if tot[self.nmini[i]] >= ts:
-                    i += 1
-                    if i > len(self.nmini) - 1:
-                        i -= 1
+        # Prepare return structures
+        cmds = {}
+        info = {}
+        for fam in families:
+            cmds[fam] = []
+            info[fam] = {'lists': [], 'instruments': []}
 
-                for r in raws:
-                    if r['mini']:
-                        continue
+        # Independent counters for family and mini index
+        family_counter = 0
+        mini_counter = 0
 
-                    if d not in ret[self.nmini[i]]:
-                        ret[self.nmini[i]][d] = []
+        for das in dass:
+            files = self.resolved[das]
+            if not files:
+                continue
 
-                    r['mini'] = self.nmini[i]
-                    tot[self.nmini[i]] += r['size']
-                    ret[self.nmini[i]][d].append(r)
+            # Assume a DAS has a single type from guess_instrument_type
+            tp = files[0]['type']
+            if tp not in INST2PROG:
+                raise FormaIOError(
+                    12,
+                    "Unsupported instrument type {0} for DAS {1}".format(
+                        tp, das)
+                )
 
-            return ret
+            # Round-robin family: A, B, C, D, A, B, ...
+            family = families[family_counter % len(families)]
+            family_counter += 1
 
-        def setup(tl):
-            '''   Write sub-lists of raw files to each mini
-                  family directory   '''
-            ret = {}
-            for m in self.nmini:
-                ret[m] = {}
-                for typ in ('texan', 'rt-130', 'nodal', 'seg2'):
-                    of = None
-                    outfile = "{0}_{1}{2}.lst".format(
-                        typ, str(int(time.time())), m)
-                    os.chdir(os.path.join(self.home, m))
-                    dass = tl[m]
-                    keys = sorted(dass.keys())
-                    wrote = False
-                    for d in keys:
-                        files = dass[d]
-                        for f in files:
-                            if f['type'] == typ:
-                                if not of:
-                                    of = open(outfile, 'w+')
-                                of.write(f['path'] + '\n')
-                                wrote = True
+            # Round-robin mini index: 1..MAX_INDEX, then wrap
+            mini_index = (mini_counter % MAX_INDEX) + 1
+            mini_counter += 1
 
-                    try:
-                        of.close()
-                    except BaseException:
-                        pass
-                    if wrote:
-                        ret[m][typ] = os.path.join(self.home, m, outfile)
+            # Create list file for this DAS in its family directory
+            os.chdir(os.path.join(self.home, family))
+            outfile = "{0}_{1}.lst".format(tp, das)
+            with open(outfile, 'w') as of:
+                for f in files:
+                    of.write(f['path'] + '\n')
+
+            list_path = os.path.join(self.home, family, outfile)
+            clprog = INST2PROG[tp]
+
+            cmd = self.build_cmd(tp, clprog, list_path, mini_index)
+            cmds[family].append(cmd)
+            info[family]['lists'].append(list_path)
+            info[family]['instruments'].append(tp)
 
             os.chdir(self.whereami)
 
-            return ret
+        # Save commands JSON (for debugging)
+        write_json(
+            cmds,
+            os.path.join(self.home,
+                         "commands{0}.json".format(str(int(time.time()))))
+        )
 
-        def build_cmds(lsts):
-            '''   Make commands to do the conversion from raw to ph5
-                  for each mini ph5 family   '''
-            ret = {}
-            info = {}
-
-            i = 0
-            for m in self.nmini:
-                cmd = []
-                lists = []
-                instruments = []
-                lst = lsts[m]
-                if not self.M:
-                    self.M = 1
-                ess = i * self.M + 1
-                if 'texan' in lst:
-                    lists.append(lst['texan'])
-                    instruments.append('texan')
-                    clprog = INST2PROG['texan']
-                    cmd.append(
-                        "{3} -n master.ph5 -f {0} -M {1} -S {2}\
-                         --overide 2>&1".format(lst['texan'],
-                                                self.M, ess, clprog))
-                if 'rt-130' in lst:
-                    lists.append(lst['rt-130'])
-                    instruments.append('rt-130')
-                    clprog = INST2PROG['rt-130']
-                    cmd.append(
-                        "{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format(
-                            lst['rt-130'], self.M, ess, clprog))
-
-                if 'seg2' in lst:
-                    lists.append(lst['seg2'])
-                    instruments.append('seg2')
-                    clprog = INST2PROG['seg2']
-                    cmd.append(
-                        "{3} -n master.ph5 -f {0} -M {1} -S {2} 2>&1".format(
-                            lst['seg2'], self.M, ess, clprog))
-
-                if 'nodal' in lst:
-                    lists.append(lst['nodal'])
-                    instruments.append('nodal')
-                    clprog = INST2PROG['nodal']
-                    if self.UTM:
-                        cmd.append(
-                            "{5} -n master.ph5 -f {0} -M {1} -U {3} -S {2} -c\
-                             {4} 2>&1".format(lst['nodal'], self.M,
-                                              ess, self.UTM, self.COMBINE,
-                                              clprog))
-                    elif self.TSPF:
-                        cmd.append(
-                            "{4} -n master.ph5 -f {0} -M {1} -T -S {2} -c\
-                             {3} 2>&1".format(
-                                lst['nodal'], self.M, ess, self.COMBINE,
-                                clprog))
-                    else:
-                        cmd.append(
-                            "{4} -n master.ph5 -f {0} -M {1} -S {2} -c\
-                             {3} 2>&1".format(
-                                lst['nodal'], self.M, ess, self.COMBINE,
-                                clprog))
-                ret[m] = cmd
-                if m not in info:
-                    info[m] = {}
-
-                info[m]['lists'] = lists
-                info[m]['instruments'] = instruments
-
-                i += 1
-
-            return ret, info
-
-        def save_cmds(cmds):
-            '''   Save commands   '''
-            write_json(cmds, os.path.join(
-                self.home, "commands{0}.json".format(str(int(time.time())))))
-
-        #
-        # Main
-        #
-        target_size = self.total_raw / len(self.nmini)
-        toload = split(target_size)
-        lsts = setup(toload)
-        cmds, info = build_cmds(lsts)
-        save_cmds(cmds)
         if runit is True:
             pees, i = self.run_cmds(cmds)
             return cmds, pees, i
@@ -565,13 +510,6 @@ class FormaIO():
         self.average_raw = int(self.total_raw / n)
         self.number_raw = n
         self.infh.close()
-        # Estimate M so each mini file is about 12GB
-        if self.M is None:
-            self.M = int(
-                (((self.total_raw / len(
-                    self.nmini)) / 1024 / 1024 / 1024) / 12) + 0.5)
-            if self.M == 0:
-                self.M = 1
 
     def readDB(self):
         '''   Read JSON file containing files loaded so far. Same format as
@@ -628,7 +566,6 @@ class FormaIO():
             # Have not seen this DAS yet
             else:
                 ret[nk] = new_dass
-
         self.resolved = ret
 
     def unite(self, TO='A'):
