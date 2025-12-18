@@ -23,6 +23,38 @@ except Exception:
 UTMZone = '13N'
 
 
+class MaxFamiliesDialog(QtWidgets.QDialog):
+    """
+    custom spinning box because the spinning box in python 2 has bug that let
+    value go over max set
+    """
+    def __init__(self, current_value=0, max_value=32, parent=None):
+        super(MaxFamiliesDialog, self).__init__(parent)
+        self.setWindowTitle("Set Max Parallel Families")
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        label = QtWidgets.QLabel(
+            "Max number of PH5 families to process in parallel (0 = auto):")
+        layout.addWidget(label)
+
+        self.spin = QtWidgets.QSpinBox()
+        self.spin.setMinimum(0)
+        self.spin.setMaximum(max_value)   # THIS MAX IS ENFORCED CORRECTLY
+        self.spin.setValue(current_value)
+        layout.addWidget(self.spin)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def value(self):
+        return self.spin.value()
+
+
 class GetInputs(QtWidgets.QWidget):
     '''
        Widget to set name of lst file, processing directory, and to start run
@@ -169,6 +201,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timeout = 2000
         self.UTMZone = UTMZone
         self.combine = 1
+        # max number of PH5 families processed in parallel
+        self.max_families = 4
 
         self.readSettings()
 
@@ -358,6 +392,14 @@ class MainWindow(QtWidgets.QMainWindow):
             statusTip="Reset all family processes.",
             triggered=self.resetIt)
 
+        # NEW: set max parallel families
+        self.maxFamiliesAct = QtWidgets.QAction(
+            "Set &Max Parallel Families...",
+            self,
+            statusTip=("Limit how many PH5 families (A, B, C, ...) are "
+                       "processed in parallel."),
+            triggered=self.setMaxFamilies)
+
         self.exitAct = QtWidgets.QAction(
             "E&xit",
             self,
@@ -380,6 +422,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileMenu.addAction(self.timeoutAct)
         self.fileMenu.addAction(self.utmAct)
         self.fileMenu.addAction(self.combineAct)
+        # to set max number of families at the same time
+        self.fileMenu.addAction(self.maxFamiliesAct)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.resetAct)
         self.fileMenu.addAction(self.exitAct)
@@ -403,6 +447,39 @@ class MainWindow(QtWidgets.QMainWindow):
                              type=QtCore.Qt.QueuedConnection)
         self.statsig.emit("Ready")
 
+    def setMaxFamilies(self):
+        """
+        Dialog to set max number of PH5 families processed in parallel.
+
+        None / 0 means "auto" (no explicit GUI limit).
+        """
+        phys = cpu_count(logical=False) or cpu_count(logical=True)
+        logi = cpu_count(logical=True)
+
+        if phys and phys > 0:
+            max_family = max(1, phys // 2)
+        else:
+            max_family = max(1, logi // 2)
+
+        current = self.max_families if self.max_families is not None else 0
+
+        dlg = MaxFamiliesDialog(
+            current_value=current if current < max_family else max_family,
+            max_value=max_family,
+            parent=self
+        )
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            val = dlg.value()
+            if val <= 0:
+                self.max_families = None
+                self.statsig.emit("Max parallel families: auto")
+            else:
+                self.max_families = val
+                self.statsig.emit(
+                    "Max parallel families set to {0}".format(val))
+        # Persist in settings:
+        self.writeSettings()
+
     def readSettings(self):
         '''
            Read position and size from QSettings
@@ -413,6 +490,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.move(pos)
         self.resize(size)
 
+        # restore max_families
+        maxfam = settings.value('max_families', 4)
+        # QSettings may give a QString / QVariant:
+        try:
+            if maxfam is not None and maxfam != '':
+                maxfam_int = int(maxfam)
+                if maxfam_int > 0:
+                    self.max_families = maxfam_int
+                else:
+                    self.max_families = None
+        except Exception:
+            self.max_families = None
+
+
     def writeSettings(self):
         '''
             Save QSettings
@@ -420,6 +511,10 @@ class MainWindow(QtWidgets.QMainWindow):
         settings = QtCore.QSettings('PH5', 'pforma')
         settings.setValue('pos', self.pos())
         settings.setValue('size', self.size())
+
+        settings.setValue('max_families',
+                          self.max_families if self.max_families is not None
+                          else 0)
 
     def activeMdiChild(self):
         activeSubWindow = self.mdiArea.activeSubWindow()
@@ -515,7 +610,18 @@ def init_fio(f, d, utm=None, combine=None, main_window=None):
             cmds -> list of conversion commands
             lsts -> info about processing sub-lists and types of instruments
     '''
-    fio = pforma_io.FormaIO(infile=f, outdir=d, main_window=main_window)
+    # pass max_families from GUI (if available)
+    max_families = None
+    if main_window is not None:
+        max_families = getattr(main_window, 'max_families', None)
+
+    fio = pforma_io.FormaIO(
+        infile=f,
+        outdir=d,
+        main_window=main_window,
+        max_families=max_families
+    )
+
     if utm:
         fio.set_utm(utm)
     if combine:
