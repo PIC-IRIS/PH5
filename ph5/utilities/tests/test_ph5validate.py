@@ -60,14 +60,11 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
                                  "Station 9001 Channel 1\n"
-                                 "4 error, 1 warning, 0 info\n"
+                                 "3 error, 2 warning, 0 info\n"
                                  "-=-=-=-=-=-=-=-=-\n"
                                  )
                 # this error causes by changing samplerate
                 errors = [
-                    "No data found for das serial number 12183 during "
-                    "this station's time. You may need to reload the "
-                    "raw data for this station.",
                     'Response_t[4]:No response data loaded for gs11.',
                     "Response_t[4]:response_file_das_a 'rt125a_500_1_32' is "
                     "inconsistent with Array_t_009:sr=100. Please check with "
@@ -79,7 +76,11 @@ class TestPH5Validate_response_info(LogTestCase, TempDirTestCase):
                     set(errors))
                 self.assertEqual(
                     r.warning,
-                    ['No station description found.'])
+                    ['No station description found.',
+                     "No data found for das serial number 12183 during "
+                     "this station's time. You may need to reload the "
+                     "raw data for this station."
+                     ])
             if 'Station 0407 Channel -2' in r.heading:
                 self.assertEqual(r.heading,
                                  "-=-=-=-=-=-=-=-=-\n"
@@ -416,11 +417,11 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         station['pickup_time/epoch_l'] = 1550850191
         DT['time_windows'][5] = (1550850190, 1550850191, '9003')
         ret = self.ph5validate.check_station_completeness(station)
-        errors = ret[2]
+        warnings = ret[1]
         self.assertIn("No data found for das serial number 12183 during this "
                       "station's time. You may need to reload the raw data "
                       "for this station.",
-                      errors)
+                      warnings)
         # check no data found errors
         station = arraybyid.get('9002')[1][0]
         station['das/serial_number_s'] = '1218'
@@ -431,6 +432,30 @@ class TestPh5Validate_conflict_time(TempDirTestCase, LogTestCase):
         self.assertIn("No data found for das serial number 1218. "
                       "You may need to reload the raw data for this station.",
                       errors)
+
+        # Error for non-texan with no data
+        self.ph5validate.das_time = {
+            ('2X3', 1, 500):
+                {'time_windows': [(1550850125, 1550850187, '9003')],
+                 'min_deploy_time': [
+                     1550849950,
+                     'Data exists before deploy time: 7 seconds.'],
+                 }
+        }
+        station = arraybyid.get('9003')[1][0]
+        station['das/serial_number_s'] = '2X3'
+        station['deploy_time/epoch_l'] = 1550850190
+        station['pickup_time/epoch_l'] = 1550850191
+        DT = self.ph5validate.das_time[('2X3', 1, 500)]
+        DT['time_windows'][0] = (1550850190, 1550850191, '9003')
+        ret = self.ph5validate.check_station_completeness(station)
+        no_data_msg = ("No data found for das serial number 2X3 during this "
+                       "station's time. You may need to reload the raw data "
+                       "for this station.")
+        warnings = ret[1]
+        errors = ret[2]
+        self.assertNotIn(no_data_msg, warnings)
+        self.assertIn(no_data_msg, errors)
 
     def test_check_station_completeness_duplicate_das_for_diff_stations(self):
         self.ph5validate.das_time = {
