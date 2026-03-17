@@ -25,9 +25,9 @@ LOGGER = logging.getLogger(__name__)
 def check_rt125_format(serial):
     """
     Return True For rt125 das serial number with format
-      [1-9][1-9][1-9][1-9][1-9]
+      [1-9][0-9][0-9][0-9][0-9]
     """
-    return bool(re.match(r"^[1-9]{5}$", serial))
+    return bool(re.match(r"^[1-9][0-9]{4}$", serial))
 
 
 class ValidationBlock(object):
