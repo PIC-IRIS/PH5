@@ -787,7 +787,7 @@ class PH5Validate(object):
         # projection_s , ellipsoid_s , description_s
         # because they are not required and most of PIs do not fill them out
         if event['location/X/value_d'] == 0:
-            error.append("Event location/X/value_d "
+            warning.append("Event location/X/value_d "
                          "'longitude' seems to be 0. "
                          "Is this correct???")
         if event['location/X/units_s'] in [None, '']:
@@ -795,7 +795,7 @@ class PH5Validate(object):
                            "found.")
 
         if event['location/Y/value_d'] == 0:
-            error.append("Event location/Y/value_d "
+            warning.append("Event location/Y/value_d "
                          "'latitude' seems to be 0. "
                          "Is this correct???")
         if event['location/Y/units_s'] in [None, '']:
