@@ -678,5 +678,43 @@ class TestPH5Validate_das_t_order(LogTestCase, TempDirTestCase):
                       loglines)
 
 
+
+class Test_Location_value0(LogTestCase, TempDirTestCase):
+    def setUp(self):
+        super(Test_Location_value0, self).setUp()
+        ph5path = os.path.join(
+            self.home,
+            "ph5/test_data/ph5_ph5validate/location_value0")
+        self.ph5API_object = ph5api.PH5(path=ph5path, nickname='master.ph5')
+        self.ph5validate = ph5validate.PH5Validate(self.ph5API_object, ph5path)
+
+    def tearDown(self):
+        self.ph5API_object.close()
+        super(Test_Location_value0, self).tearDown()
+
+    def test_check_event_t_completeness(self):
+        with LogCapture() as log:
+            log.setLevel(logging.WARNING)
+            self.ph5API_object.read_event_t('Event_t_001')
+            event = self.ph5API_object.Event_t['Event_t_001']['byid']['4446']
+            inf, warn, err = self.ph5validate.check_event_t_completeness(event)
+            self.assertIn(
+                "Event location/X/value_d 'longitude' seems to be 0. "
+                "Is this correct???",
+                 warn)
+            self.assertIn(
+                "Event location/Y/value_d 'latitude' seems to be 0. "
+                "Is this correct???",
+                warn)
+            self.assertNotIn(
+                "Event location/X/value_d 'longitude' seems to be 0. "
+                "Is this correct???",
+                err)
+            self.assertNotIn(
+                "Event location/Y/value_d 'latitude' seems to be 0. "
+                "Is this correct???",
+                err)
+
+
 if __name__ == "__main__":
     unittest.main()
