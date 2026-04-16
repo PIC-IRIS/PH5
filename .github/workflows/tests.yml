@@ -31,7 +31,6 @@ jobs:
         python --version
         conda create -q -n ph5 python=${{ matrix.python-version }}
         conda config --add channels conda-forge
-        conda config --set restore_free_channel true
         conda env update --name ph5 --file environment.yml
         conda install flake8
     
