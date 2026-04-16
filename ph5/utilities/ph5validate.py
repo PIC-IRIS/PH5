@@ -18,8 +18,16 @@ import operator
 from ph5.core import ph5api, experiment
 from ph5.utilities import validation
 
-PROG_VERSION = "2022.066"
+PROG_VERSION = "2026.055"
 LOGGER = logging.getLogger(__name__)
+
+
+def check_rt125_format(serial):
+    """
+    Return True For rt125 das serial number with format
+      [1-9][0-9][0-9][0-9][0-9]
+    """
+    return bool(re.match(r"^[1-9][0-9]{4}$", serial))
 
 
 class ValidationBlock(object):
@@ -464,10 +472,14 @@ class PH5Validate(object):
         sample_rate = station['sample_rate_i']
         nodata_err = None
         if das_serial not in self.ph5.Das_t:
-            error.append("No data found for das serial number {0}. "
+            alert_msg = ("No data found for das serial number {0}. "
                          "You may need to reload the raw "
                          "data for this station."
                          .format(str(das_serial)))
+            if check_rt125_format(das_serial):
+                warning.append(alert_msg)
+            else:
+                error.append(alert_msg)
         dt = self.das_time[(das_serial, channel_id, sample_rate)]
         # add bound_errors if applicable
         if deploy_time == dt['min_deploy_time'][0]:
@@ -545,10 +557,14 @@ class PH5Validate(object):
 
                 if true_start is None and nodata_err is None:
                     # check nodata_err to avoid duplicate error
-                    error.append(
+                    alert_msg = (
                         "No data found for das serial number {0} during this "
                         "station's time. You may need to reload the raw "
                         "data for this station.".format(str(das_serial)))
+                    if check_rt125_format(das_serial):
+                        warning.append(alert_msg)
+                    else:
+                        error.append(alert_msg)
                 else:
                     # don't check deploy time because the time sent to
                     # get_extent() is limited from deploy time
