@@ -76,7 +76,6 @@ ph5.clients.ph5tostationxml
  * In case of other bugs, not create stationxml. Use flag --stationxml_on_error to create stationxml if bug present in the data
  * Multiprocessing has been removed because when checking subfolders of the given path, multiprocessing make the logging messages show up randomly. Using 'for loop' instead help users recognize which one the messages are for. That way ph5tostationxml can inform when never stationxml has or has not been created for a ph5 data.
 ph5.clients.ph5availability
- * For rt125 (texan) das, change the error for no data found for das to warning
  * New client for returning timeseries availability information
  * Consider array time instead of das time only
 ph5.utilities.ph5validate
@@ -215,6 +214,8 @@ v4.1.1:
  * Fix ph5toms not returning data
  * Fix bug that caused ph5toms to crash when passed an empty DAS_t after filtering
 -ph5.utilities.ph5_validate
+ * For rt125 (texan) das, change the error for no data found for das to warning
+ * Change error for location/X/value_d=0 and location/Y/value_d=0 to warning because they are valid coordinates
  * New functionality for checking stations
 -ph5.utilities.kef2kml
  * Fix bug reading kef
