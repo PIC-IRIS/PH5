@@ -394,10 +394,16 @@ class PH5toStationXMLParser(object):
             for station in arraybyid.values():
                 for deployment in station.values():
                     for station_entry in deployment:
-                        start_date = station_entry['deploy_time/epoch_l']
+                        start_date = (
+                            float(station_entry['deploy_time/epoch_l']) +
+                            station_entry['deploy_time/micro_seconds_i'] /
+                            float(10 ** 6))
                         if start_date < min_start_time:
                             min_start_time = start_date
-                        end_date = station_entry['pickup_time/epoch_l']
+                        end_date = (
+                            float(station_entry['pickup_time/epoch_l']) +
+                            station_entry['pickup_time/micro_seconds_i'] /
+                            float(10 ** 6))
                         if end_date > max_end_time:
                             max_end_time = end_date
         return float(min_start_time), float(max_end_time+1)
@@ -741,9 +747,15 @@ class PH5toStationXMLParser(object):
                                                        longitude):
                             continue
                         start_date = UTCDateTime(
-                                        station_entry['deploy_time/epoch_l'])
+                            float(station_entry['deploy_time/epoch_l']) +
+                            station_entry['deploy_time/micro_seconds_i']/
+                            float(10 ** 6)
+                        )
                         end_date = UTCDateTime(
-                                        station_entry['pickup_time/epoch_l'])
+                            float(station_entry['pickup_time/epoch_l']) +
+                            station_entry['pickup_time/micro_seconds_i'] /
+                            float(10 ** 6)
+                        )
 
                         if (sta_xml_obj.start_time and
                                 sta_xml_obj.start_time > end_date):
@@ -850,8 +862,16 @@ class PH5toStationXMLParser(object):
                                                     loc_code):
                     continue
 
-                start_date = UTCDateTime(station_entry['deploy_time/epoch_l'])
-                end_date = UTCDateTime(station_entry['pickup_time/epoch_l'])
+                start_date = UTCDateTime(
+                    float(station_entry['deploy_time/epoch_l']) +
+                    station_entry['deploy_time/micro_seconds_i'] /
+                    float(10 ** 6)
+                )
+                end_date = UTCDateTime(
+                    float(station_entry['deploy_time/epoch_l']) +
+                    station_entry['deploy_time/micro_seconds_i'] /
+                    float(10 ** 6)
+                )
 
                 # compute sample rate
                 sample_rate_multiplier = \
