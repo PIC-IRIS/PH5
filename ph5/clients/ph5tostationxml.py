@@ -868,8 +868,8 @@ class PH5toStationXMLParser(object):
                     float(10 ** 6)
                 )
                 end_date = UTCDateTime(
-                    float(station_entry['deploy_time/epoch_l']) +
-                    station_entry['deploy_time/micro_seconds_i'] /
+                    float(station_entry['pickup_time/epoch_l']) +
+                    station_entry['pickup_time/micro_seconds_i'] /
                     float(10 ** 6)
                 )
 
