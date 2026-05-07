@@ -575,9 +575,9 @@ class PH5toStationXMLParser(object):
                            cha_elevation, cha_component, receiver_id,
                            array_code, sample_rate, sample_rate_ration,
                            azimuth, dip, sensor_manufacturer, sensor_model,
-                           sensor_serial, das_manufacturer, das_model,
-                           das_serial):
-
+                           sensor_serial, sensor_note, das_manufacturer,
+                           das_model, das_serial):
+        print("sensor-note:", sensor_note)
         obs_channel = inventory.Channel(
                                         code=cha_code,
                                         location_code=loc_code,
@@ -607,7 +607,7 @@ class PH5toStationXMLParser(object):
             type=sensor_type,
             description=instrument_desc,
             manufacturer=sensor_manufacturer,
-            vendor="",
+            vendor="Sensor note: %s" % sensor_note,
             model=sensor_model,
             serial_number=sensor_serial,
             installation_date=UTCDateTime(start_date),
@@ -914,6 +914,7 @@ class PH5toStationXMLParser(object):
                         station_entry['sensor/manufacturer_s'],
                         station_entry['sensor/model_s'],
                         station_entry['sensor/serial_number_s'],
+                        station_entry['sensor/notes_s'],
                         station_entry['das/manufacturer_s'],
                         station_entry['das/model_s'],
                         station_entry['das/serial_number_s'])
