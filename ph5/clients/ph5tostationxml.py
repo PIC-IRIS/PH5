@@ -576,7 +576,7 @@ class PH5toStationXMLParser(object):
                            array_code, sample_rate, sample_rate_ration,
                            azimuth, dip, sensor_manufacturer, sensor_model,
                            sensor_serial, das_manufacturer, das_model,
-                           das_serial):
+                           das_serial, description):
 
         obs_channel = inventory.Channel(
                                         code=cha_code,
@@ -616,7 +616,7 @@ class PH5toStationXMLParser(object):
         obs_channel.data_logger = \
             inventory.Equipment(
                 type=das_type,
-                description="",
+                description=description,
                 manufacturer=das_manufacturer,
                 vendor="",
                 model=das_model,
@@ -916,7 +916,8 @@ class PH5toStationXMLParser(object):
                         station_entry['sensor/serial_number_s'],
                         station_entry['das/manufacturer_s'],
                         station_entry['das/model_s'],
-                        station_entry['das/serial_number_s'])
+                        station_entry['das/serial_number_s'],
+                        station_entry['description_s'])
                     self.manager.set_obs_channel(cha_key, obs_channel)
 
                     # read response and add it to response_by_n_i if
