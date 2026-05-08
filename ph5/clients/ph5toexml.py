@@ -337,9 +337,9 @@ class PH5toexml(object):
                           self.experiment_t[0]['longname_s'])
 
         shot_lines_ = []
-        shots = []
 
         for shot_line in shot_lines:
+            shots = []
             sl = Shotline(shot_line)
             event_t = self.ph5.Event_t[shot_line]['byid']
             if self.args.get('shotline') and \
