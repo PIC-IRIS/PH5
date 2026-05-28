@@ -220,7 +220,8 @@ class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
         self.parser.read_stations()
 
         ret = self.parser.get_network_date()
-        self.assertTupleEqual(ret, (1561831713.0, 1569680979.0))
+        self.assertTupleEqual(ret, (1561831713.822999,
+                                    1569680979.713))
 
     def test_create_obs_network(self):
         self.parser.manager.ph5.read_experiment_t()
@@ -228,15 +229,19 @@ class TestPH5toStationXMLParser_multideploy(LogTestCase, TempDirTestCase):
         self.parser.add_ph5_stationids()
 
         ret = self.parser.create_obs_network()
-        self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
-        self.assertEqual(ret.end_date.isoformat(), '2019-09-28T14:29:39')
+        self.assertEqual(ret.start_date.isoformat(),
+                         '2019-06-29T18:08:33.822999')
+        self.assertEqual(ret.end_date.isoformat(),
+                         '2019-09-28T14:29:39.713000')
         self.assertEqual(ret.code, 'AA')
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
     def test_read_networks(self):
         ret = self.parser.read_networks()
-        self.assertEqual(ret.start_date.isoformat(), '2019-06-29T18:08:33')
-        self.assertEqual(ret.end_date.isoformat(), '2019-09-28T14:29:39')
+        self.assertEqual(ret.start_date.isoformat(),
+                         '2019-06-29T18:08:33.822999')
+        self.assertEqual(ret.end_date.isoformat(),
+                         '2019-09-28T14:29:39.713000')
         self.assertEqual(ret.code, 'AA')
         self.assertEqual(ret.description, 'PH5 TEST SET')
 
