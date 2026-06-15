@@ -13,7 +13,7 @@ from ph5.clients import ph5toexml
 from ph5.core.tests.test_base import TempDirTestCase
 
 
-class TestPh5toevt_precision(TempDirTestCase):
+class TestPh5toevt_description(TempDirTestCase):
     def test_output_event_description(self):
         ph5_path = os.path.join(
             self.home, "ph5/test_data/ph5/master.ph5")
