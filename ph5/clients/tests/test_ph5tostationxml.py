@@ -256,7 +256,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             cha_component=1, receiver_id='9001', array_code='009',
             sample_rate=500.0, sample_rate_ration=500.0,
             azimuth=0.0, dip=90.0, sensor_manufacturer='geospace',
-            sensor_model='gs11v', sensor_serial='',
+            sensor_model='gs11v', sensor_serial='', sensor_note='sample note',
             das_manufacturer='reftek', das_model='rt125a', das_serial='12183'
         )
 

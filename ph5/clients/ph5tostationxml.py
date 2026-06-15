@@ -577,6 +577,7 @@ class PH5toStationXMLParser(object):
                            azimuth, dip, sensor_manufacturer, sensor_model,
                            sensor_serial, sensor_note, das_manufacturer,
                            das_model, das_serial):
+        print("sensor-note:", sensor_note)
         obs_channel = inventory.Channel(
                                         code=cha_code,
                                         location_code=loc_code,
