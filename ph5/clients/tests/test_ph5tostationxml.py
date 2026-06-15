@@ -5,10 +5,12 @@ import unittest
 import os
 import sys
 import logging
+import shutil
 
 from obspy.core import inventory as inv
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
+from xml.etree import ElementTree as ET
 
 from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5,\
     resp_load, nuke_table
@@ -565,7 +567,7 @@ class TestPH5toStationXML_Response_NI_MISMATCH(LogTestCase, TempDirTestCase):
         datapath = os.path.join(self.home,
                                 'ph5/test_data/ph5/response_table_n_i')
         self.ph5_path_error = os.path.join(self.home,
-                                          datapath)
+                                           datapath)
         self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_error,
                                                         "master.ph5",
                                                         "RESPONSE")
@@ -594,7 +596,7 @@ class TestPh5ToStationxml(LogTestCase, TempDirTestCase):
             'minlat': None, 'maxlat': None, 'minlon': None, 'maxlon': None,
             'latitude': None, 'longitude': None,
             'maxradius': None, 'minradius': None,
-            'start_time': None, 'end_time': None, 'emp_resp': False,}]
+            'start_time': None, 'end_time': None, 'emp_resp': False}]
         inv = ph5tostationxml.run_ph5_to_stationxml(
             [datapath], 'master.ph5', 'SACPZ', 'RESPONSE', '', arg_dict_list
         )
@@ -622,6 +624,33 @@ class TestPh5ToStationxml(LogTestCase, TempDirTestCase):
         self.assertEqual(response.instrument_sensitivity.frequency, 50.)
         self.assertAlmostEqual(response.instrument_sensitivity.value,
                                612759.438589, 4)
+
+
+class TestPH5toStationXML_SensorNoteUnderVendorTag(
+        LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        try:
+            self.mng.ph5.close()
+        except AttributeError:
+            pass
+        super(TestPH5toStationXML_SensorNoteUnderVendorTag, self).tearDown()
+
+    def test_main(self):
+        ph5_path = os.path.join(self.home, "ph5/test_data/ph5/master.ph5")
+        shutil.copy(ph5_path, '.')
+        testargs = ['ph5tostationxml', '-n', 'master.ph5',
+                    '--station', '500', '-o', 'station500.xml']
+        with patch.object(sys, 'argv', testargs):
+            ph5tostationxml.main()
+            tree = ET.parse('station500.xml')
+            root = tree.getroot()
+            ns = {"ns": "http://www.fdsn.org/xml/station/1"}
+            for vendor in root.findall(".//ns:Sensor/ns:Vendor", ns):
+                self.assertEqual(
+                    'Sensor note: manufacturer and model not read from file.',
+                    vendor.text
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
