@@ -564,9 +564,9 @@ class TestPH5toStationXML_Response_NI_MISMATCH(LogTestCase, TempDirTestCase):
         # datapath = '../../test_data/ph5/'
         datapath = os.path.join(self.home,
                                 'ph5/test_data/ph5/response_table_n_i')
-        self.ph5_path_eror = os.path.join(self.home,
+        self.ph5_path_error = os.path.join(self.home,
                                           datapath)
-        self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_eror,
+        self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_error,
                                                         "master.ph5",
                                                         "RESPONSE")
         self.parser.add_ph5_stationids()
