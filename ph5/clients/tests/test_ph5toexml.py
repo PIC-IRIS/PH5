@@ -28,6 +28,7 @@ class TestPh5toevt_description(TempDirTestCase):
         self.assertTrue(os.path.exists('quake.xml'))
         with open('quake.xml', 'r') as quake_xml:
             quake_xml_content = quake_xml.read()
+            print(quake_xml_content)
             root = ET.fromstring(quake_xml_content)
             ns = {
                 'q': 'http://quakeml.org/xmlns/quakeml/1.2',
