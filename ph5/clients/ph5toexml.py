@@ -20,7 +20,7 @@ import types
 import logging
 from ph5.core import ph5api, ph5utils
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2026.178'
 LOGGER = logging.getLogger(__name__)
 
 
