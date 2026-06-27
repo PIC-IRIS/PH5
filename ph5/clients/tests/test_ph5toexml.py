@@ -20,7 +20,7 @@ class TestPh5toevt_description(TempDirTestCase):
         shutil.copy(ph5_path, self.tmpdir)
 
         testargs = ['ph5toexml', '-n', 'master.ph5',
-                    '-p', '.', '-o', 'quake.xml']
+                    '-p', self.tmpdir, '-o', 'quake.xml']
 
         with patch.object(sys, 'argv', testargs):
             ph5toexml.main()
