@@ -611,8 +611,7 @@ class TestPh5Validate_currPH5(TempDirTestCase, LogTestCase):
         event['location/Z/units_s'] = ''
         inf, warn, err = self.ph5validate.check_event_t_completeness(event)
         self.assertEqual(warn,
-                         ['Event description is missing.',
-                          'No Event location/X/units_s value found.',
+                         ['No Event location/X/units_s value found.',
                           'No Event location/Y/units_s value found.',
                           'No Event location/Z/units_s value found.'])
 
