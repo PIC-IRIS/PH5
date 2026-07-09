@@ -20,7 +20,8 @@ import types
 import logging
 from ph5.core import ph5api, ph5utils
 
-PROG_VERSION = '2026.178'
+PROG_VERSION = '2026.190'
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -337,9 +338,9 @@ class PH5toexml(object):
                           self.experiment_t[0]['longname_s'])
 
         shot_lines_ = []
-        shots = []
 
         for shot_line in shot_lines:
+            shots = []
             sl = Shotline(shot_line)
             event_t = self.ph5.Event_t[shot_line]['byid']
             if self.args.get('shotline') and \

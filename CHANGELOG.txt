@@ -199,6 +199,7 @@ ph5.clients.ph5torec
 -ph5.clients.ph5view
  * Better handling of experiments with missing tables
 -ph5.clients.ph5toexml
+ * Fix bug that not reset list of shots when looping to the next shotline
  * Remove new line from geocsv field_unit header line
 -ph5.utilities.kefedit
  * Fix bugs caused when loading PH5 experiment without offset tables
