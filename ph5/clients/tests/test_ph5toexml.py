@@ -1,5 +1,4 @@
 '''
-<<<<<<< HEAD
 Tests for ph5toexml
 '''
 import unittest
