@@ -22,3 +22,4 @@
 	size/units_s=lb
 	depth/value_d=0
 	depth/units_s=m
+	description_s=sample description

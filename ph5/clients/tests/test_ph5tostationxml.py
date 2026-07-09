@@ -681,5 +681,6 @@ class TestPH5toStationXML_DataLoggerDescription(
                     ".//ns:DataLogger/ns:Description", ns):
                 self.assertEqual(datalogger.text, 'DAS: 3X500, Node ID: 2240')
 
+
 if __name__ == "__main__":
     unittest.main()
