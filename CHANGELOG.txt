@@ -22,6 +22,8 @@ ph5.utilities.ph5
  * Usage: ph5 pforma (lists info about pforma)https://github.com/PIC-IRIS/PH5/pull/new/helpfile
  ph5.utilities.csvtokef
  * modify to accept UTF-8 with BOM
+ph5.clients.exml
+ * add Event description to the output
 ph5.clients.ph5toms
  * added option to change file naming scheme
  * add day volume cuts
@@ -60,6 +62,7 @@ ph5.utilities.validation
  * Check for location errors and warnings
  * Add 'deprecated tool' as prefix for metadatatoph5 when checking response
 ph5.clients.ph5tostationxml
+ * add array_t's descriptions to <DataLogger><Description>
  * Limit number of asynchronous processes
  * Remove storage format from the sxml channel level to be compatible with sxml version 1.1
  * ph5tostationxml now correctly handles stations with multiple deployments (issue #318)

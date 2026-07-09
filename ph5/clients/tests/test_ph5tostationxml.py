@@ -5,10 +5,12 @@ import unittest
 import os
 import sys
 import logging
+import shutil
 
 from obspy.core import inventory as inv
 from mock import patch
 from testfixtures import OutputCapture, LogCapture
+from xml.etree import ElementTree as ET
 
 from ph5.utilities import segd2ph5, initialize_ph5, kef2ph5,\
     resp_load, nuke_table
@@ -262,7 +264,8 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             sample_rate=500.0, sample_rate_ration=500.0,
             azimuth=0.0, dip=90.0, sensor_manufacturer='geospace',
             sensor_model='gs11v', sensor_serial='',
-            das_manufacturer='reftek', das_model='rt125a', das_serial='12183'
+            das_manufacturer='reftek', das_model='rt125a', das_serial='12183',
+            description=''
         )
 
     def tearDown(self):
@@ -599,7 +602,7 @@ class TestPh5ToStationxml(LogTestCase, TempDirTestCase):
             'minlat': None, 'maxlat': None, 'minlon': None, 'maxlon': None,
             'latitude': None, 'longitude': None,
             'maxradius': None, 'minradius': None,
-            'start_time': None, 'end_time': None, 'emp_resp': False,}]
+            'start_time': None, 'end_time': None, 'emp_resp': False, }]
         inv = ph5tostationxml.run_ph5_to_stationxml(
             [datapath], 'master.ph5', 'SACPZ', 'RESPONSE', '', arg_dict_list
         )
@@ -627,6 +630,31 @@ class TestPh5ToStationxml(LogTestCase, TempDirTestCase):
         self.assertEqual(response.instrument_sensitivity.frequency, 50.)
         self.assertAlmostEqual(response.instrument_sensitivity.value,
                                612759.438589, 4)
+
+
+class TestPH5toStationXML_DataLoggerDescription(
+        LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        try:
+            self.mng.ph5.close()
+        except AttributeError:
+            pass
+        super(TestPH5toStationXML_DataLoggerDescription, self).tearDown()
+
+    def test_main(self):
+        ph5_path = os.path.join(self.home, "ph5/test_data/ph5/master.ph5")
+        shutil.copy(ph5_path, '.')
+        testargs = ['ph5tostationxml', '-n', 'master.ph5',
+                    '--station', '500', '-o', 'station500.xml']
+        with patch.object(sys, 'argv', testargs):
+            ph5tostationxml.main()
+            tree = ET.parse('station500.xml')
+            root = tree.getroot()
+            ns = {"ns": "http://www.fdsn.org/xml/station/1"}
+            for datalogger in root.findall(
+                    ".//ns:DataLogger/ns:Description", ns):
+                self.assertEqual(datalogger.text, 'DAS: 3X500, Node ID: 2240')
+
 
 if __name__ == "__main__":
     unittest.main()

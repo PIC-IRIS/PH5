@@ -1,4 +1,5 @@
 '''
+<<<<<<< HEAD
 Tests for ph5toexml
 '''
 import unittest
@@ -24,6 +25,9 @@ class TestPH5toexml_ResetShotsForEachShotline(
         super(TestPH5toexml_ResetShotsForEachShotline, self).tearDown()
 
     def test_main(self):
+        """
+        Test if shotline won't be accumulate with loop's increasement
+        """
         metapath = os.path.join(
             self.home, "ph5/test_data/metadata")
         ph5_path = os.path.join(self.home, "ph5/test_data/ph5/master.ph5")
@@ -51,6 +55,37 @@ class TestPH5toexml_ResetShotsForEachShotline(
                 if event.tag.endswith("event"):
                     count += 1
         self.assertEqual(count, 2)
+
+
+class TestPh5toexml_description(TempDirTestCase):
+    def test_output_event_description(self):
+        """
+        Test if event's description i added to tag <event><description>
+        """
+        ph5_path = os.path.join(
+            self.home, "ph5/test_data/ph5/master.ph5")
+        shutil.copy(ph5_path, self.tmpdir)
+
+        testargs = ['ph5toexml', '-n', 'master.ph5',
+                    '-p', self.tmpdir, '-o', 'quake.xml']
+
+        with patch.object(sys, 'argv', testargs):
+            ph5toexml.main()
+
+        self.assertTrue(os.path.exists('quake.xml'))
+        with open('quake.xml', 'r') as quake_xml:
+            quake_xml_content = quake_xml.read()
+            root = ET.fromstring(quake_xml_content)
+            ns = {
+                'q': 'http://quakeml.org/xmlns/quakeml/1.2',
+                'bed': 'http://quakeml.org/xmlns/bed/1.2'
+            }
+            # Find first event
+            first_event = root.find('.//bed:event', ns)
+
+            # Find description/text
+            text_value = first_event.find('bed:description/bed:text', ns).text
+            self.assertEqual(text_value, 'sample description')
 
 
 if __name__ == "__main__":
