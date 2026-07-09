@@ -20,7 +20,7 @@ import types
 import logging
 from ph5.core import ph5api, ph5utils
 
-PROG_VERSION = '2018.268'
+PROG_VERSION = '2026.178'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -635,12 +635,18 @@ class PH5toexml(object):
                         identifier = obspy.core.event.base.ResourceIdentifier(
                             id=str(network.code) + "." +
                             str(shot_line.name[-3:]) + "." + str(shot.shot_id))
+                        event_descriptions = [
+                            obspy.core.event.event.EventDescription(
+                                shot.description)
+                        ]
                         event = (
                             obspy.core.event.Event(
                                 resource_id=identifier,
                                 event_type="Controlled Explosion",
                                 origins=origins,
-                                magnitudes=magnitudes))
+                                magnitudes=magnitudes,
+                                event_descriptions=event_descriptions
+                            ))
                         event.extra = {'Network':
                                        {'value': str(network.code),
                                         'type': 'attribute',
