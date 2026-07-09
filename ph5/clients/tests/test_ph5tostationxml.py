@@ -263,7 +263,7 @@ class TestPH5toStationXMLParser_response(LogTestCase, TempDirTestCase):
             cha_component=1, receiver_id='9001', array_code='009',
             sample_rate=500.0, sample_rate_ration=500.0,
             azimuth=0.0, dip=90.0, sensor_manufacturer='geospace',
-            sensor_model='gs11v', sensor_serial='',
+            sensor_model='gs11v', sensor_serial='', sensor_note='sample note',
             das_manufacturer='reftek', das_model='rt125a', das_serial='12183',
             description=''
         )
@@ -572,9 +572,9 @@ class TestPH5toStationXML_Response_NI_MISMATCH(LogTestCase, TempDirTestCase):
         # datapath = '../../test_data/ph5/'
         datapath = os.path.join(self.home,
                                 'ph5/test_data/ph5/response_table_n_i')
-        self.ph5_path_eror = os.path.join(self.home,
-                                          datapath)
-        self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_eror,
+        self.ph5_path_error = os.path.join(self.home,
+                                           datapath)
+        self.ph5sxml, self.mng, self.parser = getParser(self.ph5_path_error,
                                                         "master.ph5",
                                                         "RESPONSE")
         self.parser.add_ph5_stationids()
@@ -630,6 +630,32 @@ class TestPh5ToStationxml(LogTestCase, TempDirTestCase):
         self.assertEqual(response.instrument_sensitivity.frequency, 50.)
         self.assertAlmostEqual(response.instrument_sensitivity.value,
                                612759.438589, 4)
+
+
+class TestPH5toStationXML_SensorNoteUnderVendorTag(
+        LogTestCase, TempDirTestCase):
+    def tearDown(self):
+        try:
+            self.mng.ph5.close()
+        except AttributeError:
+            pass
+        super(TestPH5toStationXML_SensorNoteUnderVendorTag, self).tearDown()
+
+    def test_main(self):
+        ph5_path = os.path.join(self.home, "ph5/test_data/ph5/master.ph5")
+        shutil.copy(ph5_path, '.')
+        testargs = ['ph5tostationxml', '-n', 'master.ph5',
+                    '--station', '500', '-o', 'station500.xml']
+        with patch.object(sys, 'argv', testargs):
+            ph5tostationxml.main()
+            tree = ET.parse('station500.xml')
+            root = tree.getroot()
+            ns = {"ns": "http://www.fdsn.org/xml/station/1"}
+            for vendor in root.findall(".//ns:Sensor/ns:Vendor", ns):
+                self.assertEqual(
+                    'Sensor note: manufacturer and model not read from file.',
+                    vendor.text
+                )
 
 
 class TestPH5toStationXML_DataLoggerDescription(
