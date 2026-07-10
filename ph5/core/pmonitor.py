@@ -562,13 +562,20 @@ if __name__ == '__main__':
 
         return num_lines
 
+
     def init_fio(f, d):
         from multiprocessing import cpu_count
         fio = pforma_io.FormaIO(infile=f, outdir=d)
-        if cpu_count() > 3:
-            fio.set_nmini(cpu_count() + 1)
+
+        cores = cpu_count()
+        # Use at most half the cores worth of families;
+        # real clamp happens in set_nmini
+        if cores > 1:
+            requested = max(1, cores // 2)
         else:
-            fio.set_nmini(cpu_count())
+            requested = 1
+
+        fio.set_nmini(requested)
 
         fio.initialize_ph5()
 
