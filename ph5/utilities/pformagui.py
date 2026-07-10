@@ -504,6 +504,21 @@ def get_len(f):
     return num_lines
 
 
+def calc_total_families():
+    """
+    Use half of physical cores to reduce memory pressure / I/O contention to
+    avoid segmentation faults.
+    """
+    phys = cpu_count(logical=False) or cpu_count(logical=True)
+    logi = cpu_count(logical=True)
+
+    if phys and phys > 0:
+        total_families = max(1, phys // 2)
+    else:
+        total_families = max(1, logi // 2)
+    return total_families
+
+
 def init_fio(f, d, utm=None, combine=None, main_window=None):
     '''
         Initialize parallel processing
@@ -520,11 +535,8 @@ def init_fio(f, d, utm=None, combine=None, main_window=None):
         fio.set_utm(utm)
     if combine:
         fio.set_combine(combine)
-    if cpu_count(logical=False) > 3:
-        fio.set_nmini(cpu_count(logical=True) + 1)
-    else:
-        fio.set_nmini(cpu_count(logical=True))
 
+    fio.set_nmini(calc_total_families())
     fio.initialize_ph5()
 
     try:
