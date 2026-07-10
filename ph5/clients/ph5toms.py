@@ -506,7 +506,7 @@ class PH5toMSeed(object):
             return self.resp_manager.get_response(sensor_keys,
                                                   datalogger_keys)
 
-    def create_trace(self, station_to_cut, mp=False):
+    def create_trace(self, station_to_cut, logger, mp=False):
         station_to_cut_segments = PH5toMSeed.get_nonrestricted_segments(
             [station_to_cut], self.restricted)
         obspy_stream = Stream()
@@ -576,10 +576,11 @@ class PH5toMSeed(object):
                     continue
             if actual_sample_rate != 0:
                 traces = self.ph5.cut(stc.das, start_time,
-                                      stc.endtime,
+                                      stc.endtime,logger,
                                       chan=stc.component,
                                       sample_rate=actual_sample_rate,
                                       apply_time_correction=nt, das_t=das)
+
 
             else:
                 traces = self.ph5.textural_cut(stc.das,
@@ -658,6 +659,8 @@ class PH5toMSeed(object):
                 if self.decimation:
                     obspy_trace.decimate(int(self.decimation))
                 obspy_stream.append(obspy_trace)
+
+        logger.debug("************ create_trace, obspy_stream.traces len: {}".format(len(obspy_stream.traces)))
         if len(obspy_stream.traces) < 1:
             return
 
@@ -688,7 +691,8 @@ class PH5toMSeed(object):
 
     def create_cut(self, seed_network, ph5_station, seed_station,
                    station_cut_times, station_list, deployment, st_num,
-                   array_code, experiment_id):
+                   array_code, experiment_id, logger):
+
         deploy = station_list[deployment][st_num]['deploy_time/epoch_l']
         deploy_micro = station_list[deployment][
             st_num]['deploy_time/micro_seconds_i']
@@ -869,6 +873,7 @@ class PH5toMSeed(object):
             elev = station_list[deployment][
                 st_num]['location/Z/value_d']
 
+            logger.debug("**************** create_cut, times_to_cut len: {}".format(len(times_to_cut)))
             for starttime, endtime in tuple(times_to_cut):
                 try:
                     self.ph5.query_das_t(das,
@@ -878,7 +883,8 @@ class PH5toMSeed(object):
                                          sample_rate,
                                          sample_rate_multiplier
                                          )
-                except experiment.HDF5InteractionError:
+                except experiment.HDF5InteractionError as ex:
+                    logger.info("**************** create_cut, what is this about, ex: {}  endtime: {}".format(ex))
                     continue
 
                 station_cut = StationCut(
@@ -916,7 +922,7 @@ class PH5toMSeed(object):
                     self.hash_list.append(station_cut_hash)
                     yield station_cut
 
-    def create_cut_list(self):
+    def create_cut_list(self, logger):
         cuts_generator = []
         experiment_t = self.ph5.Experiment_t['rows']
 
@@ -965,6 +971,9 @@ class PH5toMSeed(object):
                     "Error - requested shotid(s) do not exist.")
 
         for array_name in array_names:
+            if False:
+                # for tracking back to Array_t used
+                logger.debug("**** create_cut_list array_name: {}".format(array_name))
             array_code = array_name[8:]  # get 3 digit array code
             if self.array:
                 array_patterns = self.array
@@ -1034,22 +1043,26 @@ class PH5toMSeed(object):
                                     seed_network, ph5_station,
                                     seed_station, station_cut_times,
                                     station_list, deployment, st_num,
-                                    array_code, experiment_id))
+                                    array_code, experiment_id, logger))
                         elif self.reqtype == "FDSN":
                             # fdsn request
                             cuts_generator.append(self.create_cut(
                                 seed_network, ph5_station, seed_station,
                                 station_cut_times, station_list, deployment,
-                                st_num, array_code, experiment_id))
+                                st_num, array_code, experiment_id, logger))
 
         return itertools.chain.from_iterable(cuts_generator)
 
-    def process_all(self):
-        cuts = self.create_cut_list()
+    def process_all(self, logger=LOGGER):
+        logger.debug("************************ process_all, logger: {}".format(logger))
+        cuts = self.create_cut_list(logger)
         if cuts:
             for cut in cuts:
                 self.ph5.clear()
-                stream = self.create_trace(cut)
+                if False:
+                    # specific info used to create a trace, start_time, end_time, etc.
+                    logger.debug("************************ process_all, cut in cuts, cut: {}".format(cut))
+                stream = self.create_trace(cut, logger)
                 if stream is not None:
                     yield stream
         else:
